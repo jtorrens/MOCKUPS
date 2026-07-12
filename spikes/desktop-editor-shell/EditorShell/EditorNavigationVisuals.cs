@@ -38,11 +38,16 @@ internal static class EditorNavigationVisuals
 
     public static Avalonia.Controls.Shapes.Ellipse UsedDot(ProjectTreeNode node, bool isDark)
     {
+        return UsedDot(node.IsUsed, isDark);
+    }
+
+    public static Avalonia.Controls.Shapes.Ellipse UsedDot(bool isUsed, bool isDark)
+    {
         return new Avalonia.Controls.Shapes.Ellipse
         {
             Width = 7,
             Height = 7,
-            Fill = node.IsUsed ? new SolidColorBrush(Color.Parse("#D6A638")) : Brushes.Transparent,
+            Fill = isUsed ? new SolidColorBrush(Color.Parse("#D6A638")) : Brushes.Transparent,
             Stroke = new SolidColorBrush(Color.Parse(isDark ? "#8d96a6" : "#667085")),
             StrokeThickness = 1,
             VerticalAlignment = VerticalAlignment.Center,

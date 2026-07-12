@@ -316,6 +316,19 @@ public partial class MainWindow : SukiWindow
             {
                 var wasExpanded = _treeExpansion.IsExpanded(node);
                 ShowNode(node, rebuildTree: false);
+                if (EditorNavigationMetadata.ExpandChildrenWhenOpened(node))
+                {
+                    if (!wasExpanded)
+                    {
+                        ToggleTreeGroup(node);
+                    }
+                    else
+                    {
+                        RebuildNavigationCards();
+                    }
+                    return;
+                }
+
                 if (!wasExpanded)
                 {
                     RebuildNavigationCards();

@@ -86,16 +86,79 @@ internal sealed class EditorNavigationRenderer
     {
         var content = new StackPanel
         {
-            Spacing = 5,
-            Margin = new Thickness(6, 5, 0, 0),
+            Spacing = 1,
+            Margin = new Thickness(2, 5, 0, 0),
         };
 
-        foreach (var child in sectionRoot.Children)
+        for (var index = 0; index < sectionRoot.Children.Count; index++)
         {
-            AddNavigationNode(content, child);
+            var child = sectionRoot.Children[index];
+            AddHierarchicalNode(content, child, 0, index, index == sectionRoot.Children.Count - 1);
         }
 
         AddNavigationCard(parent, sectionRoot, content, EditorNavigationMetadata.SectionIcon(sectionRoot));
+    }
+
+    private void AddHierarchicalNode(StackPanel parent, ProjectTreeNode node, int depth, int siblingIndex, bool isLastSibling)
+    {
+        var hasChildren = node.Children.Count > 0 || node.CanAddChild;
+        var expanded = hasChildren && _isExpanded(node);
+        var options = new List<EditorNavigationRowAction>();
+        if (node.CanRenameDirectly)
+        {
+            options.Add(new("Rename", EditorIcons.Edit, () => _ = _renameNode(node)));
+        }
+        EditorNavigationRowAction? lockedAction = null;
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsLocked)
+        {
+            lockedAction = new("Unlock variant editing", EditorIcons.Lock, () => _ = _toggleVariantLock(node));
+        }
+        else if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        {
+            options.Add(new("Lock variant editing", EditorIcons.Unlock, () => _ = _toggleVariantLock(node)));
+        }
+        if (node.CanDuplicate)
+        {
+            options.Add(new("Duplicate", EditorIcons.Duplicate, () => _duplicateNode(node)));
+        }
+        if (node.CanDelete || node.IsProtected)
+        {
+            options.Add(new("Delete", EditorIcons.Delete, () => _ = _deleteNode(node), node.CanDelete));
+        }
+        var add = node.CanAddChild
+            ? new EditorNavigationRowAction(EditorNavigationMetadata.AddChildLabel(node), EditorIcons.Add, () => _ = _addChild(node))
+            : null;
+        var status = node.IsProtected ? "Protected" : node.IsLocked ? "Locked" : node.IsUsed ? "Used" : "";
+        var metadata = new EditorHierarchicalNavigationMetadata(
+            node.Id,
+            depth,
+            IsSelected(node),
+            hasChildren,
+            expanded,
+            hasChildren ? EditorNavigationMetadata.HierarchicalIcon(node) : "",
+            node.ColorHex,
+            EditorNavigationMetadata.Title(node),
+            EditorNavigationMetadata.Subtitle(node),
+            status,
+            node.IsUsed,
+            !hasChildren,
+            node.Kind == ProjectTreeNodeKind.ComponentClassGroup,
+            node.Kind == ProjectTreeNodeKind.ComponentClassGroup && siblingIndex > 0,
+            isLastSibling,
+            node.Kind == ProjectTreeNodeKind.ComponentClassGroup ? 46 : node.Kind == ProjectTreeNodeKind.ComponentPreset ? 40 : 42,
+            lockedAction,
+            add,
+            options);
+        parent.Children.Add(EditorHierarchicalNavigationRow.Create(
+            metadata,
+            _isDark(),
+            () => ActivateNavigationNode(node),
+            hasChildren ? () => _toggleGroup(node) : null));
+        if (!expanded) return;
+        for (var index = 0; index < node.Children.Count; index++)
+        {
+            AddHierarchicalNode(parent, node.Children[index], depth + 1, index, index == node.Children.Count - 1);
+        }
     }
 
     private void AddNavigationNode(StackPanel parent, ProjectTreeNode node)
@@ -358,7 +421,7 @@ internal sealed class EditorNavigationRenderer
 
         if (node.CanAddChild)
         {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), "Add child", async (_, e) =>
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), EditorNavigationMetadata.AddChildLabel(node), async (_, e) =>
             {
                 e.Handled = true;
                 await _addChild(node);

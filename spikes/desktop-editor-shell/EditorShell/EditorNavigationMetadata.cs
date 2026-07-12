@@ -137,4 +137,76 @@ internal static class EditorNavigationMetadata
     {
         return node.Kind is ProjectTreeNodeKind.ComponentClass;
     }
+
+    public static bool ExpandChildrenWhenOpened(ProjectTreeNode node)
+    {
+        return node.Kind is ProjectTreeNodeKind.App
+            or ProjectTreeNodeKind.Episode
+            or ProjectTreeNodeKind.Shot;
+    }
+
+    public static string AddChildLabel(ProjectTreeNode node)
+    {
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.AppsRoot => "Add app",
+            ProjectTreeNodeKind.App => "Add module",
+            ProjectTreeNodeKind.ComponentClassGroup => "Add component",
+            ProjectTreeNodeKind.ComponentClass => "Add variant",
+            ProjectTreeNodeKind.EpisodesRoot => "Add episode",
+            ProjectTreeNodeKind.Episode => "Add shot",
+            ProjectTreeNodeKind.Shot => "Add screen",
+            ProjectTreeNodeKind.PaletteRoot => "Add palette color",
+            ProjectTreeNodeKind.IconThemesRoot => "Add icon theme",
+            ProjectTreeNodeKind.RenderPresetsRoot => "Add render preset",
+            ProjectTreeNodeKind.DevicesRoot => "Add device",
+            ProjectTreeNodeKind.ActorsRoot => "Add actor",
+            ProjectTreeNodeKind.ThemesRoot => "Add theme",
+            ProjectTreeNodeKind.ProductionFontsRoot => "Add production font",
+            _ => "Add child",
+        };
+    }
+
+    public static string HierarchicalIcon(ProjectTreeNode node)
+    {
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
+        {
+            return HierarchicalIcon(node.Parent);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            var type = node.RecordClassId.StartsWith("component.", StringComparison.Ordinal)
+                ? node.RecordClassId["component.".Length..]
+                : "";
+            return type switch
+            {
+                "audio" => EditorIcons.Audio,
+                "avatar" => EditorIcons.Avatar,
+                "bubble" => EditorIcons.Bubble,
+                "button" => EditorIcons.ButtonIcon,
+                "cursor" => EditorIcons.Content,
+                "iconBar" or "iconRow" => EditorIcons.Icon,
+                "keyboard" => EditorIcons.Keyboard,
+                "label" => EditorIcons.Label,
+                "media" => EditorIcons.Media,
+                "navigation_bar" => EditorIcons.Navigation,
+                "status_bar" => EditorIcons.Status,
+                "surface" => EditorIcons.Layout,
+                "textBox" or "textInputBar" => EditorIcons.TextInput,
+                _ => EditorIcons.Component,
+            };
+        }
+
+        if (node.Kind != ProjectTreeNodeKind.ComponentClassGroup)
+        {
+            return EditorIcons.ForTreeNode(node.Kind);
+        }
+
+        return node.Id.Contains("_atoms_", StringComparison.Ordinal)
+            ? EditorIcons.Structure
+            : node.Id.Contains("_system_", StringComparison.Ordinal)
+                ? EditorIcons.Settings
+                : EditorIcons.Apps;
+    }
 }
