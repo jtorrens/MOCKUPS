@@ -201,18 +201,11 @@ internal sealed class RecordClassFieldValueService
     private string ModuleInstanceFieldValue(string moduleInstanceId, string fieldId)
     {
         var settings = _database.GetModuleInstanceSettings(moduleInstanceId);
-        var module = _database.GetModuleSettings(settings.ModuleId);
         return fieldId switch
         {
             "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
-            "moduleInstance.durationFrames" =>
-                (module.RecordClassId == "module.core.chat"
-                    ? ConversationModuleTiming.ResolveDurationFrames(
-                        settings.ContentJson,
-                        settings.BehaviorJson,
-                        settings.AnimationJson)
-                    : settings.DurationFrames).ToString(),
+            "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
@@ -226,7 +219,7 @@ internal sealed class RecordClassFieldValueService
             "shot.slug" => settings.Slug,
             "shot.version" => settings.Version.ToString(),
             "shot.sortOrder" => settings.SortOrder.ToString(),
-            "shot.durationFrames" => settings.DurationFrames.ToString(),
+            "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_database, shotId).ToString(),
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),

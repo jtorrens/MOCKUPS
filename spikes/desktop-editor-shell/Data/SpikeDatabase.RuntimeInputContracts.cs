@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -93,6 +94,30 @@ internal sealed partial class SpikeDatabase
             Execute(connection, "UPDATE module_instances SET content_json = $json WHERE id = $id",
                 ("$json", update.Json), ("$id", update.Id));
         }
+    }
+
+    private static void SynchronizeTimelineDurations(SqliteConnection connection)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = "SELECT mi.id, mi.duration_frames, mi.content_json, mi.animation_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
+        using var reader = select.ExecuteReader();
+        var updates = new List<(string Id, int Duration)>();
+        while (reader.Read())
+        {
+            var stored = reader.GetInt32(1);
+            var duration = RuntimeTimeline.DurationFrames(ReadString(reader, 4), ReadString(reader, 2), ReadString(reader, 3), stored);
+            if (duration != stored) updates.Add((reader.GetString(0), duration));
+        }
+        reader.Close();
+        foreach (var update in updates)
+        {
+            Execute(connection, "UPDATE module_instances SET duration_frames = $duration WHERE id = $id",
+                ("$duration", update.Duration), ("$id", update.Id));
+        }
+
+        Execute(
+            connection,
+            "UPDATE shots SET duration_frames = MAX(1, COALESCE((SELECT SUM(mi.duration_frames) FROM module_instances mi WHERE mi.shot_id = shots.id), 0))");
     }
 
     private static bool RuntimeInputDefinition(JsonObject definition)

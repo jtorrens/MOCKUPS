@@ -2159,6 +2159,21 @@ assertDoesNotContain(
   "parseObject(payload.instanceJson).behavior",
   "module renderables must consume the canonical runtime preview payload instead of a second instance behavior channel",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "[\"definesModuleDuration\"] = true",
+  "a module runtime contract must declare which action defines its finite instance duration",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeTimeline.cs",
+  "action[\"definesModuleDuration\"]",
+  "module-instance duration must be evaluated generically from the declared runtime action",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "SELECT SUM(mi.duration_frames)",
+  "cut-only Shot duration must remain the sum of its ordered module-instance durations",
+);
 for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

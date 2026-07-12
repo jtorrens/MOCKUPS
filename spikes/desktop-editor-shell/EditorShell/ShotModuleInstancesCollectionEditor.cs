@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 
@@ -45,7 +46,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         body.Children.Add(add);
 
         return new InstantEditorCard(
-            EditorCardHeader.Create("Modules", $"{slots.Count} ordered slot(s)", EditorIcons.Create(EditorIcons.Module, 18)),
+            EditorCardHeader.Create("Modules", $"{EditorUiText.Count(slots.Count, "ordered slot")}", EditorIcons.Create(EditorIcons.Module, 18)),
             new Border { Padding = new Thickness(10), Child = body },
             isExpanded: true)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -70,7 +71,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
                 Children =
                 {
                     new TextBlock { Text = slot.Name, FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                    new TextBlock { Text = $"{slot.ModuleName} · {slot.TransitionType}", Opacity = 0.66, FontSize = 11 },
+                    new TextBlock { Text = $"{slot.ModuleName} · {slot.StoredDurationFrames} frames · {slot.TransitionType}", Opacity = 0.66, FontSize = 11 },
                 },
             },
             HorizontalAlignment = HorizontalAlignment.Stretch,

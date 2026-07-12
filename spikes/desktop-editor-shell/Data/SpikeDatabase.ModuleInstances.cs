@@ -39,7 +39,8 @@ internal sealed partial class SpikeDatabase
         string Name,
         string ModuleName,
         int SortOrder,
-        string TransitionType);
+        string TransitionType,
+        int StoredDurationFrames);
 
     public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
     {
@@ -136,6 +137,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         Execute(connection, "UPDATE module_instances SET content_json = $contentJson WHERE id = $id",
             ("$contentJson", content.ToJsonString()), ("$id", moduleInstanceId));
+        SynchronizeTimelineDurations(connection);
     }
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
@@ -143,7 +145,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT mi.id, mi.name, m.name, mi.sort_order, mi.transition_json
+            SELECT mi.id, mi.name, m.name, mi.sort_order, mi.transition_json, mi.duration_frames
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
             WHERE mi.shot_id = $shotId
@@ -160,7 +162,8 @@ internal sealed partial class SpikeDatabase
                 reader.GetString(1),
                 reader.GetString(2),
                 reader.GetInt32(3),
-                transition["type"]?.GetValue<string>() ?? "cut"));
+                transition["type"]?.GetValue<string>() ?? "cut",
+                reader.GetInt32(5)));
         }
 
         return slots;

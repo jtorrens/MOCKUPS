@@ -738,6 +738,8 @@ internal sealed partial class SpikeDatabase
                     ["playInputId"] = "conversationPlayback",
                     ["durationCollectionJsonKey"] = "messages",
                     ["durationItemNumberKeys"] = new JsonArray { "delayAfterPreviousFrames", "writeOnDurationFrames", "postWriteOnHoldFrames" },
+                    ["durationBaseFrames"] = 12,
+                    ["definesModuleDuration"] = true,
                     ["timeJsonKey"] = "conversationFrame",
                     ["timeUnit"] = "frames",
                     ["prewarmFrames"] = false,

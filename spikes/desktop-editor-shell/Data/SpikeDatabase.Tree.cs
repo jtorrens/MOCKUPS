@@ -737,7 +737,10 @@ internal sealed partial class SpikeDatabase
                 ("$contentJson", DefaultConversationModuleContentJson()),
                 ("$behaviorJson", DefaultConversationModuleBehaviorJson()),
                 ("$animationJson", DefaultModuleAnimationJson()));
-            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, id, name, "Conversation · 240 frames · Cut", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance), parent);
+            NormalizeModuleInstanceRuntimePayloads(connection);
+            SynchronizeTimelineDurations(connection);
+            var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
+            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, id, name, $"Conversation · {duration} frames · Cut", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance), parent);
         }
 
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
@@ -897,6 +900,7 @@ internal sealed partial class SpikeDatabase
                 ("$name", $"{node.Name} copy"),
                 ("$sortOrder", sortOrder),
                 ("$sourceId", node.Id));
+            SynchronizeTimelineDurations(connection);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleInstance,
@@ -1127,6 +1131,10 @@ internal sealed partial class SpikeDatabase
         }
 
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            SynchronizeTimelineDurations(connection);
+        }
     }
 
     public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
