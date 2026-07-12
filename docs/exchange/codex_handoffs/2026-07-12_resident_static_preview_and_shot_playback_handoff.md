@@ -7,7 +7,7 @@ Implement the resident static-preview update model described in
 Shot Play and declarative Test Values actions behind one generic resolved-frame
 playback pipeline.
 
-Start from `main` at commit `7724fc1b` or later. Pull before editing and restart
+Start from `main` at commit `bebe400b` or later. Pull before editing and restart
 the desktop application so no stale preview process or editor layout remains in
 memory.
 
@@ -17,8 +17,16 @@ Do not reimplement these features:
 
 - Shot preview selects the active ordered ModuleInstance and resolves its local
   frame from the global Shot frame.
-- The main navigator has first/last Shot frame, previous/next frame,
-  previous/next ModuleInstance, Play and a global frame slider.
+- The main navigator has first/last scoped frame, previous/next frame,
+  previous/next Screen, Play and a scoped frame slider.
+- The navigator exposes user-facing `Shot / Screen` scope. `Screen` is the
+  production name for the active ModuleInstance; do not expose the internal
+  term in this UI.
+- In Shot scope the slider and Play range are global. In Screen scope they are
+  local to the active Screen while the controller retains and resolves the
+  equivalent global Shot frame.
+- Design and Production use independent persisted context-history stacks. The
+  Production stack contains Shots and Screens, never Design modules/components.
 - Production context identifies the active ModuleInstance and lists Shot slots.
 - Device and Theme derive from Shot/Actor and are hidden in production setup.
 - Mode follows preview mode unless the active module forces light or dark.
@@ -33,6 +41,9 @@ Relevant baseline commits:
 - `d108117c` — resident-preview architecture proposal;
 - `1302cc30` — Bubble transient geometry correction;
 - `7724fc1b` — placement-aware Bubble width and compact/inline delivery status.
+- `06a15a12` — explicit workspace ownership, independent Production history and
+  Screen context with global-to-local frame resolution;
+- `bebe400b` — Shot/Screen navigator scope and user-facing Screen terminology.
 
 ## Required first phase: resident static updates
 
@@ -53,6 +64,10 @@ authorize a WebView navigation.
 
 Reference mode, swipe, opacity and angle remain resident overlay state. A
 reference video follows the global Shot frame, not the module-local frame.
+
+Do not replace the Shot/Screen combo or reinterpret its displayed frame. A
+resident update receives the already resolved global frame identity even when
+the UI currently displays a Screen-local frame.
 
 ## Required second phase: shared playback sequence
 

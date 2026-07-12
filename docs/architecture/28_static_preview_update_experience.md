@@ -5,12 +5,15 @@ or implied by this document.
 
 ## Current implementation baseline
 
-The proposal must be implemented from `main` at or after commit `7724fc1b`.
+The proposal must be implemented from `main` at or after commit `bebe400b`.
 That baseline already contains:
 
 - production Shot preview resolved through ordered ModuleInstance slots;
 - global Shot frame navigation and global-to-local module-frame translation;
 - production context chrome that identifies and selects active module instances;
+- independent persisted Design and Production context-history stacks;
+- a user-facing `Shot / Screen` navigation scope where Screen means the active
+  ModuleInstance without exposing that internal term;
 - Device and Theme removed from production controls because Shot/Actor own them;
 - preview mode inheritance with explicit module light/dark override;
 - a first Shot Play integration with the existing HTML/raster preparation route;
@@ -164,6 +167,16 @@ Shot frame
 
 Reference video synchronization continues to use the global Shot frame, not
 the active module's local frame.
+
+The production navigator may display either scope without changing this
+internal authority:
+
+- `Shot` displays `0…Shot duration - 1` and exposes the global frame;
+- `Screen` displays `0…active Screen duration - 1` while translating its local
+  value to the corresponding global Shot frame;
+- start/end and Play operate on the selected scope;
+- previous/next Screen changes the active ModuleInstance but remains labeled
+  `Screen` in user-facing UI.
 
 ### Shot Play uses the selected playback route
 
@@ -350,6 +363,8 @@ For playback:
 - Shot Play honors the selected HTML/raster route and may cross module-instance
   boundaries without a full document load;
 - global Shot frame, active slot and local module frame remain synchronized;
+- Shot/Screen scope changes preserve the equivalent global frame and only
+  change the displayed range;
 - frame/slot navigation stops playback and commits the requested static frame;
 - Shot Play and Test Values playback cannot run concurrently.
 
