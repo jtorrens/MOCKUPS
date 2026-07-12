@@ -2330,6 +2330,16 @@ assertContains(
   "Individual Conversation must override Bubble actor identity presentation off",
 );
 assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "let y = top + gap - scrollOffset",
+  "Conversation messages must stack from Header with messageGap before applying overflow scroll",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  'transition: "slide"',
+  "Conversation message overflow must use the shared Theme Slide motion",
+);
+assertContains(
   "src/desktop-preview/bubbleComponentResolver.ts",
   "actorIdentityVisible",
   "Bubble must consume its parent-owned actor identity visibility override",

@@ -119,6 +119,15 @@ recreate their internal rules.
   Status Bar region.
 - The message viewport is bounded between header/status chrome and the
   composer/keyboard area. It clips messages that leave that region.
+- Messages stack from the top of the viewport. The first message uses the same
+  `messageGap` below Header that separates subsequent messages.
+- Once final message bounds exceed the current viewport, Conversation scrolls
+  only the overflow needed to keep the newest content visible. A Keyboard or
+  Text Input Bar reduces the viewport from below; Header remains a hard clip
+  boundary with no fade or bleed.
+- Message-driven changes in scroll offset use the Theme's shared `Slide`
+  duration/easing and are resolved deterministically for the requested frame.
+  The renderer receives only final positions and runs no scroll timer.
 - Incoming bubbles align to the left gutter, outgoing bubbles to the right,
   and system bubbles center within the message viewport.
 - **Canonical rule:** Text Input Bar anchors to the keyboard frame's top/base,

@@ -372,7 +372,35 @@ function messageNodes(
   });
   const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, entries.length - 1) * gap;
-  let y = bottom - gutter.y - totalHeight;
+  const viewportHeight = Math.max(0, bottom - top);
+  const targetOverflow = Math.max(0, gap + totalHeight - viewportHeight);
+  const latestAppearanceFrame = messages.reduce(
+    (latest, message) => Math.max(latest, message.visibleAtFrame),
+    0,
+  );
+  const previousEntries = entries.filter((_, index) =>
+    messages[index]!.visibleAtFrame < latestAppearanceFrame);
+  const previousHeight = previousEntries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
+    + Math.max(0, previousEntries.length - 1) * gap;
+  const previousOverflow = Math.max(0, gap + previousHeight - viewportHeight);
+  const scrollProgress = motionFrameProgress(
+    payload,
+    {
+      transition: "slide",
+      direction: "bottom",
+      bounds: "parent",
+      fade: false,
+      translate: true,
+      scale: false,
+    },
+    {
+      trigger: targetOverflow !== previousOverflow,
+      elapsedMs: Math.max(0, conversationFrame - latestAppearanceFrame)
+        / Math.max(1, payload.frameRate ?? 25) * 1000,
+    },
+  );
+  const scrollOffset = lerp(previousOverflow, targetOverflow, scrollProgress);
+  let y = top + gap - scrollOffset;
   return entries.map((entry, index) => {
     const { node, bounds, finalBounds } = entry;
     const message = messages[index]!;
@@ -399,6 +427,7 @@ type ConversationPreviewMessage = {
   writeOnTrigger: boolean;
   writeOnFrame: number;
   statusVisible: boolean;
+  visibleAtFrame: number;
   mediaType: "none" | "image" | "video" | "audio";
   mediaSource: string;
   viewportSize: string;
@@ -489,6 +518,7 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         writeOnTrigger: false,
         writeOnFrame: 0,
         statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
+        visibleAtFrame: 0,
         mediaType: messageMediaType(message),
         mediaSource: optionalString(message, "mediaSource"),
         viewportSize: optionalString(message, "viewportSize") || "240|160",
@@ -542,6 +572,7 @@ function visibleMessages(
       && (isOutgoingMessage || incomingWriteOn || incomingTyping);
     return [{
       ...message,
+      visibleAtFrame: visibleAt,
       text: incomingTyping ? timing.typingIndicatorText : message.text,
       mediaType: messageIsWriting ? "none" as const : message.mediaType,
       mediaSource: messageIsWriting ? "" : message.mediaSource,
