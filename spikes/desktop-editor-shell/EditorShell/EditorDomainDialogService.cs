@@ -36,6 +36,18 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmIconTokenDelete(token);
     }
 
+    public Task<bool> ConfirmTestValueDefaults(string destination, IReadOnlyList<string> fields)
+    {
+        var fieldList = string.Join(", ", fields);
+        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
+            "Guardar valores predeterminados",
+            $"¿Guardar los valores de prueba en «{destination}»?",
+            $"Se actualizarán: {fieldList}.",
+            "Guardar valores predeterminados",
+            width: 500,
+            height: 240);
+    }
+
     public Task ShowIconThemeSearch(ProjectTreeNode node)
     {
         return new IconThemeSearchDialog(_owner, _database, _showInfo, _reloadAndSelect).Show(node);

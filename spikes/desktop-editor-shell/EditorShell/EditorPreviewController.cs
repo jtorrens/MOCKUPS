@@ -1153,6 +1153,11 @@ internal sealed class EditorPreviewController
         return _designInputsPanel.ApplyTransientTestValues(preview);
     }
 
+    public bool ResetDesignPreviewTestValues()
+    {
+        return _designInputsPanel.ResetCurrentTestValues();
+    }
+
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {
         ReleaseFrameCacheReservation();

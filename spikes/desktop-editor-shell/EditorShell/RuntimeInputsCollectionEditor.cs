@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -20,8 +21,11 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Func<JsonObject, JsonObject> _applyTransientTestValues;
+    private readonly Func<bool> _resetTestValues;
+    private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
+    private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
         SpikeDatabase database,
@@ -31,6 +35,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Func<JsonObject, JsonObject> applyTransientTestValues,
+        Func<bool> resetTestValues,
+        Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         PreviewPlaybackState playbackState,
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
@@ -41,6 +47,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _applyTransientTestValues = applyTransientTestValues;
+        _resetTestValues = resetTestValues;
+        _confirmSaveDefaults = confirmSaveDefaults;
         _playbackState = playbackState;
         _reloadAndSelect = reloadAndSelect;
     }
@@ -48,7 +56,8 @@ internal sealed class RuntimeInputsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var owner = ResolveOwner(node);
-        var preview = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+        var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
+        var preview = _applyTransientTestValues(persistedPreview);
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
@@ -57,7 +66,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             Items =
             {
-                new TabItem { Header = owner.IsInstance ? "Runtime Values" : "Test Values", Content = CreateTestValuesTab(owner, preview, inputs, collections, actions) },
+                new TabItem { Header = owner.IsInstance ? "Valores de ejecución" : "Valores de prueba · temporales", Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions) },
                 new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
             },
         };
@@ -107,6 +116,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateTestValuesTab(
         RuntimeInputOwner owner,
         JsonObject preview,
+        JsonObject persistedPreview,
         IReadOnlyList<ComponentInputDefinition> inputs,
         IReadOnlyList<RuntimeInputCollectionDefinition> collections,
         IReadOnlyList<ComponentPreviewActionDefinition> actions)
@@ -120,7 +130,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         header.Children.Add(new TextBlock
         {
-            Text = owner.IsInstance ? "Runtime Values" : "Test Values",
+            Text = owner.IsInstance ? "Valores de ejecución" : "Valores de prueba · temporales",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -132,20 +142,49 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         if (!owner.IsInstance)
         {
-            var saveDefaults = new Button
+            var reset = new Button
             {
-                MinWidth = 124,
-                Content = "Save as defaults",
+                MinWidth = 150,
+                Content = "Restablecer valores de prueba",
             };
-            ToolTip.SetTip(saveDefaults, "Promote current test values to component defaults");
-            saveDefaults.Click += (_, args) =>
+            ToolTip.SetTip(reset, "Descarta los cambios temporales de este Preview.");
+            reset.Click += (_, args) =>
             {
                 args.Handled = true;
-                DesignPreviewTestValues.PromoteToDefaults(preview, inputs, collections);
-                owner.Save(preview.ToJsonString());
+                if (_resetTestValues()) _onChanged();
+            };
+            buttons.Children.Add(reset);
+            var saveDefaults = new Button
+            {
+                MinWidth = 170,
+                Content = "Guardar como valores predeterminados…",
+            };
+            void RefreshSaveState()
+            {
+                var current = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var baseline = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
+                var currentInputs = ComponentPreviewInputSession.ReadRuntimeInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
+                var currentCollections = ComponentPreviewInputSession.ReadRuntimeCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
+                var currentDifferences = DesignPreviewTestValues.Differences(current, baseline, currentInputs, currentCollections);
+                saveDefaults.IsEnabled = currentDifferences.Count > 0;
+                ToolTip.SetTip(saveDefaults, currentDifferences.Count == 0
+                    ? "No hay diferencias respecto a los valores predeterminados."
+                    : $"Guarda {currentDifferences.Count} campo(s) como valores predeterminados.");
+            }
+            _testValuesChanged = RefreshSaveState;
+            saveDefaults.Click += async (_, args) =>
+            {
+                args.Handled = true;
+                var current = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var differences = DesignPreviewTestValues.Differences(current, DesignPreviewTestValues.Parse(owner.DesignPreviewJson), inputs, collections);
+                if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
+                DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
+                owner.Save(current.ToJsonString());
+                _resetTestValues();
                 _onChanged();
             };
             buttons.Children.Add(saveDefaults);
+            RefreshSaveState();
         }
         foreach (var action in actions.Where((candidate) => !candidate.IsCollectionItemAction))
         {
@@ -165,6 +204,16 @@ internal sealed class RuntimeInputsCollectionEditor
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
         panel.Children.Add(header);
+        if (!owner.IsInstance)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Estos valores afectan únicamente al Preview actual hasta que decidas guardarlos como predeterminados.",
+                FontSize = 11,
+                Opacity = 0.7,
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
         if (inputs.Count == 0 && collections.Count == 0)
         {
             panel.Children.Add(new TextBlock { Text = "No test values are required.", Opacity = 0.68 });
@@ -268,7 +317,11 @@ internal sealed class RuntimeInputsCollectionEditor
         var control = new DictionaryFieldControl(
             new FieldValue(CreateDefinition(owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
-        control.ValueChanged += (_, next) => _setPreviewTestValue(input.JsonKey, next);
+        control.ValueChanged += (_, next) =>
+        {
+            _setPreviewTestValue(input.JsonKey, next);
+            _testValuesChanged();
+        };
         control.ValueCommitted += (_, next) =>
         {
             if (owner.IsInstance)
@@ -474,6 +527,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
             }
             _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
+            _testValuesChanged();
             afterCommit?.Invoke();
             if (collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))

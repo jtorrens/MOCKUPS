@@ -21,6 +21,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Func<JsonObject, JsonObject> _applyPreviewTransientTestValues;
+    private readonly Func<bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
 
@@ -37,6 +38,7 @@ internal sealed class EditorCollectionCardFactory
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Func<JsonObject, JsonObject> applyPreviewTransientTestValues,
+        Func<bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode)
     {
@@ -52,6 +54,7 @@ internal sealed class EditorCollectionCardFactory
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _applyPreviewTransientTestValues = applyPreviewTransientTestValues;
+        _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
     }
@@ -75,7 +78,7 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _previewPlaybackState, _reloadAndSelect).Create(node),
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _previewPlaybackState, _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],

@@ -9,6 +9,33 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class DesignPreviewTestValues
 {
+    internal sealed record Difference(string Id, string Label);
+
+    public static IReadOnlyList<Difference> Differences(
+        JsonObject effectivePreview,
+        JsonObject persistedPreview,
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
+    {
+        var differences = inputs
+            .Where((input) => !string.Equals(Value(effectivePreview, input), input.DefaultValue, StringComparison.Ordinal))
+            .Select((input) => new Difference(input.Id, input.Label))
+            .ToList();
+
+        foreach (var collection in collections)
+        {
+            var current = CollectionItems(effectivePreview, collection);
+            var baseline = BaselineCollectionItems(persistedPreview, collection);
+            if (!JsonNode.DeepEquals(
+                    new JsonArray(current.Select((item) => (JsonNode?)item.DeepClone()).ToArray()),
+                    new JsonArray(baseline.Select((item) => (JsonNode?)item.DeepClone()).ToArray())))
+            {
+                differences.Add(new Difference(collection.JsonKey, collection.Label));
+            }
+        }
+
+        return differences;
+    }
     public static JsonObject Parse(string json)
     {
         try
@@ -79,6 +106,16 @@ internal static class DesignPreviewTestValues
             ? testItems
             : preview[collection.JsonKey] as JsonArray;
         return source?.OfType<JsonObject>().Select(CloneObject).ToList() ?? [];
+    }
+
+    private static IReadOnlyList<JsonObject> BaselineCollectionItems(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var key = string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
+            ? collection.JsonKey
+            : collection.SourceCollectionJsonKey;
+        return (preview[key] as JsonArray)?.OfType<JsonObject>().Select(CloneObject).ToList() ?? [];
     }
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)

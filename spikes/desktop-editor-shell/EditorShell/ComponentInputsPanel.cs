@@ -225,6 +225,25 @@ internal sealed class ComponentPreviewInputSession
         return ApplyTransientTestValues(preview, _scopeKey, _config);
     }
 
+    public bool ResetCurrentTestValues()
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey)) return false;
+
+        StopPlayback();
+        var prefix = $"{_scopeKey}:";
+        var removed = false;
+        foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            removed |= _values.Remove(key);
+        }
+        removed |= _transientCollectionTestValuesByScope.Remove(_scopeKey);
+        _activeActionId = "";
+        _playbackSecondsByActionId.Clear();
+        UpdateActionButtons();
+        if (removed) _refreshPreview();
+        return removed;
+    }
+
     public DesignPreviewPayload ApplyInputs(DesignPreviewPayload payload, string themeMode, string? projectId)
     {
         if (!SupportsInputs(payload))

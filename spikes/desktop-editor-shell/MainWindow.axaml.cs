@@ -185,6 +185,7 @@ public partial class MainWindow : SukiWindow
             _previewController.SetDesignPreviewTestValue,
             _previewController.SetDesignPreviewCollectionTestValue,
             _previewController.ApplyDesignPreviewTransientTestValues,
+            _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
             SelectNodeById);
         _editorContent = new EditorContentController(
