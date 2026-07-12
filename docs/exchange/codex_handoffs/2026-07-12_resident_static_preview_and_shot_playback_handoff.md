@@ -65,6 +65,32 @@ WebView navigation, retains the last valid preview on render/asset failure,
 and suppresses obsolete completed updates. The remaining work in this handoff
 starts at the shared playback sequence below.
 
+Validated implementation commits:
+
+- `50110777` isolates Production runtime reference resolution from Design Test
+  Values and preserves global/local frame identity;
+- `10e5849a` adds the resident static body/font commit and last-good policy;
+- `20550322` gives playback updates explicit identity and avoids redundant font
+  synchronization on every frame;
+- `4086b5c5` retains patch completion by id so diagnostic event draining cannot
+  create a false five-second timeout;
+- `9da0d304` activates the native Raster surface for Shot playback instead of
+  leaving the WebView airspace above it.
+
+Manual validation after these fixes:
+
+- Production Screen frame selection and Screen-local resolution are correct;
+- stopped slider and frame-step changes remain resident;
+- HTML playback is stable after navigation and replay;
+- Raster visually advances its prepared bitmaps and reported 89/91 presented
+  frames at approximately 24.8 FPS;
+- the false `resident preview update could not be committed` error caused by
+  diagnostic event consumption is resolved.
+
+Treat future playback defects as follow-up stabilization unless they require
+the still-pending generic sequence/ownership phases. Do not reopen Conversation,
+Bubble or the completed navigator without evidence of a resolver-owned defect.
+
 Before resident updates, preserve the explicit input boundary now enforced by
 the preview controller: Design uses `ComponentPreviewInputSession` Test Values
 and actions; Production uses the reference-only runtime resolver and retains

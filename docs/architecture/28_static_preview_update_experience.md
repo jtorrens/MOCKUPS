@@ -1,7 +1,7 @@
 # Static desktop preview update experience
 
-Status: analysis and implementation proposal. No implementation is authorized
-or implied by this document.
+Status: resident static-preview phase implemented and manually validated on
+2026-07-12. The shared resolved-frame playback abstraction remains proposed.
 
 ## Current implementation baseline
 
@@ -37,6 +37,23 @@ identified production-font style, and commit through the generic DOM patch.
 Render or asset-commit failures preserve the last valid body, and completed
 updates are discarded when a newer state is already pending. Full document
 loads remain limited to initial, empty and shell-incompatible states.
+
+Production and Design have explicit input boundaries. Design may apply
+session-only Test Values and declarative actions. Production resolves only
+declared runtime references and preserves the Shot-global to Screen-local frame
+calculated by navigation; it never passes through the Design input session.
+
+Resident patch completion is retained by patch id independently from diagnostic
+event draining. A log reader therefore cannot consume the confirmation awaited
+by presentation. This is required to prevent a stopped patch from delaying the
+playback clock and making a Screen appear to start part-way through.
+
+Raster Shot playback uses the same prepared frame map as Test Values playback,
+but explicitly activates the native bitmap surface while the clock is running.
+The native WebView must be hidden during that interval because its platform
+airspace otherwise paints above Avalonia and conceals correctly advancing
+bitmaps. Manual validation reached 89/91 presented frames at 24.8 FPS; visual
+playback, slider navigation and frame-step navigation were correct.
 
 The shared resolved-frame playback sequence and single playback ownership are
 still pending. Do not rewrite
