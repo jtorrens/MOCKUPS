@@ -1489,8 +1489,7 @@ internal sealed class EditorPreviewController
         _playbackSummaryGeneration++;
         _playbackPerformanceRun = new PlaybackPerformanceRun(run.TargetFrames, run.TargetFps, Stopwatch.GetTimestamp());
         if (_selectedPlaybackRoute == "raster"
-            && _rasterPlaybackOrder.Count > 0
-            && !_shotPlaybackTimer.IsEnabled)
+            && _rasterPlaybackOrder.Count > 0)
         {
             _designPreviewPane.PlayRasterFrames(_rasterPlaybackOrder, run.TargetFps);
         }
