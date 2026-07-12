@@ -59,9 +59,12 @@ internal sealed partial class SpikeDatabase
             var buttonId = ScalarString(connection, "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'button'", ("$projectId", projectId))!;
             var surfaceId = ScalarString(connection, "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'surface'", ("$projectId", projectId))!;
             var labelId = ScalarString(connection, "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'label'", ("$projectId", projectId))!;
-            var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}");
-            var metadata = ParseJsonObject(ScalarString(connection, "SELECT metadata_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}");
-            var preview = ParseJsonObject(ScalarString(connection, "SELECT design_preview_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}");
+            var originalConfig = ScalarString(connection, "SELECT config_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}";
+            var originalMetadata = ScalarString(connection, "SELECT metadata_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}";
+            var originalPreview = ScalarString(connection, "SELECT design_preview_json FROM component_classes WHERE id = $id", ("$id", buttonId)) ?? "{}";
+            var config = ParseJsonObject(originalConfig);
+            var metadata = ParseJsonObject(originalMetadata);
+            var preview = ParseJsonObject(originalPreview);
             NormalizeButtonStateConfiguration(config);
             SetButtonPresetReferences(config, surfaceId, labelId);
             if (metadata["presets"] is JsonArray presets)
@@ -75,19 +78,24 @@ internal sealed partial class SpikeDatabase
                     }
                 }
             }
-            Execute(
-                connection,
-                "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", buttonId),
-                ("$configJson", config.ToJsonString()),
-                ("$previewJson", NormalizeButtonDesignPreview(preview).ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+            var configJson = config.ToJsonString();
+            var previewJson = NormalizeButtonDesignPreview(preview).ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson != originalConfig || previewJson != originalPreview || metadataJson != originalMetadata)
+            {
+                Execute(connection,
+                    "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
+                    ("$id", buttonId), ("$configJson", configJson), ("$previewJson", previewJson), ("$metadataJson", metadataJson));
+            }
         }
 
-        Execute(
-            connection,
-            "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.button', $layoutJson)",
-            ("$layoutJson", MinimalEditorLayoutJson("component.button")));
+        var buttonLayout = MinimalEditorLayoutJson("component.button");
+        if (ScalarString(connection, "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.button'") != buttonLayout)
+        {
+            Execute(connection,
+                "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.button', $layoutJson)",
+                ("$layoutJson", buttonLayout));
+        }
     }
 
     private static void NormalizeCalculatedLabelComposition(SqliteConnection connection)
@@ -106,11 +114,12 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(row.MetadataJson);
             NormalizeCalculatedLabelNodes(config, labelClassId, surfaceClassId);
             NormalizeCalculatedLabelNodes(metadata, labelClassId, surfaceClassId);
+            var configJson = config.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson && metadataJson == row.MetadataJson) continue;
             Execute(connection,
                 "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", row.Id),
-                ("$configJson", config.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                ("$id", row.Id), ("$configJson", configJson), ("$metadataJson", metadataJson));
         }
     }
 
@@ -263,13 +272,13 @@ internal sealed partial class SpikeDatabase
                 preview["collections"] = defaults["collections"]?.DeepClone();
                 NormalizeIconRowNodes(preview, buttonPresetId);
             }
-            Execute(
-                connection,
+            var configJson = config.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson && previewJson == row.DesignPreviewJson && metadataJson == row.MetadataJson) continue;
+            Execute(connection,
                 "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", row.Id),
-                ("$configJson", config.ToJsonString()),
-                ("$previewJson", preview.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                ("$id", row.Id), ("$configJson", configJson), ("$previewJson", previewJson), ("$metadataJson", metadataJson));
         }
     }
 
@@ -371,13 +380,13 @@ internal sealed partial class SpikeDatabase
             RetireButtonIconReferences(config, buttonPresetId);
             RetireButtonIconReferences(metadata, buttonPresetId);
             RetireButtonIconReferences(preview, buttonPresetId);
-            Execute(
-                connection,
+            var configJson = config.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson && previewJson == row.DesignPreviewJson && metadataJson == row.MetadataJson) continue;
+            Execute(connection,
                 "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", row.Id),
-                ("$configJson", config.ToJsonString()),
-                ("$previewJson", preview.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                ("$id", row.Id), ("$configJson", configJson), ("$previewJson", previewJson), ("$metadataJson", metadataJson));
         }
         Execute(connection, "DELETE FROM component_classes WHERE component_type = 'buttonIcon'");
         Execute(connection, "DELETE FROM editor_layouts WHERE record_class_id = 'component.buttonIcon'");

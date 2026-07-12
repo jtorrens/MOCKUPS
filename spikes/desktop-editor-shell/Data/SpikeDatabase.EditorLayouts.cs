@@ -69,7 +69,11 @@ internal sealed partial class SpikeDatabase
 
     private static void NormalizeEditorLayouts(SqliteConnection connection)
     {
-        foreach (var retiredRecordClassId in new[] { "component.text_input_bar", "component.button_icon", "component.video" })
+        foreach (var retiredRecordClassId in new[]
+        {
+            "component.text_input_bar", "component.button_icon", "component.video",
+            "status_bar", "navigation_bar", "navigation.status_bars", "navigation.navigation_bars",
+        })
         {
             Execute(
                 connection,

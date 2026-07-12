@@ -1536,8 +1536,6 @@ for (const forbiddenLegacyTreeTerm of [
   );
 }
 for (const forbiddenLegacyLayoutTerm of [
-  "\"navigation.status_bars\"",
-  "\"navigation.navigation_bars\"",
   "recordClassId == \"status_bar\"",
   "recordClassId == \"navigation_bar\"",
 ]) {
@@ -2308,8 +2306,27 @@ function assertDesktopDatabaseHasNoRetiredTimeFields() {
   }
 }
 
+function assertDesktopDatabaseHasNoRetiredEditorLayouts() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const retired = ["status_bar", "navigation_bar", "navigation.status_bars", "navigation.navigation_bars"];
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const placeholders = retired.map(() => "?").join(",");
+    const rows = database.prepare(
+      `SELECT record_class_id FROM editor_layouts WHERE record_class_id IN (${placeholders})`,
+    ).all(...retired) as { record_class_id: string }[];
+    for (const row of rows) {
+      addViolation("data/desktop-editor-spike.sqlite", `contains retired editor layout ${row.record_class_id}`);
+    }
+  } finally {
+    database.close();
+  }
+}
+
 assertDesktopSystemTypographyData();
 assertDesktopDatabaseHasNoRetiredTimeFields();
+assertDesktopDatabaseHasNoRetiredEditorLayouts();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

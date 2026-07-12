@@ -130,8 +130,10 @@ internal sealed partial class SpikeDatabase
         while (reader.Read())
         {
             var id = reader.GetString(0);
-            var config = ParseJsonObject(ReadString(reader, 1));
-            var preview = ParseJsonObject(ReadString(reader, 2));
+            var originalConfig = ReadString(reader, 1);
+            var originalPreview = ReadString(reader, 2);
+            var config = ParseJsonObject(originalConfig);
+            var preview = ParseJsonObject(originalPreview);
             var projectId = reader.GetString(3);
             var conversation = config["conversation"] as JsonObject ?? new JsonObject();
             config["conversation"] = conversation;
@@ -166,7 +168,12 @@ internal sealed partial class SpikeDatabase
                     collections.Remove(retired);
                 }
             }
-            updates.Add((id, config.ToJsonString(), preview.ToJsonString()));
+            var configJson = config.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            if (configJson != originalConfig || previewJson != originalPreview)
+            {
+                updates.Add((id, configJson, previewJson));
+            }
         }
         reader.Close();
         foreach (var update in updates)
