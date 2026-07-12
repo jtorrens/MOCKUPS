@@ -9,15 +9,18 @@ internal sealed class EditorDictionaryFieldServices
     private readonly SpikeDatabase _database;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
+    private readonly Func<string?> _selectedThemeId;
 
     public EditorDictionaryFieldServices(
         SpikeDatabase database,
         EditorPathBrowser pathBrowser,
-        EditorDomainDialogService domainDialogs)
+        EditorDomainDialogService domainDialogs,
+        Func<string?> selectedThemeId)
     {
         _database = database;
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
+        _selectedThemeId = selectedThemeId;
     }
 
     public DictionaryFieldServices ForNode(
@@ -28,11 +31,18 @@ internal sealed class EditorDictionaryFieldServices
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null)
     {
         var projectId = ProjectAncestor(node).Id;
+        string IconThemeId()
+        {
+            var effectiveThemeId = DesignPreviewPayloadFactory.ResolveThemeId(_database, node, _selectedThemeId());
+            return string.IsNullOrWhiteSpace(effectiveThemeId)
+                ? ""
+                : _database.GetThemeSettings(effectiveThemeId).IconThemeId;
+        }
         return new DictionaryFieldServices(
             _pathBrowser.BrowsePath,
-            (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(projectId, currentValue, allowMultiple),
+            (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(IconThemeId(), currentValue, allowMultiple),
             (currentValue, allowedOptions) => _domainDialogs.ShowThemeTokenPicker(projectId, currentValue, allowedOptions),
-            (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 18),
+            (token) => SvgIconPreview.CreateIconTokenPreview(_database, IconThemeId(), token, 18),
             _pathBrowser.ResolveImagePath,
             getFieldValue,
             () => _database.GetPaletteColorOptions(projectId),

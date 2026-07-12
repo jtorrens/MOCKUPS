@@ -24,6 +24,8 @@ internal static class EditorIcons
     public const string Play = "play";
     public const string Pause = "pause";
     public const string Folder = "folder";
+    public const string Left = "left";
+    public const string Right = "right";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -211,6 +213,8 @@ internal static class EditorIcons
             Unlock => "system_unlock.svg",
             Settings => "system_settings.svg",
             Folder => "system_folder.svg",
+            Left => "system_arrow_left.svg",
+            Right => "system_arrow_right.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",

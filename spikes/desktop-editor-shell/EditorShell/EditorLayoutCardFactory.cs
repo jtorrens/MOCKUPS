@@ -82,7 +82,7 @@ internal sealed class EditorLayoutCardFactory
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = _fieldValues.Create(node, layoutField.Id);
-                var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset;
+                var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module;
                 var services = _dictionaryFieldServices.ForNode(
                     node,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),

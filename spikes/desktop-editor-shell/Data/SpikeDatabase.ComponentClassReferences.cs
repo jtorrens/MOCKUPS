@@ -92,7 +92,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var settings = GetComponentClassSettings(connection, componentClassId);
         var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
-        return GetEmbeddedComponentPresetName(connection, settings, ownerConfig, slots);
+        return GetEmbeddedComponentPresetName(connection, settings.ProjectId, ownerConfig, slots);
     }
 
     public string GetEmbeddedComponentPresetName(
@@ -105,19 +105,25 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
-        var settings = ownerNode.Kind switch
+        var projectId = ownerNode.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id),
-            ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode),
+            ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id).ProjectId,
+            ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode).ProjectId,
+            ProjectTreeNodeKind.Module => GetModuleSettings(ownerNode.Id).ProjectId,
             _ => throw new InvalidOperationException($"Embedded component variants are not supported for '{ownerNode.Kind}'."),
         };
-        var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
-        return GetEmbeddedComponentPresetName(connection, settings, ownerConfig, slots);
+        var ownerConfigJson = ownerNode.Kind == ProjectTreeNodeKind.Module
+            ? GetModuleSettings(ownerNode.Id).ConfigJson
+            : ownerNode.Kind == ProjectTreeNodeKind.ComponentClass
+                ? GetComponentClassSettings(connection, ownerNode.Id).ConfigJson
+                : GetComponentPresetSettings(connection, ownerNode).ConfigJson;
+        var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(ownerConfigJson) ? "{}" : ownerConfigJson);
+        return GetEmbeddedComponentPresetName(connection, projectId, ownerConfig, slots);
     }
 
     private static string GetEmbeddedComponentPresetName(
         SqliteConnection connection,
-        ComponentClassSettings settings,
+        string projectId,
         JsonObject ownerConfig,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
@@ -131,12 +137,12 @@ internal sealed partial class SpikeDatabase
             var presetId = JsonPath.String(slotNode ?? [], "presetId", DefaultComponentPresetId);
             if (index == slots.Count - 1)
             {
-                return ComponentPresetName(connection, settings.ProjectId, slot.EmbeddedComponentType, presetId);
+                return ComponentPresetName(connection, projectId, slot.EmbeddedComponentType, presetId);
             }
 
             var child = ParseJsonObject(GetComponentClassPresetConfigJson(
                 connection,
-                settings.ProjectId,
+                projectId,
                 slot.EmbeddedComponentType,
                 presetId));
             if (slotNode?["overrides"] is JsonObject overrides)

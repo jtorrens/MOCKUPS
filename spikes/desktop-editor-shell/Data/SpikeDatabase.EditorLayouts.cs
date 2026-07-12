@@ -77,6 +77,22 @@ internal sealed partial class SpikeDatabase
                 ("$recordClassId", retiredRecordClassId));
         }
 
+        var conversationLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'module.core.chat'");
+        if (!string.IsNullOrWhiteSpace(conversationLayout)
+            && (conversationLayout.Contains("module.conversation.headerLeftIconRowVariant", StringComparison.Ordinal)
+                || conversationLayout.Contains("module.conversation.headerRightIconRowVariant", StringComparison.Ordinal)
+                || conversationLayout.Contains("module.conversation.headerLeftIconRow.inputs", StringComparison.Ordinal)
+                || conversationLayout.Contains("module.conversation.headerRightIconRow.inputs", StringComparison.Ordinal)
+                || !conversationLayout.Contains("\"id\": \"header\"", StringComparison.Ordinal)))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'module.core.chat'",
+                ("$layoutJson", MinimalEditorLayoutJson("module.core.chat")));
+        }
+
         var audioLayout = ScalarString(
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.audio'");
@@ -84,12 +100,31 @@ internal sealed partial class SpikeDatabase
             && (audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal)
                 || audioLayout.Contains("component.audio.badge.backgroundColor", StringComparison.Ordinal)
                 || audioLayout.Contains("component.audio.badge.iconColor", StringComparison.Ordinal)
+                || audioLayout.Contains("component.audio.textSize", StringComparison.Ordinal)
+                || audioLayout.Contains("component.audio.textColorToken", StringComparison.Ordinal)
                 || !audioLayout.Contains("component.audio.badge.size", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.audio'",
                 ("$layoutJson", MinimalEditorLayoutJson("component.audio")));
+        }
+
+        var mediaLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.media'");
+        if (!string.IsNullOrWhiteSpace(mediaLayout)
+            && (mediaLayout.Contains("component.media.idleText.textColorToken", StringComparison.Ordinal)
+                || mediaLayout.Contains("component.media.idleText.typography", StringComparison.Ordinal)
+                || mediaLayout.Contains("component.media.idleText.textAlign", StringComparison.Ordinal)
+                || mediaLayout.Contains("component.media.playText.textColorToken", StringComparison.Ordinal)
+                || mediaLayout.Contains("component.media.playText.typography", StringComparison.Ordinal)
+                || mediaLayout.Contains("component.media.playText.textAlign", StringComparison.Ordinal)))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.media'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.media")));
         }
 
         var themeLayout = ScalarString(
@@ -800,16 +835,35 @@ internal sealed partial class SpikeDatabase
                   "order": 10,
                   "visible": true,
                   "fields": [
+                    { "id": "module.conversation.useAppWallpaper", "order": 10, "visible": true },
+                    { "id": "module.conversation.screenGutter", "order": 20, "visible": true },
+                    { "id": "module.conversation.messageGap", "order": 30, "visible": true },
+                    { "id": "module.conversation.messageViewportMotion", "order": 40, "visible": true }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "header",
+              "label": "Header",
+              "subtitle": "Conversation header composition",
+              "icon": "{{EditorIcons.Header}}",
+              "order": 25,
+              "visible": true,
+              "defaultOpen": true,
+              "groups": [
+                {
+                  "id": "header",
+                  "label": "Header",
+                  "order": 10,
+                  "visible": true,
+                  "fields": [
                     { "id": "module.conversation.showHeader", "order": 10, "visible": true },
-                    { "id": "module.conversation.useAppWallpaper", "order": 20, "visible": true },
-                    { "id": "module.conversation.headerHeight", "order": 30, "visible": true },
-                    { "id": "module.conversation.headerAvatarVariant", "order": 40, "visible": true },
-                    { "id": "module.conversation.headerAvatarAlignment", "order": 45, "visible": true },
-                    { "id": "module.conversation.headerLeftIconRowVariant", "order": 50, "visible": true },
-                    { "id": "module.conversation.headerRightIconRowVariant", "order": 55, "visible": true },
-                    { "id": "module.conversation.screenGutter", "order": 60, "visible": true },
-                    { "id": "module.conversation.messageGap", "order": 70, "visible": true },
-                    { "id": "module.conversation.messageViewportMotion", "order": 80, "visible": true }
+                    { "id": "module.conversation.headerHeight", "order": 20, "visible": true },
+                    { "id": "module.conversation.headerAvatarVariant", "order": 30, "visible": true },
+                    { "id": "module.conversation.headerAvatarAlignment", "order": 40, "visible": true },
+                    { "id": "module.conversation.headerLeftIconRow.editor", "order": 50, "visible": true },
+                    { "id": "module.conversation.headerRightIconRow.editor", "order": 60, "visible": true }
                   ]
                 }
               ]

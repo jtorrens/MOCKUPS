@@ -324,6 +324,28 @@ internal sealed partial class SpikeDatabase
             return CreateEmbeddedComponentFieldValue(ownerNode.Id, slots, embeddedFieldId);
         }
 
+        if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+        {
+            if (slots.Count == 0) throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+            var moduleSettings = GetModuleSettings(ownerNode.Id);
+            var moduleDescriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+            using var moduleConnection = OpenConnection();
+            var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
+            var moduleInheritedConfig = EffectiveEmbeddedBaseConfig(moduleConnection, moduleSettings.ProjectId, moduleConfig, slots);
+            var moduleInheritedValue = ComponentConfigFieldValue(moduleInheritedConfig.ToJsonString(), moduleDescriptor);
+            var moduleOverrides = EmbeddedOverrides(moduleConfig, slots, createIfMissing: false);
+            var moduleHasOverride = moduleOverrides is not null && GetJsonValue(moduleOverrides, moduleDescriptor.JsonPath) is not null;
+            var moduleLocalValue = moduleHasOverride && moduleOverrides is not null
+                ? ComponentConfigFieldValue(moduleOverrides.ToJsonString(), moduleDescriptor)
+                : moduleInheritedValue;
+            return new FieldValue(
+                new FieldDefinition(moduleDescriptor.Id, moduleDescriptor.Label, moduleDescriptor.ValueKind, moduleDescriptor.IsEditable,
+                    moduleDescriptor.DefaultValue, CanInherit: true, InheritedValue: moduleInheritedValue,
+                    Options: ComponentClassFieldOptions(moduleSettings.ProjectId, moduleDescriptor), PairLabels: moduleDescriptor.PairLabels,
+                    Number: moduleDescriptor.Number, ComponentInputBindings: moduleDescriptor.ComponentInputBindings),
+                moduleLocalValue, IsInherited: !moduleHasOverride);
+        }
+
         if (ownerNode.Kind != ProjectTreeNodeKind.ComponentPreset)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
@@ -449,6 +471,28 @@ internal sealed partial class SpikeDatabase
         if (ownerNode.Kind == ProjectTreeNodeKind.ComponentClass)
         {
             UpdateEmbeddedComponentField(ownerNode.Id, slots, embeddedFieldId, value);
+            return;
+        }
+
+        if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+        {
+            if (slots.Count == 0) throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+            var moduleDescriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
+            lock (WriteGate)
+            {
+                using var connection = OpenConnection();
+                var settings = GetModuleSettings(ownerNode.Id);
+                var config = ParseJsonObject(settings.ConfigJson);
+                var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
+                    ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
+                if (value.Equals("inherited", StringComparison.Ordinal)
+                    || moduleDescriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
+                    RemoveJsonValue(overrides, moduleDescriptor.JsonPath);
+                else
+                    SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value));
+                Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+                    ("$id", ownerNode.Id), ("$configJson", config.ToJsonString()));
+            }
             return;
         }
 

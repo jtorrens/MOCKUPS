@@ -111,10 +111,45 @@ internal sealed partial class SpikeDatabase
             ["mode"] = mode,
             ["text"] = text,
             ["targetSeconds"] = 0,
-            ["textColorToken"] = "theme.colors.textPrimary",
-            ["typography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+            ["labelSlot"] = CalculatedLabelSlot("theme.colors.textPrimary", "theme.typography.sizes.s", "center"),
             ["placement"] = JsonNode.Parse(placement),
-            ["textAlign"] = "center",
+        };
+    }
+
+    private static JsonObject CalculatedLabelSlot(string colorToken, string sizeToken, string textAlign)
+    {
+        return new JsonObject
+        {
+            ["presetId"] = DefaultComponentPresetId,
+            ["overrides"] = new JsonObject
+            {
+                ["label"] = new JsonObject
+                {
+                    ["dimensionMode"] = "content",
+                    ["padding"] = "theme.spacing.none|theme.spacing.none",
+                    ["textColorToken"] = colorToken,
+                    ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault(sizeToken)),
+                    ["textAlign"] = textAlign,
+                    ["surfaceSlot"] = new JsonObject
+                    {
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["overrides"] = new JsonObject
+                        {
+                            ["surface"] = new JsonObject
+                            {
+                                ["backgroundAlpha"] = 0,
+                                ["borderAlpha"] = 0,
+                            },
+                            ["style"] = new JsonObject
+                            {
+                                ["borderWidth"] = 0,
+                                ["shadowEnabled"] = false,
+                                ["reliefEnabled"] = false,
+                            },
+                        },
+                    },
+                },
+            },
         };
     }
 
@@ -312,8 +347,7 @@ internal sealed partial class SpikeDatabase
                 {
                     ["padding"] = "theme.spacing.l|theme.spacing.m",
                     ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["textSize"] = 11,
-                    ["textColorToken"] = "theme.icons.secondary",
+                    ["durationLabelSlot"] = CalculatedLabelSlot("theme.icons.secondary", "theme.typography.sizes.xs", "right"),
                     ["playCircleSize"] = 32,
                     ["playIconPadding"] = "theme.spacing.m",
                     ["playColorToken"] = "theme.icons.accent",

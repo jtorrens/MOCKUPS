@@ -16,27 +16,26 @@ internal sealed class StatusBarItemsCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly bool _isDark;
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
-    private readonly Func<string, string, bool, Task<string?>> _showIconTokenPicker;
+    private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
 
     public StatusBarItemsCollectionEditor(
         SpikeDatabase database,
         bool isDark,
         Func<string, ValueKind, Task<string?>> browsePath,
-        Func<string, string, bool, Task<string?>> showIconTokenPicker,
+        EditorDictionaryFieldServices dictionaryServices,
         Action onChanged)
     {
         _database = database;
         _isDark = isDark;
         _browsePath = browsePath;
-        _showIconTokenPicker = showIconTokenPicker;
+        _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var icon = EditorIcons.Create(EditorIcons.Status, 18);
-        var projectId = _database.GetComponentClassSettings(node.Id).ProjectId;
         var items = Items(node).ToList();
         var body = new StackPanel
         {
@@ -52,7 +51,7 @@ internal sealed class StatusBarItemsCollectionEditor
 
         for (var index = 0; index < items.Count; index++)
         {
-            body.Children.Add(CreateItemRow(node, projectId, index, items[index]));
+            body.Children.Add(CreateItemRow(node, index, items[index]));
         }
 
         return new InstantEditorCard(
@@ -68,7 +67,7 @@ internal sealed class StatusBarItemsCollectionEditor
         };
     }
 
-    private Control CreateItemRow(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
+    private Control CreateItemRow(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item)
     {
         var row = new Border
         {
@@ -96,7 +95,7 @@ internal sealed class StatusBarItemsCollectionEditor
 
         var valueControl = item.Kind switch
         {
-            "iconToken" => CreateIconTokenControl(node, projectId, index, item),
+            "iconToken" => CreateIconTokenControl(node, index, item),
             "generatedBattery" => CreateGeneratedControl(node, index, item, includeCharging: true),
             "generatedSignal" => CreateGeneratedControl(node, index, item, includeCharging: false),
             _ => CreateTextControl(node, index, item),
@@ -146,7 +145,7 @@ internal sealed class StatusBarItemsCollectionEditor
             (value) => UpdateItem(node, index, (current) => current with { Value = value }));
     }
 
-    private Control CreateIconTokenControl(ProjectTreeNode node, string projectId, int index, SpikeDatabase.StatusBarItem item)
+    private Control CreateIconTokenControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item)
     {
         return CreateInlineField(
             new FieldValue(
@@ -157,10 +156,7 @@ internal sealed class StatusBarItemsCollectionEditor
                     DefaultValue: item.Token),
                 item.Token),
             (value) => UpdateItem(node, index, (current) => current with { Token = value }),
-            new DictionaryFieldServices(
-                BrowsePath: _browsePath,
-                ShowIconTokenPicker: (currentValue, allowMultiple) => _showIconTokenPicker(projectId, currentValue, allowMultiple),
-                CreateIconPreview: (token) => SvgIconPreview.CreateProjectIconTokenPreview(_database, projectId, token, 21)));
+            _dictionaryServices.ForNode(node, (_) => ""));
     }
 
     private Control CreateGeneratedControl(ProjectTreeNode node, int index, SpikeDatabase.StatusBarItem item, bool includeCharging)

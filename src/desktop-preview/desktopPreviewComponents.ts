@@ -81,7 +81,7 @@ export const desktopPreviewComponents = {
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["surface", "avatar", "button"],
+    embeds: ["surface", "avatar", "button", "label"],
   },
   textInputBar: {
     category: "system",
@@ -105,7 +105,7 @@ export const desktopPreviewComponents = {
     contract: "./mediaComponentContract",
     resolver: "./mediaComponentResolver",
     renderable: "./mediaComponentRenderable",
-    embeds: ["surface", "iconBar"],
+    embeds: ["surface", "iconBar", "label"],
   },
   bubble: {
     category: "component",

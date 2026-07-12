@@ -20,7 +20,7 @@ internal sealed class EditorEmbeddedEditorController
     {
         try
         {
-            if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset)
+            if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module)
             {
                 return Task.CompletedTask;
             }
@@ -63,7 +63,7 @@ internal sealed class EditorEmbeddedEditorController
     {
         try
         {
-            if (node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset)
+            if (node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module)
             {
                 _showContext(new EditorEmbeddedContext(node, [slot]));
             }

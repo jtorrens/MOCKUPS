@@ -99,6 +99,8 @@ internal sealed class EditorPreviewController
     public PreviewPlaybackState PlaybackState { get; } = new();
     private string? _projectId;
     private string? _selectedThemeId;
+    public string? SelectedThemeId => _selectedThemeId;
+    public event Action? ThemeChanged;
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;
     private PreviewNodeKey? _lockedDesignPreviewNode;
@@ -629,6 +631,7 @@ internal sealed class EditorPreviewController
         if (_themeComboBox.SelectedItem is not { } option) return;
 
         _selectedThemeId = option.Value;
+        ThemeChanged?.Invoke();
         if (!_isRefreshingOptions)
         {
             Refresh();

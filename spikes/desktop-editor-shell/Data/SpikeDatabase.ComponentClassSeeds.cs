@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Text.Json.Nodes;
 using System.Linq;
@@ -86,6 +88,97 @@ internal sealed partial class SpikeDatabase
             connection,
             "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.button', $layoutJson)",
             ("$layoutJson", MinimalEditorLayoutJson("component.button")));
+    }
+
+    private static void NormalizeCalculatedLabelComposition(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection))
+        {
+            var labelClassId = ScalarString(connection,
+                "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'label'",
+                ("$projectId", row.ProjectId))
+                ?? throw new InvalidOperationException($"Project '{row.ProjectId}' has no Label component class.");
+            var surfaceClassId = ScalarString(connection,
+                "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'surface'",
+                ("$projectId", row.ProjectId))
+                ?? throw new InvalidOperationException($"Project '{row.ProjectId}' has no Surface component class.");
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            NormalizeCalculatedLabelNodes(config, labelClassId, surfaceClassId);
+            NormalizeCalculatedLabelNodes(metadata, labelClassId, surfaceClassId);
+            Execute(connection,
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", config.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+    }
+
+    private static void NormalizeCalculatedLabelNodes(JsonNode? node, string labelClassId, string surfaceClassId)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array.ToList()) NormalizeCalculatedLabelNodes(child, labelClassId, surfaceClassId);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+
+        if (obj["audio"] is JsonObject audio)
+        {
+            var color = audio["textColorToken"]?.GetValue<string>() ?? "theme.icons.secondary";
+            audio["durationLabelSlot"] ??= MigratedCalculatedLabelSlot(
+                labelClassId, surfaceClassId, color, "theme.typography.sizes.xs", "right");
+            QualifyCalculatedLabelSlot(audio["durationLabelSlot"] as JsonObject, labelClassId, surfaceClassId);
+            audio.Remove("textSize");
+            audio.Remove("textColorToken");
+        }
+        if (obj["media"] is JsonObject media)
+        {
+            NormalizeMediaCalculatedLabel(media["idleText"] as JsonObject, labelClassId, surfaceClassId);
+            NormalizeMediaCalculatedLabel(media["playText"] as JsonObject, labelClassId, surfaceClassId);
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList())
+        {
+            NormalizeCalculatedLabelNodes(child, labelClassId, surfaceClassId);
+        }
+    }
+
+    private static void NormalizeMediaCalculatedLabel(JsonObject? overlay, string labelClassId, string surfaceClassId)
+    {
+        if (overlay is null) return;
+        var color = overlay["textColorToken"]?.GetValue<string>() ?? "theme.colors.textPrimary";
+        var typography = overlay["typography"]?.DeepClone()
+            ?? JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s"));
+        var align = overlay["textAlign"]?.GetValue<string>() ?? "center";
+        if (overlay["labelSlot"] is null)
+        {
+            var slot = MigratedCalculatedLabelSlot(labelClassId, surfaceClassId, color, "theme.typography.sizes.s", align);
+            slot["overrides"]!["label"]!["textTypography"] = typography;
+            overlay["labelSlot"] = slot;
+        }
+        QualifyCalculatedLabelSlot(overlay["labelSlot"] as JsonObject, labelClassId, surfaceClassId);
+        overlay.Remove("textColorToken");
+        overlay.Remove("typography");
+        overlay.Remove("textAlign");
+    }
+
+    private static JsonObject MigratedCalculatedLabelSlot(
+        string labelClassId, string surfaceClassId, string colorToken, string sizeToken, string textAlign)
+    {
+        var slot = CalculatedLabelSlot(colorToken, sizeToken, textAlign);
+        slot["presetId"] = $"{labelClassId}::preset::{DefaultComponentPresetId}";
+        slot["overrides"]!["label"]!["surfaceSlot"]!["presetId"] = $"{surfaceClassId}::preset::{DefaultComponentPresetId}";
+        return slot;
+    }
+
+    private static void QualifyCalculatedLabelSlot(JsonObject? slot, string labelClassId, string surfaceClassId)
+    {
+        if (slot is null) return;
+        QualifyButtonPresetReference(slot, labelClassId);
+        if (slot["overrides"]?["label"]?["surfaceSlot"] is JsonObject surfaceSlot)
+        {
+            QualifyButtonPresetReference(surfaceSlot, surfaceClassId);
+        }
     }
 
     private static JsonObject NormalizeButtonDesignPreview(JsonObject preview)

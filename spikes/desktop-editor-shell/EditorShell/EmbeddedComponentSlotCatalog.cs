@@ -14,6 +14,8 @@ internal static class EmbeddedComponentSlotCatalog
 {
     private static readonly EmbeddedComponentSlotDefinition[] Slots =
     [
+        new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
+        new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(
             "component.avatar.label.editor",
             "label",
@@ -112,6 +114,7 @@ internal static class EmbeddedComponentSlotCatalog
             "Surface",
             "component.surface",
             ["audio", "surfaceSlot"]),
+        new("component.audio.durationLabel.editor", "label", "Duration label", "component.label", ["audio", "durationLabelSlot"]),
         new(
             "component.audio.avatar.editor",
             "avatar",
@@ -130,6 +133,8 @@ internal static class EmbeddedComponentSlotCatalog
             "Surface",
             "component.surface",
             ["media", "surfaceSlot"]),
+        new("component.media.idleText.label.editor", "label", "Idle label", "component.label", ["media", "idleText", "labelSlot"]),
+        new("component.media.playText.label.editor", "label", "Play label", "component.label", ["media", "playText", "labelSlot"]),
         new(
             "component.media.inlineTopIconBar.editor",
             "iconBar",

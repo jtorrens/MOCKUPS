@@ -6,7 +6,6 @@ import {
   previewScreenBox,
   renderScale,
   scalePlacement,
-  selectedColor,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js";
@@ -14,10 +13,7 @@ import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 import { motionFrameProgress } from "./previewMotionHelpers.js";
-import {
-  measuredMultilineTextSize,
-  resolveTypographyStyle,
-} from "./previewTextHelpers.js";
+import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 export function mediaComponentToRenderable(
@@ -396,13 +392,12 @@ function mediaTextOverlayNodes(
   mediaBox: RenderableBox,
 ): RenderableNode[] {
   const overlay = media.textOverlay;
-  if (!overlay?.enabled || overlay.resolvedText.trim().length === 0) {
+  if (!overlay?.enabled || overlay.label.text.trim().length === 0) {
     return [];
   }
 
   const scale = renderScale(payload);
-  const typography = resolveTypographyStyle(payload, overlay.typography, scale);
-  const textSize = measuredMultilineTextSize(overlay.resolvedText, typography);
+  const textSize = measureLabelComponent(overlay.label, payload);
   const childSize = {
     width: Math.min(mediaBox.width, Math.max(1, textSize.width)),
     height: Math.max(1, textSize.height),
@@ -414,24 +409,6 @@ function mediaTextOverlayNodes(
   );
 
   return [
-    {
-      id: overlay.id,
-      type: "text",
-      frame: 0,
-      box,
-      text: overlay.resolvedText,
-      style: {
-        display: "block",
-        fontFamily: typography.fontFamily,
-        fontSize: typography.fontSize,
-        fontStyle: typography.fontStyle,
-        fontWeight: typography.fontWeight,
-        lineHeight: typography.lineHeight,
-        overflow: "visible",
-        textAlign: overlay.textAlign,
-        textColor: selectedColor(payload, overlay.textColorToken),
-        whiteSpace: "pre-line",
-      },
-    },
+    labelComponentToRenderableAt(payload, overlay.label, box),
   ];
 }

@@ -23,9 +23,9 @@ import {
   requiredPlacement,
   requiredString,
   requiredStringPair,
-  requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
+import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
@@ -182,6 +182,7 @@ export function resolveMediaComponentFromRecords(
       playbackState,
       currentTimeSeconds,
       durationSeconds,
+      componentBaseConfigs,
     ),
     controlsFadeDelayMs: Math.max(
       0,
@@ -209,6 +210,7 @@ function resolveMediaTextOverlay(
   playbackState: MediaPlaybackState,
   currentTimeSeconds: number,
   durationSeconds: number,
+  componentBaseConfigs: Record<string, unknown>,
 ): MediaTextOverlayContract | null {
   const overlay = asRecord(media[key]);
   const enabled = requiredBoolean(overlay, "enabled", `component.media.${key}.enabled`);
@@ -227,31 +229,28 @@ function resolveMediaTextOverlay(
     currentTimeSeconds,
     durationSeconds,
   );
+  const labelSlot = asRecord(overlay.labelSlot);
+  const labelConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
+    asRecord(labelSlot.overrides),
+  );
 
   return {
     id: `component.media.${playbackState}.text`,
     enabled,
     mode,
     text,
-    resolvedText,
     targetSeconds,
-    textColorToken: requiredString(
-      overlay,
-      "textColorToken",
-      `component.media.${key}.textColorToken`,
-    ),
-    typography: requiredTypographyStyle(
-      overlay,
-      "typography",
-      `component.media.${key}.typography`,
-    ),
     placement: requiredPlacement(
       overlay,
       "placement",
       `component.media.${key}.placement`,
     ),
-    textAlign: mediaTextAlign(
-      requiredString(overlay, "textAlign", `component.media.${key}.textAlign`),
+    label: resolveLabelComponentFromRecords(
+      labelConfig,
+      { sampleText: resolvedText, sampleSubtext: "" },
+      componentBaseConfigs,
+      `component.media.${playbackState}.label`,
     ),
   };
 }
@@ -310,9 +309,4 @@ function mediaFullframeOrientation(value: string): MediaFullframeOrientation {
 function mediaTextOverlayMode(value: string): MediaTextOverlayMode {
   if (value === "free" || value === "countUp" || value === "countDown") return value;
   throw new Error(`Unsupported media text overlay mode ${value}`);
-}
-
-function mediaTextAlign(value: string): "left" | "center" | "right" {
-  if (value === "left" || value === "center" || value === "right") return value;
-  throw new Error(`Unsupported media text overlay alignment ${value}`);
 }

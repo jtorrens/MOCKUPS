@@ -419,8 +419,7 @@ internal sealed partial class SpikeDatabase
                 { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
                   { "id": "component.audio.padding", "order": 10, "visible": true },
                   { "id": "component.audio.surface.editor", "order": 20, "visible": true },
-                  { "id": "component.audio.textSize", "order": 40, "visible": true },
-                  { "id": "component.audio.textColorToken", "order": 50, "visible": true }
+                  { "id": "component.audio.durationLabel.editor", "order": 40, "visible": true }
                 ] },
                 { "id": "audioPlayback", "label": "Playback", "order": 20, "visible": true, "fields": [
                   { "id": "component.audio.playCircleSize", "order": 10, "visible": true },
@@ -521,10 +520,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.media.idleText.mode", "order": 20, "visible": true },
                   { "id": "component.media.idleText.text", "order": 30, "visible": true },
                   { "id": "component.media.idleText.targetSeconds", "order": 40, "visible": true },
-                  { "id": "component.media.idleText.textColorToken", "order": 50, "visible": true },
-                  { "id": "component.media.idleText.typography", "order": 60, "visible": true },
-                  { "id": "component.media.idleText.placement", "order": 70, "visible": true },
-                  { "id": "component.media.idleText.textAlign", "order": 80, "visible": true }
+                  { "id": "component.media.idleText.label.editor", "order": 50, "visible": true },
+                  { "id": "component.media.idleText.placement", "order": 70, "visible": true }
                 ] }
               ]
             },
@@ -542,10 +539,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.media.playText.mode", "order": 20, "visible": true },
                   { "id": "component.media.playText.text", "order": 30, "visible": true },
                   { "id": "component.media.playText.targetSeconds", "order": 40, "visible": true },
-                  { "id": "component.media.playText.textColorToken", "order": 50, "visible": true },
-                  { "id": "component.media.playText.typography", "order": 60, "visible": true },
-                  { "id": "component.media.playText.placement", "order": 70, "visible": true },
-                  { "id": "component.media.playText.textAlign", "order": 80, "visible": true }
+                  { "id": "component.media.playText.label.editor", "order": 50, "visible": true },
+                  { "id": "component.media.playText.placement", "order": 70, "visible": true }
                 ] }
               ]
             }

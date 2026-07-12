@@ -46,9 +46,9 @@ internal sealed class EditorDomainDialogService
         return new IconThemeSvgReplaceDialog(_owner, _database, _browseSvgFile, _reloadAndSelect).Show(node, token);
     }
 
-    public Task<string?> ShowIconTokenPicker(string projectId, string currentValue, bool allowMultiple)
+    public Task<string?> ShowIconTokenPicker(string iconThemeId, string currentValue, bool allowMultiple)
     {
-        return new IconTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowMultiple);
+        return new IconTokenPickerDialog(_owner, _database).Show(iconThemeId, currentValue, allowMultiple);
     }
 
     public Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)

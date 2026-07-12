@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class SvgIconPreview
 {
+    private sealed record CachedSvg(DateTime LastWriteUtc, long Length, string Content);
+    private static readonly ConcurrentDictionary<string, CachedSvg> SvgCache = new(StringComparer.Ordinal);
+
     public static Control CreateIconThemePreview(SpikeDatabase database, string iconThemeId, string file, double size)
     {
         try
@@ -24,7 +28,7 @@ internal static class SvgIconPreview
             var path = database.ResolveIconThemeAssetPath(iconThemeId, file);
             if (!File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
 
-            return CreateFromSvg(File.ReadAllText(path), size);
+            return CreateFromSvg(ReadSvg(path), size);
         }
         catch
         {
@@ -32,7 +36,7 @@ internal static class SvgIconPreview
         }
     }
 
-    public static Control CreateProjectIconTokenPreview(SpikeDatabase database, string projectId, string token, double size)
+    public static Control CreateIconTokenPreview(SpikeDatabase database, string iconThemeId, string token, double size)
     {
         try
         {
@@ -41,10 +45,13 @@ internal static class SvgIconPreview
                 .FirstOrDefault();
             if (string.IsNullOrWhiteSpace(firstToken)) return EditorIcons.Create(EditorIcons.Icon, size);
 
-            var path = database.ResolveIconTokenAssetPath(projectId, firstToken);
+            if (string.IsNullOrWhiteSpace(iconThemeId)) return EditorIcons.Create(EditorIcons.Icon, size);
+            var icon = database.GetIconThemeTokens(iconThemeId).FirstOrDefault((candidate) => candidate.Token == firstToken);
+            if (icon is null) return EditorIcons.Create(EditorIcons.Icon, size);
+            var path = database.ResolveIconThemeAssetPath(iconThemeId, icon.File);
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
 
-            return CreateFromSvg(File.ReadAllText(path), size);
+            return CreateFromSvg(ReadSvg(path), size);
         }
         catch
         {
@@ -75,31 +82,27 @@ internal static class SvgIconPreview
     {
         try
         {
-            var validatedSvg = SvgReplacementService.Validate(svg);
-            var geometry = SvgReplacementService.TryGeometry(validatedSvg);
-            var webView = new NativeWebView
-            {
-                Width = size,
-                Height = size,
-                Background = Brushes.Transparent,
-                IsHitTestVisible = false,
-            };
-            webView.NavigateToString(
-                SvgMarkupPreview.CreateHtml(validatedSvg, geometry, 0, false),
-                new Uri("https://mockups.local/svg-icon-preview/"));
-
-            return new Border
-            {
-                Width = size,
-                Height = size,
-                ClipToBounds = true,
-                Child = webView,
-            };
+            return CreateLightweightSvgPreview(svg, size) ?? EditorIcons.Create(EditorIcons.Icon, size);
         }
         catch
         {
             return EditorIcons.Create(EditorIcons.Icon, size);
         }
+    }
+
+    private static string ReadSvg(string path)
+    {
+        var info = new FileInfo(path);
+        if (SvgCache.TryGetValue(path, out var cached)
+            && cached.LastWriteUtc == info.LastWriteTimeUtc
+            && cached.Length == info.Length)
+        {
+            return cached.Content;
+        }
+
+        var content = File.ReadAllText(path);
+        SvgCache[path] = new CachedSvg(info.LastWriteTimeUtc, info.Length, content);
+        return content;
     }
 
     private static Control? CreateLightweightSvgPreview(string svg, double size)

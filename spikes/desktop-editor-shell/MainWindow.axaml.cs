@@ -86,6 +86,7 @@ public partial class MainWindow : SukiWindow
             () => _editorViewState.CaptureState(_editorContent!.Cards),
             SelectNodeById,
             this);
+        _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
         _nodeCommands = new EditorNodeCommandController(
             this,
             _database,
@@ -122,7 +123,11 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
-        _dictionaryFieldServices = new EditorDictionaryFieldServices(_database, _pathBrowser, _domainDialogs);
+        _dictionaryFieldServices = new EditorDictionaryFieldServices(
+            _database,
+            _pathBrowser,
+            _domainDialogs,
+            () => _previewController.SelectedThemeId);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         _fieldValues = new EditorFieldValueRouter(
             _coreFieldValues,

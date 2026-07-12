@@ -21,7 +21,7 @@ internal sealed record ComponentClassFieldDescriptor(
 
 internal static class ComponentClassFieldCatalog
 {
-    public const string EmptyIconSlots = """{"left":[],"center":[],"right":[]}""";
+    public const string EmptyIconSlots = "[]";
 
     private static readonly FieldOption[] ThemeColorOptions =
     [
@@ -215,6 +215,13 @@ internal static class ComponentClassFieldCatalog
     private static readonly ComponentInputBindingDefinition[] IconRowParentInputBindings =
     [
         new(
+            "items",
+            "Buttons",
+            "items",
+            ValueKind.IconSlots,
+            ComponentInputBindingSource.Variant,
+            "[]"),
+        new(
             "gap",
             "Gap",
             "gap",
@@ -342,6 +349,17 @@ internal static class ComponentClassFieldCatalog
         {
             "iconRow" => IconRowParentInputBindings
                 .Where((binding) => binding.Source == ComponentInputBindingSource.Runtime)
+                .ToList(),
+            _ => [],
+        };
+    }
+
+    internal static IReadOnlyList<ComponentInputBindingDefinition> VariantInputBindingsForComponent(string componentType)
+    {
+        return componentType switch
+        {
+            "iconRow" => IconRowParentInputBindings
+                .Where((binding) => binding.Source == ComponentInputBindingSource.Variant)
                 .ToList(),
             _ => [],
         };
@@ -584,8 +602,7 @@ internal static class ComponentClassFieldCatalog
 
         ["component.audio.padding"] = new("component.audio.padding", "Padding", ValueKind.ThemeTokenPair, ["audio", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.audio.surface.editor"] = new("component.audio.surface.editor", "Surface", ValueKind.ComponentPreset, ["audio", "surfaceSlot", "presetId"], "default"),
-        ["component.audio.textSize"] = new("component.audio.textSize", "Text size", ValueKind.Integer, ["audio", "textSize"], "13"),
-        ["component.audio.textColorToken"] = new("component.audio.textColorToken", "Text color", ValueKind.ThemeToken, ["audio", "textColorToken"], "theme.icons.secondary", Options: ThemeColorOptions),
+        ["component.audio.durationLabel.editor"] = new("component.audio.durationLabel.editor", "Duration label", ValueKind.ComponentPreset, ["audio", "durationLabelSlot", "presetId"], "default"),
         ["component.audio.playCircleSize"] = new("component.audio.playCircleSize", "Play size", ValueKind.Integer, ["audio", "playCircleSize"], "32"),
         ["component.audio.playIconPadding"] = new("component.audio.playIconPadding", "Play icon padding", ValueKind.ThemeToken, ["audio", "playIconPadding"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.audio.playColorToken"] = new("component.audio.playColorToken", "Play color", ValueKind.ThemeToken, ["audio", "playColorToken"], "theme.icons.accent", Options: ThemeColorOptions),
@@ -644,18 +661,14 @@ internal static class ComponentClassFieldCatalog
         ["component.media.idleText.mode"] = new("component.media.idleText.mode", "Mode", ValueKind.OptionToken, ["media", "idleText", "mode"], "free", Options: MediaTextOverlayModeOptions),
         ["component.media.idleText.text"] = new("component.media.idleText.text", "Text", ValueKind.StringMultiline, ["media", "idleText", "text"], ""),
         ["component.media.idleText.targetSeconds"] = new("component.media.idleText.targetSeconds", "Target seconds", ValueKind.Decimal, ["media", "idleText", "targetSeconds"], "0", Number: new NumberDefinition(0, 86400, 0.1m, 1)),
-        ["component.media.idleText.textColorToken"] = new("component.media.idleText.textColorToken", "Text color", ValueKind.ThemeToken, ["media", "idleText", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
-        ["component.media.idleText.typography"] = new("component.media.idleText.typography", "Typography", ValueKind.TypographyStyle, ["media", "idleText", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+        ["component.media.idleText.label.editor"] = new("component.media.idleText.label.editor", "Label", ValueKind.ComponentPreset, ["media", "idleText", "labelSlot", "presetId"], "default"),
         ["component.media.idleText.placement"] = new("component.media.idleText.placement", "Placement", ValueKind.AlignmentPlacement, ["media", "idleText", "placement"], """{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
-        ["component.media.idleText.textAlign"] = new("component.media.idleText.textAlign", "Text align", ValueKind.OptionToken, ["media", "idleText", "textAlign"], "center", Options: TextAlignOptions),
         ["component.media.playText.enabled"] = new("component.media.playText.enabled", "Enabled", ValueKind.Boolean, ["media", "playText", "enabled"], "true"),
         ["component.media.playText.mode"] = new("component.media.playText.mode", "Mode", ValueKind.OptionToken, ["media", "playText", "mode"], "countDown", Options: MediaTextOverlayModeOptions),
         ["component.media.playText.text"] = new("component.media.playText.text", "Text", ValueKind.StringMultiline, ["media", "playText", "text"], ""),
         ["component.media.playText.targetSeconds"] = new("component.media.playText.targetSeconds", "Target seconds", ValueKind.Decimal, ["media", "playText", "targetSeconds"], "0", Number: new NumberDefinition(0, 86400, 0.1m, 1)),
-        ["component.media.playText.textColorToken"] = new("component.media.playText.textColorToken", "Text color", ValueKind.ThemeToken, ["media", "playText", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
-        ["component.media.playText.typography"] = new("component.media.playText.typography", "Typography", ValueKind.TypographyStyle, ["media", "playText", "typography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+        ["component.media.playText.label.editor"] = new("component.media.playText.label.editor", "Label", ValueKind.ComponentPreset, ["media", "playText", "labelSlot", "presetId"], "default"),
         ["component.media.playText.placement"] = new("component.media.playText.placement", "Placement", ValueKind.AlignmentPlacement, ["media", "playText", "placement"], """{"mode":"center","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":-18}"""),
-        ["component.media.playText.textAlign"] = new("component.media.playText.textAlign", "Text align", ValueKind.OptionToken, ["media", "playText", "textAlign"], "center", Options: TextAlignOptions),
         ["component.media.controlsFadeDelayMs"] = new("component.media.controlsFadeDelayMs", "Fade delay ms", ValueKind.Integer, ["media", "controlsFadeDelayMs"], "900", Number: new NumberDefinition(0, 10000, 10, 0)),
         ["component.media.controlsFadeDurationMs"] = new("component.media.controlsFadeDurationMs", "Fade duration ms", ValueKind.Integer, ["media", "controlsFadeDurationMs"], "180", Number: new NumberDefinition(0, 10000, 10, 0)),
         ["component.media.motion"] = new("component.media.motion", "Motion", ValueKind.Motion, ["media", "motion"], (MotionVariantValue.Default with { Scale = true }).ToJsonString()),

@@ -6,6 +6,7 @@ import {
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
+import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
 import {
   asRecord,
   optionalNumber,
@@ -43,6 +44,7 @@ export function resolveAudioComponentFromRecords(
   const surfaceSlot = asRecord(audio.surfaceSlot);
   const avatarSlot = asRecord(audio.avatarSlot);
   const badgeSlot = asRecord(audio.badgeSlot);
+  const durationLabelSlot = asRecord(audio.durationLabelSlot);
   const showAvatar = requiredBoolean(
     avatarSlot,
     "showAvatar",
@@ -64,6 +66,10 @@ export function resolveAudioComponentFromRecords(
   const surfaceConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
     asRecord(surfaceSlot.overrides),
+  );
+  const durationLabelConfig = mergeComponentDefaults(
+    componentPresetConfig(componentBaseConfigs, "label", durationLabelSlot.presetId),
+    asRecord(durationLabelSlot.overrides),
   );
   const durationSeconds = Math.max(
     1,
@@ -92,14 +98,13 @@ export function resolveAudioComponentFromRecords(
       durationSeconds,
       currentTimeSeconds,
       progress: currentTimeSeconds / durationSeconds,
-      durationText: formatDuration(durationSeconds - currentTimeSeconds),
     },
     padding: toSpacingPair(requiredStringPair(audio, "padding", "component.audio.padding")),
-    textSize: requiredNumber(audio, "textSize", "component.audio.textSize"),
-    textColorToken: requiredString(
-      audio,
-      "textColorToken",
-      "component.audio.textColorToken",
+    durationLabel: resolveLabelComponentFromRecords(
+      durationLabelConfig,
+      { sampleText: formatDuration(durationSeconds - currentTimeSeconds), sampleSubtext: "" },
+      componentBaseConfigs,
+      `${id}.durationLabel`,
     ),
     playCircleSize: requiredNumber(
       audio,

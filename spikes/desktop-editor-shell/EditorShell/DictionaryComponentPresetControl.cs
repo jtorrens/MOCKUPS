@@ -38,10 +38,9 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
 
         if (openComponentPresetReference is not null)
         {
-            var openIcon = EditorIcons.Create(EditorIcons.Edit, 15);
             var openButton = new Button
             {
-                Content = openIcon,
+                Content = EditorIcons.Create(EditorIcons.Edit, 15),
                 Width = 32,
                 Height = 32,
                 Padding = new Avalonia.Thickness(0),

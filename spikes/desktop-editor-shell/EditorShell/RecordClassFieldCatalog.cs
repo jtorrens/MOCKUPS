@@ -14,7 +14,8 @@ internal sealed record RecordClassFieldDescriptor(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     string ComponentPresetType = "",
-    string Unit = "");
+    string Unit = "",
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -136,8 +137,10 @@ internal static class RecordClassFieldCatalog
             new FieldOption("center", "Center"),
             new FieldOption("right", "Right"),
         ]),
-        ["module.conversation.headerLeftIconRowVariant"] = new("module.conversation.headerLeftIconRowVariant", "Left icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
-        ["module.conversation.headerRightIconRowVariant"] = new("module.conversation.headerRightIconRowVariant", "Right icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerLeftIconRow.editor"] = new("module.conversation.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerLeftIconRow.inputs"] = new("module.conversation.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
+        ["module.conversation.headerRightIconRow.editor"] = new("module.conversation.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerRightIconRow.inputs"] = new("module.conversation.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
         ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
         ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
         ["module.conversation.showTextInputBar"] = new("module.conversation.showTextInputBar", "Text input bar", ValueKind.Boolean),

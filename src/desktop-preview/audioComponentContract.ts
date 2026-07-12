@@ -1,5 +1,6 @@
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { ButtonDesignContract } from "./buttonComponentContract.js";
+import type { LabelDesignContract } from "./labelComponentContract.js";
 import type {
   AlignmentPlacementContract,
   SpacingPairContract,
@@ -13,11 +14,9 @@ export interface AudioDesignContract {
     durationSeconds: number;
     currentTimeSeconds: number;
     progress: number;
-    durationText: string;
   };
   padding: SpacingPairContract;
-  textSize: number;
-  textColorToken: string;
+  durationLabel: LabelDesignContract;
   playCircleSize: number;
   playIconPaddingToken: string;
   playColorToken: string;

@@ -302,8 +302,10 @@ internal sealed partial class SpikeDatabase
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
             "module.conversation.headerAvatarVariant" => JsonString(config, ["conversation", "headerAvatarVariant"]),
             "module.conversation.headerAvatarAlignment" => JsonString(config, ["conversation", "headerAvatarAlignment"]) is { Length: > 0 } alignment ? alignment : "left",
-            "module.conversation.headerLeftIconRowVariant" => JsonString(config, ["conversation", "headerLeftIconRowVariant"]),
-            "module.conversation.headerRightIconRowVariant" => JsonString(config, ["conversation", "headerRightIconRowVariant"]),
+            "module.conversation.headerLeftIconRow.editor" => JsonString(config, ["conversation", "headerLeftIconRowSlot", "presetId"]),
+            "module.conversation.headerLeftIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerLeftIconRowInputs"])?.ToJsonString() ?? "{}",
+            "module.conversation.headerRightIconRow.editor" => JsonString(config, ["conversation", "headerRightIconRowSlot", "presetId"]),
+            "module.conversation.headerRightIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerRightIconRowInputs"])?.ToJsonString() ?? "{}",
             "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
             "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
             "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
@@ -539,11 +541,17 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.headerAvatarAlignment":
                 SetJsonValue(config, ["conversation", "headerAvatarAlignment"], JsonValue.Create(value is "center" or "right" ? value : "left")!);
                 break;
-            case "module.conversation.headerLeftIconRowVariant":
-                SetJsonValue(config, ["conversation", "headerLeftIconRowVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+            case "module.conversation.headerLeftIconRow.editor":
+                SetJsonValue(config, ["conversation", "headerLeftIconRowSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
                 break;
-            case "module.conversation.headerRightIconRowVariant":
-                SetJsonValue(config, ["conversation", "headerRightIconRowVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+            case "module.conversation.headerLeftIconRow.inputs":
+                SetJsonValue(config, ["conversation", "headerLeftIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
+                break;
+            case "module.conversation.headerRightIconRow.editor":
+                SetJsonValue(config, ["conversation", "headerRightIconRowSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+                break;
+            case "module.conversation.headerRightIconRow.inputs":
+                SetJsonValue(config, ["conversation", "headerRightIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
                 break;
             case "module.conversation.showStatusBar":
                 SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
@@ -597,8 +605,10 @@ internal sealed partial class SpikeDatabase
                 ["headerHeight"] = 64,
                 ["headerAvatarVariant"] = SeededComponentPresetReference(projectId, "avatar"),
                 ["headerAvatarAlignment"] = "left",
-                ["headerLeftIconRowVariant"] = SeededComponentPresetReference(projectId, "iconRow"),
-                ["headerRightIconRowVariant"] = SeededComponentPresetReference(projectId, "iconRow"),
+                ["headerLeftIconRowSlot"] = new JsonObject { ["presetId"] = SeededComponentPresetReference(projectId, "iconRow"), ["overrides"] = new JsonObject() },
+                ["headerLeftIconRowInputs"] = HeaderIconRowInputs(projectId, []),
+                ["headerRightIconRowSlot"] = new JsonObject { ["presetId"] = SeededComponentPresetReference(projectId, "iconRow"), ["overrides"] = new JsonObject() },
+                ["headerRightIconRowInputs"] = HeaderIconRowInputs(projectId, ["media_camera"]),
                 ["showStatusBar"] = true,
                 ["showNavigationBar"] = true,
                 ["showTextInputBar"] = true,
@@ -614,6 +624,34 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static JsonObject HeaderIconRowInputs(string projectId, IReadOnlyList<string> icons)
+    {
+        var items = new JsonArray();
+        for (var index = 0; index < icons.Count; index++)
+        {
+            items.Add(new JsonObject
+            {
+                ["id"] = $"button_{index + 1:000}",
+                ["buttonPresetId"] = SeededComponentPresetReference(projectId, "button"),
+                ["contentMode"] = "icon",
+                ["state"] = "normal",
+                ["iconToken"] = icons[index],
+                ["text"] = "",
+                ["iconSizeToken"] = "theme.iconSizes.m",
+                ["textSizeToken"] = "theme.typography.sizes.s",
+                ["pushTrigger"] = false,
+                ["pushElapsedMs"] = 0,
+                ["buttonOverrides"] = new JsonObject(),
+            });
+        }
+        return new JsonObject
+        {
+            ["items"] = items,
+            ["gap"] = "theme.spacing.s",
+            ["orientation"] = "horizontal",
+        };
+    }
+
     private static string SeededComponentPresetReference(string projectId, string componentType)
     {
         return ComponentPresetNodeId($"component_{projectId}_{componentType}", DefaultComponentPresetId);
@@ -624,8 +662,6 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["headerSubtitle"] = "online",
-            ["headerLeftButtons"] = new JsonArray(),
-            ["headerRightButtons"] = new JsonArray(),
             ["actorId"] = "",
             ["bubbleRevealMode"] = "afterWriteOn",
             ["incomingRevealMode"] = "typingIndicator",
@@ -656,8 +692,6 @@ internal sealed partial class SpikeDatabase
             },
             ["collections"] = new JsonArray
             {
-                HeaderButtonCollection("headerLeftButtons", "Left header buttons"),
-                HeaderButtonCollection("headerRightButtons", "Right header buttons"),
                 new JsonObject
                 {
                     ["id"] = "messages",

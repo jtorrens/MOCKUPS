@@ -3,7 +3,7 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
-import { componentPresetConfig } from "./componentPreviewDefaults.js";
+import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   asRecord,
   optionalBoolean,
@@ -253,8 +253,6 @@ function runtimePreview(payload: DesignPreviewPayload): JsonRecord {
     ...preview,
     actor: context.ownerActor,
     headerSubtitle: optionalString(header, "subtitle"),
-    headerLeftButtons: Array.isArray(header.leftButtons) ? header.leftButtons : preview.headerLeftButtons,
-    headerRightButtons: Array.isArray(header.rightButtons) ? header.rightButtons : preview.headerRightButtons,
     messages: content.messages,
   };
 }
@@ -662,16 +660,25 @@ function headerNode(
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const subtitle = optionalString(preview, "headerSubtitle");
-  const avatarSize = Math.max(0, height - 16 * scale);
+  const leftSlot = asRecord(conversation.headerLeftIconRowSlot);
+  const rightSlot = asRecord(conversation.headerRightIconRowSlot);
+  const leftInputs = asRecord(conversation.headerLeftIconRowInputs);
+  const rightInputs = asRecord(conversation.headerRightIconRowInputs);
   const leftRow = resolveIconRowComponentFromRecords(
-    componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(conversation, "headerLeftIconRowVariant", "module.conversation.headerLeftIconRowVariant")),
-    { orientation: "horizontal", gap: "theme.spacing.s", items: Array.isArray(preview.headerLeftButtons) ? preview.headerLeftButtons : [] },
+    mergeComponentDefaults(
+      componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(leftSlot, "presetId", "module.conversation.headerLeftIconRowSlot.presetId")),
+      asRecord(leftSlot.overrides),
+    ),
+    leftInputs,
     componentBaseConfigs,
     "module.conversation.header.left",
   );
   const rightRow = resolveIconRowComponentFromRecords(
-    componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(conversation, "headerRightIconRowVariant", "module.conversation.headerRightIconRowVariant")),
-    { orientation: "horizontal", gap: "theme.spacing.s", items: Array.isArray(preview.headerRightButtons) ? preview.headerRightButtons : [] },
+    mergeComponentDefaults(
+      componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(rightSlot, "presetId", "module.conversation.headerRightIconRowSlot.presetId")),
+      asRecord(rightSlot.overrides),
+    ),
+    rightInputs,
     componentBaseConfigs,
     "module.conversation.header.right",
   );
@@ -682,9 +689,7 @@ function headerNode(
   const centerLeft = screen.x + edgePadding + leftSize.width + (leftSize.width > 0 ? rowGap : 0);
   const centerRight = screen.x + screen.width - edgePadding - rightSize.width - (rightSize.width > 0 ? rowGap : 0);
   const avatarAlignment = optionalString(conversation, "headerAvatarAlignment") || "left";
-  const unresolvedAvatar = avatarComponentToRenderableAt(
-    payload,
-    resolveAvatarComponentFromRecords(
+  const resolvedAvatar = resolveAvatarComponentFromRecords(
       componentPresetConfig(
         componentBaseConfigs,
         "avatar",
@@ -700,9 +705,14 @@ function headerNode(
       },
       componentBaseConfigs,
       "module.conversation.header.avatar",
-    ),
+    );
+  const avatarSize = resolvedAvatar.size * scale;
+  const unresolvedAvatar = avatarComponentToRenderableAt(
+    payload,
+    resolvedAvatar,
     {
       x: 0,
+      // Header content starts below Status Bar; only the background bleeds upward.
       y: screen.y + offsetY + (height - avatarSize) / 2,
       width: avatarSize,
       height: avatarSize,

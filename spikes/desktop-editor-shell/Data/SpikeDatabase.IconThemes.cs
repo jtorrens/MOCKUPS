@@ -91,24 +91,6 @@ internal sealed partial class SpikeDatabase
         return Path.Combine(mediaRoot, settings.AssetRoot, file);
     }
 
-    public string? ResolveIconTokenAssetPath(string projectId, string token)
-    {
-        if (string.IsNullOrWhiteSpace(token)) return null;
-
-        using var connection = OpenConnection();
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        foreach (var row in QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId))
-        {
-            var icon = IconThemeTokens(row.MappingJson).FirstOrDefault((candidate) => candidate.Token == token);
-            if (icon is null || string.IsNullOrWhiteSpace(icon.File)) continue;
-
-            var path = Path.Combine(mediaRoot, row.AssetRoot, icon.File);
-            if (File.Exists(path)) return path;
-        }
-
-        return null;
-    }
-
     public IconThemeRefreshResult RefreshIconThemeSets(ProjectTreeNode iconThemesRoot)
     {
         if (iconThemesRoot.Kind != ProjectTreeNodeKind.IconThemesRoot)

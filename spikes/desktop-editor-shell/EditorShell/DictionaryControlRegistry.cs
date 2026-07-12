@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -78,7 +79,9 @@ internal static class DictionaryControlRegistry
                 request.Value,
                 request.Definition.IsEditable,
                 request.Services.ShowIconTokenPicker,
-                request.Services.CreateIconPreview),
+                request.Services.CreateIconPreview,
+                request.Services.GetComponentPresetOptions?.Invoke("button")
+                    .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? ""),
             [ValueKind.ComponentPreset] = (request) => new DictionaryComponentPresetControl(
                 request.Definition,
                 request.Value,

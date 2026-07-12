@@ -110,7 +110,7 @@ internal sealed class EditorCollectionCardFactory
                     _database,
                     _isDark(),
                     _browsePath,
-                    _domainDialogs.ShowIconTokenPicker,
+                    _dictionaryServices,
                     _onChanged).Create(node),
             ],
             "navigation_bar" =>

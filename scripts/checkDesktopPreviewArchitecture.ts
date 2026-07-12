@@ -1925,6 +1925,21 @@ assertContains(
   "componentPresetConfig(componentBaseConfigs, \"button\", badgeSlot.presetId)",
   "audio badge preview must resolve the selected Button preset",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "ResolveIconTokenAssetPath",
+  "icon tokens must never resolve through the first Icon Set in a project",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/IconTokenPickerDialog.cs",
+  "GetIconThemeOptions",
+  "the generic icon-token picker must use the active Theme Icon Set instead of selecting a concrete set",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/SvgIconPreview.cs",
+  "NativeWebView",
+  "editor icon thumbnails must use lightweight vector controls instead of one web view per icon",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "ValidateComponentPresetReferencesForPreview",
@@ -2178,9 +2193,9 @@ assertContains(
   "Status Bar text must use the Theme system-font role",
 );
 assertContains(
-  "src/desktop-preview/audioComponentRenderable.ts",
-  "fontFamilyForTypography(payload, \"theme\")",
-  "Audio text must resolve the Theme normal text font explicitly",
+  "src/desktop-preview/audioComponentResolver.ts",
+  "resolveLabelComponentFromRecords",
+  "Audio calculated text must delegate its final visual presentation to Label",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",

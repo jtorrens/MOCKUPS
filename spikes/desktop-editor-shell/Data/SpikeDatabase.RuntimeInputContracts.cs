@@ -124,21 +124,24 @@ internal sealed partial class SpikeDatabase
     private static void NormalizeConversationHeaderComposition(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT m.id, m.config_json, a.project_id FROM modules m JOIN apps a ON a.id = m.app_id WHERE m.record_class_id = 'module.core.chat'";
+        select.CommandText = "SELECT m.id, m.config_json, m.design_preview_json, a.project_id FROM modules m JOIN apps a ON a.id = m.app_id WHERE m.record_class_id = 'module.core.chat'";
         using var reader = select.ExecuteReader();
-        var updates = new List<(string Id, string Json)>();
+        var updates = new List<(string Id, string ConfigJson, string PreviewJson)>();
         while (reader.Read())
         {
             var id = reader.GetString(0);
             var config = ParseJsonObject(ReadString(reader, 1));
-            var projectId = reader.GetString(2);
+            var preview = ParseJsonObject(ReadString(reader, 2));
+            var projectId = reader.GetString(3);
             var conversation = config["conversation"] as JsonObject ?? new JsonObject();
             config["conversation"] = conversation;
             conversation.Remove("statusBarVariant");
             conversation.Remove("navigationBarVariant");
             conversation["headerAvatarAlignment"] ??= "left";
-            conversation["headerLeftIconRowVariant"] ??= SeededComponentPresetReference(projectId, "iconRow");
-            conversation["headerRightIconRowVariant"] ??= SeededComponentPresetReference(projectId, "iconRow");
+            NormalizeConversationHeaderIconRowSlot(conversation, "headerLeftIconRowSlot", "headerLeftIconRowVariant", projectId);
+            NormalizeConversationHeaderIconRowSlot(conversation, "headerRightIconRowSlot", "headerRightIconRowVariant", projectId);
+            conversation["headerLeftIconRowInputs"] ??= HeaderIconRowInputs(projectId, []);
+            conversation["headerRightIconRowInputs"] ??= HeaderIconRowInputs(projectId, ["media_camera"]);
             var currentAvatar = conversation["headerAvatarVariant"]?.GetValue<string>() ?? "";
             if (currentAvatar.EndsWith("::preset::default", System.StringComparison.Ordinal))
             {
@@ -152,13 +155,36 @@ internal sealed partial class SpikeDatabase
                     }
                 }
             }
-            updates.Add((id, config.ToJsonString()));
+            preview.Remove("headerLeftButtons");
+            preview.Remove("headerRightButtons");
+            if (preview["collections"] is JsonArray collections)
+            {
+                foreach (var retired in collections.OfType<JsonObject>()
+                    .Where((collection) => collection["jsonKey"]?.GetValue<string>() is "headerLeftButtons" or "headerRightButtons")
+                    .ToList())
+                {
+                    collections.Remove(retired);
+                }
+            }
+            updates.Add((id, config.ToJsonString(), preview.ToJsonString()));
         }
         reader.Close();
         foreach (var update in updates)
         {
-            Execute(connection, "UPDATE modules SET config_json = $json WHERE id = $id", ("$id", update.Id), ("$json", update.Json));
+            Execute(connection, "UPDATE modules SET config_json = $configJson, design_preview_json = $previewJson WHERE id = $id",
+                ("$id", update.Id), ("$configJson", update.ConfigJson), ("$previewJson", update.PreviewJson));
         }
+    }
+
+    private static void NormalizeConversationHeaderIconRowSlot(JsonObject conversation, string slotKey, string retiredKey, string projectId)
+    {
+        var presetId = conversation[retiredKey]?.GetValue<string>();
+        conversation[slotKey] ??= new JsonObject
+        {
+            ["presetId"] = string.IsNullOrWhiteSpace(presetId) ? SeededComponentPresetReference(projectId, "iconRow") : presetId,
+            ["overrides"] = new JsonObject(),
+        };
+        conversation.Remove(retiredKey);
     }
 
     private static void MigrateConversationPreviewMessages(JsonObject preview, JsonObject defaults, ref bool changed)

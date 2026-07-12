@@ -468,7 +468,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha => NumberNode(value),
             ValueKind.Boolean => JsonValue.Create(BooleanText.Parse(value))!,
-            ValueKind.IconTokenList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
+            ValueKind.IconTokenList or ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
             _ => JsonValue.Create(value)!,
         };
     }

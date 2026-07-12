@@ -78,7 +78,7 @@ internal static class DesignPreviewPayloadFactory
             };
     }
 
-    private static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)
+    internal static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)
     {
         if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
         {

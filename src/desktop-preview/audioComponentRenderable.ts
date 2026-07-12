@@ -2,6 +2,7 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { buttonComponentToRenderableAt } from "./buttonComponentRenderable.js";
+import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
@@ -15,7 +16,6 @@ import {
   unionBoxes,
 } from "./componentRenderableCommon.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
-import { fontFamilyForTypography } from "./previewFontHelpers.js";
 
 function hashString(value: string) {
   let hash = 2166136261;
@@ -60,9 +60,9 @@ export function audioComponentToRenderable(
   const maxBarHeight = Math.max(minBarHeight, audio.waveformMaxHeight * scale);
   const knobSize = audio.progressKnobSize * scale;
   const waveformHeight = Math.max(maxBarHeight, knobSize);
-  const durationText = audio.playback.durationText;
-  const durationWidth = Math.ceil(durationText.length * audio.textSize * scale * 0.58);
-  const textHeight = audio.textSize * scale * 1.25;
+  const durationSize = measureLabelComponent(audio.durationLabel, payload);
+  const durationWidth = durationSize.width;
+  const textHeight = durationSize.height;
   const waveformColumnWidth = Math.max(waveformWidth, durationWidth);
   const verticalGap = Math.max(2 * scale, paddingY * 0.5);
   const playbackHeight = Math.max(playSize, waveformHeight, avatarSize);
@@ -220,22 +220,7 @@ export function audioComponentToRenderable(
           borderRadius: knobSize / 2,
         },
       },
-      {
-        id: `${audio.id}.duration`,
-        type: "text",
-        frame: 0,
-        box: textBox,
-        text: durationText,
-        style: {
-          color: selectedColor(payload, audio.textColorToken),
-          fontFamily: fontFamilyForTypography(payload, "theme"),
-          fontSize: audio.textSize * scale,
-          display: "block",
-          lineHeight: textBox.height,
-          textAlign: "right",
-          whiteSpace: "nowrap",
-        },
-      },
+      labelComponentToRenderableAt(payload, audio.durationLabel, textBox),
       ...(audio.avatarSlot.avatar && avatarBox
         ? [avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBox)]
         : []),

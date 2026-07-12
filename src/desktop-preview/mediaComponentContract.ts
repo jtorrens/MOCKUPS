@@ -4,8 +4,8 @@ import type {
   ComponentMotionContract,
   ComponentMotionFrameContract,
   AlignmentPlacementContract,
-  TypographyStyleContract,
 } from "./previewComponentContracts.js";
+import type { LabelDesignContract } from "./labelComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export type MediaKind = "image" | "video";
@@ -33,12 +33,9 @@ export interface MediaTextOverlayContract {
   enabled: boolean;
   mode: MediaTextOverlayMode;
   text: string;
-  resolvedText: string;
   targetSeconds: number;
-  textColorToken: string;
-  typography: TypographyStyleContract;
   placement: AlignmentPlacementContract;
-  textAlign: "left" | "center" | "right";
+  label: LabelDesignContract;
 }
 
 export interface MediaDesignContract {

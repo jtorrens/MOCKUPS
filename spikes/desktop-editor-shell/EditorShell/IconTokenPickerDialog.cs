@@ -26,19 +26,18 @@ internal sealed class IconTokenPickerDialog
         _database = database;
     }
 
-    public async Task<string?> Show(string projectId, string currentValue, bool allowMultiple)
+    public async Task<string?> Show(string iconThemeId, string currentValue, bool allowMultiple)
     {
-        var iconThemes = _database.GetIconThemeOptions(projectId)
-            .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
-            .ToList();
         var selected = currentValue
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
         var selectedSet = selected.ToHashSet(StringComparer.Ordinal);
-        var selectedThemeId = iconThemes.FirstOrDefault()?.Value ?? "";
+        var selectedThemeId = iconThemeId;
         string query = "";
         string? result = null;
         var visibleButtons = new Dictionary<string, Button>(StringComparer.Ordinal);
+        var tokensByTheme = new Dictionary<string, IReadOnlyList<SpikeDatabase.IconThemeToken>>(StringComparer.Ordinal);
+        const int visibleResultLimit = 160;
 
         var dialog = new SukiWindow
         {
@@ -53,12 +52,6 @@ internal sealed class IconTokenPickerDialog
         };
         EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
-        var themeCombo = new EditorInstantComboBox
-        {
-            MinWidth = 220,
-            ItemsSource = iconThemes,
-            SelectedItem = iconThemes.FirstOrDefault((option) => option.Value == selectedThemeId),
-        };
         var searchBox = EditorTextBoxBehavior.Configure(new TextBox
         {
             PlaceholderText = "Search icons…",
@@ -75,6 +68,7 @@ internal sealed class IconTokenPickerDialog
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         ScrollViewer? scroll = null;
+        var searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
 
         void RefreshSelectedText()
         {
@@ -136,14 +130,20 @@ internal sealed class IconTokenPickerDialog
             RefreshSelectedText();
             if (string.IsNullOrWhiteSpace(selectedThemeId))
             {
-                listPanel.Children.Add(new TextBlock { Text = "No icon themes available. Refresh icon sets first.", Opacity = 0.72 });
+                listPanel.Children.Add(new TextBlock { Text = "The active Theme has no Icon Set reference.", Opacity = 0.72 });
                 return;
             }
 
-            var tokens = _database.GetIconThemeTokens(selectedThemeId)
+            if (!tokensByTheme.TryGetValue(selectedThemeId, out var themeTokens))
+            {
+                themeTokens = _database.GetIconThemeTokens(selectedThemeId);
+                tokensByTheme[selectedThemeId] = themeTokens;
+            }
+            var matches = themeTokens
                 .Where((token) => EditorSearchMatcher.Matches(query, token.Token, token.Category, token.File))
                 .OrderBy((token) => token.Token, StringComparer.Ordinal)
                 .ToList();
+            var tokens = matches.Take(visibleResultLimit).ToList();
 
             foreach (var token in tokens)
             {
@@ -207,6 +207,15 @@ internal sealed class IconTokenPickerDialog
             {
                 listPanel.Children.Add(new TextBlock { Text = "No icons match the current search.", Opacity = 0.72 });
             }
+            else if (matches.Count > visibleResultLimit)
+            {
+                listPanel.Children.Add(new TextBlock
+                {
+                    Text = $"Showing the first {visibleResultLimit} of {matches.Count} matches. Refine the search to see more.",
+                    Margin = new Thickness(8),
+                    Opacity = 0.72,
+                });
+            }
 
             listPanel.InvalidateMeasure();
             scroll?.InvalidateMeasure();
@@ -218,20 +227,17 @@ internal sealed class IconTokenPickerDialog
             }, DispatcherPriority.Background);
         }
 
-        themeCombo.SelectionChanged += (_, _) =>
-        {
-            if (themeCombo.SelectedItem is FieldOption option)
-            {
-                selectedThemeId = option.Value;
-                RefreshList();
-            }
-        };
         searchBox.TextChanged += (_, _) =>
         {
             query = searchBox.Text ?? "";
+            ScheduleRefresh(immediate: false);
+        };
+        dialog.ActualThemeVariantChanged += (_, _) => ScheduleRefresh(immediate: true);
+        searchTimer.Tick += (_, _) =>
+        {
+            searchTimer.Stop();
             RefreshList();
         };
-        dialog.ActualThemeVariantChanged += (_, _) => RefreshList();
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 90 };
         cancelButton.Click += (_, _) => dialog.Close();
@@ -253,7 +259,6 @@ internal sealed class IconTokenPickerDialog
             Spacing = 12,
             Children =
             {
-                new StackPanel { Spacing = 4, Children = { new TextBlock { Text = "Icon theme" }, themeCombo } },
                 new StackPanel { Spacing = 4, Children = { new TextBlock { Text = "Search" }, searchBox } },
             },
         };
@@ -294,7 +299,19 @@ internal sealed class IconTokenPickerDialog
 
         RefreshList();
         await dialog.ShowDialog(_owner);
+        searchTimer.Stop();
         return result;
+
+        void ScheduleRefresh(bool immediate)
+        {
+            searchTimer.Stop();
+            if (immediate)
+            {
+                RefreshList();
+                return;
+            }
+            searchTimer.Start();
+        }
 
         IBrush TextBrush()
         {

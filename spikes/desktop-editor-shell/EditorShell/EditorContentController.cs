@@ -59,6 +59,33 @@ internal sealed class EditorContentController
     {
         Reset();
 
+        if (EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
+        {
+            _cardHost.Add(_layoutCards.Create(context.OwnerNode, new EditorLayoutCard
+            {
+                Id = $"{context.Slot.FieldId}.ownerSettings",
+                Label = ownerSettings.Label,
+                Subtitle = ownerSettings.Subtitle,
+                Icon = ownerSettings.Icon,
+                Order = 0,
+                Visible = true,
+                DefaultOpen = true,
+                Groups =
+                [
+                    new EditorLayoutGroup
+                    {
+                        Id = "content",
+                        Label = "Content",
+                        Order = 0,
+                        Visible = true,
+                        Fields = ownerSettings.FieldIds
+                            .Select((fieldId, index) => new EditorLayoutField { Id = fieldId, Order = index, Visible = true })
+                            .ToList(),
+                    },
+                ],
+            }));
+        }
+
         var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
         foreach (var layoutCard in layout.Cards
                      .Where((card) => card.Visible && EditorLayoutCardFactory.EmbeddedCardHasFields(card))
