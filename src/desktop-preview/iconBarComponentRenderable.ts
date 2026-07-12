@@ -39,7 +39,7 @@ export function iconBarComponentToRenderableAt(
   const zones: IconBarZone[] = ["left", "center", "right"];
   const children = zones.flatMap((zone) => {
     const row = iconBar.rows[zone];
-    if (row.buttons.length === 0) return [];
+    if (row.items.length === 0) return [];
 
     const size = measureIconRowComponent(payload, row);
     const rowBox = {

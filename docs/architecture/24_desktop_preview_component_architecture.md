@@ -428,13 +428,13 @@ audio
     embeds label
 
 audio
-  embeds buttonIcon
+  embeds button
 ```
 
 This means:
 
 - Audio owns an Avatar slot.
-- Audio owns a Button Icon slot.
+- Audio owns a Button slot configured at runtime as icon-only.
 - Avatar owns a Label slot.
 - Label keeps its own component identity.
 
@@ -650,12 +650,12 @@ export const desktopPreviewComponents = {
     embeds: ["label"]
   },
 
-  buttonIcon: {
+  button: {
     category: "atom",
     migrationStatus: "functional",
-    contract: "./buttonIconComponentContract",
-    resolver: "./buttonIconComponentResolver",
-    renderable: "./buttonIconComponentRenderable",
+    contract: "./buttonComponentContract",
+    resolver: "./buttonComponentResolver",
+    renderable: "./buttonComponentRenderable",
     embeds: ["label"]
   },
 
@@ -665,7 +665,7 @@ export const desktopPreviewComponents = {
     contract: "./iconRowComponentContract",
     resolver: "./iconRowComponentResolver",
     renderable: "./iconRowComponentRenderable",
-    embeds: ["buttonIcon"]
+    embeds: ["button"]
   },
 
   audio: {
@@ -674,7 +674,7 @@ export const desktopPreviewComponents = {
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["avatar", "buttonIcon"]
+    embeds: ["avatar", "button"]
   },
 
   textInputBar: {
@@ -729,9 +729,9 @@ against the manifest.
 
 Current migrated component routes:
 
-- `label`, `avatar`, `buttonIcon` and `audio` are active functional examples of
+- `label`, `avatar`, `button` and `audio` are active functional examples of
   the recursive route.
-- `iconRow` is a structural atom that embeds `buttonIcon`; its declared inputs
+- `iconRow` is a structural atom that embeds stable `button` collection items; its declared inputs
   can stay runtime or be fixed by an owning parent as variant bindings. In
   `textInputBar`, size/gap/orientation are parent variant decisions and the
   ordered icon token list remains runtime data supplied by preview/screen input.
@@ -1085,7 +1085,7 @@ Tasks:
 - list current migrated components:
   - label;
   - avatar;
-  - buttonIcon;
+  - button;
   - audio;
   - textInputBar;
   - keyboard;
@@ -1116,7 +1116,7 @@ Tasks:
 Validation:
 
 - build;
-- preview still opens for Label, Avatar, Button Icon and Audio;
+- preview still opens for Label, Avatar, Button and Audio;
 - device/theme/mode selectors still work.
 
 ### Phase 4: Split Generic Preview Helpers
@@ -1142,7 +1142,7 @@ Validation:
 
 - build;
 - architecture check;
-- visual smoke for Label, Avatar, Button Icon and Audio.
+- visual smoke for Label, Avatar, Button and Audio.
 
 ### Phase 5: Final Paint Primitive Allowlist
 
@@ -1205,7 +1205,7 @@ Non-preview follow-up resolved for the desktop spike:
 - status/navigation editing and theme selection must go through component class
   variants.
 - component class record-class ids for migrated components use the current
-  manifest/component names. For example, use `component.buttonIcon` and
+  manifest/component names. For example, use `component.button` and
   `component.textInputBar`, not legacy `component.button_icon` or
   `component.text_input_bar`.
 

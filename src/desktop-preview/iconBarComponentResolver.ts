@@ -39,15 +39,15 @@ export function resolveIconBarComponentFromRecords(
 ): IconBarDesignContract {
   const iconBar = asRecord(config.iconBar);
   const state = iconBarState(optionalString(inputs, "state") || "idle");
-  const iconColorTokenOverride = optionalString(inputs, "iconColorTokenOverride") || undefined;
   const sizePair = requiredNumberPair(inputs, "size", "component.iconBar.input.size");
-  const iconButtonSlot = asRecord(iconBar.iconButtonSlot);
-  const iconButtonPresetId = requiredString(
-    iconButtonSlot,
-    "presetId",
-    "component.iconBar.iconButtonSlot.presetId",
-  );
-  const iconButtonOverrides = asRecord(iconButtonSlot.overrides);
+  const sizeSource = requiredString(iconBar, "sizeSource", "component.iconBar.sizeSource");
+  if (sizeSource !== "shared" && sizeSource !== "perRow") throw new Error(`Unsupported icon bar size source ${sizeSource}`);
+  const sharedSizes = sizeSource === "shared"
+    ? {
+        iconSizeToken: requiredString(iconBar, "iconSizeToken", "component.iconBar.iconSizeToken"),
+        textSizeToken: requiredString(iconBar, "textSizeToken", "component.iconBar.textSizeToken"),
+      }
+    : undefined;
 
   return {
     id,
@@ -66,31 +66,25 @@ export function resolveIconBarComponentFromRecords(
         iconBar,
         state,
         "left",
-        iconButtonPresetId,
-        iconButtonOverrides,
-        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.left`,
+        sharedSizes,
       ),
       center: resolveIconBarRow(
         iconBar,
         state,
         "center",
-        iconButtonPresetId,
-        iconButtonOverrides,
-        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.center`,
+        sharedSizes,
       ),
       right: resolveIconBarRow(
         iconBar,
         state,
         "right",
-        iconButtonPresetId,
-        iconButtonOverrides,
-        iconColorTokenOverride,
         componentBaseConfigs,
         `${id}.${state}.right`,
+        sharedSizes,
       ),
     },
   };
@@ -100,21 +94,14 @@ function resolveIconBarRow(
   iconBar: Record<string, unknown>,
   state: IconBarState,
   zone: IconBarZone,
-  iconButtonPresetId: string,
-  iconButtonOverrides: Record<string, unknown>,
-  iconColorTokenOverride: string | undefined,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  sharedSizes?: { iconSizeToken: string; textSizeToken: string },
 ) {
   const slotKey = `${state}${capitalize(zone)}IconRowSlot`;
   const inputsKey = `${state}${capitalize(zone)}IconRowInputs`;
   const slot = asRecord(iconBar[slotKey]);
-  const inputs = {
-    ...asRecord(iconBar[inputsKey]),
-    buttonIconPresetId: iconButtonPresetId,
-    buttonIconOverrides: iconButtonOverrides,
-    iconColorTokenOverride,
-  };
+  const inputs = asRecord(iconBar[inputsKey]);
   const config = mergeComponentDefaults(
     componentPresetConfig(
       componentBaseConfigs,
@@ -123,7 +110,7 @@ function resolveIconBarRow(
     ),
     asRecord(slot.overrides),
   );
-  return resolveIconRowComponentFromRecords(config, inputs, componentBaseConfigs, id);
+  return resolveIconRowComponentFromRecords(config, { ...inputs, ...sharedSizes }, componentBaseConfigs, id);
 }
 
 function iconBarState(value: string): IconBarState {

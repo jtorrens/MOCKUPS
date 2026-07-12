@@ -130,18 +130,16 @@ internal static class RecordClassFieldCatalog
             "Header avatar variant",
             ValueKind.ComponentPreset,
             ComponentPresetType: "avatar"),
+        ["module.conversation.headerAvatarAlignment"] = new("module.conversation.headerAvatarAlignment", "Avatar alignment", ValueKind.OptionToken, Options:
+        [
+            new FieldOption("left", "Left"),
+            new FieldOption("center", "Center"),
+            new FieldOption("right", "Right"),
+        ]),
+        ["module.conversation.headerLeftIconRowVariant"] = new("module.conversation.headerLeftIconRowVariant", "Left icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerRightIconRowVariant"] = new("module.conversation.headerRightIconRowVariant", "Right icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
         ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
-        ["module.conversation.statusBarVariant"] = new(
-            "module.conversation.statusBarVariant",
-            "Status bar variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "status_bar"),
         ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
-        ["module.conversation.navigationBarVariant"] = new(
-            "module.conversation.navigationBarVariant",
-            "Navigation variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "navigation_bar"),
         ["module.conversation.showTextInputBar"] = new("module.conversation.showTextInputBar", "Text input bar", ValueKind.Boolean),
         ["module.conversation.textInputBarVariant"] = new(
             "module.conversation.textInputBarVariant",

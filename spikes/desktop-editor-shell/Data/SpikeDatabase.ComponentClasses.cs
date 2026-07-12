@@ -118,15 +118,17 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException($"Missing component class '{componentClassId}'.");
         }
 
+        var metadataJson = ReadString(reader, 7);
+        var classConfigJson = ReadString(reader, 5);
         return new ComponentClassSettings(
             reader.GetString(0),
             reader.GetString(1),
             reader.GetString(2),
             reader.GetString(3),
             ReadString(reader, 4),
-            ReadString(reader, 5),
+            DefaultComponentPresetConfigJson(classConfigJson, metadataJson),
             ReadString(reader, 6),
-            ReadString(reader, 7));
+            metadataJson);
     }
 
     public FieldValue CreateComponentClassFieldValue(string componentClassId, string fieldId)
@@ -198,12 +200,15 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            SetDefaultComponentPresetConfig(metadata, config);
             Execute(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()));
+                ("$configJson", config.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
         }
     }
 
@@ -220,11 +225,7 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             var config = ComponentPresetConfigForUpdate(connection, presetNode, out var componentClassId, out var metadata);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            PersistComponentPresetUpdate(connection, presetNode, componentClassId, config, metadata);
         }
     }
 
@@ -386,6 +387,7 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
 
@@ -399,11 +401,7 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             }
 
-            Execute(
-                connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()));
+            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
         }
     }
 
@@ -424,6 +422,7 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
             var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
             var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
@@ -437,11 +436,7 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             }
 
-            Execute(
-                connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()));
+            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
         }
     }
 
@@ -485,11 +480,7 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             }
 
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            PersistComponentPresetUpdate(connection, ownerNode, componentClassId, config, metadata);
         }
     }
 
@@ -538,6 +529,55 @@ internal sealed partial class SpikeDatabase
         return string.IsNullOrWhiteSpace(defaultPreset?.ConfigJson) || defaultPreset.ConfigJson == "{}"
             ? classConfigJson
             : defaultPreset.ConfigJson;
+    }
+
+    private static void SetDefaultComponentPresetConfig(JsonObject metadata, JsonObject config)
+    {
+        if (metadata["presets"] is not JsonArray presets)
+        {
+            throw new InvalidOperationException("Component class has no variants.");
+        }
+        var defaultPreset = FindPreset(presets, DefaultComponentPresetId)
+            ?? throw new InvalidOperationException("Component class has no Default variant.");
+        defaultPreset["config"] = config.DeepClone();
+    }
+
+    private static void PersistDefaultComponentConfig(
+        SqliteConnection connection,
+        string componentClassId,
+        JsonObject config,
+        JsonObject metadata)
+    {
+        SetDefaultComponentPresetConfig(metadata, config);
+        Execute(
+            connection,
+            "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
+            ("$id", componentClassId),
+            ("$configJson", config.ToJsonString()),
+            ("$metadataJson", metadata.ToJsonString()));
+    }
+
+    private static void PersistComponentPresetUpdate(
+        SqliteConnection connection,
+        ProjectTreeNode presetNode,
+        string componentClassId,
+        JsonObject config,
+        JsonObject metadata)
+    {
+        if (!TryParseComponentPresetNodeId(presetNode.Id, out _, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
+        }
+        if (presetId.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+        {
+            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
+            return;
+        }
+        Execute(
+            connection,
+            "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+            ("$id", componentClassId),
+            ("$metadataJson", metadata.ToJsonString()));
     }
 
     private static List<ComponentClassRow> QueryComponentClassRows(SqliteConnection connection)

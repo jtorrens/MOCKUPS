@@ -301,10 +301,11 @@ internal sealed partial class SpikeDatabase
             "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
             "module.conversation.headerAvatarVariant" => JsonString(config, ["conversation", "headerAvatarVariant"]),
+            "module.conversation.headerAvatarAlignment" => JsonString(config, ["conversation", "headerAvatarAlignment"]) is { Length: > 0 } alignment ? alignment : "left",
+            "module.conversation.headerLeftIconRowVariant" => JsonString(config, ["conversation", "headerLeftIconRowVariant"]),
+            "module.conversation.headerRightIconRowVariant" => JsonString(config, ["conversation", "headerRightIconRowVariant"]),
             "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
-            "module.conversation.statusBarVariant" => JsonString(config, ["conversation", "statusBarVariant"]),
             "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
-            "module.conversation.navigationBarVariant" => JsonString(config, ["conversation", "navigationBarVariant"]),
             "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
             "module.conversation.textInputBarVariant" => JsonString(config, ["conversation", "textInputBarVariant"]),
             "module.conversation.showKeyboard" => JsonBoolString(config, ["conversation", "showKeyboard"], defaultValue: true),
@@ -535,17 +536,20 @@ internal sealed partial class SpikeDatabase
             case "module.conversation.headerAvatarVariant":
                 SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "avatar", value))!);
                 break;
+            case "module.conversation.headerAvatarAlignment":
+                SetJsonValue(config, ["conversation", "headerAvatarAlignment"], JsonValue.Create(value is "center" or "right" ? value : "left")!);
+                break;
+            case "module.conversation.headerLeftIconRowVariant":
+                SetJsonValue(config, ["conversation", "headerLeftIconRowVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+                break;
+            case "module.conversation.headerRightIconRowVariant":
+                SetJsonValue(config, ["conversation", "headerRightIconRowVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+                break;
             case "module.conversation.showStatusBar":
                 SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
                 break;
-            case "module.conversation.statusBarVariant":
-                SetJsonValue(config, ["conversation", "statusBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
-                break;
             case "module.conversation.showNavigationBar":
                 SetJsonValue(config, ["conversation", "showNavigationBar"], JsonValue.Create(BoolFromText(value))!);
-                break;
-            case "module.conversation.navigationBarVariant":
-                SetJsonValue(config, ["conversation", "navigationBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
                 break;
             case "module.conversation.showTextInputBar":
                 SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BoolFromText(value))!);
@@ -592,10 +596,11 @@ internal sealed partial class SpikeDatabase
                 ["useAppWallpaper"] = true,
                 ["headerHeight"] = 64,
                 ["headerAvatarVariant"] = SeededComponentPresetReference(projectId, "avatar"),
+                ["headerAvatarAlignment"] = "left",
+                ["headerLeftIconRowVariant"] = SeededComponentPresetReference(projectId, "iconRow"),
+                ["headerRightIconRowVariant"] = SeededComponentPresetReference(projectId, "iconRow"),
                 ["showStatusBar"] = true,
-                ["statusBarVariant"] = SeededComponentPresetReference(projectId, "status_bar"),
                 ["showNavigationBar"] = true,
-                ["navigationBarVariant"] = SeededComponentPresetReference(projectId, "navigation_bar"),
                 ["showTextInputBar"] = true,
                 ["textInputBarVariant"] = SeededComponentPresetReference(projectId, "textInputBar"),
                 ["showKeyboard"] = true,
@@ -618,8 +623,9 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
-            ["headerTitle"] = "Alex Q",
             ["headerSubtitle"] = "online",
+            ["headerLeftButtons"] = new JsonArray(),
+            ["headerRightButtons"] = new JsonArray(),
             ["actorId"] = "",
             ["bubbleRevealMode"] = "afterWriteOn",
             ["incomingRevealMode"] = "typingIndicator",
@@ -638,7 +644,6 @@ internal sealed partial class SpikeDatabase
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
-                new JsonObject { ["id"] = "headerTitle", ["label"] = "Header title", ["jsonKey"] = "headerTitle", ["kind"] = "text", ["defaultValue"] = "Alex Q" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
                 new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
                 new JsonObject { ["id"] = "bubbleReveal", ["label"] = "Outgoing bubble reveal", ["jsonKey"] = "bubbleRevealMode", ["kind"] = "option", ["defaultValue"] = "afterWriteOn", ["options"] = new JsonArray { new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" }, new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
@@ -651,6 +656,8 @@ internal sealed partial class SpikeDatabase
             },
             ["collections"] = new JsonArray
             {
+                HeaderButtonCollection("headerLeftButtons", "Left header buttons"),
+                HeaderButtonCollection("headerRightButtons", "Right header buttons"),
                 new JsonObject
                 {
                     ["id"] = "messages",
@@ -705,6 +712,29 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static JsonObject HeaderButtonCollection(string jsonKey, string label) => new()
+    {
+        ["id"] = jsonKey,
+        ["label"] = label,
+        ["jsonKey"] = jsonKey,
+        ["itemLabel"] = "Button",
+        ["sourceCollectionJsonKey"] = jsonKey,
+        ["fields"] = IconRowButtonFields(),
+        ["itemActions"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "push",
+                ["label"] = "Push",
+                ["playInputId"] = "pushTrigger",
+                ["durationThemeToken"] = "theme.motion.buttonPushedDurationMs",
+                ["timeJsonKey"] = "pushElapsedMs",
+                ["timeUnit"] = "milliseconds",
+                ["prewarmFrames"] = false,
+            },
+        },
+    };
+
     private static JsonObject ConversationPreviewMessage(
         string id,
         string direction,
@@ -719,6 +749,7 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["id"] = id,
+            ["actorId"] = "",
             ["direction"] = direction,
             ["text"] = text,
             ["delayAfterPreviousFrames"] = delayAfterPreviousFrames,
@@ -749,6 +780,7 @@ internal sealed partial class SpikeDatabase
     {
         var fields = new JsonArray
         {
+            new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
             new JsonObject { ["id"] = "direction", ["label"] = "Direction", ["jsonKey"] = "direction", ["kind"] = "option", ["defaultValue"] = "incoming", ["options"] = new JsonArray { new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" }, new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" }, new JsonObject { ["value"] = "system", ["label"] = "System" } } },
             new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" },
             new JsonObject { ["id"] = "delay", ["label"] = "Delay", ["jsonKey"] = "delayAfterPreviousFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
@@ -778,6 +810,7 @@ internal sealed partial class SpikeDatabase
 
     private static void ApplyConversationRuntimeGroups(JsonArray fields)
     {
+        SetRuntimeGroup(fields, ["actor", "direction", "text"], "message", "Message", 10);
         SetRuntimeGroup(fields, ["delay", "writeOn", "postWriteOnHold"], "timing", "Timing", 20);
         SetRuntimeGroup(fields, ["statusVisible", "status", "statusText"], "delivery", "Delivery", 30);
         SetRuntimeGroup(fields, ["mediaType", "mediaSource"], "attachment", "Attachment", 40);

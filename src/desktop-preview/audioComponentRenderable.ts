@@ -1,7 +1,7 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
-import { buttonIconComponentToRenderableAt } from "./buttonIconComponentRenderable.js";
+import { buttonComponentToRenderableAt } from "./buttonComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
@@ -94,7 +94,7 @@ export function audioComponentToRenderable(
       }
     : undefined;
   const badgeSurfaceSize = audio.badgeSlot.badge
-    ? audio.badgeSlot.badge.buttonSize * scale
+    ? audio.badgeSlot.size * scale
     : 0;
   const badgeBoxLocal = audio.badgeSlot.badge && avatarBoxLocal
     ? placeChild(
@@ -107,7 +107,7 @@ export function audioComponentToRenderable(
     ? avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBoxLocal)
     : undefined;
   const badgeNodeLocal = audio.badgeSlot.badge && badgeBoxLocal
-    ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBoxLocal)
+    ? buttonComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBoxLocal)
     : undefined;
   const childBoxes: RenderableBox[] = [
     playBoxLocal,
@@ -174,7 +174,7 @@ export function audioComponentToRenderable(
     } satisfies RenderableNode;
   });
   const badgeNode = audio.badgeSlot.badge && badgeBox
-    ? buttonIconComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
+    ? buttonComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
     : undefined;
 
   return {

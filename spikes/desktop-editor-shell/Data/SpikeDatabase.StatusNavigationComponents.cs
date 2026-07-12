@@ -35,11 +35,11 @@ internal sealed partial class SpikeDatabase
 
             items[index] = StatusBarItemToJson(patch);
             config["items"] = items;
-            Execute(
+            PersistDefaultComponentConfig(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()));
+                componentClassId,
+                config,
+                ParseJsonObject(settings.MetadataJson));
         }
     }
 
@@ -68,11 +68,11 @@ internal sealed partial class SpikeDatabase
 
             items[index] = NavigationBarItemToJson(patch);
             config["items"] = items;
-            Execute(
+            PersistDefaultComponentConfig(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()));
+                componentClassId,
+                config,
+                ParseJsonObject(settings.MetadataJson));
         }
     }
 

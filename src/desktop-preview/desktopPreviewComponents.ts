@@ -49,7 +49,7 @@ export const desktopPreviewComponents = {
     contract: "./iconRowComponentContract",
     resolver: "./iconRowComponentResolver",
     renderable: "./iconRowComponentRenderable",
-    embeds: ["buttonIcon"],
+    embeds: ["button"],
   },
   iconBar: {
     category: "atom",
@@ -67,14 +67,6 @@ export const desktopPreviewComponents = {
     renderable: "./avatarComponentRenderable",
     embeds: ["label"],
   },
-  buttonIcon: {
-    category: "atom",
-    migrationStatus: "functional",
-    contract: "./buttonIconComponentContract",
-    resolver: "./buttonIconComponentResolver",
-    renderable: "./buttonIconComponentRenderable",
-    embeds: ["surface", "label"],
-  },
   button: {
     category: "atom",
     migrationStatus: "functional",
@@ -89,7 +81,7 @@ export const desktopPreviewComponents = {
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["surface", "avatar", "buttonIcon"],
+    embeds: ["surface", "avatar", "button"],
   },
   textInputBar: {
     category: "system",

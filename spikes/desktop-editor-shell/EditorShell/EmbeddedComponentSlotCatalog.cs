@@ -38,18 +38,6 @@ internal static class EmbeddedComponentSlotCatalog
             "Icon bar",
             "component.iconBar",
             ["textInput", "iconBarSlot"]),
-        new(
-            "component.buttonIcon.surface.editor",
-            "surface",
-            "Surface",
-            "component.surface",
-            ["buttonIcon", "surfaceSlot"]),
-        new(
-            "component.buttonIcon.label.editor",
-            "label",
-            "Label",
-            "component.label",
-            ["buttonIcon", "labelSlot"]),
         new("component.button.states.normal.surface.editor", "surface", "Normal surface", "component.surface", ["button", "states", "normal", "surfaceSlot"]),
         new("component.button.states.normal.label.editor", "label", "Normal label", "component.label", ["button", "states", "normal", "labelSlot"]),
         new("component.button.states.active.surface.editor", "surface", "Active surface", "component.surface", ["button", "states", "active", "surfaceSlot"]),
@@ -70,18 +58,6 @@ internal static class EmbeddedComponentSlotCatalog
             "Cursor",
             "component.cursor",
             ["textBox", "cursorSlot"]),
-        new(
-            "component.iconRow.buttonIcon.editor",
-            "buttonIcon",
-            "Button icon",
-            "component.buttonIcon",
-            ["iconRow", "buttonIconSlot"]),
-        new(
-            "component.iconBar.iconButton.editor",
-            "buttonIcon",
-            "Button icon",
-            "component.buttonIcon",
-            ["iconBar", "iconButtonSlot"]),
         new(
             "component.iconBar.idleLeftIconRow.editor",
             "iconRow",
@@ -144,9 +120,9 @@ internal static class EmbeddedComponentSlotCatalog
             ["audio", "avatarSlot"]),
         new(
             "component.audio.badge.editor",
-            "buttonIcon",
+            "button",
             "Badge",
-            "component.buttonIcon",
+            "component.button",
             ["audio", "badgeSlot"]),
         new(
             "component.media.surface.editor",

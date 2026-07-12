@@ -69,11 +69,22 @@ internal sealed partial class SpikeDatabase
 
     private static void NormalizeEditorLayouts(SqliteConnection connection)
     {
+        foreach (var retiredRecordClassId in new[] { "component.text_input_bar", "component.button_icon", "component.video" })
+        {
+            Execute(
+                connection,
+                "DELETE FROM editor_layouts WHERE record_class_id = $recordClassId",
+                ("$recordClassId", retiredRecordClassId));
+        }
+
         var audioLayout = ScalarString(
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.audio'");
         if (!string.IsNullOrWhiteSpace(audioLayout)
-            && audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal))
+            && (audioLayout.Contains("component.audio.waveformBarWidth", StringComparison.Ordinal)
+                || audioLayout.Contains("component.audio.badge.backgroundColor", StringComparison.Ordinal)
+                || audioLayout.Contains("component.audio.badge.iconColor", StringComparison.Ordinal)
+                || !audioLayout.Contains("component.audio.badge.size", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
@@ -117,6 +128,34 @@ internal sealed partial class SpikeDatabase
                 ("$layoutJson", MinimalEditorLayoutJson("component.keyboard")));
         }
 
+        var iconBarLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.iconBar'");
+        if (!string.IsNullOrWhiteSpace(iconBarLayout)
+            && (iconBarLayout.Contains("component.iconBar.iconButton.editor", StringComparison.Ordinal)
+                || !iconBarLayout.Contains("component.iconBar.sizeSource", StringComparison.Ordinal)))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.iconBar'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.iconBar")));
+        }
+
+        foreach (var (recordClassId, requiredField, retiredField) in new[]
+        {
+            ("component.iconRow", "component.iconRow.sizeSource", ""),
+            ("component.button", "component.button.contentGapToken", "component.button.iconSizeToken"),
+        })
+        {
+            var layout = ScalarString(connection, "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId", ("$recordClassId", recordClassId));
+            if (!string.IsNullOrWhiteSpace(layout)
+                && (!layout.Contains(requiredField, StringComparison.Ordinal)
+                    || (!string.IsNullOrWhiteSpace(retiredField) && layout.Contains(retiredField, StringComparison.Ordinal))))
+            {
+                Execute(connection, "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId", ("$recordClassId", recordClassId), ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
+            }
+        }
+
         foreach (var recordClassId in new[] { "module.generic", "module.core.chat" })
         {
             var moduleLayout = ScalarString(
@@ -124,7 +163,11 @@ internal sealed partial class SpikeDatabase
                 "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId",
                 ("$recordClassId", recordClassId));
             if (string.IsNullOrWhiteSpace(moduleLayout)
-                || moduleLayout.Contains("module.appearanceMode", StringComparison.Ordinal))
+                || (moduleLayout.Contains("module.appearanceMode", StringComparison.Ordinal)
+                    && (recordClassId != "module.core.chat"
+                        || (moduleLayout.Contains("module.conversation.headerAvatarAlignment", StringComparison.Ordinal)
+                            && !moduleLayout.Contains("module.conversation.statusBarVariant", StringComparison.Ordinal)
+                            && !moduleLayout.Contains("module.conversation.navigationBarVariant", StringComparison.Ordinal)))))
             {
                 continue;
             }
@@ -761,6 +804,9 @@ internal sealed partial class SpikeDatabase
                     { "id": "module.conversation.useAppWallpaper", "order": 20, "visible": true },
                     { "id": "module.conversation.headerHeight", "order": 30, "visible": true },
                     { "id": "module.conversation.headerAvatarVariant", "order": 40, "visible": true },
+                    { "id": "module.conversation.headerAvatarAlignment", "order": 45, "visible": true },
+                    { "id": "module.conversation.headerLeftIconRowVariant", "order": 50, "visible": true },
+                    { "id": "module.conversation.headerRightIconRowVariant", "order": 55, "visible": true },
                     { "id": "module.conversation.screenGutter", "order": 60, "visible": true },
                     { "id": "module.conversation.messageGap", "order": 70, "visible": true },
                     { "id": "module.conversation.messageViewportMotion", "order": 80, "visible": true }
@@ -783,8 +829,7 @@ internal sealed partial class SpikeDatabase
                   "order": 10,
                   "visible": true,
                   "fields": [
-                    { "id": "module.conversation.showStatusBar", "order": 10, "visible": true },
-                    { "id": "module.conversation.statusBarVariant", "order": 20, "visible": true }
+                    { "id": "module.conversation.showStatusBar", "order": 10, "visible": true }
                   ]
                 }
               ]
@@ -804,8 +849,7 @@ internal sealed partial class SpikeDatabase
                   "order": 10,
                   "visible": true,
                   "fields": [
-                    { "id": "module.conversation.showNavigationBar", "order": 30, "visible": true },
-                    { "id": "module.conversation.navigationBarVariant", "order": 40, "visible": true }
+                    { "id": "module.conversation.showNavigationBar", "order": 30, "visible": true }
                   ]
                 }
               ]

@@ -139,7 +139,6 @@ export function resolveTextBoxComponentFromRecords(
       inputs,
       leftIconRowInputs,
       "leftIconRowSlot",
-      "buttonIconSlot",
       componentBaseConfigs,
       `${id}.leftIcons`,
     ),
@@ -147,7 +146,6 @@ export function resolveTextBoxComponentFromRecords(
       inputs,
       rightIconRowInputs,
       "rightIconRowSlot",
-      "buttonIconSlot",
       componentBaseConfigs,
       `${id}.rightIcons`,
     ),
@@ -175,7 +173,6 @@ function resolveOptionalIconRowComponentFromRecords(
   parentInputs: Record<string, unknown>,
   iconRowInputs: Record<string, unknown>,
   slotInputKey: string,
-  buttonSlotInputKey: string,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
@@ -187,17 +184,10 @@ function resolveOptionalIconRowComponentFromRecords(
       id,
       orientation: requiredIconRowOrientation(iconRowInputs),
       gapToken: requiredString(iconRowInputs, "gap", "component.textBox.input.iconRow.gap"),
-      sizeToken: requiredString(iconRowInputs, "size", "component.textBox.input.iconRow.size"),
-      icons: [],
-      buttons: [],
+      items: [],
     };
   }
 
-  const buttonIconSlot = componentInputSlot(
-    parentInputs,
-    buttonSlotInputKey,
-    `component.textBox.input.${buttonSlotInputKey}`,
-  );
   const iconRowSlot = componentInputSlot(
     parentInputs,
     slotInputKey,
@@ -212,7 +202,7 @@ function resolveOptionalIconRowComponentFromRecords(
     mergeComponentDefaults(iconRowConfig, iconRowSlot.overrides),
     iconRowInputsFromParent(
       iconRowInputs,
-      buttonIconSlot,
+      componentBaseConfigs,
     ),
     componentBaseConfigs,
     id,
@@ -263,11 +253,28 @@ function requiredIconRowOrientation(value: Record<string, unknown>): "horizontal
 
 function iconRowInputsFromParent(
   parentInputs: Record<string, unknown>,
-  buttonIconSlot: { presetId: string; overrides: Record<string, unknown> },
+  componentBaseConfigs: Record<string, unknown>,
 ) {
+  const icons = Array.isArray(parentInputs.icons)
+    ? parentInputs.icons.filter((icon): icon is string => typeof icon === "string" && icon.trim().length > 0)
+    : [];
+  const buttonPresetId = Object.keys(asRecord(componentBaseConfigs.presets)).find((reference) =>
+    reference.endsWith("_button::preset::default"),
+  );
+  if (!buttonPresetId) throw new Error("Missing Button.default preset for TextBox icon rows");
   return {
-    ...parentInputs,
-    buttonIconPresetId: buttonIconSlot.presetId,
-    buttonIconOverrides: buttonIconSlot.overrides,
+    gap: parentInputs.gap,
+    orientation: parentInputs.orientation,
+    items: icons.map((iconToken, index) => ({
+      id: `button_${String(index + 1).padStart(3, "0")}`,
+      buttonPresetId,
+      contentMode: "icon",
+      state: "normal",
+      iconToken,
+      text: "",
+      pushTrigger: false,
+      pushElapsedMs: 0,
+      buttonOverrides: {},
+    })),
   };
 }

@@ -5,7 +5,7 @@ import {
 } from "./componentPreviewDefaults.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { resolveButtonIconComponentFromRecords } from "./buttonIconComponentResolver.js";
+import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import {
   asRecord,
   optionalNumber,
@@ -58,7 +58,7 @@ export function resolveAudioComponentFromRecords(
     asRecord(avatarSlot.overrides),
   );
   const badgeConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "buttonIcon", badgeSlot.presetId),
+    componentPresetConfig(componentBaseConfigs, "button", badgeSlot.presetId),
     asRecord(badgeSlot.overrides),
   );
   const surfaceConfig = mergeComponentDefaults(
@@ -184,45 +184,28 @@ export function resolveAudioComponentFromRecords(
         "iconToken",
         "component.audio.badge.iconToken",
       ),
-      backgroundColor: requiredString(
-        badgeSlot,
-        "backgroundColor",
-        "component.audio.badge.backgroundColor",
-      ),
-      iconColor: requiredString(
-        badgeSlot,
-        "iconColor",
-        "component.audio.badge.iconColor",
-      ),
       placement: requiredPlacement(
         badgeSlot,
         "placement",
         "component.audio.badge.placement",
       ),
+      size: requiredNumber(badgeSlot, "size", "component.audio.badge.size"),
       badge: showBadge
-        ? {
-            ...resolveButtonIconComponentFromRecords(
+        ? resolveButtonComponentFromRecords(
               badgeConfig,
-              inputs,
+              {
+                contentMode: "icon",
+                state: "normal",
+                iconToken: requiredString(badgeSlot, "iconToken", "component.audio.badge.iconToken"),
+                iconSizeToken: "theme.iconSizes.s",
+                textSizeToken: "theme.typography.sizes.s",
+                sampleText: "",
+                pushTrigger: false,
+                pushElapsedMs: 0,
+              },
               componentBaseConfigs,
               "component.audio.badge",
-            ),
-            iconToken: requiredString(
-              badgeSlot,
-              "iconToken",
-              "component.audio.badge.iconToken",
-            ),
-            backgroundPaletteColor: requiredString(
-              badgeSlot,
-              "backgroundColor",
-              "component.audio.badge.backgroundColor",
-            ),
-            iconPaletteColor: requiredString(
-              badgeSlot,
-              "iconColor",
-              "component.audio.badge.iconColor",
-            ),
-          }
+            )
         : undefined,
     },
   };

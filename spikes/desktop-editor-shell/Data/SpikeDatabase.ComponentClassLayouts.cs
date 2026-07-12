@@ -94,7 +94,13 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
-              "groups": []
+              "groups": [
+                { "id": "sizes", "label": "Sizes", "order": 10, "visible": true, "fields": [
+                  { "id": "component.iconRow.sizeSource", "order": 10, "visible": true },
+                  { "id": "component.iconRow.iconSizeToken", "order": 20, "visible": true },
+                  { "id": "component.iconRow.textSizeToken", "order": 30, "visible": true }
+                ] }
+              ]
             }
             """,
             "component.iconBar" => $$"""
@@ -110,7 +116,9 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "iconBar", "label": "Icon bar", "order": 10, "visible": true, "fields": [
                   { "id": "component.iconBar.edgePadding", "order": 10, "visible": true },
-                  { "id": "component.iconBar.iconButton.editor", "order": 20, "visible": true }
+                  { "id": "component.iconBar.sizeSource", "order": 20, "visible": true },
+                  { "id": "component.iconBar.iconSizeToken", "order": 30, "visible": true },
+                  { "id": "component.iconBar.textSizeToken", "order": 40, "visible": true }
                 ] }
               ]
             },
@@ -322,34 +330,6 @@ internal sealed partial class SpikeDatabase
               ]
             }
             """,
-            "component.buttonIcon" => $$"""
-            ,
-            {
-              "id": "buttonIcon",
-              "label": "Button Icon",
-              "subtitle": "Icon padding and optional label",
-              "icon": "{{EditorIcons.ButtonIcon}}",
-              "order": 20,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                { "id": "buttonIcon", "label": "Button icon", "order": 10, "visible": true, "fields": [
-                  { "id": "component.buttonIcon.sizeMode", "order": 10, "visible": true },
-                  { "id": "component.buttonIcon.size", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.iconSizeToken", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.iconPadding", "order": 40, "visible": true },
-                  { "id": "component.buttonIcon.surface.editor", "order": 50, "visible": true },
-                  { "id": "component.buttonIcon.iconColorToken", "order": 60, "visible": true }
-                ] },
-                { "id": "buttonIconLabel", "label": "Label", "order": 20, "visible": true, "fields": [
-                  { "id": "component.buttonIcon.label.showLabel", "order": 10, "visible": true },
-                  { "id": "component.buttonIcon.label.showSubtext", "order": 20, "visible": true },
-                  { "id": "component.buttonIcon.label.placement", "order": 30, "visible": true },
-                  { "id": "component.buttonIcon.label.editor", "order": 40, "visible": true }
-                ] }
-              ]
-            }
-            """,
             "component.button" => $$"""
             ,
             {
@@ -362,10 +342,8 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": true,
               "groups": [
                 { "id": "content", "label": "Content", "order": 10, "visible": true, "fields": [
-                  { "id": "component.button.contentMode", "order": 10, "visible": true },
-                  { "id": "component.button.iconToken", "order": 20, "visible": true },
-                  { "id": "component.button.iconSizeToken", "order": 30, "visible": true },
-                  { "id": "component.button.contentGapToken", "order": 40, "visible": true }
+                  { "id": "component.button.iconToken", "order": 10, "visible": true },
+                  { "id": "component.button.contentGapToken", "order": 30, "visible": true }
                 ] },
                 { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
                   { "id": "component.button.dimensionMode", "order": 10, "visible": true },
@@ -378,26 +356,22 @@ internal sealed partial class SpikeDatabase
                 { "id": "normalState", "label": "Normal", "order": 40, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
                   { "id": "component.button.states.normal.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.normal.label.editor", "order": 20, "visible": true },
-                  { "id": "component.button.states.normal.iconColorToken", "order": 30, "visible": true },
-                  { "id": "component.button.states.normal.opacity", "order": 40, "visible": true }
+                  { "id": "component.button.states.normal.iconColorToken", "order": 30, "visible": true }
                 ] },
                 { "id": "activeState", "label": "Active", "order": 50, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.button.states.active.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.active.label.editor", "order": 20, "visible": true },
-                  { "id": "component.button.states.active.iconColorToken", "order": 30, "visible": true },
-                  { "id": "component.button.states.active.opacity", "order": 40, "visible": true }
+                  { "id": "component.button.states.active.iconColorToken", "order": 30, "visible": true }
                 ] },
                 { "id": "pushedState", "label": "Pushed", "order": 60, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.button.states.pushed.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.pushed.label.editor", "order": 20, "visible": true },
-                  { "id": "component.button.states.pushed.iconColorToken", "order": 30, "visible": true },
-                  { "id": "component.button.states.pushed.opacity", "order": 40, "visible": true }
+                  { "id": "component.button.states.pushed.iconColorToken", "order": 30, "visible": true }
                 ] },
                 { "id": "disabledState", "label": "Disabled", "order": 70, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.button.states.disabled.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.disabled.label.editor", "order": 20, "visible": true },
-                  { "id": "component.button.states.disabled.iconColorToken", "order": 30, "visible": true },
-                  { "id": "component.button.states.disabled.opacity", "order": 40, "visible": true }
+                  { "id": "component.button.states.disabled.iconColorToken", "order": 30, "visible": true }
                 ] }
               ]
             }
@@ -470,9 +444,8 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
                   { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
-                  { "id": "component.audio.badge.iconToken", "order": 20, "visible": true },
-                  { "id": "component.audio.badge.backgroundColor", "order": 30, "visible": true },
-                  { "id": "component.audio.badge.iconColor", "order": 40, "visible": true },
+                  { "id": "component.audio.badge.size", "order": 20, "visible": true },
+                  { "id": "component.audio.badge.iconToken", "order": 30, "visible": true },
                   { "id": "component.audio.badge.placement", "order": 50, "visible": true },
                   { "id": "component.audio.badge.editor", "order": 60, "visible": true }
                 ] }

@@ -21,19 +21,26 @@ embedded children.
 - Module/shot context: device, theme, color mode, orientation, screen frame,
   frame rate, owner actor and optional wallpaper.
 - Message collection: ordered message records with direction/state, text,
-  status, actor/media data, timing and visibility settings.
+  status, independent `actorId`, media data, timing and visibility settings.
+  A message actor never inherits the header/shot actor implicitly; this keeps
+  group conversations representable through the same payload contract.
 - Module timeline inputs: current frame and optional composer-transition
   trigger/time.
-- Header data: title/subtitle and actor-derived avatar data.
+- Header data: actor-derived identity, runtime subtitle and independent
+  left/right Button collections. The title is resolved by the selected Avatar
+  variant from the actor; Conversation does not duplicate it as a text input.
 
 ### Variant/configuration
 
-- Selected concrete variants for Status Bar, Navigation Bar, Keyboard, Text
-  Input Bar, Bubble and header Avatar.
+- Selected concrete variants for Keyboard, Text Input Bar, Bubble, header
+  Avatar and the two header Icon Rows. Status Bar and Navigation Bar variants
+  come exclusively from the active Theme; Conversation owns only their
+  visibility switches.
 - `appearanceMode`: `inherit`, `light` or `dark`. `inherit` follows the
   selected device/theme preview mode; a forced value becomes the effective
   payload mode before any Conversation child resolves its variants.
-- Header visibility/layout, wallpaper usage, screen gutter, message gap,
+- Header visibility/layout, Avatar alignment (`left`, `center`, `right`) within
+  the space left by both Icon Rows, wallpaper usage, screen gutter, message gap,
   composer placement policy and message viewport motion configuration.
 - Default message behavior such as reveal policy and tail/head framing.
 
@@ -45,7 +52,8 @@ and actor/media values remain runtime data.
 Conversation composes, from back to front:
 
 1. optional wallpaper;
-2. optional header, which may bleed visually behind Status Bar;
+2. optional header, which may bleed visually behind Status Bar and composes a
+   vertically centred left Icon Row, Avatar and right Icon Row;
 3. Status Bar;
 4. clipped message viewport containing ordered Bubbles;
 5. Text Input Bar;

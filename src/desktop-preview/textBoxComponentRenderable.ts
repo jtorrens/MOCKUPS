@@ -52,8 +52,8 @@ export function measureTextBoxComponent(
   const iconGap = Math.max(0, numberToken(payload, textBox.iconGapToken) * scale);
   const leftIconSize = measureIconRowComponent(payload, textBox.leftIconRow);
   const rightIconSize = measureIconRowComponent(payload, textBox.rightIconRow);
-  const hasLeftIcons = textBox.leftIconRow.icons.length > 0;
-  const hasRightIcons = textBox.rightIconRow.icons.length > 0;
+  const hasLeftIcons = textBox.leftIconRow.items.length > 0;
+  const hasRightIcons = textBox.rightIconRow.items.length > 0;
   const contentText = visibleText(textBox);
   const cursorWidth = inlineCursorMeasuredWidth(textBox, typography.fontSize, scale);
   const contentSize = withInlineCursorWidth(

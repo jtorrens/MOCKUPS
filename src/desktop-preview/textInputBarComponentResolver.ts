@@ -37,11 +37,6 @@ export function resolveTextInputBarComponent(
     "rightIconRowSlot",
     "component.textInput.textBox.rightIconRowSlot",
   );
-  const textBoxButtonIconSlot = componentInputSlot(
-    textBoxInputs,
-    "buttonIconSlot",
-    "component.textInput.textBox.buttonIconSlot",
-  );
   const sampleText = requiredPossiblyEmptyString(
     preview,
     "sampleText",
@@ -88,15 +83,12 @@ export function resolveTextInputBarComponent(
       leftIconRowInputs: iconRowInputsForTextBox(
         textBoxInputs,
         "left",
-        textBoxButtonIconSlot.presetId,
       ),
       rightIconRowSlot: rightTextBoxIconRowSlot,
       rightIconRowInputs: iconRowInputsForTextBox(
         textBoxInputs,
         "right",
-        textBoxButtonIconSlot.presetId,
       ),
-      buttonIconSlot: textBoxButtonIconSlot,
       iconGap: requiredString(
         textBoxInputs,
         "iconGap",
@@ -158,7 +150,6 @@ function componentInputSlot(
 function iconRowInputsForTextBox(
   textBoxInputs: Record<string, unknown>,
   side: "left" | "right",
-  buttonIconPresetId: string,
 ) {
   const variantIcons = requiredIconList(
     textBoxInputs,
@@ -182,7 +173,6 @@ function iconRowInputsForTextBox(
       "component.textInput.textBox.iconRowOrientation",
     ),
     icons: variantIcons,
-    buttonIconPresetId,
   };
 }
 

@@ -12,6 +12,15 @@ import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComp
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 export function buttonComponentToRenderable(payload: DesignPreviewPayload, button: ButtonDesignContract): RenderableNode {
+  const size = measureButtonComponent(payload, button);
+  return buttonComponentToRenderableAt(
+    payload,
+    button,
+    boundedCenterBox(payload, size.width, size.height),
+  );
+}
+
+export function measureButtonComponent(payload: DesignPreviewPayload, button: ButtonDesignContract) {
   const scale = renderScale(payload);
   const iconSize = button.contentMode === "text" ? 0 : numberToken(payload, button.iconSizeToken) * scale;
   const labelSize = button.stateStyle.label ? measureLabelComponent(button.stateStyle.label, payload) : undefined;
@@ -22,7 +31,19 @@ export function buttonComponentToRenderable(payload: DesignPreviewPayload, butto
   const contentHeight = Math.max(iconSize, labelSize?.height ?? 0);
   const width = button.dimensionMode === "fixed" ? button.size.width * scale : contentWidth + paddingX * 2;
   const height = button.dimensionMode === "fixed" ? button.size.height * scale : contentHeight + paddingY * 2;
-  const box = boundedCenterBox(payload, Math.max(1, width), Math.max(1, height));
+  return { width: Math.max(1, width), height: Math.max(1, height) };
+}
+
+export function buttonComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  button: ButtonDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const iconSize = button.contentMode === "text" ? 0 : numberToken(payload, button.iconSizeToken) * scale;
+  const labelSize = button.stateStyle.label ? measureLabelComponent(button.stateStyle.label, payload) : undefined;
+  const gap = button.contentMode === "iconText" ? numberToken(payload, button.contentGapToken) * scale : 0;
+  const contentWidth = iconSize + gap + (labelSize?.width ?? 0);
   const contentX = box.x + (box.width - contentWidth) * 0.5;
   const children: RenderableNode[] = [surfaceComponentToRenderableAt(payload, button.stateStyle.surface, box)];
 
@@ -51,7 +72,6 @@ export function buttonComponentToRenderable(payload: DesignPreviewPayload, butto
     box,
     style: {
       overflow: "visible",
-      opacity: button.stateStyle.opacity,
     },
     children,
   };

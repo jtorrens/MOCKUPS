@@ -83,7 +83,7 @@ export function resolveLabelComponentFromRecords(
 
   return {
     id,
-    text: requiredString(preview, "sampleText", "component.label.preview.sampleText"),
+    text: requiredText(preview, "sampleText", "component.label.preview.sampleText"),
     subtext: requiredText(
       preview,
       "sampleSubtext",
@@ -97,11 +97,12 @@ export function resolveLabelComponentFromRecords(
       "textColorToken",
       "component.label.textColorToken",
     ),
-    textTypography: requiredTypographyStyle(
-      label,
-      "textTypography",
-      "component.label.textTypography",
-    ),
+    textTypography: {
+      ...requiredTypographyStyle(label, "textTypography", "component.label.textTypography"),
+      ...(typeof preview.textSizeToken === "string" && preview.textSizeToken.trim()
+        ? { sizeToken: preview.textSizeToken }
+        : {}),
+    },
     textAlign,
     textGap: requiredNumber(label, "textGap", "component.label.textGap"),
     subtextColorToken: requiredString(

@@ -6,7 +6,6 @@ export type ButtonContentMode = "icon" | "text" | "iconText";
 export type ButtonState = "normal" | "active" | "pushed" | "disabled";
 
 export interface ButtonStateDesignContract {
-  opacity: number;
   iconColorToken: string;
   label?: LabelDesignContract;
   surface: SurfaceDesignContract;

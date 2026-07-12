@@ -74,14 +74,16 @@ internal sealed partial class SpikeDatabase
     private static void NormalizeConversationRuntimeInputContracts(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT id, design_preview_json FROM modules WHERE record_class_id = 'module.core.chat'";
+        select.CommandText = "SELECT m.id, m.design_preview_json, a.project_id FROM modules m JOIN apps a ON a.id = m.app_id WHERE m.record_class_id = 'module.core.chat'";
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, string Json)>();
         var defaults = DefaultConversationDesignPreviewJson();
         while (reader.Read())
         {
             var preview = ParseJsonObject(ReadString(reader, 1));
+            var projectId = reader.GetString(2);
             var changed = false;
+            changed |= preview.Remove("headerTitle");
             MigrateConversationPreviewMessages(preview, defaults, ref changed);
             foreach (var property in defaults.Where((property) => property.Key is not "inputs" and not "actions" and not "collections" and not "messages"))
             {
@@ -97,6 +99,11 @@ internal sealed partial class SpikeDatabase
                 changed = true;
             }
 
+            var buttonClassId = ScalarString(connection, "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'button'", ("$projectId", projectId))!;
+            var beforeButtonReferences = preview.ToJsonString();
+            NormalizeIconRowNodes(preview, $"{buttonClassId}::preset::{DefaultComponentPresetId}");
+            changed |= !string.Equals(beforeButtonReferences, preview.ToJsonString(), System.StringComparison.Ordinal);
+
             if (changed)
             {
                 updates.Add((reader.GetString(0), preview.ToJsonString()));
@@ -111,6 +118,46 @@ internal sealed partial class SpikeDatabase
                 "UPDATE modules SET design_preview_json = $json WHERE id = $id",
                 ("$json", update.Json),
                 ("$id", update.Id));
+        }
+    }
+
+    private static void NormalizeConversationHeaderComposition(SqliteConnection connection)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = "SELECT m.id, m.config_json, a.project_id FROM modules m JOIN apps a ON a.id = m.app_id WHERE m.record_class_id = 'module.core.chat'";
+        using var reader = select.ExecuteReader();
+        var updates = new List<(string Id, string Json)>();
+        while (reader.Read())
+        {
+            var id = reader.GetString(0);
+            var config = ParseJsonObject(ReadString(reader, 1));
+            var projectId = reader.GetString(2);
+            var conversation = config["conversation"] as JsonObject ?? new JsonObject();
+            config["conversation"] = conversation;
+            conversation.Remove("statusBarVariant");
+            conversation.Remove("navigationBarVariant");
+            conversation["headerAvatarAlignment"] ??= "left";
+            conversation["headerLeftIconRowVariant"] ??= SeededComponentPresetReference(projectId, "iconRow");
+            conversation["headerRightIconRowVariant"] ??= SeededComponentPresetReference(projectId, "iconRow");
+            var currentAvatar = conversation["headerAvatarVariant"]?.GetValue<string>() ?? "";
+            if (currentAvatar.EndsWith("::preset::default", System.StringComparison.Ordinal))
+            {
+                var avatarClassId = ScalarString(connection, "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = 'avatar'", ("$projectId", projectId));
+                if (!string.IsNullOrWhiteSpace(avatarClassId))
+                {
+                    var metadata = ParseJsonObject(ScalarString(connection, "SELECT metadata_json FROM component_classes WHERE id = $id", ("$id", avatarClassId)) ?? "{}");
+                    if ((metadata["presets"] as JsonArray)?.OfType<JsonObject>().Any((preset) => preset["id"]?.GetValue<string>() == "avatar_chat_header") == true)
+                    {
+                        conversation["headerAvatarVariant"] = $"{avatarClassId}::preset::avatar_chat_header";
+                    }
+                }
+            }
+            updates.Add((id, config.ToJsonString()));
+        }
+        reader.Close();
+        foreach (var update in updates)
+        {
+            Execute(connection, "UPDATE modules SET config_json = $json WHERE id = $id", ("$id", update.Id), ("$json", update.Json));
         }
     }
 

@@ -4,7 +4,6 @@ import {
   asRecord,
   parseObject,
   requiredNumberPair,
-  requiredNumber,
   requiredStringPair,
   requiredString,
 } from "./componentResolverCommon.js";
@@ -16,8 +15,17 @@ export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDes
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
+  return resolveButtonComponentFromRecords(config, preview, bases, "component.button");
+}
+
+export function resolveButtonComponentFromRecords(
+  config: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  bases: Record<string, unknown>,
+  id: string,
+): ButtonDesignContract {
   const button = asRecord(config.button);
-  const contentMode = buttonContentMode(requiredString(button, "contentMode", "component.button.contentMode"));
+  const contentMode = buttonContentMode(requiredString(preview, "contentMode", "component.button.input.contentMode"));
   const state = typeof preview.pushTrigger === "boolean" && preview.pushTrigger
     ? "pushed"
     : buttonState(typeof preview.state === "string" ? preview.state : "normal");
@@ -31,7 +39,7 @@ export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDes
   const text = typeof preview.sampleText === "string" ? preview.sampleText : "";
 
   return {
-    id: "component.button",
+    id,
     contentMode,
     state,
     dimensionMode,
@@ -41,7 +49,7 @@ export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDes
     iconToken: typeof preview.iconToken === "string" && preview.iconToken.trim()
       ? preview.iconToken
       : requiredString(button, "iconToken", "component.button.iconToken"),
-    iconSizeToken: requiredString(button, "iconSizeToken", "component.button.iconSizeToken"),
+    iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
     pushedDurationToken: requiredString(button, "pushedDurationToken", "component.button.pushedDurationToken"),
     stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
   };
@@ -61,14 +69,13 @@ function resolveButtonStateStyle(
   const surfaceSlot = asRecord(style.surfaceSlot);
   const labelSlot = asRecord(style.labelSlot);
   return {
-    opacity: requiredNumber(style, "opacity", `component.button.states.${state}.opacity`),
     iconColorToken: requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
     label: contentMode === "icon" ? undefined : resolveLabelComponentFromRecords(
       mergeComponentDefaults(
         componentPresetConfig(bases, "label", requiredString(labelSlot, "presetId", `component.button.states.${state}.label.presetId`)),
         asRecord(labelSlot.overrides),
       ),
-      { ...preview, sampleText: text, sampleSubtext: "" },
+      { ...preview, sampleText: text, sampleSubtext: "", textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
       bases,
       `component.button.${state}.label`,
     ),

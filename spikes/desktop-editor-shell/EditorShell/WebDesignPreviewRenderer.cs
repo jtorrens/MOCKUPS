@@ -139,6 +139,8 @@ internal static class WebDesignPreviewRenderer
             showMarks,
             themeMode = payload.ThemeMode is "dark" ? "dark" : themeMode is "dark" ? "dark" : "light",
             themeTokensJson = payload.ThemeTokensJson,
+            themeStatusBarPresetId = payload.ThemeStatusBarPresetId,
+            themeNavigationBarPresetId = payload.ThemeNavigationBarPresetId,
             paletteColors = payload.PaletteColors,
             paletteNeutralColors = payload.PaletteNeutralColors,
             projectMediaRoot = payload.ProjectMediaRoot,

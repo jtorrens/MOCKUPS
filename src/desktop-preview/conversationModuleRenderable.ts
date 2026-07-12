@@ -17,6 +17,8 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
+import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import {
@@ -29,7 +31,6 @@ import {
   translateRenderableNode,
 } from "./componentRenderableCommon.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
-import { fontFamilyForTypography } from "./previewFontHelpers.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
@@ -62,16 +63,18 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     : undefined;
   if (wallpaper) children.push(wallpaper);
 
+  const themeStatusBarPresetId = payload.themeStatusBarPresetId?.trim() ?? "";
+  const themeNavigationBarPresetId = payload.themeNavigationBarPresetId?.trim() ?? "";
   const status = requiredBoolean(
     conversation,
     "showStatusBar",
     "module.conversation.showStatusBar",
-  )
+  ) && themeStatusBarPresetId
     ? childRenderable(
         payload,
         componentBaseConfigs,
         "status_bar",
-        requiredString(conversation, "statusBarVariant", "module.conversation.statusBarVariant"),
+        themeStatusBarPresetId,
         {},
         (childPayload) =>
           statusBarComponentToRenderable(childPayload, resolveStatusBarComponent(childPayload)),
@@ -81,16 +84,12 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     conversation,
     "showNavigationBar",
     "module.conversation.showNavigationBar",
-  )
+  ) && themeNavigationBarPresetId
     ? childRenderable(
         payload,
         componentBaseConfigs,
         "navigation_bar",
-        requiredString(
-          conversation,
-          "navigationBarVariant",
-          "module.conversation.navigationBarVariant",
-        ),
+        themeNavigationBarPresetId,
         {},
         (childPayload) =>
           navigationBarComponentToRenderable(
@@ -253,8 +252,9 @@ function runtimePreview(payload: DesignPreviewPayload): JsonRecord {
   return {
     ...preview,
     actor: context.ownerActor,
-    headerTitle: optionalString(header, "title"),
     headerSubtitle: optionalString(header, "subtitle"),
+    headerLeftButtons: Array.isArray(header.leftButtons) ? header.leftButtons : preview.headerLeftButtons,
+    headerRightButtons: Array.isArray(header.rightButtons) ? header.rightButtons : preview.headerRightButtons,
     messages: content.messages,
   };
 }
@@ -339,7 +339,7 @@ function messageNodes(
     {
       state: message.state,
       sampleText: message.text,
-      actor: preview.actor,
+      actor: message.actor,
       mediaType: message.mediaType,
       mediaSource: message.mediaSource,
       viewportSize: message.viewportSize,
@@ -392,6 +392,7 @@ function messageNodes(
 }
 
 type ConversationPreviewMessage = {
+  actor: JsonRecord;
   state: string;
   text: string;
   statusState: string;
@@ -481,6 +482,7 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
     return messages.map((message) => {
       const status = asRecord(message.status);
       return {
+        actor: asRecord(message.actor),
         state: optionalString(message, "direction") || "incoming",
         text: optionalString(message, "text"),
         statusState: optionalString(message, "statusState") || optionalString(status, "deliveryStatus") || "none",
@@ -659,11 +661,28 @@ function headerNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const title = optionalString(preview, "headerTitle");
   const subtitle = optionalString(preview, "headerSubtitle");
-  const titleHeight = subtitle ? height * 0.46 : height;
   const avatarSize = Math.max(0, height - 16 * scale);
-  const avatar = avatarComponentToRenderableAt(
+  const leftRow = resolveIconRowComponentFromRecords(
+    componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(conversation, "headerLeftIconRowVariant", "module.conversation.headerLeftIconRowVariant")),
+    { orientation: "horizontal", gap: "theme.spacing.s", items: Array.isArray(preview.headerLeftButtons) ? preview.headerLeftButtons : [] },
+    componentBaseConfigs,
+    "module.conversation.header.left",
+  );
+  const rightRow = resolveIconRowComponentFromRecords(
+    componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(conversation, "headerRightIconRowVariant", "module.conversation.headerRightIconRowVariant")),
+    { orientation: "horizontal", gap: "theme.spacing.s", items: Array.isArray(preview.headerRightButtons) ? preview.headerRightButtons : [] },
+    componentBaseConfigs,
+    "module.conversation.header.right",
+  );
+  const leftSize = measureIconRowComponent(payload, leftRow);
+  const rightSize = measureIconRowComponent(payload, rightRow);
+  const edgePadding = 12 * scale;
+  const rowGap = 8 * scale;
+  const centerLeft = screen.x + edgePadding + leftSize.width + (leftSize.width > 0 ? rowGap : 0);
+  const centerRight = screen.x + screen.width - edgePadding - rightSize.width - (rightSize.width > 0 ? rowGap : 0);
+  const avatarAlignment = optionalString(conversation, "headerAvatarAlignment") || "left";
+  const unresolvedAvatar = avatarComponentToRenderableAt(
     payload,
     resolveAvatarComponentFromRecords(
       componentPresetConfig(
@@ -677,20 +696,40 @@ function headerNode(
       ),
       {
         ...preview,
-        sampleSubtext: "",
+        sampleSubtext: subtitle,
       },
       componentBaseConfigs,
       "module.conversation.header.avatar",
     ),
     {
-      x: screen.x + 12 * scale,
+      x: 0,
       y: screen.y + offsetY + (height - avatarSize) / 2,
       width: avatarSize,
       height: avatarSize,
     },
   );
-  const textLeft = screen.x + 24 * scale + avatarSize;
-  const textWidth = Math.max(0, screen.width - (textLeft - screen.x) - 16 * scale);
+  const avatarVisualWidth = unresolvedAvatar.box?.width ?? avatarSize;
+  const avatarTargetX = avatarAlignment === "right"
+    ? centerRight - avatarVisualWidth
+    : avatarAlignment === "center"
+      ? centerLeft + Math.max(0, centerRight - centerLeft - avatarVisualWidth) * 0.5
+      : centerLeft;
+  const avatar = translateRenderableNode(unresolvedAvatar, {
+    x: avatarTargetX - (unresolvedAvatar.box?.x ?? 0),
+    y: 0,
+  });
+  const leftRowNode = iconRowComponentToRenderableAt(payload, leftRow, {
+    x: screen.x + edgePadding,
+    y: screen.y + offsetY + (height - leftSize.height) * 0.5,
+    width: leftSize.width,
+    height: leftSize.height,
+  });
+  const rightRowNode = iconRowComponentToRenderableAt(payload, rightRow, {
+    x: screen.x + screen.width - edgePadding - rightSize.width,
+    y: screen.y + offsetY + (height - rightSize.height) * 0.5,
+    width: rightSize.width,
+    height: rightSize.height,
+  });
   return {
     id: "module.conversation.header",
     type: "group",
@@ -719,10 +758,8 @@ function headerNode(
         },
       },
       avatar,
-      textNode(payload, `${title}`, textLeft, screen.y + offsetY + 10 * scale, textWidth, titleHeight, 19 * scale, 700),
-      ...(subtitle
-        ? [textNode(payload, subtitle, textLeft, screen.y + offsetY + 36 * scale, textWidth, height * 0.34, 12 * scale, 500, "theme.colors.textSecondary")]
-        : []),
+      leftRowNode,
+      rightRowNode,
       {
         id: "module.conversation.header.separator",
         type: "surface",
@@ -738,36 +775,6 @@ function headerNode(
         },
       },
     ],
-  };
-}
-
-function textNode(
-  payload: DesignPreviewPayload,
-  text: string,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  fontSize: number,
-  fontWeight: number,
-  colorToken = "theme.colors.textPrimary",
-): RenderableNode {
-  return {
-    id: `module.conversation.header.text.${text}`,
-    type: "text",
-    frame: 0,
-    text,
-    box: { x, y, width, height },
-    style: {
-      alignItems: "center",
-      color: selectedColor(payload, colorToken),
-      display: "flex",
-      fontFamily: fontFamilyForTypography(payload, "theme"),
-      fontSize,
-      fontWeight,
-      overflow: "hidden",
-      whiteSpace: "nowrap",
-    },
   };
 }
 

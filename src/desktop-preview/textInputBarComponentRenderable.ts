@@ -36,8 +36,8 @@ export function textInputBarComponentToRenderable(
   const leftIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "left");
   const rightIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "right");
   const centerIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "center");
-  const hasLeftIcons = leftIconRow.buttons.length > 0;
-  const hasRightIcons = rightIconRow.buttons.length > 0;
+  const hasLeftIcons = leftIconRow.items.length > 0;
+  const hasRightIcons = rightIconRow.items.length > 0;
   const iconGap = Math.max(0, numberToken(payload, textInput.iconGapToken) * scale);
   const iconBarEdgePadding = Math.max(
     0,

@@ -69,6 +69,7 @@ internal sealed class ComponentPreviewInputSession
                 SyncBooleanInput(ActionStateKey(activeAction));
             }
             UpdateActionButtons();
+            _refreshPreview();
             return;
         }
         SyncPlaybackTimer();
@@ -260,6 +261,7 @@ internal sealed class ComponentPreviewInputSession
         {
             EnsureRecordReferenceValues(inputs, effectiveProjectId);
             EnsureComponentPresetReferenceValues(inputs, effectiveProjectId);
+            ResolveCollectionRecordReferences(preview, config, themeMode, payload.PaletteColors);
         }
 
         foreach (var input in inputs)
@@ -294,6 +296,32 @@ internal sealed class ComponentPreviewInputSession
         }
 
         return payload with { DesignPreviewJson = preview.ToJsonString() };
+    }
+
+    private void ResolveCollectionRecordReferences(
+        JsonObject preview,
+        JsonObject config,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        foreach (var collection in ReadRuntimeCollections(preview, config))
+        {
+            if (preview[collection.JsonKey] is not JsonArray items) continue;
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                foreach (var input in collection.Fields.Where((field) => field.Kind == ComponentInputKind.RecordReference))
+                {
+                    if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey)) continue;
+                    var recordId = item[input.JsonKey]?.GetValue<string>() ?? "";
+                    item[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
+                        input.TableId,
+                        recordId,
+                        themeMode,
+                        paletteColors,
+                        input.Id);
+                }
+            }
+        }
     }
 
     private static string ScopeKey(DesignPreviewPayload payload)
@@ -807,6 +835,7 @@ internal sealed class ComponentPreviewInputSession
             SyncBooleanInput(ActionStateKey(activeAction));
             StopPlayback();
             UpdateActionButtons();
+            _refreshPreview();
         }
     }
 

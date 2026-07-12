@@ -5,8 +5,6 @@ import { avatarComponentToRenderable } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponent } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
-import { buttonIconComponentToRenderable } from "./buttonIconComponentRenderable.js";
-import { resolveButtonIconComponent } from "./buttonIconComponentResolver.js";
 import { buttonComponentToRenderable } from "./buttonComponentRenderable.js";
 import { resolveButtonComponent } from "./buttonComponentResolver.js";
 import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
@@ -53,8 +51,6 @@ export const componentRenderableFactories = {
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
-  buttonIcon: (payload) =>
-    buttonIconComponentToRenderable(payload, resolveButtonIconComponent(payload)),
   button: (payload) => buttonComponentToRenderable(payload, resolveButtonComponent(payload)),
   textInputBar: (payload) =>
     textInputBarComponentToRenderable(payload, resolveTextInputBarComponent(payload)),

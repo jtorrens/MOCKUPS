@@ -1194,6 +1194,8 @@ internal sealed class EditorPreviewController
             payload.Name,
             payload.ConfigJson,
             payload.ThemeTokensJson,
+            payload.ThemeStatusBarPresetId,
+            payload.ThemeNavigationBarPresetId,
             payload.ComponentBaseConfigsJson,
             payload.AppConfigJson,
             payload.FrameRate,

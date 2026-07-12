@@ -82,12 +82,13 @@ internal sealed class EditorLayoutCardFactory
             foreach (var layoutField in group.VisibleFields)
             {
                 var field = _fieldValues.Create(node, layoutField.Id);
+                var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset;
                 var services = _dictionaryFieldServices.ForNode(
                     node,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
                     _openComponentPresetReference,
-                    (fieldId) => _openEmbeddedComponentEditor(node, fieldId),
-                    (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)));
+                    supportsEmbeddedOverrides ? (fieldId) => _openEmbeddedComponentEditor(node, fieldId) : null,
+                    supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null);
                 var control = new DictionaryFieldControl(
                     field,
                     services);
@@ -177,7 +178,8 @@ internal sealed class EditorLayoutCardFactory
             };
 
             foreach (var layoutField in group.VisibleFields
-                         .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)))
+                         .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
+                             && !field.Id.Equals("component.type", StringComparison.Ordinal)))
             {
                 var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
                     context.OwnerNode,
@@ -281,7 +283,8 @@ internal sealed class EditorLayoutCardFactory
     {
         return layoutCard.VisibleGroups
             .SelectMany((group) => group.VisibleFields)
-            .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal));
+            .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
+                && !field.Id.Equals("component.type", StringComparison.Ordinal));
     }
 
     private static EmbeddedComponentSlotDefinition ComponentInputSlot(

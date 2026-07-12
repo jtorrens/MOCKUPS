@@ -24,7 +24,6 @@ internal sealed partial class SpikeDatabase
             "iconBar" => "Icon bar component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
-            "buttonIcon" => "Button icon component",
             "button" => "Button component",
             "label" => "Label component",
             "audio" => "Audio component",
@@ -49,7 +48,6 @@ internal sealed partial class SpikeDatabase
     private static string DefaultButtonMetadataJson(string configJson)
     {
         var iconConfig = JsonNode.Parse(configJson)!.AsObject().DeepClone().AsObject();
-        iconConfig["button"]!["contentMode"] = "icon";
         iconConfig["button"]!["dimensionMode"] = "fixed";
         iconConfig["button"]!["size"] = "44|44";
         return new JsonObject
@@ -91,14 +89,13 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static JsonObject ButtonStateStyle(string iconColorToken, double opacity)
+    private static JsonObject ButtonStateStyle(string iconColorToken)
     {
         return new JsonObject
         {
             ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["labelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["iconColorToken"] = iconColorToken,
-            ["opacity"] = opacity,
         };
     }
 
@@ -208,30 +205,29 @@ internal sealed partial class SpikeDatabase
                 config["iconRow"] = new JsonObject
                 {
                     ["orientation"] = "horizontal",
-                    ["size"] = "theme.iconSizes.xl",
                     ["gap"] = "theme.spacing.s",
-                    ["buttonIconSlot"] = new JsonObject
-                    {
-                        ["presetId"] = DefaultComponentPresetId,
-                        ["overrides"] = new JsonObject(),
-                    },
+                    ["sizeSource"] = "shared",
+                    ["iconSizeToken"] = "theme.iconSizes.m",
+                    ["textSizeToken"] = "theme.typography.sizes.s",
                 };
                 break;
             case "iconBar":
                 config["iconBar"] = new JsonObject
                 {
                     ["edgePadding"] = "theme.spacing.m",
-                    ["iconButtonSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["sizeSource"] = "shared",
+                    ["iconSizeToken"] = "theme.iconSizes.m",
+                    ["textSizeToken"] = "theme.typography.sizes.s",
                     ["idleLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["idleLeftIconRowInputs"] = IconRowInputBindings(new JsonArray("media_camera")),
                     ["idleCenterIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["idleCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_play"), actionIconNumber: 1),
+                    ["idleCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_play")),
                     ["idleRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["idleRightIconRowInputs"] = IconRowInputBindings(new JsonArray("nav_more_horizontal")),
                     ["activeLeftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["activeLeftIconRowInputs"] = IconRowInputBindings(new JsonArray("media_camera")),
                     ["activeCenterIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
-                    ["activeCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_pause"), actionIconNumber: 1),
+                    ["activeCenterIconRowInputs"] = IconRowInputBindings(new JsonArray("media_pause")),
                     ["activeRightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["activeRightIconRowInputs"] = IconRowInputBindings(new JsonArray("nav_more_horizontal")),
                 };
@@ -278,43 +274,21 @@ internal sealed partial class SpikeDatabase
                     ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 };
                 break;
-            case "buttonIcon":
-                config["buttonIcon"] = new JsonObject
-                {
-                    ["sizeMode"] = "fixed",
-                    ["size"] = 48,
-                    ["iconSizeToken"] = "theme.iconSizes.xl",
-                    ["iconToken"] = "media_mic",
-                    ["iconPadding"] = "theme.spacing.m",
-                    ["surfaceSlot"] = ComponentSurfaceSlot("IconButton"),
-                    ["iconColorToken"] = "theme.colors.icon",
-                    ["labelSlot"] = new JsonObject
-                    {
-                        ["showLabel"] = false,
-                        ["showSubtext"] = false,
-                        ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("bottom", 3).ToJsonString()),
-                        ["overrides"] = new JsonObject(),
-                    },
-                };
-                break;
             case "button":
                 config["button"] = new JsonObject
                 {
-                    ["contentMode"] = "text",
                     ["dimensionMode"] = "content",
                     ["size"] = "120|44",
                     ["padding"] = "theme.spacing.l|theme.spacing.m",
                     ["contentGapToken"] = "theme.spacing.s",
                     ["iconToken"] = "media_play_fill",
-                    ["iconSizeToken"] = "theme.iconSizes.m",
                     ["pushedDurationToken"] = "theme.motion.buttonPushedDurationMs",
                     ["states"] = new JsonObject
                     {
-                        ["normal"] = ButtonStateStyle("theme.colors.icon", 1),
-                        ["active"] = ButtonStateStyle("theme.colors.accent", 1),
-                        ["pushed"] = ButtonStateStyle("theme.colors.accent", 0.72),
-                        ["disabled"] = ButtonStateStyle("theme.colors.icon", 0.4),
+                        ["normal"] = ButtonStateStyle("theme.colors.icon"),
+                        ["active"] = ButtonStateStyle("theme.colors.accent"),
+                        ["pushed"] = ButtonStateStyle("theme.colors.accent"),
+                        ["disabled"] = ButtonStateStyle("theme.colors.icon"),
                     },
                 };
                 break;
@@ -367,19 +341,11 @@ internal sealed partial class SpikeDatabase
                     ["badgeSlot"] = new JsonObject
                     {
                         ["showBadge"] = false,
+                        ["size"] = 16,
                         ["iconToken"] = "media_mic",
-                        ["backgroundColor"] = "blue",
-                        ["iconColor"] = "gray_100",
                         ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
-                        ["overrides"] = new JsonObject
-                        {
-                            ["buttonIcon"] = new JsonObject
-                            {
-                                ["size"] = 16,
-                                ["iconPadding"] = "theme.spacing.s",
-                            },
-                        },
+                        ["overrides"] = new JsonObject(),
                     },
                 };
                 break;
@@ -489,8 +455,8 @@ internal sealed partial class SpikeDatabase
                 "bubble" => "Message",
                 _ => "Sample",
             },
-            ["sampleSubtext"] = componentType is "label" or "avatar" or "buttonIcon" ? "Subtitle" : "",
-            ["sampleSize"] = componentType == "buttonIcon" ? 48 : 256,
+            ["sampleSubtext"] = componentType is "label" or "avatar" ? "Subtitle" : "",
+            ["sampleSize"] = 256,
             ["inputs"] = ComponentInputsForComponent(componentType),
         };
         if (componentType == "surface")
@@ -511,6 +477,37 @@ internal sealed partial class SpikeDatabase
         {
             preview["size"] = "360|56";
             preview["state"] = "idle";
+        }
+        if (componentType == "iconRow")
+        {
+            preview["gap"] = "theme.spacing.s";
+            preview["orientation"] = "horizontal";
+            preview["items"] = IconRowItems(new JsonArray("media_mic", "chat_send"));
+            preview["collections"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "items",
+                    ["label"] = "Buttons",
+                    ["jsonKey"] = "items",
+                    ["itemLabel"] = "Button",
+                    ["sourceCollectionJsonKey"] = "items",
+                    ["fields"] = IconRowButtonFields(),
+                    ["itemActions"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["id"] = "push",
+                            ["label"] = "Push",
+                            ["playInputId"] = "pushTrigger",
+                            ["durationThemeToken"] = "theme.motion.buttonPushedDurationMs",
+                            ["timeJsonKey"] = "pushElapsedMs",
+                            ["timeUnit"] = "milliseconds",
+                            ["prewarmFrames"] = false,
+                        },
+                    },
+                },
+            };
         }
         if (componentType == "textInputBar")
         {
@@ -595,6 +592,9 @@ internal sealed partial class SpikeDatabase
         }
         if (componentType == "button")
         {
+            preview["contentMode"] = "text";
+            preview["iconSizeToken"] = "theme.iconSizes.m";
+            preview["textSizeToken"] = "theme.typography.sizes.s";
             preview["pushTrigger"] = false;
             preview["pushElapsedMs"] = 0;
             preview["actions"] = new JsonArray
@@ -697,7 +697,6 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("leftIcons", "Icons", "leftIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "leftIconRow", uiGroupLabel: "Left icon row"),
                 ComponentInput("rightIconRowSlot", "Variant", "rightIconRowSlot", "componentPreset", "iconRow::preset::default", componentType: "iconRow", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
                 ComponentInput("rightIcons", "Icons", "rightIcons", "iconList", "[]", uiOrigin: "embedded", uiGroupId: "rightIconRow", uiGroupLabel: "Right icon row"),
-                ComponentInput("buttonIconSlot", "Variant", "buttonIconSlot", "componentPreset", "buttonIcon::preset::default", componentType: "buttonIcon", uiOrigin: "embedded", uiGroupId: "buttonIcon", uiGroupLabel: "Icon button", uiParentGroupId: "iconRowShared"),
                 ComponentInput("iconGap", "Gap to text", "iconGap", "themeToken", "theme.spacing.m", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput("iconRowSize", "Icon size", "iconRowSize", ValueKind.ThemeToken, "theme.iconSizes.xl", options: ComponentClassFieldCatalog.IconSizeTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
                 ComponentInput("iconRowGap", "Gap", "iconRowGap", "themeToken", "theme.spacing.s", options: ComponentClassFieldCatalog.SpacingTokenOptions, uiOrigin: "embedded", uiGroupId: "iconRowShared", uiGroupLabel: "Icon row shared"),
@@ -749,7 +748,6 @@ internal sealed partial class SpikeDatabase
             ],
             "iconRow" =>
             [
-                ComponentInput("size", "Size", "size", ValueKind.ThemeToken, "theme.iconSizes.xl", options: ComponentClassFieldCatalog.IconSizeTokenOptions),
                 ComponentInput(
                     "gap",
                     "Gap",
@@ -768,18 +766,6 @@ internal sealed partial class SpikeDatabase
                         new FieldOption("horizontal", "Horizontal"),
                         new FieldOption("vertical", "Vertical"),
                     ]),
-                ComponentInput("actionIconNumber", "Action icon #", "actionIconNumber", ValueKind.Integer, "0", minimum: 0, maximum: 10, increment: 1),
-                ComponentInput("actionBackgroundAlpha", "Action bg alpha", "actionBackgroundAlpha", ValueKind.Alpha, "1", minimum: 0, maximum: 1, increment: 0.05m),
-                ComponentInput("actionBackgroundColor", "Action bg color", "actionBackgroundColor", ValueKind.PaletteColorToken, "aqua_green"),
-                ComponentInput("actionIconColor", "Action icon color", "actionIconColor", ValueKind.PaletteColorToken, "gray_100"),
-                ComponentInput(
-                    "buttonIconPresetId",
-                    "Button icon",
-                    "buttonIconPresetId",
-                    "componentPreset",
-                    "",
-                    componentType: "buttonIcon"),
-                ComponentInput("icons", "Icons", "icons", "iconList", """["media_mic","chat_send"]"""),
             ],
             "iconBar" =>
             [
@@ -815,17 +801,14 @@ internal sealed partial class SpikeDatabase
                     resolvedJsonKey: "actor"),
                 ComponentInput("sampleSubtext", "Subtitle", "sampleSubtext", "text", "Subtitle"),
             ],
-            "buttonIcon" =>
-            [
-                ComponentInput("iconToken", "Icon", "iconToken", "icon", "media_mic"),
-                ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
-                ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
-            ],
             "button" =>
             [
+                ComponentInput("contentMode", "Content", "contentMode", "option", "text", options: [new("icon", "Icon"), new("text", "Text"), new("iconText", "Icon + text")]),
                 ComponentInput("state", "State", "state", "option", "normal", options: [new("normal", "Normal"), new("active", "Active"), new("pushed", "Pushed"), new("disabled", "Disabled")]),
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Action"),
                 ComponentInput("iconToken", "Icon", "iconToken", "icon", "media_play_fill"),
+                ComponentInput("iconSizeToken", "Icon size", "iconSizeToken", ValueKind.ThemeToken, "theme.iconSizes.m", options: ComponentClassFieldCatalog.IconSizeTokenOptions),
+                ComponentInput("textSizeToken", "Text size", "textSizeToken", ValueKind.ThemeToken, "theme.typography.sizes.s", options: ComponentClassFieldCatalog.TypographySizeOptions),
                 ComponentInput("pushTrigger", "Push", "pushTrigger", "boolean", "false", source: "calculated"),
                 ComponentInput("pushElapsedMs", "Push elapsed", "pushElapsedMs", ValueKind.Decimal, "0", minimum: 0, maximum: 60000, increment: 10, source: "calculated", unit: "ms"),
             ],
@@ -1021,9 +1004,7 @@ internal sealed partial class SpikeDatabase
                 SetComponentInputGroup(inputs, ["fixedSize", "contentMaxWidth", "growSize"], "layout", "Layout", 20);
                 break;
             case "iconRow":
-                SetComponentInputGroup(inputs, ["size", "gap", "orientation"], "layout", "Layout", 10);
-                SetComponentInputGroup(inputs, ["actionIconNumber", "actionBackgroundAlpha", "actionBackgroundColor", "actionIconColor"], "action", "Action", 20);
-                SetComponentInputGroup(inputs, ["buttonIconPresetId", "icons"], "content", "Content", 30);
+                SetComponentInputGroup(inputs, ["gap", "orientation"], "layout", "Layout", 10);
                 break;
             case "iconBar":
                 SetComponentInputGroup(inputs, ["state"], "state", "State", 10);
@@ -1032,12 +1013,9 @@ internal sealed partial class SpikeDatabase
             case "avatar":
                 SetComponentInputGroup(inputs, ["actorId", "sampleSubtext"], "identity", "Identity", 10);
                 break;
-            case "buttonIcon":
-                SetComponentInputGroup(inputs, ["iconToken", "sampleText", "sampleSubtext"], "content", "Content", 10);
-                break;
             case "button":
                 SetComponentInputGroup(inputs, ["state"], "state", "State", 10);
-                SetComponentInputGroup(inputs, ["sampleText", "iconToken"], "content", "Content", 20);
+                SetComponentInputGroup(inputs, ["contentMode", "sampleText", "iconToken", "iconSizeToken", "textSizeToken"], "content", "Content", 20);
                 SetComponentInputGroup(inputs, ["pushTrigger", "pushElapsedMs"], "action", "Action", 30);
                 break;
             case "textInputBar":
@@ -1256,22 +1234,63 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static JsonObject IconRowInputBindings(
-        JsonArray? icons = null,
-        int actionIconNumber = 0)
+    private static JsonObject IconRowInputBindings(JsonArray? icons = null)
     {
         return new JsonObject
         {
-            ["size"] = "theme.iconSizes.xl",
             ["gap"] = "theme.spacing.m",
             ["orientation"] = "horizontal",
-            ["icons"] = icons ?? [],
-            ["actionIconNumber"] = actionIconNumber,
-            ["actionBackgroundAlpha"] = 1,
-            ["actionBackgroundColor"] = "aqua_green",
-            ["actionIconColor"] = "gray_100",
+            ["items"] = IconRowItems(icons ?? []),
         };
     }
+
+    private static JsonArray IconRowItems(JsonArray icons)
+    {
+        var items = new JsonArray();
+        for (var index = 0; index < icons.Count; index++)
+        {
+            var icon = icons[index]?.GetValue<string>() ?? "";
+            items.Add(new JsonObject
+            {
+                ["id"] = $"button_{index + 1:000}",
+                ["buttonPresetId"] = "button::preset::default",
+                ["contentMode"] = "icon",
+                ["state"] = "normal",
+                ["iconToken"] = icon,
+                ["iconSizeToken"] = "theme.iconSizes.m",
+                ["textSizeToken"] = "theme.typography.sizes.s",
+                ["text"] = "",
+                ["pushTrigger"] = false,
+                ["pushElapsedMs"] = 0,
+                ["buttonOverrides"] = new JsonObject(),
+            });
+        }
+        return items;
+    }
+
+    private static JsonArray IconRowButtonFields() =>
+    [
+        ComponentInput("buttonPresetId", "Variant", "buttonPresetId", "componentPreset", "button::preset::default", componentType: "button"),
+        ComponentInput("contentMode", "Content", "contentMode", "option", "icon", options:
+        [
+            new FieldOption("icon", "Icon"),
+            new FieldOption("text", "Text"),
+            new FieldOption("iconText", "Icon + text"),
+        ]),
+        ComponentInput("state", "State", "state", "option", "normal", options:
+        [
+            new FieldOption("normal", "Normal"),
+            new FieldOption("active", "Active"),
+            new FieldOption("pushed", "Pushed"),
+            new FieldOption("disabled", "Disabled"),
+        ]),
+        ComponentInput("iconToken", "Icon", "iconToken", "icon", "media_mic"),
+        ComponentInput("text", "Text", "text", "text", ""),
+        ComponentInput("iconSizeToken", "Icon size", "iconSizeToken", ValueKind.ThemeToken, "theme.iconSizes.m", options: ComponentClassFieldCatalog.IconSizeTokenOptions),
+        ComponentInput("textSizeToken", "Text size", "textSizeToken", ValueKind.ThemeToken, "theme.typography.sizes.s", options: ComponentClassFieldCatalog.TypographySizeOptions),
+        ComponentInput("pushTrigger", "Push trigger", "pushTrigger", "boolean", "false", source: "calculated"),
+        ComponentInput("pushElapsedMs", "Push elapsed", "pushElapsedMs", ValueKind.Integer, "0", minimum: 0, maximum: 60000, increment: 10, source: "calculated", unit: "ms"),
+    ];
 
     private static JsonObject TextBoxInputBindings()
     {
@@ -1283,7 +1302,6 @@ internal sealed partial class SpikeDatabase
             ["leftIcons"] = new JsonArray(),
             ["rightIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["rightIcons"] = new JsonArray(),
-            ["buttonIconSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
             ["iconGap"] = "theme.spacing.m",
             ["iconRowSize"] = "theme.iconSizes.xl",
             ["iconRowGap"] = "theme.spacing.s",
@@ -1320,7 +1338,6 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
-        NewComponentSeed("buttonIcon", "component.buttonIcon", "Default Button Icon"),
         NewComponentSeed("button", "component.button", "Default Button"),
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),

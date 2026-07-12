@@ -54,12 +54,16 @@ internal sealed partial class SpikeDatabase
             ValidateSchemaV1(connection);
             EnsureThemeTokens(connection);
             EnsureButtonComponentClasses(connection);
+            NormalizeIconRowButtonCollections(connection);
+            RetireButtonIconComponentClasses(connection);
             NormalizeRadiusTokenVocabulary(connection);
             NormalizeModuleAppearanceModes(connection);
             NormalizeKeyboardConfiguration(connection);
             NormalizeRuntimeInputContracts(connection);
             NormalizeConversationModuleInstanceBehavior(connection);
+            NormalizeConversationHeaderComposition(connection);
             NormalizeEditorLayouts(connection);
+            NormalizeDefaultComponentConfigAuthority(connection);
             return;
         }
 
@@ -74,6 +78,8 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureButtonComponentClasses(connection);
+        NormalizeIconRowButtonCollections(connection);
+        RetireButtonIconComponentClasses(connection);
         SeedThemesIfEmpty(connection);
         EnsureThemeTokens(connection);
         NormalizeRadiusTokenVocabulary(connection);
@@ -81,7 +87,9 @@ internal sealed partial class SpikeDatabase
         NormalizeKeyboardConfiguration(connection);
         NormalizeRuntimeInputContracts(connection);
         NormalizeConversationModuleInstanceBehavior(connection);
+        NormalizeConversationHeaderComposition(connection);
         NormalizeEditorLayouts(connection);
+        NormalizeDefaultComponentConfigAuthority(connection);
         ValidateSchemaV1(connection);
     }
 

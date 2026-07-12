@@ -1968,6 +1968,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 payload.Name,
                 payload.ConfigJson,
                 payload.ThemeTokensJson,
+                payload.ThemeStatusBarPresetId,
+                payload.ThemeNavigationBarPresetId,
                 payload.ComponentBaseConfigsJson,
                 payload.AppConfigJson,
                 StablePreviewJson(payload.DesignPreviewJson));

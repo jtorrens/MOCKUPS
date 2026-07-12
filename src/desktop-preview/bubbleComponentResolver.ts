@@ -159,7 +159,6 @@ export function resolveBubbleComponent(
     leftIcons: [],
     rightIconRowSlot: {},
     rightIcons: [],
-    buttonIconSlot: {},
     iconGap: "theme.spacing.none",
     iconRowSize: "theme.iconSizes.s",
     iconRowGap: "theme.spacing.none",

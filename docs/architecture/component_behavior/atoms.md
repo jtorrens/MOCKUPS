@@ -61,33 +61,22 @@ the parent component and determines whether it affects parent sizing.
 
 **Motion.** No independent clock.
 
-## Button Icon
-
-**Purpose/ownership.** Icon-oriented action surface, optionally with embedded
-Label. **Runtime inputs.** Icon token and any externally supplied text.
-**Variant/config.** Surface, icon sizing mode, glyph/padding, theme colors and
-label variant.
-
-**Layout.** In fixed sizing mode, size refers to button frame; in glyph plus
-padding mode, size refers to glyph. It owns internal centering. **Motion.** No
-independent clock.
-
 ## Button
 
 **Purpose/ownership.** Generic action atom with `icon`, `text` and `iconText`
-content modes. It is independent from Button Icon until the explicit migration
-phase.
+content modes. It is the sole button atom; the former Button Icon class is retired.
 
-**Runtime inputs.** Text, icon token and persistent state: `normal`, `active`,
+**Runtime inputs.** Text, icon token, icon/text size tokens and persistent state: `normal`, `active`,
 `pushed` or `disabled`. **Variant/config.** Content mode, content/fixed sizing,
 spacing-token padding and gap, plus four visual state blocks. Every state block
-owns its Surface variant, Label variant, icon color and opacity. The variant
-also stores the `theme.motion.buttonPushedDurationMs` timing-token reference.
+owns its Surface variant, Label variant and icon color. Surface exclusively
+owns state opacity through its background, border and other alpha values. The
+variant also stores the `theme.motion.buttonPushedDurationMs` timing-token
+reference.
 
 **Layout.** Button owns horizontal icon/text composition and internal centering.
 Content mode hugs the resolved child bounds plus token padding; fixed mode uses
-the configured frame. The protected `Icon only` variant provides the migration
-target for existing Button Icon usages without changing those usages yet.
+the configured frame.
 
 **States/motion.** The resolver receives the state for the requested frame. The
 declarative `Push` Test Values action temporarily overrides it with `pushed`
@@ -114,10 +103,10 @@ difference. Do not compensate in a specific parent.
 
 ## Icon Row
 
-**Purpose/ownership.** Ordered horizontal/vertical run of Button Icon entries.
-**Runtime inputs.** Icon list and optional one action-icon override.
-**Variant/config.** Button Icon variant, icon size token, gap spacing token and
-orientation.
+**Purpose/ownership.** Ordered horizontal/vertical collection of Button entries.
+**Runtime inputs.** Stable Button items with independent content/state/actions.
+**Variant/config.** Gap/orientation plus `shared` or `perButton` size ownership.
+Shared mode is the default and sends one icon/text size pair to every Button.
 
 **Layout.** Slot count derives from icon list; no arbitrary fixed max is needed.
 The parent places/alines the resulting row. Action override affects only its
@@ -126,8 +115,9 @@ designated entry and preserves the Button Icon variant otherwise.
 ## Icon Bar
 
 **Purpose/ownership.** Three-zone (`left`, `center`, `right`) two-state holder
-for Icon Rows. **Runtime inputs.** Per-state icon lists and active/idle state.
-**Variant/config.** Concrete Icon Row variants and action overrides.
+for Icon Rows. **Runtime inputs.** Per-state row data and active/idle state.
+**Variant/config.** Concrete Icon Row variants plus `shared` or `perRow` size
+ownership. Shared mode sends one icon/text size pair to all three rows.
 
 **Layout/z-order.** Icon Bar resolves zone contents; parent assigns its frame
 and edge padding. It is used by Text Input Bar, Keyboard and Media without
@@ -138,3 +128,8 @@ component-specific renderer logic.
 Atoms do not own a wall-clock. A component or module supplies the requested
 frame/state. Atom resolvers may calculate a visual phase from that data and
 emit resolved atoms; generic web rendering only paints them.
+
+Calculated Label values follow the same boundary: the owning component resolver
+knows the declarative source and resolves its text for the requested frame.
+Label receives the resulting text only; neither Label nor the renderer receives
+callbacks, timers or component-specific source knowledge.

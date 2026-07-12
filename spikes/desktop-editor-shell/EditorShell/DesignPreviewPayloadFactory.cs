@@ -25,7 +25,9 @@ internal sealed record DesignPreviewPayload(
     string InstanceJson = "{}",
     string DeviceId = "",
     int FrameRate = 25,
-    string ThemeMode = "");
+    string ThemeMode = "",
+    string ThemeStatusBarPresetId = "",
+    string ThemeNavigationBarPresetId = "");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -59,7 +61,7 @@ internal static class DesignPreviewPayloadFactory
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
             ? database.GetIconThemeSettings(theme.IconThemeId)
             : null;
-        return node.Kind switch
+        var payload = node.Kind switch
         {
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
@@ -67,6 +69,13 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             _ => null,
         };
+        return payload is null
+            ? null
+            : payload with
+            {
+                ThemeStatusBarPresetId = theme.StatusBarId,
+                ThemeNavigationBarPresetId = theme.NavigationBarId,
+            };
     }
 
     private static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)
@@ -113,12 +122,25 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = EffectiveThemeMode(module.ConfigJson, themeMode);
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
-        var ownerActor = string.IsNullOrWhiteSpace(shot.OwnerActorId)
+        var content = JsonNode.Parse(instance.ContentJson) as JsonObject ?? new JsonObject();
+        var headerActorId = (content["header"] as JsonObject)?["actorId"]?.GetValue<string>();
+        var ownerActorId = string.IsNullOrWhiteSpace(headerActorId) ? shot.OwnerActorId : headerActorId;
+        var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)
             ? ActorPreviewInputFactory.CreateSample()
-            : ActorPreviewInputFactory.Create(database, shot.OwnerActorId, effectiveThemeMode, paletteColors);
+            : ActorPreviewInputFactory.Create(database, ownerActorId, effectiveThemeMode, paletteColors);
+        if (content["messages"] is JsonArray messages)
+        {
+            foreach (var message in messages.OfType<JsonObject>())
+            {
+                var actorId = message["actorId"]?.GetValue<string>() ?? "";
+                message["actor"] = string.IsNullOrWhiteSpace(actorId)
+                    ? ActorPreviewInputFactory.CreateSample()
+                    : ActorPreviewInputFactory.Create(database, actorId, effectiveThemeMode, paletteColors);
+            }
+        }
         var instanceJson = new JsonObject
         {
-            ["content"] = JsonNode.Parse(instance.ContentJson) ?? new JsonObject(),
+            ["content"] = content,
             ["behavior"] = JsonNode.Parse(instance.BehaviorJson) ?? new JsonObject(),
             ["animation"] = JsonNode.Parse(instance.AnimationJson) ?? new JsonObject(),
             ["context"] = new JsonObject

@@ -277,10 +277,21 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
     };
 
     for (const row of rows) {
-      validateValue(row, JSON.parse(row.config_json || "{}"), "config");
+      const classConfig = JSON.parse(row.config_json || "{}");
+      validateValue(row, classConfig, "config");
       const metadata = JSON.parse(row.metadata_json || "{}") as { presets?: unknown };
       if (!Array.isArray(metadata.presets)) continue;
       metadata.presets.forEach((preset, index) => validateValue(row, preset, `metadata.presets[${index}]`));
+      const defaultPreset = metadata.presets.find((preset) =>
+        typeof preset === "object"
+        && preset !== null
+        && (preset as { id?: unknown }).id === "default") as { config?: unknown } | undefined;
+      if (!defaultPreset || JSON.stringify(defaultPreset.config ?? {}) !== JSON.stringify(classConfig)) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `component ${row.id} config_json must mirror its canonical Default variant`,
+        );
+      }
     }
   } finally {
     database.close();
@@ -424,11 +435,12 @@ function assertDesktopRuntimeCollectionsAreConsistent() {
           ? collection.sourceCollectionJsonKey
           : "";
         if (!sourceKey) continue;
+        const sourceExists = Array.isArray(preview[sourceKey]);
         const sourceItems = jsonArray(preview[sourceKey]).map(jsonRecord);
-        if (sourceItems.length === 0) {
+        if (!sourceExists) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
-            `${row.id}.design_preview_json collection "${jsonKey}" declares source "${sourceKey}" but source is empty or missing`,
+            `${row.id}.design_preview_json collection "${jsonKey}" declares missing source "${sourceKey}"`,
           );
         }
         const ids = new Set<string>();
@@ -491,10 +503,10 @@ function assertDesktopPreviewActionsAreDeclarative() {
             `${row.id}.design_preview_json.${path} must declare id and label`,
           );
         }
-        if (isItemAction && (!timeJsonKey || typeof action.playInputId !== "string" || typeof action.durationInputId !== "string")) {
+        if (isItemAction && (!timeJsonKey || typeof action.playInputId !== "string" || !hasDuration)) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
-            `${row.id}.design_preview_json.${path} item action must declare playInputId, durationInputId and timeJsonKey`,
+            `${row.id}.design_preview_json.${path} item action must declare playInputId, a duration source and timeJsonKey`,
           );
         }
         if (!isItemAction && (typeof action.playInputId !== "string" || !timeJsonKey || !hasDuration)) {
@@ -554,6 +566,42 @@ function assertDesktopPreviewActionsAreDeclarative() {
           "data/desktop-editor-spike.sqlite",
           `required declarative Test Values action is missing: ${required}`,
         );
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
+function assertComponentEditorLayoutsUseKnownFields() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const catalog = readFileSync(
+    path.join(root, "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs"),
+    "utf8",
+  );
+  const knownFields = new Set(
+    [...catalog.matchAll(/^\s*\["([^"]+)"\]\s*=/gm)].map((match) => match[1]),
+  );
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database.prepare(
+      "SELECT record_class_id, layout_json FROM editor_layouts WHERE record_class_id LIKE 'component.%'",
+    ).all() as { record_class_id: string; layout_json: string }[];
+    for (const row of rows) {
+      const layout = jsonRecord(jsonParse(row.layout_json));
+      for (const card of jsonArray(layout.cards).map(jsonRecord)) {
+        for (const group of jsonArray(card.groups).map(jsonRecord)) {
+          for (const field of jsonArray(group.fields).map(jsonRecord)) {
+            const fieldId = typeof field.id === "string" ? field.id : "";
+            if (fieldId.startsWith("component.") && !knownFields.has(fieldId)) {
+              addViolation(
+                "data/desktop-editor-spike.sqlite",
+                `${row.record_class_id} editor layout references unknown field ${fieldId}`,
+              );
+            }
+          }
+        }
       }
     }
   } finally {
@@ -673,6 +721,7 @@ function assertGenericTextWrappingIsConservative() {
 assertDesktopDatabaseDoesNotContainRetiredTokens();
 assertDesktopRuntimeCollectionsAreConsistent();
 assertDesktopPreviewActionsAreDeclarative();
+assertComponentEditorLayoutsUseKnownFields();
 assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys();
 assertGenericTextWrappingIsConservative();
 for (const filePath of walkFiles(previewRoot)) {
@@ -1106,6 +1155,8 @@ allowedComponentImports["src/desktop-preview/conversationModuleRenderable.ts"] =
   "./bubbleComponentResolver.js",
   "./keyboardComponentRenderable.js",
   "./keyboardComponentResolver.js",
+  "./iconRowComponentRenderable.js",
+  "./iconRowComponentResolver.js",
   "./navigationBarComponentRenderable.js",
   "./navigationBarComponentResolver.js",
   "./statusBarComponentRenderable.js",
@@ -1676,11 +1727,6 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/desktopPreviewComponents.ts",
-  "buttonIcon: {",
-  "desktop preview component manifest must use the current button icon component type",
-);
-assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
   "textBox: {",
   "desktop preview component manifest must route text box as an owning component module",
 );
@@ -1703,11 +1749,6 @@ assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "audio: (payload)",
   "component renderable registry must route the current audio component type",
-);
-assertContains(
-  "src/desktop-preview/componentClassRenderableRegistry.ts",
-  "buttonIcon: (payload)",
-  "component renderable registry must route the current button icon component type",
 );
 assertContains(
   "src/desktop-preview/componentClassRenderableRegistry.ts",
@@ -1881,8 +1922,8 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/audioComponentResolver.ts",
-  "componentPresetConfig(componentBaseConfigs, \"buttonIcon\", badgeSlot.presetId)",
-  "audio badge preview must resolve the selected button icon preset, not the default button icon config",
+  "componentPresetConfig(componentBaseConfigs, \"button\", badgeSlot.presetId)",
+  "audio badge preview must resolve the selected Button preset",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
@@ -1891,7 +1932,6 @@ assertContains(
 );
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
-  "component.buttonIcon.label.presetId",
   "component.audio.avatar.presetId",
   "component.audio.badge.presetId",
 ]) {
@@ -2136,11 +2176,6 @@ assertContains(
   "src/desktop-preview/statusBarComponentResolver.ts",
   "fontFamilyId: \"theme.system\"",
   "Status Bar text must use the Theme system-font role",
-);
-assertContains(
-  "src/desktop-preview/conversationModuleRenderable.ts",
-  "fontFamilyForTypography(payload, \"theme\")",
-  "Conversation header text must resolve the Theme normal text font explicitly",
 );
 assertContains(
   "src/desktop-preview/audioComponentRenderable.ts",

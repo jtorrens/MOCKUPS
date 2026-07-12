@@ -64,13 +64,12 @@ field `migrationStatus`.
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; variant owns background, alphas, border, radius, shadow, relief and optional tail geometry. |
 | `cursor` | atom | Structurally migrated | Reusable text cursor atom. Height is supplied as runtime input; variant owns theme color token, width, minimum fade alpha and fade frame timing. Animation remains resolver frame data, not renderer state. |
 | `textBox` | atom | Structurally migrated | Reusable text field atom. Size, text, placeholder and internal left/right icon row data are runtime inputs; variant owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor variant. |
-| `iconRow` | atom | Structurally migrated | Reusable row/column of `buttonIcon` instances. Its inputs can stay runtime or be fixed by a parent variant. `textBox` still uses internal left/right icon rows for icons inside the text field. |
+| `iconRow` | atom | Structurally migrated | Reusable row/column of stable `button` instances. Every item independently owns runtime content mode, state, icon/text and Push action. `textBox` still uses internal left/right icon rows for icons inside the text field. |
 | `iconBar` | atom | Structurally migrated | Reusable left/center/right grouping of `iconRow` instances with idle/active states. Parent components provide the outer frame; the bar aligns rows inside that frame and keeps state-specific row variants/settings together. `textInputBar` and `keyboard` use this instead of owning direct icon rows. |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` variant. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
-| `buttonIcon` | atom | Functional reference | Embeds `surface` and `label`; icon input and optional label are on the recursive route. Supports fixed button size and token-derived sizing from `theme.iconSizes.* + iconPadding`. |
-| `button` | atom | Functional reference | Independent generic action atom with `icon`, `text` and `iconText` content modes. Embeds state-specific `surface` and `label` variants, supports content/fixed sizing, exposes `normal`, `active`, `pushed` and `disabled` runtime states, and provides a declarative `Push` action timed by `theme.motion.buttonPushedDurationMs`. Existing `buttonIcon` references are intentionally not migrated yet. |
-| `audio` | component | Functional reference, still evolving | Embeds `surface`, `avatar` and `buttonIcon`; playback inputs are generic frame inputs, exposed through a preview action. Future work may refine waveform behavior, badge semantics and animation details. |
+| `button` | atom | Functional reference | Generic action atom with `icon`, `text` and `iconText` runtime content modes. Embeds state-specific `surface` and `label` variants, supports content/fixed sizing, exposes `normal`, `active`, `pushed` and `disabled` runtime states, and provides a declarative `Push` action timed by `theme.motion.buttonPushedDurationMs`. It replaces the retired `buttonIcon` class. |
+| `audio` | component | Functional reference, still evolving | Embeds `surface`, `avatar` and a `button` badge fixed by the parent to icon/normal runtime inputs; playback inputs are generic frame inputs, exposed through a preview action. Future work may refine waveform behavior, badge semantics and animation details. |
 | `status_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface`, `textBox` and one `iconBar` slot. `idle` vs `typing` is derived from whether runtime text is empty. Icon token lists are variant data inside the embedded `iconBar`, not runtime preview inputs. Text content is runtime data passed into the embedded `textBox`; placeholder is fixed by the parent variant through generic input bindings. |
@@ -141,7 +140,7 @@ legacy/new fragments.
   component schema, domain field options, domain fixtures, chat resolver
   component lookup, or SQLite component seeds;
 - migrated desktop component record-class ids use the current component names
-  such as `component.buttonIcon` and `component.textInputBar`, not legacy
+  such as `component.button` and `component.textInputBar`, not legacy
   snake-case ids.
 - the `textBox` atom stays on its own resolver/renderable route and is not
   folded into `textInputBar` until it is embedded as a normal component slot.
@@ -157,6 +156,9 @@ legacy/new fragments.
 - preview actions are declarative payload data with required `id`, `label` and
   timeline fields for duration-driven actions; the editor triggers the payload
   action instead of knowing module-specific behavior.
+- every component class uses its `Default` variant as the canonical
+  configuration; `config_json` is a synchronized parity copy and the
+  architecture check rejects any divergence between them.
 
 `npm run test` is the active desktop validation path. It builds the desktop
 preview bundle, runs TypeScript, runs this architecture check, and builds the
