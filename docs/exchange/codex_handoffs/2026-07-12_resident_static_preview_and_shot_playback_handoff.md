@@ -7,7 +7,7 @@ Implement the resident static-preview update model described in
 Shot Play and declarative Test Values actions behind one generic resolved-frame
 playback pipeline.
 
-Start from `main` at commit `e7a3acae` or later. Pull before editing and restart
+Start from `main` at commit `0b26b7df` or later. Pull before editing and restart
 the desktop application so no stale preview process or editor layout remains in
 memory.
 
@@ -33,6 +33,9 @@ Do not reimplement these features:
 - The transport chrome is already grouped into Shot/Screen/Shot zones with
   vertical separators and theme accent colors. Do not redesign it in the
   resident-preview phase.
+- Selecting or traversing to a Screen activates Screen-local scope. Replaying
+  at its end restarts that Screen, not Shot frame zero. An explicit later switch
+  to Shot scope remains selected until the production context changes.
 - Production context identifies the active ModuleInstance and lists Shot slots.
 - Device and Theme derive from Shot/Actor and are hidden in production setup.
 - Mode follows preview mode unless the active module forces light or dark.
@@ -51,6 +54,8 @@ Relevant baseline commits:
   Screen context with global-to-local frame resolution;
 - `bebe400b` — Shot/Screen navigator scope and user-facing Screen terminology.
 - `e7a3acae` — stable Screen/frame identity and grouped production transport UI.
+- `0b26b7df` — Screen-scope replay correctness and final borderless transport
+  chrome with filled boundary bars.
 
 ## Required first phase: resident static updates
 

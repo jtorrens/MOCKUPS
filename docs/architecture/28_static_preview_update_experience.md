@@ -5,7 +5,7 @@ or implied by this document.
 
 ## Current implementation baseline
 
-The proposal must be implemented from `main` at or after commit `e7a3acae`.
+The proposal must be implemented from `main` at or after commit `0b26b7df`.
 That baseline already contains:
 
 - production Shot preview resolved through ordered ModuleInstance slots;
@@ -18,6 +18,8 @@ That baseline already contains:
   of display name, plus the resolved local frame in production payload context;
 - a grouped transport surface with separate Shot/Screen zones and editor-theme
   accent colors;
+- automatic Screen-local scope when a Screen is selected or traversed, while a
+  later explicit user choice of Shot scope remains authoritative;
 - Device and Theme removed from production controls because Shot/Actor own them;
 - preview mode inheritance with explicit module light/dark override;
 - a first Shot Play integration with the existing HTML/raster preparation route;
