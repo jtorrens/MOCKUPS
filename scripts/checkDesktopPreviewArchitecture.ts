@@ -2321,6 +2321,11 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "[\"jsonKey\"] = \"conversationType\"",
+  "Conversation must publish its individual or group type through the runtime contract",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
   "[\"source\"] = \"calculated\"",
   "parent-owned timeline frame inputs must be declared calculated",
 );

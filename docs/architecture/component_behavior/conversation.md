@@ -18,6 +18,9 @@ embedded children.
 
 ### Public runtime inputs
 
+- Conversation identity: `conversationType` is published as `individual` or
+  `group` and defaults to `individual`. Participant-resolution behavior remains
+  the planned phase described below.
 - Module/shot context: device, theme, color mode, orientation, screen frame,
   frame rate, owner actor and optional wallpaper.
 - Message collection: ordered message records with direction/state, text,

@@ -661,6 +661,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["conversationType"] = "individual",
             ["headerSubtitle"] = "online",
             ["actorId"] = "",
             ["bubbleRevealMode"] = "afterWriteOn",
@@ -680,6 +681,22 @@ internal sealed partial class SpikeDatabase
             ["timelineFrameJsonKey"] = "conversationFrame",
             ["inputs"] = new JsonArray
             {
+                new JsonObject
+                {
+                    ["id"] = "conversationType",
+                    ["label"] = "Chat type",
+                    ["jsonKey"] = "conversationType",
+                    ["kind"] = "option",
+                    ["defaultValue"] = "individual",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject { ["value"] = "individual", ["label"] = "Individual" },
+                        new JsonObject { ["value"] = "group", ["label"] = "Group" },
+                    },
+                    ["groupId"] = "participants",
+                    ["groupLabel"] = "Participants",
+                    ["groupOrder"] = 10,
+                },
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
                 new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames", ["source"] = "calculated" },
