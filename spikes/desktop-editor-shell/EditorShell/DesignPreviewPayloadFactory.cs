@@ -167,6 +167,7 @@ internal static class DesignPreviewPayloadFactory
             {
                 ["shotId"] = instance.ShotId,
                 ["moduleInstanceId"] = node.Id,
+                ["localFrame"] = Math.Max(0, localTimelineFrame ?? 0),
             },
         };
         return new DesignPreviewPayload(

@@ -326,7 +326,8 @@ internal sealed class ComponentPreviewInputSession
 
     private static string ScopeKey(DesignPreviewPayload payload)
     {
-        return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}";
+        var instanceId = ParseJsonObject(payload.InstanceJson)["context"]?["moduleInstanceId"]?.GetValue<string>() ?? "";
+        return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}:{instanceId}";
     }
 
     private JsonObject ApplyTransientTestValues(

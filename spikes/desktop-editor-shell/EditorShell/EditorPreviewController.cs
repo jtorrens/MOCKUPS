@@ -98,12 +98,14 @@ internal sealed class EditorPreviewController
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly Button _shotPreviousSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
+    private readonly Button _shotAbsoluteStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotStart, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineFirstFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPreviousFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPlayButton = new() { Content = EditorIcons.Create(EditorIcons.Play, 16), Width = 42, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotEndButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineLastFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
+    private readonly Button _shotAbsoluteEndButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotEnd, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly DispatcherTimer _shotPlaybackTimer = new() { Interval = TimeSpan.FromMilliseconds(20) };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
@@ -622,30 +624,48 @@ internal sealed class EditorPreviewController
         Grid.SetColumn(_shotFrameText, 2);
         frameRow.Children.Add(_shotFrameText);
         _shotTimelineControls.Children.Add(frameRow);
-        var navigationRow = new StackPanel
+        var navigationRow = new Border
         {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 6,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            Children =
+            Padding = new Thickness(8, 5),
+            CornerRadius = new CornerRadius(10),
+            Background = EditorSukiWindowTheme.SelectionBackgroundBrush(_isDark()),
+            BorderBrush = EditorSukiWindowTheme.AccentBrush(_isDark() ? (byte)0x55 : (byte)0x3C),
+            BorderThickness = new Thickness(1),
+            Child = new StackPanel
             {
-                _shotPreviousSlotButton,
-                _shotStartButton,
-                _shotPreviousFrameButton,
-                _shotPlayButton,
-                _shotNextFrameButton,
-                _shotEndButton,
-                _shotNextSlotButton,
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 7,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Children =
+                {
+                    TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousSlotButton),
+                    TimelineSeparator(),
+                    TimelineButtonGroup(
+                        _shotStartButton,
+                        _shotPreviousFrameButton,
+                        _shotPlayButton,
+                        _shotNextFrameButton,
+                        _shotEndButton),
+                    TimelineSeparator(),
+                    TimelineButtonGroup(_shotNextSlotButton, _shotAbsoluteEndButton),
+                },
             },
         };
+        _shotPlayButton.Background = EditorSukiWindowTheme.AccentBrush();
+        _shotPlayButton.Foreground = Brushes.White;
+        _shotPlayButton.BorderBrush = EditorSukiWindowTheme.AccentBrush();
         _shotTimelineControls.Children.Add(navigationRow);
         ToolTip.SetTip(_shotPreviousSlotButton, "Previous Screen");
+        ToolTip.SetTip(_shotAbsoluteStartButton, "First Shot frame");
         ToolTip.SetTip(_shotStartButton, "First frame in the selected scope");
         ToolTip.SetTip(_shotPreviousFrameButton, "Previous frame");
         ToolTip.SetTip(_shotPlayButton, "Play or pause the selected scope");
         ToolTip.SetTip(_shotNextFrameButton, "Next frame");
         ToolTip.SetTip(_shotEndButton, "Last frame in the selected scope");
         ToolTip.SetTip(_shotNextSlotButton, "Next Screen");
+        ToolTip.SetTip(_shotAbsoluteEndButton, "Last Shot frame");
+        _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
         _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame);
         _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1);
@@ -653,6 +673,7 @@ internal sealed class EditorPreviewController
         _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1);
         _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
+        _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false);
 
         previewControlsHost.Content = new GlassCard
         {
@@ -694,6 +715,28 @@ internal sealed class EditorPreviewController
             },
         };
     }
+
+    private static Control TimelineButtonGroup(params Button[] buttons)
+    {
+        var panel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 4,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        foreach (var button in buttons) panel.Children.Add(button);
+        return panel;
+    }
+
+    private Control TimelineSeparator() => new Border
+    {
+        Width = 1,
+        Height = 22,
+        Margin = new Thickness(2, 0),
+        Background = new SolidColorBrush(Color.Parse(_isDark() ? "#697386" : "#9AA3B2")),
+        Opacity = 0.62,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
 
     private static void AddReferenceSlider(Grid host, int column, string label, Slider slider)
     {
@@ -1724,6 +1767,7 @@ internal sealed class EditorPreviewController
             "\u001f",
             payload.ComponentType,
             payload.Name,
+            payload.InstanceJson.GetHashCode(StringComparison.Ordinal),
             PlaybackFrameTime(payload),
             payload.DesignPreviewJson.GetHashCode(StringComparison.Ordinal));
     }
@@ -1930,6 +1974,8 @@ internal sealed class EditorPreviewController
         _shotFrameText.Text = $"{displayedFrame} / {Math.Max(0, range.DurationFrames - 1)}";
         _shotStartButton.IsEnabled = _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
         _shotEndButton.IsEnabled = _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
+        _shotAbsoluteStartButton.IsEnabled = _shotPreviewFrame > 0;
+        _shotAbsoluteEndButton.IsEnabled = _shotPreviewFrame < duration - 1;
         var activeSlotIndex = ActiveShotSlotIndex(shotId);
         var slotCount = _database.GetShotModuleInstanceSlots(shotId).Count;
         _shotPreviousSlotButton.IsEnabled = activeSlotIndex > 0;
@@ -1952,12 +1998,14 @@ internal sealed class EditorPreviewController
         return (start, start + duration - 1, duration);
     }
 
-    private void SetShotPreviewFrame(int frame)
+    private void SetShotPreviewFrame(int frame, bool useSelectedScope = true)
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
         StopShotPlayback();
-        var range = NavigationFrameRange();
+        var range = useSelectedScope
+            ? NavigationFrameRange()
+            : (StartFrame: 0, EndFrame: ShotLastFrame(), DurationFrames: ShotLastFrame() + 1);
         var next = Math.Clamp(frame, range.StartFrame, range.EndFrame);
         if (next == _shotPreviewFrame) return;
         _shotPreviewFrame = next;
