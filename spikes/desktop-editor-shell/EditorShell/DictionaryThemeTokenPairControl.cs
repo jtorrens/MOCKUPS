@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueControl, IDictionaryLocalHorizontalScrollControl
 {
     private readonly DictionaryThemeTokenControl _firstControl;
     private readonly DictionaryThemeTokenControl _secondControl;

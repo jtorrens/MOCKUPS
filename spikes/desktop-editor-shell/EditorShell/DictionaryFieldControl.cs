@@ -96,6 +96,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public string Value => _value;
 
+    public bool RequiresLocalHorizontalViewport => _valueControl is IDictionaryLocalHorizontalScrollControl;
+
     public void RefreshPreview()
     {
         if (_valueControl is IDictionaryPreviewValueControl previewControl)

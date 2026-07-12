@@ -14,74 +14,72 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorHeaderController
 {
     private readonly Panel _breadcrumbPanel;
-    private readonly TextBlock _presetTextBlock;
+    private readonly Panel _contextStripHost;
     private readonly Panel _actionsPanel;
     private readonly SpikeDatabase _database;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly EditorNodeSelectionState _nodeSelection;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly Action<ProjectTreeNode, bool> _showNode;
+    private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
     private readonly Func<ProjectTreeNode, Task> _savePreset;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
     private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
+    private readonly EditorActiveFieldControls _activeFieldControls;
 
     public EditorHeaderController(
         Panel breadcrumbPanel,
-        TextBlock presetTextBlock,
+        Panel contextStripHost,
         Panel actionsPanel,
         SpikeDatabase database,
         Func<ProjectTreeNode?> selectedNode,
         EditorNodeSelectionState nodeSelection,
         EditorEmbeddedUsageNavigator embeddedUsageNavigator,
         Action<ProjectTreeNode, bool> showNode,
+        Action<ProjectTreeNode> returnToEmbeddedOwner,
         Action<EditorEmbeddedContext> showEmbeddedContext,
         Func<ProjectTreeNode, Task> savePreset,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
-        Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot)
+        Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot,
+        EditorActiveFieldControls activeFieldControls)
     {
         _breadcrumbPanel = breadcrumbPanel;
-        _presetTextBlock = presetTextBlock;
+        _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
         _database = database;
         _selectedNode = selectedNode;
         _nodeSelection = nodeSelection;
         _embeddedUsageNavigator = embeddedUsageNavigator;
         _showNode = showNode;
+        _returnToEmbeddedOwner = returnToEmbeddedOwner;
         _showEmbeddedContext = showEmbeddedContext;
         _savePreset = savePreset;
         _variantHistory = variantHistory;
         _restoreVariantSnapshot = restoreVariantSnapshot;
+        _activeFieldControls = activeFieldControls;
     }
 
     public void SetRootTitle(string title)
     {
-        SetPresetText(EditorPresetTextForSelection());
         EditorBreadcrumbBar.Render(_breadcrumbPanel, [
             new EditorBreadcrumbItem(title),
         ], CreateStructureButtonForSelectedComponent());
         SetHeaderActions(CreateHeaderActionsForSelectedComponent());
+        SetContextStrip(ContextMetadataForSelection());
     }
 
     public void SetEmbeddedTitle(EditorEmbeddedContext context)
     {
         var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
-        SetPresetText(string.IsNullOrWhiteSpace(activePresetName) ? null : $"Variant: {activePresetName}");
         var items = new List<EditorBreadcrumbItem>
         {
-            new(context.OwnerNode.Name, () => _showNode(context.OwnerNode, false)),
+            new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
         for (var index = 0; index < context.Slots.Count; index++)
         {
             var slot = context.Slots[index];
-            var slotPresetName = _database.GetEmbeddedComponentPresetName(
-                context.OwnerNode,
-                context.Slots.Take(index + 1).ToArray());
-            items.Add(new EditorBreadcrumbItem($"{slot.Label} slot"));
-            var componentLabel = EditorUiText.IdentifierLabel(slot.EmbeddedComponentType);
-            var label = string.IsNullOrWhiteSpace(slotPresetName)
-                ? componentLabel
-                : $"{componentLabel} / {slotPresetName}";
+            var label = $"Slot: {slot.Label}";
             if (index == context.Slots.Count - 1)
             {
                 items.Add(new EditorBreadcrumbItem(label));
@@ -99,21 +97,42 @@ internal sealed class EditorHeaderController
             items,
             EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(null);
+        SetContextStrip(ContextMetadataForEmbedded(context, activePresetName));
     }
 
-    private string? EditorPresetTextForSelection()
+    private EditorContextStripMetadata? ContextMetadataForSelection()
     {
-        return _selectedNode()?.Kind switch
+        var selected = _selectedNode();
+        if (selected is null) return null;
+        var identities = selected.Kind switch
         {
-            ProjectTreeNodeKind.ComponentPreset => $"Variant: {_selectedNode()!.Name}",
-            _ => null,
+            ProjectTreeNodeKind.ComponentPreset when selected.Parent is not null =>
+                new[] { new EditorContextIdentity("Component", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
+            ProjectTreeNodeKind.ComponentClass =>
+                new[] { new EditorContextIdentity("Component", selected.Name), new EditorContextIdentity("Variant", _nodeSelection.PreferredPresetNode(selected).Name) },
+            ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
+            ProjectTreeNodeKind.ModuleInstance => [new EditorContextIdentity("Screen", selected.Name)],
+            ProjectTreeNodeKind.App => [new EditorContextIdentity("App", selected.Name)],
+            _ => [new EditorContextIdentity(EditorUiText.IdentifierLabel(selected.Kind.ToString()), selected.Name)],
         };
+        return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
     }
 
-    private void SetPresetText(string? text)
+    private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activePresetName)
     {
-        _presetTextBlock.Text = text ?? "";
-        _presetTextBlock.IsVisible = !string.IsNullOrWhiteSpace(text);
+        var component = EditorUiText.IdentifierLabel(context.Slot.EmbeddedComponentType);
+        var identities = new List<EditorContextIdentity> { new("Component", component) };
+        if (!string.IsNullOrWhiteSpace(activePresetName)) identities.Add(new EditorContextIdentity("Variant", activePresetName));
+        return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
+    }
+
+    private int OverrideCount() => _activeFieldControls.ControlsByFieldId.Values.Count((control) => control.HasLocalOverride);
+
+    private void SetContextStrip(EditorContextStripMetadata? metadata)
+    {
+        _contextStripHost.Children.Clear();
+        _contextStripHost.IsVisible = metadata is not null;
+        if (metadata is not null) _contextStripHost.Children.Add(EditorContextStrip.Create(metadata));
     }
 
     private void SetHeaderActions(Control? content)

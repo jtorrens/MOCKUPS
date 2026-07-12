@@ -30,6 +30,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
+    private readonly Dictionary<string, EditorViewState> _embeddedParentViewStates = new(StringComparer.Ordinal);
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorContentController _editorContent;
@@ -161,17 +162,19 @@ public partial class MainWindow : SukiWindow
             _messages);
         _editorHeader = new EditorHeaderController(
             EditorBreadcrumbPanel,
-            EditorPresetTextBlock,
+            EditorContextStripHost,
             EditorHeaderActionsPanel,
             _database,
             () => _selectedNode,
             _nodeSelection,
             _embeddedUsageNavigator,
             ShowNode,
+            ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
             _nodeCommands.SaveCurrentComponentPreset,
             _variantHistory.Snapshots,
-            _nodeCommands.RestoreComponentPresetSnapshot);
+            _nodeCommands.RestoreComponentPresetSnapshot,
+            _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
             () => _themeController.IsDark,
@@ -377,9 +380,9 @@ public partial class MainWindow : SukiWindow
         _nodeSelection.RememberComponentPresetSelection(node);
         _treeExpansion.ExpandAncestors(node);
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
-        SetEditorRootTitle(editorNode.Name);
         transaction.Checkpoint("before-editor-candidate");
         _editorContent.Build(editorNode, node);
+        SetEditorRootTitle(editorNode.Name);
         transaction.Checkpoint("after-editor-swap");
         if (keepEditorViewState)
         {
@@ -397,10 +400,24 @@ public partial class MainWindow : SukiWindow
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
-        SetEditorEmbeddedTitle(context);
+        if (context.Slots.Count == 1
+            && _editorViewState.CaptureState(_editorContent.Cards) is { } parentState)
+        {
+            _embeddedParentViewStates[context.OwnerNode.Id] = parentState;
+        }
         _editorContent.BuildEmbedded(context);
+        SetEditorEmbeddedTitle(context);
         RefreshPreviewDevice();
         ApplyUiTextScale();
+    }
+
+    private void ReturnToEmbeddedOwner(ProjectTreeNode ownerNode)
+    {
+        ShowNode(ownerNode, false, "breadcrumb");
+        if (_embeddedParentViewStates.Remove(ownerNode.Id, out var state))
+        {
+            _editorViewState.RestoreState(state, _editorContent.Cards);
+        }
     }
 
     private void SetEditorRootTitle(string title)

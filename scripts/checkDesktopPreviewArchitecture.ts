@@ -145,6 +145,46 @@ function assertFilesDoNotContain(files: readonly string[], term: string, message
   }
 }
 
+function assertSharedEditorSurfacesHaveNoConcreteEditors() {
+  const sharedSurfaces = [
+    "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorBreadcrumbBar.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorGroupBlock.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  ];
+  const concreteEditorTypes = [
+    "IconThemeTokensCollectionEditor",
+    "NavigationBarItemsCollectionEditor",
+    "RuntimeInputsCollectionEditor",
+    "ShotModuleInstancesCollectionEditor",
+    "StatusBarItemsCollectionEditor",
+  ];
+  const concreteComponentLiterals = [
+    '"audio"',
+    '"avatar"',
+    '"bubble"',
+    '"button"',
+    '"label"',
+    '"navigation_bar"',
+    '"status_bar"',
+    '"text_input"',
+    '"video"',
+  ];
+
+  for (const relativePath of sharedSurfaces) {
+    for (const term of [...concreteEditorTypes, ...concreteComponentLiterals]) {
+      assertDoesNotContain(
+        relativePath,
+        term,
+        `shared editor surface contains concrete editor/component knowledge: ${term}`,
+      );
+    }
+  }
+}
+
 function assertMatches(relativePath: string, pattern: RegExp, message: string) {
   const source = readText(relativePath);
   if (!pattern.test(source)) {
@@ -2398,8 +2438,18 @@ for (const dictionaryControl of [
 }
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
-  "$\"{componentLabel} / {slotPresetName}\"",
-  "embedded breadcrumbs must distinguish component class and concrete variant",
+  "$\"Slot: {slot.Label}\"",
+  "embedded breadcrumbs must identify the owning slot without duplicating component identity",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "new(\"Component\", component)",
+  "embedded context metadata must identify the concrete component",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "new EditorContextIdentity(\"Variant\", activePresetName)",
+  "embedded context metadata must identify the concrete variant",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
@@ -2696,6 +2746,7 @@ function assertModuleInstanceRuntimePayloadsMatchContracts() {
 }
 
 assertDesktopSystemTypographyData();
+assertSharedEditorSurfacesHaveNoConcreteEditors();
 assertDesktopDatabaseHasNoRetiredTimeFields();
 assertDesktopDatabaseHasNoRetiredEditorLayouts();
 assertModuleInstanceRuntimePayloadsMatchContracts();

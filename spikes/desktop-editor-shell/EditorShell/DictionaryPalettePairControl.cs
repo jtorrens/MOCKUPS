@@ -6,7 +6,7 @@ using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueControl, IDictionaryLocalHorizontalScrollControl
 {
     private readonly DictionaryPaletteTokenControl _firstControl;
     private readonly DictionaryPaletteTokenControl _secondControl;

@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl, IDictionaryLocalHorizontalScrollControl
 {
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;

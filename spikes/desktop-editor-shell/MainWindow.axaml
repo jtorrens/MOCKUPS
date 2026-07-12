@@ -137,10 +137,9 @@
                                             Orientation="Horizontal"
                                             Spacing="4"
                                             VerticalAlignment="Center" />
-                                <TextBlock x:Name="EditorPresetTextBlock"
-                                           FontSize="12"
-                                           Opacity="0.74"
-                                           IsVisible="False" />
+                                <StackPanel x:Name="EditorContextStripHost"
+                                            Margin="0,4,0,0"
+                                            IsVisible="False" />
                             </StackPanel>
                             <StackPanel x:Name="EditorHeaderActionsPanel"
                                         Grid.Column="1"

@@ -118,7 +118,7 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(GroupControl(group, groupPanel, useSectionChrome, exclusiveGroupCards));
+                body.Children.Add(GroupControl(group, LocalHorizontalViewport(groupPanel), useSectionChrome, exclusiveGroupCards));
             }
         }
 
@@ -247,7 +247,7 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(GroupControl(group, groupPanel, useSectionChrome, exclusiveGroupCards));
+                body.Children.Add(GroupControl(group, LocalHorizontalViewport(groupPanel), useSectionChrome, exclusiveGroupCards));
             }
         }
 
@@ -355,6 +355,24 @@ internal sealed class EditorLayoutCardFactory
         return useSectionChrome
             ? EditorGroupBlock.Create(group, groupPanel)
             : EditorGroupBlock.CreatePlain(group, groupPanel);
+    }
+
+    private static Control LocalHorizontalViewport(StackPanel groupPanel)
+    {
+        if (!groupPanel.Children
+                .OfType<DictionaryFieldControl>()
+                .Any((control) => control.RequiresLocalHorizontalViewport))
+        {
+            return groupPanel;
+        }
+
+        return new ScrollViewer
+        {
+            Content = groupPanel,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
     }
 
     private static void WireExclusiveGroups(IReadOnlyList<InstantEditorCard> cards)

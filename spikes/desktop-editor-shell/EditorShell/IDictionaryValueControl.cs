@@ -16,3 +16,9 @@ internal interface IDictionaryPreviewValueControl
 {
     void RefreshPreview();
 }
+
+// Composite controls can opt into a local horizontal viewport without leaking
+// their minimum width into the editor's main scrolling surface.
+internal interface IDictionaryLocalHorizontalScrollControl
+{
+}
