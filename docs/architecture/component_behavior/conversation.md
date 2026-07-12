@@ -19,8 +19,9 @@ embedded children.
 ### Public runtime inputs
 
 - Conversation identity: `conversationType` is published as `individual` or
-  `group` and defaults to `individual`. Participant-resolution behavior remains
-  the planned phase described below.
+  `group` and defaults to `individual`. Individual composition currently
+  overrides Bubble actor name/avatar visibility off; participant actor
+  resolution remains the planned phase described below.
 - Module/shot context: device, theme, color mode, orientation, screen frame,
   frame rate, owner actor and optional wallpaper.
 - Message collection: ordered message records with direction/state, text,
@@ -72,6 +73,11 @@ The planned `conversationType` runtime option starts with `individual` and
 These are participant/content rules, not Header layout. Their editor fields
 belong in a Conversation/Participants card; Header remains responsible only
 for visual composition and layout.
+
+The visibility portion is active now: Conversation passes an ephemeral child
+composition override to Bubble. `individual` forces both actor Label and Avatar
+off; `group` respects the Bubble preset. The override never mutates or persists
+the selected Bubble configuration.
 
 ### Interim group workflow
 

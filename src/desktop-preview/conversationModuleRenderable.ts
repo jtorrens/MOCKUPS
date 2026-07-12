@@ -316,6 +316,15 @@ function messageNodes(
     conversationFrame,
     timing,
   );
+  const conversationType = requiredString(
+    preview,
+    "conversationType",
+    "module.conversation.input.conversationType",
+  );
+  if (conversationType !== "individual" && conversationType !== "group") {
+    throw new Error(`Unsupported Conversation type ${conversationType}`);
+  }
+  const actorIdentityVisible = conversationType === "group";
   const bubbleNode = (message: ConversationPreviewMessage, writeOnTrigger: boolean) => childRenderable(
     payload,
     componentBaseConfigs,
@@ -325,6 +334,7 @@ function messageNodes(
       state: message.state,
       sampleText: message.text,
       actor: message.actor,
+      actorIdentityVisible,
       mediaType: message.mediaType,
       mediaSource: message.mediaSource,
       viewportSize: message.viewportSize,

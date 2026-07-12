@@ -2325,6 +2325,16 @@ assertContains(
   "Conversation must publish its individual or group type through the runtime contract",
 );
 assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "actorIdentityVisible = conversationType === \"group\"",
+  "Individual Conversation must override Bubble actor identity presentation off",
+);
+assertContains(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  "actorIdentityVisible",
+  "Bubble must consume its parent-owned actor identity visibility override",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
   "[\"source\"] = \"calculated\"",
   "parent-owned timeline frame inputs must be declared calculated",

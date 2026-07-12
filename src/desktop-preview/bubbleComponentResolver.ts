@@ -71,6 +71,9 @@ export function resolveBubbleComponent(
     durationFrames: optionalNumber(preview, "writeOnDurationFrames", 30),
   };
   const visibleText = simpleWriteOnFrameText(fullText, writeOnPlan);
+  const actorIdentityVisible = typeof preview.actorIdentityVisible === "boolean"
+    ? preview.actorIdentityVisible
+    : true;
 
   const surfaceConfig = mergeComponentDefaults(
     componentPresetConfig(
@@ -166,7 +169,8 @@ export function resolveBubbleComponent(
     size: `${maxWidth}|1`,
     maxWidth,
   };
-  const actorLabelVisible = state === "incoming"
+  const actorLabelVisible = actorIdentityVisible
+    && state === "incoming"
     && requiredBoolean(
       actorLabelSlot,
       "showLabel",
@@ -191,7 +195,8 @@ export function resolveBubbleComponent(
         asRecord(actorLabelSlot.overrides),
       )
     : undefined;
-  const avatarVisible = state === "incoming"
+  const avatarVisible = actorIdentityVisible
+    && state === "incoming"
     && requiredBoolean(
       avatarSlot,
       "showAvatar",
