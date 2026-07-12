@@ -52,6 +52,13 @@ internal abstract class WebPreviewPane : Grid
         Children.Add(_nativeRasterFrame);
     }
 
+    public string NativeHostLifecycleState()
+    {
+        return $"pane={Bounds.X:0.##},{Bounds.Y:0.##},{Bounds.Width:0.##},{Bounds.Height:0.##};"
+            + $"webview={WebView.Bounds.X:0.##},{WebView.Bounds.Y:0.##},{WebView.Bounds.Width:0.##},{WebView.Bounds.Height:0.##};"
+            + $"webVisible={WebView.IsVisible};rasterVisible={_nativeRasterFrame.IsVisible}";
+    }
+
     public void ShowRasterFrame(string rasterId)
     {
         if (!File.Exists(rasterId)) return;

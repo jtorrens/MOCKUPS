@@ -84,7 +84,7 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => _selectedNode,
             () => _editorViewState.CaptureState(_editorContent!.Cards),
-            SelectNodeById,
+            (nodeId, viewState) => SelectNodeById(nodeId, viewState, "preview-context"),
             this);
         _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
         _nodeCommands = new EditorNodeCommandController(
@@ -212,7 +212,7 @@ public partial class MainWindow : SukiWindow
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
         _previewController.RestoreProductionHistoryState(_shellState.SessionHistory.ProductionPreviewHistory);
-        _previewController.SetWorkspace(_workspace);
+        _previewController.SetWorkspaceWithoutRefresh(_workspace);
         _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
@@ -348,7 +348,13 @@ public partial class MainWindow : SukiWindow
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
     {
+        ShowNode(node, rebuildTree, "selection");
+    }
+
+    private void ShowNode(ProjectTreeNode node, bool rebuildTree, string source)
+    {
         node = _nodeSelection.ResolveSelectionNode(node);
+        using var transaction = BeginContextTransaction(source, node.Id);
         var previousNode = _selectedNode;
         var previousViewState = _editorViewState.CaptureState(_editorContent.Cards);
         var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
@@ -371,7 +377,9 @@ public partial class MainWindow : SukiWindow
         _treeExpansion.ExpandAncestors(node);
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         SetEditorRootTitle(editorNode.Name);
+        transaction.Checkpoint("before-editor-candidate");
         _editorContent.Build(editorNode, node);
+        transaction.Checkpoint("after-editor-swap");
         if (keepEditorViewState)
         {
             _editorViewState.Restore(node, _editorContent.Cards);
@@ -381,6 +389,7 @@ public partial class MainWindow : SukiWindow
         if (rebuildTree)
         {
             RebuildNavigationCards();
+            transaction.Checkpoint("after-navigation-swap");
         }
         ApplyUiTextScale();
     }
@@ -422,6 +431,11 @@ public partial class MainWindow : SukiWindow
 
     private bool SelectNodeById(string nodeId, EditorViewState? viewState)
     {
+        return SelectNodeById(nodeId, viewState, "node-id");
+    }
+
+    private bool SelectNodeById(string nodeId, EditorViewState? viewState, string source)
+    {
         var node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
         if (node is null)
         {
@@ -431,7 +445,7 @@ public partial class MainWindow : SukiWindow
         var selectableNode = EditorNodeSelectionState.CanSelectTreeNode(node) ? node : EditorNodeSelectionState.ClosestEditableNode(node);
         selectableNode = _nodeSelection.ResolveSelectionNode(selectableNode);
         _treeExpansion.ExpandAncestors(selectableNode);
-        ShowNode(selectableNode, rebuildTree: true);
+        ShowNode(selectableNode, rebuildTree: true, source);
         _editorViewState.RestoreState(viewState, _editorContent.Cards);
         ApplyUiTextScale();
         return true;
@@ -468,6 +482,8 @@ public partial class MainWindow : SukiWindow
     {
         if (_workspace == workspace) return;
 
+        using var transaction = BeginContextTransaction("workspace", workspace.ToString());
+
         if (_selectedNode is not null)
         {
             _workspaceSelections[_workspace] = _selectedNode.Id;
@@ -475,9 +491,25 @@ public partial class MainWindow : SukiWindow
 
         _workspace = workspace;
         _shellState.SetWorkspace(workspace);
-        _previewController.SetWorkspace(workspace);
+        _previewController.SetWorkspaceWithoutRefresh(workspace);
         UpdateWorkspaceButtons();
+        transaction.Checkpoint("workspace-state-ready");
         LoadProjectTree();
+        transaction.Checkpoint("workspace-selection-committed");
+    }
+
+    private EditorShellContextTransaction BeginContextTransaction(string source, string targetId)
+    {
+        return new EditorShellContextTransaction(
+            source,
+            targetId,
+            _selectedNode?.Id ?? "",
+            _workspace.ToString(),
+            this,
+            NavigationCardsPanel,
+            EditorCardsPanel,
+            DesignPreviewHost,
+            _previewController.NativeHostLifecycleState);
     }
 
     private void UpdateWorkspaceButtons()

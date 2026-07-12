@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Mockups.DesktopEditorShell.Common;
 
@@ -11,6 +12,14 @@ internal static class PreviewDebugLog
     private static readonly object Gate = new();
     private static bool _initialized;
     private static string? _filePath;
+    private static readonly AsyncLocal<string?> Correlation = new();
+
+    public static IDisposable BeginCorrelation(string correlationId)
+    {
+        var previous = Correlation.Value;
+        Correlation.Value = correlationId;
+        return new CorrelationScope(previous);
+    }
 
     public static string FilePath
     {
@@ -30,10 +39,25 @@ internal static class PreviewDebugLog
         {
             EnsureInitialized();
             var timestamp = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture);
-            var suffix = fields.Length == 0
+            var correlatedFields = string.IsNullOrWhiteSpace(Correlation.Value)
+                ? fields
+                : new (string Key, object? Value)[] { ("transaction", Correlation.Value) }.Concat(fields).ToArray();
+            var suffix = correlatedFields.Length == 0
                 ? ""
-                : "\t" + string.Join("\t", fields.Select((field) => $"{field.Key}={FormatValue(field.Value)}"));
+                : "\t" + string.Join("\t", correlatedFields.Select((field) => $"{field.Key}={FormatValue(field.Value)}"));
             File.AppendAllText(_filePath!, $"{timestamp}\t{eventName}{suffix}{Environment.NewLine}");
+        }
+    }
+
+    private sealed class CorrelationScope(string? previous) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            Correlation.Value = previous;
         }
     }
 

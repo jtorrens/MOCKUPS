@@ -27,25 +27,36 @@ internal sealed class EditorCardHostController
 
     public IReadOnlyList<InstantEditorCard> Cards => _cards;
 
-    public void Clear()
+    public void Replace(IReadOnlyList<InstantEditorCard> cards)
     {
+        var candidateCards = cards.ToList();
+        var candidateWrappers = candidateCards.Select(CreateWrapper).ToList();
+
+        _host.Children.Clear();
         _cards.Clear();
         _wrappers.Clear();
-        _host.Children.Clear();
+        foreach (var card in candidateCards)
+        {
+            card.Expanded += (_, _) =>
+            {
+                foreach (var other in _cards.Where((item) => item != card))
+                {
+                    other.IsExpanded = false;
+                }
+            };
+            _cards.Add(card);
+        }
+        foreach (var wrapper in candidateWrappers)
+        {
+            _wrappers.Add(wrapper);
+            _host.Children.Add(wrapper);
+        }
+        UpdateWrapperWidths();
     }
 
-    public void Add(InstantEditorCard card)
+    private static Border CreateWrapper(InstantEditorCard card)
     {
-        card.Expanded += (_, _) =>
-        {
-            foreach (var other in _cards.Where((item) => item != card))
-            {
-                other.IsExpanded = false;
-            }
-        };
-
-        _cards.Add(card);
-        var wrapper = new Border
+        return new Border
         {
             Margin = EditorUiDensity.CardThickness(0, 0, 0, 12),
             CornerRadius = new CornerRadius(14),
@@ -57,9 +68,6 @@ internal sealed class EditorCardHostController
                 Content = card,
             },
         };
-        _wrappers.Add(wrapper);
-        _host.Children.Add(wrapper);
-        UpdateWrapperWidths();
     }
 
     private void UpdateWrapperWidths()

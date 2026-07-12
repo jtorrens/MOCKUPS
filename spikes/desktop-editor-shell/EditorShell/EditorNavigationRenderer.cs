@@ -55,7 +55,7 @@ internal sealed class EditorNavigationRenderer
         EditorWorkspace workspace,
         string productionId)
     {
-        target.Children.Clear();
+        var candidate = new StackPanel();
 
         foreach (var project in treeRoots)
         {
@@ -67,14 +67,19 @@ internal sealed class EditorNavigationRenderer
 
             if (workspace != EditorWorkspace.Production)
             {
-                target.Children.Add(CreateNavigationRow(project, EditorIcons.ForTreeNode(project.Kind)));
+                candidate.Children.Add(CreateNavigationRow(project, EditorIcons.ForTreeNode(project.Kind)));
             }
 
             foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
             {
-                AddNavigationSection(target, root);
+                AddNavigationSection(candidate, root);
             }
         }
+
+        var replacement = candidate.Children.ToList();
+        candidate.Children.Clear();
+        target.Children.Clear();
+        foreach (var child in replacement) target.Children.Add(child);
     }
 
     private void AddNavigationSection(StackPanel parent, ProjectTreeNode sectionRoot)

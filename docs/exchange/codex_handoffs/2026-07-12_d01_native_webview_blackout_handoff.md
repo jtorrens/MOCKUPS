@@ -6,7 +6,33 @@ To: WebView / Preview lifecycle debugging thread
 Current `main`: `18de46ae`  
 Original UX baseline: `862c7f1c`  
 Platform reproduced: macOS  
-Status: diagnosis accepted; implementation intentionally stopped
+Status: shared lifecycle correction implemented; manual macOS continuity matrix
+pending, Windows parity unavailable in the current environment
+
+## Implementation update
+
+The shared correction keeps the previous editor and navigation visuals attached
+while their replacements are constructed. `EditorContentController` now builds
+all candidate cards before `EditorCardHostController` performs one synchronous
+host swap. `EditorNavigationRenderer` follows the same candidate-then-swap
+ordering. No editor-specific controls or preview/component rules were added.
+
+Workspace ownership is now changed without immediately refreshing Preview.
+`LoadProjectTree` resolves and commits the final workspace selection, and
+`ShowNode` issues the single Preview refresh for that final context. Restored
+startup workspace uses the same ordering. This removes the old new-workspace /
+old-selection intermediate payload.
+
+Generic lifecycle instrumentation adds a correlation id to shell and Preview
+events and records candidate/swap checkpoints, child counts, window/Preview
+bounds, NativeWebView bounds and visibility, synchronous completion, and the
+first render-priority dispatcher callback. Patch and renderer events launched
+inside the transaction inherit the same correlation id.
+
+Architecture enforcement now requires the no-refresh workspace transition and
+candidate replacement routes. The correction leaves payload contracts,
+Production frame resolution, Conversation, Bubble and transport units/scopes
+unchanged. It does not introduce a loading mask or WebView navigation action.
 
 ## Requested outcome
 

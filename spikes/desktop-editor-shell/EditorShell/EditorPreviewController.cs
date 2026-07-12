@@ -499,12 +499,24 @@ internal sealed class EditorPreviewController
 
     public void SetWorkspace(EditorWorkspace workspace)
     {
+        SetWorkspace(workspace, refresh: true);
+    }
+
+    public void SetWorkspaceWithoutRefresh(EditorWorkspace workspace)
+    {
+        SetWorkspace(workspace, refresh: false);
+    }
+
+    private void SetWorkspace(EditorWorkspace workspace, bool refresh)
+    {
         if (_workspace == workspace) return;
         _workspace = workspace;
         _designContextHistoryPopup.IsOpen = false;
         StopShotPlayback();
-        Refresh();
+        if (refresh) Refresh();
     }
+
+    public string NativeHostLifecycleState() => _designPreviewPane.NativeHostLifecycleState();
 
     private void RefreshDesignContextHistoryChrome()
     {

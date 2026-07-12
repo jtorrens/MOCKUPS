@@ -2205,6 +2205,21 @@ assertContains(
   "preview ownership must follow the explicit Design or Production workspace",
 );
 assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "_previewController.SetWorkspaceWithoutRefresh(workspace);",
+  "workspace transactions must establish their final selection before refreshing Preview",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContentController.cs",
+  "_cardHost.Replace(cards);",
+  "editor content must build a candidate before replacing the visible card host",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "var candidate = new StackPanel();",
+  "navigation content must build a candidate before replacing the visible host",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "ModuleInstanceStartFrame(shotId, contextNode.Id)",
   "a selected module instance must retain its owning Shot navigator context",

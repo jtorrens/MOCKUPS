@@ -38,30 +38,26 @@ internal sealed class EditorContentController
 
     public void Build(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
     {
-        Reset();
-
         var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
-        foreach (var layoutCard in layout.Cards
+        ResetRegistries();
+        var cards = layout.Cards
                      .Where((card) => card.Visible)
                      .OrderBy((card) => card.Order)
-                     .ThenBy((card) => card.Label))
-        {
-            _cardHost.Add(_layoutCards.Create(dataNode, layoutCard));
-        }
-
-        foreach (var collectionCard in _collectionCards.Create(dataNode))
-        {
-            _cardHost.Add(collectionCard);
-        }
+                     .ThenBy((card) => card.Label)
+                     .Select((layoutCard) => _layoutCards.Create(dataNode, layoutCard))
+                     .Concat(_collectionCards.Create(dataNode))
+                     .ToList();
+        _cardHost.Replace(cards);
     }
 
     public void BuildEmbedded(EditorEmbeddedContext context)
     {
-        Reset();
+        ResetRegistries();
+        var cards = new List<InstantEditorCard>();
 
         if (EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
         {
-            _cardHost.Add(_layoutCards.Create(context.OwnerNode, new EditorLayoutCard
+            cards.Add(_layoutCards.Create(context.OwnerNode, new EditorLayoutCard
             {
                 Id = $"{context.Slot.FieldId}.ownerSettings",
                 Label = ownerSettings.Label,
@@ -92,13 +88,13 @@ internal sealed class EditorContentController
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            _cardHost.Add(_layoutCards.CreateEmbedded(context, layoutCard));
+            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard));
         }
+        _cardHost.Replace(cards);
     }
 
-    private void Reset()
+    private void ResetRegistries()
     {
-        _cardHost.Clear();
         _activeFieldControls.Clear();
         _inlinePreviews.Reset();
     }
