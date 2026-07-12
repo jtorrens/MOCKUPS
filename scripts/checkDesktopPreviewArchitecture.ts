@@ -2175,6 +2175,20 @@ assertContains(
   "Required production font file is missing",
   "missing production font files must fail before web rendering",
 );
+for (const requiredAssetIdentityTerm of ["stats.size", "stats.mtimeMs", "stats.ctimeMs"]) {
+  assertContains(
+    "src/desktop-preview/previewAssetResolver.ts",
+    requiredAssetIdentityTerm,
+    `preview video cache identity must include ${requiredAssetIdentityTerm}`,
+  );
+}
+for (const requiredReferenceIdentityTerm of ["info.Length", "info.LastWriteTimeUtc.Ticks", "info.CreationTimeUtc.Ticks"]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+    requiredReferenceIdentityTerm,
+    `reference overlay cache identity must include ${requiredReferenceIdentityTerm}`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
   "ValueKind.TypographySystemStyle",

@@ -14,8 +14,9 @@ import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import { stringValue } from "./previewValueHelpers.js";
 
 const videoFrameCache = new Map<string, string>();
-const lastVideoFrameByPath = new Map<string, string>();
+const lastVideoFrameByAsset = new Map<string, string>();
 const videoDurationCache = new Map<string, number>();
+const videoIdentityByPath = new Map<string, string>();
 const maxVideoFrameCacheEntries = 240;
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
@@ -142,11 +143,12 @@ function localMediaFrameUri(fullPath: string, timeSeconds: number) {
 }
 
 function videoFrameFileUri(fullPath: string, timeSeconds: number) {
+  const assetIdentity = currentVideoAssetIdentity(fullPath);
   const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
-  const duration = videoDurationSeconds(fullPath);
+  const duration = videoDurationSeconds(fullPath, assetIdentity);
   const effectiveTime =
     duration > 0 ? Math.min(normalizedTime, Math.max(0, duration - 0.001)) : normalizedTime;
-  const cacheKey = `${fullPath}#${effectiveTime.toFixed(3)}`;
+  const cacheKey = `${assetIdentity}#${effectiveTime.toFixed(3)}`;
   const cached = videoFrameCache.get(cacheKey);
   if (cached) {
     debugVideoFrame("cache-hit", {
@@ -160,7 +162,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
   }
 
   try {
-    const framePath = cachedVideoFramePath(fullPath, effectiveTime);
+    const framePath = cachedVideoFramePath(assetIdentity, effectiveTime);
     const hadFrame = existingNonEmptyFile(framePath);
     if (!existingNonEmptyFile(framePath)) {
       mkdirSync(path.dirname(framePath), { recursive: true });
@@ -196,7 +198,7 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
         framePath,
       });
       return lastVideoFrameOrError(
-        fullPath,
+        assetIdentity,
         `No video frame at ${effectiveTime.toFixed(3)}s`,
       );
     }
@@ -212,13 +214,13 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
         bytes: fileSize(framePath),
       });
       return lastVideoFrameOrError(
-        fullPath,
+        assetIdentity,
         `Unsupported extracted video frame: ${framePath}`,
       );
     }
 
     cacheVideoFrame(cacheKey, uri);
-    lastVideoFrameByPath.set(fullPath, uri);
+    lastVideoFrameByAsset.set(assetIdentity, uri);
     debugVideoFrame(hadFrame ? "disk-hit" : "extract", {
       source: fullPath,
       requested: normalizedTime,
@@ -239,24 +241,24 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
       error: message,
     });
     return lastVideoFrameOrError(
-      fullPath,
+      assetIdentity,
       `Video frame extraction failed: ${message}`,
     );
   }
 }
 
-function lastVideoFrameOrError(fullPath: string, error: string) {
-  const lastFrame = lastVideoFrameByPath.get(fullPath);
+function lastVideoFrameOrError(assetIdentity: string, error: string) {
+  const lastFrame = lastVideoFrameByAsset.get(assetIdentity);
   debugVideoFrame(lastFrame ? "last-frame" : "missing", {
-    source: fullPath,
+    source: assetIdentity,
     error,
     uriChars: lastFrame?.length ?? 0,
   });
   return lastFrame ? { uri: lastFrame, error } : { uri: "", error };
 }
 
-function videoDurationSeconds(fullPath: string) {
-  const cached = videoDurationCache.get(fullPath);
+function videoDurationSeconds(fullPath: string, assetIdentity: string) {
+  const cached = videoDurationCache.get(assetIdentity);
   if (cached !== undefined) return cached;
 
   try {
@@ -279,18 +281,34 @@ function videoDurationSeconds(fullPath: string) {
     );
     const duration = Number.parseFloat(output.trim());
     const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
-    videoDurationCache.set(fullPath, safeDuration);
+    videoDurationCache.set(assetIdentity, safeDuration);
     return safeDuration;
   } catch {
-    videoDurationCache.set(fullPath, 0);
+    videoDurationCache.set(assetIdentity, 0);
     return 0;
   }
 }
 
-function cachedVideoFramePath(fullPath: string, timeSeconds: number) {
-  const key = `${fullPath}#${timeSeconds.toFixed(3)}`;
+function cachedVideoFramePath(assetIdentity: string, timeSeconds: number) {
+  const key = `${assetIdentity}#${timeSeconds.toFixed(3)}`;
   const hash = createHash("sha1").update(key).digest("hex");
   return path.join(os.tmpdir(), "mockups-video-frames", `${hash}.jpg`);
+}
+
+function currentVideoAssetIdentity(fullPath: string) {
+  const stats = statSync(fullPath);
+  const normalizedPath = path.resolve(fullPath);
+  const identity = `${normalizedPath}|${stats.size}|${stats.mtimeMs}|${stats.ctimeMs}`;
+  const previousIdentity = videoIdentityByPath.get(normalizedPath);
+  if (previousIdentity && previousIdentity !== identity) {
+    videoDurationCache.delete(previousIdentity);
+    lastVideoFrameByAsset.delete(previousIdentity);
+    for (const key of videoFrameCache.keys()) {
+      if (key.startsWith(`${previousIdentity}#`)) videoFrameCache.delete(key);
+    }
+  }
+  videoIdentityByPath.set(normalizedPath, identity);
+  return identity;
 }
 
 function existingNonEmptyFile(fullPath: string) {

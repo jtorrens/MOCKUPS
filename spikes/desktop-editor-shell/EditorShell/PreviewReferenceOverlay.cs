@@ -51,13 +51,14 @@ internal sealed record PreviewReferenceOverlay(
         var timeSeconds = isVideo
             ? Math.Max(0, state.PreviewFrame) / Math.Max(1, state.FrameRate)
             : 0;
-        var cacheKey = $"{sourcePath}|{timeSeconds:F3}";
+        var assetIdentity = AssetIdentity(sourcePath);
+        var cacheKey = $"{assetIdentity}|{timeSeconds:F3}";
         lock (UriCache)
         {
             if (UriCache.TryGetValue(cacheKey, out var cached)) return cached;
         }
 
-        var resolved = isVideo ? VideoFrameUri(sourcePath, timeSeconds) : ImageDataUri(sourcePath);
+        var resolved = isVideo ? VideoFrameUri(sourcePath, assetIdentity, timeSeconds) : ImageDataUri(sourcePath);
         if (string.IsNullOrWhiteSpace(resolved)) return "";
         lock (UriCache)
         {
@@ -95,11 +96,11 @@ internal sealed record PreviewReferenceOverlay(
             : $"data:{mime};base64,{Convert.ToBase64String(File.ReadAllBytes(path))}";
     }
 
-    private static string VideoFrameUri(string sourcePath, double timeSeconds)
+    private static string VideoFrameUri(string sourcePath, string assetIdentity, double timeSeconds)
     {
         try
         {
-            var key = $"{sourcePath}|{timeSeconds:F3}";
+            var key = $"{assetIdentity}|{timeSeconds:F3}";
             var hash = Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(key))).ToLowerInvariant();
             var framePath = Path.Combine(Path.GetTempPath(), "mockups-preview-reference", $"{hash}.jpg");
             Directory.CreateDirectory(Path.GetDirectoryName(framePath)!);
@@ -123,6 +124,12 @@ internal sealed record PreviewReferenceOverlay(
     }
 
     private static bool IsVideo(string path) => Path.GetExtension(path).ToLowerInvariant() is ".mp4" or ".mov" or ".m4v" or ".webm";
+
+    private static string AssetIdentity(string path)
+    {
+        var info = new FileInfo(path);
+        return $"{Path.GetFullPath(path)}|{info.Length}|{info.LastWriteTimeUtc.Ticks}|{info.CreationTimeUtc.Ticks}";
+    }
 
     private static string FfmpegExecutable()
     {
