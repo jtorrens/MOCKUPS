@@ -2210,6 +2210,16 @@ assertContains(
   "a selected module instance must retain its owning Shot navigator context",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'new FieldOption("screen", "Screen")',
+  "production navigation must expose the user-facing Shot or Screen scope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "NavigationFrameRange()",
+  "production slider and playback must resolve their selected Shot or Screen range",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "ModuleInstanceLocalFrame(database, node.Id, timelineFrame)",
   "module-instance production preview must translate the global Shot frame to a local frame",

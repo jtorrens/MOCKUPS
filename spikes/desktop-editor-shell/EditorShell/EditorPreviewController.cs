@@ -84,7 +84,13 @@ internal sealed class EditorPreviewController
         Maximum = 0,
         Value = 0,
         TickFrequency = 1,
-        MinWidth = 180,
+        MinWidth = 140,
+        MaxWidth = 300,
+    };
+    private readonly EditorInstantComboBox _shotNavigationScopeComboBox = new()
+    {
+        MinWidth = 92,
+        MinHeight = 30,
     };
     private readonly TextBlock _shotFrameText = new()
     {
@@ -163,6 +169,7 @@ internal sealed class EditorPreviewController
     private int _shotPreviewFrame;
     private string _shotTimelineShotId = "";
     private string _shotTimelineContextNodeId = "";
+    private string _shotNavigationScope = "shot";
     private bool _isUpdatingShotTimeline;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
@@ -329,7 +336,7 @@ internal sealed class EditorPreviewController
         {
             var subtitle = entry.Key.Kind == ProjectTreeNodeKind.Shot
                 ? "Shot"
-                : $"Module instance · {_database.GetModuleInstanceSettings(entry.Key.Id).ShotId}";
+                : $"Screen · {_database.GetModuleInstanceSettings(entry.Key.Id).ShotId}";
             var button = new Button
             {
                 Content = new StackPanel
@@ -602,13 +609,14 @@ internal sealed class EditorPreviewController
             ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
             ColumnSpacing = 8,
         };
-        frameRow.Children.Add(new TextBlock
+        _shotNavigationScopeComboBox.ItemsSource = new[]
         {
-            Text = "Frame",
-            FontSize = 11,
-            Opacity = 0.72,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-        });
+            new FieldOption("shot", "Shot"),
+            new FieldOption("screen", "Screen"),
+        };
+        _shotNavigationScopeComboBox.SelectedItem = ((IEnumerable<FieldOption>)_shotNavigationScopeComboBox.ItemsSource)
+            .First((option) => option.Value == _shotNavigationScope);
+        frameRow.Children.Add(_shotNavigationScopeComboBox);
         Grid.SetColumn(_shotFrameSlider, 1);
         frameRow.Children.Add(_shotFrameSlider);
         Grid.SetColumn(_shotFrameText, 2);
@@ -631,19 +639,19 @@ internal sealed class EditorPreviewController
             },
         };
         _shotTimelineControls.Children.Add(navigationRow);
-        ToolTip.SetTip(_shotPreviousSlotButton, "Previous module instance");
-        ToolTip.SetTip(_shotStartButton, "First Shot frame");
+        ToolTip.SetTip(_shotPreviousSlotButton, "Previous Screen");
+        ToolTip.SetTip(_shotStartButton, "First frame in the selected scope");
         ToolTip.SetTip(_shotPreviousFrameButton, "Previous frame");
-        ToolTip.SetTip(_shotPlayButton, "Play or pause Shot");
+        ToolTip.SetTip(_shotPlayButton, "Play or pause the selected scope");
         ToolTip.SetTip(_shotNextFrameButton, "Next frame");
-        ToolTip.SetTip(_shotEndButton, "Last Shot frame");
-        ToolTip.SetTip(_shotNextSlotButton, "Next module instance");
+        ToolTip.SetTip(_shotEndButton, "Last frame in the selected scope");
+        ToolTip.SetTip(_shotNextSlotButton, "Next Screen");
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
-        _shotStartButton.Click += (_, _) => SetShotPreviewFrame(0);
+        _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame);
         _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1);
         _shotPlayButton.Click += (_, _) => ToggleShotPlayback();
         _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1);
-        _shotEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame());
+        _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
 
         previewControlsHost.Content = new GlassCard
@@ -813,8 +821,16 @@ internal sealed class EditorPreviewController
         {
             if (change.Property == RangeBase.ValueProperty && !_isUpdatingShotTimeline)
             {
-                SetShotPreviewFrame((int)Math.Round(_shotFrameSlider.Value, MidpointRounding.AwayFromZero));
+                var range = NavigationFrameRange();
+                SetShotPreviewFrame(range.StartFrame + (int)Math.Round(_shotFrameSlider.Value, MidpointRounding.AwayFromZero));
             }
+        };
+        _shotNavigationScopeComboBox.SelectionChanged += (_, _) =>
+        {
+            if (_shotNavigationScopeComboBox.SelectedItem is not { } option || _isUpdatingShotTimeline) return;
+            _shotNavigationScope = option.Value;
+            StopShotPlayback();
+            Refresh();
         };
         _marksToggle.PropertyChanged += (_, change) =>
         {
@@ -1835,7 +1851,7 @@ internal sealed class EditorPreviewController
     {
         if (_workspace == EditorWorkspace.Production)
         {
-            var productionNode = ProductionContextNode();
+            var productionNode = ProductionPayloadNode();
             var productionPayload = DesignPreviewPayloadFactory.Create(
                 _database,
                 productionNode,
@@ -1906,12 +1922,14 @@ internal sealed class EditorPreviewController
                 : 0;
         }
         _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, 0, Math.Max(0, duration - 1));
+        var range = NavigationFrameRange();
+        var displayedFrame = Math.Clamp(_shotPreviewFrame - range.StartFrame, 0, Math.Max(0, range.DurationFrames - 1));
         _isUpdatingShotTimeline = true;
-        _shotFrameSlider.Maximum = Math.Max(0, duration - 1);
-        _shotFrameSlider.Value = _shotPreviewFrame;
-        _shotFrameText.Text = $"{_shotPreviewFrame} / {Math.Max(0, duration - 1)}";
-        _shotStartButton.IsEnabled = _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > 0;
-        _shotEndButton.IsEnabled = _shotNextFrameButton.IsEnabled = _shotPreviewFrame < duration - 1;
+        _shotFrameSlider.Maximum = Math.Max(0, range.DurationFrames - 1);
+        _shotFrameSlider.Value = displayedFrame;
+        _shotFrameText.Text = $"{displayedFrame} / {Math.Max(0, range.DurationFrames - 1)}";
+        _shotStartButton.IsEnabled = _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
+        _shotEndButton.IsEnabled = _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
         var activeSlotIndex = ActiveShotSlotIndex(shotId);
         var slotCount = _database.GetShotModuleInstanceSlots(shotId).Count;
         _shotPreviousSlotButton.IsEnabled = activeSlotIndex > 0;
@@ -1920,13 +1938,27 @@ internal sealed class EditorPreviewController
         _isUpdatingShotTimeline = false;
     }
 
+    private (int StartFrame, int EndFrame, int DurationFrames) NavigationFrameRange()
+    {
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)) return (0, 0, 1);
+        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
+        if (_shotNavigationScope != "screen") return (0, shotDuration - 1, shotDuration);
+        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var index = ActiveShotSlotIndex(shotId);
+        if (index < 0 || index >= slots.Count) return (0, shotDuration - 1, shotDuration);
+        var start = ModuleInstanceStartFrame(shotId, slots[index].Id);
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, slots[index].Id));
+        return (start, start + duration - 1, duration);
+    }
+
     private void SetShotPreviewFrame(int frame)
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
         StopShotPlayback();
-        var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shotId);
-        var next = Math.Clamp(frame, 0, Math.Max(0, duration - 1));
+        var range = NavigationFrameRange();
+        var next = Math.Clamp(frame, range.StartFrame, range.EndFrame);
         if (next == _shotPreviewFrame) return;
         _shotPreviewFrame = next;
         Refresh();
@@ -1964,7 +1996,9 @@ internal sealed class EditorPreviewController
         {
             start += ModuleInstanceTimeline.DurationFrames(_database, slots[index].Id);
         }
-        SetShotPreviewFrame(start);
+        StopShotPlayback();
+        _shotPreviewFrame = start;
+        _selectNodeById(slots[target].Id, null);
     }
 
     private int ModuleInstanceStartFrame(string shotId, string instanceId)
@@ -1988,12 +2022,13 @@ internal sealed class EditorPreviewController
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
         var shot = new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
-        if (_shotPreviewFrame >= ShotLastFrame()) _shotPreviewFrame = 0;
+        var navigationRange = NavigationFrameRange();
+        if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
         _shotPlaybackIsPreparing = true;
         PlaybackState.SetBusy(true);
         try
         {
-            _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(shot, _shotPreviewFrame).ToList();
+            _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(shot, _shotPreviewFrame, navigationRange.EndFrame).ToList();
             if (!await PreparePlaybackFramesAsync(null)) return;
         }
         finally
@@ -2007,14 +2042,14 @@ internal sealed class EditorPreviewController
         _shotPlaybackTimer.Start();
         _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Pause, 16);
         OnPlaybackStarted(new ComponentPreviewInputSession.PlaybackRunInfo(
-            ShotLastFrame() - _shotPlaybackStartFrame + 1,
+            navigationRange.EndFrame - _shotPlaybackStartFrame + 1,
             Math.Max(1, _database.GetShotSettings(shotId).Fps)));
         AdvanceShotPlayback();
     }
 
-    private IEnumerable<DesignPreviewPayload> ShotPlaybackFramePayloads(ProjectTreeNode shot, int startFrame)
+    private IEnumerable<DesignPreviewPayload> ShotPlaybackFramePayloads(ProjectTreeNode shot, int startFrame, int endFrame)
     {
-        var lastFrame = Math.Max(startFrame, ShotLastFrame());
+        var lastFrame = Math.Max(startFrame, endFrame);
         for (var frame = startFrame; frame <= lastFrame; frame++)
         {
             var payload = DesignPreviewPayloadFactory.Create(
@@ -2037,7 +2072,7 @@ internal sealed class EditorPreviewController
         }
         var elapsed = Stopwatch.GetElapsedTime(_shotPlaybackStartedTimestamp).TotalSeconds;
         var next = _shotPlaybackStartFrame + (int)Math.Floor(elapsed * Math.Max(1, _database.GetShotSettings(shotId).Fps));
-        var last = ShotLastFrame();
+        var last = NavigationFrameRange().EndFrame;
         if (next >= last)
         {
             _shotPreviewFrame = last;
@@ -2205,6 +2240,21 @@ internal sealed class EditorPreviewController
             return selected;
         }
         return _lastProductionPreviewNode?.ToNode();
+    }
+
+    private ProjectTreeNode? ProductionPayloadNode()
+    {
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)) return null;
+        if (_shotNavigationScope == "shot")
+        {
+            return new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
+        }
+        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var index = ActiveShotSlotIndex(shotId);
+        return index >= 0 && index < slots.Count
+            ? new PreviewNodeKey(ProjectTreeNodeKind.ModuleInstance, slots[index].Id).ToNode()
+            : new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
     }
 
     private static string RuntimeContextValue(DesignPreviewPayload? payload, string key)
