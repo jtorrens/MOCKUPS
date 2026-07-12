@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860">
+  <rect width="1500" height="860" fill="#171a1f"/><style>text{font-family:Inter,Arial}.p{fill:#20242a;stroke:#3b414a}.r{fill:#2b3037}.s{fill:#36577e}.t{fill:#f4f5f7}.m{fill:#aab2bd}.a{fill:#ffd45a}.d{fill:#6f7782}</style>
+  <text x="28" y="36" class="m" font-size="17">D02 · Gramática compartida de navegación — layout normal</text>
+  <rect x="28" y="55" width="430" height="745" rx="16" class="p"/><rect x="475" y="55" width="470" height="745" rx="16" class="p"/><rect x="962" y="55" width="510" height="745" rx="16" class="p"/>
+  <text x="56" y="95" class="m" font-size="14">NAVEGACIÓN</text><text x="56" y="126" class="t" font-size="24" font-weight="700">Design</text>
+  <text x="56" y="170" class="m" font-size="14">NORMAL</text><rect x="56" y="184" width="374" height="74" rx="11" class="r"/>
+  <text x="76" y="215" class="t" font-size="18" font-weight="600">Componentes</text><text x="76" y="239" class="m" font-size="14">Grupo de clases</text>
+  <text x="341" y="228" class="t" font-size="22">＋</text><text x="383" y="228" class="t" font-size="24">⌄</text>
+  <text x="56" y="294" class="m" font-size="14">SELECCIONADO</text><rect x="56" y="308" width="374" height="82" rx="11" class="s"/>
+  <text x="76" y="340" class="t" font-size="18" font-weight="600">Bubble</text><text x="76" y="365" class="m" font-size="14">Variante · seleccionada</text>
+  <text x="284" y="353" class="t" font-size="16">Abrir</text><text x="345" y="353" class="t" font-size="22">＋</text><text x="389" y="353" class="t" font-size="22">⋯</text>
+  <text x="56" y="426" class="m" font-size="14">PROTEGIDO · SELECCIONABLE Y ABRIBLE</text><rect x="56" y="440" width="374" height="82" rx="11" class="r"/>
+  <text x="76" y="472" class="t" font-size="18" font-weight="600">Default</text><text x="76" y="497" class="m" font-size="14">Variante protegida</text><text x="268" y="484" class="t" font-size="15">Abrir</text><text x="331" y="484" class="d" font-size="19">＋</text><text x="384" y="484" class="t" font-size="19">⋯</text>
+  <rect x="56" y="560" width="374" height="190" rx="12" fill="#242930" stroke="#59616d"/><text x="76" y="594" class="t" font-size="18" font-weight="600">Regla</text>
+  <text x="76" y="628" class="m" font-size="15">• Clic en fila = seleccionar</text><text x="76" y="657" class="m" font-size="15">• Chevron = expandir/contraer</text><text x="76" y="686" class="m" font-size="15">• Abrir = entrar en otro contexto</text><text x="76" y="715" class="m" font-size="15">• ＋ = crear [objeto] en tooltip/nombre accesible</text><text x="76" y="744" class="m" font-size="15">• Protegido: solo se desactivan acciones prohibidas</text>
+  <text x="505" y="98" class="m" font-size="14">EDITOR</text><text x="505" y="130" class="t" font-size="24" font-weight="700">Bubble</text><rect x="505" y="160" width="410" height="80" rx="11" class="r"/><text x="530" y="196" class="t" font-size="18">General</text><text x="864" y="205" class="t" font-size="22">›</text>
+  <rect x="505" y="260" width="410" height="80" rx="11" class="r"/><text x="530" y="296" class="t" font-size="18">Runtime Inputs</text><text x="864" y="305" class="t" font-size="22">›</text>
+  <text x="992" y="98" class="m" font-size="14">PREVIEW</text><rect x="992" y="120" width="450" height="630" rx="13" fill="#17263a"/><rect x="1127" y="170" width="180" height="530" rx="22" fill="#f3f4f6"/>
+  <rect x="1000" y="770" width="430" height="58" rx="10" fill="#252a31"/><text x="1020" y="805" class="m" font-size="15">Ancho reducido: “Abrir” pasa a icono + tooltip; ＋ y ⋯ permanecen.</text>
+</svg>

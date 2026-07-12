@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720">
+  <rect width="1400" height="720" fill="#171a1f"/>
+  <rect x="30" y="30" width="1340" height="660" rx="18" fill="#20242a" stroke="#3b414a"/>
+  <text x="70" y="82" fill="#929aa6" font-family="Inter,Arial" font-size="18">DESIGN  /  COMPONENTS  /  BUBBLE</text>
+  <text x="70" y="132" fill="#f4f5f7" font-family="Inter,Arial" font-size="32" font-weight="700">Bubble</text>
+  <rect x="205" y="99" width="160" height="44" rx="10" fill="#343a44" stroke="#f0b90b"/>
+  <text x="228" y="128" fill="#f4f5f7" font-family="Inter,Arial" font-size="18">Variant: Bubble</text>
+  <rect x="382" y="99" width="118" height="44" rx="22" fill="#4d3b12"/>
+  <text x="407" y="128" fill="#ffd761" font-family="Inter,Arial" font-size="17">3 overrides</text>
+  <rect x="1030" y="94" width="138" height="50" rx="10" fill="#2d323a" stroke="#626a76"/>
+  <text x="1060" y="126" fill="#eef0f3" font-family="Inter,Arial" font-size="18">Revert…</text>
+  <rect x="1182" y="94" width="150" height="50" rx="10" fill="#705407" stroke="#f0b90b"/>
+  <text x="1209" y="126" fill="#fff6d1" font-family="Inter,Arial" font-size="18">Save variant</text>
+  <line x1="70" y1="166" x2="1330" y2="166" stroke="#3b414a"/>
+  <rect x="70" y="200" width="1260" height="86" rx="12" fill="#292e35"/>
+  <text x="98" y="238" fill="#f4f5f7" font-family="Inter,Arial" font-size="20" font-weight="600">Surface and padding</text>
+  <text x="98" y="266" fill="#a9b0ba" font-family="Inter,Arial" font-size="16">Uses Surface / Default · 1 local override</text>
+  <text x="1280" y="252" fill="#d6dae0" font-family="Inter,Arial" font-size="26">›</text>
+  <rect x="70" y="306" width="1260" height="86" rx="12" fill="#292e35"/>
+  <text x="98" y="344" fill="#f4f5f7" font-family="Inter,Arial" font-size="20" font-weight="600">Text</text>
+  <text x="98" y="372" fill="#a9b0ba" font-family="Inter,Arial" font-size="16">Uses Text Box / Default · inherited</text>
+  <text x="1280" y="358" fill="#d6dae0" font-family="Inter,Arial" font-size="26">›</text>
+  <rect x="70" y="426" width="1260" height="196" rx="12" fill="#252a31" stroke="#4b525d"/>
+  <text x="98" y="468" fill="#f4f5f7" font-family="Inter,Arial" font-size="20" font-weight="600">Runtime inputs</text>
+  <rect x="98" y="492" width="540" height="98" rx="10" fill="#1e2228"/>
+  <text x="120" y="526" fill="#f4f5f7" font-family="Inter,Arial" font-size="18">Test values</text>
+  <text x="120" y="557" fill="#9da5b0" font-family="Inter,Arial" font-size="16">Temporary preview content · not saved to the variant</text>
+  <rect x="1000" y="505" width="290" height="54" rx="10" fill="#2d323a" stroke="#626a76"/>
+  <text x="1030" y="539" fill="#eef0f3" font-family="Inter,Arial" font-size="18">Save test values as defaults…</text>
+  <text x="70" y="666" fill="#8f98a4" font-family="Inter,Arial" font-size="16">Proposal: one persistent context header makes owner, variant, override state and save scope explicit.</text>
+</svg>

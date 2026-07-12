@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050"><rect width="1600" height="1050" fill="#171a1f"/><style>text{font-family:Inter,Arial}.t{fill:#f4f5f7}.m{fill:#b6bec8}.a{fill:#ffd45a}.c{fill:#11151a;stroke:#f0b90b;stroke-width:3}</style>
+  <image href="03-production-overview.png" x="0" y="0" width="1600" height="1097" preserveAspectRatio="xMidYMid slice" opacity=".46"/>
+  <rect x="420" y="92" width="1040" height="72" rx="12" class="c"/><text x="448" y="121" class="m" font-size="15">PRODUCTION</text><text x="448" y="149" class="t" font-size="22" font-weight="700">Episode 1 › Shot 03 › Screen: Conversation</text><text x="1264" y="139" class="a" font-size="15">contexto persistente</text>
+  <rect x="900" y="185" width="560" height="80" rx="12" class="c"/><text x="925" y="215" class="m" font-size="14">HEREDADO</text><text x="925" y="245" class="t" font-size="16">Galaxy S21 · Android Theme Test · Light</text>
+  <rect x="420" y="810" width="1040" height="124" rx="12" class="c"/><text x="445" y="842" class="m" font-size="14">TRANSPORTE EXISTENTE · SIN REDISEÑO</text>
+  <text x="445" y="879" class="t" font-size="17">Conservar controles compactos, separadores, unidades en frames y ámbitos Frame / Screen / Shot.</text>
+  <text x="445" y="915" class="m" font-size="14">La parte aceptada de P01 añade contexto encima; no sustituye ni reagrupa este transporte.</text>
+  <rect x="30" y="92" width="350" height="140" rx="12" class="c"/><text x="52" y="125" class="t" font-size="17" font-weight="700">Ancho reducido</text><text x="52" y="156" class="m" font-size="14">Episode 1 › Shot 03</text><text x="52" y="183" class="m" font-size="14">Conversation · frame 124</text><text x="52" y="211" class="m" font-size="14">Tooltips conservan ámbito y destino.</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900">
+  <rect width="1500" height="900" fill="#171a1f"/>
+  <style>text{font-family:Inter,Arial}.p{fill:#20242a;stroke:#3b414a}.r{fill:transparent}.h{fill:#292e35}.s{fill:#36577e}.t{fill:#f4f5f7}.m{fill:#aab2bd}.a{fill:#ffd45a}.l{stroke:#4b525d;stroke-width:1}</style>
+  <text x="28" y="38" class="m" font-size="17">D02 · Decisión final — navegación híbrida equilibrada</text>
+  <rect x="28" y="58" width="460" height="792" rx="16" class="p"/>
+  <rect x="505" y="58" width="460" height="792" rx="16" class="p"/>
+  <rect x="982" y="58" width="490" height="792" rx="16" class="p"/>
+
+  <text x="56" y="100" class="m" font-size="14">NAVEGACIÓN · DESIGN</text>
+  <rect x="56" y="124" width="404" height="52" rx="11" class="h"/>
+  <text x="78" y="156" class="t" font-size="17" font-weight="600">Component Classes</text>
+  <text x="425" y="157" class="t" font-size="20">⌃</text>
+  <text x="76" y="210" class="t" font-size="16" font-weight="600">⌄  ◫  Components</text><text x="417" y="210" class="m" font-size="14">3</text>
+  <line x1="88" y1="224" x2="88" y2="474" class="l"/>
+  <text x="104" y="254" class="t" font-size="16">›  ◉  Audio</text>
+  <text x="104" y="300" class="t" font-size="16">⌄  ◫  Bubble</text><text x="413" y="300" class="m" font-size="14">2</text>
+  <line x1="120" y1="313" x2="120" y2="403" class="l"/>
+  <text x="137" y="344" class="t" font-size="15">○  Default</text><text x="385" y="344" class="a" font-size="16">▣</text>
+  <rect x="126" y="360" width="318" height="40" rx="7" class="s"/>
+  <text x="139" y="386" class="t" font-size="15">◫  Bubble</text><text x="321" y="386" class="t" font-size="14">Abrir</text><text x="376" y="386" class="t" font-size="18">＋  ⋯</text>
+  <text x="104" y="442" class="t" font-size="16">›  ◉  Media</text>
+  <text x="76" y="498" class="t" font-size="16" font-weight="600">›  ◫  Atoms</text><text x="417" y="498" class="m" font-size="14">8</text>
+  <text x="76" y="544" class="t" font-size="16" font-weight="600">›  ◫  System</text><text x="417" y="544" class="m" font-size="14">4</text>
+  <rect x="56" y="582" width="404" height="52" rx="11" class="h"/><text x="78" y="614" class="t" font-size="17">Themes</text><text x="425" y="614" class="t" font-size="20">›</text>
+  <rect x="56" y="648" width="404" height="52" rx="11" class="h"/><text x="78" y="680" class="t" font-size="17">Devices</text><text x="425" y="680" class="t" font-size="20">›</text>
+  <text x="56" y="742" class="m" font-size="14">Card = sección funcional</text><text x="56" y="771" class="m" font-size="14">Fila = objeto navegable</text>
+
+  <text x="533" y="100" class="m" font-size="14">ESTADOS Y ACCIONES</text>
+  <text x="533" y="142" class="m" font-size="13">NORMAL</text><rect x="533" y="154" width="404" height="40" rx="7" class="r"/><text x="551" y="180" class="t" font-size="16">›  ◫  Bubble</text>
+  <text x="533" y="224" class="m" font-size="13">HOVER / FOCO</text><rect x="533" y="236" width="404" height="40" rx="7" fill="#30363e"/><text x="551" y="262" class="t" font-size="16">›  ◫  Bubble</text><text x="806" y="262" class="t" font-size="14">Abrir  ＋  ⋯</text>
+  <text x="533" y="306" class="m" font-size="13">SELECCIONADO</text><rect x="533" y="318" width="404" height="40" rx="7" class="s"/><text x="551" y="344" class="t" font-size="16">›  ◫  Bubble</text><text x="806" y="344" class="t" font-size="14">Abrir  ＋  ⋯</text>
+  <text x="533" y="388" class="m" font-size="13">PROTEGIDO · FILA OPERATIVA</text><rect x="533" y="400" width="404" height="40" rx="7" fill="#292e35"/><text x="551" y="426" class="t" font-size="16">○  Default</text><text x="805" y="426" class="a" font-size="15">Protegido ▣  ⋯</text>
+  <rect x="533" y="482" width="404" height="210" rx="11" fill="#242930" stroke="#59616d"/>
+  <text x="555" y="518" class="t" font-size="17" font-weight="600">Reglas</text>
+  <text x="555" y="550" class="m" font-size="14">• Clic en fila = seleccionar</text><text x="555" y="578" class="m" font-size="14">• Chevron = expandir/contraer</text><text x="555" y="606" class="m" font-size="14">• Enter/Abrir = entrar en contexto</text><text x="555" y="634" class="m" font-size="14">• ＋ nombra el hijo que crea</text><text x="555" y="662" class="m" font-size="14">• ⋯ contiene acciones raras/destructivas</text>
+  <text x="533" y="744" class="m" font-size="14">Las acciones aparecen en hover, selección y foco.</text><text x="533" y="773" class="m" font-size="14">Su columna permanece reservada: el texto no se desplaza.</text>
+
+  <text x="1010" y="100" class="m" font-size="14">INTEGRACIÓN · TRES PANELES</text>
+  <rect x="1010" y="124" width="434" height="92" rx="11" class="h"/><text x="1032" y="158" class="t" font-size="18">Componente: Bubble</text><text x="1032" y="188" class="m" font-size="15">Variante: Bubble · 3 overrides</text>
+  <rect x="1010" y="236" width="434" height="82" rx="11" class="h"/><text x="1032" y="284" class="t" font-size="18">General</text>
+  <rect x="1010" y="334" width="434" height="82" rx="11" class="h"/><text x="1032" y="382" class="t" font-size="18">Runtime Inputs</text>
+  <rect x="1010" y="450" width="434" height="300" rx="12" fill="#17263a"/><rect x="1142" y="484" width="170" height="236" rx="22" fill="#f3f4f6"/>
+  <text x="1010" y="792" class="m" font-size="14">Design y Production suministran metadatos.</text><text x="1010" y="819" class="m" font-size="14">La fila compartida no conoce tipos concretos.</text>
+</svg>
