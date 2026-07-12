@@ -211,6 +211,8 @@ public partial class MainWindow : SukiWindow
         UpdateWorkspaceButtons();
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
+        _previewController.RestoreProductionHistoryState(_shellState.SessionHistory.ProductionPreviewHistory);
+        _previewController.SetWorkspace(_workspace);
         _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
@@ -473,6 +475,7 @@ public partial class MainWindow : SukiWindow
 
         _workspace = workspace;
         _shellState.SetWorkspace(workspace);
+        _previewController.SetWorkspace(workspace);
         UpdateWorkspaceButtons();
         LoadProjectTree();
     }
@@ -555,6 +558,7 @@ public partial class MainWindow : SukiWindow
         {
             VariantHistory = _variantHistory.ExportState(),
             DesignPreviewHistory = _previewController.ExportDesignHistoryState().ToList(),
+            ProductionPreviewHistory = _previewController.ExportProductionHistoryState().ToList(),
             LastComponentVariantSelections = _nodeSelection.ExportComponentPresetSelections().ToDictionary(
                 (entry) => entry.Key,
                 (entry) => entry.Value,

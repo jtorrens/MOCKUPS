@@ -8,6 +8,7 @@ internal sealed class EditorSessionHistoryState
 {
     public EditorVariantHistoryStore? VariantHistory { get; set; }
     public List<EditorDesignPreviewHistoryEntryState> DesignPreviewHistory { get; set; } = [];
+    public List<EditorDesignPreviewHistoryEntryState> ProductionPreviewHistory { get; set; } = [];
     public Dictionary<string, string> LastComponentVariantSelections { get; set; } = new(StringComparer.Ordinal);
 }
 

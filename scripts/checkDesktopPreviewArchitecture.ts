@@ -2196,8 +2196,28 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "RenderShotModuleInstanceItems",
-  "production preview history must expose ordered Shot module-instance slots",
+  "RenderProductionContextHistoryItems",
+  "production preview history must use its own Shot and module-instance stack",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "public void SetWorkspace(EditorWorkspace workspace)",
+  "preview ownership must follow the explicit Design or Production workspace",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "ModuleInstanceStartFrame(shotId, contextNode.Id)",
+  "a selected module instance must retain its owning Shot navigator context",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "ModuleInstanceLocalFrame(database, node.Id, timelineFrame)",
+  "module-instance production preview must translate the global Shot frame to a local frame",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
+  "TimelinePreviousInstance",
+  "Shot navigator boundary controls must use shared vector icon chrome",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",

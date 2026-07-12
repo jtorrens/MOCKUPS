@@ -67,7 +67,7 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.Module => FromModule(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
-            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces, ModuleInstanceLocalFrame(database, node.Id, timelineFrame)),
             ProjectTreeNodeKind.Shot => FromShot(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces, timelineFrame),
             _ => null,
         };
@@ -78,6 +78,18 @@ internal static class DesignPreviewPayloadFactory
                 ThemeStatusBarPresetId = theme.StatusBarId,
                 ThemeNavigationBarPresetId = theme.NavigationBarId,
             };
+    }
+
+    private static int ModuleInstanceLocalFrame(SpikeDatabase database, string instanceId, int shotFrame)
+    {
+        var instance = database.GetModuleInstanceSettings(instanceId);
+        var startFrame = 0;
+        foreach (var slot in database.GetShotModuleInstanceSlots(instance.ShotId))
+        {
+            if (slot.Id == instanceId) return Math.Max(0, shotFrame - startFrame);
+            startFrame += ModuleInstanceTimeline.DurationFrames(database, slot.Id);
+        }
+        return 0;
     }
 
     internal static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)

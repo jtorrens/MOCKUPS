@@ -26,6 +26,12 @@ internal static class EditorIcons
     public const string Folder = "folder";
     public const string Left = "left";
     public const string Right = "right";
+    public const string TimelinePreviousInstance = "timeline-previous-instance";
+    public const string TimelineFirstFrame = "timeline-first-frame";
+    public const string TimelinePreviousFrame = "timeline-previous-frame";
+    public const string TimelineNextFrame = "timeline-next-frame";
+    public const string TimelineLastFrame = "timeline-last-frame";
+    public const string TimelineNextInstance = "timeline-next-instance";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -301,6 +307,12 @@ internal static class EditorIcons
             Settings => "M12 15.5A3.5 3.5 0 1 0 12 8.5A3.5 3.5 0 0 0 12 15.5Z M19.4 13.5A7.9 7.9 0 0 0 19.4 10.5L21.2 9.1L19.2 5.7L17.1 6.6A8.1 8.1 0 0 0 14.5 5.1L14.2 3H9.8L9.5 5.1A8.1 8.1 0 0 0 6.9 6.6L4.8 5.7L2.8 9.1L4.6 10.5A7.9 7.9 0 0 0 4.6 13.5L2.8 14.9L4.8 18.3L6.9 17.4A8.1 8.1 0 0 0 9.5 18.9L9.8 21H14.2L14.5 18.9A8.1 8.1 0 0 0 17.1 17.4L19.2 18.3L21.2 14.9Z",
             Play => "M8 5V19L19 12Z",
             Pause => "M7 5H10V19H7Z M14 5H17V19H14Z",
+            TimelinePreviousInstance => "M5 5V19 M18 6L12 12L18 18 M13 6L7 12L13 18",
+            TimelineFirstFrame => "M7 5V19 M18 6L11 12L18 18",
+            TimelinePreviousFrame => "M16 6L9 12L16 18",
+            TimelineNextFrame => "M8 6L15 12L8 18",
+            TimelineLastFrame => "M17 5V19 M6 6L13 12L6 18",
+            TimelineNextInstance => "M19 5V19 M6 6L12 12L6 18 M11 6L17 12L11 18",
             Folder => "M3 6H10L12 8H21V19H3Z M3 6V19",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
