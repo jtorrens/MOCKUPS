@@ -47,6 +47,45 @@ embedded children.
 The module configuration chooses reusable variants; individual message content
 and actor/media values remain runtime data.
 
+## Planned participant identity model
+
+Conversation must distinguish the Shot owner from the remote chat identity:
+
+- `ownerActor` is parent/calculated production context. It owns the device and
+  theme and represents the local participant for outgoing messages.
+- `chatActor` is a Conversation runtime reference used by the header and by
+  incoming messages in an individual chat.
+- `message.actorId` remains an item runtime value for group conversations.
+
+The planned `conversationType` runtime option starts with `individual` and
+`group`:
+
+- Individual forces incoming messages to `chatActor`, outgoing messages to
+  `ownerActor`, hides per-message actor selection and suppresses Bubble actor
+  name/avatar presentation.
+- Group allows an independent actor per message and keeps normal Bubble actor
+  presentation rules.
+
+These are participant/content rules, not Header layout. Their editor fields
+belong in a Conversation/Participants card; Header remains responsible only
+for visual composition and layout.
+
+### Interim group workflow
+
+Until a dedicated group identity record exists, a normal Actor may be created
+as the visual identity of a group and selected for the header. Message actors
+are then selected manually from the actors that belong to that chat. No
+automatic membership filtering is implied by this interim workflow.
+
+### Future group assistance
+
+A future `Actor Group` record may own a name, avatar and ordered Actor members.
+Selecting it would filter each group-message actor picker to those members plus
+the owner actor. Actor itself should remain a person/device owner; do not add a
+compatibility switch that makes Actor polymorphically represent both a person
+and a group. Filtering must be declared through the generic record-reference
+input contract, not implemented as a Conversation-specific picker.
+
 ## Composition and declared dependencies
 
 Conversation composes, from back to front:
