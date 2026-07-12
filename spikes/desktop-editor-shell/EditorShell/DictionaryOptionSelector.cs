@@ -37,6 +37,12 @@ internal static class DictionaryOptionSelector
     private static IReadOnlyList<FieldOption> OptionsWithValue(FieldDefinition definition, string value)
     {
         var options = definition.Options ?? [];
+        if (definition.ValueKind == ValueKind.RecordReference
+            && string.IsNullOrWhiteSpace(value)
+            && !options.Any((option) => string.IsNullOrWhiteSpace(option.Value)))
+        {
+            return [new FieldOption("", $"Select {definition.Label.ToLowerInvariant()}…"), .. options];
+        }
         if (string.IsNullOrWhiteSpace(value) || options.Any((option) => option.Value == value))
         {
             return options;

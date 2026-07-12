@@ -2331,8 +2331,13 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  '"0,0,Auto,Auto"',
-  "production preview setup must collapse editor-owned Device and Theme selectors",
+  '"0,0,0,Auto"',
+  "production preview setup must collapse editor-owned Device, Theme and Mode selectors",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "ProductionPreviewContextStrip.Render",
+  "production preview setup must expose inherited context through the shared read-only strip",
 );
 assertContains(
   "src/desktop-preview/conversationModuleRenderable.ts",
@@ -2744,6 +2749,7 @@ function assertModuleInstanceRuntimePayloadsMatchContracts() {
     database.close();
   }
 }
+
 
 assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();

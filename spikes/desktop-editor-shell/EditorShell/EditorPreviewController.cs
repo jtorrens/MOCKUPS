@@ -116,13 +116,23 @@ internal sealed class EditorPreviewController
     private readonly Button _designContextHistoryButton;
     private readonly Button _designContextAddHistoryButton;
     private readonly Button _designContextLockButton;
+    private readonly Panel _previewTitle;
     private readonly Popup _designContextHistoryPopup;
     private readonly StackPanel _designContextHistoryItems = new() { Spacing = 1 };
     private readonly DesignWebPreviewPane _designPreviewPane = new();
     private readonly ComponentPreviewInputSession _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
+    private readonly StackPanel _productionContextHost = new()
+    {
+        Spacing = 7,
+        Margin = new Thickness(0, 0, 0, 12),
+        IsVisible = false,
+    };
+    private Grid? _previewSetupGrid;
+    private Control? _orientationField;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
+    private readonly ProductionShotContextService _productionShotContext;
     private readonly Border _previewPerformanceDot = new()
     {
         Width = 10,
@@ -195,6 +205,7 @@ internal sealed class EditorPreviewController
         Button designContextHistoryButton,
         Button designContextAddHistoryButton,
         Button designContextLockButton,
+        Panel previewTitle,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
         Func<EditorViewState?> captureCurrentEditorViewState,
@@ -216,9 +227,11 @@ internal sealed class EditorPreviewController
         _designContextHistoryButton = designContextHistoryButton;
         _designContextAddHistoryButton = designContextAddHistoryButton;
         _designContextLockButton = designContextLockButton;
+        _previewTitle = previewTitle;
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(database);
+        _productionShotContext = new ProductionShotContextService(database);
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
@@ -586,12 +599,15 @@ internal sealed class EditorPreviewController
                         Spacing = 0,
                         Children =
                         {
+                            _productionContextHost,
                             setupContent,
                         },
                     },
                 },
                 isExpanded: true),
         };
+        _previewSetupGrid = _deviceComboBox.Parent?.Parent as Grid;
+        _orientationField = _orientationComboBox.Parent as Control;
     }
 
     private void CreatePreviewControls(ContentControl previewControlsHost)
@@ -1066,10 +1082,14 @@ internal sealed class EditorPreviewController
             EnsureSelectedOptionsExist();
             UpdateShotTimelineControls();
             UpdateProductionPreviewSetup();
-            var designPayload = DesignPreviewPayloadForSelection();
-            var contextState = designPayload is null
-                ? NonRenderableStateForSelection()
-                : PreviewContextState.Renderable;
+            var invalidProductionContext = InvalidProductionContext();
+            var designPayload = invalidProductionContext is null ? DesignPreviewPayloadForSelection() : null;
+            var contextState = invalidProductionContext
+                ?? (designPayload is null ? NonRenderableStateForSelection() : PreviewContextState.Renderable);
+            if (invalidProductionContext is not null)
+            {
+                _messages.Error("Production context", invalidProductionContext.Message);
+            }
             var deviceId = PreviewDeviceId(designPayload);
             if (string.IsNullOrWhiteSpace(deviceId))
             {
@@ -2295,6 +2315,15 @@ internal sealed class EditorPreviewController
     {
         _activeProductionModuleInstanceId = RuntimeContextValue(payload, "moduleInstanceId");
         _designContextText.Text = payload?.Name ?? "";
+        var productionNodes = ProductionNodePath(_selectedNode());
+        var previewItems = _workspace == EditorWorkspace.Production
+            ? productionNodes.Select((node, index) => new EditorBreadcrumbItem(
+                node.Name,
+                index == productionNodes.Count - 1 ? null : () => _selectNodeById(node.Id, null)))
+            : [new EditorBreadcrumbItem(string.IsNullOrWhiteSpace(payload?.Name) ? "Preview" : payload.Name)];
+        EditorBreadcrumbBar.Render(
+            _previewTitle,
+            previewItems.Any() ? previewItems : [new EditorBreadcrumbItem("Production Preview")]);
         _designContextText.IsVisible = !string.IsNullOrWhiteSpace(_designContextText.Text);
         _designContextText.Foreground = EditorNavigationVisuals.VariantLockBrush(true);
         _designContextText.Opacity = 1;
@@ -2489,14 +2518,26 @@ internal sealed class EditorPreviewController
 
     private void UpdateProductionPreviewSetup()
     {
-        var production = !string.IsNullOrWhiteSpace(ProductionShotId());
+        var production = _workspace == EditorWorkspace.Production;
+        UpdateProductionContextStrip(production);
         if (_deviceComboBox.Parent is Control deviceField) deviceField.IsVisible = !production;
         if (_themeComboBox.Parent is Control themeField) themeField.IsVisible = !production;
-        if (_deviceComboBox.Parent is Control { Parent: Grid setupGrid })
+        if (_modeComboBox.Parent is Control modeField) modeField.IsVisible = !production;
+        if (_previewSetupGrid is { } setupGrid)
         {
             setupGrid.ColumnDefinitions = new ColumnDefinitions(production
-                ? "0,0,Auto,Auto"
+                ? "0,0,0,Auto"
                 : "*,*,Auto,Auto");
+            if (!production && _orientationField is { Parent: Panel currentParent } orientationField)
+            {
+                if (!ReferenceEquals(currentParent, setupGrid))
+                {
+                    currentParent.Children.Remove(orientationField);
+                    Grid.SetColumn(orientationField, 3);
+                    orientationField.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+                    setupGrid.Children.Add(orientationField);
+                }
+            }
         }
         var appearanceMode = production ? ActiveModuleAppearanceMode() : "inherit";
         var forcedMode = appearanceMode is "light" or "dark";
@@ -2511,9 +2552,90 @@ internal sealed class EditorPreviewController
         ToolTip.SetTip(_modeComboBox, forcedMode ? "Mode is fixed by the active module" : null);
     }
 
+    private void UpdateProductionContextStrip(bool production)
+    {
+        _productionContextHost.IsVisible = production;
+        _productionContextHost.Children.Clear();
+        if (!production) return;
+
+        var selected = _selectedNode();
+        var pathNodes = ProductionNodePath(selected);
+        var path = pathNodes.Select((node, index) => new ProductionPreviewPathItem(
+            node.Name,
+            index == pathNodes.Count - 1 ? null : () => _selectNodeById(node.Id, null))).ToList();
+        var shotId = ProductionShotId();
+        string actorName;
+        string device;
+        string theme;
+        string mode;
+        if (string.IsNullOrWhiteSpace(shotId))
+        {
+            actorName = "No Shot selected";
+            device = "No Shot selected";
+            theme = "No Shot selected";
+            mode = "Inherited";
+        }
+        else
+        {
+            var inherited = _productionShotContext.Resolve(shotId);
+            actorName = inherited.Actor;
+            device = inherited.Device;
+            theme = inherited.Theme;
+            mode = ActiveModuleAppearanceMode();
+            if (mode == "inherit")
+            {
+                mode = inherited.ThemeMode;
+            }
+            mode = EditorUiText.IdentifierLabel(mode);
+        }
+        Control? orientation = null;
+        if (_orientationField is { } orientationField)
+        {
+            if (orientationField.Parent is Panel parent) parent.Children.Remove(orientationField);
+            orientation = orientationField;
+        }
+        ProductionPreviewContextStrip.Render(
+            _productionContextHost,
+            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode),
+            orientation);
+    }
+
+    private static IReadOnlyList<ProjectTreeNode> ProductionNodePath(ProjectTreeNode? selected)
+    {
+        if (selected is null) return [];
+        var nodes = new List<ProjectTreeNode>();
+        var current = selected;
+        while (current is not null)
+        {
+            if (current.Kind is ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance)
+            {
+                nodes.Add(current);
+            }
+            current = current.Parent;
+        }
+        nodes.Reverse();
+        return nodes;
+    }
+
+    private PreviewContextState? InvalidProductionContext()
+    {
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)) return null;
+        var context = _productionShotContext.Resolve(shotId);
+        return context.IsValid
+            ? null
+            : new PreviewContextState(
+                PreviewContextStateKind.Error,
+                "Shot context is incomplete",
+                context.Error);
+    }
+
+
     private string ActiveModuleAppearanceMode()
     {
-        var instanceId = _activeProductionModuleInstanceId;
+        var instanceId = _selectedNode() is { Kind: ProjectTreeNodeKind.ModuleInstance } selectedInstance
+            ? selectedInstance.Id
+            : _activeProductionModuleInstanceId;
         if (string.IsNullOrWhiteSpace(instanceId) && ProductionShotId() is { Length: > 0 } shotId)
         {
             var frame = 0;

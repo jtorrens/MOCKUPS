@@ -145,6 +145,11 @@ internal static class EditorNavigationMetadata
             or ProjectTreeNodeKind.Shot;
     }
 
+    public static bool IsUsed(ProjectTreeNode node)
+    {
+        return node.Kind == ProjectTreeNodeKind.ModuleInstance || node.IsUsed;
+    }
+
     public static string AddChildLabel(ProjectTreeNode node)
     {
         return node.Kind switch

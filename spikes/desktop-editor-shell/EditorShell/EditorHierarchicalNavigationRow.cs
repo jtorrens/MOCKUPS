@@ -20,6 +20,8 @@ internal sealed record EditorNavigationRowAction(
 internal sealed record EditorHierarchicalNavigationMetadata(
     string NodeId,
     int Depth,
+    bool IsEnabled,
+    string DisabledReason,
     bool IsSelected,
     bool HasChildren,
     bool IsExpanded,
@@ -54,6 +56,7 @@ internal static class EditorHierarchicalNavigationRow
             Background = Brushes.Transparent,
             Focusable = true,
             Tag = metadata,
+            Opacity = metadata.IsEnabled ? 1 : 0.42,
         };
         if (metadata.ShowTopSeparator)
         {
@@ -150,6 +153,10 @@ internal static class EditorHierarchicalNavigationRow
         ToolTip.SetTip(title, string.IsNullOrWhiteSpace(metadata.Subtitle)
             ? metadata.Title
             : $"{metadata.Title} · {metadata.Subtitle}");
+        if (!metadata.IsEnabled && !string.IsNullOrWhiteSpace(metadata.DisabledReason))
+        {
+            ToolTip.SetTip(row, metadata.DisabledReason);
+        }
 
         if (metadata.ShowUsageIndicator)
         {
@@ -206,6 +213,7 @@ internal static class EditorHierarchicalNavigationRow
         row.Child = grid;
         row.PointerPressed += (_, args) =>
         {
+            if (!metadata.IsEnabled) return;
             if (args.Source is Avalonia.Visual source && source.FindAncestorOfType<Button>() is not null) return;
             select();
             args.Handled = true;
@@ -218,7 +226,7 @@ internal static class EditorHierarchicalNavigationRow
             switch (args.Key)
             {
                 case Key.Enter:
-                    select();
+                    if (metadata.IsEnabled) select();
                     args.Handled = true;
                     break;
                 case Key.Up when index > 0:

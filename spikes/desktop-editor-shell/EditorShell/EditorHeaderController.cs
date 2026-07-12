@@ -62,11 +62,37 @@ internal sealed class EditorHeaderController
 
     public void SetRootTitle(string title)
     {
-        EditorBreadcrumbBar.Render(_breadcrumbPanel, [
-            new EditorBreadcrumbItem(title),
-        ], CreateStructureButtonForSelectedComponent());
+        var selected = _selectedNode();
+        var productionPath = ProductionPath(selected);
+        var breadcrumbItems = productionPath
+            .Select((node, index) => new EditorBreadcrumbItem(
+                node.Name,
+                index == productionPath.Count - 1 ? null : () => _showNode(node, false)))
+            .ToList();
+        EditorBreadcrumbBar.Render(
+            _breadcrumbPanel,
+            productionPath.Count > 0
+                ? breadcrumbItems
+                : [new EditorBreadcrumbItem(title)],
+            CreateStructureButtonForSelectedComponent());
         SetHeaderActions(CreateHeaderActionsForSelectedComponent());
         SetContextStrip(ContextMetadataForSelection());
+    }
+
+    private static IReadOnlyList<ProjectTreeNode> ProductionPath(ProjectTreeNode? selected)
+    {
+        var result = new List<ProjectTreeNode>();
+        var current = selected;
+        while (current is not null)
+        {
+            if (current.Kind is ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance)
+            {
+                result.Add(current);
+            }
+            current = current.Parent;
+        }
+        result.Reverse();
+        return result;
     }
 
     public void SetEmbeddedTitle(EditorEmbeddedContext context)

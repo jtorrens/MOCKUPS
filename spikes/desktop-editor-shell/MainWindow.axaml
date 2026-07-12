@@ -173,7 +173,9 @@
                             Padding="18,16">
                         <StackPanel Spacing="4">
                             <TextBlock FontSize="11" FontWeight="SemiBold" Text="WEB PREVIEW" />
-                            <TextBlock FontSize="17" FontWeight="Bold" Text="Web source of truth" />
+                            <StackPanel x:Name="PreviewTitlePanel"
+                                        Orientation="Horizontal"
+                                        Spacing="4" />
                         </StackPanel>
                     </Border>
                     <Grid Margin="22"

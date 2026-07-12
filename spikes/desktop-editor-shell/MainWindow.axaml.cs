@@ -25,6 +25,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
+    private readonly ProductionShotContextService _productionShotContext;
     private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
@@ -82,6 +83,7 @@ public partial class MainWindow : SukiWindow
             PreviewContextHistoryButton,
             PreviewContextAddHistoryButton,
             PreviewContextLockButton,
+            PreviewTitlePanel,
             () => _themeController.IsDark,
             () => _selectedNode,
             () => _editorViewState.CaptureState(_editorContent!.Cards),
@@ -98,6 +100,7 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect,
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
+        _productionShotContext = new ProductionShotContextService(_database);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
             () => _themeController.IsDark,
@@ -108,7 +111,9 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.DuplicateNode,
             _nodeCommands.RenameNode,
             _nodeCommands.DeleteNode,
-            _nodeCommands.ToggleComponentPresetLock);
+            _nodeCommands.ToggleComponentPresetLock,
+            _productionShotContext.CanExposeChildren,
+            _productionShotContext.IsNavigationNodeEnabled);
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
             () => _previewController.SelectedDeviceId,

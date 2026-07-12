@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 
@@ -49,7 +50,9 @@ internal static class EditorBreadcrumbBar
                 Text = item.Label,
                 FontSize = 17,
                 FontWeight = FontWeight.Bold,
-                Foreground = isCurrent ? new SolidColorBrush(Color.Parse("#D6A638")) : null,
+                Foreground = isCurrent
+                    ? new SolidColorBrush(Color.Parse("#D6A638"))
+                    : EditorNavigationVisuals.TextBrush(false, EditorSukiWindowTheme.IsDark(null)),
                 VerticalAlignment = VerticalAlignment.Center,
             };
         }
@@ -63,6 +66,7 @@ internal static class EditorBreadcrumbBar
             BorderThickness = new Avalonia.Thickness(0),
             FontSize = 17,
             FontWeight = FontWeight.Bold,
+            Foreground = EditorNavigationVisuals.TextBrush(false, EditorSukiWindowTheme.IsDark(null)),
             VerticalAlignment = VerticalAlignment.Center,
         };
         button.Click += (_, _) => item.Activate();

@@ -1939,7 +1939,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     {
         var stopwatch = Stopwatch.StartNew();
         var reference = PreviewReferenceOverlay.Resolve(update.Reference);
-        if (update.ContextState.Kind == PreviewContextStateKind.NonRenderable)
+        if (update.ContextState.Kind is PreviewContextStateKind.NonRenderable or PreviewContextStateKind.Error)
         {
             if (_lastRenderedUpdate is null)
             {

@@ -24,6 +24,8 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<ProjectTreeNode, Task> _renameNode;
     private readonly Func<ProjectTreeNode, Task> _deleteNode;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
+    private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
+    private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
 
     public EditorNavigationRenderer(
         Func<ProjectTreeNode?> selectedNode,
@@ -35,7 +37,9 @@ internal sealed class EditorNavigationRenderer
         Action<ProjectTreeNode> duplicateNode,
         Func<ProjectTreeNode, Task> renameNode,
         Func<ProjectTreeNode, Task> deleteNode,
-        Func<ProjectTreeNode, Task> toggleVariantLock)
+        Func<ProjectTreeNode, Task> toggleVariantLock,
+        Func<ProjectTreeNode, bool> canExposeChildren,
+        Func<ProjectTreeNode, bool> isNodeEnabled)
     {
         _selectedNode = selectedNode;
         _isDark = isDark;
@@ -47,6 +51,8 @@ internal sealed class EditorNavigationRenderer
         _renameNode = renameNode;
         _deleteNode = deleteNode;
         _toggleVariantLock = toggleVariantLock;
+        _canExposeChildren = canExposeChildren;
+        _isNodeEnabled = isNodeEnabled;
     }
 
     public void Rebuild(
@@ -101,7 +107,10 @@ internal sealed class EditorNavigationRenderer
 
     private void AddHierarchicalNode(StackPanel parent, ProjectTreeNode node, int depth, int siblingIndex, bool isLastSibling)
     {
-        var hasChildren = node.Children.Count > 0 || node.CanAddChild;
+        var exposeChildren = _canExposeChildren(node);
+        var visibleChildren = node.Children;
+        var hasChildren = visibleChildren.Count > 0 || node.CanAddChild;
+        var nodeEnabled = _isNodeEnabled(node);
         var expanded = hasChildren && _isExpanded(node);
         var options = new List<EditorNavigationRowAction>();
         if (node.CanRenameDirectly)
@@ -126,12 +135,14 @@ internal sealed class EditorNavigationRenderer
             options.Add(new("Delete", EditorIcons.Delete, () => _ = _deleteNode(node), node.CanDelete));
         }
         var add = node.CanAddChild
-            ? new EditorNavigationRowAction(EditorNavigationMetadata.AddChildLabel(node), EditorIcons.Add, () => _ = _addChild(node))
+            ? new EditorNavigationRowAction(EditorNavigationMetadata.AddChildLabel(node), EditorIcons.Add, () => _ = _addChild(node), exposeChildren)
             : null;
         var status = node.IsProtected ? "Protected" : node.IsLocked ? "Locked" : node.IsUsed ? "Used" : "";
         var metadata = new EditorHierarchicalNavigationMetadata(
             node.Id,
             depth,
+            nodeEnabled,
+            nodeEnabled ? "" : "Assign an Actor to the Shot to enable this Screen",
             IsSelected(node),
             hasChildren,
             expanded,
@@ -140,7 +151,7 @@ internal sealed class EditorNavigationRenderer
             EditorNavigationMetadata.Title(node),
             EditorNavigationMetadata.Subtitle(node),
             status,
-            node.IsUsed,
+            EditorNavigationMetadata.IsUsed(node),
             !hasChildren,
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup,
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup && siblingIndex > 0,
@@ -152,12 +163,12 @@ internal sealed class EditorNavigationRenderer
         parent.Children.Add(EditorHierarchicalNavigationRow.Create(
             metadata,
             _isDark(),
-            () => ActivateNavigationNode(node),
+            () => { if (nodeEnabled) ActivateNavigationNode(node); },
             hasChildren ? () => _toggleGroup(node) : null));
         if (!expanded) return;
-        for (var index = 0; index < node.Children.Count; index++)
+        for (var index = 0; index < visibleChildren.Count; index++)
         {
-            AddHierarchicalNode(parent, node.Children[index], depth + 1, index, index == node.Children.Count - 1);
+            AddHierarchicalNode(parent, visibleChildren[index], depth + 1, index, index == visibleChildren.Count - 1);
         }
     }
 
