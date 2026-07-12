@@ -3,6 +3,30 @@
 Status: analysis and implementation proposal. No implementation is authorized
 or implied by this document.
 
+## Current implementation baseline
+
+The proposal must be implemented from `main` at or after commit `7724fc1b`.
+That baseline already contains:
+
+- production Shot preview resolved through ordered ModuleInstance slots;
+- global Shot frame navigation and global-to-local module-frame translation;
+- production context chrome that identifies and selects active module instances;
+- Device and Theme removed from production controls because Shot/Actor own them;
+- preview mode inheritance with explicit module light/dark override;
+- a first Shot Play integration with the existing HTML/raster preparation route;
+- the final Conversation Bubble geometry, including placement-aware actor-name
+  width, compact delivery status rows and inline status placement.
+
+The existing Shot Play integration is a correctness bridge, not the final
+playback abstraction. It supplies Shot payloads to the current preparation
+pipeline through a pending-frame override. Phase 7 must replace that temporary
+coupling with the shared resolved-frame-sequence provider described below.
+
+The resident static-update work has not yet been implemented. Do not rewrite
+the production navigator, Conversation resolver or Bubble geometry while
+implementing this proposal unless a demonstrated preview-boundary defect
+requires a separately reviewed change.
+
 ## Purpose
 
 Editing a stopped preview should preserve visual continuity. A normal field,
