@@ -2324,6 +2324,16 @@ assertContains(
   "[\"jsonKey\"] = \"conversationType\"",
   "Conversation must publish its individual or group type through the runtime contract",
 );
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  /\["id"\] = "writeOn"[\s\S]*?\["defaultValue"\] = "30"/,
+  "new Conversation messages must contribute a finite default write-on duration",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey",
+  "runtime collection controls must rebuild after a dependency field changes",
+);
 assertContains(
   "src/desktop-preview/conversationModuleRenderable.ts",
   "actorIdentityVisible = conversationType === \"group\"",

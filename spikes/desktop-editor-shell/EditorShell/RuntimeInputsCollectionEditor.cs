@@ -457,6 +457,8 @@ internal sealed class RuntimeInputsCollectionEditor
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
                 ? id
                 : "";
+            var nextNode = DesignPreviewTestValues.ValueNode(input, next);
+            item[input.JsonKey] = nextNode?.DeepClone();
             if (owner.IsInstance)
             {
                 _database.UpdateModuleInstanceRuntimeCollectionValue(
@@ -464,7 +466,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     StorageCollectionKey(collection),
                     itemId,
                     input.JsonKey,
-                    DesignPreviewTestValues.ValueNode(input, next));
+                    nextNode);
                 _onChanged();
             }
             else
@@ -473,6 +475,11 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
             afterCommit?.Invoke();
+            if (collection.Fields.Any((candidate) =>
+                    candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
+            {
+                _reloadAndSelect?.Invoke(owner.Node);
+            }
         };
         return control;
     }

@@ -151,6 +151,9 @@ recreate their internal rules.
   state/direction, media playback state and status state. Per-message delay,
   write-on and hold remain part of the ordered sequence because they define the
   rhythm of each message.
+- A newly inserted incoming message defaults to 30 write-on frames so it
+  contributes a finite interval immediately; persistence recalculates its
+  Screen duration and the owning Shot duration in the same operation.
 - Video and audio attachments additionally expose `playbackMode` (`once` or
   `loop`) and `playDurationFrames`. `durationSeconds` remains the physical
   source duration; it is not the duration of the timeline event. Design action
