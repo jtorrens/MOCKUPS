@@ -3,7 +3,7 @@
 Date: 2026-07-12  
 Baseline: `main` at `862c7f1cca50dd9f8832acc1a10a6e3377faa9dd`  
 Platform exercised: macOS  
-Status: diagnosis gate; no lifecycle or UX code changed
+Status: reproduced diagnosis gate; no lifecycle or UX code changed
 
 ## Scope and invariant
 
@@ -38,10 +38,19 @@ The acceptance invariant remains:
 | Selection continuity | workspace round trips | after each return | prior Design `Chat` and Production `Episode 1` selections restored |
 | WebView continuity | workspace round trips | preview log and visible host | no renderer failure correlated with the actions |
 
-The 2-4 second blackout recorded in
-`2026-07-12_desktop_editor_ux_ui_visual_audit.md` was therefore not reproduced
-after the required clean restart. Windows parity was not available in this
+The initial clean-start matrix did not reproduce the 2-4 second blackout from
+`2026-07-12_desktop_editor_ux_ui_visual_audit.md`. The failure was reproduced
+later while validating the next preview-state phase: an action originating in
+the preview surface requested a selection/context transition. The native shell
+disappeared into black while preview-host content remained visible. Replacing a
+WebView navigation action with a native Avalonia button removed document
+navigation from the path, but the resulting context-selection/recomposition
+still reproduced the blackout. Windows parity was not available in this
 environment and remains unverified.
+
+This follow-up is important: ordinary workspace and tree actions are not a
+sufficient reproduction matrix. A representative D01 run must also include a
+preview-originated action that selects or opens another editor context.
 
 ## What the current evidence establishes
 
@@ -65,9 +74,13 @@ environment and remains unverified.
   caused by an empty native host, a delayed layout pass or incorrect airspace
   bounds.
 
-These points identify a lifecycle risk but do not establish a unique root cause.
-Changing the shared composition order on this evidence alone would be a deep
-lifecycle change without a verified failing checkpoint.
+These points establish the failing boundary: a preview-host interaction followed
+by native selection/recomposition can leave the platform WebView/native-host
+airspace composed while the surrounding Avalonia shell has not committed its
+replacement frame. The remaining diagnostic work must distinguish whether the
+decisive fault is stale/oversized native-host bounds or the non-atomic Avalonia
+replacement beneath it. Changing either shared lifecycle is a deep change and
+requires review.
 
 ## Candidate causes to distinguish
 
@@ -118,8 +131,9 @@ therefore requires review before implementation.
 
 ## Gate decision
 
-D01 is stopped at diagnosis. The clean-start matrix is green but the audited
-failure is not reproducible and current logging cannot isolate the original
-2-4 second incident. Do not implement a lifecycle correction until the user
-accepts the instrumentation/reproduction step or supplies a currently failing
-journey. Do not advance to animation.
+D01 is stopped at diagnosis. The clean-start workspace/tree matrix is green,
+but preview-originated context selection reproduces the audited blackout and
+current logging cannot distinguish native-host bounds from non-atomic shell
+replacement. Do not implement a lifecycle correction until the user accepts
+the instrumentation and shared-lifecycle correction step. Do not advance to
+animation or continue D05 on top of the unstable transition.
