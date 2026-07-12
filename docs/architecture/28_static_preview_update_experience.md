@@ -31,7 +31,15 @@ playback abstraction. It supplies Shot payloads to the current preparation
 pipeline through a pending-frame override. Phase 7 must replace that temporary
 coupling with the shared resolved-frame-sequence provider described below.
 
-The resident static-update work has not yet been implemented. Do not rewrite
+The first resident static-update phase is implemented in the desktop preview.
+Compatible stopped updates retain the WebView document, synchronize the
+identified production-font style, and commit through the generic DOM patch.
+Render or asset-commit failures preserve the last valid body, and completed
+updates are discarded when a newer state is already pending. Full document
+loads remain limited to initial, empty and shell-incompatible states.
+
+The shared resolved-frame playback sequence and single playback ownership are
+still pending. Do not rewrite
 the production navigator, Conversation resolver or Bubble geometry while
 implementing this proposal unless a demonstrated preview-boundary defect
 requires a separately reviewed change.
@@ -311,6 +319,9 @@ The indicator should be delayed so fast updates do not create additional
 flicker.
 
 ## Proposed implementation phases
+
+Phases 1-5 below are complete. Phase 6 remains measurement-driven; phases 7-8
+remain the next implementation boundary.
 
 1. **General static body patch**
    - Define shell compatibility independently from animation-only updates.

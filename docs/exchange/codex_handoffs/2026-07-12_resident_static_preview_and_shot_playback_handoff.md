@@ -59,6 +59,12 @@ Relevant baseline commits:
 
 ## Required first phase: resident static updates
 
+Implemented after the Production input-boundary correction. The resident shell
+now handles compatible static bodies and production-font styles without a
+WebView navigation, retains the last valid preview on render/asset failure,
+and suppresses obsolete completed updates. The remaining work in this handoff
+starts at the shared playback sequence below.
+
 Before resident updates, preserve the explicit input boundary now enforced by
 the preview controller: Design uses `ComponentPreviewInputSession` Test Values
 and actions; Production uses the reference-only runtime resolver and retains

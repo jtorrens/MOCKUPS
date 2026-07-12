@@ -250,6 +250,30 @@ internal abstract class WebPreviewPane : Grid
         }
     }
 
+    protected async Task<bool> ReplacePreviewFontStylesAsync(string fontStyleHtml)
+    {
+        var fontStylesJson = JsonSerializer.Serialize(InlineFontFileUris(fontStyleHtml));
+        try
+        {
+            var result = await WebView.InvokeScript($$"""
+                (() => {
+                  if (typeof window.mockupsSetPreviewFontStyles !== "function") return false;
+                  return window.mockupsSetPreviewFontStyles({{fontStylesJson}});
+                })();
+                """);
+            return result is not null && !string.Equals(result.ToString(), "false", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception error)
+        {
+            PreviewDebugLog.Write(
+                "preview.webview.font-styles",
+                ("success", false),
+                ("fontStyleChars", fontStyleHtml.Length),
+                ("error", error.Message));
+            return false;
+        }
+    }
+
     private async Task RegisterPreviewAssetsAsync(IEnumerable<string> keys)
     {
         foreach (var key in keys.Distinct(StringComparer.Ordinal))
@@ -773,7 +797,7 @@ internal abstract class WebPreviewPane : Grid
                   color: {{mutedText}};
                 }
               </style>
-              {{FontStylesHtml(fontStyleHtml)}}
+              <style id="mockupsProductionFontStyles">{{FontStylesCss(fontStyleHtml)}}</style>
             </head>
             <body>
               <main class="preview-viewport-host">
@@ -796,6 +820,7 @@ internal abstract class WebPreviewPane : Grid
                 const referenceImage = document.getElementById("previewReferenceImage");
                 const designMarks = document.querySelector(".preview-design-marks");
                 const previewMeta = document.querySelector(".preview-meta");
+                const productionFontStyles = document.getElementById("mockupsProductionFontStyles");
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
@@ -1355,6 +1380,15 @@ internal abstract class WebPreviewPane : Grid
                   return true;
                 }
 
+                window.mockupsSetPreviewFontStyles = (fontStyleHtml) => {
+                  if (!productionFontStyles) return false;
+                  const template = document.createElement("template");
+                  template.innerHTML = fontStyleHtml ?? "";
+                  const style = template.content.querySelector("style");
+                  productionFontStyles.textContent = style?.textContent ?? fontStyleHtml ?? "";
+                  return true;
+                };
+
                 window.mockupsSetPreviewBody = (html) => {
                   const sequence = ++previewBodyPatchSequence;
                   const startedAt = performance.now();
@@ -1523,6 +1557,17 @@ internal abstract class WebPreviewPane : Grid
             : InlineFontFileUris(fontStyleHtml);
     }
 
+    private static string FontStylesCss(string fontStyleHtml)
+    {
+        var inlined = FontStylesHtml(fontStyleHtml).Trim();
+        if (!inlined.StartsWith("<style", StringComparison.OrdinalIgnoreCase)) return inlined;
+        var openEnd = inlined.IndexOf('>');
+        var closeStart = inlined.LastIndexOf("</style>", StringComparison.OrdinalIgnoreCase);
+        return openEnd >= 0 && closeStart > openEnd
+            ? inlined[(openEnd + 1)..closeStart]
+            : inlined;
+    }
+
     protected static string RasterDocumentHtml(
         SpikeDatabase.DevicePreviewMetrics metrics,
         string bodyContent,
@@ -1610,6 +1655,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private DesignPreviewUpdate? _pendingUpdate;
     private DesignPreviewUpdate? _renderingUpdate;
     private DesignPreviewUpdate? _lastRenderedUpdate;
+    private long _latestUpdateSequence;
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
 
@@ -1663,7 +1709,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             showDesignMarks,
             payload);
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
-        var committed = await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: true);
+        var committed = await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml)
+            && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: true);
         PreviewDebugLog.Write(
             "preview.webview.prewarm-frame",
             ("component", payload.ComponentType),
@@ -1687,6 +1734,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         IEditorShellMessageSink messages)
     {
         var nextUpdate = new DesignPreviewUpdate(
+            Interlocked.Increment(ref _latestUpdateSequence),
             metrics,
             isDark,
             themeName,
@@ -1790,6 +1838,34 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         if (renderError is not null)
         {
             update.Messages.Error("Design preview", renderError);
+            if (_lastRenderedUpdate is not null)
+            {
+                PreviewDebugLog.Write(
+                    "preview.webview.update",
+                    ("route", "retain-last-good"),
+                    ("reason", "render-error"),
+                    ("component", update.Payload.ComponentType),
+                    ("name", update.Payload.Name),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
+                    stopwatch.Elapsed.TotalMilliseconds,
+                    IsAnimationOnly: false,
+                    UsedDomPatch: false,
+                    RenderError: true));
+                return;
+            }
+        }
+
+        if (update.Sequence != Volatile.Read(ref _latestUpdateSequence))
+        {
+            PreviewDebugLog.Write(
+                "preview.webview.update",
+                ("route", "discarded"),
+                ("reason", "newer-pending"),
+                ("component", update.Payload.ComponentType),
+                ("name", update.Payload.Name),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+            return;
         }
 
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
@@ -1797,25 +1873,60 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             && update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate);
         var isMarksOnlyUpdate = _lastRenderedUpdate is not null
             && update.IsMarksOnlyUpdateOf(_lastRenderedUpdate);
-        if (renderError is null
-            && (isAnimationOnlyUpdate || isMarksOnlyUpdate)
-            && await ReplacePreviewBodyAsync(htmlParts.BodyHtml))
+        var isResidentCompatible = _lastRenderedUpdate is not null
+            && update.IsResidentShellCompatibleWith(_lastRenderedUpdate);
+        if (renderError is null && isResidentCompatible)
         {
-            await UpdateReferenceOverlayAsync(reference);
-            _lastRenderedUpdate = update;
+            var fontsCommitted = await ReplacePreviewFontStylesAsync(htmlParts.FontStyleHtml);
+            if (update.Sequence != Volatile.Read(ref _latestUpdateSequence))
+            {
+                PreviewDebugLog.Write(
+                    "preview.webview.update",
+                    ("route", "discarded"),
+                    ("reason", "newer-pending-after-fonts"),
+                    ("component", update.Payload.ComponentType),
+                    ("name", update.Payload.Name),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds));
+                return;
+            }
+            var bodyCommitted = fontsCommitted
+                && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: !isAnimationOnlyUpdate);
+            if (bodyCommitted)
+            {
+                await UpdateReferenceOverlayAsync(reference);
+                _lastRenderedUpdate = update;
+                PreviewDebugLog.Write(
+                    "preview.webview.update",
+                    ("route", "dom-patch"),
+                    ("component", update.Payload.ComponentType),
+                    ("name", update.Payload.Name),
+                    ("animationOnly", isAnimationOnlyUpdate),
+                    ("marksOnly", isMarksOnlyUpdate),
+                    ("ms", stopwatch.Elapsed.TotalMilliseconds),
+                    ("bodyChars", htmlParts.BodyHtml.Length),
+                    ("fontStyleChars", htmlParts.FontStyleHtml.Length));
+                FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
+                    stopwatch.Elapsed.TotalMilliseconds,
+                    IsAnimationOnly: isAnimationOnlyUpdate,
+                    UsedDomPatch: true,
+                    RenderError: false));
+                return;
+            }
+
+            var commitError = new InvalidOperationException("The resident preview update could not be committed; the last valid preview was retained.");
+            update.Messages.Error("Design preview", commitError);
             PreviewDebugLog.Write(
                 "preview.webview.update",
-                ("route", "dom-patch"),
+                ("route", "retain-last-good"),
+                ("reason", fontsCommitted ? "body-commit-failed" : "font-style-commit-failed"),
                 ("component", update.Payload.ComponentType),
                 ("name", update.Payload.Name),
-                ("ms", stopwatch.Elapsed.TotalMilliseconds),
-                ("bodyChars", htmlParts.BodyHtml.Length),
-                ("fontStyleChars", htmlParts.FontStyleHtml.Length));
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
             FrameStatusChanged?.Invoke(new DesignPreviewFrameStatus(
                 stopwatch.Elapsed.TotalMilliseconds,
                 IsAnimationOnly: isAnimationOnlyUpdate,
-                UsedDomPatch: true,
-                RenderError: false));
+                UsedDomPatch: false,
+                RenderError: true));
             return;
         }
 
@@ -1838,6 +1949,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             ("component", update.Payload.ComponentType),
             ("name", update.Payload.Name),
             ("animationOnly", isAnimationOnlyUpdate),
+            ("reason", _lastRenderedUpdate is null ? "initial-document" : "incompatible-shell"),
             ("renderError", renderError is not null),
             ("ms", stopwatch.Elapsed.TotalMilliseconds),
             ("bodyChars", htmlParts.BodyHtml.Length),
@@ -1918,6 +2030,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     }
 
     private sealed record DesignPreviewUpdate(
+        long Sequence,
         SpikeDatabase.DevicePreviewMetrics Metrics,
         bool IsDark,
         string ThemeName,
@@ -1929,6 +2042,18 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         DesignPreviewPayload? Payload,
         IEditorShellMessageSink Messages)
     {
+        public bool IsResidentShellCompatibleWith(DesignPreviewUpdate other)
+        {
+            return Metrics.Equals(other.Metrics)
+                && IsDark == other.IsDark
+                && ThemeName == other.ThemeName
+                && ThemeMode == other.ThemeMode
+                && ScaleMode == other.ScaleMode
+                && ShowDeviceFrame == other.ShowDeviceFrame
+                && Payload is not null
+                && other.Payload is not null;
+        }
+
         public bool IsAnimationOnlyUpdateOf(DesignPreviewUpdate other)
         {
             return Metrics.Equals(other.Metrics)
