@@ -310,6 +310,7 @@ export function resolveBubbleComponent(
       state: bubbleStatusState(optionalString(preview, "statusState") || "none"),
       sizeToken: requiredString(status, "sizeToken", "component.bubble.status.sizeToken"),
       textSizeToken: requiredString(status, "textSizeToken", "component.bubble.status.textSizeToken"),
+      gapToken: requiredString(status, "gapToken", "component.bubble.status.gapToken"),
       icons: {
         sent: statusIcon(status, "sent", "component.bubble.status.sent"),
         delivered: statusIcon(status, "delivered", "component.bubble.status.delivered"),

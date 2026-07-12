@@ -140,6 +140,41 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void NormalizeBubbleStatusGapTokens(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ComponentType == "bubble"))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            NormalizeBubbleStatusGapTokenNodes(config);
+            NormalizeBubbleStatusGapTokenNodes(metadata);
+            var configJson = config.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson && metadataJson == row.MetadataJson) continue;
+            Execute(connection,
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id), ("$configJson", configJson), ("$metadataJson", metadataJson));
+        }
+    }
+
+    private static void NormalizeBubbleStatusGapTokenNodes(JsonNode? node)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array.ToList()) NormalizeBubbleStatusGapTokenNodes(child);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+        if (obj["bubble"]?["status"] is JsonObject status)
+        {
+            status["gapToken"] ??= "theme.spacing.xs";
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList())
+        {
+            NormalizeBubbleStatusGapTokenNodes(child);
+        }
+    }
+
     private static void NormalizeComponentSpacingTokenNodes(JsonNode? node)
     {
         if (node is JsonArray array)

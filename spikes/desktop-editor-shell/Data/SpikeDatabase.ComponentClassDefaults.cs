@@ -444,6 +444,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["sizeToken"] = "theme.iconSizes.s",
                         ["textSizeToken"] = "theme.iconSizes.s",
+                        ["gapToken"] = "theme.spacing.xs",
                         ["sent"] = new JsonObject
                         {
                             ["iconToken"] = "system_check",

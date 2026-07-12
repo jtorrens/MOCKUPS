@@ -657,7 +657,8 @@ internal sealed partial class SpikeDatabase
               "groups": [
                 { "id": "bubbleStatusGeneral", "label": "General", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.status.size", "order": 10, "visible": true },
-                  { "id": "component.bubble.status.textSize", "order": 20, "visible": true }
+                  { "id": "component.bubble.status.textSize", "order": 20, "visible": true },
+                  { "id": "component.bubble.status.gap", "order": 30, "visible": true }
                 ] },
                 { "id": "bubbleStatusSent", "label": "Sent", "order": 20, "visible": true, "fields": [
                   { "id": "component.bubble.status.sent.icon", "order": 10, "visible": true },

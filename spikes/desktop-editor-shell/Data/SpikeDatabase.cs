@@ -66,6 +66,7 @@ internal sealed partial class SpikeDatabase
             NormalizeConversationHeaderComposition(connection);
             NormalizeCalculatedLabelComposition(connection);
             NormalizeComponentSpacingTokens(connection);
+            NormalizeBubbleStatusGapTokens(connection);
             NormalizeEditorLayouts(connection);
             NormalizeDefaultComponentConfigAuthority(connection);
             return;
@@ -96,6 +97,7 @@ internal sealed partial class SpikeDatabase
         NormalizeConversationHeaderComposition(connection);
         NormalizeCalculatedLabelComposition(connection);
         NormalizeComponentSpacingTokens(connection);
+        NormalizeBubbleStatusGapTokens(connection);
         NormalizeEditorLayouts(connection);
         NormalizeDefaultComponentConfigAuthority(connection);
         ValidateSchemaV1(connection);

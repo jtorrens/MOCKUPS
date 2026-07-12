@@ -2240,6 +2240,21 @@ assertContains(
   "Bubble layout must allow owned labels to define its minimum content width",
 );
 assertContains(
+  "src/desktop-preview/bubbleComponentRenderable.ts",
+  "inlineBubbleStatusWidth",
+  "Bubble status must reuse the final text line when its resolved frame fits",
+);
+assertContains(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  'requiredString(status, "gapToken"',
+  "Bubble status row spacing must use its declared spacing token",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassSeeds.cs",
+  "NormalizeBubbleStatusGapTokens",
+  "persisted Bubble presets must be explicitly migrated to the status gap token contract",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
   "[\"timelineFrameJsonKey\"] = \"conversationFrame\"",
   "modules with a local timeline must declare its runtime frame key",

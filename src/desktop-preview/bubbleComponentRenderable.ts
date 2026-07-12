@@ -45,6 +45,7 @@ import {
   textBoxComponentToRenderableAt,
 } from "./textBoxComponentRenderable.js";
 import {
+  measuredWrappedTextLines,
   measuredTextWidth,
   resolveTypographyStyle,
   typographyAtFontSize,
@@ -76,6 +77,7 @@ export function bubbleComponentToRenderable(
       ? measureAudioComponent(payload, media.value)
       : measureMediaComponent(payload, media.value)
     : undefined;
+  const statusGap = Math.max(0, numberToken(payload, bubble.status.gapToken) * scale);
   let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   if (mediaSize
       && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
@@ -90,6 +92,14 @@ export function bubbleComponentToRenderable(
     };
     measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   }
+  const inlineStatusWidth = statusSize && !mediaSize
+    ? inlineBubbleStatusWidth(
+        measuredTextBox,
+        statusSize.width,
+        statusGap,
+        textBoxForContent.size.width * scale,
+      )
+    : undefined;
   const basePadding = {
     left: paddingX,
     top: paddingY,
@@ -104,7 +114,9 @@ export function bubbleComponentToRenderable(
     mediaSize,
     bubble.mediaSlot.position,
     basePadding,
-    Math.max(0, (actorLabelSize?.width ?? 0) - basePadding.left - basePadding.right),
+    actorLabelSize?.width ?? 0,
+    statusGap,
+    inlineStatusWidth,
   );
   const baseSurfaceBox = {
     x: 0,
@@ -112,11 +124,12 @@ export function bubbleComponentToRenderable(
     width: baseContentLayout.width + basePadding.left + basePadding.right,
     height: baseContentLayout.height + basePadding.top + basePadding.bottom,
   };
+  const actorLabelPlacement = scalePlacement(bubble.actorLabelSlot.placement, scale);
   const baseLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         baseSurfaceBox,
         actorLabelSize!,
-        scalePlacement(bubble.actorLabelSlot.placement, scale),
+        actorLabelPlacement,
       )
     : undefined;
   const baseAvatarBox = bubble.avatarSlot.avatar
@@ -138,13 +151,21 @@ export function bubbleComponentToRenderable(
     gapX: paddingX,
     gapY: paddingY,
   };
+  const labelMinimumSurfaceWidth = minimumSurfaceWidthForChildRightEdge(
+    baseSurfaceBox,
+    baseLabelBox,
+    actorLabelPlacement.alignX,
+    paddingX,
+  );
   const contentLayout = bubbleContentLayout(
     { width: measuredTextBox.width, height: measuredTextBox.height },
     statusSize,
     mediaSize,
     bubble.mediaSlot.position,
     contentPadding,
-    Math.max(0, (actorLabelSize?.width ?? 0) - contentPadding.left - contentPadding.right),
+    Math.max(0, labelMinimumSurfaceWidth - contentPadding.left - contentPadding.right),
+    statusGap,
+    inlineStatusWidth,
   );
   const localSurfaceBox = {
     x: 0,
@@ -156,7 +177,7 @@ export function bubbleComponentToRenderable(
     ? placeChild(
         localSurfaceBox,
         actorLabelSize!,
-        scalePlacement(bubble.actorLabelSlot.placement, scale),
+        actorLabelPlacement,
     )
     : undefined;
   const localAvatarBox = bubble.avatarSlot.avatar
@@ -291,11 +312,11 @@ function bubbleContentLayout(
     gapY: number;
   },
   minimumContentWidth = 0,
+  statusGap = 0,
+  inlineStatusWidth?: number,
 ) {
-  const statusGap = statusSize
-    ? Math.max(2, Math.min(padding.gapY, statusSize.height * 0.45))
-    : 0;
-  const statusBlockHeight = statusSize ? statusGap + statusSize.height : 0;
+  const statusIsInline = statusSize !== undefined && inlineStatusWidth !== undefined;
+  const statusBlockHeight = statusSize && !statusIsInline ? statusGap + statusSize.height : 0;
   const textAndStatusBoxes = (
     textX: number,
     textY: number,
@@ -318,13 +339,20 @@ function bubbleContentLayout(
       : undefined,
   });
   if (!mediaSize) {
-    const width = Math.max(minimumContentWidth, textSize.width, statusSize?.width ?? 0);
+    const width = Math.max(
+      minimumContentWidth,
+      textSize.width,
+      statusSize?.width ?? 0,
+      inlineStatusWidth ?? 0,
+    );
     const height = textSize.height + statusBlockHeight;
     const boxes = textAndStatusBoxes(
       padding.left,
       padding.top,
       width,
-      padding.top + height - (statusSize?.height ?? 0),
+      statusIsInline
+        ? padding.top + textSize.height - (statusSize?.height ?? 0)
+        : padding.top + height - (statusSize?.height ?? 0),
     );
     return {
       width,
@@ -386,6 +414,46 @@ function bubbleContentLayout(
     ...boxes,
     mediaBox,
   };
+}
+
+function inlineBubbleStatusWidth(
+  textBox: ReturnType<typeof measureTextBoxComponent>,
+  statusWidth: number,
+  gap: number,
+  maximumWidth: number,
+) {
+  const availableTextWidth = Math.max(
+    1,
+    textBox.width - textBox.paddingX * 2 - textBox.iconInset.total,
+  );
+  const lines = measuredWrappedTextLines(
+    textBox.contentText,
+    textBox.typography,
+    availableTextWidth,
+  );
+  const lastLineWidth = measuredTextWidth(lines.at(-1) ?? "", textBox.typography);
+  const requiredWidth = textBox.paddingX
+    + textBox.iconInset.left
+    + lastLineWidth
+    + gap
+    + statusWidth
+    + textBox.iconInset.right
+    + textBox.paddingX;
+  return requiredWidth <= maximumWidth ? Math.max(textBox.width, requiredWidth) : undefined;
+}
+
+function minimumSurfaceWidthForChildRightEdge(
+  surface: RenderableBox,
+  child: RenderableBox | undefined,
+  alignX: number,
+  rightPadding: number,
+) {
+  if (!child) return surface.width;
+  const alignment = Math.max(0, Math.min(1, alignX));
+  const currentRight = child.x + child.width - surface.x;
+  if (alignment >= 0.999) return Math.max(surface.width, currentRight + rightPadding);
+  const placementConstant = currentRight - alignment * surface.width;
+  return Math.max(surface.width, (placementConstant + rightPadding) / (1 - alignment));
 }
 
 function activeBubbleMedia(bubble: BubbleDesignContract):
