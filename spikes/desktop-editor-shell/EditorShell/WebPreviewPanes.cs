@@ -572,7 +572,8 @@ internal abstract class WebPreviewPane : Grid
         bool showDeviceFrame,
         string bodyContent,
         string fontStyleHtml = "",
-        PreviewReferenceOverlay? reference = null)
+        PreviewReferenceOverlay? reference = null,
+        PreviewContextState? initialContextState = null)
     {
         reference ??= new PreviewReferenceOverlay("", "preview", 0.5, 1, 0);
         var width = Math.Max(1, metrics.CanvasWidth);
@@ -585,6 +586,11 @@ internal abstract class WebPreviewPane : Grid
             : "linear-gradient(155deg, rgba(241,246,252,.96), rgba(222,232,244,.82))";
         var frameBorder = isDark ? "#111827" : "#263142";
         var screenBackground = themeMode == "dark" ? "#101827" : "#F7F9FC";
+        var initialContextVisible = initialContextState is not null;
+        var initialActionVisible = initialContextState?.HasAction == true;
+        var initialAction = initialActionVisible
+            ? $"invokeCSharpAction('mockups-preview-action:{Html(initialContextState!.ActionTargetId)}')"
+            : "";
 
         return $$"""
             <!doctype html>
@@ -620,6 +626,7 @@ internal abstract class WebPreviewPane : Grid
                 }
 
                 .preview-viewport-host {
+                  position: relative;
                   width: 100vw;
                   height: 100vh;
                   display: grid;
@@ -792,6 +799,55 @@ internal abstract class WebPreviewPane : Grid
                 .preview-meta span {
                   color: {{mutedText}};
                 }
+
+                .preview-context-state {
+                  position: absolute;
+                  right: 14px;
+                  bottom: 14px;
+                  z-index: 2000;
+                  display: none;
+                  max-width: min(380px, calc(100% - 28px));
+                  gap: 8px;
+                  align-items: center;
+                  padding: 10px 12px;
+                  border: 1px solid rgba(148, 163, 184, .42);
+                  border-radius: 12px;
+                  background: {{(isDark ? "rgba(20,27,37,.94)" : "rgba(255,255,255,.96)")}};
+                  color: {{panelText}};
+                  box-shadow: 0 10px 26px rgba(15, 23, 42, .22);
+                  pointer-events: none;
+                }
+
+                .preview-context-state.is-visible { display: grid; grid-template-columns: auto 1fr; }
+                .preview-context-state.is-error { border-color: rgba(239, 68, 68, .58); }
+                .preview-context-state.is-error { pointer-events: auto; }
+                .preview-context-state-dot { width: 9px; height: 9px; border-radius: 50%; background: #2F80ED; }
+                .preview-context-state.is-loading .preview-context-state-dot { animation: mockups-context-pulse 1s ease-in-out infinite alternate; }
+                .preview-context-state.is-error .preview-context-state-dot { background: #EF4444; }
+                .preview-context-state-title { display:block; font-size: 12px; font-weight: 760; }
+                .preview-context-state-message { display:block; margin-top: 2px; color: {{mutedText}}; font-size: 12px; line-height: 1.35; }
+                .preview-context-state-retry { display:none; grid-column:2; justify-self:start; min-height:30px; padding:4px 10px; border:1px solid currentColor; border-radius:8px; background:transparent; color:inherit; font:700 12px inherit; cursor:pointer; }
+                .preview-context-state.is-error .preview-context-state-retry { display:block; }
+                @keyframes mockups-context-pulse { from { opacity: .4; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+
+                .preview-non-renderable-state {
+                  position: absolute;
+                  inset: 0;
+                  z-index: 2100;
+                  display: none;
+                  place-items: center;
+                  padding: 28px;
+                  background: {{(isDark ? "#171C24" : "#EEF2F7")}};
+                  text-align: center;
+                }
+                .preview-non-renderable-state.is-visible { display: grid; }
+                .preview-non-renderable-state.is-loading .preview-non-renderable-activity { display:inline-block; }
+                .preview-non-renderable-card { width:min(520px,100%); padding:28px; border-radius:18px; background:{{(isDark ? "#252D38" : "#FFFFFF")}}; box-shadow:0 16px 36px rgba(0,0,0,.16); }
+                .preview-non-renderable-activity { display:none; width:10px; height:10px; margin-bottom:12px; border-radius:50%; background:#2F80ED; animation:mockups-context-pulse 1s ease-in-out infinite alternate; }
+                .preview-non-renderable-title { margin:0 0 10px; font-size:20px; font-weight:760; }
+                .preview-non-renderable-message { margin:0; color:{{mutedText}}; font-size:14px; line-height:1.5; }
+                .preview-non-renderable-action { display:none; margin-top:20px; min-height:40px; padding:8px 16px; border:1px solid #D89A16; border-radius:10px; background:#F0B429; color:#17120A; font:700 14px inherit; cursor:pointer; }
+                .preview-non-renderable-action.is-visible { display:inline-grid; place-items:center; }
               </style>
               <style id="mockupsProductionFontStyles">{{FontStylesCss(fontStyleHtml)}}</style>
             </head>
@@ -806,6 +862,19 @@ internal abstract class WebPreviewPane : Grid
                   {{(showDeviceFrame ? "<div aria-hidden=\"true\" class=\"preview-phone-frame\" id=\"previewPhoneFrame\"></div>" : "")}}
                   {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
                 </section>
+                <div class="preview-context-state" id="previewContextState" role="status" aria-live="polite">
+                  <span class="preview-context-state-dot" aria-hidden="true"></span>
+                  <span><span class="preview-context-state-title" id="previewContextStateTitle"></span><span class="preview-context-state-message" id="previewContextStateMessage"></span></span>
+                  <button class="preview-context-state-retry" type="button" onclick="invokeCSharpAction('mockups-preview-action:__preview_retry__')">Reintentar</button>
+                </div>
+                <div class="preview-non-renderable-state{{(initialContextVisible ? " is-visible" : "")}}{{(initialContextState?.Kind == PreviewContextStateKind.Loading ? " is-loading" : "")}}" id="previewNonRenderableState">
+                  <div class="preview-non-renderable-card" role="status">
+                    <span class="preview-non-renderable-activity" aria-hidden="true"></span>
+                    <h1 class="preview-non-renderable-title" id="previewNonRenderableTitle">{{Html(initialContextState?.Title ?? "")}}</h1>
+                    <p class="preview-non-renderable-message" id="previewNonRenderableMessage">{{Html(initialContextState?.Message ?? "")}}</p>
+                    <button class="preview-non-renderable-action{{(initialActionVisible ? " is-visible" : "")}}" id="previewNonRenderableAction" type="button"{{(initialActionVisible ? $" onclick=\"{initialAction}\"" : "")}}>{{Html(initialContextState?.ActionLabel ?? "")}}</button>
+                  </div>
+                </div>
               </main>
               <script>
                 const host = document.querySelector(".preview-viewport-host");
@@ -817,6 +886,14 @@ internal abstract class WebPreviewPane : Grid
                 const designMarks = document.querySelector(".preview-design-marks");
                 const previewMeta = document.querySelector(".preview-meta");
                 const productionFontStyles = document.getElementById("mockupsProductionFontStyles");
+                const contextualState = document.getElementById("previewContextState");
+                const contextualStateTitle = document.getElementById("previewContextStateTitle");
+                const contextualStateMessage = document.getElementById("previewContextStateMessage");
+                const nonRenderableState = document.getElementById("previewNonRenderableState");
+                const nonRenderableTitle = document.getElementById("previewNonRenderableTitle");
+                const nonRenderableMessage = document.getElementById("previewNonRenderableMessage");
+                const nonRenderableAction = document.getElementById("previewNonRenderableAction");
+                let contextualStateTimer = 0;
                 const renderWidth = {{Number(width)}};
                 const renderHeight = {{Number(height)}};
                 const cornerRadius = {{Number(cornerRadius)}};
@@ -829,6 +906,41 @@ internal abstract class WebPreviewPane : Grid
                 let startTranslateX = 0;
                 let startTranslateY = 0;
                 let isDragging = false;
+
+                window.mockupsSetContextualPreviewState = (kind, title, message) => {
+                  window.clearTimeout(contextualStateTimer);
+                  contextualStateTimer = 0;
+                  if (!contextualState) return false;
+                  const show = () => {
+                    contextualState.className = `preview-context-state is-visible is-${kind}`;
+                    contextualStateTitle.textContent = String(title ?? "");
+                    contextualStateMessage.textContent = String(message ?? "");
+                  };
+                  if (!kind) {
+                    contextualState.className = "preview-context-state";
+                    contextualStateTitle.textContent = "";
+                    contextualStateMessage.textContent = "";
+                    return true;
+                  }
+                  if (kind === "loading") contextualStateTimer = window.setTimeout(show, 140);
+                  else show();
+                  return true;
+                };
+
+                window.mockupsSetNonRenderablePreviewState = (title, message, actionLabel, actionTarget, kind = "non-renderable") => {
+                  if (!nonRenderableState || !nonRenderableAction) return false;
+                  const visible = Boolean(title || message);
+                  nonRenderableState.classList.toggle("is-visible", visible);
+                  nonRenderableState.classList.toggle("is-loading", kind === "loading");
+                  nonRenderableTitle.textContent = String(title ?? "");
+                  nonRenderableMessage.textContent = String(message ?? "");
+                  nonRenderableAction.textContent = String(actionLabel ?? "");
+                  nonRenderableAction.classList.toggle("is-visible", Boolean(actionLabel && actionTarget));
+                  nonRenderableAction.onclick = actionLabel && actionTarget
+                    ? () => invokeCSharpAction(`mockups-preview-action:${actionTarget}`)
+                    : null;
+                  return true;
+                };
 
                 function applyReferenceOverlay(state) {
                   if (!referenceLayer || !referenceImage) return;
@@ -1661,9 +1773,33 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private DesignPreviewUpdate? _renderingUpdate;
     private DesignPreviewUpdate? _lastRenderedUpdate;
     private string _lastRenderedFontStyleHtml = "";
+    private bool _hasResidentDocument;
     private long _latestUpdateSequence;
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
+    public event Action<string>? ContextActionRequested;
+
+    public DesignWebPreviewPane()
+    {
+        WebView.WebMessageReceived += (_, args) =>
+        {
+            var message = args.Body?.ToString() ?? "";
+            if (message.Length >= 2 && message[0] == '"')
+            {
+                try
+                {
+                    message = JsonSerializer.Deserialize<string>(message) ?? message;
+                }
+                catch (JsonException)
+                {
+                    return;
+                }
+            }
+            const string prefix = "mockups-preview-action:";
+            if (!message.StartsWith(prefix, StringComparison.Ordinal)) return;
+            ContextActionRequested?.Invoke(message[prefix.Length..]);
+        };
+    }
 
     public Task<int> PreloadFrameImagesAsync(
         IReadOnlyCollection<string> imageSources,
@@ -1737,6 +1873,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool showDeviceFrame,
         PreviewReferenceState reference,
         DesignPreviewPayload? payload,
+        PreviewContextState contextState,
         bool isPlaybackUpdate,
         IEditorShellMessageSink messages)
     {
@@ -1751,6 +1888,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             showDeviceFrame,
             reference,
             payload,
+            contextState,
             isPlaybackUpdate,
             messages);
 
@@ -1801,6 +1939,28 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     {
         var stopwatch = Stopwatch.StartNew();
         var reference = PreviewReferenceOverlay.Resolve(update.Reference);
+        if (update.ContextState.Kind == PreviewContextStateKind.NonRenderable)
+        {
+            if (_lastRenderedUpdate is null)
+            {
+                LoadContextState(update.ContextState, update);
+                _lastRenderedFontStyleHtml = "";
+            }
+            else
+            {
+                await ShowResidentNonRenderableStateAsync(update.ContextState);
+            }
+            PreviewDebugLog.Write(
+                "preview.context-state",
+                ("kind", "non-renderable"),
+                ("title", update.ContextState.Title),
+                ("hasAction", update.ContextState.HasAction));
+            return;
+        }
+        if (_lastRenderedUpdate is not null)
+        {
+            await HideResidentNonRenderableStateAsync();
+        }
         if (update.Payload is null)
         {
             LoadHtml(DeviceHtml(
@@ -1827,6 +1987,25 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
         string bodyContent;
         Exception? renderError = null;
+        if (_lastRenderedUpdate is null)
+        {
+            var loadingState = new PreviewContextState(
+                PreviewContextStateKind.Loading,
+                "Preparando preview",
+                $"Resolviendo {update.Payload.Name}…");
+            if (_hasResidentDocument)
+            {
+                await ShowResidentNonRenderableStateAsync(loadingState);
+            }
+            else
+            {
+                LoadContextState(loadingState, update);
+            }
+        }
+        else
+        {
+            ShowResidentContextState("loading", "Actualizando preview", update.Payload.Name);
+        }
         try
         {
             bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
@@ -1848,6 +2027,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             update.Messages.Error("Design preview", renderError);
             if (_lastRenderedUpdate is not null)
             {
+                ShowResidentContextState(
+                    "error",
+                    "Preview no actualizado",
+                    "Se conserva el último resultado válido. Consulta Messages para ver el detalle.");
                 PreviewDebugLog.Write(
                     "preview.webview.update",
                     ("route", "retain-last-good"),
@@ -1862,6 +2045,14 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     RenderError: true));
                 return;
             }
+
+            LoadContextState(new PreviewContextState(
+                PreviewContextStateKind.Error,
+                "Preview no disponible",
+                "No se pudo generar un primer resultado. Consulta Messages y vuelve a intentarlo.",
+                "Reintentar",
+                "__preview_retry__"), update);
+            return;
         }
 
         if (!update.IsPlaybackUpdate
@@ -1883,7 +2074,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         var isMarksOnlyUpdate = _lastRenderedUpdate is not null
             && update.IsMarksOnlyUpdateOf(_lastRenderedUpdate);
         var isResidentCompatible = _lastRenderedUpdate is not null
-            && update.IsResidentShellCompatibleWith(_lastRenderedUpdate);
+            ? update.IsResidentShellCompatibleWith(_lastRenderedUpdate)
+            : _hasResidentDocument;
         if (renderError is null && isResidentCompatible)
         {
             var fontsChanged = !string.Equals(
@@ -1908,6 +2100,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: !isAnimationOnlyUpdate);
             if (bodyCommitted)
             {
+                HideResidentContextState();
+                await HideResidentNonRenderableStateAsync();
                 await UpdateReferenceOverlayAsync(reference);
                 _lastRenderedUpdate = update;
                 _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
@@ -1931,6 +2125,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
             var commitError = new InvalidOperationException("The resident preview update could not be committed; the last valid preview was retained.");
             update.Messages.Error("Design preview", commitError);
+            ShowResidentContextState(
+                "error",
+                "Preview no actualizado",
+                "Se conserva el último resultado válido. Consulta Messages para ver el detalle.");
             PreviewDebugLog.Write(
                 "preview.webview.update",
                 ("route", "retain-last-good"),
@@ -1958,6 +2156,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             htmlParts.BodyHtml,
             htmlParts.FontStyleHtml,
             reference));
+        _hasResidentDocument = true;
         _lastRenderedUpdate = update;
         _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
         PreviewDebugLog.Write(
@@ -1977,6 +2176,68 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             UsedDomPatch: false,
             renderError is not null));
     }
+
+    private void LoadContextState(PreviewContextState state, DesignPreviewUpdate update)
+    {
+        LoadHtml(DeviceHtml(
+            update.Metrics,
+            update.IsDark,
+            update.ThemeName,
+            update.ThemeMode,
+            update.ScaleMode,
+            "Design preview",
+            showDesignMarks: false,
+            showDeviceFrame: false,
+            bodyContent: "",
+            reference: PreviewReferenceOverlay.Resolve(update.Reference),
+            initialContextState: state));
+        _hasResidentDocument = true;
+    }
+
+    private async Task ShowResidentNonRenderableStateAsync(PreviewContextState state)
+    {
+        var titleJson = JsonSerializer.Serialize(state.Title);
+        var messageJson = JsonSerializer.Serialize(state.Message);
+        var actionLabelJson = JsonSerializer.Serialize(state.ActionLabel);
+        var actionTargetJson = JsonSerializer.Serialize(state.ActionTargetId);
+        var kindJson = JsonSerializer.Serialize(state.Kind == PreviewContextStateKind.Loading ? "loading" : "non-renderable");
+        await WebView.InvokeScript($$"""
+            (() => typeof window.mockupsSetNonRenderablePreviewState === "function"
+              ? window.mockupsSetNonRenderablePreviewState({{titleJson}}, {{messageJson}}, {{actionLabelJson}}, {{actionTargetJson}}, {{kindJson}})
+              : false)();
+            """);
+    }
+
+    private async Task HideResidentNonRenderableStateAsync()
+    {
+        try
+        {
+            await WebView.InvokeScript("(() => typeof window.mockupsSetNonRenderablePreviewState === 'function' ? window.mockupsSetNonRenderablePreviewState('', '', '', '') : false)();");
+        }
+        catch
+        {
+            // A first-load context-state document does not expose the resident
+            // preview shell yet; the following full load replaces it normally.
+        }
+    }
+
+    private void ShowResidentContextState(string kind, string title, string message)
+    {
+        var kindJson = JsonSerializer.Serialize(kind);
+        var titleJson = JsonSerializer.Serialize(title);
+        var messageJson = JsonSerializer.Serialize(message);
+        _ = WebView.InvokeScript($$"""
+            (() => typeof window.mockupsSetContextualPreviewState === "function"
+              ? window.mockupsSetContextualPreviewState({{kindJson}}, {{titleJson}}, {{messageJson}})
+              : false)();
+            """);
+    }
+
+    private void HideResidentContextState()
+    {
+        _ = WebView.InvokeScript("(() => typeof window.mockupsSetContextualPreviewState === 'function' ? window.mockupsSetContextualPreviewState('', '', '') : false)();");
+    }
+
 
     public sealed record DesignPreviewFrameStatus(
         double ElapsedMilliseconds,
@@ -2057,6 +2318,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool ShowDeviceFrame,
         PreviewReferenceState Reference,
         DesignPreviewPayload? Payload,
+        PreviewContextState ContextState,
         bool IsPlaybackUpdate,
         IEditorShellMessageSink Messages)
     {

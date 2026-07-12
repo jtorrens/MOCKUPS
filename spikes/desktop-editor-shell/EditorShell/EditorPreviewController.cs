@@ -223,6 +223,11 @@ internal sealed class EditorPreviewController
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
+        _designPreviewPane.ContextActionRequested += targetId =>
+        {
+            if (targetId == PreviewRetryTargetId) Refresh();
+            else _selectNodeById(targetId, null);
+        };
         _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
@@ -1062,6 +1067,9 @@ internal sealed class EditorPreviewController
             UpdateShotTimelineControls();
             UpdateProductionPreviewSetup();
             var designPayload = DesignPreviewPayloadForSelection();
+            var contextState = designPayload is null
+                ? NonRenderableStateForSelection()
+                : PreviewContextState.Renderable;
             var deviceId = PreviewDeviceId(designPayload);
             if (string.IsNullOrWhiteSpace(deviceId))
             {
@@ -1100,6 +1108,7 @@ internal sealed class EditorPreviewController
                 !_showCanonicalFrame,
                 CurrentReferenceState(),
                 designPayload,
+                contextState,
                 IsPreviewPlaybackActive,
                 _messages);
             if (designPayload is not null && _designInputsPanel.IsPlaybackActive)
@@ -1921,6 +1930,13 @@ internal sealed class EditorPreviewController
     {
         if (_workspace == EditorWorkspace.Production)
         {
+            var selected = _selectedNode();
+            if (!_isDesignPreviewContextLocked
+                && selected?.Kind is not ProjectTreeNodeKind.Shot and not ProjectTreeNodeKind.ModuleInstance)
+            {
+                _activeDesignPreviewNode = null;
+                return null;
+            }
             var productionNode = ProductionPayloadNode();
             var productionPayload = DesignPreviewPayloadFactory.Create(
                 _database,
@@ -1961,15 +1977,46 @@ internal sealed class EditorPreviewController
             return selectedPayload;
         }
 
-        if (_lastDesignPreviewNode is null)
+        _activeDesignPreviewNode = null;
+        return null;
+    }
+
+    private const string PreviewRetryTargetId = "__preview_retry__";
+
+    private PreviewContextState NonRenderableStateForSelection()
+    {
+        var selected = _selectedNode();
+        var destination = FirstRenderableDescendant(selected);
+        return new PreviewContextState(
+            PreviewContextStateKind.NonRenderable,
+            selected is null ? "No hay una selección renderizable" : $"{selected.Name} no tiene preview directo",
+            selected is null
+                ? "Selecciona un componente, módulo o Screen para ver su resultado resuelto."
+                : "Este objeto organiza o contiene otros elementos, pero no produce una imagen por sí mismo.",
+            destination is null ? "" : "Ver elementos renderizables",
+            destination?.Id ?? "");
+    }
+
+    private ProjectTreeNode? FirstRenderableDescendant(ProjectTreeNode? node)
+    {
+        if (node is null) return null;
+        foreach (var child in node.Children)
         {
-            _activeDesignPreviewNode = null;
-            return null;
+            if (DesignPreviewPayloadFactory.Create(
+                    _database,
+                    child,
+                    _selectedThemeId,
+                    _selectedMode,
+                    _shotPreviewFrame) is not null)
+            {
+                return child;
+            }
+
+            var nested = FirstRenderableDescendant(child);
+            if (nested is not null) return nested;
         }
 
-        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
-        _activeDesignPreviewNode = fallbackPayload is null ? null : _lastDesignPreviewNode;
-        return fallbackPayload;
+        return null;
     }
 
     private void UpdateShotTimelineControls()
