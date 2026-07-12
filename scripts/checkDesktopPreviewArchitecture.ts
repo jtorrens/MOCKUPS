@@ -2190,6 +2190,51 @@ assertContains(
   "Shot preview must translate the requested Shot frame to the active module's local frame",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  '["moduleInstanceId"] = node.Id',
+  "production preview payloads must identify their active module instance",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "RenderShotModuleInstanceItems",
+  "production preview history must expose ordered Shot module-instance slots",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "MoveShotSlot(-1)",
+  "Shot navigation must expose previous and next module-instance controls",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "Stopwatch.GetElapsedTime(_shotPlaybackStartedTimestamp).TotalSeconds",
+  "Shot playback must derive frames from a monotonic elapsed clock",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_pendingPlaybackFramesOverride = ShotPlaybackFramePayloads",
+  "Shot playback must prepare its frames through the shared HTML/raster playback route",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  '"0,0,Auto,Auto"',
+  "production preview setup must collapse editor-owned Device and Theme selectors",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  'statusText: message.statusVisible ? message.statusText : ""',
+  "hidden message delivery state must not reserve status text space",
+);
+assertContains(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  'optionalBoolean(preview, "typingIndicator") ? "center"',
+  "typing-indicator text must be centered by the Bubble resolver",
+);
+assertContains(
+  "src/desktop-preview/bubbleComponentRenderable.ts",
+  "minimumContentWidth",
+  "Bubble layout must allow owned labels to define its minimum content width",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
   "[\"timelineFrameJsonKey\"] = \"conversationFrame\"",
   "modules with a local timeline must declare its runtime frame key",

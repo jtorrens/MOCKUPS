@@ -343,11 +343,12 @@ function messageNodes(
       textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
       textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
       textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
+      typingIndicator: message.isTypingIndicator,
       writeOnTrigger,
       writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: message.writeOnDurationFrames,
       statusState: message.statusVisible ? message.statusState : "none",
-      statusText: message.statusText,
+      statusText: message.statusVisible ? message.statusText : "",
     },
     (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
   );

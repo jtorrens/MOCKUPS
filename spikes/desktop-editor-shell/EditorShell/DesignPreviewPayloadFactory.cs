@@ -154,6 +154,7 @@ internal static class DesignPreviewPayloadFactory
             ["context"] = new JsonObject
             {
                 ["shotId"] = instance.ShotId,
+                ["moduleInstanceId"] = node.Id,
             },
         };
         return new DesignPreviewPayload(
@@ -228,7 +229,7 @@ internal static class DesignPreviewPayloadFactory
         shotPreview.Remove("actions");
         return payload with
         {
-            Name = $"{shotNode.Name} · {active.Name}",
+            Name = active.Name,
             DesignPreviewJson = shotPreview.ToJsonString(),
         };
     }

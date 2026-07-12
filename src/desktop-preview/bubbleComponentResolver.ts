@@ -211,6 +211,12 @@ export function resolveBubbleComponent(
         asRecord(avatarSlot.overrides),
       )
     : undefined;
+  const resolvedTextBox = resolveTextBoxComponentFromRecords(
+    textBoxConfig,
+    textBoxInputs,
+    componentBaseConfigs,
+    "component.bubble.textBox",
+  );
 
   return {
     id: "component.bubble",
@@ -226,12 +232,8 @@ export function resolveBubbleComponent(
       state,
     ),
     textBox: {
-      ...resolveTextBoxComponentFromRecords(
-        textBoxConfig,
-        textBoxInputs,
-        componentBaseConfigs,
-        "component.bubble.textBox",
-      ),
+      ...resolvedTextBox,
+      textAlign: optionalBoolean(preview, "typingIndicator") ? "center" : resolvedTextBox.textAlign,
       cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan),
     },
     mediaSlot: {

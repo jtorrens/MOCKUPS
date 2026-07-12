@@ -67,6 +67,9 @@ export function bubbleComponentToRenderable(
     },
   };
   const statusSize = measureBubbleStatus(payload, bubble);
+  const actorLabelSize = bubble.actorLabelSlot.label
+    ? measureLabelComponent(bubble.actorLabelSlot.label, payload)
+    : undefined;
   const media = activeBubbleMedia(bubble);
   const mediaSize = media
     ? media.kind === "audio"
@@ -101,6 +104,7 @@ export function bubbleComponentToRenderable(
     mediaSize,
     bubble.mediaSlot.position,
     basePadding,
+    Math.max(0, (actorLabelSize?.width ?? 0) - basePadding.left - basePadding.right),
   );
   const baseSurfaceBox = {
     x: 0,
@@ -111,7 +115,7 @@ export function bubbleComponentToRenderable(
   const baseLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         baseSurfaceBox,
-        measureLabelComponent(bubble.actorLabelSlot.label, payload),
+        actorLabelSize!,
         scalePlacement(bubble.actorLabelSlot.placement, scale),
       )
     : undefined;
@@ -141,6 +145,7 @@ export function bubbleComponentToRenderable(
     mediaSize,
     bubble.mediaSlot.position,
     contentPadding,
+    Math.max(0, (actorLabelSize?.width ?? 0) - contentPadding.left - contentPadding.right),
   );
   const localSurfaceBox = {
     x: 0,
@@ -151,7 +156,7 @@ export function bubbleComponentToRenderable(
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         localSurfaceBox,
-        measureLabelComponent(bubble.actorLabelSlot.label, payload),
+        actorLabelSize!,
         scalePlacement(bubble.actorLabelSlot.placement, scale),
     )
     : undefined;
@@ -286,6 +291,7 @@ function bubbleContentLayout(
     gapX: number;
     gapY: number;
   },
+  minimumContentWidth = 0,
 ) {
   const statusGap = statusSize
     ? Math.max(2, Math.min(padding.gapY, statusSize.height * 0.45))
@@ -313,7 +319,7 @@ function bubbleContentLayout(
       : undefined,
   });
   if (!mediaSize) {
-    const width = Math.max(textSize.width, statusSize?.width ?? 0);
+    const width = Math.max(minimumContentWidth, textSize.width, statusSize?.width ?? 0);
     const height = textSize.height + statusBlockHeight;
     const boxes = textAndStatusBoxes(
       padding.left,
@@ -333,7 +339,7 @@ function bubbleContentLayout(
   const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
     const mediaGap = verticalGap;
-    const width = Math.max(textSize.width, statusSize?.width ?? 0, mediaSize.width);
+    const width = Math.max(minimumContentWidth, textSize.width, statusSize?.width ?? 0, mediaSize.width);
     const height = textSize.height + mediaGap + mediaSize.height + statusBlockHeight;
     const textX = mediaSize.width > textSize.width
       ? padding.left
@@ -360,7 +366,7 @@ function bubbleContentLayout(
   }
 
   const rowWidth = textSize.width + horizontalGap + mediaSize.width;
-  const width = Math.max(rowWidth, statusSize?.width ?? 0);
+  const width = Math.max(minimumContentWidth, rowWidth, statusSize?.width ?? 0);
   const rowHeight = Math.max(textSize.height, mediaSize.height);
   const height = rowHeight + statusBlockHeight;
   const textX = position === "left"
