@@ -127,6 +127,7 @@ internal sealed class EditorPreviewController
     private readonly ChromiumPreviewRasterizer _chromiumRasterizer = new();
     private string _rasterCacheDirectory = "";
     private PlaybackPerformanceRun? _playbackPerformanceRun;
+    private IDisposable? _frameCacheReservation;
     private int _playbackSummaryGeneration;
 
     public EditorPreviewController(
@@ -841,6 +842,7 @@ internal sealed class EditorPreviewController
 
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition requestedAction)
     {
+        ReleaseFrameCacheReservation();
         EnsureSelectedOptionsExist();
         if (string.IsNullOrWhiteSpace(_projectId))
         {
@@ -871,13 +873,13 @@ internal sealed class EditorPreviewController
                 ("reason", "no-frames"));
             return true;
         }
+        _frameCacheReservation = WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
         if (_selectedPlaybackRoute != "raster")
         {
             var prewarmStopwatch = Stopwatch.StartNew();
             ShowPreviewLoading($"Preparing HTML 0 / {frames.Count} frames…", () => { });
             try
             {
-                WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
                 var imageSources = new HashSet<string>(StringComparer.Ordinal);
                 for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++)
                 {
@@ -901,6 +903,11 @@ internal sealed class EditorPreviewController
                 var loadedImages = await _designPreviewPane.PreloadFrameImagesAsync(imageSources, CancellationToken.None);
                 _designPreviewPane.SetRasterLoading(true, $"Decoding HTML assets {loadedImages} / {imageSources.Count}…");
             }
+            catch
+            {
+                ReleaseFrameCacheReservation();
+                throw;
+            }
             finally
             {
                 HidePreviewLoading();
@@ -918,14 +925,22 @@ internal sealed class EditorPreviewController
             && _rasterPlaybackOrder.Count == frames.Count
             && frames.All((frame) => _rasterPlaybackFrames.ContainsKey(PlaybackFrameKey(frame))))
         {
-            await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, CancellationToken.None);
-            await _designPreviewPane.SyncRasterViewportAsync();
-            PreviewDebugLog.Write(
-                "preview.playback.raster-cache-hit",
-                ("component", payload.ComponentType),
-                ("name", payload.Name),
-                ("frames", frames.Count));
-            return true;
+            try
+            {
+                await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, CancellationToken.None);
+                await _designPreviewPane.SyncRasterViewportAsync();
+                PreviewDebugLog.Write(
+                    "preview.playback.raster-cache-hit",
+                    ("component", payload.ComponentType),
+                    ("name", payload.Name),
+                    ("frames", frames.Count));
+                return true;
+            }
+            catch
+            {
+                ReleaseFrameCacheReservation();
+                throw;
+            }
         }
 
         _previewLoadingCancellation?.Cancel();
@@ -966,7 +981,6 @@ internal sealed class EditorPreviewController
 
         try
         {
-            WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
             if (!string.IsNullOrWhiteSpace(_rasterCacheDirectory) && Directory.Exists(_rasterCacheDirectory))
             {
                 Directory.Delete(_rasterCacheDirectory, recursive: true);
@@ -1011,6 +1025,7 @@ internal sealed class EditorPreviewController
         }
         catch (OperationCanceledException)
         {
+            ReleaseFrameCacheReservation();
             PreviewDebugLog.Write(
                 "preview.playback.frames.cancelled",
                 ("component", payload.ComponentType),
@@ -1021,6 +1036,7 @@ internal sealed class EditorPreviewController
         }
         catch (Exception error)
         {
+            ReleaseFrameCacheReservation();
             PreviewDebugLog.Write(
                 "preview.playback.frames.error",
                 ("component", payload.ComponentType),
@@ -1212,6 +1228,7 @@ internal sealed class EditorPreviewController
 
     private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
+        ReleaseFrameCacheReservation();
         if (_playbackPerformanceRun is null) return;
         _playbackPerformanceRun.AcceptsPresentations = false;
         var generation = ++_playbackSummaryGeneration;
@@ -1221,6 +1238,12 @@ internal sealed class EditorPreviewController
                 if (generation == _playbackSummaryGeneration) FinalizePlaybackSummary();
             },
             TimeSpan.FromMilliseconds(750));
+    }
+
+    private void ReleaseFrameCacheReservation()
+    {
+        _frameCacheReservation?.Dispose();
+        _frameCacheReservation = null;
     }
 
     private double? RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)

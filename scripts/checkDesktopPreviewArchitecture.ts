@@ -2118,6 +2118,16 @@ assertContains(
   "preview prewarming must not serialize interactive frames through the same renderer process",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "public static IDisposable ReserveFrameCacheCapacity",
+  "expanded playback frame caches must be represented by a releasable reservation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "ReleaseFrameCacheReservation();",
+  "playback must release its expanded frame-cache reservation",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
   "mockupsPreviewImagePreloadResult",
   "WebView image preload must return a serializable request id and expose a synchronous result poll",

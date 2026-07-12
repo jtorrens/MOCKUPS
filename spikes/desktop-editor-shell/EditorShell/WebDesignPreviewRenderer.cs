@@ -24,7 +24,9 @@ internal static class WebDesignPreviewRenderer
     private static readonly LinkedList<FrameCacheEntry> FrameCacheOrder = [];
     private static readonly PersistentPreviewRenderer PersistentRenderer = new();
     private static readonly PersistentPreviewRenderer PrewarmPersistentRenderer = new();
+    private static readonly Dictionary<long, int> FrameCacheReservations = [];
     private static int _frameCacheCapacity = DefaultFrameCacheCapacity;
+    private static long _nextFrameCacheReservationId;
 
     public static async Task<string> RenderBodyAsync(
         SpikeDatabase.DevicePreviewMetrics metrics,
@@ -101,27 +103,46 @@ internal static class WebDesignPreviewRenderer
         _ = await RenderPrewarmBodyAsync(metrics, themeMode, showMarks, payload);
     }
 
-    public static void ReserveFrameCacheCapacity(int frameCount)
+    public static IDisposable ReserveFrameCacheCapacity(int frameCount)
     {
-        if (frameCount <= DefaultFrameCacheCapacity)
-        {
-            PreviewDebugLog.Write(
-                "preview.cache.reserve",
-                ("requestedFrames", frameCount),
-                ("capacity", _frameCacheCapacity),
-                ("changed", false));
-            return;
-        }
-
+        var reservationId = Interlocked.Increment(ref _nextFrameCacheReservationId);
         lock (CacheGate)
         {
-            _frameCacheCapacity = Math.Clamp(frameCount, DefaultFrameCacheCapacity, MaximumFrameCacheCapacity);
+            FrameCacheReservations[reservationId] = Math.Clamp(
+                frameCount,
+                DefaultFrameCacheCapacity,
+                MaximumFrameCacheCapacity);
+            UpdateFrameCacheCapacityLocked();
             PreviewDebugLog.Write(
                 "preview.cache.reserve",
                 ("requestedFrames", frameCount),
                 ("capacity", _frameCacheCapacity),
-                ("changed", true));
+                ("reservations", FrameCacheReservations.Count));
         }
+
+        return new FrameCacheReservation(reservationId);
+    }
+
+    private static void ReleaseFrameCacheCapacity(long reservationId)
+    {
+        lock (CacheGate)
+        {
+            if (!FrameCacheReservations.Remove(reservationId)) return;
+            UpdateFrameCacheCapacityLocked();
+            TrimFrameCacheLocked();
+            PreviewDebugLog.Write(
+                "preview.cache.release",
+                ("capacity", _frameCacheCapacity),
+                ("cacheSize", FrameCache.Count),
+                ("reservations", FrameCacheReservations.Count));
+        }
+    }
+
+    private static void UpdateFrameCacheCapacityLocked()
+    {
+        _frameCacheCapacity = FrameCacheReservations.Count == 0
+            ? DefaultFrameCacheCapacity
+            : Math.Max(DefaultFrameCacheCapacity, FrameCacheReservations.Values.Max());
     }
 
     private static object CreateRequest(
@@ -300,12 +321,17 @@ internal static class WebDesignPreviewRenderer
             var node = new LinkedListNode<FrameCacheEntry>(new FrameCacheEntry(key, html));
             FrameCacheOrder.AddFirst(node);
             FrameCache[key] = node;
-            while (FrameCache.Count > _frameCacheCapacity && FrameCacheOrder.Last is not null)
-            {
-                var last = FrameCacheOrder.Last;
-                FrameCacheOrder.RemoveLast();
-                FrameCache.Remove(last.Value.Key);
-            }
+            TrimFrameCacheLocked();
+        }
+    }
+
+    private static void TrimFrameCacheLocked()
+    {
+        while (FrameCache.Count > _frameCacheCapacity && FrameCacheOrder.Last is not null)
+        {
+            var last = FrameCacheOrder.Last;
+            FrameCacheOrder.RemoveLast();
+            FrameCache.Remove(last.Value.Key);
         }
     }
 
@@ -314,6 +340,17 @@ internal static class WebDesignPreviewRenderer
         lock (CacheGate)
         {
             return FrameCache.Count;
+        }
+    }
+
+    private sealed class FrameCacheReservation(long reservationId) : IDisposable
+    {
+        private long _reservationId = reservationId;
+
+        public void Dispose()
+        {
+            var id = Interlocked.Exchange(ref _reservationId, 0);
+            if (id != 0) ReleaseFrameCacheCapacity(id);
         }
     }
 
