@@ -3,11 +3,32 @@
 Date: 2026-07-12  
 From: desktop editor UX/UI implementation thread  
 To: WebView / Preview lifecycle debugging thread  
-Current `main`: `18de46ae`  
+Current `main`: `cf298b6a`
 Original UX baseline: `862c7f1c`  
 Platform reproduced: macOS  
-Status: shared lifecycle correction implemented; manual macOS continuity matrix
-pending, Windows parity unavailable in the current environment
+Status: closed and visually accepted on macOS; Windows parity remains unavailable
+in the current environment and does not block resuming D05
+
+## Delivery back to the UX/UI thread
+
+Pull `main` at or after `cf298b6a`. The user validated the corrected shell on
+macOS and reported no visible glitch or blackout. D01 is closed for the
+reproduced platform, so the UX/UI thread may resume Phase 2 D05 from the current
+implementation. Do not restore either discarded D05 prototype and do not reopen
+the native lifecycle unless a new reproducible defect appears.
+
+Delivered evidence:
+
+- root cause boundary: visible hosts were cleared before replacement controls
+  were constructed, while workspace switching also emitted an intermediate
+  Preview refresh before final selection;
+- correction commit: `cf298b6a fix: commit desktop shell context atomically`;
+- macOS result: user exercised the corrected flow and reported no glitches;
+- Windows result: unavailable in the current environment, explicitly pending;
+- Preview/component/Production contracts and transport remain unchanged;
+- `npm run check:architecture`, `npm test`, schema validation and
+  `git diff --check` passed before delivery;
+- `artifacts/` and `data/window-state.json` remain unrelated and uncommitted.
 
 ## Implementation update
 
