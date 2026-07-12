@@ -2442,9 +2442,69 @@ function assertDesktopDatabaseHasNoRetiredEditorLayouts() {
   }
 }
 
+function assertModuleInstanceRuntimePayloadsMatchContracts() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const instances = database.prepare(
+      "SELECT mi.id, mi.content_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id",
+    ).all() as { id: string; content_json: string; design_preview_json: string }[];
+    for (const instance of instances) {
+      const content = jsonRecord(jsonParse(instance.content_json));
+      const contract = jsonRecord(jsonParse(instance.design_preview_json));
+      for (const input of jsonArray(contract.inputs).map(jsonRecord)) {
+        const key = typeof input.jsonKey === "string" ? input.jsonKey : "";
+        const source = typeof input.source === "string" ? input.source : "runtime";
+        if (!key) continue;
+        if (source === "runtime" && !(key in content)) {
+          addViolation("data/desktop-editor-spike.sqlite", `module instance ${instance.id} is missing runtime input ${key}`);
+        }
+        if (source !== "runtime" && key in content) {
+          addViolation("data/desktop-editor-spike.sqlite", `module instance ${instance.id} persists parent-owned input ${key}`);
+        }
+      }
+      for (const collection of jsonArray(contract.collections).map(jsonRecord)) {
+        const key = typeof collection.sourceCollectionJsonKey === "string"
+          ? collection.sourceCollectionJsonKey
+          : typeof collection.jsonKey === "string" ? collection.jsonKey : "";
+        if (!key || !Array.isArray(content[key])) {
+          addViolation("data/desktop-editor-spike.sqlite", `module instance ${instance.id} is missing runtime collection ${key}`);
+          continue;
+        }
+        const fields = jsonArray(collection.fields).map(jsonRecord);
+        for (const item of jsonArray(content[key]).map(jsonRecord)) {
+          if (typeof item.id !== "string" || !item.id) {
+            addViolation("data/desktop-editor-spike.sqlite", `module instance ${instance.id} collection ${key} contains an item without stable id`);
+          }
+          for (const field of fields) {
+            const fieldKey = typeof field.jsonKey === "string" ? field.jsonKey : "";
+            const source = typeof field.source === "string" ? field.source : "runtime";
+            if (fieldKey && source === "runtime" && !(fieldKey in item)) {
+              addViolation("data/desktop-editor-spike.sqlite", `module instance ${instance.id} collection ${key} item is missing ${fieldKey}`);
+            }
+          }
+        }
+      }
+    }
+
+    const shots = database.prepare(
+      "SELECT s.id, s.duration_frames, COALESCE(SUM(mi.duration_frames), 0) AS expected FROM shots s LEFT JOIN module_instances mi ON mi.shot_id = s.id GROUP BY s.id",
+    ).all() as { id: string; duration_frames: number; expected: number }[];
+    for (const shot of shots) {
+      if (shot.duration_frames !== Math.max(1, shot.expected)) {
+        addViolation("data/desktop-editor-spike.sqlite", `Shot ${shot.id} duration does not equal its cut-slot duration sum`);
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 assertDesktopSystemTypographyData();
 assertDesktopDatabaseHasNoRetiredTimeFields();
 assertDesktopDatabaseHasNoRetiredEditorLayouts();
+assertModuleInstanceRuntimePayloadsMatchContracts();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

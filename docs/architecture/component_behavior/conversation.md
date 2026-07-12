@@ -119,6 +119,10 @@ recreate their internal rules.
   and pressed key, never the first character.
 - Trigger buttons in Test Values invoke the same public runtime action data as
   a module instance. They do not define a preview-only animation protocol.
+- The concrete ModuleInstance editor is generated from this same runtime
+  contract. Its scalar values and sourced `messages[]` collection persist
+  directly to the instance payload; there is no separate Conversation-specific
+  message editor.
 - `Play video` and `Play audio` run only for their finite declared
   `playDurationFrames`. A loop repeats the source inside that interval and
   cannot create an unbounded preview run.
@@ -130,6 +134,9 @@ frame rate. Children receive the appropriate frame/time/state derived by the
 module. There is no independent `motion time` per message. Component motion is
 governed by the selected component's motion configuration/token and resolved
 for the requested module frame.
+The module declares `conversationFrame` as its calculated
+`timelineFrameJsonKey`; Shot preview supplies the local slot frame and never
+persists that calculated value in the instance payload.
 
 ## Parent data vs local resolution
 

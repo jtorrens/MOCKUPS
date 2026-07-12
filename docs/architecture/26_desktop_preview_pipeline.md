@@ -109,6 +109,8 @@ It returns a `DesignPreviewPayload` for one of these contexts:
 - `componentClass`;
 - `module`;
 - `moduleInstance`.
+- a selected `shot`, resolved to its active `moduleInstance` for the requested
+  Shot frame.
 
 The payload includes:
 
@@ -131,11 +133,18 @@ For module instances, the factory resolves real shot/module context:
 
 - module config comes from the selected module;
 - app config comes from the instance app;
-- `instanceJson.content` comes from `module_instances.content_json`;
-- `instanceJson.behavior` comes from `module_instances.behavior_json`;
+- `designPreviewJson` is the module's declared runtime contract populated with
+  the concrete values from `module_instances.content_json`;
 - `instanceJson.animation` comes from `module_instances.animation_json`;
-- `instanceJson.context.ownerActor` is resolved from the shot owner actor;
+- actor references are resolved into that same runtime envelope;
+- `instanceJson.context` carries render context only, not a second content or
+  behavior channel;
 - frame rate comes from the shot.
+
+For Shot preview, cut slots are sequential. The requested Shot frame selects
+the active slot, is converted to its local module frame, and is written to the
+module-declared `timelineFrameJsonKey`. Parent-owned timeline inputs are marked
+`calculated`; they are not persisted as instance runtime values.
 
 For module and component design previews, `designPreviewJson` comes from test
 values via `DesignPreviewTestValues.RuntimeJson(...)`.

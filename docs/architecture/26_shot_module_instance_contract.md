@@ -21,6 +21,14 @@ action.
 `ModuleInstance` owns only its module reference, persisted runtime content,
 behavior, animation data, duration and transition declaration.
 
+`content_json` follows the public runtime-input contract declared by its
+selected module. The Module Design Test Values editor and the concrete
+ModuleInstance editor therefore expose the same fields, collections, hierarchy
+and actions. Calculated/parent-owned inputs are excluded from persistence.
+`behavior_json` is reserved for module-internal instance state that is not a
+public runtime input; Conversation currently retains only its head/tail timing
+padding there.
+
 It does not own actor, device, theme, mode or device state. Those are resolved
 from the shot and its owner actor. FPS is inherited from the project, with a
 future nullable override at shot level.
@@ -36,6 +44,13 @@ Slots are ordered by `sort_order`. The initial transition contract is:
 For cuts, slot durations are sequential and the shot timeline is their summed
 duration. The shot editor will expose add, delete, reorder and navigation for
 these slots. The first editor phase allows only Conversation module instances.
+
+A module declares the finite action that owns its duration with
+`definesModuleDuration`. The shared evaluator reads that action's declared
+collection and frame fields, compares its endpoint with authored animation
+events, persists the module-instance duration, and synchronizes the Shot sum.
+The Preview controls expose a Shot frame navigator and resolve the selected
+frame through the same local-frame contract.
 
 ## Future transitions
 
