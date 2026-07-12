@@ -2174,6 +2174,26 @@ assertContains(
   "SELECT SUM(mi.duration_frames)",
   "cut-only Shot duration must remain the sum of its ordered module-instance durations",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "ProjectTreeNodeKind.Shot => FromShot",
+  "Shot preview must resolve its active ordered module-instance slot",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "boundedFrame - startFrame",
+  "Shot preview must translate the requested Shot frame to the active module's local frame",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "[\"timelineFrameJsonKey\"] = \"conversationFrame\"",
+  "modules with a local timeline must declare its runtime frame key",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "[\"source\"] = \"calculated\"",
+  "parent-owned timeline frame inputs must be declared calculated",
+);
 for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

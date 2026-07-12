@@ -71,6 +71,26 @@ internal sealed class EditorPreviewController
     private readonly Slider _referenceOpacitySlider = new() { Minimum = 0, Maximum = 1, Value = 1, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
     private readonly Slider _referenceAngleSlider = new() { Minimum = -45, Maximum = 45, Value = 0, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
     private readonly StackPanel _referenceSplitControls = new() { Spacing = 8, IsVisible = false };
+    private readonly StackPanel _shotTimelineControls = new()
+    {
+        Orientation = Avalonia.Layout.Orientation.Horizontal,
+        Spacing = 8,
+        IsVisible = false,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
+    private readonly Slider _shotFrameSlider = new()
+    {
+        Minimum = 0,
+        Maximum = 0,
+        Value = 0,
+        TickFrequency = 1,
+        MinWidth = 180,
+    };
+    private readonly TextBlock _shotFrameText = new()
+    {
+        MinWidth = 88,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
@@ -129,6 +149,9 @@ internal sealed class EditorPreviewController
     private PlaybackPerformanceRun? _playbackPerformanceRun;
     private IDisposable? _frameCacheReservation;
     private int _playbackSummaryGeneration;
+    private int _shotPreviewFrame;
+    private string _shotTimelineShotId = "";
+    private bool _isUpdatingShotTimeline;
 
     public EditorPreviewController(
         SpikeDatabase database,
@@ -197,7 +220,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId, _selectedMode);
+        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
         if (payload is null)
         {
             return;
@@ -437,6 +460,21 @@ internal sealed class EditorPreviewController
         AddReferenceSlider(splitGrid, 2, "Opacity", _referenceOpacitySlider);
         AddReferenceSlider(splitGrid, 3, "Angle", _referenceAngleSlider);
         _referenceSplitControls.Children.Add(splitGrid);
+        var previousFrame = new Button { Content = "‹", Width = 32, Height = 30, Padding = new Thickness(0) };
+        var nextFrame = new Button { Content = "›", Width = 32, Height = 30, Padding = new Thickness(0) };
+        previousFrame.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1);
+        nextFrame.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1);
+        _shotTimelineControls.Children.Add(new TextBlock
+        {
+            Text = "Frame",
+            FontSize = 11,
+            Opacity = 0.72,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        });
+        _shotTimelineControls.Children.Add(previousFrame);
+        _shotTimelineControls.Children.Add(_shotFrameSlider);
+        _shotTimelineControls.Children.Add(nextFrame);
+        _shotTimelineControls.Children.Add(_shotFrameText);
 
         previewControlsHost.Content = new GlassCard
         {
@@ -454,6 +492,7 @@ internal sealed class EditorPreviewController
                         Children =
                         {
                             primaryControls,
+                            _shotTimelineControls,
                             _referenceSplitControls,
                         },
                     },
@@ -600,6 +639,13 @@ internal sealed class EditorPreviewController
         _referenceSwipeSlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
         _referenceOpacitySlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
         _referenceAngleSlider.PropertyChanged += (_, change) => { if (change.Property == RangeBase.ValueProperty) RefreshReferenceOverlay(); };
+        _shotFrameSlider.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == RangeBase.ValueProperty && !_isUpdatingShotTimeline)
+            {
+                SetShotPreviewFrame((int)Math.Round(_shotFrameSlider.Value, MidpointRounding.AwayFromZero));
+            }
+        };
         _marksToggle.PropertyChanged += (_, change) =>
         {
             if (change.Property == ToggleSwitch.IsCheckedProperty)
@@ -755,6 +801,7 @@ internal sealed class EditorPreviewController
                 HidePreviewLoading();
             }
             EnsureSelectedOptionsExist();
+            UpdateShotTimelineControls();
             var designPayload = DesignPreviewPayloadForSelection();
             var deviceId = PreviewDeviceId(designPayload);
             if (string.IsNullOrWhiteSpace(deviceId))
@@ -1614,7 +1661,7 @@ internal sealed class EditorPreviewController
     {
         if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
         {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode);
+            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
             if (lockedPayload is not null)
             {
                 _activeDesignPreviewNode = _lockedDesignPreviewNode;
@@ -1626,7 +1673,7 @@ internal sealed class EditorPreviewController
         }
 
         var selectedNode = _selectedNode();
-        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId, _selectedMode);
+        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId, _selectedMode, _shotPreviewFrame);
         if (selectedPayload is not null && selectedNode is not null)
         {
             _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
@@ -1640,9 +1687,42 @@ internal sealed class EditorPreviewController
             return null;
         }
 
-        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode);
+        var fallbackPayload = DesignPreviewPayloadFactory.Create(_database, _lastDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
         _activeDesignPreviewNode = fallbackPayload is null ? null : _lastDesignPreviewNode;
         return fallbackPayload;
+    }
+
+    private void UpdateShotTimelineControls()
+    {
+        var shot = _selectedNode();
+        if (shot?.Kind != ProjectTreeNodeKind.Shot)
+        {
+            _shotTimelineControls.IsVisible = false;
+            return;
+        }
+        var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shot.Id);
+        if (_shotTimelineShotId != shot.Id)
+        {
+            _shotTimelineShotId = shot.Id;
+            _shotPreviewFrame = 0;
+        }
+        _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, 0, Math.Max(0, duration - 1));
+        _isUpdatingShotTimeline = true;
+        _shotFrameSlider.Maximum = Math.Max(0, duration - 1);
+        _shotFrameSlider.Value = _shotPreviewFrame;
+        _shotFrameText.Text = $"{_shotPreviewFrame} / {Math.Max(0, duration - 1)}";
+        _shotTimelineControls.IsVisible = true;
+        _isUpdatingShotTimeline = false;
+    }
+
+    private void SetShotPreviewFrame(int frame)
+    {
+        if (_selectedNode() is not { Kind: ProjectTreeNodeKind.Shot } shot) return;
+        var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shot.Id);
+        var next = Math.Clamp(frame, 0, Math.Max(0, duration - 1));
+        if (next == _shotPreviewFrame) return;
+        _shotPreviewFrame = next;
+        Refresh();
     }
 
     private string PreviewDeviceId(DesignPreviewPayload? payload)

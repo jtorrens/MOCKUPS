@@ -677,11 +677,12 @@ internal sealed partial class SpikeDatabase
                 ConversationPreviewMessage("message_003", "system", "Siguiente paso: instancias reales.", 12, 0, 0, false, "none", ""),
             },
             ["conversationFrame"] = 0,
+            ["timelineFrameJsonKey"] = "conversationFrame",
             ["inputs"] = new JsonArray
             {
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
                 new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
-                new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
+                new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames", ["source"] = "calculated" },
                 new JsonObject { ["id"] = "bubbleReveal", ["label"] = "Outgoing bubble reveal", ["jsonKey"] = "bubbleRevealMode", ["kind"] = "option", ["defaultValue"] = "afterWriteOn", ["options"] = new JsonArray { new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" }, new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "incomingReveal", ["label"] = "Incoming reveal", ["jsonKey"] = "incomingRevealMode", ["kind"] = "option", ["defaultValue"] = "typingIndicator", ["options"] = new JsonArray { new JsonObject { ["value"] = "instant", ["label"] = "Instant" }, new JsonObject { ["value"] = "writeOn", ["label"] = "Write-on" }, new JsonObject { ["value"] = "typingIndicator", ["label"] = "Typing indicator" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "textInput", ["label"] = "Text input while writing", ["jsonKey"] = "textInputVisible", ["kind"] = "boolean", ["defaultValue"] = "true", ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },

@@ -57,9 +57,14 @@ internal sealed partial class SpikeDatabase
             var contract = ParseJsonObject(ReadString(reader, 2));
             foreach (var input in (contract["inputs"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                if (!RuntimeInputDefinition(input)) continue;
                 var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
-                if (string.IsNullOrWhiteSpace(jsonKey) || content[jsonKey] is not null) continue;
+                if (string.IsNullOrWhiteSpace(jsonKey)) continue;
+                if (!RuntimeInputDefinition(input))
+                {
+                    content.Remove(jsonKey);
+                    continue;
+                }
+                if (content[jsonKey] is not null) continue;
                 content[jsonKey] = RuntimeDefaultValue(input);
             }
 

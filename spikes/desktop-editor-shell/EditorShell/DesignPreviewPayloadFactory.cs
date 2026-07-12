@@ -35,7 +35,8 @@ internal static class DesignPreviewPayloadFactory
         SpikeDatabase database,
         ProjectTreeNode? node,
         string? themeId,
-        string themeMode = "light")
+        string themeMode = "light",
+        int timelineFrame = 0)
     {
         if (node is null)
         {
@@ -67,6 +68,7 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.Module => FromModule(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.Shot => FromShot(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces, timelineFrame),
             _ => null,
         };
         return payload is null
@@ -80,13 +82,14 @@ internal static class DesignPreviewPayloadFactory
 
     internal static string? ResolveThemeId(SpikeDatabase database, ProjectTreeNode node, string? selectedThemeId)
     {
-        if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
+        if (node.Kind is not ProjectTreeNodeKind.ModuleInstance and not ProjectTreeNodeKind.Shot)
         {
             return selectedThemeId;
         }
 
-        var instance = database.GetModuleInstanceSettings(node.Id);
-        var shot = database.GetShotSettings(instance.ShotId);
+        var shot = node.Kind == ProjectTreeNodeKind.Shot
+            ? database.GetShotSettings(node.Id)
+            : database.GetShotSettings(database.GetModuleInstanceSettings(node.Id).ShotId);
         if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return selectedThemeId;
 
         var actor = database.GetActorSettings(shot.OwnerActorId);
@@ -97,10 +100,10 @@ internal static class DesignPreviewPayloadFactory
 
     private static string ResolveDeviceId(SpikeDatabase database, ProjectTreeNode node)
     {
-        if (node.Kind != ProjectTreeNodeKind.ModuleInstance) return "";
-
-        var instance = database.GetModuleInstanceSettings(node.Id);
-        var shot = database.GetShotSettings(instance.ShotId);
+        if (node.Kind is not ProjectTreeNodeKind.ModuleInstance and not ProjectTreeNodeKind.Shot) return "";
+        var shot = node.Kind == ProjectTreeNodeKind.Shot
+            ? database.GetShotSettings(node.Id)
+            : database.GetShotSettings(database.GetModuleInstanceSettings(node.Id).ShotId);
         if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return "";
         return database.GetActorSettings(shot.OwnerActorId).DefaultDeviceId;
     }
@@ -115,7 +118,8 @@ internal static class DesignPreviewPayloadFactory
         IReadOnlyDictionary<string, bool> paletteNeutralColors,
         string projectMediaRoot,
         SpikeDatabase.IconThemeSettings? iconTheme,
-        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces,
+        int? localTimelineFrame = null)
     {
         var instance = database.GetModuleInstanceSettings(node.Id);
         var module = database.GetModuleSettings(instance.ModuleId);
@@ -123,6 +127,11 @@ internal static class DesignPreviewPayloadFactory
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
         var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        if (localTimelineFrame is not null
+            && runtimePreview["timelineFrameJsonKey"]?.GetValue<string>() is { Length: > 0 } timelineFrameJsonKey)
+        {
+            runtimePreview[timelineFrameJsonKey] = Math.Max(0, localTimelineFrame.Value);
+        }
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
         var ownerActorId = string.IsNullOrWhiteSpace(runtimeActorId) ? shot.OwnerActorId : runtimeActorId;
         var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)
@@ -166,6 +175,62 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             shot.Fps,
             effectiveThemeMode);
+    }
+
+    private static DesignPreviewPayload? FromShot(
+        SpikeDatabase database,
+        ProjectTreeNode shotNode,
+        string deviceId,
+        string themeMode,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces,
+        int shotFrame)
+    {
+        var slots = database.GetShotModuleInstanceSlots(shotNode.Id);
+        if (slots.Count == 0) return null;
+        var boundedFrame = Math.Max(0, Math.Min(ModuleInstanceTimeline.ShotDurationFrames(database, shotNode.Id) - 1, shotFrame));
+        var startFrame = 0;
+        var active = slots[^1];
+        foreach (var slot in slots)
+        {
+            var duration = ModuleInstanceTimeline.DurationFrames(database, slot.Id);
+            if (boundedFrame < startFrame + duration)
+            {
+                active = slot;
+                break;
+            }
+            startFrame += duration;
+        }
+        var instanceNode = new ProjectTreeNode(
+            ProjectTreeNodeKind.ModuleInstance,
+            active.Id,
+            active.Name,
+            active.ModuleName,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
+            shotNode);
+        var payload = FromModuleInstance(
+            database,
+            instanceNode,
+            deviceId,
+            themeMode,
+            themeTokensJson,
+            paletteColors,
+            paletteNeutralColors,
+            projectMediaRoot,
+            iconTheme,
+            fontFaces,
+            boundedFrame - startFrame);
+        var shotPreview = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
+        shotPreview.Remove("actions");
+        return payload with
+        {
+            Name = $"{shotNode.Name} · {active.Name}",
+            DesignPreviewJson = shotPreview.ToJsonString(),
+        };
     }
 
     private static DesignPreviewPayload FromModule(
