@@ -317,7 +317,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var value = DesignPreviewTestValues.Value(preview, input);
         var control = new DictionaryFieldControl(
-            new FieldValue(CreateDefinition(owner.Node, input), value),
+            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
         control.ValueChanged += (_, next) =>
         {
@@ -336,7 +336,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.SetValue(preview, input, next);
             }
         };
-        return control;
+        return DecorateAnimationToggle(owner, input, "", control);
     }
 
     private Control CreateTestValueCollectionCard(
@@ -504,7 +504,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action? afterCommit = null)
     {
         var control = new DictionaryFieldControl(
-            new FieldValue(CreateDefinition(owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
+            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
         control.IsEnabled = CollectionFieldIsEnabled(item, input);
         control.ValueCommitted += (_, next) =>
@@ -537,7 +537,59 @@ internal sealed class RuntimeInputsCollectionEditor
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
-        return control;
+        var targetId = item["id"]?.GetValue<string>() ?? "";
+        return DecorateAnimationToggle(owner, input, targetId, control);
+    }
+
+    private Control DecorateAnimationToggle(
+        RuntimeInputOwner owner,
+        ComponentInputDefinition input,
+        string targetId,
+        DictionaryFieldControl control)
+    {
+        if (!owner.IsInstance || input.Animation is null) return control;
+        var document = new ModuleInstanceAnimationDocument(
+            _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+        var active = document.HasTrack(input.Id, targetId);
+        var toggle = new Button
+        {
+            Content = active ? "◆" : "◇",
+            Width = 30,
+            Height = 30,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            Foreground = active
+                ? new SolidColorBrush(Color.Parse("#F0B429"))
+                : new SolidColorBrush(Color.Parse("#8F98A8")),
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 1, 4, 0),
+        };
+        EditorAccessibility.Describe(toggle, active
+            ? $"Disable animation for {input.Label}"
+            : $"Enable animation for {input.Label}");
+        toggle.Click += (_, args) =>
+        {
+            args.Handled = true;
+            if (active) document.RemoveTrack(input.Id, targetId);
+            else document.AddTrack(
+                input.Id,
+                targetId,
+                DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
+                input.Animation.Interpolations.First());
+            _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+            _onChanged();
+            _reloadAndSelect?.Invoke(owner.Node);
+        };
+        var row = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 2,
+        };
+        row.Children.Add(toggle);
+        Grid.SetColumn(control, 1);
+        row.Children.Add(control);
+        return row;
     }
 
     private Control CreateTestValueCollectionGroupCard(
@@ -649,33 +701,6 @@ internal sealed class RuntimeInputsCollectionEditor
         Grid.SetColumn(label, 1);
         content.Children.Add(label);
         return content;
-    }
-
-    private FieldDefinition CreateDefinition(ProjectTreeNode node, ComponentInputDefinition input)
-    {
-        var projectId = ProjectAncestor(node).Id;
-        var options = input.ValueKind switch
-        {
-            ValueKind.RecordReference when input.TableId == "actors" => _database.GetActorOptions(projectId),
-            ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                _database.GetComponentPresetReferenceOptionsByType(projectId, input.ComponentType),
-            ValueKind.PaletteColorToken => _database.GetPaletteColorOptions(projectId),
-            _ => input.Options,
-        };
-        return new FieldDefinition(
-            input.Id,
-            input.Label,
-            input.ValueKind,
-            DefaultValue: input.DefaultValue,
-            Options: options,
-            PairLabels: input.ValueKind == ValueKind.IntegerPair ? input.PairLabels : null,
-            Number: input.ValueKind is ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha
-                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
-                : null,
-            RecordReference: input.ValueKind == ValueKind.RecordReference
-                ? new RecordReferenceDefinition(input.TableId)
-                : null,
-            Unit: input.Unit);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)

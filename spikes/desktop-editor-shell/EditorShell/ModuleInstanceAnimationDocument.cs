@@ -1,0 +1,144 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
+
+namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed class ModuleInstanceAnimationDocument
+{
+    private readonly JsonObject _root;
+    private readonly JsonArray _tracks;
+
+    public ModuleInstanceAnimationDocument(string json)
+    {
+        _root = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject
+            ?? throw new InvalidOperationException("animation_json must be an object.");
+        if (_root["schemaVersion"]?.GetValue<int>() != 2)
+            throw new InvalidOperationException("Animation editor requires animation_json schemaVersion 2.");
+        _tracks = _root["tracks"] as JsonArray
+            ?? throw new InvalidOperationException("animation_json v2 requires tracks.");
+    }
+
+    public IReadOnlyList<AnimationTrackView> Tracks => _tracks.OfType<JsonObject>()
+        .Select(ReadTrack)
+        .ToList();
+
+    public AnimationTrackView? Track(string fieldId, string targetId) =>
+        Tracks.FirstOrDefault((track) => track.FieldId == fieldId && track.TargetId == targetId);
+
+    public bool HasTrack(string fieldId, string targetId) => Track(fieldId, targetId) is not null;
+
+    public void AddTrack(
+        string fieldId,
+        string targetId,
+        JsonNode initialValue,
+        string interpolation)
+    {
+        if (HasTrack(fieldId, targetId)) return;
+        var track = new JsonObject
+        {
+            ["id"] = $"track-{Guid.NewGuid():N}",
+            ["fieldId"] = fieldId,
+            ["keyframes"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = $"keyframe-{Guid.NewGuid():N}",
+                    ["frame"] = 0,
+                    ["value"] = initialValue.DeepClone(),
+                    ["interpolation"] = interpolation,
+                    ["enabled"] = true,
+                },
+            },
+        };
+        if (!string.IsNullOrWhiteSpace(targetId)) track["targetId"] = targetId;
+        _tracks.Add(track);
+    }
+
+    public void RemoveTrack(string fieldId, string targetId)
+    {
+        var track = TrackObject(fieldId, targetId);
+        if (track is not null) _tracks.Remove(track);
+    }
+
+    public void UpsertKeyframe(
+        string fieldId,
+        string targetId,
+        int frame,
+        JsonNode value,
+        string interpolation)
+    {
+        var track = TrackObject(fieldId, targetId)
+            ?? throw new InvalidOperationException("Animation track does not exist.");
+        var keyframes = (JsonArray)track["keyframes"]!;
+        var existing = keyframes.OfType<JsonObject>()
+            .FirstOrDefault((keyframe) => keyframe["frame"]?.GetValue<int>() == frame);
+        if (existing is null)
+        {
+            existing = new JsonObject
+            {
+                ["id"] = $"keyframe-{Guid.NewGuid():N}",
+                ["frame"] = Math.Max(0, frame),
+            };
+            keyframes.Add(existing);
+        }
+        existing["value"] = value.DeepClone();
+        existing["interpolation"] = interpolation;
+        existing["enabled"] = true;
+        var ordered = keyframes.OfType<JsonObject>()
+            .OrderBy((keyframe) => keyframe["frame"]?.GetValue<int>() ?? 0)
+            .ThenBy((keyframe) => keyframe["id"]?.GetValue<string>() ?? "", StringComparer.Ordinal)
+            .Select((keyframe) => keyframe.DeepClone())
+            .ToList();
+        keyframes.Clear();
+        foreach (var keyframe in ordered) keyframes.Add(keyframe);
+    }
+
+    public void RemoveKeyframe(string fieldId, string targetId, int frame)
+    {
+        var track = TrackObject(fieldId, targetId);
+        var keyframes = track?["keyframes"] as JsonArray;
+        var keyframe = keyframes?.OfType<JsonObject>()
+            .FirstOrDefault((candidate) => candidate["frame"]?.GetValue<int>() == frame);
+        if (keyframe is not null) keyframes!.Remove(keyframe);
+    }
+
+    public string ToJson() => _root.ToJsonString();
+
+    private JsonObject? TrackObject(string fieldId, string targetId) =>
+        _tracks.OfType<JsonObject>().FirstOrDefault((track) =>
+            track["fieldId"]?.GetValue<string>() == fieldId
+            && (track["targetId"]?.GetValue<string>() ?? "") == targetId);
+
+    private static AnimationTrackView ReadTrack(JsonObject track)
+    {
+        var keyframes = (track["keyframes"] as JsonArray)?.OfType<JsonObject>()
+            .Select((keyframe) => new AnimationKeyframeView(
+                keyframe["id"]?.GetValue<string>() ?? "",
+                keyframe["frame"]?.GetValue<int>() ?? 0,
+                keyframe["value"]?.DeepClone(),
+                keyframe["interpolation"]?.GetValue<string>() ?? "hold",
+                keyframe["enabled"]?.GetValue<bool>() ?? true))
+            .OrderBy((keyframe) => keyframe.Frame)
+            .ToList() ?? [];
+        return new AnimationTrackView(
+            track["id"]?.GetValue<string>() ?? "",
+            track["fieldId"]?.GetValue<string>() ?? "",
+            track["targetId"]?.GetValue<string>() ?? "",
+            keyframes);
+    }
+}
+
+internal sealed record AnimationTrackView(
+    string Id,
+    string FieldId,
+    string TargetId,
+    IReadOnlyList<AnimationKeyframeView> Keyframes);
+
+internal sealed record AnimationKeyframeView(
+    string Id,
+    int Frame,
+    JsonNode? Value,
+    string Interpolation,
+    bool Enabled);

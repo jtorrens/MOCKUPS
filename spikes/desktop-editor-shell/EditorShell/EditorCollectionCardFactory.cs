@@ -24,6 +24,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
+    private readonly Func<string, int> _screenFrame;
+    private readonly Action<string, int> _setScreenFrame;
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
@@ -40,7 +42,9 @@ internal sealed class EditorCollectionCardFactory
         Func<JsonObject, JsonObject> applyPreviewTransientTestValues,
         Func<bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
-        Func<string, bool> navigateToNode)
+        Func<string, bool> navigateToNode,
+        Func<string, int> screenFrame,
+        Action<string, int> setScreenFrame)
     {
         _database = database;
         _isDark = isDark;
@@ -57,6 +61,8 @@ internal sealed class EditorCollectionCardFactory
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
+        _screenFrame = screenFrame;
+        _setScreenFrame = setScreenFrame;
     }
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)
@@ -84,6 +90,17 @@ internal sealed class EditorCollectionCardFactory
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
         };
+
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            cards = [.. cards, new ModuleInstanceAnimationEditor(
+                _database,
+                _dictionaryServices,
+                _onChanged,
+                _reloadAndSelect,
+                _screenFrame,
+                _setScreenFrame).Create(node)];
+        }
 
         if (node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {

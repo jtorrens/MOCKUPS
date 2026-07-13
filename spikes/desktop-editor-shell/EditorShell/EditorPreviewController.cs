@@ -155,6 +155,22 @@ internal sealed class EditorPreviewController
     private string? _selectedThemeId;
     public string? SelectedThemeId => _selectedThemeId;
     public event Action? ThemeChanged;
+
+    public int ProductionScreenFrame(string moduleInstanceId)
+    {
+        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
+        var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        return Math.Clamp(_shotPreviewFrame - start, 0, duration - 1);
+    }
+
+    public void SetProductionScreenFrame(string moduleInstanceId, int localFrame)
+    {
+        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
+        var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1), useSelectedScope: false);
+    }
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _lastProductionPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;

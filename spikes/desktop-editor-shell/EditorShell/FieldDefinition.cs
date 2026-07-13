@@ -60,6 +60,16 @@ internal sealed record NumberDefinition(
 
 internal sealed record RecordReferenceDefinition(string TableId);
 
+internal enum AnimationFrameOrigin
+{
+    ScreenStart,
+    TargetStart,
+}
+
+internal sealed record AnimationFieldDefinition(
+    IReadOnlyList<string> Interpolations,
+    AnimationFrameOrigin FrameOrigin = AnimationFrameOrigin.ScreenStart);
+
 internal enum ComponentInputBindingSource
 {
     Variant,
@@ -108,7 +118,8 @@ internal sealed record FieldDefinition(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
-    string Unit = "")
+    string Unit = "",
+    AnimationFieldDefinition? Animation = null)
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

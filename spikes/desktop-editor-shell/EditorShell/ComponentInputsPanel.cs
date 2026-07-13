@@ -1205,7 +1205,7 @@ internal sealed class ComponentPreviewInputSession
                 continue;
             }
 
-            definitions.Add(CreateInputDefinition(
+            var definition = CreateInputDefinition(
                 id,
                 label,
                 jsonKey,
@@ -1231,7 +1231,8 @@ internal sealed class ComponentPreviewInputSession
             {
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
-            });
+            };
+            definitions.Add(definition with { Animation = ReadAnimationDefinition(item) });
         }
 
         return definitions;
@@ -1278,7 +1279,7 @@ internal sealed class ComponentPreviewInputSession
                     continue;
                 }
 
-                itemFields.Add(CreateInputDefinition(
+                var definition = CreateInputDefinition(
                     fieldId,
                     fieldLabel,
                     fieldJsonKey,
@@ -1308,7 +1309,8 @@ internal sealed class ComponentPreviewInputSession
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
                     UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
                     UiSectionLabel = JsonString(field, "uiSectionLabel"),
-                });
+                };
+                itemFields.Add(definition with { Animation = ReadAnimationDefinition(field) });
             }
 
             if (itemFields.Count > 0)
@@ -1344,6 +1346,23 @@ internal sealed class ComponentPreviewInputSession
         return current is JsonValue value
             && value.TryGetValue<string>(out var text)
             && text.Equals(expected, StringComparison.Ordinal);
+    }
+
+    private static AnimationFieldDefinition? ReadAnimationDefinition(JsonObject input)
+    {
+        if (input["animatable"] is not JsonValue enabled
+            || !enabled.TryGetValue<bool>(out var isEnabled)
+            || !isEnabled)
+        {
+            return null;
+        }
+        var interpolations = JsonStringArray(input, "animationInterpolations");
+        var frameOrigin = JsonString(input, "animationFrameOrigin") == "targetStart"
+            ? AnimationFrameOrigin.TargetStart
+            : AnimationFrameOrigin.ScreenStart;
+        return interpolations.Count > 0
+            ? new AnimationFieldDefinition(interpolations, frameOrigin)
+            : new AnimationFieldDefinition(["hold"], frameOrigin);
     }
 
     private static string InputSignature(ComponentInputDefinition input)
@@ -1591,7 +1610,8 @@ internal sealed record ComponentInputDefinition(
     IReadOnlyList<string>? EnabledWhenItemValues = null,
     int UiOrder = 0,
     string UiSectionLabel = "",
-    string Unit = "");
+    string Unit = "",
+    AnimationFieldDefinition? Animation = null);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

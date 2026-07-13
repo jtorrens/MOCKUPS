@@ -698,7 +698,7 @@ internal sealed partial class SpikeDatabase
                     ["groupOrder"] = 10,
                 },
                 new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
-                new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" },
+                AnimatableRuntimeField(new JsonObject { ["id"] = "headerSubtitle", ["label"] = "Header subtitle", ["jsonKey"] = "headerSubtitle", ["kind"] = "text", ["defaultValue"] = "online" }, "hold", "writeOn"),
                 new JsonObject { ["id"] = "conversationFrame", ["label"] = "Timeline frame", ["jsonKey"] = "conversationFrame", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames", ["source"] = "calculated" },
                 new JsonObject { ["id"] = "bubbleReveal", ["label"] = "Outgoing bubble reveal", ["jsonKey"] = "bubbleRevealMode", ["kind"] = "option", ["defaultValue"] = "afterWriteOn", ["options"] = new JsonArray { new JsonObject { ["value"] = "duringWriteOn", ["label"] = "During write-on" }, new JsonObject { ["value"] = "afterWriteOn", ["label"] = "After write-on" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
                 new JsonObject { ["id"] = "incomingReveal", ["label"] = "Incoming reveal", ["jsonKey"] = "incomingRevealMode", ["kind"] = "option", ["defaultValue"] = "typingIndicator", ["options"] = new JsonArray { new JsonObject { ["value"] = "instant", ["label"] = "Instant" }, new JsonObject { ["value"] = "writeOn", ["label"] = "Write-on" }, new JsonObject { ["value"] = "typingIndicator", ["label"] = "Typing indicator" } }, ["groupId"] = "timing", ["groupLabel"] = "Timing", ["groupOrder"] = 20 },
@@ -717,6 +717,8 @@ internal sealed partial class SpikeDatabase
                     ["jsonKey"] = "messages",
                     ["itemLabel"] = "Message",
                     ["sourceCollectionJsonKey"] = "messages",
+                    ["animationTargetSequenceNumberKeys"] = new JsonArray { "delayAfterPreviousFrames", "writeOnDurationFrames", "postWriteOnHoldFrames" },
+                    ["animationTargetStartNumberKeys"] = new JsonArray { "delayAfterPreviousFrames" },
                     ["fields"] = ConversationPreviewMessageFields(),
                     ["itemActions"] = new JsonArray
                     {
@@ -842,30 +844,45 @@ internal sealed partial class SpikeDatabase
         {
             new JsonObject { ["id"] = "actor", ["label"] = "Actor", ["jsonKey"] = "actorId", ["kind"] = "recordReference", ["defaultValue"] = "", ["tableId"] = "actors", ["resolvedJsonKey"] = "actor" },
             new JsonObject { ["id"] = "direction", ["label"] = "Direction", ["jsonKey"] = "direction", ["kind"] = "option", ["defaultValue"] = "incoming", ["options"] = new JsonArray { new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" }, new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" }, new JsonObject { ["value"] = "system", ["label"] = "System" } } },
-            new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" },
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "text", ["label"] = "Text", ["jsonKey"] = "text", ["kind"] = "multilineText", ["defaultValue"] = "" }, "hold", "writeOn"),
             new JsonObject { ["id"] = "delay", ["label"] = "Delay", ["jsonKey"] = "delayAfterPreviousFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
             new JsonObject { ["id"] = "writeOn", ["label"] = "Write-on frames", ["jsonKey"] = "writeOnDurationFrames", ["kind"] = "number", ["defaultValue"] = "30", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
             new JsonObject { ["id"] = "postWriteOnHold", ["label"] = "Post write-on hold", ["jsonKey"] = "postWriteOnHoldFrames", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 100000, ["increment"] = 1, ["unit"] = "frames" },
-            new JsonObject { ["id"] = "statusVisible", ["label"] = "Show delivery status", ["jsonKey"] = "statusVisible", ["kind"] = "boolean", ["defaultValue"] = "false" },
-            new JsonObject { ["id"] = "status", ["label"] = "Status", ["jsonKey"] = "statusState", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "sent", ["label"] = "Sent" }, new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" }, new JsonObject { ["value"] = "read", ["label"] = "Read" } } },
-            new JsonObject { ["id"] = "statusText", ["label"] = "Status text", ["jsonKey"] = "statusText", ["kind"] = "text", ["defaultValue"] = "" },
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "statusVisible", ["label"] = "Show delivery status", ["jsonKey"] = "statusVisible", ["kind"] = "boolean", ["defaultValue"] = "false" }, "hold"),
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "status", ["label"] = "Status", ["jsonKey"] = "statusState", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "sent", ["label"] = "Sent" }, new JsonObject { ["value"] = "delivered", ["label"] = "Delivered" }, new JsonObject { ["value"] = "read", ["label"] = "Read" } } }, "hold"),
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "statusText", ["label"] = "Status text", ["jsonKey"] = "statusText", ["kind"] = "text", ["defaultValue"] = "" }, "hold", "writeOn"),
             new JsonObject { ["id"] = "mediaType", ["label"] = "Attachment type", ["jsonKey"] = "mediaType", ["kind"] = "option", ["defaultValue"] = "none", ["options"] = new JsonArray { new JsonObject { ["value"] = "none", ["label"] = "None" }, new JsonObject { ["value"] = "image", ["label"] = "Image" }, new JsonObject { ["value"] = "video", ["label"] = "Video" }, new JsonObject { ["value"] = "audio", ["label"] = "Audio" } } },
             new JsonObject { ["id"] = "mediaSource", ["label"] = "Media source", ["jsonKey"] = "mediaSource", ["kind"] = "text", ["valueKind"] = "MediaFilePath", ["defaultValue"] = "", ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "image", "video", "audio" } },
             new JsonObject { ["id"] = "viewport", ["label"] = "Media viewport", ["jsonKey"] = "viewportSize", ["kind"] = "integerPair", ["defaultValue"] = "240|160", ["pairFirstLabel"] = "W", ["pairSecondLabel"] = "H" },
             new JsonObject { ["id"] = "mediaScale", ["label"] = "Media scale", ["jsonKey"] = "mediaScale", ["kind"] = "number", ["defaultValue"] = "1", ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.01 },
             new JsonObject { ["id"] = "mediaOffset", ["label"] = "Media offset", ["jsonKey"] = "mediaOffset", ["kind"] = "integerPair", ["defaultValue"] = "0|0", ["pairFirstLabel"] = "X", ["pairSecondLabel"] = "Y" },
-            new JsonObject { ["id"] = "isPlaying", ["label"] = "Playing", ["jsonKey"] = "isPlaying", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "isPlaying", ["label"] = "Playing", ["jsonKey"] = "isPlaying", ["kind"] = "boolean", ["defaultValue"] = "false" }, "hold"),
             new JsonObject { ["id"] = "currentTime", ["label"] = "Current time", ["jsonKey"] = "currentTimeSeconds", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400, ["increment"] = 0.01, ["unit"] = "s" },
             new JsonObject { ["id"] = "duration", ["label"] = "Source duration", ["jsonKey"] = "durationSeconds", ["kind"] = "number", ["defaultValue"] = "12", ["minimum"] = 1, ["maximum"] = 86400, ["increment"] = 0.01, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" }, ["unit"] = "s" },
             new JsonObject { ["id"] = "playbackMode", ["label"] = "Playback mode", ["jsonKey"] = "playbackMode", ["kind"] = "option", ["defaultValue"] = "once", ["options"] = new JsonArray { new JsonObject { ["value"] = "once", ["label"] = "Play once" }, new JsonObject { ["value"] = "loop", ["label"] = "Loop" } }, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" } },
             new JsonObject { ["id"] = "playDuration", ["label"] = "Playback duration", ["jsonKey"] = "playDurationFrames", ["kind"] = "number", ["defaultValue"] = "72", ["minimum"] = 1, ["maximum"] = 100000, ["increment"] = 1, ["enabledWhenItemJsonKey"] = "mediaType", ["enabledWhenItemValues"] = new JsonArray { "video", "audio" }, ["unit"] = "frames" },
-            new JsonObject { ["id"] = "fullScreen", ["label"] = "Full screen", ["jsonKey"] = "isFullScreen", ["kind"] = "boolean", ["defaultValue"] = "false" },
+            TargetRelativeAnimatableRuntimeField(new JsonObject { ["id"] = "fullScreen", ["label"] = "Full screen", ["jsonKey"] = "isFullScreen", ["kind"] = "boolean", ["defaultValue"] = "false" }, "hold"),
             new JsonObject { ["id"] = "fullScreenTransition", ["label"] = "Full-screen transition", ["jsonKey"] = "fullScreenTransition", ["kind"] = "boolean", ["defaultValue"] = "false" },
             new JsonObject { ["id"] = "fullframeOrientation", ["label"] = "Fullframe orientation", ["jsonKey"] = "fullframeOrientation", ["kind"] = "option", ["defaultValue"] = "portrait", ["options"] = new JsonArray { new JsonObject { ["value"] = "portrait", ["label"] = "Portrait" }, new JsonObject { ["value"] = "landscape", ["label"] = "Landscape" } } },
             new JsonObject { ["id"] = "controlsElapsed", ["label"] = "Controls elapsed ms", ["jsonKey"] = "controlsElapsedMs", ["kind"] = "number", ["defaultValue"] = "0", ["minimum"] = 0, ["maximum"] = 86400000, ["increment"] = 1, ["unit"] = "ms" },
         };
         ApplyConversationRuntimeGroups(fields);
         return fields;
+    }
+
+    private static JsonObject AnimatableRuntimeField(JsonObject field, params string[] interpolations)
+    {
+        field["animatable"] = true;
+        field["animationInterpolations"] = new JsonArray(
+            interpolations.Select((value) => (JsonNode?)JsonValue.Create(value)).ToArray());
+        return field;
+    }
+
+    private static JsonObject TargetRelativeAnimatableRuntimeField(JsonObject field, params string[] interpolations)
+    {
+        AnimatableRuntimeField(field, interpolations);
+        field["animationFrameOrigin"] = "targetStart";
+        return field;
     }
 
     private static void ApplyConversationRuntimeGroups(JsonArray fields)

@@ -4,7 +4,7 @@ Date: 2026-07-13
 Status: **approved contract; phase 2 in progress**
 Base: `main` at `a124622401363117139e4fa23ff77ed360794d5f` (after the UI baseline named by the handoff). `git pull` reported the branch up to date.
 
-This document specifies the proposed canonical model before an implementation, data migration, resolver, duration-service replacement, or animation editor is started. It deliberately does not authorize a visual timeline.
+This document records the canonical model approved before implementation. The initial functional editor and resolver work was subsequently authorized; visual refinement remains a separate pass governed by this contract.
 
 ## 1. Baseline and audit inventory
 
@@ -86,7 +86,7 @@ The owning module/component contract publishes generic `FieldDefinition` metadat
 
 ```text
 fieldId, valueKind, animatable, allowedInterpolations,
-targetScope, collectionTargetRule, unit, optional finite-duration evaluator
+targetScope, frameOrigin, collectionTargetRule, unit, optional finite-duration evaluator
 ```
 
 Validation resolves `fieldId` against that metadata, checks that the target is allowed, verifies a collection `targetId` exists and is stable, and validates the keyframe value with the same `ValueKind` validation used by the dictionary editor. Calculated/internal fields are not targets unless the owning contract explicitly publishes them as safe. The editor never constructs its own target catalogue or value controls.
@@ -103,9 +103,13 @@ The initial interpolation matrix is intentionally small:
 
 `writeOn` is a derived text segment rule, not a sequence of persisted character events. `easeInOut` is the single initial numeric easing and is deterministic (smoothstep `p²(3−2p)`); it is never delegated to CSS.
 
+`frameOrigin` is owner-authored contract metadata, never a user-editable setting. Its initial values are `screenStart` and `targetStart`. A `targetStart` collection field stores frames relative to its target's calculated start; the owning collection contract publishes the generic sequence/start inputs needed by editor and duration infrastructure, while the owning resolver remains authoritative for the same calculation.
+
+Enabling animation for a field creates its track with an enabled keyframe at frame `0`, containing the current base value and the field's default interpolation. This guarantees a defined animated state from the origin. At any frame without an exact keyframe, the editor shows a hollow diamond; the filled diamond is reserved for an exact keyframe.
+
 ## 4. Frames, intervals, and value resolution
 
-All authored parameter frames are Screen-local integer frames. A Screen with `durationFrames = D` resolves exactly `[0, D)`, i.e. `0` through `D - 1`. Shot slots are sequential, so the Production navigator owns `shotFrame` and passes `localFrame = shotFrame - screenStartFrame` to the active resolver.
+Authored parameter frames are non-negative integer frames in the field's declared origin. A `screenStart` field uses Screen-local frames. A `targetStart` field uses frames relative to the calculated start of its stable target, so a message keyframe at `0` begins at that message rather than at the Shot or Screen origin. A Screen with `durationFrames = D` resolves exactly `[0, D)`, i.e. `0` through `D - 1`. Shot slots are sequential, so the Production navigator owns `shotFrame` and passes `localFrame = shotFrame - screenStartFrame` to the active resolver.
 
 For an enabled keyframe pair `A` at `a` and destination `B` at `b`, where `a < b`, the segment is `[a, b)`. `B.value` is effective exactly at `b`; the segment therefore never has to approximate its target. `B.interpolation` owns the segment from `A` to `B`:
 
@@ -156,7 +160,7 @@ max(1,
 
 Concurrent sources are maximized, never summed. A Screen ends at that maximum; the last valid frame is `durationFrames - 1`. A finite media end is clamped by source duration after converting the source duration with the same `ceil(s * fps)` convention. A loop can therefore never create infinite duration.
 
-Conversation timing remains Screen-local and sequential: each message start is derived from preceding delay/write-on/hold fields. Parameter tracks remain Screen-local even when targeted at a message; the Conversation resolver derives message-local elapsed time from that message's calculated appearance frame.
+Conversation timing remains Screen-local and sequential: each message start is derived from preceding delay/write-on/hold fields. Message-owned tracks declare `targetStart`, so their stored frames are message-local; editor, duration service, and Conversation resolver translate them through the same calculated appearance frame.
 
 For the current cut-only model, Shot duration is the sum of ordered Screen durations. The navigator, resolver selection, slider ranges, playback cache, and export all call this service; no control owns a private duration formula.
 

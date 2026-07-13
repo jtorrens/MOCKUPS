@@ -15,11 +15,56 @@ internal static class RuntimeTimeline
             .Select((action) => DeclaredActionDuration(runtime, action))
             .DefaultIfEmpty(0)
             .Max() ?? 0;
-        var animationDuration = LastAnimationEndFrame(Parse(animationJson));
+        var animationDuration = LastAnimationEndFrame(contract, runtime, Parse(animationJson));
+        var animatedItemActionDuration = LastAnimatedCollectionItemActionEndFrame(contract, runtime, Parse(animationJson));
         var itemActionDuration = LastCollectionItemActionEndFrame(contract, runtime);
         return Math.Max(1, Math.Max(
             declaredDuration > 0 ? declaredDuration : storedFallback,
-            Math.Max(animationDuration, itemActionDuration)));
+            Math.Max(Math.Max(animationDuration, animatedItemActionDuration), itemActionDuration)));
+    }
+
+    private static int LastAnimatedCollectionItemActionEndFrame(JsonObject contract, JsonObject runtime, JsonObject animation)
+    {
+        var lastEnd = 0;
+        foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            var collectionKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
+                ?? collection["jsonKey"]?.GetValue<string>()
+                ?? "";
+            if (string.IsNullOrWhiteSpace(collectionKey) || runtime[collectionKey] is not JsonArray items) continue;
+            foreach (var action in (collection["itemActions"] as JsonArray)?.OfType<JsonObject>()
+                .Where((candidate) => candidate["extendsModuleDuration"]?.GetValue<bool>() == true) ?? [])
+            {
+                var playFieldId = action["playInputId"]?.GetValue<string>() ?? "";
+                var durationKey = action["durationInputId"]?.GetValue<string>() ?? "";
+                foreach (var track in (animation["tracks"] as JsonArray)?.OfType<JsonObject>()
+                    .Where((candidate) => candidate["fieldId"]?.GetValue<string>() == playFieldId) ?? [])
+                {
+                    var targetId = track["targetId"]?.GetValue<string>() ?? "";
+                    var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == targetId);
+                    if (item is null) continue;
+                    var origin = RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, playFieldId, targetId);
+                    var keyframes = (track["keyframes"] as JsonArray)?.OfType<JsonObject>()
+                        .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
+                        .OrderBy((keyframe) => NonNegativeInt(keyframe["frame"]))
+                        .ToList() ?? [];
+                    for (var index = 0; index < keyframes.Count; index++)
+                    {
+                        var keyframe = keyframes[index];
+                        if (keyframe["value"] is not JsonValue value
+                            || !value.TryGetValue<bool>(out var enabled)
+                            || !enabled) continue;
+                        var start = origin + NonNegativeInt(keyframe["frame"]);
+                        var authoredEnd = start + Math.Max(1, NonNegativeInt(item[durationKey]));
+                        var replacementEnd = index + 1 < keyframes.Count
+                            ? origin + NonNegativeInt(keyframes[index + 1]["frame"])
+                            : int.MaxValue;
+                        lastEnd = Math.Max(lastEnd, Math.Min(authoredEnd, replacementEnd));
+                    }
+                }
+            }
+        }
+        return lastEnd;
     }
 
     private static int LastCollectionItemActionEndFrame(JsonObject contract, JsonObject runtime)
@@ -77,17 +122,22 @@ internal static class RuntimeTimeline
         return total;
     }
 
-    private static int LastAnimationEndFrame(JsonObject animation)
+    private static int LastAnimationEndFrame(JsonObject contract, JsonObject runtime, JsonObject animation)
     {
         var endFrame = 0;
         foreach (var track in (animation["tracks"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
+            var origin = RuntimeAnimationFrameOrigin.ScreenFrame(
+                contract,
+                runtime,
+                track["fieldId"]?.GetValue<string>() ?? "",
+                track["targetId"]?.GetValue<string>() ?? "");
             foreach (var item in (track["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
                 if (item["enabled"] is JsonValue enabled
                     && enabled.TryGetValue<bool>(out var isEnabled)
                     && !isEnabled) continue;
-                endFrame = Math.Max(endFrame, NonNegativeInt(item["frame"]) + 1);
+                endFrame = Math.Max(endFrame, origin + NonNegativeInt(item["frame"]) + 1);
             }
         }
         return endFrame;

@@ -97,6 +97,17 @@ internal sealed partial class SpikeDatabase
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
 
+    public void UpdateModuleInstanceAnimationJson(string moduleInstanceId, string animationJson)
+    {
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
+            ("$animationJson", animationJson),
+            ("$id", moduleInstanceId));
+        SynchronizeTimelineDurations(connection);
+    }
+
     public void UpdateModuleInstanceRuntimeCollectionValue(
         string moduleInstanceId,
         string collectionJsonKey,
@@ -544,7 +555,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
-            ["schemaVersion"] = 1,
+            ["schemaVersion"] = 2,
             ["tracks"] = new JsonArray(),
         }.ToJsonString();
     }

@@ -128,7 +128,7 @@ internal sealed partial class SpikeDatabase
     private static void NormalizeAnimationJson(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT id, animation_json FROM module_instances";
+        select.CommandText = "SELECT mi.id, mi.animation_json, mi.content_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, string Json)>();
         while (reader.Read())
@@ -137,6 +137,8 @@ internal sealed partial class SpikeDatabase
             var version = animation["schemaVersion"]?.GetValue<int>() ?? 1;
             if (version == 2)
             {
+                if (EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), ParseJsonObject(ReadString(reader, 3))))
+                    updates.Add((reader.GetString(0), animation.ToJsonString()));
                 ValidateAnimationJson(animation, reader.GetString(0));
                 continue;
             }
@@ -162,12 +164,74 @@ internal sealed partial class SpikeDatabase
                 }
             }
             animation["schemaVersion"] = 2;
+            EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), ParseJsonObject(ReadString(reader, 3)));
             ValidateAnimationJson(animation, reader.GetString(0));
             updates.Add((reader.GetString(0), animation.ToJsonString()));
         }
         reader.Close();
         foreach (var update in updates)
             Execute(connection, "UPDATE module_instances SET animation_json = $json WHERE id = $id", ("$json", update.Json), ("$id", update.Id));
+    }
+
+    private static bool EnsureInitialAnimationKeyframes(JsonObject animation, JsonObject runtime, JsonObject contract)
+    {
+        var changed = false;
+        foreach (var track in (animation["tracks"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            if (track["keyframes"] is not JsonArray { Count: 0 } keyframes) continue;
+            var fieldId = track["fieldId"]?.GetValue<string>() ?? "";
+            var targetId = track["targetId"]?.GetValue<string>() ?? "";
+            var definition = FindAnimationFieldDefinition(contract, fieldId, targetId, runtime, out var runtimeOwner);
+            if (definition is null || runtimeOwner is null) continue;
+            var jsonKey = definition["jsonKey"]?.GetValue<string>() ?? "";
+            var value = runtimeOwner[jsonKey]?.DeepClone() ?? RuntimeDefaultValue(definition);
+            var interpolation = (definition["animationInterpolations"] as JsonArray)?.OfType<JsonValue>()
+                .Select((candidate) => candidate.GetValue<string>())
+                .FirstOrDefault() ?? "hold";
+            keyframes.Add(new JsonObject
+            {
+                ["id"] = $"{track["id"]?.GetValue<string>() ?? "track"}-keyframe-0000",
+                ["frame"] = 0,
+                ["value"] = value,
+                ["interpolation"] = interpolation,
+                ["enabled"] = true,
+            });
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static JsonObject? FindAnimationFieldDefinition(
+        JsonObject contract,
+        string fieldId,
+        string targetId,
+        JsonObject runtime,
+        out JsonObject? runtimeOwner)
+    {
+        runtimeOwner = null;
+        if (string.IsNullOrWhiteSpace(targetId))
+        {
+            var definition = (contract["inputs"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
+                candidate["id"]?.GetValue<string>() == fieldId
+                && candidate["animatable"]?.GetValue<bool>() == true);
+            if (definition is not null) runtimeOwner = runtime;
+            return definition;
+        }
+
+        foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        {
+            var definition = (collection["fields"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
+                candidate["id"]?.GetValue<string>() == fieldId
+                && candidate["animatable"]?.GetValue<bool>() == true);
+            if (definition is null) continue;
+            var collectionKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
+                ?? collection["jsonKey"]?.GetValue<string>()
+                ?? "";
+            runtimeOwner = (runtime[collectionKey] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((item) =>
+                item["id"]?.GetValue<string>() == targetId);
+            if (runtimeOwner is not null) return definition;
+        }
+        return null;
     }
 
     private static void ValidateAnimationJson(JsonObject animation, string instanceId)
