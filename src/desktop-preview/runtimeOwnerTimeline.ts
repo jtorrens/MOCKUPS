@@ -1,4 +1,5 @@
 import { asRecord, optionalNumber, optionalString } from "./componentResolverCommon.js";
+import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 
 type JsonRecord = Record<string, unknown>;
 type FieldTiming = { origin: number; completion: number; endExclusive: number };
@@ -23,6 +24,7 @@ export class RuntimeOwnerTimeline {
     private readonly contract: JsonRecord,
     private readonly runtime: JsonRecord,
     private readonly animation: JsonRecord,
+    private readonly themeTokens: JsonRecord = {},
     storedFallback = 0,
   ) {
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
@@ -216,7 +218,10 @@ export class RuntimeOwnerTimeline {
     const baseFieldId = optionalString(completion, "baseDurationFieldId");
     const minimum = Math.max(2, Math.floor(optionalNumber(completion, "minimumEnabledKeyframes", 2)));
     if (baseFieldId && keyframes.length < minimum) {
-      const completionFrame = origin + fieldValue(owner, ownerFields, baseFieldId);
+      const baseDefinition = ownerFields.find((field) => optionalString(field, "id") === baseFieldId);
+      const completionFrame = origin + (optionalString(baseDefinition ?? {}, "valueKind") === "BehaviorTiming"
+        ? resolveBehaviorTimingFrames(owner, baseDefinition!, ownerFields, this.themeTokens)
+        : fieldValue(owner, ownerFields, baseFieldId));
       return {
         origin,
         completion: completionFrame,

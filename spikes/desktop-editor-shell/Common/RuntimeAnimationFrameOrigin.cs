@@ -18,8 +18,9 @@ internal static class RuntimeAnimationFrameOrigin
         JsonObject runtime,
         JsonObject animation,
         string fieldId,
-        string targetId) =>
-        Model(contract, runtime, animation).ScreenFrame(fieldId, targetId, 0);
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).ScreenFrame(fieldId, targetId, 0);
 
     public static int ScreenFrame(
         JsonObject contract,
@@ -27,8 +28,9 @@ internal static class RuntimeAnimationFrameOrigin
         JsonObject animation,
         string fieldId,
         string targetId,
-        int localFrame) =>
-        Model(contract, runtime, animation).ScreenFrame(fieldId, targetId, localFrame);
+        int localFrame,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).ScreenFrame(fieldId, targetId, localFrame);
 
     public static double LocalFrame(
         JsonObject contract,
@@ -36,46 +38,61 @@ internal static class RuntimeAnimationFrameOrigin
         JsonObject animation,
         string fieldId,
         string targetId,
-        int screenFrame) =>
-        Model(contract, runtime, animation).LocalFrame(fieldId, targetId, screenFrame);
+        int screenFrame,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).LocalFrame(fieldId, targetId, screenFrame);
 
     public static int DurationFrames(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
-        int storedFallback) =>
-        Model(contract, runtime, animation, storedFallback).DurationFrames;
+        int storedFallback,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, storedFallback, themeTokens).DurationFrames;
 
     public static int OwnerNaturalDuration(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
-        string targetId) =>
-        Math.Max(1, Round(Model(contract, runtime, animation).OwnerNaturalDuration(targetId)));
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Math.Max(1, Round(Model(contract, runtime, animation, themeTokens: themeTokens).OwnerNaturalDuration(targetId)));
 
     public static double OwnerLocalFrame(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
         string targetId,
-        int screenFrame) =>
-        Model(contract, runtime, animation).OwnerLocalFrame(targetId, screenFrame);
+        int screenFrame,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).OwnerLocalFrame(targetId, screenFrame);
 
     public static int ScreenFrameForOwnerFrame(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
         string targetId,
-        double ownerFrame) =>
-        Model(contract, runtime, animation).ScreenFrameForOwnerFrame(targetId, ownerFrame);
+        double ownerFrame,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).ScreenFrameForOwnerFrame(targetId, ownerFrame);
 
     public static double FieldOwnerFrameOrigin(
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
         string fieldId,
-        string targetId) =>
-        Model(contract, runtime, animation).FieldOwnerFrameOrigin(fieldId, targetId);
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).FieldOwnerFrameOrigin(fieldId, targetId);
+
+    public static int FieldReferenceDurationFrames(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string fieldId,
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).FieldReferenceDurationFrames(fieldId, targetId);
 
     public static int CollectionDurationFrames(
         JsonObject collection,
@@ -92,23 +109,26 @@ internal static class RuntimeAnimationFrameOrigin
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
-        int storedFallback = 0) => new(contract, runtime, animation, storedFallback);
+        int storedFallback = 0,
+        JsonObject? themeTokens = null) => new(contract, runtime, animation, storedFallback, themeTokens ?? new JsonObject());
 
     private sealed class TimelineModel
     {
         private readonly JsonObject _contract;
         private readonly JsonObject _runtime;
         private readonly JsonObject _animation;
+        private readonly JsonObject _themeTokens;
         private readonly Dictionary<string, ItemTiming> _items = new(StringComparer.Ordinal);
         private readonly Dictionary<string, FieldTiming> _topFields = new(StringComparer.Ordinal);
         private readonly double _naturalDuration;
         private readonly double _effectiveDuration;
 
-        public TimelineModel(JsonObject contract, JsonObject runtime, JsonObject animation, int storedFallback)
+        public TimelineModel(JsonObject contract, JsonObject runtime, JsonObject animation, int storedFallback, JsonObject themeTokens)
         {
             _contract = contract;
             _runtime = runtime;
             _animation = animation;
+            _themeTokens = themeTokens;
             var naturalEnd = (double)Math.Max(1, DeclaredBaseDuration(contract));
             foreach (var collection in Collections(contract))
             {
@@ -182,6 +202,22 @@ internal static class RuntimeAnimationFrameOrigin
         {
             if (string.IsNullOrWhiteSpace(targetId)) return TopField(fieldId).Origin;
             return _items.TryGetValue(targetId, out var item) ? ItemField(item, fieldId).Origin : 0;
+        }
+
+        public int FieldReferenceDurationFrames(string fieldId, string targetId)
+        {
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                var fields = Inputs(_contract);
+                var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
+                return definition is null ? 0 : ReferenceDuration(definition, _runtime, fields, _contract["actions"] as JsonArray);
+            }
+            if (!_items.TryGetValue(targetId, out var item)) return 0;
+            var itemFields = Fields(item.Collection);
+            var itemDefinition = itemFields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
+            return itemDefinition is null
+                ? 0
+                : ReferenceDuration(itemDefinition, item.Item, itemFields, item.Collection["itemActions"] as JsonArray);
         }
 
         public int ScreenFrame(string fieldId, string targetId, int localFrame)
@@ -298,13 +334,45 @@ internal static class RuntimeAnimationFrameOrigin
             {
                 var baseDurationDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId);
                 var baseDurationJsonKey = Text(baseDurationDefinition?["jsonKey"]);
-                var completion = origin + Number(owner[baseDurationJsonKey]);
+                var completion = origin + (Text(baseDurationDefinition?["valueKind"]) == "BehaviorTiming"
+                    ? BehaviorTimingResolver.ResolveFrames(owner, baseDurationDefinition!, ownerFields, _themeTokens)
+                    : Number(owner[baseDurationJsonKey]));
                 var end = Math.Max(completion, enabledKeyframes.Count > 0 ? origin + 1 : 0);
                 return new FieldTiming(origin, completion, end);
             }
             if (enabledKeyframes.Count == 0) return new FieldTiming(origin, origin, 0);
             var last = Number(enabledKeyframes[^1]["frame"]);
             return new FieldTiming(origin, origin + last, origin + last + 1);
+        }
+
+        private int ReferenceDuration(
+            JsonObject definition,
+            JsonObject owner,
+            IReadOnlyList<JsonObject> ownerFields,
+            JsonArray? actions)
+        {
+            var baseDurationFieldId = Text((Timeline(definition)["completion"] as JsonObject)?["baseDurationFieldId"]);
+            if (!string.IsNullOrWhiteSpace(baseDurationFieldId))
+            {
+                var baseDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId);
+                if (baseDefinition is null) return 0;
+                return Text(baseDefinition["valueKind"]) == "BehaviorTiming"
+                    ? BehaviorTimingResolver.ResolveFrames(owner, baseDefinition, ownerFields, _themeTokens)
+                    : Math.Max(0, Round(Number(owner[Text(baseDefinition["jsonKey"])])));
+            }
+
+            var fieldId = Text(definition["id"]);
+            return actions?.OfType<JsonObject>()
+                .Where((action) => Text(action["playInputId"]) == fieldId)
+                .Select((action) =>
+                {
+                    var durationFieldId = Text(action["durationInputId"]);
+                    var durationDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == durationFieldId);
+                    var durationJsonKey = Text(durationDefinition?["jsonKey"]);
+                    return Math.Max(0, Round(Number(owner[durationJsonKey])));
+                })
+                .DefaultIfEmpty(0)
+                .Max() ?? 0;
         }
 
         private double LastFiniteActionEnd(

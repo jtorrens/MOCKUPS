@@ -521,7 +521,7 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         timelineRevealAtFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0))),
         postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
         writeOnTrigger: false,
-        writeOnFrame: 0,
+        writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
         statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
         visibleAtFrame: 0,
         mediaType: messageMediaType(message),
@@ -583,7 +583,7 @@ function visibleMessages(
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn
         && effectiveWriteOnFrames > 0,
-      writeOnFrame: Math.max(0, frame - startFrame),
+      writeOnFrame: message.writeOnFrame,
       writeOnDurationFrames: effectiveWriteOnFrames,
     }];
   });
@@ -609,7 +609,7 @@ function composerState(
       const textLength = writeOnInProgress
         ? simpleWriteOnFrameVisibleCount(message.text, {
             enabled: true,
-            frame: frame - startFrame,
+            frame: message.writeOnFrame,
             durationFrames: effectiveWriteOnFrames,
           })
         : graphemes.length;

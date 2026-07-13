@@ -34,6 +34,7 @@ internal enum ValueKind
     AlignmentPlacement,
     Motion,
     MotionTiming,
+    BehaviorTiming,
     Boolean,
 }
 
@@ -63,6 +64,11 @@ internal sealed record RecordReferenceDefinition(string TableId);
 internal sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,
     bool ExtendsOwnerDuration = true);
+
+internal sealed record BehaviorTimingDefinition(
+    string SourceFieldId,
+    string Unit,
+    double BaseFramesPerUnit);
 
 internal enum ComponentInputBindingSource
 {
@@ -113,7 +119,8 @@ internal sealed record FieldDefinition(
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
     string Unit = "",
-    AnimationFieldDefinition? Animation = null)
+    AnimationFieldDefinition? Animation = null,
+    BehaviorTimingDefinition? BehaviorTiming = null)
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

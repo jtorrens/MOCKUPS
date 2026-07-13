@@ -24,8 +24,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
-    private readonly Func<string, int> _screenFrame;
-    private readonly Action<string, int> _setScreenFrame;
+    private readonly Func<int> _shotFrame;
+    private readonly Action<int> _setShotFrame;
     private readonly Action _toggleProductionPlayback;
     private readonly EditorSessionUiState _sessionUiState = new();
 
@@ -45,8 +45,8 @@ internal sealed class EditorCollectionCardFactory
         Func<bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
-        Func<string, int> screenFrame,
-        Action<string, int> setScreenFrame,
+        Func<int> shotFrame,
+        Action<int> setShotFrame,
         Action toggleProductionPlayback)
     {
         _database = database;
@@ -64,8 +64,8 @@ internal sealed class EditorCollectionCardFactory
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
-        _screenFrame = screenFrame;
-        _setScreenFrame = setScreenFrame;
+        _shotFrame = shotFrame;
+        _setShotFrame = setShotFrame;
         _toggleProductionPlayback = toggleProductionPlayback;
     }
 
@@ -78,8 +78,8 @@ internal sealed class EditorCollectionCardFactory
                 _onChanged,
                 _reloadAndSelect,
                 _sessionUiState,
-                _screenFrame,
-                _setScreenFrame,
+                _shotFrame,
+                _setShotFrame,
                 _previewPlaybackState,
                 _toggleProductionPlayback)
             : null;

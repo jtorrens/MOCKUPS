@@ -154,12 +154,14 @@ internal static class ComponentPreviewActions
         var durationInputId = JsonString(action, "durationInputId");
         var durationCollectionJsonKey = JsonString(action, "durationCollectionJsonKey");
         var durationThemeToken = JsonString(action, "durationThemeToken");
+        var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var timeJsonKey = JsonString(action, "timeJsonKey");
         if (string.IsNullOrWhiteSpace(playInputId)
             || (string.IsNullOrWhiteSpace(durationInputId)
                 && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
                 && string.IsNullOrWhiteSpace(durationThemeToken)
+                && !durationOwnerTimeline
                 && durationSeconds <= 0)
             || string.IsNullOrWhiteSpace(timeJsonKey))
         {
@@ -189,6 +191,7 @@ internal static class ComponentPreviewActions
             JsonStringArray(action, "durationItemNumberKeys"),
             JsonStringArray(action, "durationCollectionMultiplierNumberKeys"),
             JsonNumber(action, "durationBaseFrames", 0),
+            durationOwnerTimeline,
             timeJsonKey,
             ParseTimeUnit(JsonString(action, "timeUnit")),
             JsonBoolean(action, "prewarmFrames", true),
@@ -282,6 +285,7 @@ internal sealed record ComponentPreviewActionDefinition(
     IReadOnlyList<string> DurationItemNumberKeys,
     IReadOnlyList<string> DurationCollectionMultiplierNumberKeys,
     double DurationBaseFrames,
+    bool DurationOwnerTimeline,
     string TimeJsonKey,
     ComponentPreviewActionTimeUnit TimeUnit,
     bool PrewarmFrames,

@@ -1250,7 +1250,11 @@ internal sealed class ComponentPreviewInputSession
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
             };
-            definitions.Add(definition with { Animation = ReadAnimationDefinition(item) });
+            definitions.Add(definition with
+            {
+                Animation = ReadAnimationDefinition(item),
+                BehaviorTiming = ReadBehaviorTimingDefinition(item),
+            });
         }
 
         return definitions;
@@ -1328,7 +1332,11 @@ internal sealed class ComponentPreviewInputSession
                     UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
                     UiSectionLabel = JsonString(field, "uiSectionLabel"),
                 };
-                itemFields.Add(definition with { Animation = ReadAnimationDefinition(field) });
+                itemFields.Add(definition with
+                {
+                    Animation = ReadAnimationDefinition(field),
+                    BehaviorTiming = ReadBehaviorTimingDefinition(field),
+                });
             }
 
             if (itemFields.Count > 0)
@@ -1368,6 +1376,17 @@ internal sealed class ComponentPreviewInputSession
             JsonString(presentation, "iconFieldId"),
             JsonString(presentation, "fallbackIcon", EditorIcons.Component),
             iconValueMap);
+    }
+
+    private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
+    {
+        if (field["naturalTiming"] is not JsonObject natural) return null;
+        var sourceFieldId = JsonString(natural, "sourceFieldId");
+        var unit = JsonString(natural, "unit");
+        var baseFramesPerUnit = (double)JsonDecimal(natural, "baseFramesPerUnit", 0);
+        return string.IsNullOrWhiteSpace(sourceFieldId) || string.IsNullOrWhiteSpace(unit) || baseFramesPerUnit <= 0
+            ? null
+            : new BehaviorTimingDefinition(sourceFieldId, unit, baseFramesPerUnit);
     }
 
     private static bool InputIsVisible(JsonObject input, JsonObject config)
@@ -1651,7 +1670,8 @@ internal sealed record ComponentInputDefinition(
     int UiOrder = 0,
     string UiSectionLabel = "",
     string Unit = "",
-    AnimationFieldDefinition? Animation = null);
+    AnimationFieldDefinition? Animation = null,
+    BehaviorTimingDefinition? BehaviorTiming = null);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

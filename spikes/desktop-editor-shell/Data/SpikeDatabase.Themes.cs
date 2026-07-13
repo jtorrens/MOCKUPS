@@ -112,6 +112,31 @@ internal sealed partial class SpikeDatabase
             ReadString(reader, 7));
     }
 
+    public string GetModuleInstanceThemeTokensJson(string moduleInstanceId)
+    {
+        using var connection = OpenConnection();
+        return ScalarString(
+            connection,
+            """
+            SELECT COALESCE(
+              (SELECT t.tokens_json
+               FROM module_instances target
+               JOIN shots s ON s.id = target.shot_id
+               JOIN actors actor ON actor.id = s.owner_actor_id
+               JOIN themes t ON t.id = actor.default_theme_id
+               WHERE target.id = $id),
+              (SELECT t.tokens_json
+               FROM module_instances target
+               JOIN apps a ON a.id = target.app_id
+               JOIN themes t ON t.project_id = a.project_id
+               WHERE target.id = $id
+               ORDER BY t.name, t.id
+               LIMIT 1),
+              '{}')
+            """,
+            ("$id", moduleInstanceId)) ?? "{}";
+    }
+
     public string GetThemeFieldValue(string themeId, string fieldId)
     {
         var settings = GetThemeSettings(themeId);
@@ -587,6 +612,14 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["buttonPushedDurationMs"] = 120,
+            ["naturalPace"] = new JsonObject
+            {
+                ["verySlow"] = 2,
+                ["slow"] = 1.5,
+                ["normal"] = 1,
+                ["fast"] = 0.8,
+                ["veryFast"] = 0.6,
+            },
             ["transitions"] = new JsonObject
             {
                 ["fade"] = MotionTiming(180, 0, "ease", 1),

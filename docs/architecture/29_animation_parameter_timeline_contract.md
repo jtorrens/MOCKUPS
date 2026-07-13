@@ -172,6 +172,30 @@ Conversation timing remains Screen-local and serial. For message `i`, `start(i) 
 
 For the current cut-only model, Shot duration is the sum of ordered Screen durations. The navigator, resolver selection, slider ranges, playback cache, and export all call this service; no control owns a private duration formula.
 
+### Fixed and natural behavior timing
+
+Reusable time-based interactions use the dictionary `BehaviorTiming` value kind. Its persisted value is explicit and keeps both alternatives so switching modes does not discard authored intent:
+
+```json
+{
+  "mode": "natural",
+  "fixedFrames": 30,
+  "paceToken": "theme.motion.naturalPace.normal"
+}
+```
+
+`fixed` resolves directly to the positive integer `fixedFrames`. `natural` resolves a final integer duration from contract metadata, never from editor-specific logic:
+
+```text
+round(semanticUnitCount * baseFramesPerUnit * naturalPaceMultiplier)
+```
+
+The declaring module owns `semanticUnitCount`, `baseFramesPerUnit`, and the deterministic distribution of its interaction inside the resolved duration. The generic owner timeline consumes only the resulting frame duration. The Theme owns five numeric pace multipliers: `verySlow = 2`, `slow = 1.5`, `normal = 1`, `fast = 0.8`, and `veryFast = 0.6`. Values greater than one deliberately make an interaction longer. These are Theme motion tokens, not animation tracks or renderer timers.
+
+The dictionary keeps `Duration (frames)` visible in both modes. It is editable in Fixed mode and read-only in Natural mode, where it displays the live derived value from the same shared resolver used by the owner timeline. The calculated number is not persisted and changes when its semantic source, module rate, selected pace token, or effective Theme changes.
+
+Conversation Write On is the first consumer. Its semantic unit is a grapheme, its base rate is 7 frames per grapheme, and its module resolver produces a deterministic, monotonic typing plan with small contextual variations and no corrections. It always reaches the complete text at the resolved final frame. A future module may own a different rate and plan—for example, a known numeric PIN at 4 frames per digit—without adding a special case to the dictionary, owner timeline, bridge, or renderer.
+
 ## 8. Context, resolver, and presentation boundaries
 
 Production owns one global Shot cursor and one playback owner. Its Screen scope only changes the displayed range; it never creates an independent clock. Design actions are isolated fixtures: their action frame and Test Values do not read Shot navigation and are never persisted into Production animation.
@@ -198,9 +222,11 @@ The audited committed data is empty, so step 2 presently has no event or keyfram
 
 ## 10. Editor scope after approval
 
-The Production Animation surface is bound to the existing authoritative Screen playhead. Screen-owned tracks live in an `Animation` subcard inside Runtime Inputs `General`; collection tracks live inside their owning item. Each panel presents owner-local natural frames and translates them through the generic owner timeline at its boundary. A dictionary-backed target-duration control may set the owner or Screen retime; Auto removes that override. Persisted keyframes remain authored local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The list contains only active properties, while all active properties remain visible when another is selected.
+The Production Animation surface is bound to the existing authoritative Shot playhead. Screen-owned tracks live in an `Animation` subcard inside Runtime Inputs `General`; collection tracks live inside their owning item. Each panel presents the complete Shot frame scale and translates at its boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
 
-The compact transport and mini-timeline use the shared keyframe glyphs and one Preview playback owner. The exact nonzero keyframe diamond removes that keyframe; a hollow diamond creates one; mandatory KF0 cannot be removed. Slider dragging uses a shared soft magnetic detent at keyframes without blocking continued movement. Preview aggregates enabled keyframes from every header and collection owner into Screen/Shot coordinates, disables unavailable directions and marks exact-keyframe parking with an amber Play/Pause border. Runtime field activation uses diamonds for sequencing tracks and circles for `extendsOwnerDuration: false` tracks; this distinction is not repeated inside Animation.
+Retime is an explicit persisted switch represented by the presence of `targetDurationFrames`. Off means no retime override and hides the target-duration input. Turning it on initializes the target from the generic natural/reference duration and reveals the editable frame target; turning it off removes the override. The editor never presents an effective keyframe-shortened span as the natural duration of a contract-declared behavior.
+
+The compact transport and mini-timeline use the shared keyframe glyphs and one Preview playback owner. The selected property always occupies an 18 px lane. When its contract declares a base or finite action duration, a pale blue reference band fills `[fieldOrigin, fieldOrigin + referenceDuration)` behind the keyframes; a property without a duration provider keeps the same empty lane. The band is contract-derived and generic: Fixed/Natural Write On and a declared finite Playback Duration use the same mechanism. It remains visible when two or more keyframes override the base completion, so shortening or extending the reference is directly legible. The exact nonzero keyframe diamond removes that keyframe; a hollow diamond creates one; mandatory KF0 cannot be removed. Slider dragging uses a shared soft magnetic detent at keyframes without blocking continued movement. Preview aggregates enabled keyframes from every header and collection owner into Screen/Shot coordinates, disables unavailable directions and marks exact-keyframe parking with an amber Play/Pause border. Runtime field activation uses diamonds for sequencing tracks and circles for `extendsOwnerDuration: false` tracks; this distinction is not repeated inside Animation.
 
 It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, component-specific controls, an independent playhead, or a private duration calculation. Empty/invalid/orphaned states are explicit. Curves, color/geometry animation, cross-Screen transitions, arbitrary scripted events, and unbounded/live media are deferred.
 
@@ -212,15 +238,15 @@ It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, compone
 | boundaries | base-before-first; exact keyframe; every interpolation interior frame; final hold; duration `D` resolves only `0..D-1` |
 | numeric/text | hold/linear/easeInOut; deletion/rewrite; same value; emoji, combining mark, newline, interval of one frame |
 | media | play-once/loop, finite end, early off, source shorter than window, unknown source duration, no infinite loop |
-| duration | grow/shrink after edits, concurrent max not sum, Screen-to-Shot sum, screen boundary navigation |
+| duration | grow/shrink after edits, concurrent max not sum, Screen-to-Shot sum, screen boundary navigation; Fixed/Natural timing and pace multiplication |
 | ownership | Design Test Values never affect Production; one playback owner; cancelled/stale work cannot commit |
 
 ### Automated animation suite
 
 `npm run animation:test` is the focused autonomous suite and `npm test` includes it. It does not read or modify `data/desktop-editor-spike.sqlite`.
 
-- TypeScript frame tests cover missing/disabled tracks, exact `[start, end)` boundaries, final hold, destination-owned hold/linear/ease-in-out/write-on interpolation, Unicode grapheme rewrite, exact `fieldId`/`targetId` isolation, Screen fields, post-delay message-relative origins, delay changes without keyframe rewrites, insertion/reordering, chain extension by keyframes and finite media, non-animable actor/direction, delivery/full-screen fields, and finite media playing.
-- The .NET contract runner covers strict v2 document shape, activation with a frame-zero keyframe, target persistence and round-trip, ordered upsert/removal, Screen and target origins, animated/media-driven target chaining, duration endpoints and composition, finite media action duration, duplicate target/frame rejection, negative-frame rejection, initial-keyframe normalization, explicit rejection of legacy events, the initially authorized animatable vocabulary, and shared playback state notifications.
+- TypeScript frame tests cover missing/disabled tracks, exact `[start, end)` boundaries, final hold, destination-owned hold/linear/ease-in-out/write-on interpolation, Unicode grapheme rewrite, exact `fieldId`/`targetId` isolation, Screen fields, post-delay message-relative origins, delay changes without keyframe rewrites, insertion/reordering, chain extension by keyframes and finite media, non-animable actor/direction, delivery/full-screen fields, finite media playing, Natural Pace multiplication, and deterministic monotonic natural Write On cadence.
+- The .NET contract runner covers strict v2 document shape, activation with a frame-zero keyframe, target persistence and round-trip, ordered upsert/removal, Screen and target origins, animated/media-driven target chaining, duration endpoints and composition, finite media action duration, duplicate target/frame rejection, negative-frame rejection, initial-keyframe normalization, explicit rejection of legacy events, the initially authorized animatable vocabulary, shared playback state notifications, and grapheme-based `BehaviorTiming` resolution through Theme pace tokens.
 - `npm run check:architecture` covers editor placement, active-track-only lists, target-scoped session state, dictionary interpolation, diamond-first standard transport order, Preview keyframe aggregation and scope filtering, delegation to the single Preview playback owner, absence of an editor timer, resolver ownership, and renderer/bridge boundaries.
 
 Visual density, alignment, truncation and responsive layout remain a short human review in the running application; they are not treated as semantic correctness tests.
@@ -231,4 +257,4 @@ Performance targets retain the static-preview contract: at 25 fps, median end-to
 
 ## 12. Approved decisions
 
-The implemented baseline is keyframes-only v2, strict `fieldId`/`targetId`, destination-owned interpolation, half-open intervals, mandatory KF0, grapheme-safe `writeOn`, finite audio/video, one derived Screen duration, generic owner/field-completion origins, non-sequencing late fields, and integer target-duration retime. Future animation types remain contract additions rather than editor or renderer exceptions.
+The implemented baseline is keyframes-only v2, strict `fieldId`/`targetId`, destination-owned interpolation, half-open intervals, mandatory KF0, grapheme-safe `writeOn`, finite audio/video, one derived Screen duration, generic owner/field-completion origins, non-sequencing late fields, integer target-duration retime, and dictionary-backed Fixed/Natural behavior timing. Natural cadence remains module-owned; future interaction types remain contract additions rather than editor, bridge, or renderer exceptions.

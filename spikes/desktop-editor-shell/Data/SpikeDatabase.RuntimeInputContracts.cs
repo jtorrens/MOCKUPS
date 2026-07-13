@@ -104,13 +104,21 @@ internal sealed partial class SpikeDatabase
     private static void SynchronizeTimelineDurations(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT mi.id, mi.duration_frames, mi.content_json, mi.animation_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
+        select.CommandText = """
+            SELECT mi.id, mi.duration_frames, mi.content_json, mi.animation_json, m.design_preview_json,
+                   COALESCE(
+                     (SELECT t.tokens_json FROM shots s JOIN actors actor ON actor.id = s.owner_actor_id JOIN themes t ON t.id = actor.default_theme_id WHERE s.id = mi.shot_id),
+                     (SELECT t.tokens_json FROM apps a JOIN themes t ON t.project_id = a.project_id WHERE a.id = mi.app_id ORDER BY t.name, t.id LIMIT 1),
+                     '{}')
+            FROM module_instances mi
+            JOIN modules m ON m.id = mi.module_id
+            """;
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, int Duration)>();
         while (reader.Read())
         {
             var stored = reader.GetInt32(1);
-            var duration = RuntimeTimeline.DurationFrames(ReadString(reader, 4), ReadString(reader, 2), ReadString(reader, 3), stored);
+            var duration = RuntimeTimeline.DurationFrames(ReadString(reader, 4), ReadString(reader, 2), ReadString(reader, 3), stored, ReadString(reader, 5));
             if (duration != stored) updates.Add((reader.GetString(0), duration));
         }
         reader.Close();
@@ -313,6 +321,7 @@ internal sealed partial class SpikeDatabase
             "number" when decimal.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
                 => JsonValue.Create(number)!,
             "iconList" => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
+            "behaviorTiming" => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value) ?? new JsonObject(),
             _ => JsonValue.Create(value)!,
         };
     }
@@ -522,21 +531,16 @@ internal sealed partial class SpikeDatabase
     {
         foreach (var (message, index) in messages.OfType<JsonObject>().Select((message, index) => (message, index)))
         {
-            if (message["writeOnDurationFrames"] is null)
+            if (message["writeOnTiming"] is null)
             {
                 var defaultMessage = (defaults["messages"] as JsonArray)?.ElementAtOrDefault(index) as JsonObject;
-                if (message["textReveal"]?["durationFrames"] is JsonNode duration)
-                {
-                    message["writeOnDurationFrames"] = duration.DeepClone();
-                }
-                else if (defaultMessage?["writeOnDurationFrames"] is JsonNode defaultWriteOn)
-                {
-                    message["writeOnDurationFrames"] = defaultWriteOn.DeepClone();
-                }
-                else
-                {
-                    message["writeOnDurationFrames"] = 0;
-                }
+                message["writeOnTiming"] = defaultMessage?["writeOnTiming"]?.DeepClone()
+                    ?? new JsonObject
+                    {
+                        ["mode"] = "fixed",
+                        ["fixedFrames"] = 0,
+                        ["paceToken"] = "theme.motion.naturalPace.normal",
+                    };
                 changed = true;
             }
             if (message["postWriteOnHoldFrames"] is null)

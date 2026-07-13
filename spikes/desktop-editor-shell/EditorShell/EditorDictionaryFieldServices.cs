@@ -1,5 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -38,6 +40,36 @@ internal sealed class EditorDictionaryFieldServices
                 ? ""
                 : _database.GetThemeSettings(effectiveThemeId).IconThemeId;
         }
+        JsonObject ThemeTokens()
+        {
+            if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+            {
+                return DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
+            }
+            var effectiveThemeId = DesignPreviewPayloadFactory.ResolveThemeId(_database, node, _selectedThemeId());
+            return string.IsNullOrWhiteSpace(effectiveThemeId)
+                ? new JsonObject()
+                : DesignPreviewTestValues.Parse(_database.GetThemeSettings(effectiveThemeId).TokensJson);
+        }
+        int? ResolveBehaviorTimingFrames(FieldDefinition definition, string json)
+        {
+            if (definition.BehaviorTiming is not { } timing) return null;
+            try
+            {
+                var value = BehaviorTimingValue.Parse(json);
+                if (value.Mode == "fixed") return value.FixedFrames;
+                return BehaviorTimingResolver.ResolveNaturalFrames(
+                    getFieldValue(timing.SourceFieldId),
+                    timing.Unit,
+                    timing.BaseFramesPerUnit,
+                    value.PaceToken,
+                    ThemeTokens());
+            }
+            catch
+            {
+                return null;
+            }
+        }
         return new DictionaryFieldServices(
             _pathBrowser.BrowsePath,
             (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(IconThemeId(), currentValue, allowMultiple),
@@ -49,7 +81,8 @@ internal sealed class EditorDictionaryFieldServices
             (componentType) => _database.GetComponentPresetReferenceOptionsByType(projectId, componentType),
             openComponentPresetReference,
             openEmbeddedComponent,
-            openComponentInputBinding);
+            openComponentInputBinding,
+            ResolveBehaviorTimingFrames);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

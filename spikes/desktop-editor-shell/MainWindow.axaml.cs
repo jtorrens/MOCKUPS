@@ -196,8 +196,8 @@ public partial class MainWindow : SukiWindow
             _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
             SelectNodeById,
-            _previewController.ProductionScreenFrame,
-            _previewController.SetProductionScreenFrame,
+            _previewController.ProductionShotFrame,
+            _previewController.SetProductionShotFrame,
             _previewController.ToggleProductionPlayback);
         _editorContent = new EditorContentController(
             _database,

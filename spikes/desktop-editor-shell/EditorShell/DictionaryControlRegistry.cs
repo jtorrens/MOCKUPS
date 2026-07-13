@@ -100,6 +100,11 @@ internal static class DictionaryControlRegistry
             [ValueKind.AlignmentPlacement] = (request) => new DictionaryAlignmentPlacementControl(request.Definition, request.Value),
             [ValueKind.Motion] = (request) => new DictionaryMotionControl(request.Definition, request.Value),
             [ValueKind.MotionTiming] = (request) => new DictionaryMotionTimingControl(request.Definition, request.Value),
+            [ValueKind.BehaviorTiming] = (request) => new DictionaryBehaviorTimingControl(
+                request.Definition,
+                request.Value,
+                request.Services.ShowThemeTokenPicker,
+                request.Services.ResolveBehaviorTimingFrames),
         };
 
     public static IDictionaryValueControl Create(

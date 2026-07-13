@@ -693,7 +693,11 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var control = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
-            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+            _dictionaryServices.ForNode(owner.Node, (fieldId) =>
+            {
+                var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
+                return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
+            }));
         control.IsEnabled = CollectionFieldIsEnabled(item, input);
         control.ValueCommitted += (_, next) =>
         {
@@ -720,7 +724,8 @@ internal sealed class RuntimeInputsCollectionEditor
             _testValuesChanged();
             afterCommit?.Invoke();
             if (collection.Fields.Any((candidate) =>
-                    candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
+                    candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)
+                    || candidate.BehaviorTiming?.SourceFieldId.Equals(input.Id, StringComparison.Ordinal) == true))
             {
                 _reloadAndSelect?.Invoke(owner.Node);
             }

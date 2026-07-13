@@ -16,11 +16,24 @@ internal static class ModuleInstanceTimeline
             module.DesignPreviewJson,
             instance.ContentJson,
             instance.AnimationJson,
-            instance.DurationFrames);
+            instance.DurationFrames,
+            database.GetModuleInstanceThemeTokensJson(moduleInstanceId));
     }
 
     public static int ShotDurationFrames(SpikeDatabase database, string shotId) =>
         database.GetShotModuleInstanceSlots(shotId).Sum((slot) => DurationFrames(database, slot.Id));
+
+    public static int ScreenStartFrame(SpikeDatabase database, string moduleInstanceId)
+    {
+        var instance = database.GetModuleInstanceSettings(moduleInstanceId);
+        var start = 0;
+        foreach (var slot in database.GetShotModuleInstanceSlots(instance.ShotId))
+        {
+            if (slot.Id == moduleInstanceId) return start;
+            start += DurationFrames(database, slot.Id);
+        }
+        return 0;
+    }
 
     public static IReadOnlyList<int> KeyframeFrames(SpikeDatabase database, string moduleInstanceId)
     {
@@ -29,6 +42,7 @@ internal static class ModuleInstanceTimeline
         var contract = Parse(module.DesignPreviewJson);
         var runtime = Parse(database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId));
         var animation = Parse(instance.AnimationJson);
+        var themeTokens = Parse(database.GetModuleInstanceThemeTokensJson(moduleInstanceId));
         return (animation["tracks"] as JsonArray)?.OfType<JsonObject>()
             .SelectMany((track) =>
             {
@@ -42,7 +56,8 @@ internal static class ModuleInstanceTimeline
                         animation,
                         fieldId,
                         targetId,
-                        System.Math.Max(0, keyframe["frame"]?.GetValue<int>() ?? 0)))
+                        System.Math.Max(0, keyframe["frame"]?.GetValue<int>() ?? 0),
+                        themeTokens))
                     ?? [];
             })
             .Distinct()

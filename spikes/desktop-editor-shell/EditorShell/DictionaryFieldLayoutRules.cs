@@ -17,27 +17,28 @@ internal static class DictionaryFieldLayoutRules
             ValueKind.StringMultiline => 96,
             ValueKind.IconSlots => 150,
             ValueKind.ComponentInputBindings => 46,
+            ValueKind.BehaviorTiming => 124,
             _ => 40,
         };
     }
 
     public static VerticalAlignment LabelVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.BehaviorTiming
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }
 
     public static Avalonia.Thickness LabelMargin(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings
+        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.BehaviorTiming
             ? new Avalonia.Thickness(0, 7, 0, 0)
             : new Avalonia.Thickness(0);
     }
 
     public static VerticalAlignment RestoreButtonVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings
+        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.BehaviorTiming
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }

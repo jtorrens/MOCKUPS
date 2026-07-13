@@ -81,6 +81,7 @@ internal static class DesignPreviewTestValues
             JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
             JsonArray array => array.ToJsonString(),
+            JsonObject objectValue => objectValue.ToJsonString(),
             _ => input.DefaultValue,
         };
     }
@@ -118,6 +119,7 @@ internal static class DesignPreviewTestValues
             JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
             JsonArray array => array.ToJsonString(),
+            JsonObject objectValue => objectValue.ToJsonString(),
             _ => input.DefaultValue,
         };
     }
@@ -313,6 +315,10 @@ internal static class DesignPreviewTestValues
 
     internal static JsonNode? ValueNode(ComponentInputDefinition input, string value)
     {
+        if (input.ValueKind == ValueKind.BehaviorTiming)
+        {
+            return JsonNode.Parse(BehaviorTimingValue.Parse(value).ToJson());
+        }
         return input.Kind switch
         {
             ComponentInputKind.Number when double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),

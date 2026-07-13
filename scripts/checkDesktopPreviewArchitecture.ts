@@ -537,7 +537,8 @@ function assertDesktopPreviewActionsAreDeclarative() {
           || typeof action.durationCollectionJsonKey === "string"
           || typeof action.durationSeconds === "number"
           || typeof action.durationThemeToken === "string"
-          || typeof action.durationMotionConfigPath === "string";
+          || typeof action.durationMotionConfigPath === "string"
+          || action.durationOwnerTimeline === true;
         if (!id || !label) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
@@ -666,9 +667,10 @@ function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
     "textInputVisible",
     "keyboardVisible",
     "textReveal",
+    "writeOnDurationFrames",
   ]);
   const requiredMessageTimingKeys = new Set([
-    "writeOnDurationFrames",
+    "writeOnTiming",
     "postWriteOnHoldFrames",
   ]);
 
@@ -2457,7 +2459,7 @@ assertContains(
 );
 assertMatches(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  /\["id"\] = "writeOn"[\s\S]*?\["defaultValue"\] = "30"/,
+  /\["id"\] = "writeOn"[\s\S]*?\["valueKind"\] = "BehaviorTiming"[\s\S]*?\["baseFramesPerUnit"\] = 7/,
   "new Conversation messages must contribute a finite default write-on duration",
 );
 assertContains(
@@ -2637,13 +2639,33 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  "RuntimeAnimationFrameOrigin.OwnerLocalFrame(preview, preview, animation, targetId, currentFrame)",
+  "TimelineFrame() - screenStartFrame",
   "target-owned animation panels must obtain owner-relative frames from the common timeline",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(",
-  "owner-relative slider navigation must translate back to the authoritative Screen playhead",
+  "owner-relative keyframes must translate through the common timeline onto the authoritative Shot playhead",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "ModuleInstanceTimeline.ShotDurationFrames",
+  "animation authoring panels must use the complete Shot scale",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "timelineDuration += 10",
+  "the provisional authoring horizon must grow in session-only ten-frame steps",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "toggle.IsChecked == true ? naturalDuration : null",
+  "Retime off must remove the persisted target-duration override",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "FieldReferenceDurationFrames",
+  "reference-duration lanes must resolve through the common owner timeline",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
@@ -2662,7 +2684,7 @@ assertDoesNotContain(
 );
 assertContains(
   "src/desktop-preview/conversationModuleResolver.ts",
-  'new RuntimeOwnerTimeline(preview, preview, animation)',
+  'new RuntimeOwnerTimeline(preview, preview, animation, themeTokens)',
   "Conversation must resolve generic owner timing in its owning frame resolver",
 );
 assertContains(

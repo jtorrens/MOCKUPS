@@ -33,7 +33,8 @@ internal static class RuntimeInputFieldDefinitionFactory
                 ? new RecordReferenceDefinition(input.TableId)
                 : null,
             Unit: input.Unit,
-            Animation: input.Animation);
+            Animation: input.Animation,
+            BehaviorTiming: input.BehaviorTiming);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

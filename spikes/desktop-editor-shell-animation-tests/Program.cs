@@ -35,6 +35,8 @@ var tests = new (string Name, Action Run)[]
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("collection item presentation summarizes configured fields", CollectionItemPresentationSummarizesConfiguredFields),
     ("Screen tree nodes keep actions in their editor", ScreenTreeNodesKeepActionsInEditor),
+    ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
+    ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
 };
 
 var failures = new List<string>();
@@ -505,6 +507,51 @@ static void ScreenTreeNodesKeepActionsInEditor()
     var screen = new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, "screen", "Screen", "", "module_instance");
     True(!screen.CanDuplicate);
     True(!screen.CanDelete);
+}
+
+static void NaturalBehaviorTimingUsesGraphemesAndThemePace()
+{
+    var contract = Object("""
+        {"collections":[{"jsonKey":"messages","animationTimeline":{"sequence":"serial","preDurationFieldIds":[],"postDurationFieldIds":[]},"fields":[
+          {"id":"text","jsonKey":"text","animationTimeline":{"origin":{"kind":"ownerStart"},"completion":{"baseDurationFieldId":"writeOn","minimumEnabledKeyframes":2}}},
+          {"id":"writeOn","jsonKey":"writeOnTiming","valueKind":"BehaviorTiming","naturalTiming":{"sourceFieldId":"text","unit":"grapheme","baseFramesPerUnit":7}}
+        ]}]}
+        """);
+    var runtime = Object("""
+        {"messages":[{"id":"m1","text":"12345678901234567890123456789012345678901234567890","writeOnTiming":{"mode":"natural","fixedFrames":12,"paceToken":"theme.motion.naturalPace.slow"}}]}
+        """);
+    var theme = Object("""{"motion":{"naturalPace":{"slow":1.5}}}""");
+    Equal(525, RuntimeAnimationFrameOrigin.DurationFrames(
+        contract,
+        runtime,
+        Object("""{"schemaVersion":2,"tracks":[]}"""),
+        1,
+        theme));
+}
+
+static void TimelineReferenceBandsUseContractDurations()
+{
+    var contract = Object("""
+        {"collections":[{"jsonKey":"messages","animationTimeline":{"sequence":"serial","preDurationFieldIds":[],"postDurationFieldIds":[]},"fields":[
+          {"id":"text","jsonKey":"text","animationTimeline":{"origin":{"kind":"ownerStart"},"completion":{"baseDurationFieldId":"writeOn","minimumEnabledKeyframes":2}}},
+          {"id":"writeOn","jsonKey":"writeOnTiming","valueKind":"BehaviorTiming","naturalTiming":{"sourceFieldId":"text","unit":"grapheme","baseFramesPerUnit":7}},
+          {"id":"playing","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"ownerStart"}}},
+          {"id":"playDuration","jsonKey":"playDurationFrames"}
+        ],"itemActions":[{"playInputId":"playing","durationInputId":"playDuration"}]}]}
+        """);
+    var runtime = Object("""
+        {"messages":[{"id":"m1","text":"1234567890","writeOnTiming":{"mode":"natural","fixedFrames":12,"paceToken":"theme.motion.naturalPace.slow"},"isPlaying":false,"playDurationFrames":80}]}
+        """);
+    var animation = Object("""
+        {"schemaVersion":2,"tracks":[{"id":"text-track","fieldId":"text","targetId":"m1","keyframes":[
+          {"id":"text-0","frame":0,"value":"","interpolation":"hold","enabled":true},
+          {"id":"text-37","frame":37,"value":"1234567890","interpolation":"writeOn","enabled":true}
+        ]}]}
+        """);
+    var theme = Object("""{"motion":{"naturalPace":{"slow":1.5}}}""");
+
+    Equal(105, RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(contract, runtime, animation, "text", "m1", theme));
+    Equal(80, RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(contract, runtime, animation, "playing", "m1", theme));
 }
 
 static (string InstanceId, List<string> ItemIds) CollectionOrder(string path, string? instanceId = null)

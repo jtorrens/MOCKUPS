@@ -172,6 +172,10 @@ internal sealed class EditorPreviewController
         SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1), useSelectedScope: false);
     }
 
+    public int ProductionShotFrame() => _shotPreviewFrame;
+
+    public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame, useSelectedScope: false);
+
     public void ToggleProductionPlayback() => ToggleShotPlayback();
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _lastProductionPreviewNode;
@@ -1811,12 +1815,13 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(timeJsonKey)
             || (string.IsNullOrWhiteSpace(durationInputId)
                 && string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey)
+                && !action.DurationOwnerTimeline
                 && animationDurationSeconds <= 0))
         {
             yield break;
         }
 
-        var frameCount = PlaybackDurationFrames(action, preview, fps);
+        var frameCount = PlaybackDurationFrames(action, preview, fps, payload.ThemeTokensJson);
         if (frameCount <= 0)
         {
             yield break;
@@ -1853,7 +1858,7 @@ internal sealed class EditorPreviewController
             yield break;
         }
 
-        var durationFrames = PlaybackDurationFrames(action, preview, fps);
+        var durationFrames = PlaybackDurationFrames(action, preview, fps, payload.ThemeTokensJson);
         if (durationFrames <= 0)
         {
             yield break;
@@ -1887,8 +1892,12 @@ internal sealed class EditorPreviewController
         }
     }
 
-    private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps)
+    private static int PlaybackDurationFrames(ComponentPreviewActionDefinition action, JsonObject preview, int fps, string themeTokensJson)
     {
+        if (action.DurationOwnerTimeline)
+        {
+            return RuntimeTimeline.DurationFrames(preview.ToJsonString(), preview.ToJsonString(), "{}", 1, themeTokensJson);
+        }
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
             return CollectionDurationFrames(preview, action);

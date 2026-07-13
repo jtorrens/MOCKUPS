@@ -7,6 +7,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
+import { naturalWriteOnFrame } from "./behaviorTiming.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -16,7 +17,8 @@ export function resolveConversationModuleFrame(payload: DesignPreviewPayload): J
   const animation = asRecord(instance.animation);
   const context = asRecord(instance.context);
   const screenFrame = Math.max(0, Math.floor(optionalNumber(context, "localFrame", 0)));
-  const timeline = new RuntimeOwnerTimeline(preview, preview, animation);
+  const themeTokens = parseObject(payload.themeTokensJson);
+  const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
   preview.headerSubtitle = resolveParameterAnimation(
     animation,
     "headerSubtitle",
@@ -54,6 +56,13 @@ export function resolveConversationModuleFrame(payload: DesignPreviewPayload): J
     message.writeOnDurationFrames = timeline.usesTrackCompletion("text", targetId)
       ? 0
       : Math.max(0, textCompletionFrame - textOriginFrame);
+    message.writeOnFrame = naturalWriteOnFrame(
+      optionalString(message, "text"),
+      message.writeOnTiming,
+      Math.max(0, screenFrame - textOriginFrame),
+      optionalNumber(message, "writeOnDurationFrames", 0),
+      `${targetId}:${optionalString(message, "text")}`,
+    );
     message.statusVisible = resolve("statusVisible", message.statusVisible).value;
     message.statusState = resolve("status", message.statusState).value;
     message.statusText = resolve("statusText", message.statusText).value;

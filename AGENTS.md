@@ -136,6 +136,14 @@ The web renderer is even stricter: it paints the final resolved nodes. It must n
 
 Animation is also frame data. Resolvers own the component state for the requested frame, and the bridge may translate that resolved frame into final pixels. The web preview/render layer must not run its own timers, CSS animations, countdowns, or component-specific interpolation. For web preview, an animated component is just a succession of resolved frames.
 
+## Hard rule: animation timing is contract-owned and generic
+
+Persist parameter animation only as v2 `fieldId`/`targetId` keyframe tracks. Frame origins, completion dependencies, finite action durations, non-sequencing fields and retime must come from runtime contract metadata and the common owner timeline; editors must not reproduce those formulas.
+
+Reusable behavioral timing uses the dictionary `BehaviorTiming` value kind. Fixed mode resolves authored frames. Natural mode resolves semantic units × the module-owned base rate × a `theme.motion.naturalPace.*` multiplier. The module resolver owns deterministic cadence inside that final duration; the bridge and renderer receive only the resolved frame state.
+
+Animation editors show a Shot-wide authoring scale while persisted collection keyframes remain relative to their stable owner. Contract-declared base/finite durations use the shared reference-duration lane. Retime is off when `targetDurationFrames` is absent; provisional right-side authoring margin is session-only and must never be persisted as duration or window state.
+
 Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
 
 Component composition must reference concrete component presets, not parent component classes. Parent classes own schema, resolver identity and preset lists; reusable visual instances store full preset references in the form `componentClassId::preset::presetId`. Short preset ids are legacy migration input only. Saving a new preset must clone the active selected preset config, never ambiguous "current class values".

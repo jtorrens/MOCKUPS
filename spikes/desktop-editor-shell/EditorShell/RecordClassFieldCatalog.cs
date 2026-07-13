@@ -318,6 +318,11 @@ internal static class RecordClassFieldCatalog
         ["theme.motion.swipe"] = new("theme.motion.swipe", "Swipe", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.scale"] = new("theme.motion.scale", "Scale", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.buttonPushedDurationMs"] = new("theme.motion.buttonPushedDurationMs", "Button pushed", ValueKind.Integer, Unit: "ms"),
+        ["theme.motion.naturalPace.verySlow"] = new("theme.motion.naturalPace.verySlow", "Very slow", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
+        ["theme.motion.naturalPace.slow"] = new("theme.motion.naturalPace.slow", "Slow", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
+        ["theme.motion.naturalPace.normal"] = new("theme.motion.naturalPace.normal", "Normal", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
+        ["theme.motion.naturalPace.fast"] = new("theme.motion.naturalPace.fast", "Fast", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
+        ["theme.motion.naturalPace.veryFast"] = new("theme.motion.naturalPace.veryFast", "Very fast", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
         ["theme.typography.fontFamilyId"] = new(
             "theme.typography.fontFamilyId",
             "Text font",
