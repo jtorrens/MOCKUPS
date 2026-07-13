@@ -254,7 +254,7 @@ internal sealed class EditorPreviewController
         _shotPlaybackTimer.Tick += (_, _) => AdvanceShotPlayback();
 
         _designContextHistoryButton.Content = EditorIcons.CreateSemantic("Recent design contexts", EditorIcons.Collapse, 15);
-        _designContextAddHistoryButton.Content = EditorIcons.CreateSemantic("Add current design context to history", EditorIcons.Add, 15);
+        _designContextAddHistoryButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
 
         WrapPreviewSetup(previewSetupHost);
         CreatePreviewControls(previewControlsHost);
