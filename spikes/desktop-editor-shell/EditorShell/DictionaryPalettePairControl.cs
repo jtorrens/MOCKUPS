@@ -11,6 +11,8 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
     private readonly DictionaryPaletteTokenControl _firstControl;
     private readonly DictionaryPaletteTokenControl _secondControl;
     private bool _isUpdating;
+    private readonly PairFieldLabels _labels;
+    private bool _usesSharedHeader;
 
     public DictionaryPalettePairControl(FieldDefinition definition, string value)
     {
@@ -21,6 +23,7 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
 
         var pair = DictionaryFieldPairText.Split(value);
         var labels = DictionaryFieldPairText.Labels(definition);
+        _labels = new PairFieldLabels(labels.First, labels.Second);
 
         _firstControl = new DictionaryPaletteTokenControl($"{definition.Label} · {labels.First}", definition.Options, pair.First, definition.IsEditable);
         _firstControl.ValueCommitted += (_, _) => SetValueFromControls();
@@ -39,6 +42,33 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
     public event EventHandler<string>? ValueChanged;
 
     public event EventHandler<string>? ValueCommitted;
+
+    public PairFieldLabels Labels => _labels;
+
+    public bool RequiresLocalHorizontalViewport => !_usesSharedHeader;
+
+    public void UseSharedHeader()
+    {
+        if (_usesSharedHeader) return;
+        _usesSharedHeader = true;
+        ColumnDefinitions = new ColumnDefinitions("*,*");
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        _firstControl.UseCompactWidth();
+        _secondControl.UseCompactWidth();
+        if (_firstControl.Parent is Panel firstParent)
+        {
+            firstParent.Children.Remove(_firstControl);
+        }
+        if (_secondControl.Parent is Panel secondParent)
+        {
+            secondParent.Children.Remove(_secondControl);
+        }
+        Children.Clear();
+        SetColumn(_firstControl, 0);
+        SetColumn(_secondControl, 1);
+        Children.Add(_firstControl);
+        Children.Add(_secondControl);
+    }
 
     public void SetValue(string value)
     {

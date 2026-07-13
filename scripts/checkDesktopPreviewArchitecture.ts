@@ -153,6 +153,7 @@ function assertSharedEditorSurfacesHaveNoConcreteEditors() {
     "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
     "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
     "spikes/desktop-editor-shell/EditorShell/EditorGroupBlock.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
     "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
   ];
   const concreteEditorTypes = [
@@ -2315,6 +2316,16 @@ assertDoesNotContain(
   "production transport must not use a fixed wrapping breakpoint",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_shotFrameSlider.PointerReleased += (_, _) => SynchronizeExplicitScreenSelection()",
+  "explicit production scrubbing must synchronize Screen selection only after confirmation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "if (IsPreviewPlaybackActive) return false;",
+  "automatic playback must not synchronize the editor or tree selection",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
   'TimelineShotStart => "M4 5H6V19H4Z',
   "timeline boundary bars must be filled geometry rather than invisible open paths",
@@ -2408,6 +2419,215 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey",
   "runtime collection controls must rebuild after a dependency field changes",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/InstantEditorCard.cs",
+  "public EditorSubcardLayout SubcardLayout { get; }",
+  "subcard organization must be an explicit generic card property",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "EditorSubcardLayout.VerticalCards",
+  "runtime collection cards must declare their subcard organization explicitly",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorGroupBlock.cs",
+  "subcardLayout == EditorSubcardLayout.FlatStack",
+  "flat-stack cards must inherit their parent surface through the shared card factory",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateSeparatedInputContent(owner, preview, ownInputs)",
+  "the General runtime category must use shared separated-section content",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  '"general",\n                "General",\n                "Runtime inputs"',
+  "direct runtime fields must join the shared top-level category navigator",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateTestValueCollectionContent(owner, preview, collection, actions, items)",
+  "runtime collections must join the same top-level category navigator",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "_entries[section.Id] = entry;",
+  "vertical-card rows must own full-width separators up to the navigation divider",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayout.cs",
+  '[JsonPropertyName("groupLayout")]',
+  "editor cards must declare reusable child-group organization through layout metadata",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayout.cs",
+  '[JsonPropertyName("presentation")]',
+  "individual editor groups must be able to declare a reusable presentation block",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "EffectiveGroupLayout(group, groupLayout)",
+  "mixed editor-card organization must remain metadata-driven and generic",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  '"verticalCards" => EditorSubcardLayout.VerticalCards',
+  "layout cards must route vertical-card organization through the shared subcard host",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  '"separatedSections" => EditorSubcardLayout.SeparatedSections',
+  "layout cards must route separated sections through the shared subcard host",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  '"groupLayout": "verticalCards"',
+  "component layouts must opt into vertical cards declaratively",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  '"groupLayout": "separatedSections"',
+  "component layouts must opt into separated sections declaratively",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  /"component\.status_bar"[\s\S]*?"groupLayout": "separatedSections"/,
+  "Status Bar must use the same declarative separated-section organization as Atoms",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  /"component\.navigation_bar"[\s\S]*?"groupLayout": "separatedSections"/,
+  "Navigation Bar must use the same declarative separated-section organization as Atoms",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  /"component\.keyboard"[\s\S]*?"groupLayout": "verticalCards"/,
+  "Keyboard categories must use the same declarative vertical-card organization as Atoms",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  'EditorSubcardLayout.VerticalCards',
+  "runtime input groups must use the shared vertical-card organization",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+  '"iconRow::preset::default"',
+  "component input contracts must store concrete component preset references",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorTreeExpansionState.cs",
+  "CollapseWorkspaceSectionPeers(node)",
+  "workspace navigation cards must remain mutually exclusive",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_internalExpansionStates[expansionKey] = next",
+  "nested card expansion must remain available within the current editor session",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "cards[0].IsExpanded = true",
+  "nested cards must not reopen automatically in a new application session",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs",
+  "ExpandedCards",
+  "card expansion must never be written to persisted window state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
+  "card.IsExpanded = false;",
+  "a new editor session must begin with every editor card closed",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "_statesByNodeId[node.Id] = state;",
+  "card expansion and scroll must remain available per editor within the current session",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+  /"subtitle": "Theme color behavior"[\s\S]*?"groupLayout": "verticalCards"/,
+  "Theme Colors groups must use the shared vertical-card organization",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+  /"id": "icons"[\s\S]*?"groupLayout": "verticalCards"/,
+  "Theme Icons groups must use the shared vertical-card organization",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+  '"pairLayout": "sharedHeader"',
+  "palette-pair groups must opt into the generic shared Light/Dark header through layout metadata",
+);
+for (const semanticIcon of [
+  "Neutral tint",
+  "App colors",
+  "Content colors",
+  "Action and input colors",
+  "Navigation and feedback colors",
+  "Border colors",
+  "Icon colors",
+  "Icon sizes",
+  "Font families",
+  "Text sizes",
+  "Style and line heights",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+    `EditorIcons.SemanticAsset("${semanticIcon}")`,
+    `Theme group '${semanticIcon}' must use its dedicated reusable system icon`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+  'ColumnDefinitions = new ColumnDefinitions("*,*");',
+  "compact palette pairs must preserve two equal columns at narrow widths",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+  "firstParent.Children.Remove(_firstControl);",
+  "compact palette pairs must detach existing controls before reusing them in shared-header composition",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "var controlLabels = control.UseSharedPairHeader();",
+  "shared palette-pair presentation must be applied to every control in the group",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+  /"id": "typography"[\s\S]*?"groupLayout": "verticalCards"[\s\S]*?"id": "fontFamilies"[\s\S]*?"id": "typographySizes"[\s\S]*?"id": "typographyStyle"/,
+  "Theme Typography must remain split into semantic vertical cards",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Common/ThemeNumericTokenCatalog.cs",
+  'Token("theme.typography.size",',
+  "the retired singular typography size token must not remain in the numeric token catalog",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "ClearTransientValues(scopeKey);",
+  "runtime contract changes must invalidate stale session-only input values generically",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "ShouldUse(",
+  "subcard organization must not be inferred from count or hierarchy depth",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  '"flatStack" => EditorSubcardLayout.FlatStack',
+  "the documented flat-stack organization must remain available through generic layout metadata",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "_content.Content = null;",
+  "internal navigation must detach reusable editor content before selecting another card",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  '"Messages"',
+  "shared internal navigation must not know a concrete runtime collection",
 );
 assertContains(
   "src/desktop-preview/conversationModuleRenderable.ts",

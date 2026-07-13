@@ -100,7 +100,19 @@ internal sealed class DictionaryFieldControl : Grid
 
     public string Value => _value;
 
-    public bool RequiresLocalHorizontalViewport => _valueControl is IDictionaryLocalHorizontalScrollControl;
+    public bool RequiresLocalHorizontalViewport => _valueControl switch
+    {
+        DictionaryPalettePairControl pair => pair.RequiresLocalHorizontalViewport,
+        IDictionaryLocalHorizontalScrollControl => true,
+        _ => false,
+    };
+
+    public PairFieldLabels? UseSharedPairHeader()
+    {
+        if (_valueControl is not DictionaryPalettePairControl pair) return null;
+        pair.UseSharedHeader();
+        return pair.Labels;
+    }
 
     public void RefreshPreview()
     {

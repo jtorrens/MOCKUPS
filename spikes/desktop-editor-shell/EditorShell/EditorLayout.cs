@@ -33,6 +33,9 @@ internal sealed class EditorLayoutCard
     [JsonPropertyName("defaultOpen")]
     public bool DefaultOpen { get; init; }
 
+    [JsonPropertyName("groupLayout")]
+    public string GroupLayout { get; init; } = "stacked";
+
     [JsonPropertyName("groups")]
     public List<EditorLayoutGroup> Groups { get; init; } = [];
 
@@ -47,6 +50,15 @@ internal sealed class EditorLayoutGroup
 
     [JsonPropertyName("label")]
     public string Label { get; init; } = "";
+
+    [JsonPropertyName("icon")]
+    public string Icon { get; init; } = "";
+
+    [JsonPropertyName("presentation")]
+    public string Presentation { get; init; } = "";
+
+    [JsonPropertyName("pairLayout")]
+    public string PairLayout { get; init; } = "";
 
     [JsonPropertyName("order")]
     public int Order { get; init; }

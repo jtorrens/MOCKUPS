@@ -195,6 +195,8 @@ internal static class EditorIcons
 
     private static string NavigationAsset(string assetName) => $"{NavigationAssetPrefix}{assetName}";
 
+    public static string SemanticAsset(string assetName) => NavigationAsset(assetName);
+
     public static Control CreateSemantic(string label, string fallback, double size = 20)
     {
         var semanticName = NavigationAsset(label);

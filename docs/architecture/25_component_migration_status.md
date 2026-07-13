@@ -59,6 +59,42 @@ is to remove legacy routing risk first.
 The executable source of truth for the status column is the component manifest
 field `migrationStatus`.
 
+## Desktop Editor UX/UI Baseline (2026-07-13)
+
+The component, atom, system and Runtime Inputs editors now use one shared
+metadata-driven organization system:
+
+- `flatStack` for repeated collection instances on the parent surface;
+- `verticalCards` for internal vertical navigation;
+- `separatedSections` for continuous semantic field groups;
+- per-group `presentation` for mixed cards;
+- a generic `General` child for direct owner fields when sibling subcards exist;
+- `pairLayout: sharedHeader` for compact two-column Light/Dark palette pairs.
+
+The same shared implementation is used by component classes, atom/system
+classes, Theme groups and Runtime Inputs. No layout mode is selected from a
+component name or editor type. New categories use reusable semantic SVG assets
+from `assets/system/system_icons/components`.
+
+All editor cards begin closed in a new application session. Card expansion,
+internal selection and scroll state are retained only while the process is
+running and are keyed by editor node. They are not part of persisted window
+state.
+
+The retired singular token `theme.typography.size` has been removed from the
+catalog, layout, default tokens and committed themes. Typography uses only
+`theme.typography.sizes.*`, split into Font families, Text sizes and Style and
+line heights vertical groups.
+
+Component preset references in runtime input contracts use full references:
+
+```text
+componentClassId::preset::presetId
+```
+
+Contract-signature changes invalidate stale session-only Test Values for that
+scope instead of coercing legacy short references.
+
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; variant owns background, alphas, border, radius, shadow, relief and optional tail geometry. |

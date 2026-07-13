@@ -793,9 +793,9 @@
   },
   {
     "nombre original": "Add current design context to history",
-    "glyph": "history",
+    "glyph": "add",
     "nombre de archivo": "Add current design context to history.svg",
-    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/history/materialsymbolsrounded/history_24px.svg"
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add/materialsymbolsrounded/add_24px.svg"
   },
   {
     "nombre original": "Keep current design context",
@@ -808,5 +808,113 @@
     "glyph": "keep_off",
     "nombre de archivo": "Release design context.svg",
     "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/keep_off/materialsymbolsrounded/keep_off_24px.svg"
+  },
+  {
+    "nombre original": "Center",
+    "glyph": "format_align_center",
+    "nombre de archivo": "Center.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_align_center/materialsymbolsrounded/format_align_center_24px.svg"
+  },
+  {
+    "nombre original": "Keys",
+    "glyph": "key",
+    "nombre de archivo": "Keys.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/key/materialsymbolsrounded/key_24px.svg"
+  },
+  {
+    "nombre original": "Interaction",
+    "glyph": "touch_app",
+    "nombre de archivo": "Interaction.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/touch_app/materialsymbolsrounded/touch_app_24px.svg"
+  },
+  {
+    "nombre original": "Normal",
+    "glyph": "check_circle",
+    "nombre de archivo": "Normal.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/check_circle/materialsymbolsrounded/check_circle_24px.svg"
+  },
+  {
+    "nombre original": "Disabled",
+    "glyph": "block",
+    "nombre de archivo": "Disabled.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/block/materialsymbolsrounded/block_24px.svg"
+  },
+  {
+    "nombre original": "Waveform",
+    "glyph": "graphic_eq",
+    "nombre de archivo": "Waveform.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/graphic_eq/materialsymbolsrounded/graphic_eq_24px.svg"
+  },
+  {
+    "nombre original": "Badge",
+    "glyph": "badge",
+    "nombre de archivo": "Badge.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/badge/materialsymbolsrounded/badge_24px.svg"
+  },
+  {
+    "nombre original": "Neutral tint",
+    "glyph": "format_paint",
+    "nombre de archivo": "Neutral tint.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_paint/materialsymbolsrounded/format_paint_24px.svg"
+  },
+  {
+    "nombre original": "App colors",
+    "glyph": "palette",
+    "nombre de archivo": "App colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/palette/materialsymbolsrounded/palette_24px.svg"
+  },
+  {
+    "nombre original": "Content colors",
+    "glyph": "colorize",
+    "nombre de archivo": "Content colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/colorize/materialsymbolsrounded/colorize_24px.svg"
+  },
+  {
+    "nombre original": "Action and input colors",
+    "glyph": "tune",
+    "nombre de archivo": "Action and input colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/tune/materialsymbolsrounded/tune_24px.svg"
+  },
+  {
+    "nombre original": "Navigation and feedback colors",
+    "glyph": "navigation",
+    "nombre de archivo": "Navigation and feedback colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/navigation/materialsymbolsrounded/navigation_24px.svg"
+  },
+  {
+    "nombre original": "Border colors",
+    "glyph": "border_all",
+    "nombre de archivo": "Border colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/border_all/materialsymbolsrounded/border_all_24px.svg"
+  },
+  {
+    "nombre original": "Icon colors",
+    "glyph": "palette",
+    "nombre de archivo": "Icon colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/palette/materialsymbolsrounded/palette_24px.svg"
+  },
+  {
+    "nombre original": "Icon sizes",
+    "glyph": "format_size",
+    "nombre de archivo": "Icon sizes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_size/materialsymbolsrounded/format_size_24px.svg"
+  },
+  {
+    "nombre original": "Font families",
+    "glyph": "font_download",
+    "nombre de archivo": "Font families.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/font_download/materialsymbolsrounded/font_download_24px.svg"
+  },
+  {
+    "nombre original": "Text sizes",
+    "glyph": "format_size",
+    "nombre de archivo": "Text sizes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_size/materialsymbolsrounded/format_size_24px.svg"
+  },
+  {
+    "nombre original": "Style and line heights",
+    "glyph": "format_line_spacing",
+    "nombre de archivo": "Style and line heights.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_line_spacing/materialsymbolsrounded/format_line_spacing_24px.svg"
   }
 ]

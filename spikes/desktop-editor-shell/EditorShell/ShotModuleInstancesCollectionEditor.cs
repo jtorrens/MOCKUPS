@@ -48,7 +48,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         return new InstantEditorCard(
             EditorCardHeader.Create("Modules", $"{EditorUiText.Count(slots.Count, "ordered slot")}", EditorIcons.CreateSemantic("Modules", EditorIcons.Module, 18)),
             new Border { Padding = new Thickness(10), Child = body },
-            isExpanded: true)
+            isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
     }
 

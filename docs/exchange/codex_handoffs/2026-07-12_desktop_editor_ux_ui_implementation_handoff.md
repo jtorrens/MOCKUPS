@@ -350,6 +350,44 @@ Stop and report instead of improvising if:
 
 ## Completion criteria
 
+### Implementation update — 2026-07-13 editor organization pass
+
+The accepted UX/UI work has been extended with a generic editor organization
+pass. The stable implementation vocabulary is now:
+
+- `flatStack`: repeated children inherit the parent surface and use separators;
+- `verticalCards`: vertical internal navigation and one selected content area;
+- `separatedSections`: semantic groups in continuous content, divided by
+  labelled horizontal rules;
+- group `presentation`: explicit mixed organization within one card;
+- `pairLayout: sharedHeader`: shared Light/Dark headings for compact
+  `PaletteColorPair` rows.
+
+This is implemented in shared editor-shell controls and layout metadata. It is
+not keyed to a concrete editor, component class or hierarchy level.
+
+The pass includes:
+
+- Component/Atom/System and Runtime Inputs card organization;
+- generic keyboard navigation for internal vertical navigation;
+- full-width separators and parent-surface inheritance for flat stacks;
+- session-only restoration of expansion, internal selection and scroll;
+- all cards closed in a fresh application process;
+- generic preview/editor navigation synchronization while stopped, never
+  during playback;
+- reusable semantic category icons;
+- Theme Colors and Icons vertical groups;
+- Theme Typography semantic vertical groups and removal of the retired
+  `theme.typography.size` token;
+- compact borderless Light/Dark rows with one shared header and permanent equal
+  columns;
+- generic invalidation of stale transient Test Values when a runtime input
+  contract changes.
+
+Architecture enforcement covers the shared presentation metadata, session-only
+state, closed-session defaults, dictionary ownership of palette-pair layout and
+full component preset references.
+
 The implementation series is complete only when all seven phases have an accepted
 result, every commit is independently reviewable, the full validation path passes,
 the architecture boundaries remain green, and the audit decision table can link to

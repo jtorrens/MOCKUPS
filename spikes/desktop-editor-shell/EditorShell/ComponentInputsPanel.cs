@@ -135,6 +135,13 @@ internal sealed class ComponentPreviewInputSession
         var scopeKey = ScopeKey(payload);
         var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
         var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
+        if (_scopeKey.Equals(scopeKey, StringComparison.Ordinal)
+            && _inputSignature.Length > 0
+            && !_inputSignature.Equals(inputSignature, StringComparison.Ordinal))
+        {
+            ClearTransientValues(scopeKey);
+            StopPlayback();
+        }
         _scopeKey = scopeKey;
         _projectId = projectId;
         _inputSignature = inputSignature;
@@ -146,6 +153,17 @@ internal sealed class ComponentPreviewInputSession
         EnsureActionValues(preview);
         EnsureRecordReferenceValues(inputs, projectId);
         SyncPlaybackTimer();
+    }
+
+    private void ClearTransientValues(string scopeKey)
+    {
+        var prefix = $"{scopeKey}:";
+        foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            _values.Remove(key);
+            _inputDefaults.Remove(key);
+        }
+        _transientCollectionTestValuesByScope.Remove(scopeKey);
     }
 
     public bool IsPlaybackActive => SupportsPlayback()

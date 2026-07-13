@@ -61,6 +61,13 @@ internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueCo
         Content = ContentForValue(value);
     }
 
+    public void UseCompactWidth()
+    {
+        MinWidth = 0;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        Content = ContentForValue(_value);
+    }
+
     private Control ContentForValue(string value)
     {
         var option = _options.FirstOrDefault((candidate) => candidate.Value == value);
@@ -70,7 +77,8 @@ internal sealed class DictionaryPaletteTokenControl : Button, IDictionaryValueCo
             Text = string.IsNullOrWhiteSpace(option?.Label) ? value : option.Label,
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
-            Width = 142,
+            MaxWidth = 142,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         Grid.SetColumn(label, 1);
         var chevron = new TextBlock

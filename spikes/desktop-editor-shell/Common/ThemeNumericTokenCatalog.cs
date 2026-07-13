@@ -17,7 +17,6 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.keyboard.height", ["keyboard", "height"]),
         Token("theme.keyboard.keyGap", ["keyboard", "keyGap"]),
         Token("theme.keyboard.rowGap", ["keyboard", "rowGap"]),
-        Token("theme.typography.size", ["typography", "size"]),
         Token("theme.typography.sizes.xs", ["typography", "sizes", "xs"]),
         Token("theme.typography.sizes.s", ["typography", "sizes", "s"]),
         Token("theme.typography.sizes.m", ["typography", "sizes", "m"]),

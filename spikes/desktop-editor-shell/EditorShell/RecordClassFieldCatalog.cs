@@ -333,7 +333,6 @@ internal static class RecordClassFieldCatalog
             "Emoji font",
             ValueKind.RecordReference,
             RecordReference: new RecordReferenceDefinition("production_fonts")),
-        ["theme.typography.size"] = new("theme.typography.size", "Size", ValueKind.Integer),
         ["theme.typography.sizes.xs"] = new("theme.typography.sizes.xs", "Text XS", ValueKind.Integer),
         ["theme.typography.sizes.s"] = new("theme.typography.sizes.s", "Text S", ValueKind.Integer),
         ["theme.typography.sizes.m"] = new("theme.typography.sizes.m", "Text M", ValueKind.Integer),

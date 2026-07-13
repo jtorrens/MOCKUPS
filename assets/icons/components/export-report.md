@@ -1,147 +1,165 @@
 # Material Symbols export report
 
-- Esperados: 135
-- Creados: 133
-- Omitidos: 0
+- Esperados: 153
+- Creados: 0
+- Omitidos: 151
 - Fallidos: 2
 
 ## Iconos creados
-- `Project.svg` ← `account_tree`
-- `Apps.svg` ← `apps`
-- `Chat.svg` ← `chat`
-- `Component Classes.svg` ← `developer_board`
-- `Components.svg` ← `extension`
-- `Atoms.svg` ← `brightness_low`
-- `System.svg` ← `settings_applications`
-- `Audio.svg` ← `volume_up`
-- `Avatar.svg` ← `account_circle`
-- `Bubble.svg` ← `chat_bubble`
-- `Button.svg` ← `smart_button`
-- `Cursor.svg` ← `arrow_selector_tool`
-- `Icon Bar.svg` ← `view_headline`
-- `Icon Row.svg` ← `view_column`
-- `Keyboard.svg` ← `keyboard`
-- `Label.svg` ← `label`
-- `Media.svg` ← `play_circle`
-- `Navigation Bar.svg` ← `menu`
-- `Status Bar.svg` ← `network_cell`
-- `Surface.svg` ← `layers`
-- `Text Box.svg` ← `match_case`
-- `Text Input Bar.svg` ← `edit_note`
-- `Themes.svg` ← `palette`
-- `Icon Themes.svg` ← `bento`
-- `Production Fonts.svg` ← `font_download`
-- `Devices.svg` ← `devices`
-- `Episodes.svg` ← `video_library`
-- `Actors.svg` ← `person`
-- `Render Presets.svg` ← `settings_backup_restore`
-- `App 2.svg` ← `apps`
-- `Episode 1.svg` ← `video_library`
-- `Episode 2.svg` ← `video_library`
-- `Episode 3.svg` ← `video_library`
-- `Shot 01 · Lock to chat.svg` ← `lock`
-- `Shot 01 · Opening chat.svg` ← `chat`
-- `Shot 02 · Incoming media.svg` ← `perm_media`
-- `Shot 02 · Message escalation.svg` ← `priority_high`
-- `Shot 03 · Audio reply.svg` ← `reply`
-- `Active.svg` ← `check_circle`
-- `Actor.svg` ← `person`
-- `Actor label.svg` ← `badge`
-- `Action.svg` ← `bolt`
-- `Bar.svg` ← `view_headline`
-- `Behavior.svg` ← `psychology`
-- `Button Items.svg` ← `smart_button`
-- `Buttons.svg` ← `smart_button`
-- `Colors.svg` ← `palette`
-- `Content.svg` ← `article`
-- `Delivery.svg` ← `local_shipping`
-- `Frame.svg` ← `crop_free`
-- `Full screen.svg` ← `fullscreen`
-- `Full screen controls.svg` ← `fullscreen`
-- `General.svg` ← `tune`
-- `Header.svg` ← `title`
-- `Icon.svg` ← `star`
-- `Icons.svg` ← `star`
-- `Icon Tokens.svg` ← `token`
-- `Identity.svg` ← `badge`
-- `Idle.svg` ← `pause_circle`
-- `Idle text.svg` ← `text_fields`
-- `Inline controls.svg` ← `tune`
-- `Input.svg` ← `input`
-- `Items.svg` ← `list`
-- `Layout.svg` ← `dashboard`
-- `Left icon row.svg` ← `format_align_left`
-- `Message.svg` ← `chat`
-- `Modules.svg` ← `view_module`
-- `Motion.svg` ← `animation`
-- `Notes.svg` ← `note`
-- `Playback.svg` ← `play_circle`
-- `Play text.svg` ← `play_arrow`
-- `Preview controls.svg` ← `preview`
-- `Preview setup.svg` ← `preview`
-- `Radii.svg` ← `rounded_corner`
-- `References.svg` ← `link`
-- `Right icon row.svg` ← `format_align_right`
-- `Runtime Inputs.svg` ← `input`
-- `Shadow.svg` ← `shadow`
-- `Source.svg` ← `code`
-- `Spacing.svg` ← `space_bar`
-- `State.svg` ← `toggle_on`
-- `Status.svg` ← `info`
-- `Style.svg` ← `style`
-- `Text.svg` ← `text_fields`
-- `Timing.svg` ← `timer`
-- `Typography.svg` ← `text_format`
-- `Usage.svg` ← `data_usage`
-- `Wallpaper.svg` ← `wallpaper`
-- `Add.svg` ← `add`
-- `Browse.svg` ← `folder_open`
-- `Clear.svg` ← `close`
-- `Collapse.svg` ← `expand_less`
-- `Create first slot.svg` ← `add_box`
-- `Delete.svg` ← `delete`
-- `Delete selected slot.svg` ← `delete`
-- `Duplicate.svg` ← `content_copy`
-- `Edit.svg` ← `edit`
-- `Edit overrides.svg` ← `edit_note`
-- `Embedded structure.svg` ← `account_tree`
-- `Expand.svg` ← `expand_more`
-- `Folder.svg` ← `folder`
-- `Insert after.svg` ← `add_circle`
-- `Lock.svg` ← `lock`
-- `Move left.svg` ← `arrow_back`
-- `Move right.svg` ← `arrow_forward`
-- `Open referenced record.svg` ← `open_in_new`
-- `Open selected component variant.svg` ← `open_in_new`
-- `Pause.svg` ← `pause`
-- `Pick icon.svg` ← `add_reaction`
-- `Pick icons.svg` ← `add_reaction`
-- `Play.svg` ← `play_arrow`
-- `Rename.svg` ← `drive_file_rename_outline`
-- `Restore inherited value.svg` ← `settings_backup_restore`
-- `Save variant.svg` ← `save`
-- `Settings.svg` ← `settings`
-- `Unlock.svg` ← `lock_open`
-- `Write-on.svg` ← `edit`
-- `Push.svg` ← `touch_app`
-- `In.svg` ← `login`
-- `Previous Screen.svg` ← `navigate_before`
-- `First Shot frame.svg` ← `first_page`
-- `First frame in the selected scope.svg` ← `first_page`
-- `Previous frame.svg` ← `skip_previous`
-- `Play or pause the selected scope.svg` ← `play_arrow`
-- `Next frame.svg` ← `skip_next`
-- `Last frame in the selected scope.svg` ← `last_page`
-- `Next Screen.svg` ← `navigate_next`
-- `Last Shot frame.svg` ← `last_page`
-- `Recent design contexts.svg` ← `history`
-- `Recent production contexts.svg` ← `history`
-- `Add current design context to history.svg` ← `history`
-- `Keep current design context.svg` ← `push_pin`
-- `Release design context.svg` ← `keep_off`
+- Ninguno
 
 ## Iconos omitidos
-- Ninguno
+- `Project.svg` ya existía
+- `Apps.svg` ya existía
+- `Chat.svg` ya existía
+- `Component Classes.svg` ya existía
+- `Components.svg` ya existía
+- `Atoms.svg` ya existía
+- `System.svg` ya existía
+- `Audio.svg` ya existía
+- `Avatar.svg` ya existía
+- `Bubble.svg` ya existía
+- `Button.svg` ya existía
+- `Cursor.svg` ya existía
+- `Icon Bar.svg` ya existía
+- `Icon Row.svg` ya existía
+- `Keyboard.svg` ya existía
+- `Label.svg` ya existía
+- `Media.svg` ya existía
+- `Navigation Bar.svg` ya existía
+- `Status Bar.svg` ya existía
+- `Surface.svg` ya existía
+- `Text Box.svg` ya existía
+- `Text Input Bar.svg` ya existía
+- `Themes.svg` ya existía
+- `Icon Themes.svg` ya existía
+- `Production Fonts.svg` ya existía
+- `Devices.svg` ya existía
+- `Episodes.svg` ya existía
+- `Actors.svg` ya existía
+- `Render Presets.svg` ya existía
+- `App 2.svg` ya existía
+- `Episode 1.svg` ya existía
+- `Episode 2.svg` ya existía
+- `Episode 3.svg` ya existía
+- `Shot 01 · Lock to chat.svg` ya existía
+- `Shot 01 · Opening chat.svg` ya existía
+- `Shot 02 · Incoming media.svg` ya existía
+- `Shot 02 · Message escalation.svg` ya existía
+- `Shot 03 · Audio reply.svg` ya existía
+- `Active.svg` ya existía
+- `Actor.svg` ya existía
+- `Actor label.svg` ya existía
+- `Action.svg` ya existía
+- `Bar.svg` ya existía
+- `Behavior.svg` ya existía
+- `Button Items.svg` ya existía
+- `Buttons.svg` ya existía
+- `Colors.svg` ya existía
+- `Content.svg` ya existía
+- `Delivery.svg` ya existía
+- `Frame.svg` ya existía
+- `Full screen.svg` ya existía
+- `Full screen controls.svg` ya existía
+- `General.svg` ya existía
+- `Header.svg` ya existía
+- `Icon.svg` ya existía
+- `Icons.svg` ya existía
+- `Icon Tokens.svg` ya existía
+- `Identity.svg` ya existía
+- `Idle.svg` ya existía
+- `Idle text.svg` ya existía
+- `Inline controls.svg` ya existía
+- `Input.svg` ya existía
+- `Items.svg` ya existía
+- `Layout.svg` ya existía
+- `Left icon row.svg` ya existía
+- `Message.svg` ya existía
+- `Modules.svg` ya existía
+- `Motion.svg` ya existía
+- `Notes.svg` ya existía
+- `Playback.svg` ya existía
+- `Play text.svg` ya existía
+- `Preview controls.svg` ya existía
+- `Preview setup.svg` ya existía
+- `Radii.svg` ya existía
+- `References.svg` ya existía
+- `Right icon row.svg` ya existía
+- `Runtime Inputs.svg` ya existía
+- `Shadow.svg` ya existía
+- `Source.svg` ya existía
+- `Spacing.svg` ya existía
+- `State.svg` ya existía
+- `Status.svg` ya existía
+- `Style.svg` ya existía
+- `Text.svg` ya existía
+- `Timing.svg` ya existía
+- `Typography.svg` ya existía
+- `Usage.svg` ya existía
+- `Wallpaper.svg` ya existía
+- `Add.svg` ya existía
+- `Browse.svg` ya existía
+- `Clear.svg` ya existía
+- `Collapse.svg` ya existía
+- `Create first slot.svg` ya existía
+- `Delete.svg` ya existía
+- `Delete selected slot.svg` ya existía
+- `Duplicate.svg` ya existía
+- `Edit.svg` ya existía
+- `Edit overrides.svg` ya existía
+- `Embedded structure.svg` ya existía
+- `Expand.svg` ya existía
+- `Folder.svg` ya existía
+- `Insert after.svg` ya existía
+- `Lock.svg` ya existía
+- `Move left.svg` ya existía
+- `Move right.svg` ya existía
+- `Open referenced record.svg` ya existía
+- `Open selected component variant.svg` ya existía
+- `Pause.svg` ya existía
+- `Pick icon.svg` ya existía
+- `Pick icons.svg` ya existía
+- `Play.svg` ya existía
+- `Rename.svg` ya existía
+- `Restore inherited value.svg` ya existía
+- `Save variant.svg` ya existía
+- `Settings.svg` ya existía
+- `Unlock.svg` ya existía
+- `Write-on.svg` ya existía
+- `Push.svg` ya existía
+- `In.svg` ya existía
+- `Previous Screen.svg` ya existía
+- `First Shot frame.svg` ya existía
+- `First frame in the selected scope.svg` ya existía
+- `Previous frame.svg` ya existía
+- `Play or pause the selected scope.svg` ya existía
+- `Next frame.svg` ya existía
+- `Last frame in the selected scope.svg` ya existía
+- `Next Screen.svg` ya existía
+- `Last Shot frame.svg` ya existía
+- `Recent design contexts.svg` ya existía
+- `Recent production contexts.svg` ya existía
+- `Add current design context to history.svg` ya existía
+- `Keep current design context.svg` ya existía
+- `Release design context.svg` ya existía
+- `Center.svg` ya existía
+- `Keys.svg` ya existía
+- `Interaction.svg` ya existía
+- `Normal.svg` ya existía
+- `Disabled.svg` ya existía
+- `Waveform.svg` ya existía
+- `Badge.svg` ya existía
+- `Neutral tint.svg` ya existía
+- `App colors.svg` ya existía
+- `Content colors.svg` ya existía
+- `Action and input colors.svg` ya existía
+- `Navigation and feedback colors.svg` ya existía
+- `Border colors.svg` ya existía
+- `Icon colors.svg` ya existía
+- `Icon sizes.svg` ya existía
+- `Font families.svg` ya existía
+- `Text sizes.svg` ya existía
+- `Style and line heights.svg` ya existía
 
 ## Glyphs no encontrados
 - `color_lens` (Palette Colors.svg) — not found: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/color_lens/materialsymbolsrounded/color_lens_24px.svg

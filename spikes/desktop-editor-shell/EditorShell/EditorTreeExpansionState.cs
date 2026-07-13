@@ -39,6 +39,10 @@ internal sealed class EditorTreeExpansionState
         var parent = node.Parent;
         while (parent is not null)
         {
+            if (EditorNavigationMetadata.IsWorkspaceSectionRoot(parent.Kind))
+            {
+                CollapseWorkspaceSectionPeers(parent);
+            }
             if (EditorNavigationMetadata.CollapseSiblingsWhenOpenedBySelection(parent))
             {
                 CollapseSiblingNodes(parent);
@@ -61,6 +65,12 @@ internal sealed class EditorTreeExpansionState
 
     private void CollapseVisibleNavigationPeers(ProjectTreeNode node)
     {
+        if (EditorNavigationMetadata.IsWorkspaceSectionRoot(node.Kind))
+        {
+            CollapseWorkspaceSectionPeers(node);
+            return;
+        }
+
         if (node.Kind == ProjectTreeNodeKind.Project)
         {
             foreach (var child in node.Children)
@@ -78,6 +88,27 @@ internal sealed class EditorTreeExpansionState
         }
 
         CollapseSiblingNodes(node);
+    }
+
+    private void CollapseWorkspaceSectionPeers(ProjectTreeNode node)
+    {
+        var project = node;
+        while (project.Parent is not null) project = project.Parent;
+        foreach (var section in Descendants(project)
+                     .Where((candidate) => EditorNavigationMetadata.IsWorkspaceSectionRoot(candidate.Kind))
+                     .Where((candidate) => candidate.Id != node.Id))
+        {
+            CollapseNodeAndDescendants(section);
+        }
+    }
+
+    private static IEnumerable<ProjectTreeNode> Descendants(ProjectTreeNode node)
+    {
+        foreach (var child in node.Children)
+        {
+            yield return child;
+            foreach (var descendant in Descendants(child)) yield return descendant;
+        }
     }
 
     private void CollapseNodeAndDescendants(ProjectTreeNode node)

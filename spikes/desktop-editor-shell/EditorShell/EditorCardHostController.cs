@@ -37,6 +37,7 @@ internal sealed class EditorCardHostController
         _wrappers.Clear();
         foreach (var card in candidateCards)
         {
+            card.IsExpanded = false;
             card.Expanded += (_, _) =>
             {
                 foreach (var other in _cards.Where((item) => item != card))

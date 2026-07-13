@@ -77,6 +77,29 @@ the existing shared cards, controls and layout helpers. Do not introduce local
 expanders, custom card chrome or one-off controls when an equivalent common
 surface exists. Extract a shared control before adding a reusable visual pattern.
 
+## Hard rule: editor organization is metadata-driven and session-only
+
+Reusable editor organization must be declared through shared layout metadata,
+never inferred from hierarchy depth, record class, card label or a concrete
+editor. Use the established shared presentations:
+
+- `flatStack` for repeated siblings that inherit the parent surface and use
+  separators instead of nested elevation;
+- `verticalCards` for vertical internal navigation with one selected child
+  content surface;
+- `separatedSections` for continuous field content divided by labelled rules;
+- per-group `presentation` when one card intentionally mixes organizations;
+- `pairLayout: sharedHeader` for groups of compound Light/Dark dictionary
+  values that share one column header.
+
+Dictionary controls own compound-control visuals. In particular,
+`PaletteColorPair` owns its two-column Light/Dark layout, compact sizing,
+ellipsis and border treatment; an editor must not restyle individual rows.
+
+Editor card expansion, internal selection and editor scroll position are
+session-only state. A new application session starts with every editor card
+closed. This state must not be written to `data/window-state.json`.
+
 ## Hard rule: padding uses spacing tokens
 
 Padding and gap fields must use `theme.spacing.*` tokens. Do not add raw numeric padding fields for component/editor values that represent visual spacing. For X/Y spacing, use a spacing-token pair.

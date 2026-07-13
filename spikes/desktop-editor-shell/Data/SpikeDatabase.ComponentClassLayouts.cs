@@ -19,6 +19,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "surface", "label": "Surface", "order": 10, "visible": true, "fields": [
                   { "id": "component.surface.backgroundColorToken", "order": 10, "visible": true },
@@ -66,6 +67,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
                   { "id": "component.textBox.dimensionMode", "order": 10, "visible": true },
@@ -130,16 +132,17 @@ internal sealed partial class SpikeDatabase
               "order": 30,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
-                { "id": "idleLeft", "label": "Left", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                { "id": "idleLeft", "label": "Left", "icon": "{{EditorIcons.SemanticAsset("Left icon row")}}", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.idleLeftIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.idleLeftIconRow.inputs", "order": 20, "visible": true }
                 ] },
-                { "id": "idleCenter", "label": "Center", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "idleCenter", "label": "Center", "icon": "{{EditorIcons.SemanticAsset("Center")}}", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.idleCenterIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.idleCenterIconRow.inputs", "order": 20, "visible": true }
                 ] },
-                { "id": "idleRight", "label": "Right", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "idleRight", "label": "Right", "icon": "{{EditorIcons.SemanticAsset("Right icon row")}}", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.idleRightIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.idleRightIconRow.inputs", "order": 20, "visible": true }
                 ] }
@@ -153,16 +156,17 @@ internal sealed partial class SpikeDatabase
               "order": 40,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
-                { "id": "activeLeft", "label": "Left", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                { "id": "activeLeft", "label": "Left", "icon": "{{EditorIcons.SemanticAsset("Left icon row")}}", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.activeLeftIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.activeLeftIconRow.inputs", "order": 20, "visible": true }
                 ] },
-                { "id": "activeCenter", "label": "Center", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "activeCenter", "label": "Center", "icon": "{{EditorIcons.SemanticAsset("Center")}}", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.activeCenterIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.activeCenterIconRow.inputs", "order": 20, "visible": true }
                 ] },
-                { "id": "activeRight", "label": "Right", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "activeRight", "label": "Right", "icon": "{{EditorIcons.SemanticAsset("Right icon row")}}", "order": 30, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
                   { "id": "component.iconBar.activeRightIconRow.editor", "order": 10, "visible": true },
                   { "id": "component.iconBar.activeRightIconRow.inputs", "order": 20, "visible": true }
                 ] }
@@ -179,6 +183,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "avatar", "label": "Avatar", "order": 10, "visible": true, "fields": [
                   { "id": "component.avatar.defaultSize", "order": 10, "visible": true },
@@ -203,13 +208,14 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
-                { "id": "appearance", "label": "Appearance", "order": 10, "visible": true, "fields": [
+                { "id": "appearance", "label": "Appearance", "icon": "{{EditorIcons.Style}}", "order": 10, "visible": true, "fields": [
                   { "id": "component.statusBar.foregroundColorToken", "order": 10, "visible": true },
                   { "id": "component.statusBar.backgroundColorToken", "order": 20, "visible": true },
                   { "id": "component.statusBar.backgroundAlpha", "order": 30, "visible": true }
                 ] },
-                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
+                { "id": "layout", "label": "Layout", "icon": "{{EditorIcons.Layout}}", "order": 20, "visible": true, "fields": [
                   { "id": "component.statusBar.layout.height", "order": 10, "visible": true },
                   { "id": "component.statusBar.layout.itemSize", "order": 20, "visible": true },
                   { "id": "component.statusBar.layout.gap", "order": 30, "visible": true },
@@ -228,13 +234,14 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
-                { "id": "appearance", "label": "Appearance", "order": 10, "visible": true, "fields": [
+                { "id": "appearance", "label": "Appearance", "icon": "{{EditorIcons.Style}}", "order": 10, "visible": true, "fields": [
                   { "id": "component.navigationBar.foregroundColorToken", "order": 10, "visible": true },
                   { "id": "component.navigationBar.backgroundColorToken", "order": 20, "visible": true },
                   { "id": "component.navigationBar.backgroundAlpha", "order": 30, "visible": true }
                 ] },
-                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
+                { "id": "layout", "label": "Layout", "icon": "{{EditorIcons.Layout}}", "order": 20, "visible": true, "fields": [
                   { "id": "component.navigationBar.type", "order": 10, "visible": true },
                   { "id": "component.navigationBar.layout.height", "order": 20, "visible": true },
                   { "id": "component.navigationBar.layout.itemSize", "order": 30, "visible": true },
@@ -243,7 +250,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.navigationBar.layout.cornerRadius", "order": 60, "visible": true },
                   { "id": "component.navigationBar.layout.filled", "order": 70, "visible": true }
                 ] },
-                { "id": "gesture", "label": "Gesture", "order": 30, "visible": true, "fields": [
+                { "id": "gesture", "label": "Gesture", "icon": "{{EditorIcons.Behavior}}", "order": 30, "visible": true, "fields": [
                   { "id": "component.navigationBar.gesture.width", "order": 10, "visible": true },
                   { "id": "component.navigationBar.gesture.height", "order": 20, "visible": true },
                   { "id": "component.navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
@@ -261,6 +268,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "bar", "label": "Bar", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.height", "order": 10, "visible": true },
@@ -277,6 +285,7 @@ internal sealed partial class SpikeDatabase
               "order": 30,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "textBox", "label": "Text box", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.textBox.editor", "order": 10, "visible": true },
@@ -292,6 +301,7 @@ internal sealed partial class SpikeDatabase
               "order": 40,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "iconDefaults", "label": "Icons", "order": 10, "visible": true, "fields": [
                   { "id": "component.textInput.iconGap", "order": 10, "visible": true },
@@ -310,8 +320,9 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
-                { "id": "keys", "label": "Keys", "order": 10, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                { "id": "keys", "label": "Keys", "icon": "{{EditorIcons.SemanticAsset("Keys")}}", "order": 10, "visible": true, "fields": [
                   { "id": "component.keyboard.language", "order": 10, "visible": true },
                   { "id": "component.keyboard.typography", "order": 20, "visible": true },
                   { "id": "component.keyboard.keyPadding", "order": 30, "visible": true },
@@ -321,7 +332,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.keyboard.pressedEffect", "order": 70, "visible": true },
                   { "id": "component.keyboard.emojiScale", "order": 80, "visible": true }
                 ] },
-                { "id": "iconRows", "label": "Icon bar", "order": 20, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "iconRows", "label": "Icon bar", "icon": "{{EditorIcons.SemanticAsset("Icon Bar")}}", "order": 20, "visible": true, "fields": [
                   { "id": "component.keyboard.iconRowPlacement", "order": 10, "visible": true },
                   { "id": "component.keyboard.iconRowsHeight", "order": 20, "visible": true },
                   { "id": "component.keyboard.iconEdgePadding", "order": 30, "visible": true },
@@ -339,36 +350,36 @@ internal sealed partial class SpikeDatabase
               "icon": "{{EditorIcons.ButtonIcon}}",
               "order": 20,
               "visible": true,
-              "defaultOpen": true,
+              "defaultOpen": false,
               "groups": [
-                { "id": "content", "label": "Content", "order": 10, "visible": true, "fields": [
+                { "id": "content", "label": "Content", "icon": "{{EditorIcons.Content}}", "presentation": "separatedSections", "order": 10, "visible": true, "fields": [
                   { "id": "component.button.iconToken", "order": 10, "visible": true },
                   { "id": "component.button.contentGapToken", "order": 30, "visible": true }
                 ] },
-                { "id": "layout", "label": "Layout", "order": 20, "visible": true, "fields": [
+                { "id": "layout", "label": "Layout", "icon": "{{EditorIcons.Layout}}", "presentation": "separatedSections", "order": 20, "visible": true, "fields": [
                   { "id": "component.button.dimensionMode", "order": 10, "visible": true },
                   { "id": "component.button.size", "order": 20, "visible": true },
                   { "id": "component.button.padding", "order": 30, "visible": true }
                 ] },
-                { "id": "interaction", "label": "Interaction", "order": 30, "visible": true, "fields": [
+                { "id": "interaction", "label": "Interaction", "icon": "{{EditorIcons.SemanticAsset("Interaction")}}", "presentation": "verticalCards", "order": 30, "visible": true, "fields": [
                   { "id": "component.button.pushedDurationToken", "order": 10, "visible": true }
                 ] },
-                { "id": "normalState", "label": "Normal", "order": 40, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": true, "fields": [
+                { "id": "normalState", "label": "Normal", "icon": "{{EditorIcons.SemanticAsset("Normal")}}", "presentation": "verticalCards", "order": 40, "visible": true, "fields": [
                   { "id": "component.button.states.normal.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.normal.label.editor", "order": 20, "visible": true },
                   { "id": "component.button.states.normal.iconColorToken", "order": 30, "visible": true }
                 ] },
-                { "id": "activeState", "label": "Active", "order": 50, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "activeState", "label": "Active", "icon": "{{EditorIcons.Status}}", "presentation": "verticalCards", "order": 50, "visible": true, "fields": [
                   { "id": "component.button.states.active.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.active.label.editor", "order": 20, "visible": true },
                   { "id": "component.button.states.active.iconColorToken", "order": 30, "visible": true }
                 ] },
-                { "id": "pushedState", "label": "Pushed", "order": 60, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "pushedState", "label": "Pushed", "icon": "{{EditorIcons.SemanticAsset("Push")}}", "presentation": "verticalCards", "order": 60, "visible": true, "fields": [
                   { "id": "component.button.states.pushed.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.pushed.label.editor", "order": 20, "visible": true },
                   { "id": "component.button.states.pushed.iconColorToken", "order": 30, "visible": true }
                 ] },
-                { "id": "disabledState", "label": "Disabled", "order": 70, "visible": true, "collapsible": true, "exclusive": true, "defaultOpen": false, "fields": [
+                { "id": "disabledState", "label": "Disabled", "icon": "{{EditorIcons.SemanticAsset("Disabled")}}", "presentation": "verticalCards", "order": 70, "visible": true, "fields": [
                   { "id": "component.button.states.disabled.surface.editor", "order": 10, "visible": true },
                   { "id": "component.button.states.disabled.label.editor", "order": 20, "visible": true },
                   { "id": "component.button.states.disabled.iconColorToken", "order": 30, "visible": true }
@@ -386,6 +397,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "label", "label": "Label", "order": 10, "visible": true, "fields": [
                   { "id": "component.label.dimensionMode", "order": 10, "visible": true },
@@ -415,20 +427,21 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
-                { "id": "audio", "label": "Audio", "order": 10, "visible": true, "fields": [
+                { "id": "audio", "label": "General", "icon": "{{EditorIcons.General}}", "order": 10, "visible": true, "fields": [
                   { "id": "component.audio.padding", "order": 10, "visible": true },
                   { "id": "component.audio.surface.editor", "order": 20, "visible": true },
                   { "id": "component.audio.durationLabel.editor", "order": 40, "visible": true }
                 ] },
-                { "id": "audioPlayback", "label": "Playback", "order": 20, "visible": true, "fields": [
+                { "id": "audioPlayback", "label": "Playback", "icon": "{{EditorIcons.Play}}", "order": 20, "visible": true, "fields": [
                   { "id": "component.audio.playCircleSize", "order": 10, "visible": true },
                   { "id": "component.audio.playIconPadding", "order": 20, "visible": true },
                   { "id": "component.audio.playColorToken", "order": 30, "visible": true },
                   { "id": "component.audio.playIconColorToken", "order": 40, "visible": true },
                   { "id": "component.audio.progressKnobSize", "order": 50, "visible": true }
                 ] },
-                { "id": "audioWaveform", "label": "Waveform", "order": 30, "visible": true, "fields": [
+                { "id": "audioWaveform", "label": "Waveform", "icon": "{{EditorIcons.SemanticAsset("Waveform")}}", "order": 30, "visible": true, "fields": [
                   { "id": "component.audio.waveformBarCount", "order": 10, "visible": true },
                   { "id": "component.audio.waveformGap", "order": 20, "visible": true },
                   { "id": "component.audio.waveformMinHeight", "order": 30, "visible": true },
@@ -436,12 +449,12 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.audio.waveformColorToken", "order": 50, "visible": true },
                   { "id": "component.audio.waveformPlayedColorToken", "order": 60, "visible": true }
                 ] },
-                { "id": "audioAvatar", "label": "Avatar", "order": 40, "visible": true, "fields": [
+                { "id": "audioAvatar", "label": "Avatar", "icon": "{{EditorIcons.Avatar}}", "order": 40, "visible": true, "fields": [
                   { "id": "component.audio.avatar.showAvatar", "order": 10, "visible": true },
                   { "id": "component.audio.avatar.placement", "order": 20, "visible": true },
                   { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
                 ] },
-                { "id": "audioBadge", "label": "Badge", "order": 50, "visible": true, "fields": [
+                { "id": "audioBadge", "label": "Badge", "icon": "{{EditorIcons.SemanticAsset("Badge")}}", "order": 50, "visible": true, "fields": [
                   { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
                   { "id": "component.audio.badge.size", "order": 20, "visible": true },
                   { "id": "component.audio.badge.iconToken", "order": 30, "visible": true },
@@ -461,6 +474,7 @@ internal sealed partial class SpikeDatabase
               "order": 20,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "media", "label": "Media", "order": 10, "visible": true, "fields": [
                   { "id": "component.media.surface.editor", "order": 10, "visible": true }
@@ -654,6 +668,7 @@ internal sealed partial class SpikeDatabase
               "order": 80,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "separatedSections",
               "groups": [
                 { "id": "bubbleStatusGeneral", "label": "General", "order": 10, "visible": true, "fields": [
                   { "id": "component.bubble.status.size", "order": 10, "visible": true },

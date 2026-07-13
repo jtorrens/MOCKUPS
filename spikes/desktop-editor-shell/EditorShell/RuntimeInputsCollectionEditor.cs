@@ -25,6 +25,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
+    private readonly Dictionary<string, string> _internalNavigationSelections = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _internalExpansionStates = new(StringComparer.Ordinal);
     private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
@@ -67,11 +69,11 @@ internal sealed class RuntimeInputsCollectionEditor
             Items =
             {
                 new TabItem { Header = owner.IsInstance ? "Runtime Values" : "Test Values", Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions) },
-                new TabItem { Header = "Runtime API", Content = CreateApiTab(inputs, collections) },
+                new TabItem { Header = "Runtime API", Content = CreateApiTab(owner, inputs, collections) },
             },
         };
 
-        return new InstantEditorCard(
+        var card = new InstantEditorCard(
             EditorCardHeader.Create(
                 "Runtime Inputs",
                 $"{EditorUiText.Count(inputs.Count, "input")} · {EditorUiText.Count(collections.Count, "collection")}",
@@ -79,9 +81,12 @@ internal sealed class RuntimeInputsCollectionEditor
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
+        EditorGroupBlock.ApplyContentSeparator(card);
+        return card;
     }
 
     private Control CreateApiTab(
+        RuntimeInputOwner owner,
         IReadOnlyList<ComponentInputDefinition> inputs,
         IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
@@ -92,23 +97,39 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        foreach (var input in ComponentInputGrouping.OwnInputs(inputs))
+        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        var sections = new List<EditorInternalNavigationSection>();
+        var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
+        var ownInputs = ComponentInputGrouping.OwnInputs(inputs).ToList();
+        if (ownInputs.Count > 0)
         {
-            panel.Children.Add(CreateApiInputRow(input));
+            var general = new StackPanel { Spacing = 6 };
+            foreach (var input in ownInputs) general.Children.Add(CreateApiInputRow(input));
+            sections.Add(new EditorInternalNavigationSection(
+                "general",
+                "General",
+                "API fields",
+                EditorIcons.General,
+                general));
         }
 
-        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
-        var groupCards = new List<InstantEditorCard>();
-        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        foreach (var groupId in topLevelGroupIds)
         {
-            panel.Children.Add(CreateApiGroupCard(groupId, groups, groupCards));
+            sections.Add(CreateApiGroupSubcard(groupId, groups));
         }
         foreach (var collection in collections)
         {
-            panel.Children.Add(CreateApiCollectionCard(collection, out var card));
-            groupCards.Add(card);
+            sections.Add(new EditorInternalNavigationSection(
+                collection.Id,
+                collection.Label,
+                "Collection API",
+                EditorIcons.Component,
+                CreateApiCollectionContent(collection)));
         }
-        EditorGroupBlock.WireExclusiveCards(groupCards);
+        panel.Children.Add(CreateSessionSubcardLayout(
+            $"{owner.Node.Id}:runtime-api",
+            sections,
+            EditorSubcardLayout.VerticalCards));
 
         return panel;
     }
@@ -147,7 +168,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 MinWidth = 150,
                 Content = "Reset test values",
             };
-            ToolTip.SetTip(reset, "Descarta los cambios temporales de este Preview.");
+            ToolTip.SetTip(reset, "Discard temporary changes for this Preview.");
             reset.Click += (_, args) =>
             {
                 args.Handled = true;
@@ -222,23 +243,39 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        foreach (var input in ComponentInputGrouping.OwnInputs(inputs))
-        {
-            panel.Children.Add(CreateTestValueControl(owner, preview, input));
-        }
-
         var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
-        var groupCards = new List<InstantEditorCard>();
-        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        var sections = new List<EditorInternalNavigationSection>();
+        var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
+        var ownInputs = ComponentInputGrouping.OwnInputs(inputs).ToList();
+        if (ownInputs.Count > 0)
         {
-            panel.Children.Add(CreateTestValueGroupCard(owner, preview, groupId, groups, groupCards));
+            sections.Add(new EditorInternalNavigationSection(
+                "general",
+                "General",
+                "Runtime inputs",
+                EditorIcons.General,
+                CreateSeparatedInputContent(owner, preview, ownInputs),
+                ShowLabel: false));
+        }
+        foreach (var groupId in topLevelGroupIds)
+        {
+            sections.Add(CreateTestValueGroupSubcard(owner, preview, groupId, groups));
         }
         foreach (var collection in collections)
         {
-            panel.Children.Add(CreateTestValueCollectionCard(owner, preview, collection, actions, out var card));
-            groupCards.Add(card);
+            var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+            sections.Add(new EditorInternalNavigationSection(
+                collection.Id,
+                collection.Label,
+                $"{items.Count} active {EditorUiText.Noun(items.Count, "instance")}",
+                EditorIcons.Component,
+                CreateTestValueCollectionContent(owner, preview, collection, actions, items)));
         }
-        EditorGroupBlock.WireExclusiveCards(groupCards);
+        panel.Children.Add(EditorGroupBlock.CreateSeparator());
+        panel.Children.Add(CreateSessionSubcardLayout(
+            $"{owner.Node.Id}:test-values",
+            sections,
+            EditorSubcardLayout.VerticalCards));
 
         void UpdatePlaybackState()
         {
@@ -249,6 +286,26 @@ internal sealed class RuntimeInputsCollectionEditor
         panel.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
         UpdatePlaybackState();
         return panel;
+    }
+
+    private Control CreateSeparatedInputContent(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        IReadOnlyList<ComponentInputDefinition> inputs)
+    {
+        var content = new StackPanel { Spacing = 8 };
+        var sectionLabel = "";
+        foreach (var input in inputs)
+        {
+            if (!string.IsNullOrWhiteSpace(input.UiSectionLabel)
+                && !string.Equals(sectionLabel, input.UiSectionLabel, StringComparison.Ordinal))
+            {
+                content.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
+                sectionLabel = input.UiSectionLabel;
+            }
+            content.Children.Add(CreateTestValueControl(owner, preview, input));
+        }
+        return content;
     }
 
     private Control CreateApiInputRow(ComponentInputDefinition input)
@@ -268,9 +325,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
     }
 
-    private Control CreateApiCollectionCard(
-        RuntimeInputCollectionDefinition collection,
-        out InstantEditorCard card)
+    private Control CreateApiCollectionContent(RuntimeInputCollectionDefinition collection)
     {
         var content = new StackPanel { Spacing = 6 };
         content.Children.Add(new TextBlock
@@ -283,17 +338,12 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateApiInputRow(field));
         }
-        return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.CreateSemantic(collection.Label, EditorIcons.Component, 16)),
-            content,
-            out card,
-            isExpanded: false);
+        return content;
     }
 
-    private Control CreateApiGroupCard(
+    private EditorInternalNavigationSection CreateApiGroupSubcard(
         string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
-        List<InstantEditorCard> siblingCards)
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
     {
         var groupInputs = groups[groupId];
         var content = new StackPanel { Spacing = 6 };
@@ -301,13 +351,19 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateApiInputRow(input));
         }
-        var childCards = new List<InstantEditorCard>();
+        var childSubcards = new List<EditorInternalNavigationSection>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
-            content.Children.Add(CreateApiGroupCard(childId, groups, childCards));
+            childSubcards.Add(CreateApiGroupSubcard(childId, groups));
         }
-        EditorGroupBlock.WireExclusiveCards(childCards);
-        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content, siblingCards);
+        return new EditorInternalNavigationSection(
+            groupId,
+            ComponentInputGrouping.GroupLabel(groupInputs),
+            "API fields",
+            EditorIcons.Component,
+            content,
+            Subcards: childSubcards,
+            SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 
     private Control CreateTestValueControl(
@@ -339,27 +395,50 @@ internal sealed class RuntimeInputsCollectionEditor
         return DecorateAnimationToggle(owner, input, "", control);
     }
 
-    private Control CreateTestValueCollectionCard(
+    private Control CreateTestValueCollectionContent(
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
-        out InstantEditorCard card)
+        IReadOnlyList<JsonObject> items)
     {
-        var content = new StackPanel { Spacing = 8 };
-        var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+        var footer = new StackPanel { Spacing = 8 };
         if (items.Count == 0)
         {
-            content.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
+            footer.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
         }
 
-        var itemCards = new List<InstantEditorCard>();
+        var subcards = new List<EditorInternalNavigationSection>();
         for (var index = 0; index < items.Count; index++)
         {
-            content.Children.Add(CreateTestValueCollectionItemCard(owner, preview, collection, actions, index, items[index], out var itemCard));
-            itemCards.Add(itemCard);
+            var itemId = ItemId(items[index], index);
+            var expansionKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:expanded";
+            var navigationKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:vertical-card";
+            _internalExpansionStates.TryGetValue(expansionKey, out var isExpanded);
+            _internalNavigationSelections.TryGetValue(navigationKey, out var selectedSubcardId);
+            var itemContent = CreateTestValueCollectionItemContent(
+                owner,
+                preview,
+                collection,
+                actions,
+                index,
+                items[index],
+                out var trailing,
+                out var itemSubcards);
+            subcards.Add(new EditorInternalNavigationSection(
+                itemId,
+                $"{collection.ItemLabel} {index + 1}",
+                $"Payload item {index + 1}",
+                EditorIcons.Component,
+                itemContent,
+                trailing,
+                itemSubcards,
+                EditorSubcardLayout.VerticalCards,
+                isExpanded,
+                (next) => _internalExpansionStates[expansionKey] = next,
+                selectedSubcardId,
+                (next) => _internalNavigationSelections[navigationKey] = next));
         }
-        EditorGroupBlock.WireExclusiveCards(itemCards);
 
         if (owner.IsInstance)
         {
@@ -375,27 +454,27 @@ internal sealed class RuntimeInputsCollectionEditor
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
-            content.Children.Add(add);
+            footer.Children.Add(add);
         }
 
-        return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create(
-                collection.Label,
-                $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} {EditorUiText.Noun(items.Count, "instance")}",
-                EditorIcons.CreateSemantic(collection.Label, EditorIcons.Component, 16)),
-            content,
-            out card,
-            isExpanded: true);
+        var content = new StackPanel { Spacing = EditorUiDensity.Card(8) };
+        content.Children.Add(new EditorSubcardLayoutHost(subcards, EditorSubcardLayout.FlatStack));
+        if (footer.Children.Count > 0)
+        {
+            content.Children.Add(footer);
+        }
+        return content;
     }
 
-    private Control CreateTestValueCollectionItemCard(
+    private Control CreateTestValueCollectionItemContent(
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item,
-        out InstantEditorCard card)
+        out Button? delete,
+        out IReadOnlyList<EditorInternalNavigationSection> subcards)
     {
         var content = new StackPanel { Spacing = 8 };
         var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
@@ -406,7 +485,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionJsonKey == collection.JsonKey
                 && action.CollectionItemId == itemId)
             .ToList();
-        Button? delete = null;
+        delete = null;
         if (owner.IsInstance)
         {
             delete = new Button
@@ -478,20 +557,23 @@ internal sealed class RuntimeInputsCollectionEditor
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(collection.Fields);
-        var groupCards = new List<InstantEditorCard>();
-        foreach (var groupId in ComponentInputGrouping.TopLevelGroupIds(groups))
+        var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
+        var groupSubcards = new List<EditorInternalNavigationSection>();
+        foreach (var groupId in topLevelGroupIds)
         {
-            content.Children.Add(CreateTestValueCollectionGroupCard(
-                owner, preview, collection, itemIndex, item, groupId, groups, groupCards, RefreshActionVisibility));
+            groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
+                owner, preview, collection, itemIndex, item, groupId, groups, RefreshActionVisibility));
         }
-        EditorGroupBlock.WireExclusiveCards(groupCards);
+        subcards = groupSubcards;
 
-        return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"Payload item {itemIndex + 1}", EditorIcons.CreateSemantic(collection.ItemLabel, EditorIcons.Component, 14)),
-            content,
-            out card,
-            isExpanded: true,
-            headerTrailing: delete);
+        return content;
+    }
+
+    private static string ItemId(JsonObject item, int index)
+    {
+        return item["id"] is JsonValue value && value.TryGetValue<string>(out var id)
+            ? id
+            : $"item-{index}";
     }
 
     private Control CreateTestValueCollectionControl(
@@ -592,7 +674,7 @@ internal sealed class RuntimeInputsCollectionEditor
         return row;
     }
 
-    private Control CreateTestValueCollectionGroupCard(
+    private EditorInternalNavigationSection CreateTestValueCollectionGroupSubcard(
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
@@ -600,7 +682,6 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         string groupId,
         IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
-        List<InstantEditorCard> siblingCards,
         Action? afterCommit = null)
     {
         var groupInputs = groups[groupId];
@@ -617,20 +698,20 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input, afterCommit));
         }
 
-        var childCards = new List<InstantEditorCard>();
+        var childSubcards = new List<EditorInternalNavigationSection>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
-            content.Children.Add(CreateTestValueCollectionGroupCard(
-                owner, preview, collection, itemIndex, item, childId, groups, childCards, afterCommit));
+            childSubcards.Add(CreateTestValueCollectionGroupSubcard(
+                owner, preview, collection, itemIndex, item, childId, groups, afterCommit));
         }
-        EditorGroupBlock.WireExclusiveCards(childCards);
-        var cardSurface = EditorGroupBlock.CreateCollapsible(
-            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Runtime inputs", EditorIcons.CreateSemantic(ComponentInputGrouping.GroupLabel(groupInputs), EditorIcons.Component, 14)),
+        return new EditorInternalNavigationSection(
+            groupId,
+            ComponentInputGrouping.GroupLabel(groupInputs),
+            "Runtime inputs",
+            EditorIcons.Component,
             content,
-            out var card,
-            isExpanded: false);
-        siblingCards.Add(card);
-        return cardSurface;
+            Subcards: childSubcards,
+            SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 
     private static bool CollectionFieldIsEnabled(JsonObject item, ComponentInputDefinition input)
@@ -648,39 +729,40 @@ internal sealed class RuntimeInputsCollectionEditor
         return input.EnabledWhenItemValues.Contains(current, StringComparer.Ordinal);
     }
 
-    private Control CreateTestValueGroupCard(
+    private EditorInternalNavigationSection CreateTestValueGroupSubcard(
         RuntimeInputOwner owner,
         JsonObject preview,
         string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups,
-        List<InstantEditorCard> siblingCards)
+        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
     {
         var groupInputs = groups[groupId];
-        var content = new StackPanel { Spacing = 8 };
-        foreach (var input in groupInputs)
-        {
-            content.Children.Add(CreateTestValueControl(owner, preview, input));
-        }
-        var childCards = new List<InstantEditorCard>();
+        var content = CreateSeparatedInputContent(owner, preview, groupInputs);
+        var childSubcards = new List<EditorInternalNavigationSection>();
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
-            content.Children.Add(CreateTestValueGroupCard(owner, preview, childId, groups, childCards));
+            childSubcards.Add(CreateTestValueGroupSubcard(owner, preview, childId, groups));
         }
-        EditorGroupBlock.WireExclusiveCards(childCards);
-        return CreateEmbeddedCard(ComponentInputGrouping.GroupLabel(groupInputs), content, siblingCards);
+        return new EditorInternalNavigationSection(
+            groupId,
+            ComponentInputGrouping.GroupLabel(groupInputs),
+            "Runtime inputs",
+            EditorIcons.Component,
+            content,
+            Subcards: childSubcards,
+            SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 
-    private static Control CreateEmbeddedCard(
-        string label,
-        Control content,
-        List<InstantEditorCard> siblingCards)
+    private Control CreateSessionSubcardLayout(
+        string stateKey,
+        IReadOnlyList<EditorInternalNavigationSection> sections,
+        EditorSubcardLayout layout)
     {
-        var card = EditorGroupBlock.CreateCollapsible(
-            EditorCardHeader.Create(label, "Embedded component inputs", EditorIcons.CreateSemantic(label, EditorIcons.Component, 16)),
-            content,
-            out var groupCard);
-        siblingCards.Add(groupCard);
-        return card;
+        _internalNavigationSelections.TryGetValue(stateKey, out var selectedId);
+        return new EditorSubcardLayoutHost(
+            sections,
+            layout,
+            selectedId,
+            (next) => _internalNavigationSelections[stateKey] = next);
     }
 
     private static Control CreateActionContent(ComponentPreviewActionDefinition action)

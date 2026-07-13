@@ -118,6 +118,33 @@ DictionaryControlRegistry
 
 Each value editor owns its internal layout, validation, commit gesture, picker trigger, and display invariants.
 
+### Shared editor layout baseline
+
+The desktop spike now has a metadata-driven organization layer that must be
+extended rather than bypassed:
+
+```text
+card groupLayout
+  + optional group presentation
+  -> stacked | flatStack | verticalCards | separatedSections
+  -> shared EditorSubcardLayoutHost / EditorGroupBlock
+```
+
+`verticalCards` is the code/metadata name for the vertical-tab treatment.
+`flatStack` is reserved for repeated siblings that share the parent surface.
+`separatedSections` is field content separated by labelled rules. Mixed cards,
+such as Button, declare the presentation per group rather than branching on
+component type.
+
+Group-level compound presentation is also metadata-driven. A group containing
+Light/Dark palette pairs may declare `pairLayout: sharedHeader`; the registered
+`PaletteColorPair` control then owns equal columns, compact widths, ellipsis and
+the removal of repeated row labels/borders.
+
+Expansion, selected internal section and scroll restoration are session-only.
+Do not add these values to persisted window state, and do not reopen a default
+card automatically in a fresh process.
+
 ## Phase 6: refine ValueKind
 
 Split broad kinds into semantic kinds before adding local exceptions.

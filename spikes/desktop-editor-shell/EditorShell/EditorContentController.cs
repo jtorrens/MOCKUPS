@@ -65,7 +65,7 @@ internal sealed class EditorContentController
                 Icon = ownerSettings.Icon,
                 Order = 0,
                 Visible = true,
-                DefaultOpen = true,
+                DefaultOpen = false,
                 Groups =
                 [
                     new EditorLayoutGroup

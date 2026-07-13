@@ -232,6 +232,7 @@ internal sealed partial class SpikeDatabase
             var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
             var changed = RemoveJsonValue(tokens, ["modes", "light", "keyboard", "popoverBackground"])
                 | RemoveJsonValue(tokens, ["modes", "dark", "keyboard", "popoverBackground"])
+                | RemoveJsonValue(tokens, ["typography", "size"])
                 | MergeMissing(tokens, defaults);
             if (!changed)
             {
@@ -427,7 +428,6 @@ internal sealed partial class SpikeDatabase
                 ["fontFamilyId"] = textFontFamilyId,
                 ["systemFontFamilyId"] = textFontFamilyId,
                 ["emojiFontFamilyId"] = emojiFontFamilyId,
-                ["size"] = isAndroid ? 15 : 16,
                 ["sizes"] = new JsonObject
                 {
                     ["xs"] = 10,

@@ -180,7 +180,55 @@ Examples of disallowed manual value controls:
 - ad hoc color picker outside the color control;
 - ad hoc X/Y layout outside the pair control.
 
-## 5A. Embedded components are recursive component slots
+## 5A. Shared editor organization vocabulary
+
+Editor cards organize fields and child cards through layout metadata. Their
+organization must not be selected by record class, hierarchy depth, field
+count, label text or a one-off Avalonia exception.
+
+The shared vocabulary is:
+
+- `stacked`: ordinary sequential groups using the standard shared group
+  surface;
+- `flatStack`: repeated sibling objects inherit the parent card surface and
+  are separated by full-width rules, without additional elevation or a lower
+  color tier;
+- `verticalCards`: vertical internal navigation on the left and the selected
+  child content on the right; this is the implementation name for the vertical
+  tab treatment;
+- `separatedSections`: continuous content where semantic groups are divided by
+  a label followed by a horizontal rule, without nested subcard chrome;
+- group-level `presentation`: an explicit override that permits one card to
+  combine organizations without teaching the renderer about that editor.
+
+When fields belong directly to an owner that also has child cards, the direct
+fields use a generic `General` child card. Its own semantic groups use
+`separatedSections`. A selected section must not repeat a heading that is
+already supplied by the selected navigation item.
+
+Internal navigation is a shared control. It owns keyboard navigation,
+selection, responsive content placement, dividers and session state. Editors
+only provide sections and metadata.
+
+All editor cards start closed in a fresh application session. Expansion,
+internal selection and scroll position may be restored when returning to the
+same editor during that session, but must never be persisted between
+application sessions.
+
+Compound dictionary controls keep ownership of their internal presentation.
+For `PaletteColorPair`, a group may opt into `pairLayout: sharedHeader`:
+
+- `Light` and `Dark` appear once as shared column headings;
+- every pair remains in two columns, including at narrow widths;
+- selector text clips with ellipsis instead of widening or stacking the pair;
+- repeated per-row Light/Dark labels and pair borders are removed by the
+  dictionary control itself, not by Theme or another editor.
+
+Semantic editor icons come from reusable files under
+`assets/system/system_icons/components`. Add a dedicated asset when an existing
+semantic icon is not appropriate; do not draw a local icon inside an editor.
+
+## 5B. Embedded components are recursive component slots
 
 Embedded components must follow the component composition contract in
 `docs/architecture/23_embedded_component_composition_contract.md`.
@@ -200,7 +248,7 @@ The short version:
 This is intentionally recursive. A child component can later embed another
 component through the same slot/override mechanism.
 
-## 5B. Preview boundaries must not leak component knowledge
+## 5C. Preview boundaries must not leak component knowledge
 
 Preview work has three separate responsibilities:
 
@@ -245,7 +293,7 @@ component contract/resolver
 
 Common preview helpers must not import concrete component resolvers/renderables or contain concrete component names. Embedded component imports are allowed only when the parent component explicitly owns that child slot, for example avatar -> label or audio -> avatar/button icon.
 
-## 5C. Component inputs are not preview-only
+## 5D. Component inputs are not preview-only
 
 Inputs exposed by a component are part of the component runtime contract.
 
@@ -298,7 +346,7 @@ The web renderer may add support for a new generic primitive, but that primitive
 
 Animation follows the same boundary. Resolvers own component state for the requested frame, and the bridge may translate that resolved frame into final pixels. The web preview/render layer must not run timers, CSS animations, countdowns, or component-specific interpolation. For web preview, an animated component is only a succession of resolved frames.
 
-## 5C. `MainWindow` is shell-only
+## 5E. `MainWindow` is shell-only
 
 `MainWindow` may orchestrate the desktop shell, but it must not implement individual editors.
 
@@ -346,7 +394,7 @@ EditorShell/*
   preview helper controls
 ```
 
-## 5A. Field commits are a shared editor-shell behavior
+## 5F. Field commits are a shared editor-shell behavior
 
 Dictionary controls may emit local editing events while the user types, selects, or while Avalonia initializes a control. Those local events must not be treated as final record commits by each editor independently.
 

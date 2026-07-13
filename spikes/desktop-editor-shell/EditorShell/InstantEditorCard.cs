@@ -6,17 +6,19 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using System;
+using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class InstantEditorCard : Grid
 {
     private readonly TextBlock _indicator;
-    private readonly ContentControl _contentHost;
+    private readonly Border _contentHost;
     private bool _isExpanded;
 
     public InstantEditorCard(Control header, Control content, bool isExpanded, Control? headerTrailing = null)
     {
+        SubcardLayout = EditorSubcardLayout.Stacked;
         RowDefinitions = new RowDefinitions("Auto,Auto");
 
         var headerRow = new Border
@@ -77,9 +79,9 @@ internal sealed class InstantEditorCard : Grid
         Grid.SetRow(headerRow, 0);
         Children.Add(headerRow);
 
-        _contentHost = new ContentControl
+        _contentHost = new Border
         {
-            Content = content,
+            Child = content,
         };
         Grid.SetRow(_contentHost, 1);
         Children.Add(_contentHost);
@@ -88,7 +90,34 @@ internal sealed class InstantEditorCard : Grid
         ApplyExpandedState();
     }
 
+    public InstantEditorCard(
+        Control header,
+        IReadOnlyList<EditorInternalNavigationSection> subcards,
+        EditorSubcardLayout subcardLayout,
+        bool isExpanded,
+        string? selectedSubcardId = null,
+        Action<string>? subcardSelectionChanged = null,
+        Control? footer = null,
+        Control? headerTrailing = null)
+        : this(
+            header,
+            ComposeSubcards(subcards, subcardLayout, selectedSubcardId, subcardSelectionChanged, footer),
+            isExpanded,
+            headerTrailing)
+    {
+        SubcardLayout = subcardLayout;
+    }
+
+    public EditorSubcardLayout SubcardLayout { get; }
+
     public event EventHandler? Expanded;
+    public event Action<bool>? ExpansionChanged;
+
+    public void SetContentSeparator(IBrush brush)
+    {
+        _contentHost.BorderBrush = brush;
+        _contentHost.BorderThickness = new Thickness(0, 1, 0, 0);
+    }
 
     public bool IsExpanded
     {
@@ -99,6 +128,7 @@ internal sealed class InstantEditorCard : Grid
 
             _isExpanded = value;
             ApplyExpandedState();
+            ExpansionChanged?.Invoke(_isExpanded);
             if (_isExpanded)
             {
                 DeferredBringIntoView.Request(this);
@@ -111,5 +141,26 @@ internal sealed class InstantEditorCard : Grid
     {
         _contentHost.IsVisible = _isExpanded;
         _indicator.Text = _isExpanded ? "v" : ">";
+    }
+
+    private static Control ComposeSubcards(
+        IReadOnlyList<EditorInternalNavigationSection> subcards,
+        EditorSubcardLayout layout,
+        string? selectedSubcardId,
+        Action<string>? selectionChanged,
+        Control? footer)
+    {
+        Control organized = new EditorSubcardLayoutHost(
+            subcards, layout, selectedSubcardId, selectionChanged);
+        if (footer is null) return organized;
+        return new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(10),
+            Children =
+            {
+                organized,
+                footer,
+            },
+        };
     }
 }

@@ -106,7 +106,10 @@ internal sealed partial class SpikeDatabase
                 || audioLayout.Contains("component.audio.badge.iconColor", StringComparison.Ordinal)
                 || audioLayout.Contains("component.audio.textSize", StringComparison.Ordinal)
                 || audioLayout.Contains("component.audio.textColorToken", StringComparison.Ordinal)
-                || !audioLayout.Contains("component.audio.badge.size", StringComparison.Ordinal)))
+                || !audioLayout.Contains("component.audio.badge.size", StringComparison.Ordinal)
+                || !audioLayout.Contains("navigation-asset:Waveform", StringComparison.Ordinal)
+                || !audioLayout.Contains("navigation-asset:Badge", StringComparison.Ordinal)
+                || !audioLayout.Contains("\"groupLayout\": \"verticalCards\"", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
@@ -134,12 +137,25 @@ internal sealed partial class SpikeDatabase
                 || mediaLayout.Contains("component.media.idleText.textAlign", StringComparison.Ordinal)
                 || mediaLayout.Contains("component.media.playText.textColorToken", StringComparison.Ordinal)
                 || mediaLayout.Contains("component.media.playText.typography", StringComparison.Ordinal)
-                || mediaLayout.Contains("component.media.playText.textAlign", StringComparison.Ordinal)))
+                || mediaLayout.Contains("component.media.playText.textAlign", StringComparison.Ordinal)
+                || !mediaLayout.Contains("\"groupLayout\": \"separatedSections\"", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.media'",
                 ("$layoutJson", MinimalEditorLayoutJson("component.media")));
+        }
+
+        var bubbleLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.bubble'");
+        if (!string.IsNullOrWhiteSpace(bubbleLayout)
+            && !bubbleLayout.Contains("\"groupLayout\": \"separatedSections\"", StringComparison.Ordinal))
+        {
+            Execute(
+                connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.bubble'",
+                ("$layoutJson", MinimalEditorLayoutJson("component.bubble")));
         }
 
         var themeLayout = ScalarString(
@@ -152,6 +168,10 @@ internal sealed partial class SpikeDatabase
                 || !themeLayout.Contains("theme.keyboard.keyBorder", StringComparison.Ordinal)
                 || themeLayout.Contains("theme.keyboard.popoverBackground", StringComparison.Ordinal)
                 || themeLayout.Contains("theme.radii.control", StringComparison.Ordinal)
+                || themeLayout.Contains("theme.typography.size\"", StringComparison.Ordinal)
+                || !themeLayout.Contains("\"id\": \"fontFamilies\"", StringComparison.Ordinal)
+                || !themeLayout.Contains("\"id\": \"iconSizes\"", StringComparison.Ordinal)
+                || !themeLayout.Contains("\"pairLayout\": \"sharedHeader\"", StringComparison.Ordinal)
                 || !IsValidLayoutJson(themeLayout)))
         {
             Execute(
@@ -170,7 +190,8 @@ internal sealed partial class SpikeDatabase
                 || keyboardLayout.Contains("component.keyboard.keyGapToken", StringComparison.Ordinal)
                 || keyboardLayout.Contains("component.keyboard.rowGapToken", StringComparison.Ordinal)
                 || keyboardLayout.Contains("component.keyboard.specialKeyTextScale", StringComparison.Ordinal)
-                || keyboardLayout.Contains("component.style.cornerRadiusToken", StringComparison.Ordinal)))
+                || keyboardLayout.Contains("component.style.cornerRadiusToken", StringComparison.Ordinal)
+                || !keyboardLayout.Contains("navigation-asset:Keys", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
@@ -183,12 +204,44 @@ internal sealed partial class SpikeDatabase
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.iconBar'");
         if (!string.IsNullOrWhiteSpace(iconBarLayout)
             && (iconBarLayout.Contains("component.iconBar.iconButton.editor", StringComparison.Ordinal)
-                || !iconBarLayout.Contains("component.iconBar.sizeSource", StringComparison.Ordinal)))
+                || !iconBarLayout.Contains("component.iconBar.sizeSource", StringComparison.Ordinal)
+                || !iconBarLayout.Contains("navigation-asset:Center", StringComparison.Ordinal)))
         {
             Execute(
                 connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.iconBar'",
                 ("$layoutJson", MinimalEditorLayoutJson("component.iconBar")));
+        }
+
+        foreach (var (recordClassId, requiredPresentation, requiredAsset) in new[]
+        {
+            ("component.surface", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.textBox", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.avatar", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.label", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.iconBar", "\"groupLayout\": \"verticalCards\"", "navigation-asset:Center"),
+            ("component.button", "\"presentation\": \"verticalCards\"", "navigation-asset:Interaction"),
+            ("component.status_bar", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.navigation_bar", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.textInputBar", "\"groupLayout\": \"separatedSections\"", ""),
+            ("component.keyboard", "\"groupLayout\": \"verticalCards\"", "navigation-asset:Keys"),
+            ("theme", "\"groupLayout\": \"verticalCards\"", "navigation-asset:Neutral tint"),
+        })
+        {
+            var layout = ScalarString(
+                connection,
+                "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId",
+                ("$recordClassId", recordClassId));
+            if (!string.IsNullOrWhiteSpace(layout)
+                && (!layout.Contains(requiredPresentation, StringComparison.Ordinal)
+                    || (requiredAsset.Length > 0 && !layout.Contains(requiredAsset, StringComparison.Ordinal))))
+            {
+                Execute(
+                    connection,
+                    "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
+                    ("$recordClassId", recordClassId),
+                    ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
+            }
         }
 
         foreach (var (recordClassId, requiredField, retiredField) in new[]
@@ -534,10 +587,12 @@ internal sealed partial class SpikeDatabase
               "order": 30,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
                 {
                   "id": "neutralTint",
                   "label": "Neutral tint",
+                  "icon": "{{EditorIcons.SemanticAsset("Neutral tint")}}",
                   "order": 10,
                   "visible": true,
                   "fields": [
@@ -548,6 +603,8 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "appColors",
                   "label": "App colors",
+                  "icon": "{{EditorIcons.SemanticAsset("App colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 20,
                   "visible": true,
                   "fields": [
@@ -560,6 +617,8 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "contentColors",
                   "label": "Content colors",
+                  "icon": "{{EditorIcons.SemanticAsset("Content colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 30,
                   "visible": true,
                   "fields": [
@@ -573,6 +632,8 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "actionInputColors",
                   "label": "Action and input colors",
+                  "icon": "{{EditorIcons.SemanticAsset("Action and input colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 40,
                   "visible": true,
                   "fields": [
@@ -586,6 +647,8 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "navigationFeedbackColors",
                   "label": "Navigation and feedback colors",
+                  "icon": "{{EditorIcons.SemanticAsset("Navigation and feedback colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 50,
                   "visible": true,
                   "fields": [
@@ -599,6 +662,8 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "borderColors",
                   "label": "Border colors",
+                  "icon": "{{EditorIcons.SemanticAsset("Border colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 60,
                   "visible": true,
                   "fields": [
@@ -610,6 +675,7 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "cursor",
                   "label": "Cursor",
+                  "icon": "{{EditorIcons.TextInput}}",
                   "order": 70,
                   "visible": true,
                   "fields": [
@@ -680,10 +746,13 @@ internal sealed partial class SpikeDatabase
               "order": 38,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
                 {
                   "id": "iconColors",
                   "label": "Icon colors",
+                  "icon": "{{EditorIcons.SemanticAsset("Icon colors")}}",
+                  "pairLayout": "sharedHeader",
                   "order": 10,
                   "visible": true,
                   "fields": [
@@ -696,6 +765,7 @@ internal sealed partial class SpikeDatabase
                 {
                   "id": "iconSizes",
                   "label": "Icon sizes",
+                  "icon": "{{EditorIcons.SemanticAsset("Icon sizes")}}",
                   "order": 20,
                   "visible": true,
                   "fields": [
@@ -716,29 +786,48 @@ internal sealed partial class SpikeDatabase
               "order": 40,
               "visible": true,
               "defaultOpen": false,
+              "groupLayout": "verticalCards",
               "groups": [
                 {
-                  "id": "typography",
-                  "label": "Typography",
+                  "id": "fontFamilies",
+                  "label": "Font families",
+                  "icon": "{{EditorIcons.SemanticAsset("Font families")}}",
                   "order": 10,
                   "visible": true,
                   "fields": [
                     { "id": "theme.typography.fontFamilyId", "order": 10, "visible": true },
                     { "id": "theme.typography.systemFontFamilyId", "order": 20, "visible": true },
-                    { "id": "theme.typography.emojiFontFamilyId", "order": 30, "visible": true },
-                    { "id": "theme.typography.size", "order": 40, "visible": true },
-                    { "id": "theme.typography.sizes.xs", "order": 50, "visible": true },
-                    { "id": "theme.typography.sizes.s", "order": 60, "visible": true },
-                    { "id": "theme.typography.sizes.m", "order": 70, "visible": true },
-                    { "id": "theme.typography.sizes.l", "order": 80, "visible": true },
-                    { "id": "theme.typography.sizes.xl", "order": 90, "visible": true },
-                    { "id": "theme.typography.weight", "order": 100, "visible": true },
-                    { "id": "theme.typography.style", "order": 110, "visible": true },
-                    { "id": "theme.typography.lineHeights.tight", "order": 120, "visible": true },
-                    { "id": "theme.typography.lineHeights.compact", "order": 130, "visible": true },
-                    { "id": "theme.typography.lineHeights.normal", "order": 140, "visible": true },
-                    { "id": "theme.typography.lineHeights.relaxed", "order": 150, "visible": true },
-                    { "id": "theme.typography.lineHeights.loose", "order": 160, "visible": true }
+                    { "id": "theme.typography.emojiFontFamilyId", "order": 30, "visible": true }
+                  ]
+                },
+                {
+                  "id": "typographySizes",
+                  "label": "Text sizes",
+                  "icon": "{{EditorIcons.SemanticAsset("Text sizes")}}",
+                  "order": 20,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.typography.sizes.xs", "order": 10, "visible": true },
+                    { "id": "theme.typography.sizes.s", "order": 20, "visible": true },
+                    { "id": "theme.typography.sizes.m", "order": 30, "visible": true },
+                    { "id": "theme.typography.sizes.l", "order": 40, "visible": true },
+                    { "id": "theme.typography.sizes.xl", "order": 50, "visible": true }
+                  ]
+                },
+                {
+                  "id": "typographyStyle",
+                  "label": "Style and line heights",
+                  "icon": "{{EditorIcons.SemanticAsset("Style and line heights")}}",
+                  "order": 30,
+                  "visible": true,
+                  "fields": [
+                    { "id": "theme.typography.weight", "order": 10, "visible": true },
+                    { "id": "theme.typography.style", "order": 20, "visible": true },
+                    { "id": "theme.typography.lineHeights.tight", "order": 30, "visible": true },
+                    { "id": "theme.typography.lineHeights.compact", "order": 40, "visible": true },
+                    { "id": "theme.typography.lineHeights.normal", "order": 50, "visible": true },
+                    { "id": "theme.typography.lineHeights.relaxed", "order": 60, "visible": true },
+                    { "id": "theme.typography.lineHeights.loose", "order": 70, "visible": true }
                   ]
                 }
               ]
@@ -858,7 +947,7 @@ internal sealed partial class SpikeDatabase
               "icon": "{{EditorIcons.Header}}",
               "order": 25,
               "visible": true,
-              "defaultOpen": true,
+              "defaultOpen": false,
               "groups": [
                 {
                   "id": "header",
@@ -883,7 +972,7 @@ internal sealed partial class SpikeDatabase
               "icon": "{{EditorIcons.Status}}",
               "order": 30,
               "visible": true,
-              "defaultOpen": true,
+              "defaultOpen": false,
               "groups": [
                 {
                   "id": "status-bar",
@@ -992,7 +1081,7 @@ internal sealed partial class SpikeDatabase
               "icon": "{{EditorIcons.General}}",
               "order": 10,
               "visible": true,
-              "defaultOpen": true,
+              "defaultOpen": false,
               "groups": [
                 {
                   "id": "identity",

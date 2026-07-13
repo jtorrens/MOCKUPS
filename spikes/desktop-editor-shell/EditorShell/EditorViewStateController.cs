@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorViewStateController
 {
     private readonly ScrollViewer _scrollViewer;
-    private readonly Dictionary<string, EditorViewState> _statesByRecordClassId = [];
+    private readonly Dictionary<string, EditorViewState> _statesByNodeId = [];
 
     public EditorViewStateController(ScrollViewer scrollViewer)
     {
@@ -17,7 +17,7 @@ internal sealed class EditorViewStateController
 
     public bool ShouldPreserve(ProjectTreeNode? previousNode, ProjectTreeNode nextNode)
     {
-        return previousNode?.RecordClassId == nextNode.RecordClassId;
+        return previousNode is not null;
     }
 
     public void Capture(ProjectTreeNode? node, IReadOnlyList<InstantEditorCard> cards)
@@ -27,13 +27,13 @@ internal sealed class EditorViewStateController
         var state = CaptureState(cards);
         if (state is not null)
         {
-            _statesByRecordClassId[node.RecordClassId] = state;
+            _statesByNodeId[node.Id] = state;
         }
     }
 
     public void Restore(ProjectTreeNode node, IReadOnlyList<InstantEditorCard> cards)
     {
-        if (!_statesByRecordClassId.TryGetValue(node.RecordClassId, out var state))
+        if (!_statesByNodeId.TryGetValue(node.Id, out var state))
         {
             return;
         }

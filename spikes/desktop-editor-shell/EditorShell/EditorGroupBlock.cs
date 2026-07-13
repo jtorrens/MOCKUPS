@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,25 +47,115 @@ internal static class EditorGroupBlock
 
     public static Control CreateInlineSection(string label)
     {
-        return new StackPanel
+        var header = new Grid
         {
-            Spacing = EditorUiDensity.Card(5),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = EditorUiDensity.Card(8),
             Margin = EditorUiDensity.CardThickness(0, 6, 0, 0),
-            Children =
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        header.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Opacity = 0.66,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var separator = new Border
+        {
+            Height = 1,
+            Background = SeparatorBrush(),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(separator, 1);
+        header.Children.Add(separator);
+        return header;
+    }
+
+    public static Control CreateSeparator()
+    {
+        return new Border
+        {
+            Height = 1,
+            Background = SeparatorBrush(),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+    }
+
+    public static Control CreatePairColumnHeader(PairFieldLabels labels)
+    {
+        var pairHeader = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = EditorUiDensity.Card(10),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        pairHeader.Children.Add(PairHeaderLabel(labels.First, 0));
+        pairHeader.Children.Add(PairHeaderLabel(labels.Second, 1));
+
+        var header = new Grid
+        {
+            ColumnDefinitions = DictionaryFieldLayoutRules.Columns(ValueKind.PaletteColorPair),
+            ColumnSpacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        Grid.SetColumn(pairHeader, 1);
+        header.Children.Add(pairHeader);
+        return header;
+    }
+
+    private static TextBlock PairHeaderLabel(string label, int column)
+    {
+        var text = new TextBlock
+        {
+            Text = label,
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Opacity = 0.66,
+            Margin = EditorUiDensity.CardThickness(10, 0, 10, 0),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        Grid.SetColumn(text, column);
+        return text;
+    }
+
+    public static Control CreateFlatCollapsible(
+        string label,
+        string subtitle,
+        string icon,
+        Control content,
+        out InstantEditorCard card,
+        bool isExpanded = false,
+        Control? headerTrailing = null,
+        double hierarchyIndent = 0)
+    {
+        card = new InstantEditorCard(
+            EditorCardHeader.Create(
+                label,
+                subtitle,
+                EditorIcons.CreateSemantic(label, icon, 15)),
+            new Border
             {
-                new Border
-                {
-                    Height = 1,
-                    Background = new SolidColorBrush(Color.FromArgb(42, 255, 255, 255)),
-                },
-                new TextBlock
-                {
-                    Text = label,
-                    FontSize = 11,
-                    FontWeight = FontWeight.SemiBold,
-                    Opacity = 0.66,
-                },
+                Padding = EditorUiDensity.CardThickness(10, 4, 10, 12),
+                Child = content,
             },
+            isExpanded,
+            headerTrailing)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        return new Border
+        {
+            BorderBrush = SeparatorBrush(),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = hierarchyIndent > 0
+                ? new Border
+                {
+                    Padding = new Thickness(hierarchyIndent, 0, 0, 0),
+                    Child = card,
+                }
+                : card,
         };
     }
 
@@ -78,7 +170,7 @@ internal static class EditorGroupBlock
                 Opacity = 0.82,
             },
             content,
-            group.DefaultOpen)
+            isExpanded: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -127,6 +219,61 @@ internal static class EditorGroupBlock
         return NestedCardSurface(card);
     }
 
+    public static Control CreateInheritedCard(
+        Control header,
+        Control content,
+        out InstantEditorCard card,
+        bool isExpanded = false,
+        Control? headerTrailing = null)
+    {
+        card = new InstantEditorCard(
+            header,
+            new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
+            isExpanded,
+            headerTrailing)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        card.SetContentSeparator(SeparatorBrush());
+        return new Border
+        {
+            BorderBrush = SeparatorBrush(),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = card,
+        };
+    }
+
+    public static Control CreateNestedCard(
+        Control header,
+        IReadOnlyList<EditorInternalNavigationSection> subcards,
+        EditorSubcardLayout subcardLayout,
+        out InstantEditorCard card,
+        bool isExpanded = false,
+        string? selectedSubcardId = null,
+        Action<string>? subcardSelectionChanged = null,
+        Control? footer = null,
+        Control? headerTrailing = null)
+    {
+        card = new InstantEditorCard(
+            header,
+            subcards,
+            subcardLayout,
+            isExpanded,
+            selectedSubcardId,
+            subcardSelectionChanged,
+            footer,
+            headerTrailing)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        if (subcardLayout == EditorSubcardLayout.FlatStack)
+        {
+            card.SetContentSeparator(SeparatorBrush());
+            return card;
+        }
+        return NestedCardSurface(card);
+    }
+
     public static Control NestedCardSurface(InstantEditorCard card)
     {
         return GroupBorder(card);
@@ -152,6 +299,11 @@ internal static class EditorGroupBlock
         {
             extraOpenCard.IsExpanded = false;
         }
+    }
+
+    public static void ApplyContentSeparator(InstantEditorCard card)
+    {
+        card.SetContentSeparator(SeparatorBrush());
     }
 
     private static Control CreateHeaderedPanel(EditorLayoutGroup group, Control content)
@@ -194,5 +346,11 @@ internal static class EditorGroupBlock
             BoxShadow = BoxShadows.Parse("0 3 8 0 #18000000"),
             Child = child,
         };
+    }
+
+    private static IBrush SeparatorBrush()
+    {
+        var isDark = Application.Current?.ActualThemeVariant != ThemeVariant.Light;
+        return EditorUiVisuals.ScrollbarSeparatorBrush(isDark);
     }
 }

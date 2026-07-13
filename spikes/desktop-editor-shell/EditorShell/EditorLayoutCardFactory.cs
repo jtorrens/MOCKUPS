@@ -25,6 +25,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<string, Task> _openComponentPresetReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action _refreshPreview;
+    private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
 
     public EditorLayoutCardFactory(
         EditorFieldValueRouter fieldValues,
@@ -67,11 +68,14 @@ internal sealed class EditorLayoutCardFactory
         var controls = new List<DictionaryFieldControl>();
         var headerIcon = EditorIcons.CreateSemantic(layoutCard.Label, layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
+        var groupLayout = ParseGroupLayout(layoutCard.GroupLayout);
         var useSectionChrome = visibleGroups.Count > 1;
         var exclusiveGroupCards = new List<InstantEditorCard>();
+        var organizedGroups = new List<(EditorLayoutGroup Group, Control Content, EditorSubcardLayout Layout)>();
 
         foreach (var group in visibleGroups)
         {
+            var groupControls = new List<DictionaryFieldControl>();
             var groupPanel = new StackPanel
             {
                 Spacing = EditorUiDensity.Card(12),
@@ -93,6 +97,7 @@ internal sealed class EditorLayoutCardFactory
                     field,
                     services);
                 controls.Add(control);
+                groupControls.Add(control);
                 _activeFieldControls.Register(control);
                 control.ValueCommitted += (_, value) =>
                 {
@@ -118,11 +123,18 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(GroupControl(group, LocalHorizontalViewport(groupPanel), useSectionChrome, exclusiveGroupCards));
+                var groupContent = GroupContent(group, groupPanel, groupControls);
+                organizedGroups.Add((group, groupContent, EffectiveGroupLayout(group, groupLayout)));
             }
         }
 
-        WireExclusiveGroups(exclusiveGroupCards);
+        ComposeOrganizedGroups(
+            body,
+            layoutCard,
+            $"{node.RecordClassId}:{layoutCard.Id}",
+            organizedGroups,
+            useSectionChrome,
+            exclusiveGroupCards);
 
         if (body.Children.Count == 0)
         {
@@ -145,6 +157,10 @@ internal sealed class EditorLayoutCardFactory
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        if (organizedGroups.Any((item) => item.Layout == EditorSubcardLayout.VerticalCards))
+        {
+            EditorGroupBlock.ApplyContentSeparator(card);
+        }
         EditorCardHeader.SetOverrideState(headerIcon, controls);
         foreach (var control in controls)
         {
@@ -167,11 +183,14 @@ internal sealed class EditorLayoutCardFactory
         var controls = new List<DictionaryFieldControl>();
         var headerIcon = EditorIcons.CreateSemantic(layoutCard.Label, layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
+        var groupLayout = ParseGroupLayout(layoutCard.GroupLayout);
         var useSectionChrome = visibleGroups.Count > 1;
         var exclusiveGroupCards = new List<InstantEditorCard>();
+        var organizedGroups = new List<(EditorLayoutGroup Group, Control Content, EditorSubcardLayout Layout)>();
 
         foreach (var group in visibleGroups)
         {
+            var groupControls = new List<DictionaryFieldControl>();
             var groupPanel = new StackPanel
             {
                 Spacing = EditorUiDensity.Card(12),
@@ -197,6 +216,7 @@ internal sealed class EditorLayoutCardFactory
                     (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)));
                 var control = new DictionaryFieldControl(field, services);
                 controls.Add(control);
+                groupControls.Add(control);
                 _activeFieldControls.Register(control);
                 control.ValueCommitted += (_, value) =>
                 {
@@ -247,11 +267,18 @@ internal sealed class EditorLayoutCardFactory
 
             if (groupPanel.Children.Count > 0)
             {
-                body.Children.Add(GroupControl(group, LocalHorizontalViewport(groupPanel), useSectionChrome, exclusiveGroupCards));
+                var groupContent = GroupContent(group, groupPanel, groupControls);
+                organizedGroups.Add((group, groupContent, EffectiveGroupLayout(group, groupLayout)));
             }
         }
 
-        WireExclusiveGroups(exclusiveGroupCards);
+        ComposeOrganizedGroups(
+            body,
+            layoutCard,
+            $"{context.OwnerNode.RecordClassId}:{layoutCard.Id}:embedded",
+            organizedGroups,
+            useSectionChrome,
+            exclusiveGroupCards);
 
         var embeddedBody = new Border
         {
@@ -267,6 +294,10 @@ internal sealed class EditorLayoutCardFactory
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        if (organizedGroups.Any((item) => item.Layout == EditorSubcardLayout.VerticalCards))
+        {
+            EditorGroupBlock.ApplyContentSeparator(card);
+        }
         EditorCardHeader.SetOverrideState(headerIcon, controls);
         foreach (var control in controls)
         {
@@ -335,6 +366,92 @@ internal sealed class EditorLayoutCardFactory
         return button;
     }
 
+    private Control CreateGroupLayoutHost(
+        string stateKey,
+        IReadOnlyList<EditorInternalNavigationSection> sections,
+        EditorSubcardLayout layout)
+    {
+        _groupNavigationSelections.TryGetValue(stateKey, out var selectedId);
+        return new EditorSubcardLayoutHost(
+            sections,
+            layout,
+            selectedId,
+            (nextId) => _groupNavigationSelections[stateKey] = nextId);
+    }
+
+    private void ComposeOrganizedGroups(
+        StackPanel body,
+        EditorLayoutCard layoutCard,
+        string stateKey,
+        IReadOnlyList<(EditorLayoutGroup Group, Control Content, EditorSubcardLayout Layout)> groups,
+        bool useSectionChrome,
+        List<InstantEditorCard> exclusiveGroupCards)
+    {
+        var blockIndex = 0;
+        EditorSubcardLayout? previousLayout = null;
+        for (var index = 0; index < groups.Count;)
+        {
+            var layout = groups[index].Layout;
+            if (previousLayout is not null && previousLayout != layout)
+            {
+                body.Children.Add(EditorGroupBlock.CreateSeparator());
+            }
+            previousLayout = layout;
+            if (layout == EditorSubcardLayout.Stacked)
+            {
+                body.Children.Add(GroupControl(groups[index].Group, groups[index].Content, useSectionChrome, exclusiveGroupCards));
+                index++;
+                continue;
+            }
+
+            var sections = new List<EditorInternalNavigationSection>();
+            while (index < groups.Count && groups[index].Layout == layout)
+            {
+                var item = groups[index];
+                sections.Add(CreateGroupSection(layoutCard, item.Group, item.Content, index));
+                index++;
+            }
+            body.Children.Add(CreateGroupLayoutHost($"{stateKey}:block:{blockIndex++}", sections, layout));
+        }
+        WireExclusiveGroups(exclusiveGroupCards);
+    }
+
+    private static EditorSubcardLayout EffectiveGroupLayout(
+        EditorLayoutGroup group,
+        EditorSubcardLayout cardLayout)
+    {
+        return string.IsNullOrWhiteSpace(group.Presentation)
+            ? cardLayout
+            : ParseGroupLayout(group.Presentation);
+    }
+
+    private static EditorInternalNavigationSection CreateGroupSection(
+        EditorLayoutCard layoutCard,
+        EditorLayoutGroup group,
+        Control content,
+        int index)
+    {
+        return new EditorInternalNavigationSection(
+            group.Id,
+            group.Label,
+            "Editor fields",
+            string.IsNullOrWhiteSpace(group.Icon) ? EditorIcons.Component : group.Icon,
+            content,
+            ShowLabel: !(index == 0
+                && group.Label.Equals(layoutCard.Label, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static EditorSubcardLayout ParseGroupLayout(string value)
+    {
+        return value switch
+        {
+            "flatStack" => EditorSubcardLayout.FlatStack,
+            "verticalCards" => EditorSubcardLayout.VerticalCards,
+            "separatedSections" => EditorSubcardLayout.SeparatedSections,
+            _ => EditorSubcardLayout.Stacked,
+        };
+    }
+
     private static Control GroupControl(
         EditorLayoutGroup group,
         Control groupPanel,
@@ -357,18 +474,44 @@ internal sealed class EditorLayoutCardFactory
             : EditorGroupBlock.CreatePlain(group, groupPanel);
     }
 
-    private static Control LocalHorizontalViewport(StackPanel groupPanel)
+    private static Control GroupContent(
+        EditorLayoutGroup group,
+        StackPanel groupPanel,
+        IReadOnlyList<DictionaryFieldControl> controls)
     {
-        if (!groupPanel.Children
-                .OfType<DictionaryFieldControl>()
-                .Any((control) => control.RequiresLocalHorizontalViewport))
+        Control content = groupPanel;
+        if (group.PairLayout.Equals("sharedHeader", StringComparison.Ordinal))
         {
-            return groupPanel;
+            PairFieldLabels? labels = null;
+            foreach (var control in controls)
+            {
+                var controlLabels = control.UseSharedPairHeader();
+                labels ??= controlLabels;
+            }
+            if (labels is not null)
+            {
+                var compactGroup = new StackPanel { Spacing = EditorUiDensity.Card(8) };
+                compactGroup.Children.Add(EditorGroupBlock.CreatePairColumnHeader(labels));
+                compactGroup.Children.Add(groupPanel);
+                content = compactGroup;
+            }
+        }
+
+        return LocalHorizontalViewport(content, controls);
+    }
+
+    private static Control LocalHorizontalViewport(
+        Control content,
+        IReadOnlyList<DictionaryFieldControl> controls)
+    {
+        if (!controls.Any((control) => control.RequiresLocalHorizontalViewport))
+        {
+            return content;
         }
 
         return new ScrollViewer
         {
-            Content = groupPanel,
+            Content = content,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             HorizontalAlignment = HorizontalAlignment.Stretch,

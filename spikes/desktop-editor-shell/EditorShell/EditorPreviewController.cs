@@ -207,6 +207,7 @@ internal sealed class EditorPreviewController
     private string _shotTimelineContextNodeId = "";
     private string _shotNavigationScope = "shot";
     private bool _isUpdatingShotTimeline;
+    private int? _pendingExplicitScreenFrame;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
@@ -753,15 +754,15 @@ internal sealed class EditorPreviewController
         EditorAccessibility.Describe(_shotEndButton, "Last frame in the selected scope");
         EditorAccessibility.Describe(_shotNextSlotButton, "Next Screen");
         EditorAccessibility.Describe(_shotAbsoluteEndButton, "Last Shot frame");
-        _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false);
+        _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false, synchronizeScreenSelection: true);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
-        _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame);
-        _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1);
+        _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame, synchronizeScreenSelection: true);
+        _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1, synchronizeScreenSelection: true);
         _shotPlayButton.Click += (_, _) => ToggleShotPlayback();
-        _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1);
-        _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame);
+        _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1, synchronizeScreenSelection: true);
+        _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame, synchronizeScreenSelection: true);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
-        _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false);
+        _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false, synchronizeScreenSelection: true);
 
         var controlsRow = new Grid
         {
@@ -1011,6 +1012,8 @@ internal sealed class EditorPreviewController
                 SetShotPreviewFrame(range.StartFrame + (int)Math.Round(_shotFrameSlider.Value, MidpointRounding.AwayFromZero));
             }
         };
+        _shotFrameSlider.PointerReleased += (_, _) => SynchronizeExplicitScreenSelection();
+        _shotFrameSlider.KeyUp += (_, _) => SynchronizeExplicitScreenSelection();
         _shotNavigationScopeComboBox.SelectionChanged += (_, _) =>
         {
             if (_shotNavigationScopeComboBox.SelectedItem is not { } option || _isUpdatingShotTimeline) return;
@@ -2151,13 +2154,16 @@ internal sealed class EditorPreviewController
         var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shotId);
         if (_shotTimelineShotId != shotId || _shotTimelineContextNodeId != contextNode?.Id)
         {
+            var pendingExplicitFrame = _pendingExplicitScreenFrame;
+            _pendingExplicitScreenFrame = null;
             _shotTimelineShotId = shotId;
             _shotTimelineContextNodeId = contextNode?.Id ?? "";
             SetShotNavigationScope(
                 contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance ? "screen" : "shot");
-            _shotPreviewFrame = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
-                ? ModuleInstanceStartFrame(shotId, contextNode.Id)
-                : 0;
+            _shotPreviewFrame = pendingExplicitFrame
+                ?? (contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
+                    ? ModuleInstanceStartFrame(shotId, contextNode.Id)
+                    : 0);
         }
         _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, 0, Math.Max(0, duration - 1));
         var range = NavigationFrameRange();
@@ -2209,7 +2215,10 @@ internal sealed class EditorPreviewController
         return (start, start + duration - 1, duration);
     }
 
-    private void SetShotPreviewFrame(int frame, bool useSelectedScope = true)
+    private void SetShotPreviewFrame(
+        int frame,
+        bool useSelectedScope = true,
+        bool synchronizeScreenSelection = false)
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
@@ -2218,8 +2227,13 @@ internal sealed class EditorPreviewController
             ? NavigationFrameRange()
             : (StartFrame: 0, EndFrame: ShotLastFrame(), DurationFrames: ShotLastFrame() + 1);
         var next = Math.Clamp(frame, range.StartFrame, range.EndFrame);
-        if (next == _shotPreviewFrame) return;
+        if (next == _shotPreviewFrame)
+        {
+            if (synchronizeScreenSelection) SynchronizeExplicitScreenSelection();
+            return;
+        }
         _shotPreviewFrame = next;
+        if (synchronizeScreenSelection && SynchronizeExplicitScreenSelection()) return;
         Refresh();
     }
 
@@ -2258,7 +2272,27 @@ internal sealed class EditorPreviewController
         StopShotPlayback();
         _shotPreviewFrame = start;
         SetShotNavigationScope("screen");
-        _selectNodeById(slots[target].Id, null);
+        SelectExplicitScreen(slots[target].Id);
+    }
+
+    private bool SynchronizeExplicitScreenSelection()
+    {
+        if (IsPreviewPlaybackActive) return false;
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)) return false;
+        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var target = ActiveShotSlotIndex(shotId);
+        if (target < 0 || target >= slots.Count) return false;
+        if (string.Equals(_selectedNode()?.Id, slots[target].Id, StringComparison.Ordinal)) return false;
+        return SelectExplicitScreen(slots[target].Id);
+    }
+
+    private bool SelectExplicitScreen(string screenId)
+    {
+        _pendingExplicitScreenFrame = _shotPreviewFrame;
+        if (_selectNodeById(screenId, null)) return true;
+        _pendingExplicitScreenFrame = null;
+        return false;
     }
 
     private int ModuleInstanceStartFrame(string shotId, string instanceId)

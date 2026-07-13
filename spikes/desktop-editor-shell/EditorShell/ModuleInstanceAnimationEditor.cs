@@ -75,7 +75,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 EditorUiText.Count(activeTrackCount, "animated property"),
                 EditorIcons.CreateSemantic("Animation", EditorIcons.Animation, 18)),
             new Border { Padding = new Thickness(10), Child = content },
-            isExpanded: true)
+            isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
     }
 
