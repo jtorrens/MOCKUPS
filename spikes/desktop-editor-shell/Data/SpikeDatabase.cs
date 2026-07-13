@@ -52,8 +52,10 @@ internal sealed partial class SpikeDatabase
         if (HasUserTables(connection))
         {
             ValidateSchemaV1(connection);
+            NormalizeAppWallpaperContracts(connection);
             EnsureThemeTokens(connection);
             EnsureButtonComponentClasses(connection);
+            EnsureLockScreenModule(connection);
             NormalizeIconRowButtonCollections(connection);
             RetireButtonIconComponentClasses(connection);
             NormalizeRadiusTokenVocabulary(connection);
@@ -84,9 +86,11 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureButtonComponentClasses(connection);
+        EnsureLockScreenModule(connection);
         NormalizeIconRowButtonCollections(connection);
         RetireButtonIconComponentClasses(connection);
         SeedThemesIfEmpty(connection);
+        NormalizeAppWallpaperContracts(connection);
         EnsureThemeTokens(connection);
         NormalizeRadiusTokenVocabulary(connection);
         NormalizeModuleAppearanceModes(connection);

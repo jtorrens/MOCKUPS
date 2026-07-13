@@ -17,6 +17,9 @@ Current summary:
 
 - Conversation, Bubble, Text Input Bar, Keyboard, Media and Audio are active
   on the component resolver -> renderable -> generic renderer route.
+- Lock Screen is active on its module resolver -> renderable route. It owns the
+  composition of its status/navigation presets and consumes the generic
+  Actor/App wallpaper contract without adding bridge or renderer rules.
 - The atoms and system bars are active on the same route.
 - The behavior reference records the remaining Conversation shared-time,
   message-schema, generic text/emoji and video-preview limitations.

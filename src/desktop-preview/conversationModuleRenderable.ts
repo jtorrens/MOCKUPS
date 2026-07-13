@@ -27,10 +27,9 @@ import {
   renderableVisualBounds,
   renderScale,
   selectedColor,
-  selectedPaletteColor,
   translateRenderableNode,
 } from "./componentRenderableCommon.js";
-import { mediaFrameUriForPath } from "./previewAssetResolver.js";
+import { wallpaperRenderable } from "./wallpaperRenderable.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
@@ -59,7 +58,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     "useAppWallpaper",
     "module.conversation.useAppWallpaper",
   )
-    ? appWallpaperNode(payload, screen)
+    ? wallpaperRenderable(payload, screen)
     : undefined;
   if (wallpaper) children.push(wallpaper);
 
@@ -238,54 +237,6 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       overflow: "hidden",
     },
     children,
-  };
-}
-
-function appWallpaperNode(
-  payload: DesignPreviewPayload,
-  screen: NonNullable<RenderableNode["box"]>,
-): RenderableNode | undefined {
-  const appConfig = parseObject(payload.appConfigJson ?? "{}");
-  const wallpaper = asRecord(appConfig.wallpaper);
-  const opacity = Math.max(0, Math.min(1, optionalNumber(wallpaper, "opacity", 1)));
-  if (opacity <= 0) return undefined;
-
-  const image = asRecord(wallpaper.image);
-  const filePath = optionalString(image, "filePath");
-  const kind = optionalString(wallpaper, "kind") || (filePath ? "image" : "solid");
-  if (kind === "image") {
-    const frame = mediaFrameUriForPath(payload, filePath, 0);
-    if (frame.uri) {
-      return {
-        id: "module.conversation.wallpaper.image",
-        type: "image",
-        frame: 0,
-        box: screen,
-        asset: {
-          type: "image",
-          uri: frame.uri,
-        },
-        style: {
-          objectFit: "cover",
-          opacity,
-        },
-      };
-    }
-  }
-
-  const modes = asRecord(appConfig.modes);
-  const mode = asRecord(modes[payload.themeMode || "light"]);
-  const modeWallpaper = asRecord(mode.wallpaper);
-  const colorToken = optionalString(modeWallpaper, "color");
-  if (!colorToken) return undefined;
-  return {
-    id: "module.conversation.wallpaper.color",
-    type: "surface",
-    frame: 0,
-    box: screen,
-    style: {
-      background: selectedPaletteColor(payload, colorToken, opacity),
-    },
   };
 }
 

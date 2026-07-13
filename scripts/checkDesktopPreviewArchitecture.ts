@@ -1207,6 +1207,12 @@ allowedComponentImports["src/desktop-preview/conversationModuleRenderable.ts"] =
   "./textInputBarComponentRenderable.js",
   "./textInputBarComponentResolver.js",
 ]);
+allowedComponentImports["src/desktop-preview/lockScreenModuleRenderable.ts"] = new Set([
+  "./navigationBarComponentRenderable.js",
+  "./navigationBarComponentResolver.js",
+  "./statusBarComponentRenderable.js",
+  "./statusBarComponentResolver.js",
+]);
 
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);

@@ -261,7 +261,8 @@ internal sealed partial class SpikeDatabase
     {
         using var connection = OpenConnection();
         if (fieldId == "module.appearanceMode"
-            || fieldId.StartsWith("module.conversation.", StringComparison.Ordinal))
+            || fieldId.StartsWith("module.conversation.", StringComparison.Ordinal)
+            || fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal))
         {
             UpdateModuleConfigField(connection, moduleId, fieldId, value);
             return;
@@ -318,6 +319,8 @@ internal sealed partial class SpikeDatabase
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
             "module.conversation.messageViewportMotion" => JsonPath.Get(config, ["conversation", "messageViewportMotion"])?.ToJsonString()
                 ?? (MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString(),
+            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarVariant"]),
+            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarVariant"]),
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
         };
     }
@@ -358,15 +361,14 @@ internal sealed partial class SpikeDatabase
         var settings = GetAppSettings(appId);
         var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
         var lightWallpaperColor = JsonString(config, ["modes", "light", "wallpaper", "color"]);
-        if (string.IsNullOrWhiteSpace(lightWallpaperColor)) lightWallpaperColor = "gray_100";
         var darkWallpaperColor = JsonString(config, ["modes", "dark", "wallpaper", "color"]);
-        if (string.IsNullOrWhiteSpace(darkWallpaperColor)) darkWallpaperColor = "gray_000";
         return fieldId switch
         {
-            "app.wallpaper.kind" => JsonString(config, ["wallpaper", "kind"]) is { Length: > 0 } kind ? kind : "solid",
-            "app.wallpaper.opacity" => JsonNumberString(config, ["wallpaper", "opacity"], "1"),
+            "app.wallpaper.kind" => JsonString(config, ["wallpaper", "kind"]),
+            "app.wallpaper.opacity" => JsonNumberString(config, ["wallpaper", "opacity"]),
             "app.wallpaper.color" => $"{lightWallpaperColor}|{darkWallpaperColor}",
-            "app.wallpaper.image.filePath" => JsonString(config, ["wallpaper", "image", "filePath"]),
+            "app.wallpaper.images.light.filePath" => JsonString(config, ["wallpaper", "images", "light", "filePath"]),
+            "app.wallpaper.images.dark.filePath" => JsonString(config, ["wallpaper", "images", "dark", "filePath"]),
             _ => throw new InvalidOperationException($"Unknown app config field '{fieldId}'."),
         };
     }
@@ -404,8 +406,11 @@ internal sealed partial class SpikeDatabase
                     ["modes", "dark", "wallpaper", "color"],
                     asNumber: false);
                 break;
-            case "app.wallpaper.image.filePath":
-                SetJsonValue(config, ["wallpaper", "image", "filePath"], JsonValue.Create(value)!);
+            case "app.wallpaper.images.light.filePath":
+                SetJsonValue(config, ["wallpaper", "images", "light", "filePath"], JsonValue.Create(value)!);
+                break;
+            case "app.wallpaper.images.dark.filePath":
+                SetJsonValue(config, ["wallpaper", "images", "dark", "filePath"], JsonValue.Create(value)!);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown app config field '{fieldId}'.");
@@ -585,6 +590,12 @@ internal sealed partial class SpikeDatabase
                 break;
             case "module.conversation.messageViewportMotion":
                 SetJsonValue(config, ["conversation", "messageViewportMotion"], JsonNode.Parse(MotionVariantValue.Parse(value).ToJsonString())!);
+                break;
+            case "module.lockScreen.statusBarVariant":
+                SetJsonValue(config, ["lockScreen", "statusBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
+                break;
+            case "module.lockScreen.navigationBarVariant":
+                SetJsonValue(config, ["lockScreen", "navigationBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");

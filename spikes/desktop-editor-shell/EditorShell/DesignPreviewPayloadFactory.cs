@@ -262,6 +262,11 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
         var appSettings = database.GetModuleAppSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
+        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+        var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
+        runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
+            ? ActorPreviewInputFactory.CreateSample()
+            : ActorPreviewInputFactory.Create(database, actorId, effectiveThemeMode, paletteColors);
         return new DesignPreviewPayload(
             "module",
             node.Name,
@@ -274,7 +279,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.RecordClassId,
-            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson),
+            runtimePreview.ToJsonString(),
             componentBaseConfigsJson,
             appSettings.ConfigJson,
             ThemeMode: effectiveThemeMode);

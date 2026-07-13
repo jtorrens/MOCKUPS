@@ -79,9 +79,14 @@ internal static class RecordClassFieldCatalog
             ValueKind.Decimal,
             Number: new NumberDefinition(0, 1, 0.05m, 2)),
         ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
-        ["app.wallpaper.image.filePath"] = new(
-            "app.wallpaper.image.filePath",
-            "Image",
+        ["app.wallpaper.images.light.filePath"] = new(
+            "app.wallpaper.images.light.filePath",
+            "Light image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(ImagePreviewMode.Aspect)),
+        ["app.wallpaper.images.dark.filePath"] = new(
+            "app.wallpaper.images.dark.filePath",
+            "Dark image",
             ValueKind.ImageFilePath,
             ImagePreview: new ImagePreviewDefinition(ImagePreviewMode.Aspect)),
         ["app.note"] = new("app.note", "Note", ValueKind.StringMultiline),
@@ -110,6 +115,7 @@ internal static class RecordClassFieldCatalog
             [
                 new FieldOption("module.generic", "Generic"),
                 new FieldOption("module.core.chat", "Core Chat"),
+                new FieldOption("module.core.lockScreen", "Lock Screen"),
             ]),
         ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
         ["module.appearanceMode"] = new("module.appearanceMode", "Appearance mode", ValueKind.OptionToken, Options:
@@ -180,6 +186,10 @@ internal static class RecordClassFieldCatalog
             "module.conversation.messageViewportMotion",
             "Message viewport motion",
             ValueKind.Motion),
+        ["module.lockScreen.statusBarVariant"] = new(
+            "module.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentPreset, ComponentPresetType: "status_bar"),
+        ["module.lockScreen.navigationBarVariant"] = new(
+            "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentPreset, ComponentPresetType: "navigation_bar"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
@@ -384,6 +394,19 @@ internal static class RecordClassFieldCatalog
             RecordReference: new RecordReferenceDefinition("themes")),
         ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
         ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
+        ["actor.wallpaper.kind"] = new("actor.wallpaper.kind", "Kind", ValueKind.OptionToken),
+        ["actor.wallpaper.opacity"] = new("actor.wallpaper.opacity", "Opacity", ValueKind.Decimal, Number: new NumberDefinition(0, 1, 0.05m, 2)),
+        ["actor.wallpaper.color"] = new("actor.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
+        ["actor.wallpaper.images.light.filePath"] = new(
+            "actor.wallpaper.images.light.filePath",
+            "Light image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(ImagePreviewMode.Aspect)),
+        ["actor.wallpaper.images.dark.filePath"] = new(
+            "actor.wallpaper.images.dark.filePath",
+            "Dark image",
+            ValueKind.ImageFilePath,
+            ImagePreview: new ImagePreviewDefinition(ImagePreviewMode.Aspect)),
         ["actor.avatar.filePath"] = new(
             "actor.avatar.filePath",
             "Avatar image",

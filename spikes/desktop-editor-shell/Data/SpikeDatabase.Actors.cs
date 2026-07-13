@@ -61,6 +61,21 @@ internal sealed partial class SpikeDatabase
             case "actor.avatarTextColor.modes":
                 SetPair(metadata, value, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"], asNumber: false);
                 break;
+            case "actor.wallpaper.images.light.filePath":
+                SetJsonValue(metadata, ["wallpaper", "images", "light", "filePath"], JsonValue.Create(value)!);
+                break;
+            case "actor.wallpaper.images.dark.filePath":
+                SetJsonValue(metadata, ["wallpaper", "images", "dark", "filePath"], JsonValue.Create(value)!);
+                break;
+            case "actor.wallpaper.kind":
+                SetJsonValue(metadata, ["wallpaper", "kind"], JsonValue.Create(value)!);
+                break;
+            case "actor.wallpaper.opacity":
+                SetJsonValue(metadata, ["wallpaper", "opacity"], NumberNode(value));
+                break;
+            case "actor.wallpaper.color":
+                SetPair(metadata, value, ["modes", "light", "wallpaper", "color"], ["modes", "dark", "wallpaper", "color"], asNumber: false);
+                break;
             case "actor.avatar.filePath":
                 SetJsonValue(metadata, ["avatar", "filePath"], JsonValue.Create(value)!);
                 break;
@@ -98,6 +113,11 @@ internal sealed partial class SpikeDatabase
             "actor.defaultThemeId" => settings.DefaultThemeId,
             "actor.color.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "color"], ["modes", "dark", "color"]),
             "actor.avatarTextColor.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"]),
+            "actor.wallpaper.images.light.filePath" => JsonString(metadata, ["wallpaper", "images", "light", "filePath"]),
+            "actor.wallpaper.images.dark.filePath" => JsonString(metadata, ["wallpaper", "images", "dark", "filePath"]),
+            "actor.wallpaper.kind" => JsonString(metadata, ["wallpaper", "kind"]),
+            "actor.wallpaper.opacity" => JsonNumberString(metadata, ["wallpaper", "opacity"]),
+            "actor.wallpaper.color" => MetricPair(settings.MetadataJson, ["modes", "light", "wallpaper", "color"], ["modes", "dark", "wallpaper", "color"]),
             "actor.avatar.filePath" => JsonString(metadata, ["avatar", "filePath"]),
             "actor.avatar.scale" => JsonNumberString(metadata, ["avatar", "scale"]),
             "actor.avatar.offset" => MetricPair(settings.MetadataJson, ["avatar", "offsetX"], ["avatar", "offsetY"]),
@@ -144,11 +164,13 @@ internal sealed partial class SpikeDatabase
                 {
                     ["color"] = colorToken,
                     ["avatarTextColor"] = avatarTextColorToken,
+                    ["wallpaper"] = new JsonObject { ["color"] = "gray_100" },
                 },
                 ["dark"] = new JsonObject
                 {
                     ["color"] = colorToken,
                     ["avatarTextColor"] = avatarTextColorToken,
+                    ["wallpaper"] = new JsonObject { ["color"] = "gray_000" },
                 },
             },
             ["avatar"] = new JsonObject
@@ -160,6 +182,16 @@ internal sealed partial class SpikeDatabase
                 ["offsetY"] = 0,
                 ["baseSize"] = 640,
                 ["initialsPadding"] = 96,
+            },
+            ["wallpaper"] = new JsonObject
+            {
+                ["kind"] = "image",
+                ["opacity"] = 1,
+                ["images"] = new JsonObject
+                {
+                    ["light"] = new JsonObject { ["filePath"] = "wallpapers/image.16f45e146467c560c19b884f3017a4a2.png" },
+                    ["dark"] = new JsonObject { ["filePath"] = "wallpapers/image.16f45e146467c560c19b884f3017a4a2.png" },
+                },
             },
         };
 

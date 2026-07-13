@@ -42,6 +42,7 @@ internal sealed partial class SpikeDatabase
             "app.core.chat",
             "module.generic",
             "module.core.chat",
+            "module.core.lockScreen",
             "module_instance",
             "episode",
             "shot",
@@ -126,6 +127,35 @@ internal sealed partial class SpikeDatabase
             Execute(connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.label'",
                 ("$layoutJson", MinimalEditorLayoutJson("component.label")));
+        }
+
+        var actorLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'actor'");
+        if (!string.IsNullOrWhiteSpace(actorLayout)
+            && (!actorLayout.Contains("actor.wallpaper.images.light.filePath", StringComparison.Ordinal)
+                || !actorLayout.Contains("actor.wallpaper.images.dark.filePath", StringComparison.Ordinal)))
+        {
+            Execute(connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'actor'",
+                ("$layoutJson", MinimalEditorLayoutJson("actor")));
+        }
+
+        foreach (var appRecordClassId in new[] { "app.generic", "app.core.chat" })
+        {
+            var appLayout = ScalarString(
+                connection,
+                "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId",
+                ("$recordClassId", appRecordClassId));
+            if (!string.IsNullOrWhiteSpace(appLayout)
+                && (!appLayout.Contains("app.wallpaper.images.light.filePath", StringComparison.Ordinal)
+                    || !appLayout.Contains("app.wallpaper.images.dark.filePath", StringComparison.Ordinal)))
+            {
+                Execute(connection,
+                    "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
+                    ("$recordClassId", appRecordClassId),
+                    ("$layoutJson", MinimalEditorLayoutJson(appRecordClassId)));
+            }
         }
 
         var mediaLayout = ScalarString(
@@ -260,7 +290,7 @@ internal sealed partial class SpikeDatabase
             }
         }
 
-        foreach (var recordClassId in new[] { "module.generic", "module.core.chat" })
+        foreach (var recordClassId in new[] { "module.generic", "module.core.chat", "module.core.lockScreen" })
         {
             var moduleLayout = ScalarString(
                 connection,
@@ -297,6 +327,34 @@ internal sealed partial class SpikeDatabase
             return false;
         }
     }
+
+    private static string WallpaperCardJson(string fieldOwner, int order) => $$"""
+        ,
+        {
+          "id": "wallpaper",
+          "label": "Wallpaper",
+          "subtitle": "Wallpaper color, images and opacity",
+          "icon": "{{EditorIcons.Image}}",
+          "order": {{order}},
+          "visible": true,
+          "defaultOpen": false,
+          "groups": [
+            {
+              "id": "wallpaper",
+              "label": "Wallpaper",
+              "order": 10,
+              "visible": true,
+              "fields": [
+                { "id": "{{fieldOwner}}.wallpaper.kind", "order": 10, "visible": true },
+                { "id": "{{fieldOwner}}.wallpaper.opacity", "order": 20, "visible": true },
+                { "id": "{{fieldOwner}}.wallpaper.color", "order": 30, "visible": true },
+                { "id": "{{fieldOwner}}.wallpaper.images.light.filePath", "order": 40, "visible": true },
+                { "id": "{{fieldOwner}}.wallpaper.images.dark.filePath", "order": 50, "visible": true }
+              ]
+            }
+          ]
+        }
+        """;
 
     private static string MinimalEditorLayoutJson(string recordClassId)
     {
@@ -342,7 +400,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "app.appType", "order": 30, "visible": true },
                     { "id": "core.kind", "order": 40, "visible": false }
                   """
-            : recordClassId is "module.generic" or "module.core.chat"
+            : recordClassId is "module.generic" or "module.core.chat" or "module.core.lockScreen"
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "module.recordClassId", "order": 20, "visible": false },
@@ -437,6 +495,7 @@ internal sealed partial class SpikeDatabase
 
         var actorCards = recordClassId == "actor"
             ? $$"""
+            {{WallpaperCardJson("actor", 30)}}
             ,
             {
               "id": "colors",
@@ -464,7 +523,7 @@ internal sealed partial class SpikeDatabase
               "label": "Avatar",
               "subtitle": "Image crop and initials fallback",
               "icon": "{{EditorIcons.Avatar}}",
-              "order": 30,
+              "order": 40,
               "visible": true,
               "defaultOpen": false,
               "groups": [
@@ -487,30 +546,8 @@ internal sealed partial class SpikeDatabase
             : "";
         var appCards = recordClassId is "app.generic" or "app.core.chat"
             ? $$"""
+            {{WallpaperCardJson("app", 20)}}
             ,
-            {
-              "id": "wallpaper",
-              "label": "Wallpaper",
-              "subtitle": "Wallpaper color, image and opacity",
-              "icon": "{{EditorIcons.Image}}",
-              "order": 20,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                {
-                  "id": "wallpaper",
-                  "label": "Wallpaper",
-                  "order": 10,
-                  "visible": true,
-                  "fields": [
-                    { "id": "app.wallpaper.kind", "order": 10, "visible": true },
-                    { "id": "app.wallpaper.opacity", "order": 20, "visible": true },
-                    { "id": "app.wallpaper.color", "order": 30, "visible": true },
-                    { "id": "app.wallpaper.image.filePath", "order": 40, "visible": true }
-                  ]
-                }
-              ]
-            },
             {
               "id": "icon",
               "label": "Icon",
@@ -1080,6 +1117,38 @@ internal sealed partial class SpikeDatabase
                     { "id": "module.conversation.bubbleMaxWidth", "order": 20, "visible": true }
                   ]
                 }
+              ]
+            }
+            """
+            : recordClassId == "module.core.lockScreen"
+            ? $$"""
+            ,
+            {
+              "id": "status-bar",
+              "label": "Status Bar",
+              "subtitle": "Lock Screen system variant",
+              "icon": "{{EditorIcons.Status}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "status-bar", "label": "Status Bar", "order": 10, "visible": true, "fields": [
+                  { "id": "module.lockScreen.statusBarVariant", "order": 10, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "navigation-bar",
+              "label": "Navigation Bar",
+              "subtitle": "Lock Screen system variant",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "navigation-bar", "label": "Navigation Bar", "order": 10, "visible": true, "fields": [
+                  { "id": "module.lockScreen.navigationBarVariant", "order": 10, "visible": true }
+                ] }
               ]
             }
             """

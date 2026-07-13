@@ -1,10 +1,14 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { conversationModuleToRenderable } from "./conversationModuleRenderable.js";
+import { lockScreenModuleToRenderable } from "./lockScreenModuleRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 export function moduleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   if (payload.componentType === "module.core.chat") {
     return conversationModuleToRenderable(payload);
+  }
+  if (payload.componentType === "module.core.lockScreen") {
+    return lockScreenModuleToRenderable(payload);
   }
 
   const box = {

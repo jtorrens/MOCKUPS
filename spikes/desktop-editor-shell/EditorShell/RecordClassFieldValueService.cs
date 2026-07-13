@@ -194,6 +194,8 @@ internal sealed class RecordClassFieldValueService
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
+            _ when fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal) =>
+                _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
         };
     }
@@ -243,7 +245,8 @@ internal sealed class RecordClassFieldValueService
             "app.wallpaper.kind" => _database.GetAppConfigFieldValue(appId, fieldId),
             "app.wallpaper.opacity" => _database.GetAppConfigFieldValue(appId, fieldId),
             "app.wallpaper.color" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.wallpaper.image.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.images.light.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.images.dark.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
             "app.note" => _database.GetAppMetadataFieldValue(appId, fieldId),
             "app.icon.filePath" => _database.GetAppMetadataFieldValue(appId, fieldId),
             "app.icon.scale" => _database.GetAppMetadataFieldValue(appId, fieldId),
@@ -423,6 +426,11 @@ internal sealed class RecordClassFieldValueService
             [
                 new FieldOption("normal", "Normal"),
                 new FieldOption("italic", "Italic"),
+            ],
+            "actor.wallpaper.kind" =>
+            [
+                new FieldOption("solid", "Solid"),
+                new FieldOption("image", "Image"),
             ],
             _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 ? _database.GetPaletteColorOptions(settings.ProjectId)
