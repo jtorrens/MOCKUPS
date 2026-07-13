@@ -11,6 +11,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorIcons
 {
+    private const string NavigationAssetPrefix = "navigation-asset:";
     public const string Add = "add";
     public const string Delete = "delete";
     public const string Duplicate = "duplicate";
@@ -122,6 +123,85 @@ internal static class EditorIcons
         };
     }
 
+    public static string ForNavigationTreeNode(ProjectTreeNode node)
+    {
+        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
+        {
+            return ForNavigationTreeNode(node.Parent);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            var componentType = node.RecordClassId.StartsWith("component.", StringComparison.Ordinal)
+                ? node.RecordClassId["component.".Length..]
+                : "";
+            return NavigationComponentAsset(componentType);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ComponentClassGroup)
+        {
+            return node.Id.Contains("_atoms_", StringComparison.Ordinal)
+                ? NavigationAsset("Atoms")
+                : node.Id.Contains("_system_", StringComparison.Ordinal)
+                    ? NavigationAsset("System")
+                    : NavigationAsset("Components");
+        }
+
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.Project => NavigationAsset("Project"),
+            ProjectTreeNodeKind.AppsRoot => NavigationAsset("Apps"),
+            ProjectTreeNodeKind.App => node.RecordClassId.Contains(".chat", StringComparison.Ordinal)
+                ? NavigationAsset("Chat")
+                : NavigationAsset("Apps"),
+            ProjectTreeNodeKind.ComponentClassesRoot => NavigationAsset("Component Classes"),
+            ProjectTreeNodeKind.ThemesRoot or ProjectTreeNodeKind.Theme => NavigationAsset("Themes"),
+            ProjectTreeNodeKind.IconThemesRoot or ProjectTreeNodeKind.IconTheme => NavigationAsset("Icon Themes"),
+            ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont => NavigationAsset("Production Fonts"),
+            ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device => NavigationAsset("Devices"),
+            ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode => NavigationAsset("Episodes"),
+            ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor => NavigationAsset("Actors"),
+            ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset => NavigationAsset("Render Presets"),
+            ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.PaletteColor => Color,
+            ProjectTreeNodeKind.Shot => Shot,
+            _ => ForTreeNode(node.Kind),
+        };
+    }
+
+    private static string NavigationComponentAsset(string componentType)
+    {
+        var assetName = componentType switch
+        {
+            "audio" => "Audio",
+            "avatar" => "Avatar",
+            "bubble" => "Bubble",
+            "button" => "Button",
+            "cursor" => "Cursor",
+            "iconBar" => "Icon Bar",
+            "iconRow" => "Icon Row",
+            "keyboard" => "Keyboard",
+            "label" => "Label",
+            "media" => "Media",
+            "navigation_bar" => "Navigation Bar",
+            "status_bar" => "Status Bar",
+            "surface" => "Surface",
+            "textBox" => "Text Box",
+            "textInputBar" => "Text Input Bar",
+            _ => "Component Classes",
+        };
+        return NavigationAsset(assetName);
+    }
+
+    private static string NavigationAsset(string assetName) => $"{NavigationAssetPrefix}{assetName}";
+
+    public static Control CreateSemantic(string label, string fallback, double size = 20)
+    {
+        var semanticName = NavigationAsset(label);
+        return SvgPathData(semanticName) is null
+            ? Create(fallback, size)
+            : Create(semanticName, size);
+    }
+
     public static Control Create(string name, double size = 20)
     {
         var svgPath = SvgPathData(name);
@@ -210,19 +290,43 @@ internal static class EditorIcons
 
     private static string? SystemIconPath(string name)
     {
+        var directory = SystemIconsDirectory();
+        if (directory is null)
+        {
+            return null;
+        }
+
+        if (name.StartsWith(NavigationAssetPrefix, StringComparison.Ordinal))
+        {
+            var assetName = name[NavigationAssetPrefix.Length..];
+            return Path.Combine(directory, "components", $"{assetName}.svg");
+        }
+
         var fileName = name switch
         {
-            Add => "system_add.svg",
-            Delete => "system_delete.svg",
-            Duplicate => "system_duplicate.svg",
-            Edit => "system_edit.svg",
-            Structure => "system_tree.svg",
-            Lock => "system_lock.svg",
-            Unlock => "system_unlock.svg",
-            Settings => "system_settings.svg",
-            Folder => "system_folder.svg",
-            Left => "system_arrow_left.svg",
-            Right => "system_arrow_right.svg",
+            Add => "components/Add.svg",
+            Delete => "components/Delete.svg",
+            Duplicate => "components/Duplicate.svg",
+            Edit => "components/Edit.svg",
+            Expand => "components/Expand.svg",
+            Collapse => "components/Collapse.svg",
+            Structure => "components/Embedded structure.svg",
+            Lock => "components/Lock.svg",
+            Unlock => "components/Unlock.svg",
+            Settings => "components/Settings.svg",
+            Play => "components/Play.svg",
+            Pause => "components/Pause.svg",
+            Folder => "components/Folder.svg",
+            Left => "components/Move left.svg",
+            Right => "components/Move right.svg",
+            TimelinePreviousInstance => "components/Previous Screen.svg",
+            TimelineShotStart => "components/First Shot frame.svg",
+            TimelineFirstFrame => "components/First frame in the selected scope.svg",
+            TimelinePreviousFrame => "components/Previous frame.svg",
+            TimelineNextFrame => "components/Next frame.svg",
+            TimelineLastFrame => "components/Last frame in the selected scope.svg",
+            TimelineNextInstance => "components/Next Screen.svg",
+            TimelineShotEnd => "components/Last Shot frame.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",
@@ -267,8 +371,7 @@ internal static class EditorIcons
             return null;
         }
 
-        var directory = SystemIconsDirectory();
-        return directory is null ? null : Path.Combine(directory, fileName);
+        return Path.Combine(directory, fileName);
     }
 
     private static string? SystemIconsDirectory()

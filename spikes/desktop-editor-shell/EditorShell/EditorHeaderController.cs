@@ -253,7 +253,7 @@ internal sealed class EditorHeaderController
 
     private Button CreateSavePresetButton(ProjectTreeNode node)
     {
-        var icon = EditorIcons.Create(EditorIcons.Add, 15);
+        var icon = EditorIcons.CreateSemantic("Save variant", EditorIcons.Add, 15);
         EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
         var button = new Button
         {

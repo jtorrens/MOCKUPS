@@ -41,7 +41,7 @@ internal sealed class ReferenceUsageCollectionEditor
         }
 
         return new InstantEditorCard(
-            EditorCardHeader.Create("Usage", usages.Count == 1 ? "1 reference" : $"{usages.Count} references", EditorIcons.Create(EditorIcons.Structure, 18)),
+            EditorCardHeader.Create("Usage", usages.Count == 1 ? "1 reference" : $"{usages.Count} references", EditorIcons.CreateSemantic("Usage", EditorIcons.Structure, 18)),
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
             isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -79,7 +79,7 @@ internal sealed class ReferenceUsageCollectionEditor
             Background = Brushes.Transparent,
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(0),
-            Content = EditorIcons.Create(EditorIcons.Edit, 14),
+            Content = EditorIcons.CreateSemantic("Open referenced record", EditorIcons.Edit, 14),
         };
         ToolTip.SetTip(open, "Open referenced record");
         open.Click += (_, args) =>

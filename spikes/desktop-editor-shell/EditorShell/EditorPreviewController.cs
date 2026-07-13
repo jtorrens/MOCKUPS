@@ -253,6 +253,9 @@ internal sealed class EditorPreviewController
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
         _shotPlaybackTimer.Tick += (_, _) => AdvanceShotPlayback();
 
+        _designContextHistoryButton.Content = EditorIcons.CreateSemantic("Recent design contexts", EditorIcons.Collapse, 15);
+        _designContextAddHistoryButton.Content = EditorIcons.CreateSemantic("Add current design context to history", EditorIcons.Add, 15);
+
         WrapPreviewSetup(previewSetupHost);
         CreatePreviewControls(previewControlsHost);
         designPreviewHost.Content = _designPreviewPane;
@@ -546,6 +549,10 @@ internal sealed class EditorPreviewController
     private void RefreshDesignContextHistoryChrome()
     {
         var history = _workspace == EditorWorkspace.Production ? _productionHistory : _designHistory;
+        _designContextHistoryButton.Content = EditorIcons.CreateSemantic(
+            _workspace == EditorWorkspace.Production ? "Recent production contexts" : "Recent design contexts",
+            EditorIcons.Collapse,
+            15);
         _designContextHistoryButton.IsEnabled = history.Count > 0;
         _designContextHistoryButton.Opacity = history.Count > 0 ? 1 : 0.38;
         var canAddCurrentContext = _activeDesignPreviewNode is not null
@@ -581,7 +588,7 @@ internal sealed class EditorPreviewController
         header.Children.Add(EditorCardHeader.Create(
             "Preview setup",
             "Context and component inputs",
-            EditorIcons.Create(EditorIcons.Design, 18)));
+            EditorIcons.CreateSemantic("Preview setup", EditorIcons.Design, 18)));
 
         var actions = new StackPanel
         {
@@ -763,7 +770,7 @@ internal sealed class EditorPreviewController
                 EditorCardHeader.Create(
                     "Preview controls",
                     "Display and reference",
-                    EditorIcons.Create(EditorIcons.Design, 18)),
+                    EditorIcons.CreateSemantic("Preview controls", EditorIcons.Design, 18)),
                 new Border
                 {
                     Padding = new Thickness(12, 0, 12, 12),
@@ -2388,7 +2395,8 @@ internal sealed class EditorPreviewController
             || _lockedDesignPreviewNode is not null;
         if (_renderedLockState != _isDesignPreviewContextLocked)
         {
-            _designContextLockButton.Content = EditorIcons.Create(
+            _designContextLockButton.Content = EditorIcons.CreateSemantic(
+                _isDesignPreviewContextLocked ? "Release design context" : "Keep current design context",
                 _isDesignPreviewContextLocked ? EditorIcons.Lock : EditorIcons.Unlock,
                 15);
             _renderedLockState = _isDesignPreviewContextLocked;

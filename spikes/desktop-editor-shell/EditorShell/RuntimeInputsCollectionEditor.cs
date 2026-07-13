@@ -75,7 +75,7 @@ internal sealed class RuntimeInputsCollectionEditor
             EditorCardHeader.Create(
                 "Runtime Inputs",
                 $"{EditorUiText.Count(inputs.Count, "input")} · {EditorUiText.Count(collections.Count, "collection")}",
-                EditorIcons.Create(EditorIcons.Design, 18)),
+                EditorIcons.CreateSemantic("Runtime Inputs", EditorIcons.Design, 18)),
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -284,7 +284,7 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateApiInputRow(field));
         }
         return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.Create(EditorIcons.Component, 16)),
+            EditorCardHeader.Create(collection.Label, $"{collection.ItemLabel} contract", EditorIcons.CreateSemantic(collection.Label, EditorIcons.Component, 16)),
             content,
             out card,
             isExpanded: false);
@@ -382,7 +382,7 @@ internal sealed class RuntimeInputsCollectionEditor
             EditorCardHeader.Create(
                 collection.Label,
                 $"{items.Count} active {collection.ItemLabel.ToLowerInvariant()} {EditorUiText.Noun(items.Count, "instance")}",
-                EditorIcons.Create(EditorIcons.Component, 16)),
+                EditorIcons.CreateSemantic(collection.Label, EditorIcons.Component, 16)),
             content,
             out card,
             isExpanded: true);
@@ -487,7 +487,7 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorGroupBlock.WireExclusiveCards(groupCards);
 
         return EditorGroupBlock.CreateNestedCard(
-            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"Payload item {itemIndex + 1}", EditorIcons.Create(EditorIcons.Component, 14)),
+            EditorCardHeader.Create($"{collection.ItemLabel} {itemIndex + 1}", $"Payload item {itemIndex + 1}", EditorIcons.CreateSemantic(collection.ItemLabel, EditorIcons.Component, 14)),
             content,
             out card,
             isExpanded: true,
@@ -573,7 +573,7 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         EditorGroupBlock.WireExclusiveCards(childCards);
         var cardSurface = EditorGroupBlock.CreateCollapsible(
-            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Runtime inputs", EditorIcons.Create(EditorIcons.Component, 14)),
+            EditorCardHeader.Create(ComponentInputGrouping.GroupLabel(groupInputs), "Runtime inputs", EditorIcons.CreateSemantic(ComponentInputGrouping.GroupLabel(groupInputs), EditorIcons.Component, 14)),
             content,
             out var card,
             isExpanded: false);
@@ -624,7 +624,7 @@ internal sealed class RuntimeInputsCollectionEditor
         List<InstantEditorCard> siblingCards)
     {
         var card = EditorGroupBlock.CreateCollapsible(
-            EditorCardHeader.Create(label, "Embedded component inputs", EditorIcons.Create(EditorIcons.Component, 16)),
+            EditorCardHeader.Create(label, "Embedded component inputs", EditorIcons.CreateSemantic(label, EditorIcons.Component, 16)),
             content,
             out var groupCard);
         siblingCards.Add(groupCard);
@@ -639,7 +639,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ColumnSpacing = 5,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        content.Children.Add(EditorIcons.Create(EditorIcons.Play, 12));
+        content.Children.Add(EditorIcons.CreateSemantic(action.Label, EditorIcons.Play, 12));
         var label = new TextBlock
         {
             Text = action.Label,

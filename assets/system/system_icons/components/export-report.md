@@ -1,0 +1,151 @@
+# Material Symbols export report
+
+- Esperados: 135
+- Creados: 133
+- Omitidos: 0
+- Fallidos: 2
+
+## Iconos creados
+- `Project.svg` ← `account_tree`
+- `Apps.svg` ← `apps`
+- `Chat.svg` ← `chat`
+- `Component Classes.svg` ← `developer_board`
+- `Components.svg` ← `extension`
+- `Atoms.svg` ← `brightness_low`
+- `System.svg` ← `settings_applications`
+- `Audio.svg` ← `volume_up`
+- `Avatar.svg` ← `account_circle`
+- `Bubble.svg` ← `bubble`
+- `Button.svg` ← `smart_button`
+- `Cursor.svg` ← `arrow_selector_tool`
+- `Icon Bar.svg` ← `view_headline`
+- `Icon Row.svg` ← `view_column`
+- `Keyboard.svg` ← `keyboard`
+- `Label.svg` ← `label`
+- `Media.svg` ← `play_circle`
+- `Navigation Bar.svg` ← `menu`
+- `Status Bar.svg` ← `network_cell`
+- `Surface.svg` ← `layers`
+- `Text Box.svg` ← `match_case`
+- `Text Input Bar.svg` ← `edit_note`
+- `Themes.svg` ← `palette`
+- `Icon Themes.svg` ← `bento`
+- `Production Fonts.svg` ← `font_download`
+- `Devices.svg` ← `devices`
+- `Episodes.svg` ← `video_library`
+- `Actors.svg` ← `person`
+- `Render Presets.svg` ← `settings_backup_restore`
+- `App 2.svg` ← `apps`
+- `Episode 1.svg` ← `video_library`
+- `Episode 2.svg` ← `video_library`
+- `Episode 3.svg` ← `video_library`
+- `Shot 01 · Lock to chat.svg` ← `lock`
+- `Shot 01 · Opening chat.svg` ← `chat`
+- `Shot 02 · Incoming media.svg` ← `perm_media`
+- `Shot 02 · Message escalation.svg` ← `priority_high`
+- `Shot 03 · Audio reply.svg` ← `reply`
+- `Active.svg` ← `check_circle`
+- `Actor.svg` ← `person`
+- `Actor label.svg` ← `badge`
+- `Action.svg` ← `bolt`
+- `Bar.svg` ← `view_headline`
+- `Behavior.svg` ← `psychology`
+- `Button Items.svg` ← `smart_button`
+- `Buttons.svg` ← `smart_button`
+- `Colors.svg` ← `palette`
+- `Content.svg` ← `article`
+- `Delivery.svg` ← `local_shipping`
+- `Frame.svg` ← `crop_free`
+- `Full screen.svg` ← `fullscreen`
+- `Full screen controls.svg` ← `fullscreen`
+- `General.svg` ← `tune`
+- `Header.svg` ← `title`
+- `Icon.svg` ← `star`
+- `Icons.svg` ← `star`
+- `Icon Tokens.svg` ← `token`
+- `Identity.svg` ← `badge`
+- `Idle.svg` ← `pause_circle`
+- `Idle text.svg` ← `text_fields`
+- `Inline controls.svg` ← `tune`
+- `Input.svg` ← `input`
+- `Items.svg` ← `list`
+- `Layout.svg` ← `dashboard`
+- `Left icon row.svg` ← `format_align_left`
+- `Message.svg` ← `chat`
+- `Modules.svg` ← `view_module`
+- `Motion.svg` ← `animation`
+- `Notes.svg` ← `note`
+- `Playback.svg` ← `play_circle`
+- `Play text.svg` ← `play_arrow`
+- `Preview controls.svg` ← `preview`
+- `Preview setup.svg` ← `preview`
+- `Radii.svg` ← `rounded_corner`
+- `References.svg` ← `link`
+- `Right icon row.svg` ← `format_align_right`
+- `Runtime Inputs.svg` ← `input`
+- `Shadow.svg` ← `shadow`
+- `Source.svg` ← `code`
+- `Spacing.svg` ← `space_bar`
+- `State.svg` ← `toggle_on`
+- `Status.svg` ← `info`
+- `Style.svg` ← `style`
+- `Text.svg` ← `text_fields`
+- `Timing.svg` ← `timer`
+- `Typography.svg` ← `text_format`
+- `Usage.svg` ← `data_usage`
+- `Wallpaper.svg` ← `wallpaper`
+- `Add.svg` ← `add`
+- `Browse.svg` ← `folder_open`
+- `Clear.svg` ← `close`
+- `Collapse.svg` ← `expand_less`
+- `Create first slot.svg` ← `add_box`
+- `Delete.svg` ← `delete`
+- `Delete selected slot.svg` ← `delete`
+- `Duplicate.svg` ← `content_copy`
+- `Edit.svg` ← `edit`
+- `Edit overrides.svg` ← `edit_note`
+- `Embedded structure.svg` ← `account_tree`
+- `Expand.svg` ← `expand_more`
+- `Folder.svg` ← `folder`
+- `Insert after.svg` ← `add_circle`
+- `Lock.svg` ← `lock`
+- `Move left.svg` ← `arrow_back`
+- `Move right.svg` ← `arrow_forward`
+- `Open referenced record.svg` ← `open_in_new`
+- `Open selected component variant.svg` ← `open_in_new`
+- `Pause.svg` ← `pause`
+- `Pick icon.svg` ← `add_reaction`
+- `Pick icons.svg` ← `add_reaction`
+- `Play.svg` ← `play_arrow`
+- `Rename.svg` ← `drive_file_rename_outline`
+- `Restore inherited value.svg` ← `settings_backup_restore`
+- `Save variant.svg` ← `save`
+- `Settings.svg` ← `settings`
+- `Unlock.svg` ← `lock_open`
+- `Write-on.svg` ← `edit`
+- `Push.svg` ← `touch_app`
+- `In.svg` ← `login`
+- `Previous Screen.svg` ← `navigate_before`
+- `First Shot frame.svg` ← `first_page`
+- `First frame in the selected scope.svg` ← `first_page`
+- `Previous frame.svg` ← `skip_previous`
+- `Play or pause the selected scope.svg` ← `play_arrow`
+- `Next frame.svg` ← `skip_next`
+- `Last frame in the selected scope.svg` ← `last_page`
+- `Next Screen.svg` ← `navigate_next`
+- `Last Shot frame.svg` ← `last_page`
+- `Recent design contexts.svg` ← `history`
+- `Recent production contexts.svg` ← `history`
+- `Add current design context to history.svg` ← `history`
+- `Keep current design context.svg` ← `push_pin`
+- `Release design context.svg` ← `keep_off`
+
+## Iconos omitidos
+- Ninguno
+
+## Glyphs no encontrados
+- `color_lens` (Palette Colors.svg) — not found: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/color_lens/materialsymbolsrounded/color_lens_24px.svg
+- `movie_creation` (Shot.svg) — not found: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/movie_creation/materialsymbolsrounded/movie_creation_24px.svg
+
+## Errores
+- Ninguno

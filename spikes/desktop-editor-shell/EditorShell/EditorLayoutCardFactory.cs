@@ -65,7 +65,7 @@ internal sealed class EditorLayoutCardFactory
             Spacing = EditorUiDensity.Card(12),
         };
         var controls = new List<DictionaryFieldControl>();
-        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
+        var headerIcon = EditorIcons.CreateSemantic(layoutCard.Label, layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
         var useSectionChrome = visibleGroups.Count > 1;
         var exclusiveGroupCards = new List<InstantEditorCard>();
@@ -165,7 +165,7 @@ internal sealed class EditorLayoutCardFactory
             Spacing = EditorUiDensity.Card(12),
         };
         var controls = new List<DictionaryFieldControl>();
-        var headerIcon = EditorIcons.Create(layoutCard.Icon, 18);
+        var headerIcon = EditorIcons.CreateSemantic(layoutCard.Label, layoutCard.Icon, 18);
         var visibleGroups = layoutCard.VisibleGroups.ToList();
         var useSectionChrome = visibleGroups.Count > 1;
         var exclusiveGroupCards = new List<InstantEditorCard>();

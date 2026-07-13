@@ -193,7 +193,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     private static Button ActionButton(string icon, string tooltip, bool enabled, Action action)
     {
-        var button = new Button { Content = EditorIcons.Create(icon, 15), Width = 32, Height = 30, Padding = new Thickness(0), IsEnabled = enabled };
+        var button = new Button { Content = EditorIcons.CreateSemantic(tooltip, icon, 15), Width = 32, Height = 30, Padding = new Thickness(0), IsEnabled = enabled };
         ToolTip.SetTip(button, tooltip);
         button.Click += (_, _) => action();
         return button;

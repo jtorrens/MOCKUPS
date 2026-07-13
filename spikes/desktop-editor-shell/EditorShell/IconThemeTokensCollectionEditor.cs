@@ -40,7 +40,7 @@ internal sealed class IconThemeTokensCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var icon = EditorIcons.Create(EditorIcons.Icon, 18);
+        var icon = EditorIcons.CreateSemantic("Icon Tokens", EditorIcons.Icon, 18);
         var tokensPanel = new StackPanel
         {
             Spacing = 10,

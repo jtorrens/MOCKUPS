@@ -32,7 +32,7 @@ internal sealed class NavigationBarItemsCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var icon = EditorIcons.Create(EditorIcons.Navigation, 18);
+        var icon = EditorIcons.CreateSemantic("Button Items", EditorIcons.Navigation, 18);
         var items = Items(node).ToList();
         var body = new StackPanel
         {

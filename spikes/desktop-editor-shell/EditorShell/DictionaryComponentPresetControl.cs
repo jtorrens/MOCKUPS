@@ -41,7 +41,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
         {
             var openButton = new Button
             {
-                Content = EditorIcons.Create(EditorIcons.Edit, 15),
+                Content = EditorIcons.CreateSemantic("Open selected component variant", EditorIcons.Edit, 15),
                 Width = 32,
                 Height = 32,
                 Padding = new Avalonia.Thickness(0),
@@ -76,7 +76,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
 
         var button = new Button
         {
-            Content = "···",
+            Content = EditorIcons.CreateSemantic("Edit overrides", EditorIcons.Edit, 15),
             Width = 40,
             Height = 32,
             Padding = new Avalonia.Thickness(0),

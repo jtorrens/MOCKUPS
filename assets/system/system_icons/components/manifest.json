@@ -1,0 +1,812 @@
+[
+  {
+    "nombre original": "Project",
+    "glyph": "account_tree",
+    "nombre de archivo": "Project.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/account_tree/materialsymbolsrounded/account_tree_24px.svg"
+  },
+  {
+    "nombre original": "Apps",
+    "glyph": "apps",
+    "nombre de archivo": "Apps.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/apps/materialsymbolsrounded/apps_24px.svg"
+  },
+  {
+    "nombre original": "Chat",
+    "glyph": "chat",
+    "nombre de archivo": "Chat.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/chat/materialsymbolsrounded/chat_24px.svg"
+  },
+  {
+    "nombre original": "Component Classes",
+    "glyph": "developer_board",
+    "nombre de archivo": "Component Classes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/developer_board/materialsymbolsrounded/developer_board_24px.svg"
+  },
+  {
+    "nombre original": "Components",
+    "glyph": "extension",
+    "nombre de archivo": "Components.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/extension/materialsymbolsrounded/extension_24px.svg"
+  },
+  {
+    "nombre original": "Atoms",
+    "glyph": "brightness_low",
+    "nombre de archivo": "Atoms.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/brightness_low/materialsymbolsrounded/brightness_low_24px.svg"
+  },
+  {
+    "nombre original": "System",
+    "glyph": "settings_applications",
+    "nombre de archivo": "System.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/settings_applications/materialsymbolsrounded/settings_applications_24px.svg"
+  },
+  {
+    "nombre original": "Audio",
+    "glyph": "volume_up",
+    "nombre de archivo": "Audio.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/volume_up/materialsymbolsrounded/volume_up_24px.svg"
+  },
+  {
+    "nombre original": "Avatar",
+    "glyph": "account_circle",
+    "nombre de archivo": "Avatar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/account_circle/materialsymbolsrounded/account_circle_24px.svg"
+  },
+  {
+    "nombre original": "Bubble",
+    "glyph": "bubble",
+    "nombre de archivo": "Bubble.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/bubble/materialsymbolsrounded/bubble_24px.svg"
+  },
+  {
+    "nombre original": "Button",
+    "glyph": "smart_button",
+    "nombre de archivo": "Button.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/smart_button/materialsymbolsrounded/smart_button_24px.svg"
+  },
+  {
+    "nombre original": "Cursor",
+    "glyph": "arrow_selector_tool",
+    "nombre de archivo": "Cursor.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/arrow_selector_tool/materialsymbolsrounded/arrow_selector_tool_24px.svg"
+  },
+  {
+    "nombre original": "Icon Bar",
+    "glyph": "view_headline",
+    "nombre de archivo": "Icon Bar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/view_headline/materialsymbolsrounded/view_headline_24px.svg"
+  },
+  {
+    "nombre original": "Icon Row",
+    "glyph": "view_column",
+    "nombre de archivo": "Icon Row.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/view_column/materialsymbolsrounded/view_column_24px.svg"
+  },
+  {
+    "nombre original": "Keyboard",
+    "glyph": "keyboard",
+    "nombre de archivo": "Keyboard.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/keyboard/materialsymbolsrounded/keyboard_24px.svg"
+  },
+  {
+    "nombre original": "Label",
+    "glyph": "label",
+    "nombre de archivo": "Label.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/label/materialsymbolsrounded/label_24px.svg"
+  },
+  {
+    "nombre original": "Media",
+    "glyph": "play_circle",
+    "nombre de archivo": "Media.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_circle/materialsymbolsrounded/play_circle_24px.svg"
+  },
+  {
+    "nombre original": "Navigation Bar",
+    "glyph": "menu",
+    "nombre de archivo": "Navigation Bar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/menu/materialsymbolsrounded/menu_24px.svg"
+  },
+  {
+    "nombre original": "Status Bar",
+    "glyph": "network_cell",
+    "nombre de archivo": "Status Bar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/network_cell/materialsymbolsrounded/network_cell_24px.svg"
+  },
+  {
+    "nombre original": "Surface",
+    "glyph": "layers",
+    "nombre de archivo": "Surface.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/layers/materialsymbolsrounded/layers_24px.svg"
+  },
+  {
+    "nombre original": "Text Box",
+    "glyph": "match_case",
+    "nombre de archivo": "Text Box.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/match_case/materialsymbolsrounded/match_case_24px.svg"
+  },
+  {
+    "nombre original": "Text Input Bar",
+    "glyph": "edit_note",
+    "nombre de archivo": "Text Input Bar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/edit_note/materialsymbolsrounded/edit_note_24px.svg"
+  },
+  {
+    "nombre original": "Themes",
+    "glyph": "palette",
+    "nombre de archivo": "Themes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/palette/materialsymbolsrounded/palette_24px.svg"
+  },
+  {
+    "nombre original": "Palette Colors",
+    "glyph": "color_lens",
+    "nombre de archivo": "Palette Colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/color_lens/materialsymbolsrounded/color_lens_24px.svg"
+  },
+  {
+    "nombre original": "Icon Themes",
+    "glyph": "bento",
+    "nombre de archivo": "Icon Themes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/bento/materialsymbolsrounded/bento_24px.svg"
+  },
+  {
+    "nombre original": "Production Fonts",
+    "glyph": "font_download",
+    "nombre de archivo": "Production Fonts.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/font_download/materialsymbolsrounded/font_download_24px.svg"
+  },
+  {
+    "nombre original": "Devices",
+    "glyph": "devices",
+    "nombre de archivo": "Devices.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/devices/materialsymbolsrounded/devices_24px.svg"
+  },
+  {
+    "nombre original": "Episodes",
+    "glyph": "video_library",
+    "nombre de archivo": "Episodes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_library/materialsymbolsrounded/video_library_24px.svg"
+  },
+  {
+    "nombre original": "Shot",
+    "glyph": "movie_creation",
+    "nombre de archivo": "Shot.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/movie_creation/materialsymbolsrounded/movie_creation_24px.svg"
+  },
+  {
+    "nombre original": "Actors",
+    "glyph": "person",
+    "nombre de archivo": "Actors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/person/materialsymbolsrounded/person_24px.svg"
+  },
+  {
+    "nombre original": "Render Presets",
+    "glyph": "settings_backup_restore",
+    "nombre de archivo": "Render Presets.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/settings_backup_restore/materialsymbolsrounded/settings_backup_restore_24px.svg"
+  },
+  {
+    "nombre original": "App 2",
+    "glyph": "apps",
+    "nombre de archivo": "App 2.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/apps/materialsymbolsrounded/apps_24px.svg"
+  },
+  {
+    "nombre original": "Episode 1",
+    "glyph": "video_library",
+    "nombre de archivo": "Episode 1.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_library/materialsymbolsrounded/video_library_24px.svg"
+  },
+  {
+    "nombre original": "Episode 2",
+    "glyph": "video_library",
+    "nombre de archivo": "Episode 2.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_library/materialsymbolsrounded/video_library_24px.svg"
+  },
+  {
+    "nombre original": "Episode 3",
+    "glyph": "video_library",
+    "nombre de archivo": "Episode 3.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/video_library/materialsymbolsrounded/video_library_24px.svg"
+  },
+  {
+    "nombre original": "Shot 01 · Lock to chat",
+    "glyph": "lock",
+    "nombre de archivo": "Shot 01 · Lock to chat.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/lock/materialsymbolsrounded/lock_24px.svg"
+  },
+  {
+    "nombre original": "Shot 01 · Opening chat",
+    "glyph": "chat",
+    "nombre de archivo": "Shot 01 · Opening chat.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/chat/materialsymbolsrounded/chat_24px.svg"
+  },
+  {
+    "nombre original": "Shot 02 · Incoming media",
+    "glyph": "perm_media",
+    "nombre de archivo": "Shot 02 · Incoming media.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/perm_media/materialsymbolsrounded/perm_media_24px.svg"
+  },
+  {
+    "nombre original": "Shot 02 · Message escalation",
+    "glyph": "priority_high",
+    "nombre de archivo": "Shot 02 · Message escalation.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/priority_high/materialsymbolsrounded/priority_high_24px.svg"
+  },
+  {
+    "nombre original": "Shot 03 · Audio reply",
+    "glyph": "reply",
+    "nombre de archivo": "Shot 03 · Audio reply.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/reply/materialsymbolsrounded/reply_24px.svg"
+  },
+  {
+    "nombre original": "Active",
+    "glyph": "check_circle",
+    "nombre de archivo": "Active.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/check_circle/materialsymbolsrounded/check_circle_24px.svg"
+  },
+  {
+    "nombre original": "Actor",
+    "glyph": "person",
+    "nombre de archivo": "Actor.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/person/materialsymbolsrounded/person_24px.svg"
+  },
+  {
+    "nombre original": "Actor label",
+    "glyph": "badge",
+    "nombre de archivo": "Actor label.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/badge/materialsymbolsrounded/badge_24px.svg"
+  },
+  {
+    "nombre original": "Action",
+    "glyph": "bolt",
+    "nombre de archivo": "Action.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/bolt/materialsymbolsrounded/bolt_24px.svg"
+  },
+  {
+    "nombre original": "Bar",
+    "glyph": "view_headline",
+    "nombre de archivo": "Bar.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/view_headline/materialsymbolsrounded/view_headline_24px.svg"
+  },
+  {
+    "nombre original": "Behavior",
+    "glyph": "psychology",
+    "nombre de archivo": "Behavior.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/psychology/materialsymbolsrounded/psychology_24px.svg"
+  },
+  {
+    "nombre original": "Button Items",
+    "glyph": "smart_button",
+    "nombre de archivo": "Button Items.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/smart_button/materialsymbolsrounded/smart_button_24px.svg"
+  },
+  {
+    "nombre original": "Buttons",
+    "glyph": "smart_button",
+    "nombre de archivo": "Buttons.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/smart_button/materialsymbolsrounded/smart_button_24px.svg"
+  },
+  {
+    "nombre original": "Colors",
+    "glyph": "palette",
+    "nombre de archivo": "Colors.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/palette/materialsymbolsrounded/palette_24px.svg"
+  },
+  {
+    "nombre original": "Content",
+    "glyph": "article",
+    "nombre de archivo": "Content.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/article/materialsymbolsrounded/article_24px.svg"
+  },
+  {
+    "nombre original": "Delivery",
+    "glyph": "local_shipping",
+    "nombre de archivo": "Delivery.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/local_shipping/materialsymbolsrounded/local_shipping_24px.svg"
+  },
+  {
+    "nombre original": "Frame",
+    "glyph": "crop_free",
+    "nombre de archivo": "Frame.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/crop_free/materialsymbolsrounded/crop_free_24px.svg"
+  },
+  {
+    "nombre original": "Full screen",
+    "glyph": "fullscreen",
+    "nombre de archivo": "Full screen.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/fullscreen/materialsymbolsrounded/fullscreen_24px.svg"
+  },
+  {
+    "nombre original": "Full screen controls",
+    "glyph": "fullscreen",
+    "nombre de archivo": "Full screen controls.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/fullscreen/materialsymbolsrounded/fullscreen_24px.svg"
+  },
+  {
+    "nombre original": "General",
+    "glyph": "tune",
+    "nombre de archivo": "General.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/tune/materialsymbolsrounded/tune_24px.svg"
+  },
+  {
+    "nombre original": "Header",
+    "glyph": "title",
+    "nombre de archivo": "Header.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/title/materialsymbolsrounded/title_24px.svg"
+  },
+  {
+    "nombre original": "Icon",
+    "glyph": "star",
+    "nombre de archivo": "Icon.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/star/materialsymbolsrounded/star_24px.svg"
+  },
+  {
+    "nombre original": "Icons",
+    "glyph": "star",
+    "nombre de archivo": "Icons.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/star/materialsymbolsrounded/star_24px.svg"
+  },
+  {
+    "nombre original": "Icon Tokens",
+    "glyph": "token",
+    "nombre de archivo": "Icon Tokens.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/token/materialsymbolsrounded/token_24px.svg"
+  },
+  {
+    "nombre original": "Identity",
+    "glyph": "badge",
+    "nombre de archivo": "Identity.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/badge/materialsymbolsrounded/badge_24px.svg"
+  },
+  {
+    "nombre original": "Idle",
+    "glyph": "pause_circle",
+    "nombre de archivo": "Idle.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/pause_circle/materialsymbolsrounded/pause_circle_24px.svg"
+  },
+  {
+    "nombre original": "Idle text",
+    "glyph": "text_fields",
+    "nombre de archivo": "Idle text.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/text_fields/materialsymbolsrounded/text_fields_24px.svg"
+  },
+  {
+    "nombre original": "Inline controls",
+    "glyph": "tune",
+    "nombre de archivo": "Inline controls.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/tune/materialsymbolsrounded/tune_24px.svg"
+  },
+  {
+    "nombre original": "Input",
+    "glyph": "input",
+    "nombre de archivo": "Input.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/input/materialsymbolsrounded/input_24px.svg"
+  },
+  {
+    "nombre original": "Items",
+    "glyph": "list",
+    "nombre de archivo": "Items.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/list/materialsymbolsrounded/list_24px.svg"
+  },
+  {
+    "nombre original": "Layout",
+    "glyph": "dashboard",
+    "nombre de archivo": "Layout.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/dashboard/materialsymbolsrounded/dashboard_24px.svg"
+  },
+  {
+    "nombre original": "Left icon row",
+    "glyph": "format_align_left",
+    "nombre de archivo": "Left icon row.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_align_left/materialsymbolsrounded/format_align_left_24px.svg"
+  },
+  {
+    "nombre original": "Message",
+    "glyph": "chat",
+    "nombre de archivo": "Message.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/chat/materialsymbolsrounded/chat_24px.svg"
+  },
+  {
+    "nombre original": "Modules",
+    "glyph": "view_module",
+    "nombre de archivo": "Modules.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/view_module/materialsymbolsrounded/view_module_24px.svg"
+  },
+  {
+    "nombre original": "Motion",
+    "glyph": "animation",
+    "nombre de archivo": "Motion.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/animation/materialsymbolsrounded/animation_24px.svg"
+  },
+  {
+    "nombre original": "Notes",
+    "glyph": "note",
+    "nombre de archivo": "Notes.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/note/materialsymbolsrounded/note_24px.svg"
+  },
+  {
+    "nombre original": "Playback",
+    "glyph": "play_circle",
+    "nombre de archivo": "Playback.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_circle/materialsymbolsrounded/play_circle_24px.svg"
+  },
+  {
+    "nombre original": "Play text",
+    "glyph": "play_arrow",
+    "nombre de archivo": "Play text.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsrounded/play_arrow_24px.svg"
+  },
+  {
+    "nombre original": "Preview controls",
+    "glyph": "preview",
+    "nombre de archivo": "Preview controls.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/preview/materialsymbolsrounded/preview_24px.svg"
+  },
+  {
+    "nombre original": "Preview setup",
+    "glyph": "preview",
+    "nombre de archivo": "Preview setup.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/preview/materialsymbolsrounded/preview_24px.svg"
+  },
+  {
+    "nombre original": "Radii",
+    "glyph": "rounded_corner",
+    "nombre de archivo": "Radii.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/rounded_corner/materialsymbolsrounded/rounded_corner_24px.svg"
+  },
+  {
+    "nombre original": "References",
+    "glyph": "link",
+    "nombre de archivo": "References.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/link/materialsymbolsrounded/link_24px.svg"
+  },
+  {
+    "nombre original": "Right icon row",
+    "glyph": "format_align_right",
+    "nombre de archivo": "Right icon row.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/format_align_right/materialsymbolsrounded/format_align_right_24px.svg"
+  },
+  {
+    "nombre original": "Runtime Inputs",
+    "glyph": "input",
+    "nombre de archivo": "Runtime Inputs.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/input/materialsymbolsrounded/input_24px.svg"
+  },
+  {
+    "nombre original": "Shadow",
+    "glyph": "shadow",
+    "nombre de archivo": "Shadow.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/shadow/materialsymbolsrounded/shadow_24px.svg"
+  },
+  {
+    "nombre original": "Source",
+    "glyph": "code",
+    "nombre de archivo": "Source.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/code/materialsymbolsrounded/code_24px.svg"
+  },
+  {
+    "nombre original": "Spacing",
+    "glyph": "space_bar",
+    "nombre de archivo": "Spacing.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/space_bar/materialsymbolsrounded/space_bar_24px.svg"
+  },
+  {
+    "nombre original": "State",
+    "glyph": "toggle_on",
+    "nombre de archivo": "State.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/toggle_on/materialsymbolsrounded/toggle_on_24px.svg"
+  },
+  {
+    "nombre original": "Status",
+    "glyph": "info",
+    "nombre de archivo": "Status.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/info/materialsymbolsrounded/info_24px.svg"
+  },
+  {
+    "nombre original": "Style",
+    "glyph": "style",
+    "nombre de archivo": "Style.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/style/materialsymbolsrounded/style_24px.svg"
+  },
+  {
+    "nombre original": "Text",
+    "glyph": "text_fields",
+    "nombre de archivo": "Text.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/text_fields/materialsymbolsrounded/text_fields_24px.svg"
+  },
+  {
+    "nombre original": "Timing",
+    "glyph": "timer",
+    "nombre de archivo": "Timing.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/timer/materialsymbolsrounded/timer_24px.svg"
+  },
+  {
+    "nombre original": "Typography",
+    "glyph": "text_format",
+    "nombre de archivo": "Typography.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/text_format/materialsymbolsrounded/text_format_24px.svg"
+  },
+  {
+    "nombre original": "Usage",
+    "glyph": "data_usage",
+    "nombre de archivo": "Usage.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/data_usage/materialsymbolsrounded/data_usage_24px.svg"
+  },
+  {
+    "nombre original": "Wallpaper",
+    "glyph": "wallpaper",
+    "nombre de archivo": "Wallpaper.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/wallpaper/materialsymbolsrounded/wallpaper_24px.svg"
+  },
+  {
+    "nombre original": "Add",
+    "glyph": "add",
+    "nombre de archivo": "Add.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add/materialsymbolsrounded/add_24px.svg"
+  },
+  {
+    "nombre original": "Browse",
+    "glyph": "folder_open",
+    "nombre de archivo": "Browse.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/folder_open/materialsymbolsrounded/folder_open_24px.svg"
+  },
+  {
+    "nombre original": "Clear",
+    "glyph": "close",
+    "nombre de archivo": "Clear.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/close/materialsymbolsrounded/close_24px.svg"
+  },
+  {
+    "nombre original": "Collapse",
+    "glyph": "expand_less",
+    "nombre de archivo": "Collapse.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/expand_less/materialsymbolsrounded/expand_less_24px.svg"
+  },
+  {
+    "nombre original": "Create first slot",
+    "glyph": "add_box",
+    "nombre de archivo": "Create first slot.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add_box/materialsymbolsrounded/add_box_24px.svg"
+  },
+  {
+    "nombre original": "Delete",
+    "glyph": "delete",
+    "nombre de archivo": "Delete.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/delete/materialsymbolsrounded/delete_24px.svg"
+  },
+  {
+    "nombre original": "Delete selected slot",
+    "glyph": "delete",
+    "nombre de archivo": "Delete selected slot.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/delete/materialsymbolsrounded/delete_24px.svg"
+  },
+  {
+    "nombre original": "Duplicate",
+    "glyph": "content_copy",
+    "nombre de archivo": "Duplicate.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/content_copy/materialsymbolsrounded/content_copy_24px.svg"
+  },
+  {
+    "nombre original": "Edit",
+    "glyph": "edit",
+    "nombre de archivo": "Edit.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/edit/materialsymbolsrounded/edit_24px.svg"
+  },
+  {
+    "nombre original": "Edit overrides",
+    "glyph": "edit_note",
+    "nombre de archivo": "Edit overrides.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/edit_note/materialsymbolsrounded/edit_note_24px.svg"
+  },
+  {
+    "nombre original": "Embedded structure",
+    "glyph": "account_tree",
+    "nombre de archivo": "Embedded structure.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/account_tree/materialsymbolsrounded/account_tree_24px.svg"
+  },
+  {
+    "nombre original": "Expand",
+    "glyph": "expand_more",
+    "nombre de archivo": "Expand.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/expand_more/materialsymbolsrounded/expand_more_24px.svg"
+  },
+  {
+    "nombre original": "Folder",
+    "glyph": "folder",
+    "nombre de archivo": "Folder.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/folder/materialsymbolsrounded/folder_24px.svg"
+  },
+  {
+    "nombre original": "Insert after",
+    "glyph": "add_circle",
+    "nombre de archivo": "Insert after.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add_circle/materialsymbolsrounded/add_circle_24px.svg"
+  },
+  {
+    "nombre original": "Lock",
+    "glyph": "lock",
+    "nombre de archivo": "Lock.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/lock/materialsymbolsrounded/lock_24px.svg"
+  },
+  {
+    "nombre original": "Move left",
+    "glyph": "arrow_back",
+    "nombre de archivo": "Move left.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/arrow_back/materialsymbolsrounded/arrow_back_24px.svg"
+  },
+  {
+    "nombre original": "Move right",
+    "glyph": "arrow_forward",
+    "nombre de archivo": "Move right.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/arrow_forward/materialsymbolsrounded/arrow_forward_24px.svg"
+  },
+  {
+    "nombre original": "Open referenced record",
+    "glyph": "open_in_new",
+    "nombre de archivo": "Open referenced record.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/open_in_new/materialsymbolsrounded/open_in_new_24px.svg"
+  },
+  {
+    "nombre original": "Open selected component variant",
+    "glyph": "open_in_new",
+    "nombre de archivo": "Open selected component variant.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/open_in_new/materialsymbolsrounded/open_in_new_24px.svg"
+  },
+  {
+    "nombre original": "Pause",
+    "glyph": "pause",
+    "nombre de archivo": "Pause.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/pause/materialsymbolsrounded/pause_24px.svg"
+  },
+  {
+    "nombre original": "Pick icon",
+    "glyph": "add_reaction",
+    "nombre de archivo": "Pick icon.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add_reaction/materialsymbolsrounded/add_reaction_24px.svg"
+  },
+  {
+    "nombre original": "Pick icons",
+    "glyph": "add_reaction",
+    "nombre de archivo": "Pick icons.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/add_reaction/materialsymbolsrounded/add_reaction_24px.svg"
+  },
+  {
+    "nombre original": "Play",
+    "glyph": "play_arrow",
+    "nombre de archivo": "Play.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsrounded/play_arrow_24px.svg"
+  },
+  {
+    "nombre original": "Rename",
+    "glyph": "drive_file_rename_outline",
+    "nombre de archivo": "Rename.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/drive_file_rename_outline/materialsymbolsrounded/drive_file_rename_outline_24px.svg"
+  },
+  {
+    "nombre original": "Restore inherited value",
+    "glyph": "settings_backup_restore",
+    "nombre de archivo": "Restore inherited value.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/settings_backup_restore/materialsymbolsrounded/settings_backup_restore_24px.svg"
+  },
+  {
+    "nombre original": "Save variant",
+    "glyph": "save",
+    "nombre de archivo": "Save variant.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/save/materialsymbolsrounded/save_24px.svg"
+  },
+  {
+    "nombre original": "Settings",
+    "glyph": "settings",
+    "nombre de archivo": "Settings.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/settings/materialsymbolsrounded/settings_24px.svg"
+  },
+  {
+    "nombre original": "Unlock",
+    "glyph": "lock_open",
+    "nombre de archivo": "Unlock.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/lock_open/materialsymbolsrounded/lock_open_24px.svg"
+  },
+  {
+    "nombre original": "Write-on",
+    "glyph": "edit",
+    "nombre de archivo": "Write-on.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/edit/materialsymbolsrounded/edit_24px.svg"
+  },
+  {
+    "nombre original": "Push",
+    "glyph": "touch_app",
+    "nombre de archivo": "Push.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/touch_app/materialsymbolsrounded/touch_app_24px.svg"
+  },
+  {
+    "nombre original": "In",
+    "glyph": "login",
+    "nombre de archivo": "In.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/login/materialsymbolsrounded/login_24px.svg"
+  },
+  {
+    "nombre original": "Previous Screen",
+    "glyph": "navigate_before",
+    "nombre de archivo": "Previous Screen.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/navigate_before/materialsymbolsrounded/navigate_before_24px.svg"
+  },
+  {
+    "nombre original": "First Shot frame",
+    "glyph": "first_page",
+    "nombre de archivo": "First Shot frame.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/first_page/materialsymbolsrounded/first_page_24px.svg"
+  },
+  {
+    "nombre original": "First frame in the selected scope",
+    "glyph": "first_page",
+    "nombre de archivo": "First frame in the selected scope.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/first_page/materialsymbolsrounded/first_page_24px.svg"
+  },
+  {
+    "nombre original": "Previous frame",
+    "glyph": "skip_previous",
+    "nombre de archivo": "Previous frame.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/skip_previous/materialsymbolsrounded/skip_previous_24px.svg"
+  },
+  {
+    "nombre original": "Play or pause the selected scope",
+    "glyph": "play_arrow",
+    "nombre de archivo": "Play or pause the selected scope.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsrounded/play_arrow_24px.svg"
+  },
+  {
+    "nombre original": "Next frame",
+    "glyph": "skip_next",
+    "nombre de archivo": "Next frame.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/skip_next/materialsymbolsrounded/skip_next_24px.svg"
+  },
+  {
+    "nombre original": "Last frame in the selected scope",
+    "glyph": "last_page",
+    "nombre de archivo": "Last frame in the selected scope.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/last_page/materialsymbolsrounded/last_page_24px.svg"
+  },
+  {
+    "nombre original": "Next Screen",
+    "glyph": "navigate_next",
+    "nombre de archivo": "Next Screen.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/navigate_next/materialsymbolsrounded/navigate_next_24px.svg"
+  },
+  {
+    "nombre original": "Last Shot frame",
+    "glyph": "last_page",
+    "nombre de archivo": "Last Shot frame.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/last_page/materialsymbolsrounded/last_page_24px.svg"
+  },
+  {
+    "nombre original": "Recent design contexts",
+    "glyph": "history",
+    "nombre de archivo": "Recent design contexts.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/history/materialsymbolsrounded/history_24px.svg"
+  },
+  {
+    "nombre original": "Recent production contexts",
+    "glyph": "history",
+    "nombre de archivo": "Recent production contexts.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/history/materialsymbolsrounded/history_24px.svg"
+  },
+  {
+    "nombre original": "Add current design context to history",
+    "glyph": "history",
+    "nombre de archivo": "Add current design context to history.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/history/materialsymbolsrounded/history_24px.svg"
+  },
+  {
+    "nombre original": "Keep current design context",
+    "glyph": "push_pin",
+    "nombre de archivo": "Keep current design context.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/push_pin/materialsymbolsrounded/push_pin_24px.svg"
+  },
+  {
+    "nombre original": "Release design context",
+    "glyph": "keep_off",
+    "nombre de archivo": "Release design context.svg",
+    "ruta oficial de origen": "https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/keep_off/materialsymbolsrounded/keep_off_24px.svg"
+  }
+]

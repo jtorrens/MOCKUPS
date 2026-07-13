@@ -87,21 +87,7 @@ internal static class EditorNavigationMetadata
 
     public static string SectionIcon(ProjectTreeNode sectionRoot)
     {
-        return sectionRoot.Kind switch
-        {
-            ProjectTreeNodeKind.ProductionDataRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ProductionDataRoot),
-            ProjectTreeNodeKind.SystemDataRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.SystemDataRoot),
-            ProjectTreeNodeKind.EpisodesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Episode),
-            ProjectTreeNodeKind.PaletteRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.PaletteColor),
-            ProjectTreeNodeKind.IconThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.IconTheme),
-            ProjectTreeNodeKind.RenderPresetsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.RenderPreset),
-            ProjectTreeNodeKind.ComponentClassesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ComponentClass),
-            ProjectTreeNodeKind.ComponentClassGroup => EditorIcons.ForTreeNode(ProjectTreeNodeKind.ComponentClass),
-            ProjectTreeNodeKind.DevicesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Device),
-            ProjectTreeNodeKind.ActorsRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Actor),
-            ProjectTreeNodeKind.ThemesRoot => EditorIcons.ForTreeNode(ProjectTreeNodeKind.Theme),
-            _ => EditorIcons.ForTreeNode(ProjectTreeNodeKind.App),
-        };
+        return EditorIcons.ForNavigationTreeNode(sectionRoot);
     }
 
     public static string Title(ProjectTreeNode node)
@@ -174,44 +160,6 @@ internal static class EditorNavigationMetadata
 
     public static string HierarchicalIcon(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
-        {
-            return HierarchicalIcon(node.Parent);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            var type = node.RecordClassId.StartsWith("component.", StringComparison.Ordinal)
-                ? node.RecordClassId["component.".Length..]
-                : "";
-            return type switch
-            {
-                "audio" => EditorIcons.Audio,
-                "avatar" => EditorIcons.Avatar,
-                "bubble" => EditorIcons.Bubble,
-                "button" => EditorIcons.ButtonIcon,
-                "cursor" => EditorIcons.Content,
-                "iconBar" or "iconRow" => EditorIcons.Icon,
-                "keyboard" => EditorIcons.Keyboard,
-                "label" => EditorIcons.Label,
-                "media" => EditorIcons.Media,
-                "navigation_bar" => EditorIcons.Navigation,
-                "status_bar" => EditorIcons.Status,
-                "surface" => EditorIcons.Layout,
-                "textBox" or "textInputBar" => EditorIcons.TextInput,
-                _ => EditorIcons.Component,
-            };
-        }
-
-        if (node.Kind != ProjectTreeNodeKind.ComponentClassGroup)
-        {
-            return EditorIcons.ForTreeNode(node.Kind);
-        }
-
-        return node.Id.Contains("_atoms_", StringComparison.Ordinal)
-            ? EditorIcons.Structure
-            : node.Id.Contains("_system_", StringComparison.Ordinal)
-                ? EditorIcons.Settings
-                : EditorIcons.Apps;
+        return EditorIcons.ForNavigationTreeNode(node);
     }
 }

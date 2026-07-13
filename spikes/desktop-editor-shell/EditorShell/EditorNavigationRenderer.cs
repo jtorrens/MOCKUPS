@@ -74,7 +74,7 @@ internal sealed class EditorNavigationRenderer
 
             if (workspace != EditorWorkspace.Production)
             {
-                candidate.Children.Add(CreateNavigationRow(project, EditorIcons.ForTreeNode(project.Kind)));
+                candidate.Children.Add(CreateNavigationRow(project, EditorIcons.ForNavigationTreeNode(project)));
             }
 
             foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
@@ -187,13 +187,13 @@ internal sealed class EditorNavigationRenderer
                 AddNavigationNode(content, child);
             }
 
-            AddNavigationCard(parent, node, content, EditorIcons.ForTreeNode(node.Kind));
+            AddNavigationCard(parent, node, content, EditorIcons.ForNavigationTreeNode(node));
             return;
         }
 
         parent.Children.Add(node.Kind == ProjectTreeNodeKind.PaletteColor
             ? CreatePaletteNavigationRow(node)
-            : CreateNavigationRow(node, EditorIcons.ForTreeNode(node.Kind)));
+            : CreateNavigationRow(node, EditorIcons.ForNavigationTreeNode(node)));
     }
 
     private void AddNavigationCard(

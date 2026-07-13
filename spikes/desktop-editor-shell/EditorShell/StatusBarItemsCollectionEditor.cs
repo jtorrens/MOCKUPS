@@ -35,7 +35,7 @@ internal sealed class StatusBarItemsCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var icon = EditorIcons.Create(EditorIcons.Status, 18);
+        var icon = EditorIcons.CreateSemantic("Items", EditorIcons.Status, 18);
         var items = Items(node).ToList();
         var body = new StackPanel
         {
