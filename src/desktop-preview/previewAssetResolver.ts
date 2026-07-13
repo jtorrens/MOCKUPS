@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -18,6 +18,35 @@ const lastVideoFrameByAsset = new Map<string, string>();
 const videoDurationCache = new Map<string, number>();
 const videoIdentityByPath = new Map<string, string>();
 const maxVideoFrameCacheEntries = 240;
+const emojiRasterCache = new Map<string, { uri: string; width: number; height: number }>();
+
+export function emojiRasterDataUri(text: string, fontSize: number) {
+  const pixelScale = 4;
+  const glyphCount = Math.max(1, [...text].filter((character) => character !== "\ufe0f").length);
+  const width = Math.ceil(Math.max(fontSize * 1.2, glyphCount * fontSize * 1.28));
+  const height = Math.ceil(fontSize * 1.28);
+  const cacheKey = `${text}\u001f${fontSize}`;
+  const cached = emojiRasterCache.get(cacheKey);
+  if (cached) return cached;
+  const directory = path.join(os.tmpdir(), "mockups-emoji-raster");
+  mkdirSync(directory, { recursive: true });
+  const identity = createHash("sha256").update(cacheKey).digest("hex");
+  const sourcePath = path.join(directory, `${identity}.svg`);
+  const outputPath = path.join(directory, `${identity}.png`);
+  if (!existsSync(outputPath)) {
+    const pixelWidth = width * pixelScale;
+    const pixelHeight = height * pixelScale;
+    writeFileSync(sourcePath, `<svg xmlns="http://www.w3.org/2000/svg" width="${pixelWidth}" height="${pixelHeight}"><text x="0" y="${fontSize * pixelScale}" font-family="Apple Color Emoji" font-size="${fontSize * pixelScale}">${escapeXml(text)}</text></svg>`);
+    execFileSync("/usr/bin/sips", ["-s", "format", "png", sourcePath, "--out", outputPath], { stdio: "ignore" });
+  }
+  const result = { uri: `data:image/png;base64,${readFileSync(outputPath).toString("base64")}`, width, height };
+  emojiRasterCache.set(cacheKey, result);
+  return result;
+}
+
+function escapeXml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   const systemIcon = systemIconUri(token);

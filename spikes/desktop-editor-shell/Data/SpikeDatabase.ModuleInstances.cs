@@ -422,7 +422,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
-            ["schemaVersion"] = 1,
+            ["schemaVersion"] = 2,
             ["actorId"] = "",
             ["headerSubtitle"] = "online",
             ["bubbleRevealMode"] = "afterWriteOn",

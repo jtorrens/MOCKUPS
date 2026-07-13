@@ -125,6 +125,75 @@ internal sealed partial class SpikeDatabase
             "UPDATE shots SET duration_frames = MAX(1, COALESCE((SELECT SUM(mi.duration_frames) FROM module_instances mi WHERE mi.shot_id = shots.id), 0))");
     }
 
+    private static void NormalizeAnimationJson(SqliteConnection connection)
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = "SELECT id, animation_json FROM module_instances";
+        using var reader = select.ExecuteReader();
+        var updates = new List<(string Id, string Json)>();
+        while (reader.Read())
+        {
+            var animation = ParseJsonObject(ReadString(reader, 1));
+            var version = animation["schemaVersion"]?.GetValue<int>() ?? 1;
+            if (version == 2)
+            {
+                ValidateAnimationJson(animation, reader.GetString(0));
+                continue;
+            }
+            if (version != 1) throw new InvalidOperationException($"Unsupported animation schemaVersion {version}.");
+            var tracks = animation["tracks"] as JsonArray ?? new JsonArray();
+            foreach (var (track, trackIndex) in tracks.OfType<JsonObject>().Select((value, index) => (value, index)))
+            {
+                if (track["events"] is JsonArray { Count: > 0 })
+                    throw new InvalidOperationException("Animation events cannot be migrated; convert them explicitly to v2 keyframes.");
+                track["id"] ??= $"track-{trackIndex + 1:D4}";
+                track["fieldId"] = track["parameterId"]?.DeepClone() ?? throw new InvalidOperationException("Animation track is missing parameterId.");
+                track.Remove("parameterId");
+                if (track["itemId"] is JsonNode targetId) track["targetId"] = targetId.DeepClone();
+                track.Remove("itemId");
+                track.Remove("label");
+                var keyframes = track["keyframes"] as JsonArray ?? new JsonArray();
+                track["keyframes"] = keyframes;
+                foreach (var (keyframe, keyframeIndex) in keyframes.OfType<JsonObject>().Select((value, index) => (value, index)))
+                {
+                    keyframe["id"] ??= $"{track["id"]!.GetValue<string>()}-keyframe-{keyframeIndex + 1:D4}";
+                    keyframe["interpolation"] ??= "hold";
+                    keyframe["enabled"] ??= true;
+                }
+            }
+            animation["schemaVersion"] = 2;
+            ValidateAnimationJson(animation, reader.GetString(0));
+            updates.Add((reader.GetString(0), animation.ToJsonString()));
+        }
+        reader.Close();
+        foreach (var update in updates)
+            Execute(connection, "UPDATE module_instances SET animation_json = $json WHERE id = $id", ("$json", update.Json), ("$id", update.Id));
+    }
+
+    private static void ValidateAnimationJson(JsonObject animation, string instanceId)
+    {
+        if (animation["schemaVersion"]?.GetValue<int>() != 2 || animation["tracks"] is not JsonArray tracks)
+            throw new InvalidOperationException($"Module instance '{instanceId}' has invalid animation_json v2.");
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var track in tracks.OfType<JsonObject>())
+        {
+            var id = track["id"]?.GetValue<string>() ?? "";
+            var fieldId = track["fieldId"]?.GetValue<string>() ?? "";
+            var targetId = track["targetId"]?.GetValue<string>() ?? "";
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(fieldId) || track["keyframes"] is not JsonArray keyframes)
+                throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid animation track.");
+            if (!targets.Add($"{fieldId}\u001f{targetId}")) throw new InvalidOperationException($"Module instance '{instanceId}' has duplicate animation targets.");
+            var frames = new HashSet<int>();
+            foreach (var keyframe in keyframes.OfType<JsonObject>())
+            {
+                var frame = keyframe["frame"]?.GetValue<int>() ?? -1;
+                var keyframeId = keyframe["id"]?.GetValue<string>() ?? "";
+                if (frame < 0 || string.IsNullOrWhiteSpace(keyframeId) || keyframe["value"] is null || !frames.Add(frame))
+                    throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid animation keyframe.");
+            }
+        }
+    }
+
     private static bool RuntimeInputDefinition(JsonObject definition)
     {
         var source = definition["source"]?.GetValue<string>() ?? "runtime";

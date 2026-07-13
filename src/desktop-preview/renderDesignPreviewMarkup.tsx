@@ -9,7 +9,7 @@ import { fontFacesForPayload } from "./previewAssetResolver.js";
 import { selectedColor } from "./previewColorHelpers.js";
 import { extractRootOverlays } from "./renderableRootOverlays.js";
 
-function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
+export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): RenderableNode {
   const child = designPreviewPayloadToRenderable(payload);
   const extracted = extractRootOverlays(child);
 
@@ -34,7 +34,7 @@ function renderableForPayload(payload: DesignPreviewPayload): RenderableNode {
 }
 
 export function renderDesignPreviewMarkup(payload: DesignPreviewPayload): string {
-  const renderable = renderableForPayload(payload);
+  const renderable = renderDesignPreviewRenderable(payload);
   return renderToStaticMarkup(
     React.createElement(DesktopRenderableHtmlAdapter, {
       tree: renderable,

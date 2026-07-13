@@ -82,9 +82,12 @@ internal static class RuntimeTimeline
         var endFrame = 0;
         foreach (var track in (animation["tracks"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
-            foreach (var item in (track["events"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            foreach (var item in (track["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                endFrame = Math.Max(endFrame, NonNegativeInt(item["startFrame"]) + NonNegativeInt(item["durationFrames"]));
+                if (item["enabled"] is JsonValue enabled
+                    && enabled.TryGetValue<bool>(out var isEnabled)
+                    && !isEnabled) continue;
+                endFrame = Math.Max(endFrame, NonNegativeInt(item["frame"]) + 1);
             }
         }
         return endFrame;

@@ -16,6 +16,7 @@
     "legacy:audit:current-model": "tsx archive/react-legacy/src/persistence/audit/auditCurrentModel.ts",
     "legacy:db:normalize-current-model": "tsx archive/react-legacy/src/persistence/audit/normalizeCurrentModel.ts",
     "desktop-preview:build": "node scripts/buildDesktopPreview.mjs",
+    "desktop-preview:svg": "tsx scripts/renderDesignPreviewSvg.ts",
     "desktop": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
     "desktop:build": "dotnet build spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
     "desktop:schema-v1:candidate": "dotnet run --project spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -- --create-schema-v1",

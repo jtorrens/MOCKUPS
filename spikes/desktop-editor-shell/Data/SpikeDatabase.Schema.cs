@@ -79,7 +79,7 @@ internal sealed partial class SpikeDatabase
           transition_json TEXT NOT NULL DEFAULT '{"type":"cut"}',
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
-          animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":1,"tracks":[]}',
+          animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":2,"tracks":[]}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
