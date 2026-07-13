@@ -60,15 +60,9 @@ internal sealed record NumberDefinition(
 
 internal sealed record RecordReferenceDefinition(string TableId);
 
-internal enum AnimationFrameOrigin
-{
-    ScreenStart,
-    TargetStart,
-}
-
 internal sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,
-    AnimationFrameOrigin FrameOrigin = AnimationFrameOrigin.ScreenStart);
+    bool ExtendsOwnerDuration = true);
 
 internal enum ComponentInputBindingSource
 {

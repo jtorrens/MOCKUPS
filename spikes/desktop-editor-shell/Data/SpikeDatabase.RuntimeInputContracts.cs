@@ -178,7 +178,19 @@ internal sealed partial class SpikeDatabase
         var changed = false;
         foreach (var track in (animation["tracks"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
-            if (track["keyframes"] is not JsonArray { Count: 0 } keyframes) continue;
+            var keyframes = track["keyframes"] as JsonArray ?? new JsonArray();
+            track["keyframes"] = keyframes;
+            var existingOrigin = keyframes.OfType<JsonObject>()
+                .FirstOrDefault((keyframe) => keyframe["frame"]?.GetValue<int>() == 0);
+            if (existingOrigin is not null)
+            {
+                if (existingOrigin["enabled"]?.GetValue<bool>() == false)
+                {
+                    existingOrigin["enabled"] = true;
+                    changed = true;
+                }
+                continue;
+            }
             var fieldId = track["fieldId"]?.GetValue<string>() ?? "";
             var targetId = track["targetId"]?.GetValue<string>() ?? "";
             var definition = FindAnimationFieldDefinition(contract, fieldId, targetId, runtime, out var runtimeOwner);
@@ -238,13 +250,30 @@ internal sealed partial class SpikeDatabase
     {
         if (animation["schemaVersion"]?.GetValue<int>() != 2 || animation["tracks"] is not JsonArray tracks)
             throw new InvalidOperationException($"Module instance '{instanceId}' has invalid animation_json v2.");
+        if (animation["retime"] is JsonObject retime)
+        {
+            ValidatePositiveFrameCount(retime["targetDurationFrames"], instanceId);
+            if (retime["targets"] is JsonObject retimeTargets)
+            {
+                foreach (var target in retimeTargets)
+                {
+                    if (string.IsNullOrWhiteSpace(target.Key) || target.Value is not JsonObject targetRetime)
+                        throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid animation retime target.");
+                    ValidatePositiveFrameCount(targetRetime["targetDurationFrames"], instanceId);
+                }
+            }
+            else if (retime["targets"] is not null)
+                throw new InvalidOperationException($"Module instance '{instanceId}' has invalid animation retime targets.");
+        }
         var targets = new HashSet<string>(StringComparer.Ordinal);
+        var trackIds = new HashSet<string>(StringComparer.Ordinal);
+        var keyframeIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var track in tracks.OfType<JsonObject>())
         {
             var id = track["id"]?.GetValue<string>() ?? "";
             var fieldId = track["fieldId"]?.GetValue<string>() ?? "";
             var targetId = track["targetId"]?.GetValue<string>() ?? "";
-            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(fieldId) || track["keyframes"] is not JsonArray keyframes)
+            if (string.IsNullOrWhiteSpace(id) || !trackIds.Add(id) || string.IsNullOrWhiteSpace(fieldId) || track["keyframes"] is not JsonArray keyframes)
                 throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid animation track.");
             if (!targets.Add($"{fieldId}\u001f{targetId}")) throw new InvalidOperationException($"Module instance '{instanceId}' has duplicate animation targets.");
             var frames = new HashSet<int>();
@@ -252,10 +281,21 @@ internal sealed partial class SpikeDatabase
             {
                 var frame = keyframe["frame"]?.GetValue<int>() ?? -1;
                 var keyframeId = keyframe["id"]?.GetValue<string>() ?? "";
-                if (frame < 0 || string.IsNullOrWhiteSpace(keyframeId) || keyframe["value"] is null || !frames.Add(frame))
+                if (frame < 0 || string.IsNullOrWhiteSpace(keyframeId) || !keyframeIds.Add(keyframeId) || keyframe["value"] is null || !frames.Add(frame))
                     throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid animation keyframe.");
             }
+            var origin = keyframes.OfType<JsonObject>()
+                .FirstOrDefault((keyframe) => keyframe["frame"]?.GetValue<int>() == 0);
+            if (origin is null || origin["enabled"]?.GetValue<bool>() == false)
+                throw new InvalidOperationException($"Module instance '{instanceId}' must keep an enabled origin keyframe at frame 0.");
         }
+    }
+
+    private static void ValidatePositiveFrameCount(JsonNode? node, string instanceId)
+    {
+        if (node is null) return;
+        if (node is not JsonValue value || !value.TryGetValue<int>(out var frames) || frames <= 0)
+            throw new InvalidOperationException($"Module instance '{instanceId}' has an invalid target duration.");
     }
 
     private static bool RuntimeInputDefinition(JsonObject definition)

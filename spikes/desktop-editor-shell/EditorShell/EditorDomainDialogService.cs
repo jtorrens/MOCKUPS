@@ -48,6 +48,21 @@ internal sealed class EditorDomainDialogService
             height: 240);
     }
 
+    public Task<bool> ConfirmRuntimeCollectionItemDelete(string label)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmCollectionItemDelete(label);
+    }
+
+    public Task<bool> ConfirmAnimationDisable(string fieldLabel)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmAnimationDisable(fieldLabel);
+    }
+
+    public Task<SpikeDatabase.ShotModuleChoice?> SelectModuleForShot(string shotId)
+    {
+        return new ShotModulePickerDialog(_owner).Show(_database.GetAvailableShotModules(shotId));
+    }
+
     public Task ShowIconThemeSearch(ProjectTreeNode node)
     {
         return new IconThemeSearchDialog(_owner, _database, _showInfo, _reloadAndSelect).Show(node);

@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -12,15 +13,18 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
+    private readonly Func<string, Task<SpikeDatabase.ShotModuleChoice?>> _selectModule;
 
     public ShotModuleInstancesCollectionEditor(
         SpikeDatabase database,
         Action onChanged,
-        Action<ProjectTreeNode> reloadAndSelect)
+        Action<ProjectTreeNode> reloadAndSelect,
+        Func<string, Task<SpikeDatabase.ShotModuleChoice?>> selectModule)
     {
         _database = database;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
+        _selectModule = selectModule;
     }
 
     public InstantEditorCard Create(ProjectTreeNode shot)
@@ -32,23 +36,21 @@ internal sealed class ShotModuleInstancesCollectionEditor
             body.Children.Add(CreateSlot(shot, slots[index], index, slots.Count));
         }
 
-        var add = new Button
+        var add = EditorCollectionItemControls.CreateAddButton("Add module to Shot");
+        add.Click += async (_, _) =>
         {
-            Content = "Add conversation",
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-        add.Click += (_, _) =>
-        {
-            var added = _database.AddChild(shot);
+            var module = await _selectModule(shot.Id);
+            if (module is null) return;
+            var added = _database.AddModuleInstance(shot, module);
             _onChanged();
             _reloadAndSelect(added);
         };
-        body.Children.Add(add);
 
         return new InstantEditorCard(
             EditorCardHeader.Create("Modules", $"{EditorUiText.Count(slots.Count, "ordered slot")}", EditorIcons.CreateSemantic("Modules", EditorIcons.Module, 18)),
             new Border { Padding = new Thickness(10), Child = body },
-            isExpanded: false)
+            isExpanded: false,
+            headerTrailing: add)
         { HorizontalAlignment = HorizontalAlignment.Stretch };
     }
 
@@ -86,12 +88,12 @@ internal sealed class ShotModuleInstancesCollectionEditor
             shot));
         row.Children.Add(open);
 
-        row.Children.Add(MoveButton("Up", index == 0, -1));
+        row.Children.Add(MoveButton(up: true, index == 0, -1));
         Grid.SetColumn(row.Children[^1], 1);
-        row.Children.Add(MoveButton("Down", index == count - 1, 1));
+        row.Children.Add(MoveButton(up: false, index == count - 1, 1));
         Grid.SetColumn(row.Children[^1], 2);
 
-        var delete = new Button { Content = EditorIcons.Create(EditorIcons.Delete, 15) };
+        var delete = EditorCollectionItemControls.CreateDeleteButton();
         delete.Click += (_, _) =>
         {
             _database.Delete(new ProjectTreeNode(
@@ -109,9 +111,9 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
         return new Border { Padding = new Thickness(8), Child = row };
 
-        Button MoveButton(string label, bool disabled, int offset)
+        Button MoveButton(bool up, bool disabled, int offset)
         {
-            var button = new Button { Content = label, IsEnabled = !disabled };
+            var button = EditorCollectionItemControls.CreateMoveButton(up, enabled: !disabled);
             button.Click += (_, _) =>
             {
                 _database.MoveModuleInstance(slot.Id, offset);

@@ -23,6 +23,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<JsonObject, JsonObject> _applyTransientTestValues;
     private readonly Func<bool> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
+    private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
+    private readonly Func<string, Task<bool>> _confirmAnimationDisable;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
     private readonly EditorSessionUiState _sessionUiState;
@@ -39,6 +41,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<JsonObject, JsonObject> applyTransientTestValues,
         Func<bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
+        Func<string, Task<bool>> confirmCollectionItemDelete,
+        Func<string, Task<bool>> confirmAnimationDisable,
         PreviewPlaybackState playbackState,
         EditorSessionUiState sessionUiState,
         ModuleInstanceAnimationEditor? animationEditor = null,
@@ -53,6 +57,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _applyTransientTestValues = applyTransientTestValues;
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
+        _confirmCollectionItemDelete = confirmCollectionItemDelete;
+        _confirmAnimationDisable = confirmAnimationDisable;
         _playbackState = playbackState;
         _sessionUiState = sessionUiState;
         _animationEditor = animationEditor;
@@ -444,11 +450,16 @@ internal sealed class RuntimeInputsCollectionEditor
                 items[index],
                 out var trailing,
                 out var itemSubcards);
+            var presentation = RuntimeCollectionItemPresentation.Resolve(
+                collection,
+                items[index],
+                $"Payload item {index + 1}",
+                EditorIcons.Component);
             subcards.Add(new EditorInternalNavigationSection(
                 itemId,
                 $"{collection.ItemLabel} {index + 1}",
-                $"Payload item {index + 1}",
-                EditorIcons.Component,
+                presentation.Subtitle,
+                presentation.Icon,
                 itemContent,
                 trailing,
                 itemSubcards,
@@ -459,9 +470,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 (next) => _sessionUiState.Select(navigationKey, next)));
         }
 
-        if (owner.IsInstance)
+        if (owner.IsInstance && items.Count == 0)
         {
-            var add = new Button { Content = $"Add {collection.ItemLabel.ToLowerInvariant()}", HorizontalAlignment = HorizontalAlignment.Left };
+            var add = EditorCollectionItemControls.CreateAddButton($"Add {collection.ItemLabel.ToLowerInvariant()}");
+            add.HorizontalAlignment = HorizontalAlignment.Left;
             add.Click += (_, _) =>
             {
                 var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
@@ -492,7 +504,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item,
-        out Button? delete,
+        out Control? trailing,
         out IReadOnlyList<EditorInternalNavigationSection> subcards)
     {
         var content = new StackPanel { Spacing = 8 };
@@ -504,18 +516,79 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionJsonKey == collection.JsonKey
                 && action.CollectionItemId == itemId)
             .ToList();
-        delete = null;
+        trailing = null;
         if (owner.IsInstance)
         {
-            delete = new Button
+            var controls = new StackPanel
             {
-                Content = EditorIcons.Create(EditorIcons.Delete, 14),
-                Width = 30,
-                Height = 28,
-                Padding = new Thickness(0),
+                Orientation = Orientation.Horizontal,
+                Spacing = 2,
             };
-            delete.Click += (_, _) =>
+            var add = EditorCollectionItemControls.CreateAddButton($"Add {collection.ItemLabel.ToLowerInvariant()} after this item");
+            add.Click += (_, args) =>
             {
+                args.Handled = true;
+                var next = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
+                foreach (var field in collection.Fields)
+                {
+                    next[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, field.DefaultValue);
+                }
+                _database.InsertModuleInstanceRuntimeCollectionItemAfter(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    next);
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+            controls.Children.Add(add);
+            var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {collection.ItemLabel.ToLowerInvariant()}");
+            duplicate.Click += (_, args) =>
+            {
+                args.Handled = true;
+                _database.DuplicateModuleInstanceRuntimeCollectionItem(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    $"{collection.Id}_{Guid.NewGuid():N}");
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+            controls.Children.Add(duplicate);
+            var moveUp = EditorCollectionItemControls.CreateMoveButton(up: true, enabled: itemIndex > 0);
+            moveUp.Click += (_, args) =>
+            {
+                args.Handled = true;
+                _database.MoveModuleInstanceRuntimeCollectionItem(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    -1);
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+            controls.Children.Add(moveUp);
+            var moveDown = EditorCollectionItemControls.CreateMoveButton(
+                up: false,
+                enabled: itemIndex < DesignPreviewTestValues.CollectionItems(preview, collection).Count - 1);
+            moveDown.Click += (_, args) =>
+            {
+                args.Handled = true;
+                _database.MoveModuleInstanceRuntimeCollectionItem(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    1);
+                _onChanged();
+                _reloadAndSelect?.Invoke(owner.Node);
+            };
+            controls.Children.Add(moveDown);
+            var delete = EditorCollectionItemControls.CreateDeleteButton();
+            delete.Click += async (_, args) =>
+            {
+                args.Handled = true;
+                var label = $"{collection.ItemLabel} {itemIndex + 1}";
+                if (!await _confirmCollectionItemDelete(label)) return;
                 _database.DeleteModuleInstanceRuntimeCollectionItem(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
@@ -523,6 +596,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
+            controls.Children.Add(delete);
+            trailing = controls;
         }
         StackPanel? actionRow = null;
         var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
@@ -666,7 +741,13 @@ internal sealed class RuntimeInputsCollectionEditor
         var active = document.HasTrack(input.Id, targetId);
         var toggle = new Button
         {
-            Content = active ? "◆" : "◇",
+            Content = EditorTimelineTransport.CreateAnimationActivationGlyph(
+                filled: active,
+                extendsOwnerDuration: input.Animation.ExtendsOwnerDuration,
+                size: 16,
+                brush: active
+                    ? EditorAnimationVisuals.ActiveTrackBrush
+                    : EditorAnimationVisuals.InactiveTrackBrush),
             Width = 30,
             Height = 30,
             Padding = new Thickness(0),
@@ -681,10 +762,14 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorAccessibility.Describe(toggle, active
             ? $"Disable animation for {input.Label}"
             : $"Enable animation for {input.Label}");
-        toggle.Click += (_, args) =>
+        toggle.Click += async (_, args) =>
         {
             args.Handled = true;
-            if (active) document.RemoveTrack(input.Id, targetId);
+            if (active)
+            {
+                if (!await _confirmAnimationDisable(input.Label)) return;
+                document.RemoveTrack(input.Id, targetId);
+            }
             else document.AddTrack(
                 input.Id,
                 targetId,

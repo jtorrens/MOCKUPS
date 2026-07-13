@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -99,11 +100,13 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleInstanceAnimationJson(string moduleInstanceId, string animationJson)
     {
+        var animation = ParseJsonObject(animationJson);
+        ValidateAnimationJson(animation, moduleInstanceId);
         using var connection = OpenConnection();
         Execute(
             connection,
             "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
-            ("$animationJson", animationJson),
+            ("$animationJson", animation.ToJsonString()),
             ("$id", moduleInstanceId));
         SynchronizeTimelineDurations(connection);
     }
@@ -132,14 +135,130 @@ internal sealed partial class SpikeDatabase
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
 
-    public void DeleteModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, string itemId)
+    public void InsertModuleInstanceRuntimeCollectionItemAfter(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string afterItemId,
+        JsonObject item)
     {
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        var items = content[collectionJsonKey] as JsonArray ?? new JsonArray();
+        content[collectionJsonKey] = items;
+        var currentIndex = -1;
+        for (var index = 0; index < items.Count; index++)
+        {
+            if (items[index]?["id"]?.GetValue<string>() != afterItemId) continue;
+            currentIndex = index;
+            break;
+        }
+        items.Insert(currentIndex < 0 ? items.Count : currentIndex + 1, item.DeepClone());
+        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+    }
+
+    public void DuplicateModuleInstanceRuntimeCollectionItem(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId,
+        string duplicateItemId)
+    {
+        var settings = GetModuleInstanceSettings(moduleInstanceId);
+        var content = ParseJsonObject(settings.ContentJson);
+        var items = content[collectionJsonKey] as JsonArray
+            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var currentIndex = -1;
+        JsonObject? source = null;
+        for (var index = 0; index < items.Count; index++)
+        {
+            if (items[index] is not JsonObject candidate
+                || candidate["id"]?.GetValue<string>() != itemId) continue;
+            currentIndex = index;
+            source = candidate;
+            break;
+        }
+        if (source is null) throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
+        var duplicate = source.DeepClone().AsObject();
+        duplicate["id"] = duplicateItemId;
+        items.Insert(currentIndex + 1, duplicate);
+
+        var animation = ParseJsonObject(settings.AnimationJson);
+        if (animation["tracks"] is JsonArray tracks)
+        {
+            foreach (var sourceTrack in tracks.OfType<JsonObject>()
+                .Where((track) => track["targetId"]?.GetValue<string>() == itemId)
+                .ToList())
+            {
+                var duplicateTrack = sourceTrack.DeepClone().AsObject();
+                duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
+                duplicateTrack["targetId"] = duplicateItemId;
+                foreach (var keyframe in (duplicateTrack["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
+                {
+                    keyframe["id"] = $"keyframe_{Guid.NewGuid():N}";
+                }
+                tracks.Add(duplicateTrack);
+            }
+        }
+
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE module_instances SET content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
+            ("$contentJson", content.ToJsonString()),
+            ("$animationJson", animation.ToJsonString()),
+            ("$id", moduleInstanceId));
+        SynchronizeTimelineDurations(connection);
+    }
+
+    public void DeleteModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, string itemId)
+    {
+        var settings = GetModuleInstanceSettings(moduleInstanceId);
+        var content = ParseJsonObject(settings.ContentJson);
         var items = content[collectionJsonKey] as JsonArray
             ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
         var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
         items.Remove(item);
+        var animation = ParseJsonObject(settings.AnimationJson);
+        if (animation["tracks"] is JsonArray tracks)
+        {
+            foreach (var track in tracks.OfType<JsonObject>()
+                .Where((candidate) => candidate["targetId"]?.GetValue<string>() == itemId)
+                .ToList())
+            {
+                tracks.Remove(track);
+            }
+        }
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE module_instances SET content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
+            ("$contentJson", content.ToJsonString()),
+            ("$animationJson", animation.ToJsonString()),
+            ("$id", moduleInstanceId));
+        SynchronizeTimelineDurations(connection);
+    }
+
+    public void MoveModuleInstanceRuntimeCollectionItem(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId,
+        int offset)
+    {
+        if (offset == 0) return;
+        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        var items = content[collectionJsonKey] as JsonArray
+            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var currentIndex = -1;
+        for (var index = 0; index < items.Count; index++)
+        {
+            if (items[index]?["id"]?.GetValue<string>() != itemId) continue;
+            currentIndex = index;
+            break;
+        }
+        var targetIndex = currentIndex + offset;
+        if (currentIndex < 0 || targetIndex < 0 || targetIndex >= items.Count) return;
+        var item = items[currentIndex];
+        items.RemoveAt(currentIndex);
+        items.Insert(targetIndex, item);
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
 
@@ -178,6 +297,77 @@ internal sealed partial class SpikeDatabase
         }
 
         return slots;
+    }
+
+    public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
+    {
+        using var connection = OpenConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT m.id, m.name, a.name, a.id, m.record_class_id
+            FROM modules m
+            JOIN apps a ON a.id = m.app_id
+            WHERE a.project_id = (
+              SELECT e.project_id
+              FROM shots s
+              JOIN episodes e ON e.id = s.episode_id
+              WHERE s.id = $shotId
+            )
+            ORDER BY a.sort_order, a.name, m.sort_order, m.name
+            """;
+        command.Parameters.AddWithValue("$shotId", shotId);
+        using var reader = command.ExecuteReader();
+        var choices = new List<ShotModuleChoice>();
+        while (reader.Read())
+        {
+            choices.Add(new ShotModuleChoice(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4)));
+        }
+        return choices;
+    }
+
+    public ProjectTreeNode AddModuleInstance(ProjectTreeNode shot, ShotModuleChoice module)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot)
+            throw new InvalidOperationException("A module instance can only be added to a Shot.");
+        using var connection = OpenConnection();
+        var index = NextSortOrder(connection, "module_instances", "shot_id", shot.Id);
+        var id = $"module_instance_{Guid.NewGuid():N}";
+        var name = $"{module.Name} {index + 1}";
+        Execute(
+            connection,
+            """
+            INSERT INTO module_instances (
+              id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+              transition_json, content_json, behavior_json, animation_json)
+            VALUES (
+              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 1,
+              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson)
+            """,
+            ("$id", id),
+            ("$shotId", shot.Id),
+            ("$appId", module.AppId),
+            ("$moduleId", module.Id),
+            ("$name", name),
+            ("$notes", $"{module.Name} module instance."),
+            ("$sortOrder", index),
+            ("$contentJson", "{}"),
+            ("$behaviorJson", "{}"),
+            ("$animationJson", DefaultModuleAnimationJson()));
+        NormalizeModuleInstanceRuntimePayloads(connection);
+        SynchronizeTimelineDurations(connection);
+        var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ModuleInstance,
+            id,
+            name,
+            $"{module.Name} · {duration} frames · Cut",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
+            shot);
     }
 
     public void MoveModuleInstance(string moduleInstanceId, int offset)

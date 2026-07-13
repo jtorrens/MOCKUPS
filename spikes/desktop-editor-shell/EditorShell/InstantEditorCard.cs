@@ -29,7 +29,7 @@ internal sealed class InstantEditorCard : Grid
         };
         headerRow.PointerPressed += (_, args) =>
         {
-            if (args.Source is Control source
+            if (args.Source is Visual source
                 && (source is Button
                     || source is ToggleSwitch
                     || source is RangeBase

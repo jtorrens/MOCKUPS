@@ -28,6 +28,8 @@ internal static class EditorIcons
     public const string Folder = "folder";
     public const string Left = "left";
     public const string Right = "right";
+    public const string Up = "up";
+    public const string Down = "down";
     public const string TimelinePreviousInstance = "timeline-previous-instance";
     public const string TimelineShotStart = "timeline-shot-start";
     public const string TimelineFirstFrame = "timeline-first-frame";
@@ -36,6 +38,8 @@ internal static class EditorIcons
     public const string TimelineLastFrame = "timeline-last-frame";
     public const string TimelineNextInstance = "timeline-next-instance";
     public const string TimelineShotEnd = "timeline-shot-end";
+    public const string TimelineKeyframe = "timeline-keyframe";
+    public const string TimelineKeyframeEmpty = "timeline-keyframe-empty";
 
     public const string Project = "project";
     public const string Apps = "apps";
@@ -330,6 +334,8 @@ internal static class EditorIcons
             TimelineLastFrame => "components/Last frame in the selected scope.svg",
             TimelineNextInstance => "components/Next Screen.svg",
             TimelineShotEnd => "components/Last Shot frame.svg",
+            TimelineKeyframe => "components/Keyframe.svg",
+            TimelineKeyframeEmpty => "components/Keyframe empty.svg",
             Project => "editor_general.svg",
             Apps => "editor_design.svg",
             App => "editor_layout.svg",
@@ -416,15 +422,19 @@ internal static class EditorIcons
             Refresh => "M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z",
             Play => "M8 5V19L19 12Z",
             Pause => "M7 5H10V19H7Z M14 5H17V19H14Z",
-            TimelinePreviousInstance => "M18 6L12 12L18 18 M13 6L7 12L13 18",
-            TimelineShotStart => "M4 5H6V19H4Z M18 6L12 12L18 18Z M13 6L7 12L13 18Z",
+            TimelinePreviousInstance => "M4 3H7V21H4Z M20 6L13 12L20 18L18 20L9 12L18 4Z",
+            TimelineShotStart => "M3 3H6V5H5V19H6V21H3Z M20 6L13 12L20 18L18 20L9 12L18 4Z",
             TimelineFirstFrame => "M6 5H8V19H6Z M18 6L11 12L18 18Z",
-            TimelinePreviousFrame => "M16 6L9 12L16 18",
-            TimelineNextFrame => "M8 6L15 12L8 18",
+            TimelinePreviousFrame => "M17 4L7 12L17 20L19 18L11 12L19 6Z",
+            TimelineNextFrame => "M7 4L17 12L7 20L5 18L13 12L5 6Z",
             TimelineLastFrame => "M16 5H18V19H16Z M6 6L13 12L6 18Z",
-            TimelineNextInstance => "M6 6L12 12L6 18 M11 6L17 12L11 18",
-            TimelineShotEnd => "M18 5H20V19H18Z M6 6L12 12L6 18Z M11 6L17 12L11 18Z",
+            TimelineNextInstance => "M4 6L11 12L4 18L6 20L15 12L6 4Z M17 3H20V21H17Z",
+            TimelineShotEnd => "M4 6L11 12L4 18L6 20L15 12L6 4Z M18 3H21V21H18V19H19V5H18Z",
+            TimelineKeyframe => "M12 2L22 12L12 22L2 12Z",
+            TimelineKeyframeEmpty => "M12 2L22 12L12 22L2 12Z M12 6L6 12L12 18L18 12Z",
             Folder => "M3 6H10L12 8H21V19H3Z M3 6V19",
+            Up => "M4 15L12 7L20 15L18 17L12 11L6 17Z",
+            Down => "M4 9L6 7L12 13L18 7L20 9L12 17Z",
 
             Project => "M4 9.5L12 4L20 9.5V20C20 20.55 19.55 21 19 21H14V15H10V21H5C4.45 21 4 20.55 4 20V9.5Z",
             Apps => "M5 5H11V11H5Z M13 5H19V11H13Z M5 13H11V19H5Z M13 13H19V19H13Z",

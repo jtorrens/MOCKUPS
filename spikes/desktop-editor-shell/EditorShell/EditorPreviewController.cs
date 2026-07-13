@@ -105,12 +105,12 @@ internal sealed class EditorPreviewController
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly Button _shotPreviousSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
+    private readonly Button _shotPreviousKeyframeButton = new() { Content = EditorTimelineTransport.CreateKeyframeStepIcon(next: false), Width = 38, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotAbsoluteStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotStart, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
-    private readonly Button _shotStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineFirstFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPreviousFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPlayButton = new() { Content = EditorIcons.Create(EditorIcons.Play, 16), Width = 42, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
-    private readonly Button _shotEndButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineLastFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
+    private readonly Button _shotNextKeyframeButton = new() { Content = EditorTimelineTransport.CreateKeyframeStepIcon(next: true), Width = 38, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotAbsoluteEndButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotEnd, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly DispatcherTimer _shotPlaybackTimer = new() { Interval = TimeSpan.FromMilliseconds(20) };
@@ -711,16 +711,16 @@ internal sealed class EditorPreviewController
                 {
                     _shotNavigationScopeComboBox,
                     TimelineSeparator(),
-                    TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousFrameButton),
-                    TimelineSeparator(),
                     TimelineButtonGroup(
-                        _shotStartButton,
+                        _shotAbsoluteStartButton,
                         _shotPreviousSlotButton,
+                        _shotPreviousKeyframeButton,
+                        _shotPreviousFrameButton,
                         _shotPlayButton,
+                        _shotNextFrameButton,
+                        _shotNextKeyframeButton,
                         _shotNextSlotButton,
-                        _shotEndButton),
-                    TimelineSeparator(),
-                    TimelineButtonGroup(_shotNextFrameButton, _shotAbsoluteEndButton),
+                        _shotAbsoluteEndButton),
                 },
             },
         };
@@ -728,10 +728,10 @@ internal sealed class EditorPreviewController
         {
             _shotAbsoluteStartButton,
             _shotPreviousSlotButton,
-            _shotStartButton,
+            _shotPreviousKeyframeButton,
             _shotPreviousFrameButton,
             _shotNextFrameButton,
-            _shotEndButton,
+            _shotNextKeyframeButton,
             _shotNextSlotButton,
             _shotAbsoluteEndButton,
         })
@@ -747,22 +747,22 @@ internal sealed class EditorPreviewController
         var transportLeadingSeparator = TimelineSeparator(30);
         _shotTimelineControls.Children.Add(transportLeadingSeparator);
         _shotTimelineControls.Children.Add(navigationRow);
+        EditorAccessibility.Describe(_shotPreviousKeyframeButton, "Previous animation keyframe in the current Screen");
         EditorAccessibility.Describe(_shotPreviousSlotButton, "Previous Screen");
         EditorAccessibility.Describe(_shotAbsoluteStartButton, "First Shot frame");
-        EditorAccessibility.Describe(_shotStartButton, "First frame in the selected scope");
         EditorAccessibility.Describe(_shotPreviousFrameButton, "Previous frame");
         EditorAccessibility.Describe(_shotPlayButton, "Play or pause the selected scope");
         EditorAccessibility.Describe(_shotNextFrameButton, "Next frame");
-        EditorAccessibility.Describe(_shotEndButton, "Last frame in the selected scope");
+        EditorAccessibility.Describe(_shotNextKeyframeButton, "Next animation keyframe in the current Screen");
         EditorAccessibility.Describe(_shotNextSlotButton, "Next Screen");
         EditorAccessibility.Describe(_shotAbsoluteEndButton, "Last Shot frame");
         _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false, synchronizeScreenSelection: true);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
-        _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame, synchronizeScreenSelection: true);
+        _shotPreviousKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(-1);
         _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1, synchronizeScreenSelection: true);
         _shotPlayButton.Click += (_, _) => ToggleShotPlayback();
         _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1, synchronizeScreenSelection: true);
-        _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame, synchronizeScreenSelection: true);
+        _shotNextKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(1);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
         _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false, synchronizeScreenSelection: true);
 
@@ -995,6 +995,16 @@ internal sealed class EditorPreviewController
 
     private void AttachControlEvents()
     {
+        var shotFrameMagnet = new TimelineSliderMagnet(
+            _shotFrameSlider,
+            () =>
+            {
+                var range = NavigationFrameRange();
+                return AnimationKeyframesInCurrentScreen()
+                    .Select((frame) => frame - range.StartFrame)
+                    .Where((frame) => frame >= 0 && frame < range.DurationFrames)
+                    .ToList();
+            });
         _deviceComboBox.SelectionChanged += (_, _) => OnDeviceChanged();
         _themeComboBox.SelectionChanged += (_, _) => OnThemeChanged();
         _modeComboBox.SelectionChanged += (_, _) => OnModeChanged();
@@ -1011,7 +1021,9 @@ internal sealed class EditorPreviewController
             if (change.Property == RangeBase.ValueProperty && !_isUpdatingShotTimeline)
             {
                 var range = NavigationFrameRange();
-                SetShotPreviewFrame(range.StartFrame + (int)Math.Round(_shotFrameSlider.Value, MidpointRounding.AwayFromZero));
+                SetShotPreviewFrame(range.StartFrame + (int)Math.Round(
+                    shotFrameMagnet.Resolve(_shotFrameSlider.Value),
+                    MidpointRounding.AwayFromZero));
             }
         };
         _shotFrameSlider.PointerReleased += (_, _) => SynchronizeExplicitScreenSelection();
@@ -2178,14 +2190,30 @@ internal sealed class EditorPreviewController
             _shotFrameText,
             $"Frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
             showToolTip: false);
-        _shotStartButton.IsEnabled = _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
-        _shotEndButton.IsEnabled = _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
+        _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
+        _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
         _shotAbsoluteStartButton.IsEnabled = _shotPreviewFrame > 0;
         _shotAbsoluteEndButton.IsEnabled = _shotPreviewFrame < duration - 1;
+        var keyframes = AnimationKeyframesInCurrentScreen();
+        _shotPreviousKeyframeButton.IsEnabled = keyframes.Any((frame) => frame < _shotPreviewFrame);
+        _shotNextKeyframeButton.IsEnabled = keyframes.Any((frame) => frame > _shotPreviewFrame);
+        var isOnKeyframe = keyframes.Contains(_shotPreviewFrame);
+        _shotPlayButton.BorderBrush = isOnKeyframe
+            ? EditorAnimationVisuals.ActiveTrackBrush
+            : Brushes.Transparent;
+        _shotPlayButton.BorderThickness = new Thickness(2);
+        EditorAccessibility.Describe(
+            _shotPlayButton,
+            isOnKeyframe
+                ? "Play or pause the selected scope; current frame is an animation keyframe"
+                : "Play or pause the selected scope");
         var activeSlotIndex = ActiveShotSlotIndex(shotId);
         var slotCount = _database.GetShotModuleInstanceSlots(shotId).Count;
-        _shotPreviousSlotButton.IsEnabled = activeSlotIndex > 0;
-        _shotNextSlotButton.IsEnabled = activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
+        var showScreenStep = _shotNavigationScope == "shot";
+        _shotPreviousSlotButton.IsVisible = showScreenStep;
+        _shotNextSlotButton.IsVisible = showScreenStep;
+        _shotPreviousSlotButton.IsEnabled = showScreenStep && activeSlotIndex > 0;
+        _shotNextSlotButton.IsEnabled = showScreenStep && activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
         _shotTimelineControls.IsVisible = true;
         _shotHeaderTimelineControls.IsVisible = true;
         _isUpdatingShotTimeline = false;
@@ -2209,6 +2237,12 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(shotId)) return (0, 0, 1);
         var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
         if (_shotNavigationScope != "screen") return (0, shotDuration - 1, shotDuration);
+        return ActiveScreenFrameRange(shotId);
+    }
+
+    private (int StartFrame, int EndFrame, int DurationFrames) ActiveScreenFrameRange(string shotId)
+    {
+        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
         var slots = _database.GetShotModuleInstanceSlots(shotId);
         var index = ActiveShotSlotIndex(shotId);
         if (index < 0 || index >= slots.Count) return (0, shotDuration - 1, shotDuration);
@@ -2267,15 +2301,31 @@ internal sealed class EditorPreviewController
         var slots = _database.GetShotModuleInstanceSlots(shotId);
         var target = ActiveShotSlotIndex(shotId) + offset;
         if (target < 0 || target >= slots.Count) return;
-        var start = 0;
-        for (var index = 0; index < target; index++)
-        {
-            start += ModuleInstanceTimeline.DurationFrames(_database, slots[index].Id);
-        }
+        var start = ModuleInstanceStartFrame(shotId, slots[target].Id);
         StopShotPlayback();
         _shotPreviewFrame = start;
-        SetShotNavigationScope("screen");
-        SelectExplicitScreen(slots[target].Id);
+        PlaybackState.NotifyFrameChanged();
+        Refresh();
+    }
+
+    private IReadOnlyList<int> AnimationKeyframesInCurrentScreen()
+    {
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)) return [];
+        var range = ActiveScreenFrameRange(shotId);
+        return ModuleInstanceTimeline.ShotKeyframeFrames(_database, shotId)
+            .Where((frame) => frame >= range.StartFrame && frame <= range.EndFrame)
+            .ToList();
+    }
+
+    private void MoveAnimationKeyframe(int direction)
+    {
+        var keyframes = AnimationKeyframesInCurrentScreen();
+        var target = direction < 0
+            ? keyframes.LastOrDefault((frame) => frame < _shotPreviewFrame, -1)
+            : keyframes.FirstOrDefault((frame) => frame > _shotPreviewFrame, -1);
+        if (target < 0) return;
+        SetShotPreviewFrame(target, useSelectedScope: false, synchronizeScreenSelection: true);
     }
 
     private bool SynchronizeExplicitScreenSelection()

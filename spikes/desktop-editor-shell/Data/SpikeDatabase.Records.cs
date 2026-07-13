@@ -32,6 +32,12 @@ internal sealed partial class SpikeDatabase
         string ConfigJson,
         string DesignPreviewJson,
         string MetadataJson);
+    public sealed record ShotModuleChoice(
+        string Id,
+        string Name,
+        string AppName,
+        string AppId,
+        string RecordClassId);
     public sealed record ModuleInstanceSettings(
         string ShotId,
         string AppId,

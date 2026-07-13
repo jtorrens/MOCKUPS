@@ -1339,11 +1339,35 @@ internal sealed class ComponentPreviewInputSession
                     jsonKey,
                     JsonString(collection, "itemLabel", "Item"),
                     itemFields,
-                    JsonString(collection, "sourceCollectionJsonKey")));
+                    JsonString(collection, "sourceCollectionJsonKey"),
+                    ReadItemPresentation(collection)));
             }
         }
 
         return definitions;
+    }
+
+    private static RuntimeInputCollectionItemPresentation? ReadItemPresentation(JsonObject collection)
+    {
+        if (collection["itemPresentation"] is not JsonObject presentation)
+        {
+            return null;
+        }
+
+        var subtitleFieldIds = JsonStringArray(presentation, "subtitleFieldIds");
+        var iconValueMap = (presentation["iconValueMap"] as JsonObject)?
+            .Where((property) => property.Value is JsonValue)
+            .ToDictionary(
+                (property) => property.Key,
+                (property) => property.Value?.GetValue<string>() ?? "",
+                StringComparer.OrdinalIgnoreCase)
+            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        return new RuntimeInputCollectionItemPresentation(
+            subtitleFieldIds,
+            Math.Max(16, (int)JsonDecimal(presentation, "subtitleMaxCharacters", 72)),
+            JsonString(presentation, "iconFieldId"),
+            JsonString(presentation, "fallbackIcon", EditorIcons.Component),
+            iconValueMap);
     }
 
     private static bool InputIsVisible(JsonObject input, JsonObject config)
@@ -1375,12 +1399,10 @@ internal sealed class ComponentPreviewInputSession
             return null;
         }
         var interpolations = JsonStringArray(input, "animationInterpolations");
-        var frameOrigin = JsonString(input, "animationFrameOrigin") == "targetStart"
-            ? AnimationFrameOrigin.TargetStart
-            : AnimationFrameOrigin.ScreenStart;
+        var extendsOwnerDuration = input["animationTimeline"]?["extendsOwnerDuration"]?.GetValue<bool>() != false;
         return interpolations.Count > 0
-            ? new AnimationFieldDefinition(interpolations, frameOrigin)
-            : new AnimationFieldDefinition(["hold"], frameOrigin);
+            ? new AnimationFieldDefinition(interpolations, extendsOwnerDuration)
+            : new AnimationFieldDefinition(["hold"], extendsOwnerDuration);
     }
 
     private static string InputSignature(ComponentInputDefinition input)
@@ -1637,4 +1659,12 @@ internal sealed record RuntimeInputCollectionDefinition(
     string JsonKey,
     string ItemLabel,
     IReadOnlyList<ComponentInputDefinition> Fields,
-    string SourceCollectionJsonKey = "");
+    string SourceCollectionJsonKey = "",
+    RuntimeInputCollectionItemPresentation? ItemPresentation = null);
+
+internal sealed record RuntimeInputCollectionItemPresentation(
+    IReadOnlyList<string> SubtitleFieldIds,
+    int SubtitleMaxCharacters,
+    string IconFieldId,
+    string FallbackIcon,
+    IReadOnlyDictionary<string, string> IconValueMap);

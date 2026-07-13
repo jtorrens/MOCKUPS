@@ -420,6 +420,10 @@ type ConversationPreviewMessage = {
   statusText: string;
   delayAfterPreviousFrames: number;
   writeOnDurationFrames: number;
+  timelineBodyDurationFrames: number;
+  timelineStartFrame: number;
+  timelineEndFrame: number;
+  timelineRevealAtFrame: number;
   postWriteOnHoldFrames: number;
   writeOnTrigger: boolean;
   writeOnFrame: number;
@@ -511,6 +515,10 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
         statusText: optionalString(message, "statusText") || optionalString(status, "text"),
         delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
         writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
+        timelineBodyDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "timelineBodyDurationFrames", 0))),
+        timelineStartFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineStartFrame", 0))),
+        timelineEndFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineEndFrame", 0))),
+        timelineRevealAtFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0))),
         postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
         writeOnTrigger: false,
         writeOnFrame: 0,
@@ -544,18 +552,16 @@ function visibleMessages(
   frame: number,
   timing: ConversationTiming,
 ) {
-  let cursor = 0;
   return messages.flatMap((message) => {
-    const startFrame = cursor + message.delayAfterPreviousFrames;
+    const startFrame = message.timelineStartFrame;
     const isSystemMessage = message.state === "system";
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
     const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
     const holdFrames = isOutgoingMessage ? message.postWriteOnHoldFrames : 0;
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
-    cursor = revealEndFrame + holdFrames;
     const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
-    const visibleAt = revealAfterWriteOn ? revealEndFrame + holdFrames : startFrame;
+    const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;
     if (frame < visibleAt) return [];
     const incomingTyping = isIncomingMessage
       && timing.incomingRevealMode === "typingIndicator"
@@ -588,12 +594,11 @@ function composerState(
   frame: number,
   timing: ConversationTiming,
 ) {
-  let cursor = 0;
   for (const message of messages) {
-    const startFrame = cursor + message.delayAfterPreviousFrames;
+    const startFrame = message.timelineStartFrame;
     const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
     const endFrame = startFrame + effectiveWriteOnFrames;
-    const holdEndFrame = endFrame + (message.state === "outgoing" ? message.postWriteOnHoldFrames : 0);
+    const holdEndFrame = message.timelineRevealAtFrame;
     const composerVisible = message.state === "outgoing"
       && effectiveWriteOnFrames > 0
       && frame >= startFrame
@@ -617,7 +622,6 @@ function composerState(
         keyboardVisible: timing.keyboardVisible,
       };
     }
-    cursor = holdEndFrame;
   }
   return { text: "", currentCharacter: 0, textInputVisible: false, keyboardVisible: false };
 }

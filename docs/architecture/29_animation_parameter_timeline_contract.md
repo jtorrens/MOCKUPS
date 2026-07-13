@@ -1,10 +1,10 @@
 # Animation parameter timeline contract
 
 Date: 2026-07-13
-Status: **approved contract; phase 2 in progress**
+Status: **approved contract; implementation in progress**
 Base: `main` at `a124622401363117139e4fa23ff77ed360794d5f` (after the UI baseline named by the handoff). `git pull` reported the branch up to date.
 
-This document records the canonical model approved before implementation. The initial functional editor and resolver work was subsequently authorized; visual refinement remains a separate pass governed by this contract.
+This document records the canonical model and the generic owner-timeline refinements approved during implementation.
 
 ## 1. Baseline and audit inventory
 
@@ -58,6 +58,10 @@ This prevents two incompatible schedulers and makes the duration service able to
 ```json
 {
   "schemaVersion": 2,
+  "retime": {
+    "targetDurationFrames": 145,
+    "targets": { "message-42": { "targetDurationFrames": 67 } }
+  },
   "tracks": [
     {
       "id": "track-message-42-text",
@@ -72,7 +76,7 @@ This prevents two incompatible schedulers and makes the duration service able to
 }
 ```
 
-Required root properties are `schemaVersion: 2` and `tracks`. A track has a stable non-empty `id`, a stable `fieldId`, optional `targetId`, and `keyframes`. `targetId` identifies a stable collection item owned by the field's declaring contract; it is absent for a top-level field. Neither labels nor array indexes are addressing values. A label is editor-derived metadata and is not persisted in a track.
+Required root properties are `schemaVersion: 2` and `tracks`. Optional `retime.targetDurationFrames` sets the Screen target duration; `retime.targets[targetId].targetDurationFrames` sets one collection owner's target duration. These are positive integer output durations, not user-facing multipliers. A track has a stable non-empty `id`, a stable `fieldId`, optional `targetId`, and `keyframes`. `targetId` identifies a stable collection item owned by the field's declaring contract; it is absent for a top-level field. Neither labels nor array indexes are addressing values. A label is editor-derived metadata and is not persisted in a track.
 
 Each keyframe has a stable non-empty `id`, a non-negative integer `frame`, a typed `value`, one `interpolation`, and `enabled` (default `true` when writing v2). Writers always serialize tracks and keyframes by ascending `frame`, then stable `id`; readers must validate that order rather than quietly reorder it.
 
@@ -86,7 +90,7 @@ The owning module/component contract publishes generic `FieldDefinition` metadat
 
 ```text
 fieldId, valueKind, animatable, allowedInterpolations,
-targetScope, frameOrigin, collectionTargetRule, unit, optional finite-duration evaluator
+targetScope, animationTimeline, collectionTargetRule, unit, optional finite-duration evaluator
 ```
 
 Validation resolves `fieldId` against that metadata, checks that the target is allowed, verifies a collection `targetId` exists and is stable, and validates the keyframe value with the same `ValueKind` validation used by the dictionary editor. Calculated/internal fields are not targets unless the owning contract explicitly publishes them as safe. The editor never constructs its own target catalogue or value controls.
@@ -103,13 +107,17 @@ The initial interpolation matrix is intentionally small:
 
 `writeOn` is a derived text segment rule, not a sequence of persisted character events. `easeInOut` is the single initial numeric easing and is deterministic (smoothstep `p²(3−2p)`); it is never delegated to CSS.
 
-`frameOrigin` is owner-authored contract metadata, never a user-editable setting. Its initial values are `screenStart` and `targetStart`. A `targetStart` collection field stores frames relative to its target's calculated start; the owning collection contract publishes the generic sequence/start inputs needed by editor and duration infrastructure, while the owning resolver remains authoritative for the same calculation.
+`animationTimeline` is owner-authored contract metadata, never a user-editable setting. Every top-level field is owned by its Screen; every collection field is owned by the stable item selected by `targetId`. A field origin is either `{ kind: "ownerStart" }` or `{ kind: "fieldCompletion", fieldId, offsetFrames }`. A dependency may reference only another field in the same owner and the dependency graph must be acyclic. Collections separately declare their serial pre-duration and post-duration fields. This keeps collection sequencing, field dependency, animation evaluation and rendering as distinct responsibilities.
 
-Enabling animation for a field creates its track with an enabled keyframe at frame `0`, containing the current base value and the field's default interpolation. This guarantees a defined animated state from the origin. At any frame without an exact keyframe, the editor shows a hollow diamond; the filled diamond is reserved for an exact keyframe.
+`animationTimeline.extendsOwnerDuration` defaults to `true`. When `false`, the field does not move the end used to start the next serial collection item, but its absolute keyframes still extend the owning Screen and remain part of the owner's visual span. Conversation delivery/status fields use this mode: a read receipt can appear after later messages have started. Runtime activation controls distinguish these non-sequencing tracks with a circle; the Animation panel continues to use the shared diamond vocabulary.
+
+Enabling animation for a field creates its track with an enabled keyframe at frame `0`, containing the current base value and the field's default interpolation. This origin keyframe is mandatory, enabled and cannot be deleted. Disabling the field animation at its Runtime control removes the complete track after confirmation. At any frame without an exact keyframe, the editor shows a hollow diamond; the filled diamond is reserved for an exact keyframe.
 
 ## 4. Frames, intervals, and value resolution
 
-Authored parameter frames are non-negative integer frames in the field's declared origin. A `screenStart` field uses Screen-local frames. A `targetStart` field uses frames relative to the calculated start of its stable target, so a message keyframe at `0` begins at that message rather than at the Shot or Screen origin. A Screen with `durationFrames = D` resolves exactly `[0, D)`, i.e. `0` through `D - 1`. Shot slots are sequential, so the Production navigator owns `shotFrame` and passes `localFrame = shotFrame - screenStartFrame` to the active resolver.
+Authored parameter frames are non-negative integer frames relative to their field origin. A Screen field with `ownerStart` uses Screen-local frames. A Message `text` field uses its Message owner start, which is calculated after that Message's own delay. A delivery field can instead use text completion as its origin. Changing delay, insertion, reordering, write-on duration or an upstream text track recalculates absolute positions without rewriting stored keyframes. A Screen with `durationFrames = D` resolves exactly `[0, D)`, i.e. `0` through `D - 1`. Shot slots are sequential, so the Production navigator owns `shotFrame` and passes `localFrame = shotFrame - screenStartFrame` to the active resolver.
+
+Retime scales owner-local timing to a requested integer-frame output duration. The implementation derives the factor, maps every action/keyframe through it, and rounds effective actions to integer frames. Authored keyframe frames are never rewritten. For collection owners, the natural visual span includes non-sequencing fields, while the shorter sequencing extent determines when the next item begins; both are scaled by the same owner factor. Screen retime is then applied to the complete resolved Screen span.
 
 For an enabled keyframe pair `A` at `a` and destination `B` at `b`, where `a < b`, the segment is `[a, b)`. `B.value` is effective exactly at `b`; the segment therefore never has to approximate its target. `B.interpolation` owns the segment from `A` to `B`:
 
@@ -160,7 +168,7 @@ max(1,
 
 Concurrent sources are maximized, never summed. A Screen ends at that maximum; the last valid frame is `durationFrames - 1`. A finite media end is clamped by source duration after converting the source duration with the same `ceil(s * fps)` convention. A loop can therefore never create infinite duration.
 
-Conversation timing remains Screen-local and sequential: each message start is derived from preceding delay/write-on/hold fields. Message-owned tracks declare `targetStart`, so their stored frames are message-local; editor, duration service, and Conversation resolver translate them through the same calculated appearance frame.
+Conversation timing remains Screen-local and serial. For message `i`, `start(i) = sequenceEnd(i-1) + delay(i)`. Text completion is `writeOn(i)` when its active track contains only mandatory KF0, otherwise the last enabled text keyframe. Delivery/status, Playing and Full screen are relative to that text completion. Text, finite Playing and Full screen extend the serial item extent; delivery/status fields do not. Consequently a status may resolve after another Message has begun, while still extending the Screen's visual span. `sequenceEnd(i) = start(i) + sequencingBodyExtent(i) + postWriteOnHold(i)`. A true media keyframe contributes only its finite authored window or until a replacing keyframe, whichever comes first. Disabled keyframes do not contribute.
 
 For the current cut-only model, Shot duration is the sum of ordered Screen durations. The navigator, resolver selection, slider ranges, playback cache, and export all call this service; no control owns a private duration formula.
 
@@ -182,19 +190,17 @@ The resolver evaluates typed animation and module semantics at the requested fra
 
 The sequence provider accepts either Design action frames or Production frames, then shares preparation and presentation. Starting either source cancels the other; navigation, context, route, active Screen, FPS, asset/font, runtime or animation changes cancel stale preparation. Cache identity includes source, Shot id, Screen id, global and local frame, effective FPS, device/theme/mode, runtime and animation signatures, asset/font signatures, route, and geometry.
 
-## 9. Migration plan (later phase)
+## 9. Migration
 
-1. Add strict v2 schema/typed target validation and a database scan.
-2. Migrate every seed, fixture, example, layout, and committed desktop database in one transaction: rename `parameterId` to `fieldId`, `itemId` to `targetId`, assign stable missing ids, and reject/explicitly transform any legacy `events` before the release.
-3. Replace the default writer with v2 and replace `RuntimeTimeline`'s event reader with the canonical duration service.
-4. Remove all v1 readers, aliases, and retired event fields. Persisted v1 data after migration is invalid, not a compatibility input.
-5. Commit the changed desktop database and any parity assets/data in the same implementation commit.
+The seed, fixtures and committed desktop database migrate in one explicit step to v2. `RuntimeTimeline` delegates only to the generic owner timeline; the retired event/legacy duration implementation is removed rather than retained behind a fallback. Persisted v1 data after migration is invalid. Database and parity assets ship in the same implementation commit.
 
 The audited committed data is empty, so step 2 presently has no event or keyframe payload requiring semantic conversion. Any non-empty local/user data encountered at implementation time must be explicitly reported and migrated; it must not be silently reinterpreted.
 
 ## 10. Editor scope after approval
 
-The first Production Animation surface is bound to the existing authoritative Screen playhead. Screen-owned tracks live in an `Animation` subcard inside the Runtime Inputs `General` category; target-owned collection tracks live in an `Animation` category inside their owning item, after its declared runtime groups. In both scopes a compact, centred standard timeline transport and mini-timeline precede a list containing only active properties and the selected property detail. The transport begins with a filled diamond when the selected property has a keyframe at the active frame and a hollow diamond otherwise, then uses the shared first/previous/play-pause/next/last-frame controls. Play/pause delegates to the Preview's single authoritative Production playback owner and observes its shared playhead state; the animation editor must not own a timer or playback loop. Placement is generic and follows runtime input/collection ownership plus animation metadata; it must not branch on Conversation, Messages, or another concrete module. This surface is intentionally specialized timeline chrome rather than ordinary editor-card organization. Both keyframe values and interpolation use `FieldDefinition` plus registered dictionary controls. Property selection is session-only state keyed by editor node and target id and is never persisted in window state. Runtime Values keep base data; Animation keeps overrides. There is no detached module-level Animation card.
+The Production Animation surface is bound to the existing authoritative Screen playhead. Screen-owned tracks live in an `Animation` subcard inside Runtime Inputs `General`; collection tracks live inside their owning item. Each panel presents owner-local natural frames and translates them through the generic owner timeline at its boundary. A dictionary-backed target-duration control may set the owner or Screen retime; Auto removes that override. Persisted keyframes remain authored local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The list contains only active properties, while all active properties remain visible when another is selected.
+
+The compact transport and mini-timeline use the shared keyframe glyphs and one Preview playback owner. The exact nonzero keyframe diamond removes that keyframe; a hollow diamond creates one; mandatory KF0 cannot be removed. Slider dragging uses a shared soft magnetic detent at keyframes without blocking continued movement. Preview aggregates enabled keyframes from every header and collection owner into Screen/Shot coordinates, disables unavailable directions and marks exact-keyframe parking with an amber Play/Pause border. Runtime field activation uses diamonds for sequencing tracks and circles for `extendsOwnerDuration: false` tracks; this distinction is not repeated inside Animation.
 
 It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, component-specific controls, an independent playhead, or a private duration calculation. Empty/invalid/orphaned states are explicit. Curves, color/geometry animation, cross-Screen transitions, arbitrary scripted events, and unbounded/live media are deferred.
 
@@ -213,9 +219,9 @@ It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, compone
 
 `npm run animation:test` is the focused autonomous suite and `npm test` includes it. It does not read or modify `data/desktop-editor-spike.sqlite`.
 
-- TypeScript frame tests cover missing/disabled tracks, exact `[start, end)` boundaries, final hold, destination-owned hold/linear/ease-in-out/write-on interpolation, Unicode grapheme rewrite, exact `fieldId`/`targetId` isolation, Screen fields, message-relative origins, non-animable actor/direction, delivery/full-screen fields, and finite media playing.
-- The .NET contract runner covers strict v2 document shape, activation with a frame-zero keyframe, target persistence and round-trip, ordered upsert/removal, Screen and target origins, duration endpoints and composition, finite media action duration, duplicate target/frame rejection, negative-frame rejection, initial-keyframe normalization, explicit rejection of legacy events, the initially authorized animatable vocabulary, and shared playback state notifications.
-- `npm run check:architecture` covers editor placement, active-track-only lists, target-scoped session state, dictionary interpolation, diamond-first standard transport order, delegation to the single Preview playback owner, absence of an editor timer, resolver ownership, and renderer/bridge boundaries.
+- TypeScript frame tests cover missing/disabled tracks, exact `[start, end)` boundaries, final hold, destination-owned hold/linear/ease-in-out/write-on interpolation, Unicode grapheme rewrite, exact `fieldId`/`targetId` isolation, Screen fields, post-delay message-relative origins, delay changes without keyframe rewrites, insertion/reordering, chain extension by keyframes and finite media, non-animable actor/direction, delivery/full-screen fields, and finite media playing.
+- The .NET contract runner covers strict v2 document shape, activation with a frame-zero keyframe, target persistence and round-trip, ordered upsert/removal, Screen and target origins, animated/media-driven target chaining, duration endpoints and composition, finite media action duration, duplicate target/frame rejection, negative-frame rejection, initial-keyframe normalization, explicit rejection of legacy events, the initially authorized animatable vocabulary, and shared playback state notifications.
+- `npm run check:architecture` covers editor placement, active-track-only lists, target-scoped session state, dictionary interpolation, diamond-first standard transport order, Preview keyframe aggregation and scope filtering, delegation to the single Preview playback owner, absence of an editor timer, resolver ownership, and renderer/bridge boundaries.
 
 Visual density, alignment, truncation and responsive layout remain a short human review in the running application; they are not treated as semantic correctness tests.
 | routes | identical resolved frames for HTML priority, HTML every-frame and raster every-frame; no renderer timer |
@@ -223,11 +229,6 @@ Visual density, alignment, truncation and responsive layout remain a short human
 
 Performance targets retain the static-preview contract: at 25 fps, median end-to-end frame preparation no more than 25 ms, p95 no more than 40 ms, no late-frame replay, and cache work cancellable by the identity above. Resolver evaluation must be pure: any requested frame can be resolved independently.
 
-## 12. Product approvals required before phase 2
+## 12. Approved decisions
 
-1. Approve v2 as keyframes-only and retire generic `events`.
-2. Approve `fieldId`/`targetId`, destination-owned interpolation, strict unique frame policy, and the half-open `[start, end)` convention.
-3. Approve the initial interpolation set, particularly the canonical `easeInOut` name and `writeOn` text semantics.
-4. Approve finite playback as a contract-owned typed field with frame windows, rather than a global event model; confirm whether `sourceOffsetSeconds` is needed in the first release.
-5. Confirm the status of `duration_frames`: it is proposed as an explicit stored minimum while the derived canonical duration is recalculated. If it should instead be removed as redundant, that requires a separate schema migration decision.
-6. Confirm which initial runtime fields each owning module exposes as animatable. The architecture does not infer them from existing UI fields.
+The implemented baseline is keyframes-only v2, strict `fieldId`/`targetId`, destination-owned interpolation, half-open intervals, mandatory KF0, grapheme-safe `writeOn`, finite audio/video, one derived Screen duration, generic owner/field-completion origins, non-sequencing late fields, and integer target-duration retime. Future animation types remain contract additions rather than editor or renderer exceptions.

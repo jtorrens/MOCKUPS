@@ -63,6 +63,30 @@ internal sealed class EditorDialogService
             height: 220);
     }
 
+    public Task<bool> ConfirmCollectionItemDelete(string label)
+    {
+        return Confirm(
+            $"Delete {label}",
+            $"Delete {label}?",
+            "Its runtime values and the animation tracks owned by this item will be removed.",
+            "Delete",
+            isDestructive: true,
+            width: 440,
+            height: 230);
+    }
+
+    public Task<bool> ConfirmAnimationDisable(string fieldLabel)
+    {
+        return Confirm(
+            "Disable animation",
+            $"Disable animation for {fieldLabel}?",
+            "Every keyframe in this property track will be removed.",
+            "Disable animation",
+            isDestructive: true,
+            width: 440,
+            height: 230);
+    }
+
     public Task<bool> ConfirmAction(
         string title,
         string headline,

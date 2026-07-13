@@ -100,10 +100,14 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _previewPlaybackState, _sessionUiState, animationEditor, _reloadAndSelect).Create(node),
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _domainDialogs.ConfirmRuntimeCollectionItemDelete, _domainDialogs.ConfirmAnimationDisable, _previewPlaybackState, _sessionUiState, animationEditor, _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
-                [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
+                [new ShotModuleInstancesCollectionEditor(
+                    _database,
+                    _onChanged,
+                    _reloadAndSelect,
+                    _domainDialogs.SelectModuleForShot).Create(node)],
             _ => [],
         };
 

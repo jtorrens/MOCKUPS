@@ -29,6 +29,43 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public bool HasTrack(string fieldId, string targetId) => Track(fieldId, targetId) is not null;
 
+    public int? TargetDurationFrames(string targetId)
+    {
+        var retime = _root["retime"] as JsonObject;
+        var node = string.IsNullOrWhiteSpace(targetId)
+            ? retime?["targetDurationFrames"]
+            : ((retime?["targets"] as JsonObject)?[targetId] as JsonObject)?["targetDurationFrames"];
+        return node is JsonValue value && value.TryGetValue<int>(out var duration) && duration > 0
+            ? duration
+            : null;
+    }
+
+    public void SetTargetDurationFrames(string targetId, int? duration)
+    {
+        var retime = _root["retime"] as JsonObject ?? new JsonObject();
+        _root["retime"] = retime;
+        if (string.IsNullOrWhiteSpace(targetId))
+        {
+            if (duration is > 0) retime["targetDurationFrames"] = duration.Value;
+            else retime.Remove("targetDurationFrames");
+        }
+        else
+        {
+            var targets = retime["targets"] as JsonObject ?? new JsonObject();
+            retime["targets"] = targets;
+            var target = targets[targetId] as JsonObject ?? new JsonObject();
+            targets[targetId] = target;
+            if (duration is > 0) target["targetDurationFrames"] = duration.Value;
+            else
+            {
+                target.Remove("targetDurationFrames");
+                if (target.Count == 0) targets.Remove(targetId);
+            }
+            if (targets.Count == 0) retime.Remove("targets");
+        }
+        if (retime.Count == 0) _root.Remove("retime");
+    }
+
     public void AddTrack(
         string fieldId,
         string targetId,
@@ -97,6 +134,7 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public void RemoveKeyframe(string fieldId, string targetId, int frame)
     {
+        if (frame == 0) return;
         var track = TrackObject(fieldId, targetId);
         var keyframes = track?["keyframes"] as JsonArray;
         var keyframe = keyframes?.OfType<JsonObject>()

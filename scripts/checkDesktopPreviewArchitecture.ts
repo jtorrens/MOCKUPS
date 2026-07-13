@@ -2206,13 +2206,13 @@ assertContains(
   "a module runtime contract must declare which action defines its finite instance duration",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeTimeline.cs",
-  "action[\"definesModuleDuration\"]",
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "DeclaredBaseDuration(contract)",
   "module-instance duration must be evaluated generically from the declared runtime action",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeTimeline.cs",
-  "candidate[\"extendsModuleDuration\"]",
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'candidate["extendsModuleDuration"]?.GetValue<bool>() == true',
   "finite collection-item actions must be able to extend module duration through their declarative contract",
 );
 assertContains(
@@ -2285,15 +2285,15 @@ assertContains(
   '["moduleInstanceId"]?.GetValue<string>()',
   "runtime Test Values scope must distinguish production Screens by instance id",
 );
-assertContains(
+assertMatches(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousFrameButton)",
-  "production transport must keep frame stepping in the outer transport group",
+  /TimelineButtonGroup\([\s\S]*?_shotAbsoluteStartButton,[\s\S]*?_shotPreviousSlotButton,[\s\S]*?_shotPreviousKeyframeButton,[\s\S]*?_shotPreviousFrameButton,[\s\S]*?_shotPlayButton,[\s\S]*?_shotNextFrameButton,[\s\S]*?_shotNextKeyframeButton,[\s\S]*?_shotNextSlotButton,[\s\S]*?_shotAbsoluteEndButton\)/,
+  "production transport must remain symmetric around frame stepping and playback",
 );
-assertContains(
+assertMatches(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "_shotPreviousSlotButton,\n                        _shotPlayButton,\n                        _shotNextSlotButton",
-  "production transport must keep Screen navigation immediately around playback",
+  /_shotPreviousKeyframeButton,[\s\S]*?_shotPreviousFrameButton,[\s\S]*?_shotPlayButton,[\s\S]*?_shotNextFrameButton,[\s\S]*?_shotNextKeyframeButton/,
+  "production transport must keep frame stepping next to playback and keyframe stepping outside it",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
@@ -2327,7 +2327,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
-  'TimelineShotStart => "M4 5H6V19H4Z',
+  'TimelineShotStart => "M3 3H6V5H5V19H6V21H3Z',
   "timeline boundary bars must be filled geometry rather than invisible open paths",
 );
 assertContains(
@@ -2336,14 +2336,59 @@ assertContains(
   "module-instance production preview must translate the global Shot frame to a local frame",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
-  "TimelinePreviousInstance",
-  "Shot navigator boundary controls must use shared vector icon chrome",
+  "spikes/desktop-editor-shell/EditorShell/EditorTimelineTransport.cs",
+  "CreateKeyframeStepIcon(bool next)",
+  "Shot keyframe controls must use shared timeline transport chrome",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorTimelineTransport.cs",
+  "CreateKeyframeGlyph(",
+  "Preview and editor keyframe buttons must share one SVG glyph factory",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "MoveShotSlot(-1)",
-  "Shot navigation must expose previous and next module-instance controls",
+  "var isOnKeyframe = keyframes.Contains(_shotPreviewFrame)",
+  "Preview playback must expose when the playhead is parked on a keyframe",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  /_shotPlayButton\.BorderBrush\s*=\s*isOnKeyframe[\s\S]*?EditorAnimationVisuals\.ActiveTrackBrush/,
+  "Preview playback must use the animation amber border at an exact keyframe",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "ModuleInstanceTimeline.ShotKeyframeFrames(_database, shotId)",
+  "Shot navigation must aggregate keyframes from every Screen before selecting the current Screen range",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'var showScreenStep = _shotNavigationScope == "shot"',
+  "previous and next Screen controls must appear only in Shot context",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "var range = ActiveScreenFrameRange(shotId)",
+  "keyframe navigation must stay inside the Screen containing the active Shot frame",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'Timeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false',
+  "field metadata must decide whether a field advances serial owner duration",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  /preDurationFieldIds[\s\S]*?delay[\s\S]*?postDurationFieldIds[\s\S]*?postWriteOnHold/,
+  "Conversation runtime metadata must declare serial pre-delay and post-hold ownership explicitly",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  '["minimumEnabledKeyframes"] = 2',
+  "Conversation must keep base write-on when text has only mandatory KF0",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleResolver.ts",
+  'timeline.usesTrackCompletion("text", targetId)',
+  "Conversation resolver must suppress built-in write-on when text owns animation",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
@@ -2557,7 +2602,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  'Text = hasCurrentKeyframe ? "◆" : "◇"',
+  "filled: hasCurrentKeyframe",
   "animation transport must expose exact-keyframe state at the active frame",
 );
 assertContains(
@@ -2586,6 +2631,21 @@ assertContains(
   "animation property lists must originate from active persisted tracks only",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  ": EditorAnimationVisuals.OtherKeyframeBrush",
+  "active animated properties that are not selected must remain visible in gray",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "RuntimeAnimationFrameOrigin.OwnerLocalFrame(preview, preview, animation, targetId, currentFrame)",
+  "target-owned animation panels must obtain owner-relative frames from the common timeline",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(",
+  "owner-relative slider navigation must translate back to the authoritative Screen playhead",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   '_animationEditor.CreateTargetContent(owner.Node, "")',
   "Screen-owned animation must live inside the General runtime category",
@@ -2602,8 +2662,18 @@ assertDoesNotContain(
 );
 assertContains(
   "src/desktop-preview/conversationModuleResolver.ts",
-  "resolveParameterAnimation(animation, fieldId, targetId, localFrame, baseValue)",
-  "Conversation must resolve parameter animation in its owning frame resolver",
+  'new RuntimeOwnerTimeline(preview, preview, animation)',
+  "Conversation must resolve generic owner timing in its owning frame resolver",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "extendsOwnerDuration !== false",
+  "the generic preview owner timeline must support late fields that do not advance collection sequencing",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateAnimationActivationGlyph(",
+  "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",
 );
 assertDoesNotContain(
   "src/desktop-preview/conversationModuleRenderable.ts",
