@@ -767,7 +767,7 @@ internal abstract class WebPreviewPane : Grid
                   margin: 0 0 6px;
                   font-size: 15px;
                   font-weight: 760;
-                  color: {{(themeMode == "dark" ? "#F8FAFC" : "#111827")}};
+                  color: {{(themeMode == "dark" ? "#E6E6E6" : "#1A1A1A")}};
                 }
 
                 .preview-placeholder-text {
