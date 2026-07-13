@@ -26,6 +26,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<string, bool> _navigateToNode;
     private readonly Func<string, int> _screenFrame;
     private readonly Action<string, int> _setScreenFrame;
+    private readonly Action _toggleProductionPlayback;
+    private readonly EditorSessionUiState _sessionUiState = new();
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
@@ -44,7 +46,8 @@ internal sealed class EditorCollectionCardFactory
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
         Func<string, int> screenFrame,
-        Action<string, int> setScreenFrame)
+        Action<string, int> setScreenFrame,
+        Action toggleProductionPlayback)
     {
         _database = database;
         _isDark = isDark;
@@ -63,10 +66,23 @@ internal sealed class EditorCollectionCardFactory
         _navigateToNode = navigateToNode;
         _screenFrame = screenFrame;
         _setScreenFrame = setScreenFrame;
+        _toggleProductionPlayback = toggleProductionPlayback;
     }
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)
     {
+        var animationEditor = node.Kind == ProjectTreeNodeKind.ModuleInstance
+            ? new ModuleInstanceAnimationEditor(
+                _database,
+                _dictionaryServices,
+                _onChanged,
+                _reloadAndSelect,
+                _sessionUiState,
+                _screenFrame,
+                _setScreenFrame,
+                _previewPlaybackState,
+                _toggleProductionPlayback)
+            : null;
         var cards = node.Kind switch
         {
             ProjectTreeNodeKind.IconTheme =>
@@ -84,23 +100,12 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _previewPlaybackState, _reloadAndSelect).Create(node),
+                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _previewPlaybackState, _sessionUiState, animationEditor, _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(_database, _onChanged, _reloadAndSelect).Create(node)],
             _ => [],
         };
-
-        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
-        {
-            cards = [.. cards, new ModuleInstanceAnimationEditor(
-                _database,
-                _dictionaryServices,
-                _onChanged,
-                _reloadAndSelect,
-                _screenFrame,
-                _setScreenFrame).Create(node)];
-        }
 
         if (node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {

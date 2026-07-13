@@ -25,8 +25,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
-    private readonly Dictionary<string, string> _internalNavigationSelections = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, bool> _internalExpansionStates = new(StringComparer.Ordinal);
+    private readonly EditorSessionUiState _sessionUiState;
+    private readonly ModuleInstanceAnimationEditor? _animationEditor;
     private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
@@ -40,6 +40,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         PreviewPlaybackState playbackState,
+        EditorSessionUiState sessionUiState,
+        ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
         _database = database;
@@ -52,6 +54,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
         _playbackState = playbackState;
+        _sessionUiState = sessionUiState;
+        _animationEditor = animationEditor;
         _reloadAndSelect = reloadAndSelect;
     }
 
@@ -249,12 +253,27 @@ internal sealed class RuntimeInputsCollectionEditor
         var ownInputs = ComponentInputGrouping.OwnInputs(inputs).ToList();
         if (ownInputs.Count > 0)
         {
+            var generalSubcards = new List<EditorInternalNavigationSection>();
+            if (owner.IsInstance
+                && _animationEditor is not null
+                && ownInputs.Any((input) => input.Animation is not null))
+            {
+                var animation = _animationEditor.CreateTargetContent(owner.Node, "");
+                generalSubcards.Add(new EditorInternalNavigationSection(
+                    "animation",
+                    "Animation",
+                    EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
+                    EditorIcons.Animation,
+                    animation.Content));
+            }
             sections.Add(new EditorInternalNavigationSection(
                 "general",
                 "General",
                 "Runtime inputs",
                 EditorIcons.General,
                 CreateSeparatedInputContent(owner, preview, ownInputs),
+                Subcards: generalSubcards,
+                SubcardLayout: EditorSubcardLayout.FlatStack,
                 ShowLabel: false));
         }
         foreach (var groupId in topLevelGroupIds)
@@ -414,8 +433,8 @@ internal sealed class RuntimeInputsCollectionEditor
             var itemId = ItemId(items[index], index);
             var expansionKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:expanded";
             var navigationKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:vertical-card";
-            _internalExpansionStates.TryGetValue(expansionKey, out var isExpanded);
-            _internalNavigationSelections.TryGetValue(navigationKey, out var selectedSubcardId);
+            var isExpanded = _sessionUiState.IsExpanded(expansionKey);
+            var selectedSubcardId = _sessionUiState.Selection(navigationKey);
             var itemContent = CreateTestValueCollectionItemContent(
                 owner,
                 preview,
@@ -435,9 +454,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 itemSubcards,
                 EditorSubcardLayout.VerticalCards,
                 isExpanded,
-                (next) => _internalExpansionStates[expansionKey] = next,
+                (next) => _sessionUiState.SetExpanded(expansionKey, next),
                 selectedSubcardId,
-                (next) => _internalNavigationSelections[navigationKey] = next));
+                (next) => _sessionUiState.Select(navigationKey, next)));
         }
 
         if (owner.IsInstance)
@@ -564,6 +583,18 @@ internal sealed class RuntimeInputsCollectionEditor
             groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
                 owner, preview, collection, itemIndex, item, groupId, groups, RefreshActionVisibility));
         }
+        if (owner.IsInstance
+            && _animationEditor is not null
+            && collection.Fields.Any((input) => input.Animation is not null))
+        {
+            var animation = _animationEditor.CreateTargetContent(owner.Node, itemId);
+            groupSubcards.Add(new EditorInternalNavigationSection(
+                "animation",
+                "Animation",
+                EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
+                EditorIcons.Animation,
+                animation.Content));
+        }
         subcards = groupSubcards;
 
         return content;
@@ -642,8 +673,8 @@ internal sealed class RuntimeInputsCollectionEditor
             Background = Brushes.Transparent,
             BorderBrush = Brushes.Transparent,
             Foreground = active
-                ? new SolidColorBrush(Color.Parse("#F0B429"))
-                : new SolidColorBrush(Color.Parse("#8F98A8")),
+                ? EditorAnimationVisuals.ActiveTrackBrush
+                : EditorAnimationVisuals.InactiveTrackBrush,
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(0, 1, 4, 0),
         };
@@ -757,12 +788,12 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<EditorInternalNavigationSection> sections,
         EditorSubcardLayout layout)
     {
-        _internalNavigationSelections.TryGetValue(stateKey, out var selectedId);
+        var selectedId = _sessionUiState.Selection(stateKey);
         return new EditorSubcardLayoutHost(
             sections,
             layout,
             selectedId,
-            (next) => _internalNavigationSelections[stateKey] = next);
+            (next) => _sessionUiState.Select(stateKey, next));
     }
 
     private static Control CreateActionContent(ComponentPreviewActionDefinition action)

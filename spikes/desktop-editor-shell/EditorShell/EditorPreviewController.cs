@@ -171,6 +171,8 @@ internal sealed class EditorPreviewController
         var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
         SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1), useSelectedScope: false);
     }
+
+    public void ToggleProductionPlayback() => ToggleShotPlayback();
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _lastProductionPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;
@@ -2233,6 +2235,7 @@ internal sealed class EditorPreviewController
             return;
         }
         _shotPreviewFrame = next;
+        PlaybackState.NotifyFrameChanged();
         if (synchronizeScreenSelection && SynchronizeExplicitScreenSelection()) return;
         Refresh();
     }
@@ -2319,11 +2322,16 @@ internal sealed class EditorPreviewController
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
         _shotPlaybackIsPreparing = true;
+        PlaybackState.SetPlaying(true);
         PlaybackState.SetBusy(true);
         try
         {
             _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(shot, _shotPreviewFrame, navigationRange.EndFrame).ToList();
-            if (!await PreparePlaybackFramesAsync(null)) return;
+            if (!await PreparePlaybackFramesAsync(null))
+            {
+                PlaybackState.SetPlaying(false);
+                return;
+            }
         }
         finally
         {
@@ -2379,6 +2387,7 @@ internal sealed class EditorPreviewController
         }
         if (next == _shotPreviewFrame) return;
         _shotPreviewFrame = next;
+        PlaybackState.NotifyFrameChanged();
         Refresh();
     }
 
@@ -2387,6 +2396,7 @@ internal sealed class EditorPreviewController
         var wasPlaying = _shotPlaybackTimer.IsEnabled;
         if (wasPlaying) _shotPlaybackTimer.Stop();
         _shotPlaybackStartedTimestamp = 0;
+        PlaybackState.SetPlaying(false);
         _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Play, 16);
         if (wasPlaying)
         {

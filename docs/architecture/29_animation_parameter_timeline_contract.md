@@ -178,7 +178,7 @@ ResolvedFrameRequest {
 resolve(request) -> fully resolved owner state -> standard renderable atoms
 ```
 
-The resolver evaluates typed animation and module semantics at the requested frame. Component renderables emit standard atoms. Common helpers may convert frame deltas to milliseconds and tokens to final values. The bridge and HTML/raster renderer paint only those resolved atoms; none may branch on Conversation, Bubble, Media, Audio, Keyboard, or a field name, or run a timer.
+The resolver evaluates typed animation and module semantics at the requested frame. Conversation applies its field/target mapping and message-relative origins in its owning frame resolver before its renderable is called. Component renderables emit standard atoms. Common helpers may convert frame deltas to milliseconds and tokens to final values. The bridge and HTML/raster renderer paint only those resolved atoms; none may branch on Conversation, Bubble, Media, Audio, Keyboard, or a field name, or run a timer.
 
 The sequence provider accepts either Design action frames or Production frames, then shares preparation and presentation. Starting either source cancels the other; navigation, context, route, active Screen, FPS, asset/font, runtime or animation changes cancel stale preparation. Cache identity includes source, Shot id, Screen id, global and local frame, effective FPS, device/theme/mode, runtime and animation signatures, asset/font signatures, route, and geometry.
 
@@ -194,7 +194,7 @@ The audited committed data is empty, so step 2 presently has no event or keyfram
 
 ## 10. Editor scope after approval
 
-The first Production Animation surface is a generic Screen editor bound to the existing authoritative playhead. It lists declared tracks and keyframe cards, uses `FieldDefinition` plus registered dictionary controls for values, filters interpolation by the target metadata, and gives explicit add/update/move/clone/enable/delete actions. Runtime Values keep base data; Animation keeps overrides.
+The first Production Animation surface is bound to the existing authoritative Screen playhead. Screen-owned tracks live in an `Animation` subcard inside the Runtime Inputs `General` category; target-owned collection tracks live in an `Animation` category inside their owning item, after its declared runtime groups. In both scopes a compact, centred standard timeline transport and mini-timeline precede a list containing only active properties and the selected property detail. The transport begins with a filled diamond when the selected property has a keyframe at the active frame and a hollow diamond otherwise, then uses the shared first/previous/play-pause/next/last-frame controls. Play/pause delegates to the Preview's single authoritative Production playback owner and observes its shared playhead state; the animation editor must not own a timer or playback loop. Placement is generic and follows runtime input/collection ownership plus animation metadata; it must not branch on Conversation, Messages, or another concrete module. This surface is intentionally specialized timeline chrome rather than ordinary editor-card organization. Both keyframe values and interpolation use `FieldDefinition` plus registered dictionary controls. Property selection is session-only state keyed by editor node and target id and is never persisted in window state. Runtime Values keep base data; Animation keeps overrides. There is no detached module-level Animation card.
 
 It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, component-specific controls, an independent playhead, or a private duration calculation. Empty/invalid/orphaned states are explicit. Curves, color/geometry animation, cross-Screen transitions, arbitrary scripted events, and unbounded/live media are deferred.
 
@@ -208,6 +208,16 @@ It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, compone
 | media | play-once/loop, finite end, early off, source shorter than window, unknown source duration, no infinite loop |
 | duration | grow/shrink after edits, concurrent max not sum, Screen-to-Shot sum, screen boundary navigation |
 | ownership | Design Test Values never affect Production; one playback owner; cancelled/stale work cannot commit |
+
+### Automated animation suite
+
+`npm run animation:test` is the focused autonomous suite and `npm test` includes it. It does not read or modify `data/desktop-editor-spike.sqlite`.
+
+- TypeScript frame tests cover missing/disabled tracks, exact `[start, end)` boundaries, final hold, destination-owned hold/linear/ease-in-out/write-on interpolation, Unicode grapheme rewrite, exact `fieldId`/`targetId` isolation, Screen fields, message-relative origins, non-animable actor/direction, delivery/full-screen fields, and finite media playing.
+- The .NET contract runner covers strict v2 document shape, activation with a frame-zero keyframe, target persistence and round-trip, ordered upsert/removal, Screen and target origins, duration endpoints and composition, finite media action duration, duplicate target/frame rejection, negative-frame rejection, initial-keyframe normalization, explicit rejection of legacy events, the initially authorized animatable vocabulary, and shared playback state notifications.
+- `npm run check:architecture` covers editor placement, active-track-only lists, target-scoped session state, dictionary interpolation, diamond-first standard transport order, delegation to the single Preview playback owner, absence of an editor timer, resolver ownership, and renderer/bridge boundaries.
+
+Visual density, alignment, truncation and responsive layout remain a short human review in the running application; they are not treated as semantic correctness tests.
 | routes | identical resolved frames for HTML priority, HTML every-frame and raster every-frame; no renderer timer |
 | architecture | `npm run check:architecture` prevents concrete names/imports in bridge, common helpers, renderer |
 

@@ -2521,8 +2521,8 @@ assertContains(
   "workspace navigation cards must remain mutually exclusive",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  "_internalExpansionStates[expansionKey] = next",
+  "spikes/desktop-editor-shell/EditorShell/EditorSessionUiState.cs",
+  "public void SetExpanded(string key, bool value)",
   "nested card expansion must remain available within the current editor session",
 );
 assertDoesNotContain(
@@ -2544,6 +2544,71 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
   "_statesByNodeId[node.Id] = state;",
   "card expansion and scroll must remain available per editor within the current session",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  '"Interpolation",\n                    ValueKind.OptionToken',
+  "keyframe interpolation must use the dictionary field route",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "EditorIcons.TimelineFirstFrame",
+  "animation transport must reuse the standard timeline navigation icons",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  'Text = hasCurrentKeyframe ? "◆" : "◇"',
+  "animation transport must expose exact-keyframe state at the active frame",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "playbackButton.Click += (_, _) => _togglePlayback()",
+  "animation play-pause must delegate to the authoritative Preview playback owner",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  'var selectionKey = $"{node.Id}:animation-properties:{targetId}"',
+  "animation property selection must remain isolated per target in session state",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  /Children\s*=\s*\{[\s\S]*?CreateSeparator[\s\S]*?currentKeyframeButton,[\s\S]*?firstFrameButton,[\s\S]*?previousFrameButton,[\s\S]*?playbackButton,[\s\S]*?nextFrameButton,[\s\S]*?lastFrameButton/,
+  "animation transport must keep diamond-first standard navigation order",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "DispatcherTimer",
+  "animation editor must not create an independent playback clock",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "var resolvedTargets = document.Tracks",
+  "animation property lists must originate from active persisted tracks only",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  '_animationEditor.CreateTargetContent(owner.Node, "")',
+  "Screen-owned animation must live inside the General runtime category",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_animationEditor.CreateTargetContent(owner.Node, itemId)",
+  "collection-item animation must live inside its owning runtime item",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "animationEditor.Create(node)",
+  "animation must not return as a detached module-level editor card",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleResolver.ts",
+  "resolveParameterAnimation(animation, fieldId, targetId, localFrame, baseValue)",
+  "Conversation must resolve parameter animation in its owning frame resolver",
+);
+assertDoesNotContain(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "resolveParameterAnimation",
+  "Conversation renderable must not evaluate parameter tracks",
 );
 assertMatches(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
