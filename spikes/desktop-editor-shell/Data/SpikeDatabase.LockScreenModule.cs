@@ -69,15 +69,21 @@ internal sealed partial class SpikeDatabase
 
     private static void EnsureLockScreenSystemVariants(SqliteConnection connection, string projectId)
     {
-        EnsureLockScreenSystemVariant(connection, projectId, "status_bar", (config) =>
+        EnsureLockScreenSystemVariant(connection, projectId, "status_bar", "lock_screen", "Lock Screen", (config) =>
         {
             config["backgroundAlpha"] = 0;
         });
-        EnsureLockScreenSystemVariant(connection, projectId, "navigation_bar", (config) =>
+        EnsureLockScreenSystemVariant(connection, projectId, "navigation_bar", "lock_screen", "Lock Screen", (config) =>
         {
             config["type"] = "gestureBar";
             config["backgroundAlpha"] = 0;
             if (config["gesture"] is JsonObject gesture) gesture["width"] = 134;
+        });
+        EnsureLockScreenSystemVariant(connection, projectId, "navigation_bar", "none", "None", (config) =>
+        {
+            config["type"] = "buttons";
+            config["backgroundAlpha"] = 0;
+            config["items"] = new JsonArray();
         });
     }
 
@@ -85,6 +91,8 @@ internal sealed partial class SpikeDatabase
         SqliteConnection connection,
         string projectId,
         string componentType,
+        string presetId,
+        string presetName,
         Action<JsonObject> apply)
     {
         var componentId = ScalarString(connection,
@@ -94,7 +102,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(connection, componentId);
         var metadata = ParseJsonObject(settings.MetadataJson);
         var presets = EnsurePresetArray(metadata);
-        if (FindPreset(presets, "lock_screen") is not null) return;
+        if (FindPreset(presets, presetId) is not null) return;
         var source = FindPreset(presets, DefaultComponentPresetId)
             ?? throw new InvalidOperationException($"Component class '{componentId}' has no Default variant.");
         var config = (source["config"] as JsonObject)?.DeepClone() as JsonObject
@@ -102,8 +110,8 @@ internal sealed partial class SpikeDatabase
         apply(config);
         presets.Add(new JsonObject
         {
-            ["id"] = "lock_screen",
-            ["name"] = "Lock Screen",
+            ["id"] = presetId,
+            ["name"] = presetName,
             ["protected"] = true,
             ["locked"] = true,
             ["config"] = config,
