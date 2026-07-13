@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -115,29 +116,29 @@ internal sealed class EditorNavigationRenderer
         var options = new List<EditorNavigationRowAction>();
         if (node.CanRenameDirectly)
         {
-            options.Add(new("Rename", EditorIcons.Edit, () => _ = _renameNode(node)));
+            options.Add(new($"Rename {EditorNavigationMetadata.Title(node)}", EditorIcons.Edit, () => _ = _renameNode(node)));
         }
         EditorNavigationRowAction? lockedAction = null;
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsLocked)
         {
-            lockedAction = new("Unlock variant editing", EditorIcons.Lock, () => _ = _toggleVariantLock(node));
+            lockedAction = new($"Unlock {EditorNavigationMetadata.Title(node)} variant editing", EditorIcons.Lock, () => _ = _toggleVariantLock(node));
         }
         else if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {
-            options.Add(new("Lock variant editing", EditorIcons.Unlock, () => _ = _toggleVariantLock(node)));
+            options.Add(new($"Lock {EditorNavigationMetadata.Title(node)} variant editing", EditorIcons.Unlock, () => _ = _toggleVariantLock(node)));
         }
         if (node.CanDuplicate)
         {
-            options.Add(new("Duplicate", EditorIcons.Duplicate, () => _duplicateNode(node)));
+            options.Add(new($"Duplicate {EditorNavigationMetadata.Title(node)}", EditorIcons.Duplicate, () => _duplicateNode(node)));
         }
         if (node.CanDelete || node.IsProtected)
         {
-            options.Add(new("Delete", EditorIcons.Delete, () => _ = _deleteNode(node), node.CanDelete));
+            options.Add(new($"Delete {EditorNavigationMetadata.Title(node)}", EditorIcons.Delete, () => _ = _deleteNode(node), node.CanDelete));
         }
         var add = node.CanAddChild
             ? new EditorNavigationRowAction(EditorNavigationMetadata.AddChildLabel(node), EditorIcons.Add, () => _ = _addChild(node), exposeChildren)
             : null;
-        var status = node.IsProtected ? "Protected" : node.IsLocked ? "Locked" : node.IsUsed ? "Used" : "";
+        var status = !nodeEnabled ? "Unavailable" : node.IsProtected ? "Protected" : node.IsLocked ? "Locked" : node.IsUsed ? "Used" : "";
         var metadata = new EditorHierarchicalNavigationMetadata(
             node.Id,
             depth,
@@ -238,7 +239,7 @@ internal sealed class EditorNavigationRenderer
 
         var toggle = EditorNavigationVisuals.ToggleButton(
             isExpanded,
-            isExpanded ? "Collapse" : "Expand",
+            $"{(isExpanded ? "Collapse" : "Expand")} {EditorNavigationMetadata.Title(node)}",
             (_, e) =>
             {
                 e.Handled = true;
@@ -418,7 +419,7 @@ internal sealed class EditorNavigationRenderer
 
         if (node.CanRenameDirectly)
         {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Edit, 14), "Rename", async (_, e) =>
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Edit, 14), $"Rename {EditorNavigationMetadata.Title(node)}", async (_, e) =>
             {
                 e.Handled = true;
                 await _renameNode(node);
@@ -441,7 +442,7 @@ internal sealed class EditorNavigationRenderer
 
         if (node.CanDuplicate)
         {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Duplicate, 14), "Duplicate", (_, e) =>
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Duplicate, 14), $"Duplicate {EditorNavigationMetadata.Title(node)}", (_, e) =>
             {
                 e.Handled = true;
                 _duplicateNode(node);
@@ -450,7 +451,7 @@ internal sealed class EditorNavigationRenderer
 
         if (node.CanDelete)
         {
-            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Delete, 14), "Delete", async (_, e) =>
+            actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Delete, 14), $"Delete {EditorNavigationMetadata.Title(node)}", async (_, e) =>
             {
                 e.Handled = true;
                 await _deleteNode(node);
@@ -464,7 +465,7 @@ internal sealed class EditorNavigationRenderer
     {
         var icon = EditorIcons.Create(node.IsLocked ? EditorIcons.Lock : EditorIcons.Unlock, 14);
         EditorIcons.ApplyBrush(icon, EditorNavigationVisuals.VariantLockBrush(node.IsLocked));
-        return CreateTreeActionButton(icon, node.IsLocked ? "Unlock variant editing" : "Lock variant editing", async (_, e) =>
+        return CreateTreeActionButton(icon, $"{(node.IsLocked ? "Unlock" : "Lock")} {EditorNavigationMetadata.Title(node)} variant editing", async (_, e) =>
         {
             e.Handled = true;
             await _toggleVariantLock(node);
@@ -486,9 +487,8 @@ internal sealed class EditorNavigationRenderer
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(0),
         };
-        ToolTip.SetTip(button, tooltip);
         button.Click += onClick;
-        return button;
+        return EditorAccessibility.Describe(button, tooltip);
     }
 
     private bool IsSelected(ProjectTreeNode node)

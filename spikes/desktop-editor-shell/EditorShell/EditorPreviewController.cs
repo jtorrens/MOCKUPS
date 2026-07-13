@@ -73,7 +73,14 @@ internal sealed class EditorPreviewController
     private readonly StackPanel _referenceSplitControls = new() { Spacing = 8, IsVisible = false };
     private readonly StackPanel _shotTimelineControls = new()
     {
-        Orientation = Avalonia.Layout.Orientation.Vertical,
+        Orientation = Avalonia.Layout.Orientation.Horizontal,
+        Spacing = 7,
+        IsVisible = false,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
+    private readonly StackPanel _shotHeaderTimelineControls = new()
+    {
+        Orientation = Avalonia.Layout.Orientation.Horizontal,
         Spacing = 8,
         IsVisible = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -84,8 +91,8 @@ internal sealed class EditorPreviewController
         Maximum = 0,
         Value = 0,
         TickFrequency = 1,
-        MinWidth = 140,
-        MaxWidth = 300,
+        MinWidth = 280,
+        MaxWidth = 600,
     };
     private readonly EditorInstantComboBox _shotNavigationScopeComboBox = new()
     {
@@ -94,7 +101,7 @@ internal sealed class EditorPreviewController
     };
     private readonly TextBlock _shotFrameText = new()
     {
-        MinWidth = 88,
+        MinWidth = 70,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly Button _shotPreviousSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
@@ -641,11 +648,6 @@ internal sealed class EditorPreviewController
         AddReferenceSlider(splitGrid, 2, "Opacity", _referenceOpacitySlider);
         AddReferenceSlider(splitGrid, 3, "Angle", _referenceAngleSlider);
         _referenceSplitControls.Children.Add(splitGrid);
-        var frameRow = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
-            ColumnSpacing = 8,
-        };
         _shotNavigationScopeComboBox.ItemsSource = new[]
         {
             new FieldOption("shot", "Shot"),
@@ -653,15 +655,19 @@ internal sealed class EditorPreviewController
         };
         _shotNavigationScopeComboBox.SelectedItem = ((IEnumerable<FieldOption>)_shotNavigationScopeComboBox.ItemsSource)
             .First((option) => option.Value == _shotNavigationScope);
-        frameRow.Children.Add(_shotNavigationScopeComboBox);
-        Grid.SetColumn(_shotFrameSlider, 1);
-        frameRow.Children.Add(_shotFrameSlider);
-        Grid.SetColumn(_shotFrameText, 2);
-        frameRow.Children.Add(_shotFrameText);
-        _shotTimelineControls.Children.Add(frameRow);
+        EditorAccessibility.Describe(
+            _shotNavigationScopeComboBox,
+            "Preview navigation scope",
+            "Choose whether the frame slider navigates the current Shot or Screen");
+        EditorAccessibility.Describe(
+            _shotFrameSlider,
+            "Navigate preview frames",
+            "Navigate frames in the selected Shot or Screen scope");
+        _shotHeaderTimelineControls.Children.Add(_shotFrameSlider);
+        _shotHeaderTimelineControls.Children.Add(_shotFrameText);
         var navigationRow = new Border
         {
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             Padding = new Thickness(0),
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
@@ -672,6 +678,7 @@ internal sealed class EditorPreviewController
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Children =
                 {
+                    _shotNavigationScopeComboBox,
                     TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousSlotButton),
                     TimelineSeparator(),
                     TimelineButtonGroup(
@@ -705,16 +712,17 @@ internal sealed class EditorPreviewController
         _shotPlayButton.Foreground = Brushes.White;
         _shotPlayButton.BorderBrush = Brushes.Transparent;
         _shotPlayButton.BorderThickness = new Thickness(0);
+        _shotTimelineControls.Children.Add(TimelineSeparator(30));
         _shotTimelineControls.Children.Add(navigationRow);
-        ToolTip.SetTip(_shotPreviousSlotButton, "Previous Screen");
-        ToolTip.SetTip(_shotAbsoluteStartButton, "First Shot frame");
-        ToolTip.SetTip(_shotStartButton, "First frame in the selected scope");
-        ToolTip.SetTip(_shotPreviousFrameButton, "Previous frame");
-        ToolTip.SetTip(_shotPlayButton, "Play or pause the selected scope");
-        ToolTip.SetTip(_shotNextFrameButton, "Next frame");
-        ToolTip.SetTip(_shotEndButton, "Last frame in the selected scope");
-        ToolTip.SetTip(_shotNextSlotButton, "Next Screen");
-        ToolTip.SetTip(_shotAbsoluteEndButton, "Last Shot frame");
+        EditorAccessibility.Describe(_shotPreviousSlotButton, "Previous Screen");
+        EditorAccessibility.Describe(_shotAbsoluteStartButton, "First Shot frame");
+        EditorAccessibility.Describe(_shotStartButton, "First frame in the selected scope");
+        EditorAccessibility.Describe(_shotPreviousFrameButton, "Previous frame");
+        EditorAccessibility.Describe(_shotPlayButton, "Play or pause the selected scope");
+        EditorAccessibility.Describe(_shotNextFrameButton, "Next frame");
+        EditorAccessibility.Describe(_shotEndButton, "Last frame in the selected scope");
+        EditorAccessibility.Describe(_shotNextSlotButton, "Next Screen");
+        EditorAccessibility.Describe(_shotAbsoluteEndButton, "Last Shot frame");
         _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
         _shotStartButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().StartFrame);
@@ -724,6 +732,30 @@ internal sealed class EditorPreviewController
         _shotEndButton.Click += (_, _) => SetShotPreviewFrame(NavigationFrameRange().EndFrame);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
         _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false);
+
+        var controlsRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            ColumnSpacing = 10,
+            RowSpacing = 8,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        controlsRow.Children.Add(primaryControls);
+        Grid.SetColumn(_shotTimelineControls, 2);
+        controlsRow.Children.Add(_shotTimelineControls);
+        void ArrangeTransport(double availableWidth)
+        {
+            var wraps = availableWidth > 0 && availableWidth < 880;
+            Grid.SetRow(_shotTimelineControls, wraps ? 1 : 0);
+            Grid.SetColumn(_shotTimelineControls, wraps ? 0 : 2);
+            Grid.SetColumnSpan(_shotTimelineControls, wraps ? 3 : 1);
+            _shotTimelineControls.HorizontalAlignment = wraps
+                ? Avalonia.Layout.HorizontalAlignment.Center
+                : Avalonia.Layout.HorizontalAlignment.Right;
+        }
+        controlsRow.SizeChanged += (_, args) => ArrangeTransport(args.NewSize.Width);
+        ArrangeTransport(controlsRow.Bounds.Width);
 
         previewControlsHost.Content = new GlassCard
         {
@@ -740,13 +772,13 @@ internal sealed class EditorPreviewController
                         Spacing = 8,
                         Children =
                         {
-                            primaryControls,
-                            _shotTimelineControls,
+                            controlsRow,
                             _referenceSplitControls,
                         },
                     },
                 },
-                isExpanded: true),
+                isExpanded: true,
+                headerTrailing: _shotHeaderTimelineControls),
         };
         UpdateReferenceControlsVisibility();
     }
@@ -778,13 +810,12 @@ internal sealed class EditorPreviewController
         return panel;
     }
 
-    private Control TimelineSeparator() => new Border
+    private Control TimelineSeparator(double height = 22) => new Border
     {
         Width = 1,
-        Height = 22,
+        Height = height,
         Margin = new Thickness(2, 0),
-        Background = new SolidColorBrush(Color.Parse(_isDark() ? "#697386" : "#9AA3B2")),
-        Opacity = 0.62,
+        Background = EditorUiVisuals.ScrollbarSeparatorBrush(_isDark()),
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
 
@@ -2051,6 +2082,7 @@ internal sealed class EditorPreviewController
         {
             StopShotPlayback();
             _shotTimelineControls.IsVisible = false;
+            _shotHeaderTimelineControls.IsVisible = false;
             return;
         }
         var contextNode = ProductionContextNode();
@@ -2071,7 +2103,11 @@ internal sealed class EditorPreviewController
         _isUpdatingShotTimeline = true;
         _shotFrameSlider.Maximum = Math.Max(0, range.DurationFrames - 1);
         _shotFrameSlider.Value = displayedFrame;
-        _shotFrameText.Text = $"{displayedFrame} / {Math.Max(0, range.DurationFrames - 1)}";
+        _shotFrameText.Text = $"{displayedFrame}/{Math.Max(0, range.DurationFrames - 1)}";
+        EditorAccessibility.Describe(
+            _shotFrameText,
+            $"Frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
+            showToolTip: false);
         _shotStartButton.IsEnabled = _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
         _shotEndButton.IsEnabled = _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
         _shotAbsoluteStartButton.IsEnabled = _shotPreviewFrame > 0;
@@ -2081,6 +2117,7 @@ internal sealed class EditorPreviewController
         _shotPreviousSlotButton.IsEnabled = activeSlotIndex > 0;
         _shotNextSlotButton.IsEnabled = activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
         _shotTimelineControls.IsVisible = true;
+        _shotHeaderTimelineControls.IsVisible = true;
         _isUpdatingShotTimeline = false;
     }
 

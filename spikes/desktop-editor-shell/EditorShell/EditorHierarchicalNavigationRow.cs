@@ -1,10 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Automation;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using Avalonia.Threading;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,16 +57,37 @@ internal static class EditorHierarchicalNavigationRow
             CornerRadius = new CornerRadius(5),
             Background = Brushes.Transparent,
             Focusable = true,
+            IsEnabled = metadata.IsEnabled,
             Tag = metadata,
-            Opacity = metadata.IsEnabled ? 1 : 0.42,
+            Opacity = 1,
         };
+        EditorAccessibility.Describe(
+            row,
+            NavigationRowAccessibleName(metadata),
+            !metadata.IsEnabled && !string.IsNullOrWhiteSpace(metadata.DisabledReason)
+                ? metadata.DisabledReason
+                : metadata.Status,
+            showToolTip: false);
+        AutomationProperties.SetItemStatus(row, metadata.IsSelected ? "Selected" : metadata.Status);
         if (metadata.ShowTopSeparator)
         {
             row.BorderThickness = new Thickness(0, 1, 0, 0);
-            row.BorderBrush = new SolidColorBrush(Color.Parse(isDark ? "#35404B" : "#CBD3DC"));
+            row.BorderBrush = EditorUiVisuals.ConnectorBrush(isDark);
             row.Margin = new Thickness(0, 5, 0, 0);
             row.Padding = new Thickness(5, 8, 5, 3);
         }
+        row.PointerEntered += (_, _) => row.Background = EditorUiVisuals.HoverBackgroundBrush(isDark);
+        row.PointerExited += (_, _) => row.Background = Brushes.Transparent;
+        row.GotFocus += (_, _) =>
+        {
+            row.BorderBrush = EditorUiVisuals.FocusBrush(isDark);
+            row.BorderThickness = new Thickness(2);
+        };
+        row.LostFocus += (_, _) =>
+        {
+            row.BorderBrush = metadata.ShowTopSeparator ? EditorUiVisuals.ConnectorBrush(isDark) : Brushes.Transparent;
+            row.BorderThickness = metadata.ShowTopSeparator ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+        };
 
         var grid = new Grid
         {
@@ -80,7 +103,7 @@ internal static class EditorHierarchicalNavigationRow
             {
                 Margin = new Thickness(-4, 0, -3, 0),
                 CornerRadius = new CornerRadius(5),
-                Background = new SolidColorBrush(Color.Parse(isDark ? "#285F9E" : "#D7E9FF")),
+                Background = EditorUiVisuals.SelectedBackgroundBrush(isDark),
             };
             Grid.SetColumn(selection, 1);
             Grid.SetColumnSpan(selection, 3);
@@ -94,7 +117,7 @@ internal static class EditorHierarchicalNavigationRow
                 Width = 2,
                 Margin = new Thickness(6, -8, 0, -8),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush(Color.Parse(isDark ? "#35404B" : "#CBD3DC")),
+                Background = EditorUiVisuals.ConnectorBrush(isDark),
             };
             if (metadata.IsLastSibling)
             {
@@ -110,7 +133,7 @@ internal static class EditorHierarchicalNavigationRow
                 Margin = new Thickness(6, 0, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Center,
-                Background = new SolidColorBrush(Color.Parse(isDark ? "#35404B" : "#CBD3DC")),
+                Background = EditorUiVisuals.ConnectorBrush(isDark),
             });
         }
         if (!string.IsNullOrWhiteSpace(metadata.ColorHex))
@@ -135,6 +158,11 @@ internal static class EditorHierarchicalNavigationRow
         {
             Text = metadata.Title,
             FontWeight = FontWeight.SemiBold,
+            Foreground = metadata.IsSelected
+                ? EditorUiVisuals.SelectedTextBrush(isDark)
+                : metadata.IsEnabled
+                    ? EditorUiVisuals.PrimaryTextBrush(isDark)
+                    : EditorUiVisuals.DisabledTextBrush(isDark),
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -144,8 +172,12 @@ internal static class EditorHierarchicalNavigationRow
             title.Children.Add(new TextBlock
             {
                 Text = detail,
-                FontSize = 10,
-                Opacity = 0.68,
+                FontSize = EditorUiVisuals.PersistentSecondaryFontSize,
+                Foreground = metadata.IsSelected
+                    ? EditorUiVisuals.SelectedTextBrush(isDark)
+                    : metadata.IsEnabled
+                        ? EditorUiVisuals.SecondaryTextBrush(isDark)
+                        : EditorUiVisuals.DisabledTextBrush(isDark),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming = TextTrimming.CharacterEllipsis,
             });
@@ -196,7 +228,7 @@ internal static class EditorHierarchicalNavigationRow
         {
             var chevron = EditorNavigationVisuals.ToggleButton(
                 metadata.IsExpanded,
-                metadata.IsExpanded ? "Collapse" : "Expand",
+                $"{(metadata.IsExpanded ? "Collapse" : "Expand")} {metadata.Title}",
                 (_, args) => { args.Handled = true; toggle(); });
             chevron.Width = 24;
             chevron.Height = 28;
@@ -318,7 +350,13 @@ internal static class EditorHierarchicalNavigationRow
             BorderBrush = Brushes.Transparent,
         };
         button.Click += (_, args) => { args.Handled = true; action.Activate(); };
-        ToolTip.SetTip(button, action.Label);
-        return button;
+        return EditorAccessibility.Describe(button, action.Label);
+    }
+
+    private static string NavigationRowAccessibleName(EditorHierarchicalNavigationMetadata metadata)
+    {
+        var details = new[] { metadata.Title, metadata.Status, metadata.Subtitle }
+            .Where((value) => !string.IsNullOrWhiteSpace(value));
+        return string.Join(", ", details);
     }
 }

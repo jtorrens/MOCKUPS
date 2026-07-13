@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Threading.Tasks;
 
@@ -73,6 +74,9 @@ internal sealed class DictionaryFieldControl : Grid
                 SetInheritedValue(commit: true);
             }
         };
+        EditorAccessibility.Describe(
+            _restoreButton,
+            $"Restore {_definition.DisplayLabel} to its inherited value");
         SetColumn(_restoreButton, DictionaryFieldLayoutRules.RestoreButtonColumn(_definition.ValueKind));
 
         Children.Add(_label);

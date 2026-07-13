@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Threading.Tasks;
 
@@ -21,14 +22,16 @@ internal sealed class DictionaryPathBrowseButton : Grid
         _value = value;
         _browsePath = browsePath;
 
+        var objectName = valueKind == ValueKind.DirectoryPath ? "folder" : "file";
         var button = new Button
         {
-            Content = "Browse...",
+            Content = $"Browse {objectName}...",
             MinWidth = 96,
             MinHeight = 36,
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = isEditable && browsePath is not null,
         };
+        EditorAccessibility.Describe(button, $"Browse for a {objectName}");
         button.Click += async (_, _) => await Browse();
         Children.Add(button);
     }

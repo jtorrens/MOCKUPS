@@ -70,6 +70,6 @@ internal static class EditorBreadcrumbBar
             VerticalAlignment = VerticalAlignment.Center,
         };
         button.Click += (_, _) => item.Activate();
-        return button;
+        return EditorAccessibility.Describe(button, $"Open {item.Label}");
     }
 }

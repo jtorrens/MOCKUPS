@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,11 +45,12 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
 
         var pickButton = new Button
         {
-            Content = "Pick...",
-            MinWidth = 72,
+            Content = "Pick icons...",
+            MinWidth = 96,
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = _isEditable && _showIconTokenPicker is not null,
         };
+        EditorAccessibility.Describe(pickButton, "Pick icon tokens from the active Icon Theme");
         pickButton.Click += async (_, _) =>
         {
             if (_showIconTokenPicker is null) return;
@@ -70,6 +72,7 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = _isEditable,
         };
+        EditorAccessibility.Describe(clearButton, "Clear all selected icon tokens");
         clearButton.Click += (_, _) => SetTokens([]);
         SetColumn(clearButton, 2);
         Children.Add(clearButton);

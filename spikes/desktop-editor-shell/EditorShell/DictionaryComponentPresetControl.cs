@@ -52,7 +52,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
                 VerticalContentAlignment = VerticalAlignment.Center,
                 IsEnabled = !string.IsNullOrWhiteSpace(DictionaryOptionSelector.Value(_comboBox)),
             };
-            ToolTip.SetTip(openButton, "Open selected component variant");
+            EditorAccessibility.Describe(openButton, $"Open selected {_definition.DisplayLabel} component variant");
             openButton.Click += async (_, _) =>
             {
                 var selectedReference = DictionaryOptionSelector.Value(_comboBox);
@@ -84,6 +84,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable,
         };
+        EditorAccessibility.Describe(button, $"Edit overrides for {_definition.DisplayLabel}");
         EditorOverrideVisuals.ApplyActionButton(button, isHighlighted);
         button.Click += async (_, _) =>
         {

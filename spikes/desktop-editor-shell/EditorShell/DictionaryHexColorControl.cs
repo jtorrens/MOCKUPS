@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -40,12 +41,13 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
 
         var pickerButton = new Button
         {
-            Content = "Pick",
-            MinWidth = 58,
+            Content = "Pick color",
+            MinWidth = 84,
             Height = 34,
             IsEnabled = definition.IsEditable,
             VerticalAlignment = VerticalAlignment.Center,
         };
+        EditorAccessibility.Describe(pickerButton, $"Pick color for {definition.DisplayLabel}");
         pickerButton.Click += async (_, _) =>
         {
             var owner = TopLevel.GetTopLevel(this) as Window;

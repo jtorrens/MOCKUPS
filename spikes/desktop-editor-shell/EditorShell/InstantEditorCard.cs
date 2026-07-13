@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -29,8 +30,10 @@ internal sealed class InstantEditorCard : Grid
             if (args.Source is Control source
                 && (source is Button
                     || source is ToggleSwitch
+                    || source is RangeBase
                     || source.FindAncestorOfType<Button>() is not null
-                    || source.FindAncestorOfType<ToggleSwitch>() is not null))
+                    || source.FindAncestorOfType<ToggleSwitch>() is not null
+                    || source.FindAncestorOfType<RangeBase>() is not null))
             {
                 return;
             }

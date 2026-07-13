@@ -20,15 +20,15 @@ internal static class EditorNavigationVisuals
     public static IBrush TextBrush(bool isSelected, bool isDark)
     {
         return isSelected
-            ? EditorSukiWindowTheme.AccentBrush()
-            : new SolidColorBrush(Color.Parse(isDark ? "#F1F5F9" : "#1F2937"));
+            ? EditorUiVisuals.SelectedTextBrush(isDark)
+            : EditorUiVisuals.PrimaryTextBrush(isDark);
     }
 
     public static IBrush MutedTextBrush(bool isSelected, bool isDark)
     {
         return isSelected
-            ? EditorSukiWindowTheme.AccentBrush(isDark ? (byte)0xCC : (byte)0xDD)
-            : new SolidColorBrush(Color.Parse(isDark ? "#B8C0CE" : "#667085"));
+            ? EditorUiVisuals.SelectedTextBrush(isDark)
+            : EditorUiVisuals.SecondaryTextBrush(isDark);
     }
 
     public static IBrush VariantLockBrush(bool isLocked)
@@ -45,11 +45,13 @@ internal static class EditorNavigationVisuals
     {
         return new Avalonia.Controls.Shapes.Ellipse
         {
-            Width = 7,
-            Height = 7,
-            Fill = isUsed ? new SolidColorBrush(Color.Parse("#D6A638")) : Brushes.Transparent,
-            Stroke = new SolidColorBrush(Color.Parse(isDark ? "#8d96a6" : "#667085")),
-            StrokeThickness = 1,
+            Width = 8,
+            Height = 8,
+            Fill = isUsed ? new SolidColorBrush(Color.Parse("#F2B51D")) : Brushes.Transparent,
+            Stroke = isUsed
+                ? Brushes.Transparent
+                : new SolidColorBrush(Color.Parse(isDark ? "#8D96A6" : "#667085")),
+            StrokeThickness = isUsed ? 0 : 1,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
@@ -70,7 +72,7 @@ internal static class EditorNavigationVisuals
         };
     }
 
-    public static Button ToggleButton(bool isExpanded, string tooltip, EventHandler<RoutedEventArgs> onClick)
+    public static Button ToggleButton(bool isExpanded, string accessibleLabel, EventHandler<RoutedEventArgs> onClick)
     {
         var button = new Button
         {
@@ -90,7 +92,7 @@ internal static class EditorNavigationVisuals
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(0),
         };
-        ToolTip.SetTip(button, tooltip);
+        EditorAccessibility.Describe(button, accessibleLabel);
         button.Click += onClick;
         return button;
     }
