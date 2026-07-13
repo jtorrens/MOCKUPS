@@ -207,7 +207,27 @@ public partial class MainWindow : SukiWindow
             _inlinePreviews,
             _layoutCards,
             _collectionCards);
+        UsageRefreshButton.Content = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 7,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children =
+            {
+                EditorIcons.Create(EditorIcons.Refresh, 16),
+                new TextBlock
+                {
+                    Text = "Update usage",
+                    FontWeight = FontWeight.SemiBold,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                },
+            },
+        };
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
+        ApplyHeaderUtilityButton(UsageRefreshButton);
+        ApplyHeaderUtilityButton(ShellSettingsButton);
+        EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
+        EditorAccessibility.Describe(ShellSettingsButton, "Settings");
         ProductionAddButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
         ProductionDuplicateButton.Content = EditorIcons.Create(EditorIcons.Duplicate, 15);
         ProductionDeleteButton.Content = EditorIcons.Create(EditorIcons.Delete, 15);
@@ -554,8 +574,11 @@ public partial class MainWindow : SukiWindow
     {
         var activeBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#F0B429" : "#A56600"));
         var inactiveBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#9CA3AF" : "#6B7280"));
-        ApplyWorkspaceButton(DesignWorkspaceButton, _workspace == EditorWorkspace.Design, activeBrush, inactiveBrush);
-        ApplyWorkspaceButton(ProductionWorkspaceButton, _workspace == EditorWorkspace.Production, activeBrush, inactiveBrush);
+        var activeBackground = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#463711" : "#F2DEAA"));
+        WorkspaceSwitcherBorder.BorderBrush = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#59616D" : "#AAB1BB"));
+        WorkspaceSwitcherBorder.Background = new SolidColorBrush(Color.Parse(_themeController.IsDark ? "#16191F" : "#E3E5E8"));
+        ApplyWorkspaceButton(DesignWorkspaceButton, _workspace == EditorWorkspace.Design, activeBrush, inactiveBrush, activeBackground);
+        ApplyWorkspaceButton(ProductionWorkspaceButton, _workspace == EditorWorkspace.Production, activeBrush, inactiveBrush, activeBackground);
         ProductionPickerGrid.IsVisible = _workspace == EditorWorkspace.Production;
     }
 
@@ -613,13 +636,19 @@ public partial class MainWindow : SukiWindow
         ShowNode(production);
     }
 
-    private static void ApplyWorkspaceButton(Button button, bool isActive, IBrush activeBrush, IBrush inactiveBrush)
+    private static void ApplyWorkspaceButton(Button button, bool isActive, IBrush activeBrush, IBrush inactiveBrush, IBrush activeBackground)
     {
-        var brush = isActive ? activeBrush : inactiveBrush;
-        button.Foreground = brush;
-        button.BorderBrush = brush;
-        button.BorderThickness = new Thickness(1);
+        button.Foreground = isActive ? activeBrush : inactiveBrush;
+        button.BorderBrush = Brushes.Transparent;
+        button.BorderThickness = new Thickness(0);
+        button.Background = isActive ? activeBackground : Brushes.Transparent;
+    }
+
+    private static void ApplyHeaderUtilityButton(Button button)
+    {
         button.Background = Brushes.Transparent;
+        button.BorderBrush = Brushes.Transparent;
+        button.BorderThickness = new Thickness(0);
     }
 
     private EditorSessionHistoryState CreateSessionHistoryState()

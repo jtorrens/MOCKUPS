@@ -645,20 +645,25 @@ internal sealed class EditorPreviewController
         ToolTip.SetTip(_marksToggle, "Show design markers");
         ToolTip.SetTip(_canonicalFrameToggle, "Show canonical 360 × 800 frame without the device layer");
 
-        var primaryControls = new StackPanel
+        var primaryControls = new Grid
         {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 10,
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto"),
+            ColumnSpacing = 10,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Children =
-            {
-                _scaleComboBox,
-                _playbackRouteComboBox,
-                LabeledToggle("Markers", _marksToggle),
-                LabeledToggle("360", _canonicalFrameToggle),
-                _referenceViewComboBox,
-            },
         };
+        var primaryControlItems = new Control[]
+        {
+            _scaleComboBox,
+            _playbackRouteComboBox,
+            LabeledToggle("Markers", _marksToggle),
+            LabeledToggle("360", _canonicalFrameToggle),
+            _referenceViewComboBox,
+        };
+        for (var index = 0; index < primaryControlItems.Length; index++)
+        {
+            Grid.SetColumn(primaryControlItems[index], index);
+            primaryControls.Children.Add(primaryControlItems[index]);
+        }
 
         var splitGrid = new Grid
         {
@@ -702,16 +707,17 @@ internal sealed class EditorPreviewController
                 Children =
                 {
                     _shotNavigationScopeComboBox,
-                    TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousSlotButton),
+                    TimelineSeparator(),
+                    TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousFrameButton),
                     TimelineSeparator(),
                     TimelineButtonGroup(
                         _shotStartButton,
-                        _shotPreviousFrameButton,
+                        _shotPreviousSlotButton,
                         _shotPlayButton,
-                        _shotNextFrameButton,
+                        _shotNextSlotButton,
                         _shotEndButton),
                     TimelineSeparator(),
-                    TimelineButtonGroup(_shotNextSlotButton, _shotAbsoluteEndButton),
+                    TimelineButtonGroup(_shotNextFrameButton, _shotAbsoluteEndButton),
                 },
             },
         };
@@ -735,7 +741,8 @@ internal sealed class EditorPreviewController
         _shotPlayButton.Foreground = Brushes.White;
         _shotPlayButton.BorderBrush = Brushes.Transparent;
         _shotPlayButton.BorderThickness = new Thickness(0);
-        _shotTimelineControls.Children.Add(TimelineSeparator(30));
+        var transportLeadingSeparator = TimelineSeparator(30);
+        _shotTimelineControls.Children.Add(transportLeadingSeparator);
         _shotTimelineControls.Children.Add(navigationRow);
         EditorAccessibility.Describe(_shotPreviousSlotButton, "Previous Screen");
         EditorAccessibility.Describe(_shotAbsoluteStartButton, "First Shot frame");
@@ -765,19 +772,51 @@ internal sealed class EditorPreviewController
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
         };
         controlsRow.Children.Add(primaryControls);
-        Grid.SetColumn(_shotTimelineControls, 2);
-        controlsRow.Children.Add(_shotTimelineControls);
+        var transportHost = new Border
+        {
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Child = _shotTimelineControls,
+        };
+        Grid.SetColumn(transportHost, 2);
+        controlsRow.Children.Add(transportHost);
+        bool? transportWraps = null;
         void ArrangeTransport(double availableWidth)
         {
-            var wraps = availableWidth > 0 && availableWidth < 880;
-            Grid.SetRow(_shotTimelineControls, wraps ? 1 : 0);
-            Grid.SetColumn(_shotTimelineControls, wraps ? 0 : 2);
-            Grid.SetColumnSpan(_shotTimelineControls, wraps ? 3 : 1);
+            var primaryNaturalWidth = primaryControlItems.Sum((control) => control.DesiredSize.Width)
+                + (primaryControls.ColumnSpacing * (primaryControlItems.Length - 1));
+            var requiredWidth = primaryNaturalWidth
+                + _shotTimelineControls.DesiredSize.Width
+                + (controlsRow.ColumnSpacing * 2);
+            var wraps = availableWidth > 0 && availableWidth + 1 < requiredWidth;
+            if (transportWraps == wraps) return;
+            transportWraps = wraps;
+            _scaleComboBox.MinWidth = wraps ? 0 : 96;
+            _playbackRouteComboBox.MinWidth = wraps ? 0 : 190;
+            _referenceViewComboBox.MinWidth = wraps ? 0 : 88;
+            primaryControls.ColumnDefinitions = wraps
+                ? new ColumnDefinitions("*,2*,Auto,Auto,*")
+                : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto");
+            Grid.SetColumnSpan(primaryControls, wraps ? 3 : 1);
+            primaryControls.HorizontalAlignment = wraps
+                ? Avalonia.Layout.HorizontalAlignment.Stretch
+                : Avalonia.Layout.HorizontalAlignment.Left;
+            transportLeadingSeparator.Opacity = wraps ? 0 : 1;
+            transportHost.BorderBrush = EditorUiVisuals.ScrollbarSeparatorBrush(_isDark());
+            transportHost.BorderThickness = wraps ? new Thickness(0, 1, 0, 0) : new Thickness(0);
+            transportHost.Padding = wraps ? new Thickness(0, 10, 0, 0) : new Thickness(0);
+            Grid.SetRow(transportHost, wraps ? 1 : 0);
+            Grid.SetColumn(transportHost, wraps ? 0 : 2);
+            Grid.SetColumnSpan(transportHost, wraps ? 3 : 1);
+            transportHost.HorizontalAlignment = wraps
+                ? Avalonia.Layout.HorizontalAlignment.Stretch
+                : Avalonia.Layout.HorizontalAlignment.Right;
             _shotTimelineControls.HorizontalAlignment = wraps
                 ? Avalonia.Layout.HorizontalAlignment.Center
                 : Avalonia.Layout.HorizontalAlignment.Right;
         }
         controlsRow.SizeChanged += (_, args) => ArrangeTransport(args.NewSize.Width);
+        controlsRow.LayoutUpdated += (_, _) => ArrangeTransport(controlsRow.Bounds.Width);
         ArrangeTransport(controlsRow.Bounds.Width);
 
         previewControlsHost.Content = new GlassCard

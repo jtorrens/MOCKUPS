@@ -22,6 +22,7 @@ internal static class EditorIcons
     public const string Lock = "lock";
     public const string Unlock = "unlock";
     public const string Settings = "settings";
+    public const string Refresh = "refresh";
     public const string Play = "play";
     public const string Pause = "pause";
     public const string Folder = "folder";
@@ -410,6 +411,7 @@ internal static class EditorIcons
             Lock => "M7 10V8C7 5.24 9.24 3 12 3C14.76 3 17 5.24 17 8V10 M6 10H18V20H6Z M12 14V17",
             Unlock => "M8 10V8C8 5.24 10.24 3 13 3C15.05 3 16.8 4.23 17.57 5.99 M6 10H18V20H6Z M12 14V17",
             Settings => "M12 15.5A3.5 3.5 0 1 0 12 8.5A3.5 3.5 0 0 0 12 15.5Z M19.4 13.5A7.9 7.9 0 0 0 19.4 10.5L21.2 9.1L19.2 5.7L17.1 6.6A8.1 8.1 0 0 0 14.5 5.1L14.2 3H9.8L9.5 5.1A8.1 8.1 0 0 0 6.9 6.6L4.8 5.7L2.8 9.1L4.6 10.5A7.9 7.9 0 0 0 4.6 13.5L2.8 14.9L4.8 18.3L6.9 17.4A8.1 8.1 0 0 0 9.5 18.9L9.8 21H14.2L14.5 18.9A8.1 8.1 0 0 0 17.1 17.4L19.2 18.3L21.2 14.9Z",
+            Refresh => "M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z",
             Play => "M8 5V19L19 12Z",
             Pause => "M7 5H10V19H7Z M14 5H17V19H14Z",
             TimelinePreviousInstance => "M18 6L12 12L18 18 M13 6L7 12L13 18",

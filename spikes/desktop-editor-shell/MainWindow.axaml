@@ -22,34 +22,47 @@
                 Padding="18,12">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
                 <StackPanel Grid.Column="0" Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                    <Border x:Name="WorkspaceSwitcherBorder"
+                            Width="268"
+                            Height="40"
+                            CornerRadius="10"
+                            BorderThickness="1"
+                            HorizontalAlignment="Left"
+                            ClipToBounds="True">
+                        <Grid ColumnDefinitions="*,*">
                         <Button x:Name="DesignWorkspaceButton"
+                                Grid.Column="0"
                                 Content="Design"
-                                MinWidth="100"
-                                MinHeight="34"
+                                MinHeight="38"
                                 FontSize="17"
                                 FontWeight="Bold"
-                                Padding="12,4"
-                                BorderThickness="1" />
+                                Padding="18,4"
+                                BorderThickness="0"
+                                CornerRadius="0" />
                         <Button x:Name="ProductionWorkspaceButton"
+                                Grid.Column="1"
                                 Content="Production"
-                                MinWidth="124"
-                                MinHeight="34"
+                                MinHeight="38"
                                 FontSize="17"
                                 FontWeight="Bold"
-                                Padding="12,4"
-                                BorderThickness="1" />
-                    </StackPanel>
+                                Padding="18,4"
+                                BorderThickness="0"
+                                CornerRadius="0" />
+                        </Grid>
+                    </Border>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
-                            Content="Update usage" />
+                            MinHeight="36"
+                            Padding="10,4"
+                            BorderThickness="0" />
                     <Button x:Name="ShellSettingsButton"
                             Click="OnShellSettingsClick"
                             Width="38"
                             Height="36"
                             Padding="0"
+                            BorderThickness="0"
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center" />
                 </StackPanel>

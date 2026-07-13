@@ -31,6 +31,7 @@ public sealed class EditorInstantComboBox : Grid
     public EditorInstantComboBox()
     {
         Focusable = true;
+        ClipToBounds = true;
         ColumnDefinitions = new ColumnDefinitions("*,22");
         KeyDown += OnKeyDown;
 

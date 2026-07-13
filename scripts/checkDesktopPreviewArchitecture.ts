@@ -2286,8 +2286,13 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousSlotButton)",
-  "production transport must group Shot and Screen controls with shared UI chrome",
+  "TimelineButtonGroup(_shotAbsoluteStartButton, _shotPreviousFrameButton)",
+  "production transport must keep frame stepping in the outer transport group",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_shotPreviousSlotButton,\n                        _shotPlayButton,\n                        _shotNextSlotButton",
+  "production transport must keep Screen navigation immediately around playback",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
@@ -2298,6 +2303,16 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "navigationRow = new Border",
   "production transport must retain its grouped separator layout",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_shotTimelineControls.DesiredSize.Width",
+  "production navigation scope and transport controls must reflow as one measured unit",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "availableWidth < 880",
+  "production transport must not use a fixed wrapping breakpoint",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
