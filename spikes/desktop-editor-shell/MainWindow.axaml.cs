@@ -155,6 +155,7 @@ public partial class MainWindow : SukiWindow
             _embeddedEditors.OpenNestedSlot,
             OpenComponentPresetReference,
             _nodeCommands.ToggleComponentPresetLock,
+            ReloadAndSelect,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,

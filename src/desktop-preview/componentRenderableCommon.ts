@@ -30,4 +30,4 @@ export {
 } from "./previewGeometryHelpers.js";
 export { iconTokenStyle } from "./previewIconHelpers.js";
 export { shadow, surfaceVisualPadding } from "./previewSurfaceHelpers.js";
-export { embeddedComponentPayload } from "./previewPayloadHelpers.js";
+export { embeddedComponentPayload, previewPayloadInBox } from "./previewPayloadHelpers.js";

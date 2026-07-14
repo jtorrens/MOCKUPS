@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
     private readonly Func<string, Task> _openComponentPresetReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
+    private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Action _refreshPreview;
     private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
 
@@ -41,6 +43,7 @@ internal sealed class EditorLayoutCardFactory
         Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
         Func<string, Task> openComponentPresetReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
+        Action<ProjectTreeNode> reloadAndSelect,
         Action refreshPreview)
     {
         _fieldValues = fieldValues;
@@ -56,6 +59,7 @@ internal sealed class EditorLayoutCardFactory
         _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
         _openComponentPresetReference = openComponentPresetReference;
         _toggleVariantLock = toggleVariantLock;
+        _reloadAndSelect = reloadAndSelect;
         _refreshPreview = refreshPreview;
     }
 
@@ -87,11 +91,12 @@ internal sealed class EditorLayoutCardFactory
             {
                 var field = _fieldValues.Create(node, layoutField.Id);
                 var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module;
+                var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
                 var services = _dictionaryFieldServices.ForNode(
                     node,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
                     _openComponentPresetReference,
-                    supportsEmbeddedOverrides ? (fieldId) => _openEmbeddedComponentEditor(node, fieldId) : null,
+                    supportsEmbeddedOverrides && hasEmbeddedSlot ? (fieldId) => _openEmbeddedComponentEditor(node, fieldId) : null,
                     supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null);
                 var control = new DictionaryFieldControl(
                     field,
@@ -118,6 +123,9 @@ internal sealed class EditorLayoutCardFactory
                         _messages.Error($"Editor field {field.Definition.Id}", exception);
                     }
                 };
+                control.RuntimeContractChanged += (_, _) => Dispatcher.UIThread.Post(
+                    () => _reloadAndSelect(node),
+                    DispatcherPriority.Background);
                 groupPanel.Children.Add(control);
             }
 

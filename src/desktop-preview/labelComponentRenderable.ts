@@ -5,8 +5,12 @@ import {
   centerBox,
   colorForMode,
   numberToken,
+  placeChild,
   renderScale,
+  scalePlacement,
   selectedColor,
+  translateBox,
+  unionBoxes,
   variants,
 } from "./componentRenderableCommon.js";
 import {
@@ -35,29 +39,73 @@ function labelSize(
 ) {
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
-  const hasSubtext = label.subtext.trim().length > 0;
-  const textGap = hasSubtext ? numberToken(payload, label.textGapToken) * scale : 0;
-  const contentWidth = Math.max(
-    measuredTextWidth(label.text, textTypography),
-    hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 0,
+  const content = labelContentLayout(
+    label,
+    textTypography,
+    subtextTypography,
+    scale,
+    payload,
   );
-  const contentHeight =
-    textTypography.lineHeight + (hasSubtext ? textGap + subtextTypography.lineHeight : 0);
   if (label.dimensionMode === "fixed") {
     return {
       width: label.size.width * scale,
       height: label.size.height * scale,
       lineHeight: textTypography.lineHeight,
       subtextLineHeight: subtextTypography.lineHeight,
-      hasSubtext,
+      hasSubtext: content.hasSubtext,
     };
   }
 
   return {
-    width: Math.max(1, contentWidth + paddingX * 2),
-    height: Math.max(1, contentHeight + paddingY * 2),
+    width: Math.max(1, content.bounds.width + paddingX * 2),
+    height: Math.max(1, content.bounds.height + paddingY * 2),
     lineHeight: textTypography.lineHeight,
     subtextLineHeight: subtextTypography.lineHeight,
+    hasSubtext: content.hasSubtext,
+  };
+}
+
+function labelContentLayout(
+  label: LabelDesignContract,
+  textTypography: ReturnType<typeof resolveTypographyStyle>,
+  subtextTypography: ReturnType<typeof resolveTypographyStyle>,
+  scale: number,
+  payload: DesignPreviewPayload,
+  textWidth?: number,
+) {
+  const textBox = {
+    x: 0,
+    y: 0,
+    width: Math.max(1, textWidth ?? measuredTextWidth(label.text, textTypography)),
+    height: textTypography.lineHeight,
+  };
+  const hasSubtext = label.subtext.trim().length > 0;
+  if (!hasSubtext) {
+    return { textBox, subtextBox: undefined, bounds: textBox, hasSubtext };
+  }
+
+  const placement = scalePlacement(label.subtextPlacement, scale);
+  const gap = numberToken(payload, label.textGapToken) * scale;
+  const placementParent = placement.mode === "edge"
+    ? {
+        x: textBox.x - gap,
+        y: textBox.y - gap,
+        width: textBox.width + gap * 2,
+        height: textBox.height + gap * 2,
+      }
+    : textBox;
+  const subtextBox = placeChild(
+    placementParent,
+    {
+      width: Math.max(1, measuredTextWidth(label.subtext, subtextTypography)),
+      height: subtextTypography.lineHeight,
+    },
+    placement,
+  );
+  return {
+    textBox,
+    subtextBox,
+    bounds: unionBoxes([textBox, subtextBox]),
     hasSubtext,
   };
 }
@@ -88,8 +136,25 @@ export function labelComponentToRenderableAt(
   const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
   const subtextTypography = resolveTypographyStyle(payload, label.subtextTypography, scale);
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
-  const paddingY = numberToken(payload, label.padding.yToken) * scale;
   const size = labelSize(label, textTypography, subtextTypography, scale, payload);
+  const content = labelContentLayout(
+    label,
+    textTypography,
+    subtextTypography,
+    scale,
+    payload,
+    label.dimensionMode === "fixed"
+      ? Math.max(1, box.width - paddingX * 2)
+      : undefined,
+  );
+  const contentOrigin = {
+    x: box.x + (box.width - content.bounds.width) / 2 - content.bounds.x,
+    y: box.y + (box.height - content.bounds.height) / 2 - content.bounds.y,
+  };
+  const textBox = translateBox(content.textBox, contentOrigin);
+  const subtextBox = content.subtextBox
+    ? translateBox(content.subtextBox, contentOrigin)
+    : undefined;
   const surfaceNode = options.surfaceColors
     ? surfaceComponentToRenderableAt(payload, label.surface, box, options.surfaceColors)
     : surfaceComponentToRenderableAt(payload, label.surface, box);
@@ -112,13 +177,7 @@ export function labelComponentToRenderableAt(
         frame: 0,
         box,
         style: {
-          alignItems: "center",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
           overflow: "visible",
-          paddingX,
-          paddingY,
           whiteSpace: "nowrap",
           colorModes: Object.fromEntries(
             variants(payload).map((mode) => [
@@ -136,6 +195,7 @@ export function labelComponentToRenderableAt(
             id: `${label.id}.text`,
             type: "text",
             frame: 0,
+            box: textBox,
             text: label.text,
             style: {
               textColor,
@@ -144,29 +204,27 @@ export function labelComponentToRenderableAt(
               lineHeight: size.lineHeight,
               textAlign: label.textAlign,
               display: "block",
-              width: "100%",
               overflow: "hidden",
               fontStyle: textTypography.fontStyle,
               fontWeight: textTypography.fontWeight,
               whiteSpace: "nowrap",
             },
           },
-          ...(size.hasSubtext
+          ...(size.hasSubtext && subtextBox
             ? [
                 {
                   id: `${label.id}.subtext`,
                   type: "text",
                   frame: 0,
+                  box: subtextBox,
                   text: label.subtext,
                   style: {
                     textColor: subtextColor,
                     fontSize: subtextTypography.fontSize,
                     fontFamily: subtextTypography.fontFamily,
                     lineHeight: size.subtextLineHeight,
-                    marginTop: numberToken(payload, label.textGapToken) * scale,
                     textAlign: label.textAlign,
                     display: "block",
-                    width: "100%",
                     overflow: "hidden",
                     fontStyle: subtextTypography.fontStyle,
                     fontWeight: subtextTypography.fontWeight,

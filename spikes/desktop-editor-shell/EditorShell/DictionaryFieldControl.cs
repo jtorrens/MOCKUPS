@@ -94,6 +94,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public event EventHandler<string>? ValueCommitted;
 
+    public event EventHandler? RuntimeContractChanged;
+
     public bool IsDefault => _definition.CanInherit
         ? _isInherited
         : _value == _lastCommittedValue;
@@ -249,6 +251,11 @@ internal sealed class DictionaryFieldControl : Grid
             SetLocalValue(value);
             CommitValue();
         };
+        if (valueControl is IDictionaryRuntimeContractValueControl runtimeContractControl)
+        {
+            runtimeContractControl.RuntimeContractChanged += (_, _) =>
+                RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+        }
 
         if (valueControl is Control control)
         {

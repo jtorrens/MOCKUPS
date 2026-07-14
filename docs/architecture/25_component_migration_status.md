@@ -18,8 +18,10 @@ Current summary:
 - Conversation, Bubble, Text Input Bar, Keyboard, Media and Audio are active
   on the component resolver -> renderable -> generic renderer route.
 - Lock Screen is active on its module resolver -> renderable route. It owns the
-  composition of its status/navigation presets and consumes the generic
-  Actor/App wallpaper contract without adding bridge or renderer rules.
+  composition of its runtime Component Stack and optional status/navigation
+  presets, and consumes the Actor wallpaper contract without adding bridge or
+  renderer rules. The Stack receives only the available box between visible
+  bars and exposes its unchanged runtime collection contract to the module.
 - The atoms and system bars are active on the same route.
 - The behavior reference records the remaining Conversation shared-time,
   message-schema, generic text/emoji and video-preview limitations.
@@ -111,7 +113,7 @@ intermediate Component selection separately.
 | `iconRow` | atom | Structurally migrated | Reusable row/column of stable `button` instances. Every item independently owns runtime content mode, state, icon/text and Push action. `textBox` still uses internal left/right icon rows for icons inside the text field. |
 | `iconBar` | atom | Structurally migrated | Reusable left/center/right grouping of `iconRow` instances with idle/active states. Parent components provide the outer frame; the bar aligns rows inside that frame and keeps state-specific row variants/settings together. `textInputBar` and `keyboard` use this instead of owning direct icon rows. |
 | `componentStack` | atom | Structurally migrated | Generic ordered runtime collection of components. All behavior is runtime-owned: sizing, tokenized Start/End container gaps and the ordered child collection. Items expose add/delete/reorder plus a concrete child Variant, explicit item-local overrides and child runtime inputs, Left/Center/Right alignment, and a fixed token or weighted reflow gap before each item from the second onward. Item gaps therefore belong to the item’s relationship with its predecessor; the first item uses the container Start gap and the final boundary uses End gap. The class needs only its protected Default Variant because component combinations and placement are supplied by the containing parent through the runtime contract. `fill` distributes reflow space inside the parent frame; `content` sizes to its children and leaves placement to its parent. The component selector excludes nested Stacks explicitly. |
-| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` variant. |
+| `label` | atom | Functional reference | Text/subtext, sizing, typography tokens, text align and generic subtext placement are on the new route. Visual surface is an embedded `surface` variant. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
 | `button` | atom | Functional reference | Generic action atom with `icon`, `text` and `iconText` runtime content modes. Embeds state-specific `surface` and `label` variants, supports content/fixed sizing, exposes `normal`, `active`, `pushed` and `disabled` runtime states, and provides a declarative `Push` action timed by `theme.motion.buttonPushedDurationMs`. It replaces the retired `buttonIcon` class. |
 | `audio` | component | Functional reference, still evolving | Embeds `surface`, `avatar` and a `button` badge fixed by the parent to icon/normal runtime inputs; playback inputs are generic frame inputs, exposed through a preview action. Future work may refine waveform behavior, badge semantics and animation details. |

@@ -41,6 +41,7 @@ resolver and renderable that own the implementation.
 | Area | Behavior sheet | Active status |
 | --- | --- | --- |
 | Conversation module | [conversation.md](conversation.md) | Functional, with noted alignment/input gaps |
+| Lock Screen module | [lock_screen.md](lock_screen.md) | Functional foundation |
 | Bubble | [bubble.md](bubble.md) | Functional |
 | Text Input Bar | [text_input_bar.md](text_input_bar.md) | Functional |
 | Keyboard | [keyboard.md](keyboard.md) | Functional, parent integration gap noted |

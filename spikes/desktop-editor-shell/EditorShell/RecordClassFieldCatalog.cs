@@ -190,6 +190,8 @@ internal static class RecordClassFieldCatalog
             "module.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentPreset, ComponentPresetType: "status_bar"),
         ["module.lockScreen.navigationBarVariant"] = new(
             "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentPreset, ComponentPresetType: "navigation_bar"),
+        ["module.lockScreen.stackVariant"] = new(
+            "module.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentPreset, ComponentPresetType: "componentStack"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),

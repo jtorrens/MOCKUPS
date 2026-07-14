@@ -266,6 +266,34 @@ Rules:
 - bridge and web renderer must not infer missing inputs or know which concrete
   component declared them.
 
+## Runtime Input Forwarding
+
+When a parent Variant embeds a child, every child runtime input crosses a new
+composition boundary. At that boundary the value is Variant-owned by default.
+The designer may explicitly expose it to the parent runtime through generic
+Runtime Input Forwarding.
+
+The editor represents this with an empty/filled circle (`○` / `●`), distinct
+from animation keyframe diamonds. Activating the circle preserves the current
+Variant value as the runtime default and reveals an editable runtime label.
+The technical input id and payload key remain stable when that label changes.
+
+Forwarding metadata is stored beside the child input values under
+`$forwardedInputs`. The effective parent runtime contract is its declared
+runtime contract plus those forwarded definitions. A forwarded input is a
+normal runtime input at the next composition boundary and may be forwarded
+again without knowing its final owner.
+
+Before a component resolver runs, the generic forwarding pass writes resolved
+parent runtime values into their declared child input locations. Component
+resolvers continue to own composition; bridge and renderer never see forwarding
+metadata or implement component-specific routing.
+
+Stopping forwarding retains the current Variant value. If downstream bindings
+use the effective input id, the operation is blocked and the usage modal must
+offer direct navigation links to those editors. It must never silently cascade
+through parent Variants, Screen payloads or animation tracks.
+
 ## Generic Preview Helper Boundary
 
 Generic preview helpers convert reusable values inside validated component

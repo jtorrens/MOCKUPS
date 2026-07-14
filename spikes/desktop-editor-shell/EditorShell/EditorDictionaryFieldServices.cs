@@ -79,10 +79,12 @@ internal sealed class EditorDictionaryFieldServices
             getFieldValue,
             () => _database.GetPaletteColorOptions(projectId),
             (componentType) => _database.GetComponentPresetReferenceOptionsByType(projectId, componentType),
+            _database.GetComponentPresetRuntimeInputBindings,
             openComponentPresetReference,
             openEmbeddedComponent,
             openComponentInputBinding,
-            ResolveBehaviorTimingFrames);
+            ResolveBehaviorTimingFrames,
+            _domainDialogs.ConfirmStopRuntimeInputForwarding);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

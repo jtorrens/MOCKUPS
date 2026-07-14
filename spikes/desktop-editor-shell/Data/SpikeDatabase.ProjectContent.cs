@@ -319,8 +319,9 @@ internal sealed partial class SpikeDatabase
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
             "module.conversation.messageViewportMotion" => JsonPath.Get(config, ["conversation", "messageViewportMotion"])?.ToJsonString()
                 ?? (MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString(),
-            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarVariant"]),
-            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarVariant"]),
+            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarSlot", "presetId"]),
+            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarSlot", "presetId"]),
+            "module.lockScreen.stackVariant" => JsonString(config, ["lockScreen", "stackSlot", "presetId"]),
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
         };
     }
@@ -330,6 +331,10 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         if (fieldId.StartsWith("app.wallpaper.", StringComparison.Ordinal))
         {
+            if (ScalarString(connection, "SELECT app_type FROM apps WHERE id = $id", ("$id", appId)) == "system")
+            {
+                throw new InvalidOperationException("System apps inherit Actor wallpaper and cannot own wallpaper fields.");
+            }
             UpdateAppConfigField(connection, appId, fieldId, value);
             return;
         }
@@ -592,10 +597,13 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "messageViewportMotion"], JsonNode.Parse(MotionVariantValue.Parse(value).ToJsonString())!);
                 break;
             case "module.lockScreen.statusBarVariant":
-                SetJsonValue(config, ["lockScreen", "statusBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
+                SetJsonValue(config, ["lockScreen", "statusBarSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
                 break;
             case "module.lockScreen.navigationBarVariant":
-                SetJsonValue(config, ["lockScreen", "navigationBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
+                SetJsonValue(config, ["lockScreen", "navigationBarSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
+                break;
+            case "module.lockScreen.stackVariant":
+                SetJsonValue(config, ["lockScreen", "stackSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "componentStack", value))!);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");

@@ -26,6 +26,8 @@ internal sealed partial class SpikeDatabase
                     ("$notes", "Initial Lock Screen module: inherited Actor wallpaper and dedicated system component variants."),
                     ("$moduleId", moduleId));
                 RemoveLockScreenWallpaperSetting(connection, moduleId);
+                NormalizeLockScreenSystemSlots(connection, moduleId, project.Id);
+                NormalizeLockScreenStackSlot(connection, moduleId, project.Id);
                 NormalizeLockScreenDesignPreview(connection, moduleId);
                 continue;
             }
@@ -46,6 +48,9 @@ internal sealed partial class SpikeDatabase
         Execute(connection,
             "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('module.core.lockScreen', $layoutJson)",
             ("$layoutJson", MinimalEditorLayoutJson("module.core.lockScreen")));
+        Execute(connection,
+            "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('app.system', $layoutJson)",
+            ("$layoutJson", MinimalEditorLayoutJson("app.system")));
     }
 
     private static string EnsureSystemApplication(SqliteConnection connection, string projectId)
@@ -56,13 +61,19 @@ internal sealed partial class SpikeDatabase
             Execute(connection,
                 """
                 INSERT INTO apps (id, project_id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json)
-                VALUES ($id, $projectId, 'app.generic', 'System', 'system', 'system', $notes, $sortOrder, $configJson, '{}')
+                VALUES ($id, $projectId, 'app.system', 'System', 'system', 'system', $notes, $sortOrder, $configJson, '{}')
                 """,
                 ("$id", appId),
                 ("$projectId", projectId),
                 ("$notes", "Dedicated system app for device-level modules."),
                 ("$sortOrder", NextSortOrder(connection, "apps", "project_id", projectId)),
                 ("$configJson", SystemAppConfigJson()));
+        }
+        else
+        {
+            Execute(connection,
+                "UPDATE apps SET record_class_id = 'app.system' WHERE id = $id",
+                ("$id", appId));
         }
         return appId;
     }
@@ -158,10 +169,64 @@ internal sealed partial class SpikeDatabase
         ["appearanceMode"] = "inherit",
         ["lockScreen"] = new JsonObject
         {
-            ["statusBarVariant"] = SeededComponentPresetReference(projectId, "status_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal),
-            ["navigationBarVariant"] = SeededComponentPresetReference(projectId, "navigation_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal),
+            ["statusBarSlot"] = new JsonObject
+            {
+                ["presetId"] = SeededComponentPresetReference(projectId, "status_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal),
+                ["overrides"] = new JsonObject(),
+            },
+            ["navigationBarSlot"] = new JsonObject
+            {
+                ["presetId"] = SeededComponentPresetReference(projectId, "navigation_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal),
+                ["overrides"] = new JsonObject(),
+            },
+            ["stackSlot"] = new JsonObject
+            {
+                ["presetId"] = SeededComponentPresetReference(projectId, "componentStack"),
+                ["overrides"] = new JsonObject(),
+            },
         },
     }.ToJsonString();
+
+    private static void NormalizeLockScreenSystemSlots(
+        SqliteConnection connection,
+        string moduleId,
+        string projectId)
+    {
+        var original = ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
+        var config = ParseJsonObject(original);
+        var lockScreen = config["lockScreen"] as JsonObject ?? new JsonObject();
+        config["lockScreen"] = lockScreen;
+        NormalizeSlot(
+            lockScreen,
+            "statusBarSlot",
+            "statusBarVariant",
+            SeededComponentPresetReference(projectId, "status_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal));
+        NormalizeSlot(
+            lockScreen,
+            "navigationBarSlot",
+            "navigationBarVariant",
+            SeededComponentPresetReference(projectId, "navigation_bar").Replace("::preset::default", "::preset::lock_screen", StringComparison.Ordinal));
+        var next = config.ToJsonString();
+        if (next == original) return;
+        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+            ("$id", moduleId), ("$configJson", next));
+    }
+
+    private static void NormalizeSlot(JsonObject owner, string slotKey, string retiredReferenceKey, string defaultPresetId)
+    {
+        if (owner[slotKey] is not JsonObject slot)
+        {
+            var presetId = owner[retiredReferenceKey]?.GetValue<string>();
+            slot = new JsonObject
+            {
+                ["presetId"] = string.IsNullOrWhiteSpace(presetId) ? defaultPresetId : presetId,
+                ["overrides"] = new JsonObject(),
+            };
+            owner[slotKey] = slot;
+        }
+        slot["overrides"] ??= new JsonObject();
+        owner.Remove(retiredReferenceKey);
+    }
 
     private static void RemoveLockScreenWallpaperSetting(SqliteConnection connection, string moduleId)
     {
@@ -172,43 +237,89 @@ internal sealed partial class SpikeDatabase
             ("$id", moduleId), ("$configJson", config.ToJsonString()));
     }
 
-    private static string DefaultLockScreenDesignPreviewJson() => new JsonObject
+    private static void NormalizeLockScreenStackSlot(
+        SqliteConnection connection,
+        string moduleId,
+        string projectId)
     {
-        ["inputs"] = new JsonArray
+        var original = ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
+        var config = ParseJsonObject(original);
+        var lockScreen = config["lockScreen"] as JsonObject ?? new JsonObject();
+        config["lockScreen"] = lockScreen;
+        if (lockScreen["stackSlot"] is not JsonObject stackSlot)
         {
-            new JsonObject
+            var presetId = lockScreen["stackVariant"]?.GetValue<string>();
+            stackSlot = new JsonObject
             {
-                ["id"] = "actor",
-                ["label"] = "Actor",
-                ["jsonKey"] = "actorId",
-                ["kind"] = "recordReference",
-                ["defaultValue"] = "actor_alex",
-                ["tableId"] = "actors",
-                ["resolvedJsonKey"] = "actor",
-            },
-        },
-        ["actorId"] = "actor_alex",
-    }.ToJsonString();
+                ["presetId"] = string.IsNullOrWhiteSpace(presetId)
+                    ? SeededComponentPresetReference(projectId, "componentStack")
+                    : presetId,
+                ["overrides"] = new JsonObject(),
+            };
+            lockScreen["stackSlot"] = stackSlot;
+        }
+        stackSlot["overrides"] ??= new JsonObject();
+        lockScreen.Remove("stackVariant");
+        var next = config.ToJsonString();
+        if (next == original) return;
+        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+            ("$id", moduleId), ("$configJson", next));
+    }
+
+    private static string DefaultLockScreenDesignPreviewJson()
+    {
+        var preview = ComponentStackDesignPreview();
+        preview.Remove("componentType");
+        var inputs = preview["inputs"] as JsonArray
+            ?? throw new InvalidOperationException("Component Stack has no runtime input contract.");
+        inputs.Insert(0, new JsonObject
+        {
+            ["id"] = "showNavigationBar",
+            ["label"] = "Show Navigation Bar",
+            ["jsonKey"] = "showNavigationBar",
+            ["kind"] = "boolean",
+            ["defaultValue"] = "true",
+        });
+        inputs.Insert(0, new JsonObject
+        {
+            ["id"] = "showStatusBar",
+            ["label"] = "Show Status Bar",
+            ["jsonKey"] = "showStatusBar",
+            ["kind"] = "boolean",
+            ["defaultValue"] = "true",
+        });
+        inputs.Insert(0, new JsonObject
+        {
+            ["id"] = "actor",
+            ["label"] = "Actor",
+            ["jsonKey"] = "actorId",
+            ["kind"] = "recordReference",
+            ["defaultValue"] = "actor_alex",
+            ["tableId"] = "actors",
+            ["resolvedJsonKey"] = "actor",
+        });
+        preview["actorId"] = "actor_alex";
+        preview["showStatusBar"] = true;
+        preview["showNavigationBar"] = true;
+        return preview.ToJsonString();
+    }
 
     private static void NormalizeLockScreenDesignPreview(SqliteConnection connection, string moduleId)
     {
         var original = ScalarString(connection, "SELECT design_preview_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
         var preview = ParseJsonObject(original);
-        if (preview["inputs"] is JsonArray inputs)
-        {
-            for (var index = inputs.Count - 1; index >= 0; index--)
-            {
-                if (inputs[index]?["id"]?.GetValue<string>() == "actor") inputs.RemoveAt(index);
-            }
-        }
-        else
-        {
-            inputs = new JsonArray();
-            preview["inputs"] = inputs;
-        }
-        inputs.Add((JsonNode.Parse(DefaultLockScreenDesignPreviewJson())?["inputs"]?[0])?.DeepClone());
+        var defaults = ParseJsonObject(DefaultLockScreenDesignPreviewJson());
+        preview["inputs"] = defaults["inputs"]?.DeepClone();
+        preview["collections"] = defaults["collections"]?.DeepClone();
         preview.Remove("testValues");
+        preview.Remove("actor");
         if (string.IsNullOrWhiteSpace(preview["actorId"]?.GetValue<string>())) preview["actorId"] = "actor_alex";
+        preview["showStatusBar"] ??= true;
+        preview["showNavigationBar"] ??= true;
+        preview["sizingMode"] ??= "fill";
+        preview["startGapToken"] ??= "theme.spacing.none";
+        preview["endGapToken"] ??= "theme.spacing.none";
+        preview["items"] ??= new JsonArray();
         Execute(connection, "UPDATE modules SET design_preview_json = $previewJson WHERE id = $id",
             ("$id", moduleId), ("$previewJson", preview.ToJsonString()));
     }

@@ -121,6 +121,7 @@ internal sealed record FieldDefinition(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    string RuntimeInputComponentPresetFieldId = "",
     bool SelectComponentClass = false,
     string Unit = "",
     AnimationFieldDefinition? Animation = null,

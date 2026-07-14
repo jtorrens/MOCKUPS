@@ -154,6 +154,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
@@ -182,6 +183,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
@@ -212,6 +214,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             localValue,
             IsInherited: !hasOverride);
@@ -256,6 +259,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             localValue,
             IsInherited: !hasOverride,
@@ -380,7 +384,8 @@ internal sealed partial class SpikeDatabase
                 Options: ComponentClassFieldOptions(settings.ProjectId, descriptor),
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings),
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -423,7 +428,8 @@ internal sealed partial class SpikeDatabase
                 Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings),
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -499,7 +505,8 @@ internal sealed partial class SpikeDatabase
                 Options: options,
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings),
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);

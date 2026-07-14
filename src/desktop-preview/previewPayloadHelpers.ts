@@ -1,3 +1,4 @@
+import type { RenderableBox } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 export function embeddedComponentPayload(
@@ -11,5 +12,21 @@ export function embeddedComponentPayload(
     componentType: type,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(inputs),
+  };
+}
+
+export function previewPayloadInBox(
+  payload: DesignPreviewPayload,
+  box: RenderableBox,
+): DesignPreviewPayload {
+  return {
+    ...payload,
+    previewFrame: {
+      ...payload.previewFrame,
+      screenX: box.x,
+      screenY: box.y,
+      screenWidth: box.width,
+      screenHeight: box.height,
+    },
   };
 }

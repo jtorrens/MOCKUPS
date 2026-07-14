@@ -14,6 +14,24 @@ internal static class EmbeddedComponentSlotCatalog
 {
     private static readonly EmbeddedComponentSlotDefinition[] Slots =
     [
+        new(
+            "module.lockScreen.statusBarVariant",
+            "status_bar",
+            "Status bar",
+            "component.status_bar",
+            ["lockScreen", "statusBarSlot"]),
+        new(
+            "module.lockScreen.navigationBarVariant",
+            "navigation_bar",
+            "Navigation bar",
+            "component.navigation_bar",
+            ["lockScreen", "navigationBarSlot"]),
+        new(
+            "module.lockScreen.stackVariant",
+            "componentStack",
+            "Stack",
+            "component.componentStack",
+            ["lockScreen", "stackSlot"]),
         new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
         new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(

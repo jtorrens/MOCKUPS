@@ -58,6 +58,17 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmAnimationDisable(fieldLabel);
     }
 
+    public Task<bool> ConfirmStopRuntimeInputForwarding(string fieldLabel)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
+            "Keep input in Variant",
+            $"Stop exposing \"{fieldLabel}\" to the parent runtime?",
+            "Its current value will remain fixed in this Variant.",
+            "Keep as Variant value",
+            width: 500,
+            height: 240);
+    }
+
     public Task<SpikeDatabase.ShotModuleChoice?> SelectModuleForShot(string shotId)
     {
         return new ShotModulePickerDialog(_owner).Show(_database.GetAvailableShotModules(shotId));

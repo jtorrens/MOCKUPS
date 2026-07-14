@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -11,7 +12,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryComponentInputBindingsControl : Border, IDictionaryValueControl
+internal sealed class DictionaryComponentInputBindingsControl : Border, IDictionaryValueControl, IDictionaryRuntimeContractValueControl
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryFieldServices _services;
@@ -46,6 +47,8 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     public event EventHandler<string>? ValueChanged;
 
     public event EventHandler<string>? ValueCommitted;
+
+    public event EventHandler? RuntimeContractChanged;
 
     public void SetValue(string value)
     {
@@ -276,7 +279,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         return new CompactInputCard(header, groupRows);
     }
 
-    private DictionaryFieldControl CreateInputField(ComponentInputBindingDefinition input)
+    private Control CreateInputField(ComponentInputBindingDefinition input)
     {
         var services = ServicesFor(input);
         var field = new DictionaryFieldControl(CreateFieldValue(input), services, compact: true)
@@ -285,7 +288,80 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         };
         field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
         field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
-        return field;
+        var forwarded = Forwarding(input);
+        var content = new StackPanel { Spacing = 6 };
+        content.Children.Add(field);
+        if (forwarded is not null)
+        {
+            var runtimeLabel = new DictionaryFieldControl(
+                new FieldValue(
+                    new FieldDefinition(
+                        $"{_definition.Id}.{input.Id}.runtimeLabel",
+                        "Runtime label",
+                        ValueKind.StringSingleLine,
+                        DefaultValue: input.Label),
+                    JsonText(forwarded["label"], input.Label)),
+                _services,
+                compact: true);
+            runtimeLabel.ValueChanged += (_, next) => SetForwardingLabel(input, next, commit: false);
+            runtimeLabel.ValueCommitted += (_, next) => SetForwardingLabel(input, next, commit: true);
+            content.Children.Add(runtimeLabel);
+        }
+
+        var row = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 6,
+        };
+        row.Children.Add(content);
+        var indicator = new Path
+        {
+            Width = 12,
+            Height = 11,
+            Data = Geometry.Parse("M 6,1 L 11,10 L 1,10 Z"),
+            Fill = forwarded is null ? Brushes.Transparent : EditorOverrideVisuals.Brush,
+            Stroke = forwarded is null ? null : EditorOverrideVisuals.Brush,
+            StrokeThickness = 1.5,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var toggle = new Button
+        {
+            Content = indicator,
+            Width = 30,
+            Height = 30,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+        if (forwarded is null)
+        {
+            indicator.Bind(Path.StrokeProperty, toggle.GetObservable(Button.ForegroundProperty));
+        }
+        ToolTip.SetTip(toggle, forwarded is null ? "Expose to parent runtime" : "Keep as Variant value");
+        toggle.Click += async (_, args) =>
+        {
+            args.Handled = true;
+            if (Forwarding(input) is null)
+            {
+                SetForwarding(input, enabled: true);
+            }
+            else
+            {
+                var confirmed = _services.ConfirmStopRuntimeInputForwarding is null
+                    || await _services.ConfirmStopRuntimeInputForwarding(
+                        JsonText(Forwarding(input)?["label"], input.Label));
+                if (!confirmed) return;
+                SetForwarding(input, enabled: false);
+            }
+            RefreshRows();
+            RefreshSummary();
+        };
+        Grid.SetColumn(toggle, 1);
+        row.Children.Add(toggle);
+        return row;
     }
 
     private DictionaryFieldServices ServicesFor(ComponentInputBindingDefinition input)
@@ -325,7 +401,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 $"{_definition.Id}.{input.Id}",
                 input.Label,
                 input.ValueKind,
-                _definition.IsEditable,
+                _definition.IsEditable && Forwarding(input) is null,
                 input.DefaultValue,
                 Options: options,
                 Number: input.Number),
@@ -349,9 +425,21 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private IEnumerable<ComponentInputBindingDefinition> VariantInputs()
     {
-        return _definition.ComponentInputBindings?
-            .Where((input) => input.Source == ComponentInputBindingSource.Variant)
-            ?? [];
+        var declared = (_definition.ComponentInputBindings ?? [])
+            .Where((input) => input.Source != ComponentInputBindingSource.Calculated)
+            .ToList();
+        if (string.IsNullOrWhiteSpace(_definition.RuntimeInputComponentPresetFieldId)
+            || _services.GetFieldValue is null
+            || _services.GetComponentPresetRuntimeInputs is null)
+        {
+            return declared;
+        }
+        var presetReference = _services.GetFieldValue(_definition.RuntimeInputComponentPresetFieldId);
+        if (string.IsNullOrWhiteSpace(presetReference)) return declared;
+        var known = declared.Select((input) => input.Id).ToHashSet(StringComparer.Ordinal);
+        declared.AddRange(_services.GetComponentPresetRuntimeInputs(presetReference)
+            .Where((input) => known.Add(input.Id)));
+        return declared;
     }
 
     private void SetInputValue(ComponentInputBindingDefinition input, string next, bool commit)
@@ -359,12 +447,55 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         _value[input.JsonKey] = input.ValueKind == ValueKind.ComponentPreset && !string.IsNullOrWhiteSpace(input.ComponentType)
             ? ComponentPresetSlotNode(input, next)
             : ToJsonValue(input.ValueKind, next);
+        if (Forwarding(input) is { } forwarding)
+        {
+            forwarding["defaultValue"] = next;
+        }
         var json = _value.ToJsonString();
         ValueChanged?.Invoke(this, json);
         RefreshSummary();
         if (commit)
         {
             ValueCommitted?.Invoke(this, json);
+        }
+    }
+
+    private JsonObject? Forwarding(ComponentInputBindingDefinition input) =>
+        (_value[RuntimeInputForwardingContract.StorageKey] as JsonObject)?[input.JsonKey] as JsonObject;
+
+    private void SetForwarding(ComponentInputBindingDefinition input, bool enabled)
+    {
+        var forwards = _value[RuntimeInputForwardingContract.StorageKey] as JsonObject ?? new JsonObject();
+        if (enabled)
+        {
+            _value[RuntimeInputForwardingContract.StorageKey] = forwards;
+            forwards[input.JsonKey] = RuntimeInputForwardingContract.Definition(
+                _definition,
+                input,
+                input.Label,
+                InputValue(input, OptionsFor(input) ?? []));
+        }
+        else
+        {
+            forwards.Remove(input.JsonKey);
+            if (forwards.Count == 0) _value.Remove(RuntimeInputForwardingContract.StorageKey);
+        }
+        var json = _value.ToJsonString();
+        ValueChanged?.Invoke(this, json);
+        ValueCommitted?.Invoke(this, json);
+        RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SetForwardingLabel(ComponentInputBindingDefinition input, string label, bool commit)
+    {
+        if (Forwarding(input) is not { } forwarding) return;
+        forwarding["label"] = string.IsNullOrWhiteSpace(label) ? input.Label : label.Trim();
+        var json = _value.ToJsonString();
+        ValueChanged?.Invoke(this, json);
+        if (commit)
+        {
+            ValueCommitted?.Invoke(this, json);
+            RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

@@ -38,9 +38,9 @@ export function resolveTextInputBarComponent(
     "component.textInput.textBox.rightIconRowSlot",
   );
   const sampleText = requiredPossiblyEmptyString(
-    preview,
+    textBoxInputs,
     "sampleText",
-    "component.textInput.preview.sampleText",
+    "component.textInput.textBox.sampleText",
   );
   const availableWidth = Math.max(
     1,

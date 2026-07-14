@@ -1,4 +1,5 @@
 import type {
+  AlignmentPlacementContract,
   SpacingPairContract,
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
@@ -15,6 +16,7 @@ export interface LabelDesignContract {
   textTypography: TypographyStyleContract;
   textAlign: "left" | "center" | "right";
   textGapToken: string;
+  subtextPlacement: AlignmentPlacementContract;
   subtextColorToken: string;
   subtextTypography: TypographyStyleContract;
   surface: SurfaceDesignContract;

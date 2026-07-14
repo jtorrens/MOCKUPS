@@ -9,6 +9,46 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private static void NormalizeRuntimeInputForwardingContracts(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ComponentType == "textInputBar"))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            var preview = ParseJsonObject(row.DesignPreviewJson);
+            NormalizeTextInputBarForwardingNodes(config);
+            NormalizeTextInputBarForwardingNodes(metadata);
+            preview.Remove("sampleText");
+            Execute(connection,
+                "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", config.ToJsonString()),
+                ("$previewJson", preview.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+    }
+
+    private static void NormalizeTextInputBarForwardingNodes(JsonNode? node)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array) NormalizeTextInputBarForwardingNodes(child);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+        if (obj["textInput"]?["textBoxInputs"] is JsonObject inputs)
+        {
+            inputs["sampleText"] ??= "Message";
+            var forwards = inputs[RuntimeInputForwardingContract.StorageKey] as JsonObject ?? new JsonObject();
+            inputs[RuntimeInputForwardingContract.StorageKey] = forwards;
+            forwards["sampleText"] ??= ForwardedTextBoxSampleTextDefinition();
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList())
+        {
+            NormalizeTextInputBarForwardingNodes(child);
+        }
+    }
+
     private static void NormalizeDefaultComponentConfigAuthority(SqliteConnection connection)
     {
         foreach (var row in QueryComponentClassRows(connection))
@@ -192,6 +232,11 @@ internal sealed partial class SpikeDatabase
                 : gap <= 10 ? "theme.spacing.m"
                 : "theme.spacing.l";
             label.Remove("textGap");
+        }
+        if (obj["label"] is JsonObject labelConfig)
+        {
+            labelConfig["subtextPlacement"] ??= JsonNode.Parse(
+                """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}""");
         }
         if (obj["avatar"]?["labelSlot"] is JsonObject labelSlot)
         {

@@ -39,11 +39,13 @@ The parent supplies frame state; Cursor does not own a clock.
 **Purpose/ownership.** One or two text lines with optional Surface and
 placement when embedded. **Runtime inputs.** Primary/subtext and, where used,
 actor-derived label data. **Variant/config.** Typography chains, colors,
-alignment, gap, Surface and style settings.
+alignment, gap, subtext placement, Surface and style settings.
 
-**Layout.** Empty subtext takes no layout space. Text alignment is local to
-Label; parent placement is separate. Parent can use Label's visual bounds for
-its own vertical intrusion rules.
+**Layout.** Empty subtext takes no layout space. The generic alignment
+placement positions subtext relative to the primary text; its initial value is
+the former centered-below layout, while the spacing token remains the semantic
+distance between both texts. Text alignment is local to Label; parent placement
+is separate. Parent can use Label's visual bounds for its own intrusion rules.
 
 **Motion.** No independent clock. **Limitations.** Font/emoji measurement is
 shared with Text Box and has known preview fidelity work remaining.

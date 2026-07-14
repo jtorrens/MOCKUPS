@@ -40,6 +40,7 @@ internal sealed partial class SpikeDatabase
             "navigation.episodes",
             "app.generic",
             "app.core.chat",
+            "app.system",
             "module.generic",
             "module.core.chat",
             "module.core.lockScreen",
@@ -122,7 +123,8 @@ internal sealed partial class SpikeDatabase
             connection,
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.label'");
         if (!string.IsNullOrWhiteSpace(labelLayout)
-            && labelLayout.Contains("component.label.textGap", StringComparison.Ordinal))
+            && (labelLayout.Contains("component.label.textGap\"", StringComparison.Ordinal)
+                || !labelLayout.Contains("component.label.subtextPlacement", StringComparison.Ordinal)))
         {
             Execute(connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.label'",
@@ -356,6 +358,29 @@ internal sealed partial class SpikeDatabase
         }
         """;
 
+    private static string AppNotesCardJson(int order) => $$"""
+        {
+          "id": "notes",
+          "label": "Notes",
+          "subtitle": "App notes",
+          "icon": "{{EditorIcons.Content}}",
+          "order": {{order}},
+          "visible": true,
+          "defaultOpen": false,
+          "groups": [
+            {
+              "id": "notes",
+              "label": "Notes",
+              "order": 10,
+              "visible": true,
+              "fields": [
+                { "id": "app.note", "order": 10, "visible": true }
+              ]
+            }
+          ]
+        }
+        """;
+
     private static string MinimalEditorLayoutJson(string recordClassId)
     {
         var generalFields = recordClassId.StartsWith("component.", StringComparison.Ordinal)
@@ -393,7 +418,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "shot.ownerDevice", "order": 80, "visible": true },
                     { "id": "core.notes", "order": 90, "visible": true }
                   """
-            : recordClassId is "app.generic" or "app.core.chat"
+            : recordClassId is "app.generic" or "app.core.chat" or "app.system"
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "app.bundleKey", "order": 20, "visible": true },
@@ -570,27 +595,10 @@ internal sealed partial class SpikeDatabase
                 }
               ]
             },
-            {
-              "id": "notes",
-              "label": "Notes",
-              "subtitle": "App notes",
-              "icon": "{{EditorIcons.Content}}",
-              "order": 40,
-              "visible": true,
-              "defaultOpen": false,
-              "groups": [
-                {
-                  "id": "notes",
-                  "label": "Notes",
-                  "order": 10,
-                  "visible": true,
-                  "fields": [
-                    { "id": "app.note", "order": 10, "visible": true }
-                  ]
-                }
-              ]
-            }
+            {{AppNotesCardJson(40)}}
             """
+            : recordClassId == "app.system"
+            ? $"{Environment.NewLine},{Environment.NewLine}{AppNotesCardJson(20)}"
             : "";
         var themeCards = recordClassId == "theme"
             ? $$"""
@@ -1124,11 +1132,25 @@ internal sealed partial class SpikeDatabase
             ? $$"""
             ,
             {
+              "id": "content-stack",
+              "label": "Content Stack",
+              "subtitle": "Runtime-owned Lock Screen content",
+              "icon": "{{EditorIcons.Layout}}",
+              "order": 20,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "content-stack", "label": "Content Stack", "order": 10, "visible": true, "fields": [
+                  { "id": "module.lockScreen.stackVariant", "order": 10, "visible": true }
+                ] }
+              ]
+            },
+            {
               "id": "status-bar",
               "label": "Status Bar",
               "subtitle": "Lock Screen system variant",
               "icon": "{{EditorIcons.Status}}",
-              "order": 20,
+              "order": 30,
               "visible": true,
               "defaultOpen": false,
               "groups": [
@@ -1142,7 +1164,7 @@ internal sealed partial class SpikeDatabase
               "label": "Navigation Bar",
               "subtitle": "Lock Screen system variant",
               "icon": "{{EditorIcons.Navigation}}",
-              "order": 30,
+              "order": 40,
               "visible": true,
               "defaultOpen": false,
               "groups": [

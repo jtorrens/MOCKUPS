@@ -1256,6 +1256,7 @@ internal sealed class ComponentPreviewInputSession
 
     internal static IReadOnlyList<ComponentInputDefinition> ReadRuntimeInputs(JsonObject preview, JsonObject config)
     {
+        preview = RuntimeInputForwardingContract.EffectivePreview(preview, config);
         var definitions = new List<ComponentInputDefinition>();
         if (preview["inputs"] is not JsonArray inputs)
         {

@@ -410,8 +410,9 @@ internal sealed partial class SpikeDatabase
                 ] },
                 { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
                   { "id": "component.label.textGapToken", "order": 10, "visible": true },
-                  { "id": "component.label.subtextColorToken", "order": 20, "visible": true },
-                  { "id": "component.label.subtextTypography", "order": 30, "visible": true }
+                  { "id": "component.label.subtextPlacement", "order": 20, "visible": true },
+                  { "id": "component.label.subtextColorToken", "order": 30, "visible": true },
+                  { "id": "component.label.subtextTypography", "order": 40, "visible": true }
                 ] },
                 { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": false, "fields": [] }
               ]

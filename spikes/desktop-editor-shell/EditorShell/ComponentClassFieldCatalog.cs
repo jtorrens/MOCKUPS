@@ -17,6 +17,7 @@ internal sealed record ComponentClassFieldDescriptor(
     NumberDefinition? Number = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
     string ComponentPresetType = "",
+    string RuntimeInputComponentPresetFieldId = "",
     string Unit = "");
 
 internal static class ComponentClassFieldCatalog
@@ -540,7 +541,8 @@ internal static class ComponentClassFieldCatalog
             ValueKind.ComponentInputBindings,
             ["textInput", "textBoxInputs"],
             """{"placeholder":"Message"}""",
-            ComponentInputBindings: TextBoxParentInputBindings),
+            ComponentInputBindings: TextBoxParentInputBindings,
+            RuntimeInputComponentPresetFieldId: "component.textInput.textBox.editor"),
 
         ["component.keyboard.language"] = new("component.keyboard.language", "Language", ValueKind.OptionToken, ["keyboard", "language"], "es", Options: KeyboardLanguageOptions),
         ["component.keyboard.heightToken"] = new("component.keyboard.heightToken", "Height", ValueKind.ThemeToken, ["keyboard", "heightToken"], "theme.keyboard.height", Options: KeyboardHeightTokenOptions),
@@ -597,6 +599,7 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textTypography"] = new("component.label.textTypography", "Text typography", ValueKind.TypographyStyle, ["label", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
         ["component.label.textGapToken"] = new("component.label.textGapToken", "Text gap", ValueKind.ThemeToken, ["label", "textGapToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
+        ["component.label.subtextPlacement"] = new("component.label.subtextPlacement", "Placement", ValueKind.AlignmentPlacement, ["label", "subtextPlacement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextTypography"] = new("component.label.subtextTypography", "Subtext typography", ValueKind.TypographyStyle, ["label", "subtextTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
 

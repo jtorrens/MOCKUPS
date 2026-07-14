@@ -41,6 +41,8 @@ var tests = new (string Name, Action Run)[]
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
+    ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
+    ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
 };
 
 var failures = new List<string>();
@@ -60,6 +62,32 @@ foreach (var (name, run) in tests)
 
 Console.WriteLine($"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
+
+static void ForwardedChildInputsBecomeParentRuntimeInputs()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-forwarding-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var settings = database.GetComponentClassSettings("component_project_foqn_s2_textInputBar");
+        var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+        var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
+        var effective = RuntimeInputForwardingContract.EffectivePreview(preview, config);
+        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(effective, config);
+        var forwarded = inputs.Single((input) =>
+            input.Id == "forwarded.component.textInput.textBox.inputs.sampleText");
+        Equal("Text", forwarded.Label);
+        Equal("Message", forwarded.DefaultValue);
+        Equal("Message", effective[forwarded.JsonKey]?.GetValue<string>());
+        True(config["textInput"]?["textBoxInputs"]?[RuntimeInputForwardingContract.StorageKey]?["sampleText"] is JsonObject);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
 
 static void RejectsMalformedDocuments()
 {
@@ -562,9 +590,9 @@ static void ComponentStackSeedOpensAndRenders()
         True(designPreview["items"] is JsonArray);
         var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(designPreview, config);
         SequenceEqual(["sizingMode", "startGapToken", "endGapToken"], runtimeInputs.Select((input) => input.Id).ToList());
-        Equal("fill", DesignPreviewTestValues.Value(designPreview, runtimeInputs[0]));
-        Equal("theme.spacing.none", DesignPreviewTestValues.Value(designPreview, runtimeInputs[1]));
-        Equal("theme.spacing.none", DesignPreviewTestValues.Value(designPreview, runtimeInputs[2]));
+        Equal("fill", runtimeInputs[0].DefaultValue);
+        Equal("theme.spacing.none", runtimeInputs[1].DefaultValue);
+        Equal("theme.spacing.none", runtimeInputs[2].DefaultValue);
         var collections = designPreview["collections"] as JsonArray ?? throw new InvalidOperationException("Missing Component Stack collection contract.");
         Equal("items", collections.OfType<JsonObject>().Single()["jsonKey"]?.GetValue<string>() ?? "");
         var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
@@ -747,6 +775,100 @@ static void ComponentStackSeedOpensAndRenders()
         var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
         Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void LockScreenComposesRuntimeStack()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-lock-screen-stack-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var module = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Module
+            && database.GetModuleSettings(node.Id).RecordClassId == "module.core.lockScreen");
+        var systemApp = module.Parent ?? throw new InvalidOperationException("Lock Screen has no System app parent.");
+        Equal("app.system", systemApp.RecordClassId);
+        var systemConfig = JsonNode.Parse(database.GetAppSettings(systemApp.Id).ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing System app config.");
+        True(systemConfig["wallpaper"] is null);
+        True(database.LoadEditorLayout("app.system").Cards
+            .SelectMany((card) => card.VisibleGroups)
+            .SelectMany((group) => group.VisibleFields)
+            .All((field) => !field.Id.StartsWith("app.wallpaper.", StringComparison.Ordinal)));
+        Throws<InvalidOperationException>(() => database.UpdateAppField(systemApp.Id, "app.wallpaper.opacity", "1"));
+        var settings = database.GetModuleSettings(module.Id);
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen config.");
+        var lockScreen = config["lockScreen"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen contract.");
+        var stackSlot = lockScreen["stackSlot"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen Stack slot.");
+        True(lockScreen["statusBarSlot"] is JsonObject);
+        True(lockScreen["navigationBarSlot"] is JsonObject);
+        True((stackSlot["presetId"]?.GetValue<string>() ?? "").Contains("::preset::default", StringComparison.Ordinal));
+        True(stackSlot["overrides"] is JsonObject);
+        True(lockScreen["stackVariant"] is null);
+        True(lockScreen["statusBarVariant"] is null);
+        True(lockScreen["navigationBarVariant"] is null);
+
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen Runtime Inputs.");
+        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        SequenceEqual(
+            ["actor", "showStatusBar", "showNavigationBar", "sizingMode", "startGapToken", "endGapToken"],
+            inputs.Select((input) => input.Id).ToList());
+        Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showStatusBar")));
+        Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showNavigationBar")));
+        var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
+        Equal("items", collection.JsonKey);
+
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
+        var session = new ComponentPreviewInputSession(database, () => { });
+        session.UpdateForPayload(payload, settings.ProjectId);
+        var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var resolvedPreview = JsonNode.Parse(resolved.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing resolved Lock Screen preview.");
+        Equal(1d, resolvedPreview["actor"]?["wallpaper"]?["opacity"]?.GetValue<double>() ?? -1);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            resolved).GetAwaiter().GetResult();
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
+
+        var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "label").First().Value;
+        session.SetExternalCollectionItems("items",
+        [
+            new JsonObject
+            {
+                ["id"] = "lock_screen_label",
+                ["presetId"] = childVariant,
+                ["overrides"] = new JsonObject(),
+                ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+                ["alignment"] = "center",
+                ["gapBeforeMode"] = "fixed",
+                ["gapBeforeToken"] = "theme.spacing.none",
+                ["gapBeforeWeight"] = 1,
+            },
+        ]);
+        session.SetExternalInputValue("showStatusBar", "false");
+        session.SetExternalInputValue("showNavigationBar", "false");
+        var populated = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            populated).GetAwaiter().GetResult();
+        True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
     }
     finally
     {

@@ -40,7 +40,7 @@ internal sealed class EditorCardHostController
             card.IsExpanded = false;
             card.Expanded += (_, _) =>
             {
-                foreach (var other in _cards.Where((item) => item != card))
+                foreach (var other in _cards.Where((item) => item != card).ToList())
                 {
                     other.IsExpanded = false;
                 }

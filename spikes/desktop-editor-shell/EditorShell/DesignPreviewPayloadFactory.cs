@@ -312,10 +312,13 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentClassSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
+        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+            DesignPreviewTestValues.Parse(configJson));
         var designPreviewJson = ResolveActionDurationsJson(
             configJson,
             themeTokensJson,
-            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+            DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -345,10 +348,13 @@ internal static class DesignPreviewPayloadFactory
         var settings = database.GetComponentPresetSettings(node);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
         var configJson = database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson);
+        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+            DesignPreviewTestValues.Parse(configJson));
         var designPreviewJson = ResolveActionDurationsJson(
             configJson,
             themeTokensJson,
-            DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+            DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,

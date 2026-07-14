@@ -343,6 +343,7 @@ internal sealed partial class SpikeDatabase
                     ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["textAlign"] = "center",
                     ["textGapToken"] = "theme.spacing.xs",
+                    ["subtextPlacement"] = JsonNode.Parse("""{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
                     ["subtextColorToken"] = "theme.colors.textSecondary",
                     ["subtextTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
                 };
@@ -556,6 +557,7 @@ internal sealed partial class SpikeDatabase
         }
         if (componentType == "textInputBar")
         {
+            preview.Remove("sampleText");
             preview.Remove("leftIcons");
             preview.Remove("rightIcons");
         }
@@ -946,7 +948,6 @@ internal sealed partial class SpikeDatabase
             "textInputBar" =>
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "360", minimum: 1, maximum: 10000, increment: 1),
-                ComponentInput("sampleText", "Text", "sampleText", ValueKind.StringMultiline, "Message", uiOrigin: "embedded", uiGroupId: "textBox", uiGroupLabel: "Text box"),
             ],
             "keyboard" =>
             [
@@ -1455,6 +1456,7 @@ internal sealed partial class SpikeDatabase
     {
         return new JsonObject
         {
+            ["sampleText"] = "Message",
             ["placeholder"] = "Message",
             ["maxLines"] = 4,
             ["leftIconRowSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
@@ -1465,8 +1467,25 @@ internal sealed partial class SpikeDatabase
             ["iconRowSize"] = "theme.iconSizes.xl",
             ["iconRowGap"] = "theme.spacing.s",
             ["iconRowOrientation"] = "horizontal",
+            [RuntimeInputForwardingContract.StorageKey] = new JsonObject
+            {
+                ["sampleText"] = ForwardedTextBoxSampleTextDefinition(),
+            },
         };
     }
+
+    private static JsonObject ForwardedTextBoxSampleTextDefinition() => new()
+    {
+        ["id"] = "forwarded.component.textInput.textBox.inputs.sampleText",
+        ["label"] = "Text",
+        ["jsonKey"] = "forwarded_component_textInput_textBox_inputs_sampleText",
+        ["kind"] = "multilineText",
+        ["valueKind"] = ValueKind.StringMultiline.ToString(),
+        ["defaultValue"] = "Message",
+        ["source"] = "runtime",
+        ["componentType"] = "",
+        ["options"] = new JsonArray(),
+    };
 
     private static JsonArray OptionsJson(IReadOnlyList<FieldOption>? options)
     {

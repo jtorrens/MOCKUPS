@@ -355,7 +355,39 @@ internal sealed partial class SpikeDatabase
         }
 
         var settings = GetComponentClassSettings(componentClassId);
-        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+        var config = GetComponentPresetConfig(presetReference);
+        var effective = RuntimeInputForwardingContract.EffectivePreview(
+            ParseJsonObject(settings.DesignPreviewJson),
+            config);
+        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+    }
+
+    public IReadOnlyList<ComponentInputBindingDefinition> GetComponentPresetRuntimeInputBindings(
+        string presetReference)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        {
+            return [];
+        }
+        var settings = GetComponentClassSettings(componentClassId);
+        var config = GetComponentPresetConfig(presetReference);
+        var effective = RuntimeInputForwardingContract.EffectivePreview(
+            ParseJsonObject(settings.DesignPreviewJson),
+            config);
+        return ComponentPreviewInputSession.ReadRuntimeInputs(effective, config)
+            .Select((input) => new ComponentInputBindingDefinition(
+                input.Id,
+                input.Label,
+                input.JsonKey,
+                input.ValueKind,
+                ComponentInputBindingSource.Variant,
+                input.DefaultValue,
+                input.Options,
+                new NumberDefinition(input.Minimum, input.Maximum, input.Increment),
+                input.ComponentType,
+                input.UiGroupId,
+                input.UiGroupLabel))
+            .ToList();
     }
 
     public JsonObject GetComponentPresetConfig(string presetReference)

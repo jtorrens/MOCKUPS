@@ -36,6 +36,7 @@ import { textInputBarComponentToRenderable } from "./textInputBarComponentRender
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { mediaComponentToRenderable } from "./mediaComponentRenderable.js";
 import { resolveMediaComponent } from "./mediaComponentResolver.js";
+import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
 
 type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
@@ -69,6 +70,7 @@ export const componentRenderableFactories = {
 } satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
 export function componentClassToRenderable(payload: DesignPreviewPayload): RenderableNode {
+  payload = applyRuntimeInputForwarding(payload);
   const componentType = payload.componentType ?? "";
   const factory = isRoutedComponentClass(componentType)
     ? componentRenderableFactories[componentType]
