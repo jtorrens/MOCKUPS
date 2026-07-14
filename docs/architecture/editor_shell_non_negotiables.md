@@ -216,7 +216,16 @@ the selected navigation width plus splitter width plus the minimum content
 width; it must not use an editor-specific or fixed-window breakpoint. Below
 that threshold the same sections become horizontal tabs. The last vertical
 width and selected section are session-only. The control uses natural height,
-not fill-height, unless its containing layout explicitly requests fill.
+not fill-height, unless its containing layout explicitly requests fill. In the
+vertical presentation that natural height is the maximum of the navigation and
+selected-content heights. Splitters and decorative dividers stretch only when
+arranged and must not contribute the available viewport height to measurement.
+
+Shared dictionary selectors must accept the width assigned by their host. They
+must not impose a field-level minimum width: selected text stays on one line,
+contracts with character ellipsis and remains clipped inside the selector while
+the containing grid reserves its trailing action columns. Independent surfaces
+such as dialogs or preview toolbars may declare their own explicit minimum.
 
 Complex dictionary controls such as `ComponentInputBindings` and
 `StructuredCollection` use full-width block layout. A separator precedes the

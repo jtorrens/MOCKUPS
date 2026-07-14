@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -67,6 +68,20 @@ internal sealed class EditorDomainDialogService
             "Keep as Variant value",
             width: 500,
             height: 240);
+    }
+
+    public Task<bool> ConfirmDiscardForwardedRuntimeInputs(
+        string action,
+        IReadOnlyList<string> fieldLabels)
+    {
+        var fields = string.Join(", ", fieldLabels.Select((label) => $"\"{label}\""));
+        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
+            "Remove forwarded runtime inputs",
+            $"{action}?",
+            $"These forwarded fields will be removed from Runtime Inputs: {fields}.",
+            "Accept",
+            width: 520,
+            height: 250);
     }
 
     public Task<SpikeDatabase.ShotModuleChoice?> SelectModuleForShot(string shotId)

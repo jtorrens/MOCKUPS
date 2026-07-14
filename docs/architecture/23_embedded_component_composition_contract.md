@@ -355,7 +355,16 @@ Inputs surface used by Test Values:
 - a forwarded field is readonly in the Variant surface;
 - adding an item expands and reveals the new stable item;
 - changing Component constrains the second selector to that Component's
-  Variants and refreshes the child input contract;
+  Variants, replaces the item-local overrides and input values, and invalidates
+  the parent runtime contract immediately; Forward fields from the previous
+  component must disappear from Runtime Inputs in the same operation;
+- changing only the Variant inside the same Component preserves the compatible
+  item inputs, overrides and Forward contract because the Component class owns
+  that schema;
+- changing Component or deleting an item that contains Forward fields requires
+  one `Accept` / `Cancel` confirmation listing the fields that will disappear;
+  accepting performs the destructive contract change and cancelling restores
+  the previous selection or leaves the item untouched;
 - Override opens the ordinary embedded editor and the breadcrumb returns to the
   previous tab, expansion and scroll position.
 
@@ -378,7 +387,16 @@ It returns to vertical with a small hysteresis margin and restores the last
 vertical width. The block height is natural—the maximum of navigation and
 selected content—not the remaining card height. Navigation widths, selected
 tabs, card expansion and scroll restoration are session-only and are never
-written to window state.
+written to window state. The draggable splitter and visual divider are arranged
+to that resolved natural height but are excluded from desired-height
+measurement, so a stretch-aligned splitter cannot make the block consume the
+remaining editor viewport.
+
+All ordinary and embedded Component/Variant selectors use the shared selector
+contraction contract. They have no dictionary-field minimum width, keep the
+selected label on one line with ellipsis and clip it inside their assigned grid
+column. Parent/open/Override and Forward action columns remain outside that
+column and cannot be covered by selector content.
 
 ## Generic Preview Helper Boundary
 

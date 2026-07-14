@@ -121,8 +121,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 },
                 Delete: async (index) =>
                 {
-                    var confirmed = _services.ConfirmStructuredCollectionItemDelete is null
-                        || await _services.ConfirmStructuredCollectionItemDelete($"{collection.ItemLabel} {index + 1}");
+                    var forwardedLabels = RuntimeInputForwardingContract.Labels(items[index]);
+                    var confirmed = forwardedLabels.Count > 0
+                        ? _services.ConfirmDiscardForwardedRuntimeInputs is null
+                          || await _services.ConfirmDiscardForwardedRuntimeInputs(
+                              $"Delete {collection.ItemLabel} {index + 1}",
+                              forwardedLabels)
+                        : _services.ConfirmStructuredCollectionItemDelete is null
+                          || await _services.ConfirmStructuredCollectionItemDelete($"{collection.ItemLabel} {index + 1}");
                     if (!confirmed) return;
                     _items.RemoveAt(index);
                     Commit(runtimeContractChanged: true);
@@ -228,10 +234,27 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: selectsComponent && overrides is { Count: > 0 }),
             services);
-        control.ValueCommitted += (_, next) =>
+        control.ValueCommitted += async (_, next) =>
         {
+            var previous = DesignPreviewTestValues.CollectionValue(item, input);
+            var componentChanged = selectsComponent
+                && !ComponentCategory(options, previous).Equals(ComponentCategory(options, next), StringComparison.Ordinal);
+            if (componentChanged)
+            {
+                var forwardedLabels = RuntimeInputForwardingContract.Labels(item);
+                var confirmed = forwardedLabels.Count == 0
+                    || _services.ConfirmDiscardForwardedRuntimeInputs is null
+                    || await _services.ConfirmDiscardForwardedRuntimeInputs(
+                        $"Change {collection.ItemLabel} component",
+                        forwardedLabels);
+                if (!confirmed)
+                {
+                    control.SetValue(previous);
+                    return;
+                }
+            }
             item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            if (selectsComponent && componentItems is not null)
+            if (componentChanged && componentItems is not null)
             {
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
@@ -239,6 +262,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     : _services.GetComponentPresetRuntimeValues?.Invoke(next) ?? new JsonObject();
             }
             Publish(commit: true);
+            if (componentChanged)
+            {
+                RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+            }
         };
         return control;
     }
@@ -301,6 +328,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private static string JsonText(JsonNode? node) =>
         node is JsonValue value && value.TryGetValue<string>(out var text) ? text : "";
+
+    private static string ComponentCategory(IReadOnlyList<FieldOption> options, string reference)
+    {
+        var group = options.FirstOrDefault((option) => option.Value.Equals(reference, StringComparison.Ordinal))?.GroupValue;
+        if (!string.IsNullOrWhiteSpace(group)) return group;
+        var separator = reference.IndexOf("::preset::", StringComparison.Ordinal);
+        return separator > 0 ? reference[..separator] : reference;
+    }
 
     private static JsonArray Parse(string value)
     {

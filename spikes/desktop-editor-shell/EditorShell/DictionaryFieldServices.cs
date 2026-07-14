@@ -25,4 +25,5 @@ internal sealed record DictionaryFieldServices(
     Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null,
     Func<string, JsonObject, Action<JsonObject>, Task>? OpenRuntimeComponentOverrides = null,
     Func<string, Task<bool>>? ConfirmStructuredCollectionItemDelete = null,
+    Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     EditorSessionUiState? StructuredCollectionUiState = null);

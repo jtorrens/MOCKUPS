@@ -108,6 +108,7 @@ internal sealed class EditorDictionaryFieldServices
             ConfirmStopRuntimeInputForwarding: _domainDialogs.ConfirmStopRuntimeInputForwarding,
             OpenRuntimeComponentOverrides: openRuntimeComponentOverrides is null ? null : OpenRuntimeOverrides,
             ConfirmStructuredCollectionItemDelete: _domainDialogs.ConfirmRuntimeCollectionItemDelete,
+            ConfirmDiscardForwardedRuntimeInputs: _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
             StructuredCollectionUiState: _structuredCollectionUiState);
     }
 

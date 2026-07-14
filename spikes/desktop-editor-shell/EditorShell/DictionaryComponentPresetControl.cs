@@ -136,7 +136,6 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
     private EditorInstantComboBox CreateComboBox() => new()
     {
         MinHeight = 36,
-        MinWidth = 220,
         IsEnabled = _definition.IsEditable,
     };
 

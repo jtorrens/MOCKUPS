@@ -164,6 +164,7 @@ internal sealed class EditorInternalNavigation : Grid
     private readonly GridSplitter _navigationSplitter;
     private readonly Action<double>? _navigationWidthChanged;
     private readonly ContentControl _content = new();
+    private readonly Border _contentHost;
     private readonly Dictionary<string, Button> _buttons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _entries = new(StringComparer.Ordinal);
     private string _selectedId;
@@ -234,14 +235,14 @@ internal sealed class EditorInternalNavigation : Grid
         };
         Children.Add(_navigationSplitter);
 
-        var contentHost = new Border
+        _contentHost = new Border
         {
             Padding = new Thickness(18, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Top,
             Child = _content,
         };
-        Grid.SetColumn(contentHost, 2);
-        Children.Add(contentHost);
+        Grid.SetColumn(_contentHost, 2);
+        Children.Add(_contentHost);
 
         foreach (var section in sections)
         {
@@ -256,10 +257,19 @@ internal sealed class EditorInternalNavigation : Grid
             _navigation.Children.Add(entry);
         }
 
-        SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width, contentHost);
+        SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width, _contentHost);
         ActualThemeVariantChanged += (_, _) => RefreshVisuals();
         Select(_selectedId, notify: false);
         RefreshVisuals();
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var measured = base.MeasureOverride(new Size(availableSize.Width, double.PositiveInfinity));
+        var naturalHeight = _isCompact
+            ? _navigationHost.DesiredSize.Height + 1 + _contentHost.DesiredSize.Height
+            : Math.Max(_navigationHost.DesiredSize.Height, _contentHost.DesiredSize.Height);
+        return new Size(measured.Width, naturalHeight);
     }
 
     private Button CreateNavigationButton(EditorInternalNavigationSection section)

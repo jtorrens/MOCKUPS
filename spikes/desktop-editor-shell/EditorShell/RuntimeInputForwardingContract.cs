@@ -129,6 +129,21 @@ internal static class RuntimeInputForwardingContract
         });
     }
 
+    public static IReadOnlyList<string> Labels(JsonNode? node)
+    {
+        var labels = new List<string>();
+        Visit(node, (_, _, definition) =>
+        {
+            var label = Text(definition["label"]);
+            if (label.Length == 0) label = Text(definition["id"]);
+            if (label.Length > 0 && !labels.Contains(label, StringComparer.Ordinal))
+            {
+                labels.Add(label);
+            }
+        });
+        return labels;
+    }
+
     private static string InputKind(ValueKind valueKind) => valueKind switch
     {
         ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha => "number",

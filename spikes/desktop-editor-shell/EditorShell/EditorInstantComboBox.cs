@@ -32,6 +32,7 @@ public sealed class EditorInstantComboBox : Grid
     {
         Focusable = true;
         ClipToBounds = true;
+        MinWidth = 0;
         ColumnDefinitions = new ColumnDefinitions("*,22");
         KeyDown += OnKeyDown;
 
@@ -50,10 +51,12 @@ public sealed class EditorInstantComboBox : Grid
 
         _label = new TextBlock
         {
+            MinWidth = 0,
             Margin = new Thickness(10, 0, 4, 0),
             IsHitTestVisible = false,
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap,
         };
         _indicator = new TextBlock
         {
@@ -96,6 +99,15 @@ public sealed class EditorInstantComboBox : Grid
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
         ApplyThemeBrushes();
         UpdateButtonContent();
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var measured = base.MeasureOverride(availableSize);
+        var width = double.IsInfinity(availableSize.Width)
+            ? measured.Width
+            : Math.Min(measured.Width, availableSize.Width);
+        return new Size(width, measured.Height);
     }
 
     public event EventHandler? SelectionChanged;

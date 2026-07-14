@@ -10,7 +10,6 @@ internal static class DictionaryOptionSelector
         var comboBox = new EditorInstantComboBox
         {
             MinHeight = 36,
-            MinWidth = 220,
             IsEnabled = definition.IsEditable,
         };
         SetValue(comboBox, definition, value);
