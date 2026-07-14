@@ -192,10 +192,12 @@ public partial class MainWindow : SukiWindow
             _previewController.TriggerDesignPreviewAction,
             _previewController.SetDesignPreviewTestValue,
             _previewController.SetDesignPreviewCollectionTestValue,
+            _previewController.SetDesignPreviewCollectionTestItems,
             _previewController.ApplyDesignPreviewTransientTestValues,
             _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
             SelectNodeById,
+            ShowEmbeddedContext,
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
             _previewController.ToggleProductionPlayback);

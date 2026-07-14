@@ -80,7 +80,7 @@ internal sealed class EditorEmbeddedEditorController
     {
         try
         {
-            _showContext(new EditorEmbeddedContext(parentContext.OwnerNode, [.. parentContext.Slots, slot]));
+            _showContext(parentContext.Nested(slot));
         }
         catch (Exception exception)
         {

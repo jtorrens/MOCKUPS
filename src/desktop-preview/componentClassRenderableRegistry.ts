@@ -9,6 +9,8 @@ import { buttonComponentToRenderable } from "./buttonComponentRenderable.js";
 import { resolveButtonComponent } from "./buttonComponentResolver.js";
 import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
 import { resolveCursorComponent } from "./cursorComponentResolver.js";
+import { componentStackComponentToRenderable } from "./componentStackComponentRenderable.js";
+import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
 import {
   isDesktopPreviewComponentClass,
   type DesktopPreviewComponentClass,
@@ -49,6 +51,8 @@ export const componentRenderableFactories = {
     iconRowComponentToRenderable(payload, resolveIconRowComponent(payload)),
   iconBar: (payload) =>
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
+  componentStack: (payload) =>
+    componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   button: (payload) => buttonComponentToRenderable(payload, resolveButtonComponent(payload)),

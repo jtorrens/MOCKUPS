@@ -42,7 +42,10 @@ internal sealed record FieldOption(
     string Value,
     string Label,
     string? ColorHex = null,
-    bool IsNeutral = false)
+    bool IsNeutral = false,
+    string GroupValue = "",
+    string GroupLabel = "",
+    string LocalLabel = "")
 {
     public override string ToString()
     {
@@ -118,6 +121,7 @@ internal sealed record FieldDefinition(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    bool SelectComponentClass = false,
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null)

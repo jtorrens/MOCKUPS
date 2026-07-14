@@ -98,6 +98,11 @@ componentClassId::preset::presetId
 Contract-signature changes invalidate stale session-only Test Values for that
 scope instead of coercing legacy short references.
 
+The dictionary `ComponentPreset` control presents these references in two
+levels: Component first, then only the Variants owned by that component. The
+compound control still commits one full reference and does not persist its
+intermediate Component selection separately.
+
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
 | `surface` | atom | Structural reference | Reusable visual surface appearance. Size is supplied as runtime input/parent box; variant owns background, alphas, border, radius, shadow, relief and optional tail geometry. |
@@ -105,6 +110,7 @@ scope instead of coercing legacy short references.
 | `textBox` | atom | Structurally migrated | Reusable text field atom. Size, text, placeholder and internal left/right icon row data are runtime inputs; variant owns surface, padding, typography, text colors, alignment, overflow mode and embedded cursor variant. |
 | `iconRow` | atom | Structurally migrated | Reusable row/column of stable `button` instances. Every item independently owns runtime content mode, state, icon/text and Push action. `textBox` still uses internal left/right icon rows for icons inside the text field. |
 | `iconBar` | atom | Structurally migrated | Reusable left/center/right grouping of `iconRow` instances with idle/active states. Parent components provide the outer frame; the bar aligns rows inside that frame and keeps state-specific row variants/settings together. `textInputBar` and `keyboard` use this instead of owning direct icon rows. |
+| `componentStack` | atom | Structurally migrated | Generic ordered runtime collection of components. All behavior is runtime-owned: sizing, tokenized Start/End container gaps and the ordered child collection. Items expose add/delete/reorder plus a concrete child Variant, explicit item-local overrides and child runtime inputs, Left/Center/Right alignment, and a fixed token or weighted reflow gap before each item from the second onward. Item gaps therefore belong to the item’s relationship with its predecessor; the first item uses the container Start gap and the final boundary uses End gap. The class needs only its protected Default Variant because component combinations and placement are supplied by the containing parent through the runtime contract. `fill` distributes reflow space inside the parent frame; `content` sizes to its children and leaves placement to its parent. The component selector excludes nested Stacks explicitly. |
 | `label` | atom | Functional reference | Text/subtext, sizing, typography tokens and text align are on the new route. Visual surface is an embedded `surface` variant. |
 | `avatar` | component | Functional reference | Embeds `label`; actor input and label/subtext sample values work through the generic input path. |
 | `button` | atom | Functional reference | Generic action atom with `icon`, `text` and `iconText` runtime content modes. Embeds state-specific `surface` and `label` variants, supports content/fixed sizing, exposes `normal`, `active`, `pushed` and `disabled` runtime states, and provides a declarative `Push` action timed by `theme.motion.buttonPushedDurationMs`. It replaces the retired `buttonIcon` class. |

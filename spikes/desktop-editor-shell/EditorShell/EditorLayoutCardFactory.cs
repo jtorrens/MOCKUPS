@@ -200,17 +200,11 @@ internal sealed class EditorLayoutCardFactory
                          .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
                              && !field.Id.Equals("component.type", StringComparison.Ordinal)))
             {
-                var field = _componentClassFieldValues.CreateEmbeddedFieldValue(
-                    context.OwnerNode,
-                    context.Slots,
-                    layoutField.Id);
+                var field = _componentClassFieldValues.CreateEmbeddedFieldValue(context, layoutField.Id);
                 var services = _dictionaryFieldServices.ForNode(
                     context.OwnerNode,
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) =>
-                        _componentClassFieldValues.CreateEmbeddedFieldValue(
-                            context.OwnerNode,
-                            context.Slots,
-                            id).Value),
+                        _componentClassFieldValues.CreateEmbeddedFieldValue(context, id).Value),
                     _openComponentPresetReference,
                     (fieldId) => _openNestedEmbeddedComponentEditor(context, fieldId),
                     (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)));
@@ -224,11 +218,7 @@ internal sealed class EditorLayoutCardFactory
                     {
                         if (value == field.Definition.InheritedStorageValue)
                         {
-                            _componentClassFieldValues.CommitEmbeddedFieldValue(
-                                context.OwnerNode,
-                                context.Slots,
-                                field.Definition.Id,
-                                value);
+                            _componentClassFieldValues.CommitEmbeddedFieldValue(context, field.Definition.Id, value);
                             control.AcceptInheritedValueAsDefault();
                             _activeFieldControls.RefreshPreviews();
                             _refreshPreview();
@@ -241,19 +231,12 @@ internal sealed class EditorLayoutCardFactory
                             (draftValue) => draftValue,
                             () =>
                             {
-                                var current = _componentClassFieldValues.CreateEmbeddedFieldValue(
-                                    context.OwnerNode,
-                                    context.Slots,
-                                    field.Definition.Id);
+                                var current = _componentClassFieldValues.CreateEmbeddedFieldValue(context, field.Definition.Id);
                                 return current.IsInherited
                                     ? current.Definition.InheritedStorageValue
                                     : current.Value;
                             },
-                            (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(
-                                context.OwnerNode,
-                                context.Slots,
-                                field.Definition.Id,
-                                storedValue));
+                            (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(context, field.Definition.Id, storedValue));
                         _activeFieldControls.RefreshPreviews();
                         _refreshPreview();
                     }

@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,8 @@ internal sealed record EditorInternalNavigationSection(
     Action<bool>? ExpansionChanged = null,
     string? SelectedSubcardId = null,
     Action<string>? SubcardSelectionChanged = null,
-    bool ShowLabel = true);
+    bool ShowLabel = true,
+    bool Reveal = false);
 
 internal sealed class EditorSubcardLayoutHost : ContentControl
 {
@@ -115,6 +117,10 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
                 if (subcard.ExpansionChanged is not null)
                 {
                     card.ExpansionChanged += subcard.ExpansionChanged;
+                }
+                if (subcard.Reveal)
+                {
+                    Dispatcher.UIThread.Post(card.BringIntoView, DispatcherPriority.Loaded);
                 }
                 cards.Add(card);
             }

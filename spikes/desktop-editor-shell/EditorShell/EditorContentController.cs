@@ -55,7 +55,8 @@ internal sealed class EditorContentController
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
 
-        if (EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
+        if (!context.IsRuntimeRoot
+            && EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
         {
             cards.Add(_layoutCards.Create(context.OwnerNode, new EditorLayoutCard
             {
@@ -82,7 +83,7 @@ internal sealed class EditorContentController
             }));
         }
 
-        var layout = _database.LoadEditorLayout(context.Slot.RecordClassId);
+        var layout = _database.LoadEditorLayout(context.RecordClassId);
         foreach (var layoutCard in layout.Cards
                      .Where((card) => card.Visible && EditorLayoutCardFactory.EmbeddedCardHasFields(card))
                      .OrderBy((card) => card.Order)

@@ -55,6 +55,7 @@ internal sealed partial class SpikeDatabase
             NormalizeAppWallpaperContracts(connection);
             EnsureThemeTokens(connection);
             EnsureButtonComponentClasses(connection);
+            EnsureComponentStackClasses(connection);
             EnsureLockScreenModule(connection);
             NormalizeIconRowButtonCollections(connection);
             RetireButtonIconComponentClasses(connection);
@@ -86,6 +87,7 @@ internal sealed partial class SpikeDatabase
         SeedRenderPresetsIfEmpty(connection);
         SeedComponentClassesIfEmpty(connection);
         EnsureButtonComponentClasses(connection);
+        EnsureComponentStackClasses(connection);
         EnsureLockScreenModule(connection);
         NormalizeIconRowButtonCollections(connection);
         RetireButtonIconComponentClasses(connection);

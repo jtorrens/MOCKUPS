@@ -46,6 +46,7 @@ resolver and renderable that own the implementation.
 | Keyboard | [keyboard.md](keyboard.md) | Functional, parent integration gap noted |
 | Media | [media.md](media.md) | Functional, video buffering remains a limitation |
 | Audio | [audio.md](audio.md) | Functional |
+| Component Stack | [component_stack.md](component_stack.md) | Structural/functional |
 | Atoms | [atoms.md](atoms.md) | Functional/structural as stated per atom |
 | System bars | [system_bars.md](system_bars.md) | Functional |
 
@@ -55,6 +56,6 @@ Cross-component discrepancies and pending rules are collected in
 ## Verification scope
 
 The sheets were checked against the active desktop-preview contracts,
-resolvers, renderables and registry on 2026-07-11. Each sheet records any
+resolvers, renderables and registry on 2026-07-14. Each sheet records any
 known mismatch between the canonical rule and the current implementation. A
 mismatch is a backlog item, not an alternative contract.

@@ -33,10 +33,14 @@ var tests = new (string Name, Action Run)[]
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
+    ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
+    ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
+    ("only Default system bar variants are protected", OnlyDefaultSystemBarVariantsAreProtected),
     ("collection item presentation summarizes configured fields", CollectionItemPresentationSummarizesConfiguredFields),
     ("Screen tree nodes keep actions in their editor", ScreenTreeNodesKeepActionsInEditor),
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
+    ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
 };
 
 var failures = new List<string>();
@@ -480,6 +484,282 @@ static void CollectionItemReorderPersistsStableIds()
     {
         File.Delete(temporary);
     }
+}
+
+static void NewCollectionItemBecomesOnlyExpanded()
+{
+    var state = new EditorSessionUiState();
+    state.SetExpanded("first", true);
+    state.SetOnlyExpanded(["first", "second"], "second");
+    state.RequestReveal("second");
+    True(!state.IsExpanded("first"));
+    True(state.IsExpanded("second"));
+    True(state.ConsumeReveal("second"));
+    True(!state.ConsumeReveal("second"));
+}
+
+static void ActiveVariantExposesParentClassActions()
+{
+    var componentClass = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentClass, "component", "Component", "", "component.audio");
+    var variant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentPreset, "variant", "Default", "", "component.audio", componentClass);
+    var otherComponentClass = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentClass, "other", "Other", "", "component.avatar");
+    True(EditorNavigationRenderer.ShowsActions(componentClass, variant));
+    True(EditorNavigationRenderer.ShowsActions(variant, variant));
+    True(!EditorNavigationRenderer.ShowsActions(otherComponentClass, variant));
+    True(!EditorNavigationRenderer.ShowsActions(componentClass, null));
+}
+
+static void OnlyDefaultSystemBarVariantsAreProtected()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-system-variants-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        foreach (var componentType in new[] { "status_bar", "navigation_bar" })
+        {
+            var componentClass = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+                && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
+            var variants = componentClass.Children
+                .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset)
+                .ToList();
+            var defaultVariant = variants.Single((node) => node.Name == "Default");
+            True(defaultVariant.IsProtected);
+            True(variants.Where((node) => node != defaultVariant).All((node) => !node.IsProtected));
+        }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ComponentStackSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-component-stack-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "componentStack");
+        Equal("Atoms", stack.Parent?.Name ?? "");
+        var defaultVariant = stack.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsLocked);
+        var settings = database.GetComponentClassSettings(stack.Id);
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject ?? throw new InvalidOperationException("Missing Component Stack config.");
+        var stackConfig = config["componentStack"] as JsonObject ?? throw new InvalidOperationException("Missing Component Stack contract.");
+        True(!stackConfig.ContainsKey("order"));
+        True(!stackConfig.ContainsKey("slots"));
+        Equal(0, stackConfig.Count);
+        var designPreview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject ?? throw new InvalidOperationException("Missing Component Stack Runtime Inputs.");
+        True(designPreview["items"] is JsonArray);
+        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(designPreview, config);
+        SequenceEqual(["sizingMode", "startGapToken", "endGapToken"], runtimeInputs.Select((input) => input.Id).ToList());
+        Equal("fill", DesignPreviewTestValues.Value(designPreview, runtimeInputs[0]));
+        Equal("theme.spacing.none", DesignPreviewTestValues.Value(designPreview, runtimeInputs[1]));
+        Equal("theme.spacing.none", DesignPreviewTestValues.Value(designPreview, runtimeInputs[2]));
+        var collections = designPreview["collections"] as JsonArray ?? throw new InvalidOperationException("Missing Component Stack collection contract.");
+        Equal("items", collections.OfType<JsonObject>().Single()["jsonKey"]?.GetValue<string>() ?? "");
+        var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
+        var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");
+        var reflowWeightField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeWeight");
+        var fixedGapItem = new JsonObject { ["gapBeforeMode"] = "fixed" };
+        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, fixedGapField, 0));
+        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, fixedGapField, 1));
+        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, reflowWeightField, 1));
+        var reflowGapItem = new JsonObject { ["gapBeforeMode"] = "reflow" };
+        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(reflowGapItem, fixedGapField, 1));
+        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(reflowGapItem, reflowWeightField, 1));
+        var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-componentStack");
+        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
+        True(componentOptions.All((option) => !string.IsNullOrWhiteSpace(option.GroupValue)));
+        True(componentOptions.GroupBy((option) => option.GroupValue)
+            .All((group) => group.Any((option) => option.Value == $"{group.Key}::preset::default")));
+        _ = database.GetReferenceUsageDetails(stack);
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var refreshCount = 0;
+        var inputSession = new ComponentPreviewInputSession(database, () => refreshCount++);
+        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            resolvedPayload).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
+
+        var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "audio").First().Value;
+        True(RuntimeInputFieldDefinitionFactory.Create(
+            database,
+            defaultVariant,
+            runtimeCollection.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
+        var runtimeItem = new JsonObject
+        {
+            ["id"] = "test_button",
+            ["presetId"] = childVariant,
+            ["overrides"] = new JsonObject(),
+            ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+            ["alignment"] = "center",
+            ["gapBeforeMode"] = "fixed",
+            ["gapBeforeToken"] = "theme.spacing.m",
+            ["gapBeforeWeight"] = 1,
+        };
+        inputSession.SetExternalCollectionItems("items", [runtimeItem]);
+        Equal(1, refreshCount);
+        var childVariantNode = nodes.Single((node) => node.Id == childVariant);
+        True(!database.CreateComponentPresetFieldValue(
+            childVariantNode,
+            "component.audio.surface.editor").Definition.SelectComponentClass);
+        var otherPayload = Required(DesignPreviewPayloadFactory.Create(database, childVariantNode, theme.Id));
+        inputSession.UpdateForPayload(otherPayload, settings.ProjectId);
+        var revisitedPreview = inputSession.ApplyTransientTestValues(designPreview, payload);
+        Equal(1, (revisitedPreview["items"] as JsonArray)?.Count ?? -1);
+        var transientPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var transientPreview = JsonNode.Parse(transientPayload.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing transient Component Stack preview.");
+        Equal(1, (transientPreview["items"] as JsonArray)?.Count ?? -1);
+        var transientHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            transientPayload).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(transientHtml));
+        True(!transientHtml.Contains("preview-error", StringComparison.Ordinal));
+
+        var selectedComponent = database.GetComponentPresetSelectionSettings(childVariant);
+        var overrides = new JsonObject();
+        var runtimeOverrideChanges = 0;
+        var runtimeContext = new EditorEmbeddedContext(
+            defaultVariant,
+            [],
+            new RuntimeComponentOverrideSource(
+                selectedComponent.ProjectId,
+                childVariant,
+                selectedComponent.ComponentType,
+                selectedComponent.RecordClassId,
+                selectedComponent.ConfigJson,
+                overrides,
+                (_) => runtimeOverrideChanges++));
+        Equal(selectedComponent.RecordClassId, runtimeContext.RecordClassId);
+        Equal(selectedComponent.ComponentType, runtimeContext.ComponentType);
+        True(runtimeContext.CreateFieldValue(database, "component.audio.padding").IsInherited);
+        runtimeContext.CommitFieldValue(database, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
+        Equal(1, runtimeOverrideChanges);
+        True(!runtimeContext.CreateFieldValue(database, "component.audio.padding").IsInherited);
+        runtimeContext.CommitFieldValue(database, "component.audio.padding", "inherited");
+        Equal(2, runtimeOverrideChanges);
+        var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
+        var nestedRuntimeContext = runtimeContext.Nested(surfaceSlot);
+        Equal(surfaceSlot.RecordClassId, nestedRuntimeContext.RecordClassId);
+        Equal(surfaceSlot.EmbeddedComponentType, nestedRuntimeContext.ComponentType);
+        var nestedFieldId = database.LoadEditorLayout(surfaceSlot.RecordClassId).Cards
+            .Where((card) => card.Visible)
+            .SelectMany((card) => card.VisibleGroups)
+            .SelectMany((group) => group.VisibleFields)
+            .Select((field) => field.Id)
+            .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
+        _ = nestedRuntimeContext.CreateFieldValue(database, nestedFieldId);
+        var avatarVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "avatar").First().Value;
+        var avatarSelection = database.GetComponentPresetSelectionSettings(avatarVariant);
+        var avatarContext = new EditorEmbeddedContext(
+            defaultVariant,
+            [],
+            new RuntimeComponentOverrideSource(
+                avatarSelection.ProjectId,
+                avatarVariant,
+                avatarSelection.ComponentType,
+                avatarSelection.RecordClassId,
+                avatarSelection.ConfigJson,
+                new JsonObject(),
+                (_) => { }));
+        foreach (var avatarFieldId in database.LoadEditorLayout(avatarSelection.RecordClassId).Cards
+                     .Where((card) => card.Visible)
+                     .SelectMany((card) => card.VisibleGroups)
+                     .SelectMany((group) => group.VisibleFields)
+                     .Select((field) => field.Id)
+                     .Where(ComponentClassFieldCatalog.IsRuntimeOverrideField)
+                     .Distinct(StringComparer.Ordinal))
+        {
+            _ = avatarContext.CreateFieldValue(database, avatarFieldId);
+        }
+        var selectedLayout = database.LoadEditorLayout(selectedComponent.RecordClassId);
+        foreach (var fieldId in selectedLayout.Cards
+                     .Where((card) => card.Visible)
+                     .OrderBy((card) => card.Order)
+                     .SelectMany((card) => card.VisibleGroups)
+                     .SelectMany((group) => group.VisibleFields)
+                     .Select((field) => field.Id)
+                     .Where(ComponentClassFieldCatalog.IsRuntimeOverrideField)
+                     .Distinct(StringComparer.Ordinal))
+        {
+            _ = database.CreateRuntimeComponentOverrideFieldValue(
+                selectedComponent.ProjectId,
+                selectedComponent.ConfigJson,
+                overrides,
+                fieldId);
+        }
+        True(!ComponentClassFieldCatalog.IsRuntimeOverrideField("core.name"));
+        True(!ComponentClassFieldCatalog.IsRuntimeOverrideField("core.notes"));
+        True(ComponentClassFieldCatalog.IsRuntimeOverrideField("component.audio.padding"));
+        var inheritedPadding = database.CreateRuntimeComponentOverrideFieldValue(
+            selectedComponent.ProjectId,
+            selectedComponent.ConfigJson,
+            overrides,
+            "component.audio.padding");
+        True(inheritedPadding.IsInherited);
+        database.UpdateRuntimeComponentOverride(overrides, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
+        True(!database.CreateRuntimeComponentOverrideFieldValue(
+            selectedComponent.ProjectId,
+            selectedComponent.ConfigJson,
+            overrides,
+            "component.audio.padding").IsInherited);
+        database.UpdateRuntimeComponentOverride(overrides, "component.audio.padding", "inherited");
+        True(database.CreateRuntimeComponentOverrideFieldValue(
+            selectedComponent.ProjectId,
+            selectedComponent.ConfigJson,
+            overrides,
+            "component.audio.padding").IsInherited);
+
+        designPreview["items"] = new JsonArray(runtimeItem.DeepClone());
+        database.UpdateComponentClassDesignPreviewJson(stack.Id, designPreview.ToJsonString());
+        var populatedPayloadSource = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var populatedInputSession = new ComponentPreviewInputSession(database, () => { });
+        populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
+        var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", settings.ProjectId);
+        var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            populatedPayload).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(populatedHtml));
+        True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
+        var reopened = new SpikeDatabase(temporary);
+        var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
+        Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static IEnumerable<ProjectTreeNode> DescendantsAndSelf(ProjectTreeNode node)
+{
+    yield return node;
+    foreach (var child in node.Children)
+        foreach (var descendant in DescendantsAndSelf(child))
+            yield return descendant;
 }
 
 static void CollectionItemPresentationSummarizesConfiguredFields()

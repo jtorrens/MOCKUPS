@@ -12,6 +12,12 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    public sealed record ComponentPresetSelectionSettings(
+        string ProjectId,
+        string ComponentType,
+        string RecordClassId,
+        string ConfigJson);
+
 
     public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
@@ -161,6 +167,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var configs = new JsonObject();
         var presets = new JsonObject();
+        var presetTypes = new JsonObject();
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, component_type, config_json, metadata_json
@@ -187,6 +194,10 @@ internal sealed partial class SpikeDatabase
                 "",
                 metadataJson);
             AddComponentPresetConfigs(connection, presets, row);
+            foreach (var preset in RequiredComponentClassPresets(row))
+            {
+                presetTypes[ComponentPresetNodeId(componentClassId, preset.Id)] = componentType;
+            }
             if (configs.ContainsKey(componentType))
             {
                 continue;
@@ -200,6 +211,7 @@ internal sealed partial class SpikeDatabase
         }
 
         configs["presets"] = presets;
+        configs["presetTypes"] = presetTypes;
         return configs.ToJsonString();
     }
 
@@ -263,6 +275,7 @@ internal sealed partial class SpikeDatabase
                     $"Embedded component slot '{slot.FieldId}' references missing variant '{presetId}' on '{componentClassId}'.");
             }
         }
+
     }
 
     public IReadOnlyList<FieldOption> GetComponentClassOptionsByType(
@@ -291,14 +304,40 @@ internal sealed partial class SpikeDatabase
         string componentType,
         bool includeNone = false)
     {
+        return GetComponentPresetReferenceOptions(projectId, componentType, includeNone);
+    }
+
+    public IReadOnlyList<FieldOption> GetComponentPresetReferenceOptions(
+        string projectId,
+        string componentTypeSelector,
+        bool includeNone = false)
+    {
         using var connection = OpenConnection();
-        var rows = ComponentClassRowsByType(connection, projectId, componentType);
-        var showClassName = rows.Count > 1;
+        var selectorParts = componentTypeSelector.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var includeAll = selectorParts.Contains("*", StringComparer.Ordinal);
+        var includedTypes = selectorParts
+            .Where((part) => part != "*" && !part.StartsWith("-", StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
+        var excludedTypes = selectorParts
+            .Where((part) => part.StartsWith("-", StringComparison.Ordinal) && part.Length > 1)
+            .Select((part) => part[1..])
+            .ToHashSet(StringComparer.Ordinal);
+        var rows = QueryComponentClassRows(connection)
+            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
+            .Where((row) => !excludedTypes.Contains(row.ComponentType))
+            .Where((row) => includeAll || includedTypes.Contains(row.ComponentType))
+            .OrderBy((row) => row.ComponentType, StringComparer.Ordinal)
+            .ThenBy((row) => row.Name, StringComparer.Ordinal)
+            .ToList();
+        var showClassName = rows.Count > 1 || includeAll || includedTypes.Count > 1;
         var options = rows
             .SelectMany((row) => RequiredComponentClassPresets(row)
                 .Select((preset) => new FieldOption(
                     ComponentPresetNodeId(row.Id, preset.Id),
-                    showClassName ? $"{row.Name} · {preset.Name}" : preset.Name)))
+                    showClassName ? $"{row.Name} · {preset.Name}" : preset.Name,
+                    GroupValue: row.Id,
+                    GroupLabel: row.Name,
+                    LocalLabel: preset.Name)))
             .ToList();
         if (includeNone)
         {
@@ -306,6 +345,72 @@ internal sealed partial class SpikeDatabase
         }
 
         return options;
+    }
+
+    public JsonObject GetComponentPresetRuntimeInputs(string presetReference)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        {
+            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+        }
+
+        var settings = GetComponentClassSettings(componentClassId);
+        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+    }
+
+    public JsonObject GetComponentPresetConfig(string presetReference)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+        }
+
+        using var connection = OpenConnection();
+        var row = QueryComponentClassRows(connection)
+            .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
+        var preset = RequiredComponentClassPresets(row)
+            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
+        return ParseJsonObject(preset.ConfigJson);
+    }
+
+    public ComponentPresetSelectionSettings GetComponentPresetSelectionSettings(string presetReference)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+        }
+
+        using var connection = OpenConnection();
+        var row = QueryComponentClassRows(connection)
+            .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
+        var preset = RequiredComponentClassPresets(row)
+            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
+        return new ComponentPresetSelectionSettings(
+            row.ProjectId,
+            row.ComponentType,
+            row.RecordClassId,
+            preset.ConfigJson);
+    }
+
+    public string GetRuntimeComponentPresetName(
+        string presetReference,
+        JsonObject overrides,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        {
+            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+        }
+
+        using var connection = OpenConnection();
+        var row = QueryComponentClassRows(connection)
+            .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
+        var preset = RequiredComponentClassPresets(row)
+            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
+        if (slots.Count == 0) return preset.Name;
+        var ownerConfig = ParseJsonObject(preset.ConfigJson);
+        MergeOverride(ownerConfig, overrides);
+        return GetEmbeddedComponentPresetName(connection, row.ProjectId, ownerConfig, slots);
     }
 
     public string ValidateComponentPresetReferenceValue(

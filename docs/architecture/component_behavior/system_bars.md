@@ -65,3 +65,15 @@ Navigation Bar resolves local item geometry and final generic atoms.
   category is organizational only, not a separate preview path.
 - Their background/foreground must come from their own component tokens and
   alpha fields, not from extra theme-only special cases.
+
+## Variant lifecycle
+
+Only the `Default` Variant of Status Bar and Navigation Bar is system-protected.
+Lock Screen-specific, Empty, None and other non-default Variants are ordinary
+user-managed Variants: they start unprotected and unlocked, may be locked by the
+user, and may be deleted while unlocked when no reference still uses them.
+
+The one-time data migration removes the former seeded protection/lock from
+non-default system-bar Variants. It records completion on the component class
+so a later user lock is preserved and is not cleared again at application
+startup.

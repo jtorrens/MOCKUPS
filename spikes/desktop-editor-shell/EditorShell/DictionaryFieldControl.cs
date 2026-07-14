@@ -46,8 +46,12 @@ internal sealed class DictionaryFieldControl : Grid
             Text = _definition.DisplayLabel,
             FontSize = 13,
             FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = DictionaryFieldLayoutRules.LabelVerticalAlignment(_definition.ValueKind),
-            Margin = DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),
+            VerticalAlignment = _definition.SelectComponentClass
+                ? VerticalAlignment.Top
+                : DictionaryFieldLayoutRules.LabelVerticalAlignment(_definition.ValueKind),
+            Margin = _definition.SelectComponentClass
+                ? new Thickness(0, 7, 0, 0)
+                : DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),
         };
         SetColumn(_label, 0);
 
@@ -64,7 +68,9 @@ internal sealed class DictionaryFieldControl : Grid
             Width = 32,
             Height = 32,
             Padding = new Avalonia.Thickness(0),
-            VerticalAlignment = DictionaryFieldLayoutRules.RestoreButtonVerticalAlignment(_definition.ValueKind),
+            VerticalAlignment = _definition.SelectComponentClass
+                ? VerticalAlignment.Top
+                : DictionaryFieldLayoutRules.RestoreButtonVerticalAlignment(_definition.ValueKind),
             IsVisible = !IsDefault && _definition.IsEditable,
         };
         _restoreButton.Click += (_, _) =>

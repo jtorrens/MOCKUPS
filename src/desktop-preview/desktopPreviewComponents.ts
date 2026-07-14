@@ -59,6 +59,14 @@ export const desktopPreviewComponents = {
     renderable: "./iconBarComponentRenderable",
     embeds: ["iconRow"],
   },
+  componentStack: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./componentStackComponentContract",
+    resolver: "./componentStackComponentResolver",
+    renderable: "./componentStackComponentRenderable",
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "avatar", "button", "audio", "textInputBar", "keyboard", "media", "bubble", "status_bar", "navigation_bar"],
+  },
   avatar: {
     category: "component",
     migrationStatus: "functional",

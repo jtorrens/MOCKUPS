@@ -187,6 +187,121 @@ internal sealed partial class SpikeDatabase
             IsHighlighted: isHighlighted);
     }
 
+    public FieldValue CreateRuntimeComponentOverrideFieldValue(
+        string projectId,
+        string baseConfigJson,
+        JsonObject overrides,
+        string fieldId)
+    {
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        var inheritedValue = ComponentConfigFieldValue(baseConfigJson, descriptor);
+        var hasOverride = GetJsonValue(overrides, descriptor.JsonPath) is not null;
+        var localValue = hasOverride
+            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            : inheritedValue;
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                CanInherit: true,
+                InheritedValue: inheritedValue,
+                Options: ComponentClassFieldOptions(projectId, descriptor),
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                Unit: descriptor.Unit),
+            localValue,
+            IsInherited: !hasOverride);
+    }
+
+    public FieldValue CreateRuntimeComponentOverrideFieldValue(
+        string projectId,
+        string baseConfigJson,
+        JsonObject overrides,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string fieldId)
+    {
+        if (slots.Count == 0)
+        {
+            return CreateRuntimeComponentOverrideFieldValue(projectId, baseConfigJson, overrides, fieldId);
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        using var connection = OpenConnection();
+        var effectiveOwnerConfig = ParseJsonObject(baseConfigJson);
+        MergeOverride(effectiveOwnerConfig, overrides);
+        var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, projectId, effectiveOwnerConfig, slots);
+        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var localOverrides = EmbeddedOverrides(overrides, slots, createIfMissing: false);
+        var hasOverride = localOverrides is not null && GetJsonValue(localOverrides, descriptor.JsonPath) is not null;
+        var localValue = hasOverride && localOverrides is not null
+            ? ComponentConfigFieldValue(localOverrides.ToJsonString(), descriptor)
+            : inheritedValue;
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+            && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var nestedSlot)
+            && EmbeddedComponentHasOverrides(overrides, [.. slots, nestedSlot]);
+        return new FieldValue(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                descriptor.IsEditable,
+                descriptor.DefaultValue,
+                CanInherit: true,
+                InheritedValue: inheritedValue,
+                Options: ComponentClassFieldOptions(projectId, descriptor),
+                PairLabels: descriptor.PairLabels,
+                Number: descriptor.Number,
+                ComponentInputBindings: descriptor.ComponentInputBindings,
+                Unit: descriptor.Unit),
+            localValue,
+            IsInherited: !hasOverride,
+            IsHighlighted: isHighlighted);
+    }
+
+    public void UpdateRuntimeComponentOverride(
+        JsonObject overrides,
+        string fieldId,
+        string value)
+    {
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0) return;
+        if (value == "inherited")
+        {
+            RemoveJsonValue(overrides, descriptor.JsonPath);
+            return;
+        }
+        SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+    }
+
+    public void UpdateRuntimeComponentOverride(
+        JsonObject overrides,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string fieldId,
+        string value)
+    {
+        if (slots.Count == 0)
+        {
+            UpdateRuntimeComponentOverride(overrides, fieldId, value);
+            return;
+        }
+
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0) return;
+        var localOverrides = EmbeddedOverrides(overrides, slots, createIfMissing: true)
+            ?? throw new InvalidOperationException($"Missing runtime component override slot '{slots[^1].FieldId}'.");
+        if (value.Equals("inherited", StringComparison.Ordinal)
+            || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
+        {
+            RemoveJsonValue(localOverrides, descriptor.JsonPath);
+            return;
+        }
+        SetJsonValue(localOverrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+    }
+
     public void UpdateComponentClassField(string componentClassId, string fieldId, string value)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);

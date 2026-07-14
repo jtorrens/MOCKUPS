@@ -145,6 +145,7 @@ internal sealed class EditorNavigationRenderer
             nodeEnabled,
             nodeEnabled ? "" : "Assign an Actor to the Shot to enable this Screen",
             IsSelected(node),
+            ShowsActions(node, _selectedNode()),
             hasChildren,
             expanded,
             hasChildren ? EditorNavigationMetadata.HierarchicalIcon(node) : "",
@@ -495,4 +496,10 @@ internal sealed class EditorNavigationRenderer
     {
         return _selectedNode()?.Id == node.Id;
     }
+
+    internal static bool ShowsActions(ProjectTreeNode node, ProjectTreeNode? selected) =>
+        selected?.Id == node.Id
+            || (node.Kind == ProjectTreeNodeKind.ComponentClass
+                && selected?.Kind == ProjectTreeNodeKind.ComponentPreset
+                && selected.Parent?.Id == node.Id);
 }

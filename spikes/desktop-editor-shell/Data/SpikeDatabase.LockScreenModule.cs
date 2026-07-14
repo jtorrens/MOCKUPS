@@ -85,6 +85,8 @@ internal sealed partial class SpikeDatabase
             config["backgroundAlpha"] = 0;
             config["items"] = new JsonArray();
         });
+        NormalizeNonDefaultSystemVariantProtection(connection, projectId, "status_bar");
+        NormalizeNonDefaultSystemVariantProtection(connection, projectId, "navigation_bar");
     }
 
     private static void EnsureLockScreenSystemVariant(
@@ -112,10 +114,40 @@ internal sealed partial class SpikeDatabase
         {
             ["id"] = presetId,
             ["name"] = presetName,
-            ["protected"] = true,
-            ["locked"] = true,
+            ["protected"] = false,
+            ["locked"] = false,
             ["config"] = config,
         });
+        Execute(connection,
+            "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+            ("$id", componentId), ("$metadataJson", metadata.ToJsonString()));
+    }
+
+    private static void NormalizeNonDefaultSystemVariantProtection(
+        SqliteConnection connection,
+        string projectId,
+        string componentType)
+    {
+        var componentId = ScalarString(connection,
+            "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = $componentType",
+            ("$projectId", projectId), ("$componentType", componentType))
+            ?? throw new InvalidOperationException($"Project '{projectId}' has no {componentType} component class.");
+        var settings = GetComponentClassSettings(connection, componentId);
+        var metadata = ParseJsonObject(settings.MetadataJson);
+        const string migrationKey = "nonDefaultVariantProtectionPolicyVersion";
+        if (metadata[migrationKey]?.GetValue<int>() == 1) return;
+        foreach (var preset in EnsurePresetArray(metadata).OfType<JsonObject>())
+        {
+            if (string.Equals(preset["id"]?.GetValue<string>(), DefaultComponentPresetId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            preset["protected"] = false;
+            preset["locked"] = false;
+        }
+
+        metadata[migrationKey] = 1;
         Execute(connection,
             "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", componentId), ("$metadataJson", metadata.ToJsonString()));

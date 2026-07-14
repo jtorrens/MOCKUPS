@@ -2046,13 +2046,23 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "Kind == ProjectTreeNodeKind.ComponentClass",
-  "parent component classes must expose direct rename",
+  "Kind is ProjectTreeNodeKind.ComponentClass",
+  "parent component classes and component presets must expose direct rename",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected",
-  "protected component presets must not expose direct rename",
+  "or ProjectTreeNodeKind.ComponentPreset",
+  "protected component presets must expose direct rename through the standard variant action",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected)",
+  "component preset rename must not be coupled to delete protection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "EditorIcons.Create(EditorIcons.Edit, 14)",
+  "component preset rename must use the standard editor rename icon",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",

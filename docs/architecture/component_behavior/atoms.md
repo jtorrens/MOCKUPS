@@ -123,6 +123,19 @@ ownership. Shared mode sends one icon/text size pair to all three rows.
 and edge padding. It is used by Text Input Bar, Keyboard and Media without
 component-specific renderer logic.
 
+## Component Stack
+
+**Purpose/ownership.** Generic vertical container for an ordered runtime
+collection of concrete component Variants. Sizing, Start/End gaps, child
+Variants, local overrides, child runtime inputs, alignment and inter-item gap
+behavior are all Runtime Inputs. Its protected `Default` Variant contains no
+composition.
+
+**Layout.** `fill` consumes the parent box and distributes weighted reflow
+space. `content` hugs its children. Every item from the second onward owns its
+gap before itself; the first and final boundaries are owned by the container.
+See the full canonical contract in [component_stack.md](component_stack.md).
+
 ## Shared atom motion and data boundary
 
 Atoms do not own a wall-clock. A component or module supplies the requested

@@ -714,4 +714,9 @@ internal static class ComponentClassFieldCatalog
 
         throw new InvalidOperationException($"Unknown component class field '{fieldId}'.");
     }
+
+    public static bool IsRuntimeOverrideField(string fieldId) =>
+        Fields.TryGetValue(fieldId, out var field)
+        && field.IsEditable
+        && field.JsonPath.Length > 0;
 }

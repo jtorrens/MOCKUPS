@@ -20,8 +20,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string> _triggerAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
-    private readonly Func<JsonObject, JsonObject> _applyTransientTestValues;
-    private readonly Func<bool> _resetTestValues;
+    private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
+    private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyTransientTestValues;
+    private readonly Func<ProjectTreeNode, bool> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
     private readonly Func<string, Task<bool>> _confirmAnimationDisable;
@@ -29,6 +30,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
     private readonly EditorSessionUiState _sessionUiState;
     private readonly ModuleInstanceAnimationEditor? _animationEditor;
+    private readonly Func<string, bool> _navigateToNode;
+    private readonly Action<EditorEmbeddedContext> _openEmbeddedContext;
     private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
@@ -38,13 +41,16 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string> triggerAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
-        Func<JsonObject, JsonObject> applyTransientTestValues,
-        Func<bool> resetTestValues,
+        Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
+        Func<ProjectTreeNode, JsonObject, JsonObject> applyTransientTestValues,
+        Func<ProjectTreeNode, bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
         Func<string, Task<bool>> confirmAnimationDisable,
         PreviewPlaybackState playbackState,
         EditorSessionUiState sessionUiState,
+        Func<string, bool> navigateToNode,
+        Action<EditorEmbeddedContext> openEmbeddedContext,
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
@@ -54,6 +60,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _triggerAction = triggerAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
+        _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _applyTransientTestValues = applyTransientTestValues;
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
@@ -61,6 +68,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _confirmAnimationDisable = confirmAnimationDisable;
         _playbackState = playbackState;
         _sessionUiState = sessionUiState;
+        _navigateToNode = navigateToNode;
+        _openEmbeddedContext = openEmbeddedContext;
         _animationEditor = animationEditor;
         _reloadAndSelect = reloadAndSelect;
     }
@@ -69,7 +78,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var owner = ResolveOwner(node);
         var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-        var preview = _applyTransientTestValues(persistedPreview);
+        var preview = _applyTransientTestValues(owner.Node, persistedPreview);
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
@@ -182,7 +191,7 @@ internal sealed class RuntimeInputsCollectionEditor
             reset.Click += (_, args) =>
             {
                 args.Handled = true;
-                if (!_resetTestValues()) return;
+                if (!_resetTestValues(owner.Node)) return;
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -194,7 +203,7 @@ internal sealed class RuntimeInputsCollectionEditor
             };
             void RefreshSaveState()
             {
-                var current = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var current = _applyTransientTestValues(owner.Node, DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
                 var baseline = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
                 var currentInputs = ComponentPreviewInputSession.ReadRuntimeInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
                 var currentCollections = ComponentPreviewInputSession.ReadRuntimeCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
@@ -208,12 +217,12 @@ internal sealed class RuntimeInputsCollectionEditor
             saveDefaults.Click += async (_, args) =>
             {
                 args.Handled = true;
-                var current = _applyTransientTestValues(DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var current = _applyTransientTestValues(owner.Node, DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
                 var differences = DesignPreviewTestValues.Differences(current, DesignPreviewTestValues.Parse(owner.DesignPreviewJson), inputs, collections);
                 if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
                 DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
                 owner.Save(current.ToJsonString());
-                _resetTestValues();
+                _resetTestValues(owner.Node);
                 _onChanged();
             };
             buttons.Children.Add(saveDefaults);
@@ -436,28 +445,35 @@ internal sealed class RuntimeInputsCollectionEditor
         var subcards = new List<EditorInternalNavigationSection>();
         for (var index = 0; index < items.Count; index++)
         {
-            var itemId = ItemId(items[index], index);
-            var expansionKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:expanded";
+            var itemIndex = index;
+            var item = items[itemIndex];
+            var itemId = ItemId(item, itemIndex);
+            var expansionKey = CollectionItemExpansionKey(owner, collection, itemId);
             var navigationKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:vertical-card";
             var isExpanded = _sessionUiState.IsExpanded(expansionKey);
             var selectedSubcardId = _sessionUiState.Selection(navigationKey);
+            void OpenComponentOverrides()
+            {
+                OpenRuntimeComponentOverrides(owner, preview, collection, itemIndex, item);
+            }
             var itemContent = CreateTestValueCollectionItemContent(
                 owner,
                 preview,
                 collection,
                 actions,
-                index,
-                items[index],
+                itemIndex,
+                item,
+                OpenComponentOverrides,
                 out var trailing,
                 out var itemSubcards);
             var presentation = RuntimeCollectionItemPresentation.Resolve(
                 collection,
-                items[index],
-                $"Payload item {index + 1}",
+                item,
+                $"Payload item {itemIndex + 1}",
                 EditorIcons.Component);
             subcards.Add(new EditorInternalNavigationSection(
                 itemId,
-                $"{collection.ItemLabel} {index + 1}",
+                $"{collection.ItemLabel} {itemIndex + 1}",
                 presentation.Subtitle,
                 presentation.Icon,
                 itemContent,
@@ -467,21 +483,22 @@ internal sealed class RuntimeInputsCollectionEditor
                 isExpanded,
                 (next) => _sessionUiState.SetExpanded(expansionKey, next),
                 selectedSubcardId,
-                (next) => _sessionUiState.Select(navigationKey, next)));
+                (next) => _sessionUiState.Select(navigationKey, next),
+                Reveal: _sessionUiState.ConsumeReveal(expansionKey)));
         }
 
-        if (owner.IsInstance && items.Count == 0)
+        if (items.Count == 0)
         {
             var add = EditorCollectionItemControls.CreateAddButton($"Add {collection.ItemLabel.ToLowerInvariant()}");
             add.HorizontalAlignment = HorizontalAlignment.Left;
             add.Click += (_, _) =>
             {
-                var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
-                foreach (var field in collection.Fields)
-                {
-                    item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, field.DefaultValue);
-                }
-                _database.AddModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
+                var item = DefaultCollectionItem(owner, collection);
+                ActivateNewCollectionItem(owner, collection, items, item);
+                if (owner.IsInstance)
+                    _database.AddModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
+                else
+                    _setPreviewCollectionTestItems(collection.JsonKey, [item]);
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -504,6 +521,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item,
+        Action openComponentOverrides,
         out Control? trailing,
         out IReadOnlyList<EditorInternalNavigationSection> subcards)
     {
@@ -517,7 +535,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionItemId == itemId)
             .ToList();
         trailing = null;
-        if (owner.IsInstance)
         {
             var controls = new StackPanel
             {
@@ -528,16 +545,20 @@ internal sealed class RuntimeInputsCollectionEditor
             add.Click += (_, args) =>
             {
                 args.Handled = true;
-                var next = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
-                foreach (var field in collection.Fields)
-                {
-                    next[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, field.DefaultValue);
-                }
-                _database.InsertModuleInstanceRuntimeCollectionItemAfter(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId,
+                var next = DefaultCollectionItem(owner, collection);
+                ActivateNewCollectionItem(
+                    owner,
+                    collection,
+                    DesignPreviewTestValues.CollectionItems(preview, collection),
                     next);
+                if (owner.IsInstance)
+                    _database.InsertModuleInstanceRuntimeCollectionItemAfter(owner.Node.Id, StorageCollectionKey(collection), itemId, next);
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    current.Insert(Math.Min(itemIndex + 1, current.Count), next);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -546,11 +567,31 @@ internal sealed class RuntimeInputsCollectionEditor
             duplicate.Click += (_, args) =>
             {
                 args.Handled = true;
-                _database.DuplicateModuleInstanceRuntimeCollectionItem(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId,
-                    $"{collection.Id}_{Guid.NewGuid():N}");
+                var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
+                if (owner.IsInstance)
+                {
+                    var copy = CloneObject(item);
+                    copy["id"] = duplicateId;
+                    ActivateNewCollectionItem(
+                        owner,
+                        collection,
+                        DesignPreviewTestValues.CollectionItems(preview, collection),
+                        copy);
+                    _database.DuplicateModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, duplicateId);
+                }
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    var copy = CloneObject(current[itemIndex]);
+                    copy["id"] = duplicateId;
+                    ActivateNewCollectionItem(
+                        owner,
+                        collection,
+                        DesignPreviewTestValues.CollectionItems(preview, collection),
+                        copy);
+                    current.Insert(itemIndex + 1, copy);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -559,11 +600,10 @@ internal sealed class RuntimeInputsCollectionEditor
             moveUp.Click += (_, args) =>
             {
                 args.Handled = true;
-                _database.MoveModuleInstanceRuntimeCollectionItem(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId,
-                    -1);
+                if (owner.IsInstance)
+                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, -1);
+                else
+                    MoveTransientCollectionItem(preview, collection, itemIndex, -1);
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -574,11 +614,10 @@ internal sealed class RuntimeInputsCollectionEditor
             moveDown.Click += (_, args) =>
             {
                 args.Handled = true;
-                _database.MoveModuleInstanceRuntimeCollectionItem(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId,
-                    1);
+                if (owner.IsInstance)
+                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, 1);
+                else
+                    MoveTransientCollectionItem(preview, collection, itemIndex, 1);
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -589,10 +628,14 @@ internal sealed class RuntimeInputsCollectionEditor
                 args.Handled = true;
                 var label = $"{collection.ItemLabel} {itemIndex + 1}";
                 if (!await _confirmCollectionItemDelete(label)) return;
-                _database.DeleteModuleInstanceRuntimeCollectionItem(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId);
+                if (owner.IsInstance)
+                    _database.DeleteModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    current.RemoveAt(itemIndex);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
                 _onChanged();
                 _reloadAndSelect?.Invoke(owner.Node);
             };
@@ -647,7 +690,15 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         foreach (var input in ComponentInputGrouping.OwnInputs(collection.Fields))
         {
-            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input, RefreshActionVisibility));
+            content.Children.Add(CreateTestValueCollectionControl(
+                owner,
+                preview,
+                collection,
+                itemIndex,
+                item,
+                input,
+                RefreshActionVisibility,
+                openComponentOverrides));
         }
 
         var groups = ComponentInputGrouping.EmbeddedGroups(collection.Fields);
@@ -657,6 +708,35 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
                 owner, preview, collection, itemIndex, item, groupId, groups, RefreshActionVisibility));
+        }
+        var componentItemDefinition = collection.ComponentItems;
+        var componentPresetField = componentItemDefinition is null
+            ? null
+            : collection.Fields.FirstOrDefault((input) => input.JsonKey == componentItemDefinition.PresetJsonKey);
+        var componentPresetReference = componentPresetField is null
+            ? ""
+            : DesignPreviewTestValues.CollectionValue(item, componentPresetField);
+        if (!string.IsNullOrWhiteSpace(componentPresetReference)
+            && componentItemDefinition is not null
+            && item[componentItemDefinition.InputsJsonKey] is JsonObject componentInputs)
+        {
+            var componentConfig = _database.GetComponentPresetConfig(componentPresetReference);
+            var nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(componentInputs, componentConfig);
+            if (nestedInputs.Count > 0)
+            {
+                var nestedPanel = new StackPanel { Spacing = 6 };
+                foreach (var nestedInput in nestedInputs)
+                {
+                    nestedPanel.Children.Add(CreateNestedComponentInputControl(
+                        owner, preview, collection, itemIndex, item, componentInputs, nestedInput));
+                }
+                groupSubcards.Add(new EditorInternalNavigationSection(
+                    "componentInputs",
+                    "Component inputs",
+                    EditorUiText.Count(nestedInputs.Count, "runtime input"),
+                    EditorIcons.Component,
+                    nestedPanel));
+            }
         }
         if (owner.IsInstance
             && _animationEditor is not null
@@ -682,6 +762,135 @@ internal sealed class RuntimeInputsCollectionEditor
             : $"item-{index}";
     }
 
+    private JsonObject DefaultCollectionItem(RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection)
+    {
+        var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
+        foreach (var field in collection.Fields)
+        {
+            var value = field.DefaultValue;
+            if (field.ValueKind == ValueKind.ComponentPreset && string.IsNullOrWhiteSpace(value))
+            {
+                var options = RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, field).Options ?? [];
+                var componentId = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.GroupValue))?.GroupValue ?? "";
+                value = string.IsNullOrWhiteSpace(componentId)
+                    ? ""
+                    : options.SingleOrDefault((option) =>
+                        option.GroupValue.Equals(componentId, StringComparison.Ordinal)
+                        && option.Value.Equals($"{componentId}::preset::default", StringComparison.Ordinal))?.Value
+                      ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
+            }
+            item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);
+        }
+        var componentItems = collection.ComponentItems;
+        var preset = componentItems is null
+            ? null
+            : collection.Fields.FirstOrDefault((field) => field.JsonKey == componentItems.PresetJsonKey);
+        if (preset is not null && componentItems is not null)
+        {
+            var reference = item[preset.JsonKey]?.GetValue<string>() ?? "";
+            item[componentItems.OverridesJsonKey] = new JsonObject();
+            item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
+                ? new JsonObject()
+                : _database.GetComponentPresetRuntimeInputs(reference);
+        }
+        return item;
+    }
+
+    private void ActivateNewCollectionItem(
+        RuntimeInputOwner owner,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<JsonObject> currentItems,
+        JsonObject newItem)
+    {
+        var activeKey = CollectionItemExpansionKey(
+            owner,
+            collection,
+            ItemId(newItem, currentItems.Count));
+        _sessionUiState.SetOnlyExpanded(
+            currentItems.Select((current, index) => CollectionItemExpansionKey(
+                owner,
+                collection,
+                ItemId(current, index))).Append(activeKey),
+            activeKey);
+        _sessionUiState.RequestReveal(activeKey);
+    }
+
+    private static string CollectionItemExpansionKey(
+        RuntimeInputOwner owner,
+        RuntimeInputCollectionDefinition collection,
+        string itemId) => $"{owner.Node.Id}:{collection.Id}:{itemId}:expanded";
+
+    private void OpenRuntimeComponentOverrides(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item)
+    {
+        var componentItems = collection.ComponentItems
+            ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
+        var presetField = collection.Fields.Single((field) => field.JsonKey == componentItems.PresetJsonKey);
+        var presetReference = DesignPreviewTestValues.CollectionValue(item, presetField);
+        if (string.IsNullOrWhiteSpace(presetReference)) return;
+        var overrides = item[componentItems.OverridesJsonKey] as JsonObject;
+        if (overrides is null)
+        {
+            overrides = new JsonObject();
+            item[componentItems.OverridesJsonKey] = overrides;
+        }
+        var selected = _database.GetComponentPresetSelectionSettings(presetReference);
+        void ApplyOverrides(JsonObject nextOverrides)
+        {
+            item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
+            var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+            if (itemIndex >= 0 && itemIndex < current.Count)
+            {
+                current[itemIndex] = CloneObject(item);
+                _setPreviewCollectionTestItems(collection.JsonKey, current);
+            }
+            if (owner.IsInstance)
+            {
+                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    ItemId(item, itemIndex),
+                    componentItems.OverridesJsonKey,
+                    nextOverrides);
+                _onChanged();
+            }
+            _testValuesChanged();
+        }
+        _openEmbeddedContext(new EditorEmbeddedContext(
+            owner.Node,
+            [],
+            new RuntimeComponentOverrideSource(
+                selected.ProjectId,
+                presetReference,
+                selected.ComponentType,
+                selected.RecordClassId,
+                selected.ConfigJson,
+                overrides,
+                ApplyOverrides)));
+    }
+
+    private static JsonObject CloneObject(JsonObject source) =>
+        source.DeepClone() as JsonObject ?? new JsonObject();
+
+    private void MoveTransientCollectionItem(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        int delta)
+    {
+        var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+        var target = itemIndex + delta;
+        if (itemIndex < 0 || target < 0 || target >= current.Count) return;
+        var item = current[itemIndex];
+        current.RemoveAt(itemIndex);
+        current.Insert(target, item);
+        _setPreviewCollectionTestItems(collection.JsonKey, current);
+    }
+
     private Control CreateTestValueCollectionControl(
         RuntimeInputOwner owner,
         JsonObject preview,
@@ -689,16 +898,41 @@ internal sealed class RuntimeInputsCollectionEditor
         int itemIndex,
         JsonObject item,
         ComponentInputDefinition input,
-        Action? afterCommit = null)
+        Action? afterCommit = null,
+        Action? openComponentOverrides = null)
     {
+        var componentItems = collection.ComponentItems;
+        var selectsComponent = componentItems is not null
+            && input.JsonKey.Equals(componentItems.PresetJsonKey, StringComparison.Ordinal);
+        var hasComponentOverrides = selectsComponent
+            && componentItems is not null
+            && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
+            && ComponentOverrideCount(currentOverrides) > 0;
         var control = new DictionaryFieldControl(
-            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), DesignPreviewTestValues.CollectionValue(item, input)),
+            new FieldValue(
+                RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
+                DesignPreviewTestValues.CollectionValue(item, input),
+                IsHighlighted: hasComponentOverrides),
             _dictionaryServices.ForNode(owner.Node, (fieldId) =>
             {
                 var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
                 return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
-            }));
-        control.IsEnabled = CollectionFieldIsEnabled(item, input);
+            },
+            (reference) =>
+            {
+                _navigateToNode(reference);
+                return Task.CompletedTask;
+            },
+            selectsComponent && openComponentOverrides is not null
+                ? (_) =>
+                {
+                    openComponentOverrides();
+                    return Task.CompletedTask;
+                }
+                : null));
+        var fieldIsActive = CollectionFieldIsEnabled(item, input, itemIndex);
+        control.IsEnabled = fieldIsActive;
+        control.IsVisible = fieldIsActive;
         control.ValueCommitted += (_, next) =>
         {
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
@@ -706,6 +940,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 : "";
             var nextNode = DesignPreviewTestValues.ValueNode(input, next);
             item[input.JsonKey] = nextNode?.DeepClone();
+            if (selectsComponent && componentItems is not null)
+            {
+                item[componentItems.OverridesJsonKey] = new JsonObject();
+                item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
+                    ? new JsonObject()
+                    : _database.GetComponentPresetRuntimeInputs(next);
+            }
             if (owner.IsInstance)
             {
                 _database.UpdateModuleInstanceRuntimeCollectionValue(
@@ -714,16 +955,44 @@ internal sealed class RuntimeInputsCollectionEditor
                     itemId,
                     input.JsonKey,
                     nextNode);
+                if (selectsComponent && componentItems is not null)
+                {
+                    _database.UpdateModuleInstanceRuntimeCollectionValue(
+                        owner.Node.Id,
+                        StorageCollectionKey(collection),
+                        itemId,
+                        componentItems.OverridesJsonKey,
+                        item[componentItems.OverridesJsonKey]);
+                    _database.UpdateModuleInstanceRuntimeCollectionValue(
+                        owner.Node.Id,
+                        StorageCollectionKey(collection),
+                        itemId,
+                        componentItems.InputsJsonKey,
+                        item[componentItems.InputsJsonKey]);
+                }
                 _onChanged();
             }
             else
             {
                 DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
             }
-            _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
+            if (selectsComponent)
+            {
+                var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                if (itemIndex >= 0 && itemIndex < current.Count)
+                {
+                    current[itemIndex] = CloneObject(item);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
+            }
+            else
+            {
+                _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
+            }
             _testValuesChanged();
             afterCommit?.Invoke();
-            if (collection.Fields.Any((candidate) =>
+            if (selectsComponent
+                || collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)
                     || candidate.BehaviorTiming?.SourceFieldId.Equals(input.Id, StringComparison.Ordinal) == true))
             {
@@ -732,6 +1001,78 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         var targetId = item["id"]?.GetValue<string>() ?? "";
         return DecorateAnimationToggle(owner, input, targetId, control);
+    }
+
+    private Control CreateNestedComponentInputControl(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item,
+        JsonObject componentInputs,
+        ComponentInputDefinition input)
+    {
+        var control = new DictionaryFieldControl(
+            new FieldValue(
+                RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
+                DesignPreviewTestValues.Value(componentInputs, input)),
+            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        void ApplyTransientValue(string next)
+        {
+            componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
+            var inputsJsonKey = collection.ComponentItems?.InputsJsonKey
+                ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
+            item[inputsJsonKey] = componentInputs.DeepClone();
+            var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+            if (itemIndex >= 0 && itemIndex < current.Count)
+            {
+                current[itemIndex] = CloneObject(item);
+                _setPreviewCollectionTestItems(collection.JsonKey, current);
+            }
+            _testValuesChanged();
+        }
+        control.ValueChanged += (_, next) => ApplyTransientValue(next);
+        control.ValueCommitted += (_, next) =>
+        {
+            componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
+            var inputsJsonKey = collection.ComponentItems?.InputsJsonKey
+                ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
+            item[inputsJsonKey] = componentInputs.DeepClone();
+            var itemId = ItemId(item, itemIndex);
+            if (owner.IsInstance)
+            {
+                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                    owner.Node.Id,
+                    StorageCollectionKey(collection),
+                    itemId,
+                    inputsJsonKey,
+                    componentInputs);
+                _onChanged();
+            }
+        };
+        return control;
+    }
+
+    private static int ComponentOverrideCount(JsonObject overrides)
+    {
+        var count = 0;
+        void Visit(JsonNode? node)
+        {
+            switch (node)
+            {
+                case JsonObject objectValue:
+                    foreach (var value in objectValue.Select((entry) => entry.Value)) Visit(value);
+                    break;
+                case JsonArray arrayValue:
+                    foreach (var value in arrayValue) Visit(value);
+                    break;
+                case not null:
+                    count++;
+                    break;
+            }
+        }
+        Visit(overrides);
+        return count;
     }
 
     private Control DecorateAnimationToggle(
@@ -835,8 +1176,12 @@ internal sealed class RuntimeInputsCollectionEditor
             SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 
-    private static bool CollectionFieldIsEnabled(JsonObject item, ComponentInputDefinition input)
+    internal static bool CollectionFieldIsEnabled(
+        JsonObject item,
+        ComponentInputDefinition input,
+        int itemIndex = 0)
     {
+        if (itemIndex < input.MinimumItemIndex) return false;
         if (string.IsNullOrWhiteSpace(input.EnabledWhenItemJsonKey)
             || input.EnabledWhenItemValues is not { Count: > 0 })
         {

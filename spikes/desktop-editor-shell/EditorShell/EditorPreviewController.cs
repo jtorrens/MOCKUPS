@@ -1282,14 +1282,33 @@ internal sealed class EditorPreviewController
         _designInputsPanel.SetExternalCollectionInputValue(collectionJsonKey, itemId, input, value);
     }
 
-    public JsonObject ApplyDesignPreviewTransientTestValues(JsonObject preview)
+    public void SetDesignPreviewCollectionTestItems(string collectionJsonKey, IReadOnlyList<JsonObject> items)
     {
-        return _designInputsPanel.ApplyTransientTestValues(preview);
+        _designInputsPanel.SetExternalCollectionItems(collectionJsonKey, items);
     }
 
-    public bool ResetDesignPreviewTestValues()
+    public JsonObject ApplyDesignPreviewTransientTestValues(ProjectTreeNode node, JsonObject preview)
     {
-        return _designInputsPanel.ResetCurrentTestValues();
+        var payload = DesignPreviewPayloadFactory.Create(
+            _database,
+            node,
+            _selectedThemeId,
+            _selectedMode,
+            _shotPreviewFrame);
+        return payload is null
+            ? preview.DeepClone() as JsonObject ?? new JsonObject()
+            : _designInputsPanel.ApplyTransientTestValues(preview, payload);
+    }
+
+    public bool ResetDesignPreviewTestValues(ProjectTreeNode node)
+    {
+        var payload = DesignPreviewPayloadFactory.Create(
+            _database,
+            node,
+            _selectedThemeId,
+            _selectedMode,
+            _shotPreviewFrame);
+        return payload is not null && _designInputsPanel.ResetTestValues(payload);
     }
 
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)

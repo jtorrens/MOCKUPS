@@ -20,10 +20,12 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action<string> _triggerPreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
-    private readonly Func<JsonObject, JsonObject> _applyPreviewTransientTestValues;
-    private readonly Func<bool> _resetPreviewTestValues;
+    private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
+    private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyPreviewTransientTestValues;
+    private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
+    private readonly Action<EditorEmbeddedContext> _openEmbeddedContext;
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
     private readonly Action _toggleProductionPlayback;
@@ -41,10 +43,12 @@ internal sealed class EditorCollectionCardFactory
         Action<string> triggerPreviewAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
-        Func<JsonObject, JsonObject> applyPreviewTransientTestValues,
-        Func<bool> resetPreviewTestValues,
+        Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
+        Func<ProjectTreeNode, JsonObject, JsonObject> applyPreviewTransientTestValues,
+        Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
+        Action<EditorEmbeddedContext> openEmbeddedContext,
         Func<int> shotFrame,
         Action<int> setShotFrame,
         Action toggleProductionPlayback)
@@ -60,10 +64,12 @@ internal sealed class EditorCollectionCardFactory
         _triggerPreviewAction = triggerPreviewAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
+        _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _applyPreviewTransientTestValues = applyPreviewTransientTestValues;
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
+        _openEmbeddedContext = openEmbeddedContext;
         _shotFrame = shotFrame;
         _setShotFrame = setShotFrame;
         _toggleProductionPlayback = toggleProductionPlayback;
@@ -100,7 +106,7 @@ internal sealed class EditorCollectionCardFactory
                 CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
             [
-                new RuntimeInputsCollectionEditor(_database, _dictionaryServices, _onChanged, _triggerPreviewAction, _setPreviewTestValue, _setPreviewCollectionTestValue, _applyPreviewTransientTestValues, _resetPreviewTestValues, _domainDialogs.ConfirmTestValueDefaults, _domainDialogs.ConfirmRuntimeCollectionItemDelete, _domainDialogs.ConfirmAnimationDisable, _previewPlaybackState, _sessionUiState, animationEditor, _reloadAndSelect).Create(node),
+                CreateRuntimeInputsCard(node, animationEditor),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(
@@ -143,5 +149,30 @@ internal sealed class EditorCollectionCardFactory
             ],
             _ => [],
         };
+    }
+
+    private InstantEditorCard CreateRuntimeInputsCard(
+        ProjectTreeNode node,
+        ModuleInstanceAnimationEditor? animationEditor)
+    {
+        return new RuntimeInputsCollectionEditor(
+            _database,
+            _dictionaryServices,
+            _onChanged,
+            _triggerPreviewAction,
+            _setPreviewTestValue,
+            _setPreviewCollectionTestValue,
+            _setPreviewCollectionTestItems,
+            _applyPreviewTransientTestValues,
+            _resetPreviewTestValues,
+            _domainDialogs.ConfirmTestValueDefaults,
+            _domainDialogs.ConfirmRuntimeCollectionItemDelete,
+            _domainDialogs.ConfirmAnimationDisable,
+            _previewPlaybackState,
+            _sessionUiState,
+            _navigateToNode,
+            _openEmbeddedContext,
+            animationEditor,
+            _reloadAndSelect).Create(node);
     }
 }

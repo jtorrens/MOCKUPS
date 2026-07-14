@@ -15,7 +15,7 @@ internal static class RuntimeInputFieldDefinitionFactory
         {
             ValueKind.RecordReference when input.TableId == "actors" => database.GetActorOptions(projectId),
             ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                database.GetComponentPresetReferenceOptionsByType(projectId, input.ComponentType),
+                database.GetComponentPresetReferenceOptions(projectId, input.ComponentType),
             ValueKind.PaletteColorToken => database.GetPaletteColorOptions(projectId),
             _ => input.Options,
         };
@@ -32,6 +32,9 @@ internal static class RuntimeInputFieldDefinitionFactory
             RecordReference: input.ValueKind == ValueKind.RecordReference
                 ? new RecordReferenceDefinition(input.TableId)
                 : null,
+            SelectComponentClass: input.ValueKind == ValueKind.ComponentPreset
+                && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Contains("*", StringComparer.Ordinal),
             Unit: input.Unit,
             Animation: input.Animation,
             BehaviorTiming: input.BehaviorTiming);

@@ -25,6 +25,7 @@ internal sealed record EditorHierarchicalNavigationMetadata(
     bool IsEnabled,
     string DisabledReason,
     bool IsSelected,
+    bool ShowActions,
     bool HasChildren,
     bool IsExpanded,
     string Icon,
@@ -213,7 +214,7 @@ internal static class EditorHierarchicalNavigationRow
             }
             actions.Children.Add(lockButton);
         }
-        if (metadata.IsSelected)
+        if (metadata.ShowActions)
         {
             if (metadata.AddAction is { } add)
             {

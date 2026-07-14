@@ -118,8 +118,9 @@ internal sealed class ComponentPreviewInputSession
             config);
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
+        var collections = ReadRuntimeCollections(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
-        if (inputs.Count == 0)
+        if (inputs.Count == 0 && collections.Count == 0)
         {
             _scopeKey = "";
             _projectId = "";
@@ -133,7 +134,9 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var scopeKey = ScopeKey(payload);
-        var inputSignature = string.Join("|", inputs.Select(InputSignature).Concat(_actions.Select(ActionSignature)));
+        var inputSignature = string.Join("|", inputs.Select(InputSignature)
+            .Concat(collections.Select(CollectionSignature))
+            .Concat(_actions.Select(ActionSignature)));
         var testValuesSignature = preview["testValues"]?.ToJsonString() ?? "";
         if (_scopeKey.Equals(scopeKey, StringComparison.Ordinal)
             && _inputSignature.Length > 0
@@ -223,6 +226,15 @@ internal sealed class ComponentPreviewInputSession
             testValues = new JsonObject();
             _transientCollectionTestValuesByScope[_scopeKey] = testValues;
         }
+        if (testValues[collectionJsonKey] is not JsonArray)
+        {
+            var definition = ReadRuntimeCollections(_runtimePreview, _config)
+                .FirstOrDefault((candidate) => candidate.JsonKey == collectionJsonKey);
+            testValues[collectionJsonKey] = definition is null
+                ? new JsonArray()
+                : new JsonArray(DesignPreviewTestValues.CollectionItems(_runtimePreview, definition)
+                    .Select((item) => (JsonNode?)item.DeepClone()).ToArray());
+        }
         var items = testValues[collectionJsonKey] as JsonArray ?? new JsonArray();
         testValues[collectionJsonKey] = items;
         var item = items.OfType<JsonObject>().FirstOrDefault((candidate) =>
@@ -238,23 +250,50 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
+    public void SetExternalCollectionItems(string collectionJsonKey, IReadOnlyList<JsonObject> items)
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey) || string.IsNullOrWhiteSpace(collectionJsonKey)) return;
+        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey) ?? new JsonObject();
+        _transientCollectionTestValuesByScope[_scopeKey] = testValues;
+        testValues[collectionJsonKey] = new JsonArray(items.Select((item) => (JsonNode?)item.DeepClone()).ToArray());
+        _refreshPreview();
+    }
+
     public JsonObject ApplyTransientTestValues(JsonObject preview)
     {
         return ApplyTransientTestValues(preview, _scopeKey, _config);
     }
 
+    public JsonObject ApplyTransientTestValues(JsonObject preview, DesignPreviewPayload payload)
+    {
+        return ApplyTransientTestValues(
+            preview,
+            ScopeKey(payload),
+            ParseJsonObject(payload.ConfigJson));
+    }
+
     public bool ResetCurrentTestValues()
     {
-        if (string.IsNullOrWhiteSpace(_scopeKey)) return false;
+        return ResetTestValues(_scopeKey);
+    }
+
+    public bool ResetTestValues(DesignPreviewPayload payload)
+    {
+        return ResetTestValues(ScopeKey(payload));
+    }
+
+    private bool ResetTestValues(string scopeKey)
+    {
+        if (string.IsNullOrWhiteSpace(scopeKey)) return false;
 
         StopPlayback();
-        var prefix = $"{_scopeKey}:";
+        var prefix = $"{scopeKey}:";
         var removed = false;
         foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             removed |= _values.Remove(key);
         }
-        removed |= _transientCollectionTestValuesByScope.Remove(_scopeKey);
+        removed |= _transientCollectionTestValuesByScope.Remove(scopeKey);
         _activeActionId = "";
         _playbackSecondsByActionId.Clear();
         UpdateActionButtons();
@@ -276,8 +315,9 @@ internal sealed class ComponentPreviewInputSession
             config);
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
+        var collections = ReadRuntimeCollections(preview, config);
         _actions = ComponentPreviewActions.Read(preview);
-        if (inputs.Count == 0)
+        if (inputs.Count == 0 && collections.Count == 0)
         {
             return payload;
         }
@@ -346,18 +386,42 @@ internal sealed class ComponentPreviewInputSession
             if (preview[collection.JsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())
             {
-                foreach (var input in collection.Fields.Where((field) => field.Kind == ComponentInputKind.RecordReference))
+                ResolveRecordReferenceInputs(item, collection.Fields, themeMode, paletteColors);
+                if (collection.ComponentItems is not { } componentItems
+                    || item[componentItems.PresetJsonKey] is not JsonValue presetValue
+                    || !presetValue.TryGetValue<string>(out var presetReference)
+                    || string.IsNullOrWhiteSpace(presetReference)
+                    || item[componentItems.InputsJsonKey] is not JsonObject componentInputs)
                 {
-                    if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey)) continue;
-                    var recordId = item[input.JsonKey]?.GetValue<string>() ?? "";
-                    item[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
-                        input.TableId,
-                        recordId,
-                        themeMode,
-                        paletteColors,
-                        input.Id);
+                    continue;
                 }
+
+                var componentConfig = _database.GetComponentPresetConfig(presetReference);
+                ResolveRecordReferenceInputs(
+                    componentInputs,
+                    ReadRuntimeInputs(componentInputs, componentConfig),
+                    themeMode,
+                    paletteColors);
             }
+        }
+    }
+
+    private void ResolveRecordReferenceInputs(
+        JsonObject values,
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        foreach (var input in inputs.Where((field) => field.Kind == ComponentInputKind.RecordReference))
+        {
+            if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey)) continue;
+            var recordId = values[input.JsonKey]?.GetValue<string>() ?? "";
+            values[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
+                input.TableId,
+                recordId,
+                themeMode,
+                paletteColors,
+                input.Id);
         }
     }
 
@@ -537,7 +601,7 @@ internal sealed class ComponentPreviewInputSession
     {
         return string.IsNullOrWhiteSpace(input.ComponentType)
             ? []
-            : _database.GetComponentPresetReferenceOptionsByType(projectId, input.ComponentType);
+            : _database.GetComponentPresetReferenceOptions(projectId, input.ComponentType);
     }
 
     private static ComponentInputDefinition CreateInputDefinition(
@@ -1329,6 +1393,7 @@ internal sealed class ComponentPreviewInputSession
                 {
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
+                    MinimumItemIndex = (int)JsonDecimal(field, "minimumItemIndex", 0),
                     UiOrder = (int)JsonDecimal(field, "uiOrder", 0),
                     UiSectionLabel = JsonString(field, "uiSectionLabel"),
                 };
@@ -1348,7 +1413,8 @@ internal sealed class ComponentPreviewInputSession
                     JsonString(collection, "itemLabel", "Item"),
                     itemFields,
                     JsonString(collection, "sourceCollectionJsonKey"),
-                    ReadItemPresentation(collection)));
+                    ReadItemPresentation(collection),
+                    ReadComponentItems(collection)));
             }
         }
 
@@ -1376,6 +1442,23 @@ internal sealed class ComponentPreviewInputSession
             JsonString(presentation, "iconFieldId"),
             JsonString(presentation, "fallbackIcon", EditorIcons.Component),
             iconValueMap);
+    }
+
+    private static RuntimeComponentCollectionItemDefinition? ReadComponentItems(JsonObject collection)
+    {
+        if (collection["componentItems"] is not JsonObject componentItems)
+        {
+            return null;
+        }
+
+        var presetJsonKey = JsonString(componentItems, "presetJsonKey");
+        var overridesJsonKey = JsonString(componentItems, "overridesJsonKey");
+        var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
+        return string.IsNullOrWhiteSpace(presetJsonKey)
+               || string.IsNullOrWhiteSpace(overridesJsonKey)
+               || string.IsNullOrWhiteSpace(inputsJsonKey)
+            ? null
+            : new RuntimeComponentCollectionItemDefinition(presetJsonKey, overridesJsonKey, inputsJsonKey);
     }
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
@@ -1449,6 +1532,15 @@ internal sealed class ComponentPreviewInputSession
             input.UiParentGroupId,
             string.Join(",", input.Options?.Select((option) => $"{option.Value}={option.Label}") ?? []));
     }
+
+    private static string CollectionSignature(RuntimeInputCollectionDefinition collection) =>
+        string.Join(":", "collection", collection.Id, collection.JsonKey, collection.ItemLabel,
+            string.Join("|", collection.Fields.Select(InputSignature)),
+            collection.ComponentItems is null
+                ? ""
+                : string.Join("/", collection.ComponentItems.PresetJsonKey,
+                    collection.ComponentItems.OverridesJsonKey,
+                    collection.ComponentItems.InputsJsonKey));
 
     private static string ActionSignature(ComponentPreviewActionDefinition action)
     {
@@ -1667,6 +1759,7 @@ internal sealed record ComponentInputDefinition(
     string UiParentGroupId = "",
     string EnabledWhenItemJsonKey = "",
     IReadOnlyList<string>? EnabledWhenItemValues = null,
+    int MinimumItemIndex = 0,
     int UiOrder = 0,
     string UiSectionLabel = "",
     string Unit = "",
@@ -1680,7 +1773,13 @@ internal sealed record RuntimeInputCollectionDefinition(
     string ItemLabel,
     IReadOnlyList<ComponentInputDefinition> Fields,
     string SourceCollectionJsonKey = "",
-    RuntimeInputCollectionItemPresentation? ItemPresentation = null);
+    RuntimeInputCollectionItemPresentation? ItemPresentation = null,
+    RuntimeComponentCollectionItemDefinition? ComponentItems = null);
+
+internal sealed record RuntimeComponentCollectionItemDefinition(
+    string PresetJsonKey,
+    string OverridesJsonKey,
+    string InputsJsonKey);
 
 internal sealed record RuntimeInputCollectionItemPresentation(
     IReadOnlyList<string> SubtitleFieldIds,

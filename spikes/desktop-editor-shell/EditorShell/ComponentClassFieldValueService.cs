@@ -122,6 +122,12 @@ internal sealed class ComponentClassFieldValueService
         _database.UpdateEmbeddedComponentField(node, slots, embeddedFieldId, value);
     }
 
+    public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
+        context.CreateFieldValue(_database, embeddedFieldId);
+
+    public void CommitEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId, string value) =>
+        context.CommitFieldValue(_database, embeddedFieldId, value);
+
     private static FieldValue ApplyPresetLock(ProjectTreeNode node, FieldValue fieldValue)
     {
         if (node.Kind != ProjectTreeNodeKind.ComponentPreset || !node.IsLocked)

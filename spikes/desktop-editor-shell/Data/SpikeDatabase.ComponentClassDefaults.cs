@@ -22,6 +22,7 @@ internal sealed partial class SpikeDatabase
             "textBox" => "Text box component",
             "iconRow" => "Icon row component",
             "iconBar" => "Icon bar component",
+            "componentStack" => "Component stack atom",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "button" => "Button component",
@@ -174,6 +175,10 @@ internal sealed partial class SpikeDatabase
 
         switch (componentType)
         {
+            case "componentStack":
+                config.Remove("style");
+                config["componentStack"] = new JsonObject();
+                break;
             case "surface":
                 config["surface"] = new JsonObject
                 {
@@ -477,6 +482,11 @@ internal sealed partial class SpikeDatabase
 
     private static string DefaultComponentDesignPreviewJson(string componentType)
     {
+        if (componentType == "componentStack")
+        {
+            return ComponentStackDesignPreview().ToJsonString();
+        }
+
         var preview = new JsonObject
         {
             ["componentType"] = componentType,
@@ -706,10 +716,96 @@ internal sealed partial class SpikeDatabase
         return preview.ToJsonString();
     }
 
+    private static JsonObject ComponentStackDesignPreview(
+        JsonArray? items = null,
+        string sizingMode = "fill",
+        string startGapToken = "theme.spacing.none",
+        string endGapToken = "theme.spacing.none") => new()
+    {
+        ["componentType"] = "componentStack",
+        ["sizingMode"] = sizingMode,
+        ["startGapToken"] = startGapToken,
+        ["endGapToken"] = endGapToken,
+        ["inputs"] = ComponentStackRuntimeInputs(),
+        ["items"] = items ?? new JsonArray(),
+        ["collections"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "items",
+                ["label"] = "Components",
+                ["jsonKey"] = "items",
+                ["itemLabel"] = "Component",
+                ["componentItems"] = new JsonObject
+                {
+                    ["presetJsonKey"] = "presetId",
+                    ["overridesJsonKey"] = "overrides",
+                    ["inputsJsonKey"] = "inputs",
+                },
+                ["fields"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
+                        ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = "*,-componentStack",
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
+                        ["kind"] = "option", ["defaultValue"] = "center",
+                        ["options"] = new JsonArray
+                        {
+                            new JsonObject { ["value"] = "start", ["label"] = "Left" },
+                            new JsonObject { ["value"] = "center", ["label"] = "Center" },
+                            new JsonObject { ["value"] = "end", ["label"] = "Right" },
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
+                        ["kind"] = "option", ["defaultValue"] = "fixed",
+                        ["minimumItemIndex"] = 1,
+                        ["options"] = new JsonArray
+                        {
+                            new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
+                            new JsonObject { ["value"] = "reflow", ["label"] = "Reflow" },
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
+                        ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m",
+                        ["minimumItemIndex"] = 1,
+                        ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                            .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+                        ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                        ["enabledWhenItemValues"] = new JsonArray("fixed"),
+                    },
+                    new JsonObject
+                    {
+                        ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
+                        ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
+                        ["minimumItemIndex"] = 1,
+                        ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
+                        ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                        ["enabledWhenItemValues"] = new JsonArray("reflow"),
+                    },
+                },
+                ["itemPresentation"] = new JsonObject
+                {
+                    ["subtitleFieldIds"] = new JsonArray("presetId", "alignment"),
+                    ["subtitleMaxCharacters"] = 72,
+                    ["fallbackIcon"] = "component",
+                },
+            },
+        },
+    };
+
     private static JsonArray ComponentInputsForComponent(string componentType)
     {
         JsonArray inputs = componentType switch
         {
+            "componentStack" => ComponentStackRuntimeInputs(),
             "label" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
@@ -1029,6 +1125,34 @@ internal sealed partial class SpikeDatabase
         ApplyComponentInputLayout(componentType, inputs);
         return inputs;
     }
+
+    private static JsonArray ComponentStackRuntimeInputs() =>
+    [
+        new JsonObject
+        {
+            ["id"] = "sizingMode", ["label"] = "Sizing", ["jsonKey"] = "sizingMode",
+            ["kind"] = "option", ["defaultValue"] = "fill",
+            ["options"] = new JsonArray
+            {
+                new JsonObject { ["value"] = "fill", ["label"] = "Fill container" },
+                new JsonObject { ["value"] = "content", ["label"] = "Fit content" },
+            },
+        },
+        new JsonObject
+        {
+            ["id"] = "startGapToken", ["label"] = "Start gap", ["jsonKey"] = "startGapToken",
+            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+        },
+        new JsonObject
+        {
+            ["id"] = "endGapToken", ["label"] = "End gap", ["jsonKey"] = "endGapToken",
+            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+        },
+    ];
 
     private static void ApplyComponentInputLayout(string componentType, JsonArray inputs)
     {
@@ -1369,6 +1493,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("textBox", "component.textBox", "Default Text Box"),
         NewComponentSeed("iconRow", "component.iconRow", "Default Icon Row"),
         NewComponentSeed("iconBar", "component.iconBar", "Default Icon Bar"),
+        NewComponentSeed("componentStack", "component.componentStack", "Default Component Stack"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

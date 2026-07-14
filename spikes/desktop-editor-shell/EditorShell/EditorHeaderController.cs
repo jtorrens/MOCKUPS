@@ -97,11 +97,23 @@ internal sealed class EditorHeaderController
 
     public void SetEmbeddedTitle(EditorEmbeddedContext context)
     {
-        var activePresetName = _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots);
+        var activePresetName = context.ActivePresetName(_database);
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
+        if (context.RuntimeSource is not null)
+        {
+            var rootPresetName = _database.GetRuntimeComponentPresetName(
+                context.RuntimeSource.PresetReference,
+                context.RuntimeSource.Overrides,
+                []);
+            items.Add(context.Slots.Count == 0
+                ? new EditorBreadcrumbItem($"Component: {rootPresetName}")
+                : new EditorBreadcrumbItem(
+                    $"Component: {rootPresetName}",
+                    () => _showEmbeddedContext(context.Ancestor(0))));
+        }
         for (var index = 0; index < context.Slots.Count; index++)
         {
             var slot = context.Slots[index];
@@ -115,13 +127,15 @@ internal sealed class EditorHeaderController
             var slotIndex = index + 1;
             items.Add(new EditorBreadcrumbItem(
                 label,
-                () => _showEmbeddedContext(new EditorEmbeddedContext(context.OwnerNode, context.Slots.Take(slotIndex).ToArray()))));
+                () => _showEmbeddedContext(context.Ancestor(slotIndex))));
         }
 
         EditorBreadcrumbBar.Render(
             _breadcrumbPanel,
             items,
-            EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
+            context.RuntimeSource is not null
+                ? null
+                : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(null);
         SetContextStrip(ContextMetadataForEmbedded(context, activePresetName));
     }
@@ -146,7 +160,7 @@ internal sealed class EditorHeaderController
 
     private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activePresetName)
     {
-        var component = EditorUiText.IdentifierLabel(context.Slot.EmbeddedComponentType);
+        var component = EditorUiText.IdentifierLabel(context.ComponentType);
         var identities = new List<EditorContextIdentity> { new("Component", component) };
         if (!string.IsNullOrWhiteSpace(activePresetName)) identities.Add(new EditorContextIdentity("Variant", activePresetName));
         return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
