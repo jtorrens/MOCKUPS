@@ -436,82 +436,115 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         IReadOnlyList<JsonObject> items)
     {
-        var footer = new StackPanel { Spacing = 8 };
-        if (items.Count == 0)
+        StructuredCollectionEditor? editor = null;
+        void Changed()
         {
-            footer.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
+            _onChanged();
+            _reloadAndSelect?.Invoke(owner.Node);
         }
-
-        var subcards = new List<EditorInternalNavigationSection>();
-        for (var index = 0; index < items.Count; index++)
-        {
-            var itemIndex = index;
-            var item = items[itemIndex];
-            var itemId = ItemId(item, itemIndex);
-            var expansionKey = CollectionItemExpansionKey(owner, collection, itemId);
-            var navigationKey = $"{owner.Node.Id}:{collection.Id}:{itemId}:vertical-card";
-            var isExpanded = _sessionUiState.IsExpanded(expansionKey);
-            var selectedSubcardId = _sessionUiState.Selection(navigationKey);
-            void OpenComponentOverrides()
-            {
-                OpenRuntimeComponentOverrides(owner, preview, collection, itemIndex, item);
-            }
-            var itemContent = CreateTestValueCollectionItemContent(
-                owner,
-                preview,
-                collection,
-                actions,
-                itemIndex,
-                item,
-                OpenComponentOverrides,
-                out var trailing,
-                out var itemSubcards);
-            var presentation = RuntimeCollectionItemPresentation.Resolve(
-                collection,
-                item,
-                $"Payload item {itemIndex + 1}",
-                EditorIcons.Component);
-            subcards.Add(new EditorInternalNavigationSection(
-                itemId,
-                $"{collection.ItemLabel} {itemIndex + 1}",
-                presentation.Subtitle,
-                presentation.Icon,
-                itemContent,
-                trailing,
-                itemSubcards,
-                EditorSubcardLayout.VerticalCards,
-                isExpanded,
-                (next) => _sessionUiState.SetExpanded(expansionKey, next),
-                selectedSubcardId,
-                (next) => _sessionUiState.Select(navigationKey, next),
-                Reveal: _sessionUiState.ConsumeReveal(expansionKey)));
-        }
-
-        if (items.Count == 0)
-        {
-            var add = EditorCollectionItemControls.CreateAddButton($"Add {collection.ItemLabel.ToLowerInvariant()}");
-            add.HorizontalAlignment = HorizontalAlignment.Left;
-            add.Click += (_, _) =>
+        var collectionActions = new StructuredCollectionActions(
+            AddFirst: () =>
             {
                 var item = DefaultCollectionItem(owner, collection);
-                ActivateNewCollectionItem(owner, collection, items, item);
+                editor!.ActivateOnly(item, items.Count);
                 if (owner.IsInstance)
                     _database.AddModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
                 else
                     _setPreviewCollectionTestItems(collection.JsonKey, [item]);
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            footer.Children.Add(add);
-        }
-
-        var content = new StackPanel { Spacing = EditorUiDensity.Card(8) };
-        content.Children.Add(new EditorSubcardLayoutHost(subcards, EditorSubcardLayout.FlatStack));
-        if (footer.Children.Count > 0)
-        {
-            content.Children.Add(footer);
-        }
-        return content;
+                Changed();
+            },
+            AddAfter: (itemIndex) =>
+            {
+                var currentItem = items[itemIndex];
+                var itemId = ItemId(currentItem, itemIndex);
+                var next = DefaultCollectionItem(owner, collection);
+                editor!.ActivateOnly(next, items.Count);
+                if (owner.IsInstance)
+                    _database.InsertModuleInstanceRuntimeCollectionItemAfter(owner.Node.Id, StorageCollectionKey(collection), itemId, next);
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    current.Insert(Math.Min(itemIndex + 1, current.Count), next);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
+                Changed();
+            },
+            Duplicate: (itemIndex) =>
+            {
+                var item = items[itemIndex];
+                var itemId = ItemId(item, itemIndex);
+                var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
+                var copy = CloneObject(item);
+                copy["id"] = duplicateId;
+                editor!.ActivateOnly(copy, items.Count);
+                if (owner.IsInstance)
+                {
+                    _database.DuplicateModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, duplicateId);
+                }
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    current.Insert(itemIndex + 1, copy);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
+                Changed();
+            },
+            Move: (itemIndex, delta) =>
+            {
+                var itemId = ItemId(items[itemIndex], itemIndex);
+                if (owner.IsInstance)
+                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, delta);
+                else
+                    MoveTransientCollectionItem(preview, collection, itemIndex, delta);
+                Changed();
+            },
+            Delete: async (itemIndex) =>
+            {
+                var item = items[itemIndex];
+                var itemId = ItemId(item, itemIndex);
+                var label = $"{collection.ItemLabel} {itemIndex + 1}";
+                if (!await _confirmCollectionItemDelete(label)) return;
+                if (owner.IsInstance)
+                    _database.DeleteModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
+                else
+                {
+                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
+                    current.RemoveAt(itemIndex);
+                    _setPreviewCollectionTestItems(collection.JsonKey, current);
+                }
+                Changed();
+            });
+        editor = new StructuredCollectionEditor(
+            owner.IsInstance
+                ? StructuredCollectionEditingContext.InstanceRuntime
+                : StructuredCollectionEditingContext.RuntimeTestValues,
+            $"{owner.Node.Id}:{collection.Id}",
+            collection.ItemLabel,
+            items,
+            ItemId,
+            (item, itemIndex) => RuntimeCollectionItemPresentation.Resolve(
+                collection,
+                item,
+                $"Payload item {itemIndex + 1}",
+                EditorIcons.Component),
+            (item, itemIndex) =>
+            {
+                void OpenComponentOverrides() =>
+                    OpenRuntimeComponentOverrides(owner, preview, collection, itemIndex, item);
+                var content = CreateTestValueCollectionItemContent(
+                    owner,
+                    preview,
+                    collection,
+                    actions,
+                    itemIndex,
+                    item,
+                    OpenComponentOverrides,
+                    out var itemSubcards);
+                return new StructuredCollectionItemContent(content, itemSubcards);
+            },
+            collectionActions,
+            _sessionUiState);
+        return editor.Create();
     }
 
     private Control CreateTestValueCollectionItemContent(
@@ -522,7 +555,6 @@ internal sealed class RuntimeInputsCollectionEditor
         int itemIndex,
         JsonObject item,
         Action openComponentOverrides,
-        out Control? trailing,
         out IReadOnlyList<EditorInternalNavigationSection> subcards)
     {
         var content = new StackPanel { Spacing = 8 };
@@ -534,114 +566,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionJsonKey == collection.JsonKey
                 && action.CollectionItemId == itemId)
             .ToList();
-        trailing = null;
-        {
-            var controls = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 2,
-            };
-            var add = EditorCollectionItemControls.CreateAddButton($"Add {collection.ItemLabel.ToLowerInvariant()} after this item");
-            add.Click += (_, args) =>
-            {
-                args.Handled = true;
-                var next = DefaultCollectionItem(owner, collection);
-                ActivateNewCollectionItem(
-                    owner,
-                    collection,
-                    DesignPreviewTestValues.CollectionItems(preview, collection),
-                    next);
-                if (owner.IsInstance)
-                    _database.InsertModuleInstanceRuntimeCollectionItemAfter(owner.Node.Id, StorageCollectionKey(collection), itemId, next);
-                else
-                {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-                    current.Insert(Math.Min(itemIndex + 1, current.Count), next);
-                    _setPreviewCollectionTestItems(collection.JsonKey, current);
-                }
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            controls.Children.Add(add);
-            var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {collection.ItemLabel.ToLowerInvariant()}");
-            duplicate.Click += (_, args) =>
-            {
-                args.Handled = true;
-                var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
-                if (owner.IsInstance)
-                {
-                    var copy = CloneObject(item);
-                    copy["id"] = duplicateId;
-                    ActivateNewCollectionItem(
-                        owner,
-                        collection,
-                        DesignPreviewTestValues.CollectionItems(preview, collection),
-                        copy);
-                    _database.DuplicateModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, duplicateId);
-                }
-                else
-                {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-                    var copy = CloneObject(current[itemIndex]);
-                    copy["id"] = duplicateId;
-                    ActivateNewCollectionItem(
-                        owner,
-                        collection,
-                        DesignPreviewTestValues.CollectionItems(preview, collection),
-                        copy);
-                    current.Insert(itemIndex + 1, copy);
-                    _setPreviewCollectionTestItems(collection.JsonKey, current);
-                }
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            controls.Children.Add(duplicate);
-            var moveUp = EditorCollectionItemControls.CreateMoveButton(up: true, enabled: itemIndex > 0);
-            moveUp.Click += (_, args) =>
-            {
-                args.Handled = true;
-                if (owner.IsInstance)
-                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, -1);
-                else
-                    MoveTransientCollectionItem(preview, collection, itemIndex, -1);
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            controls.Children.Add(moveUp);
-            var moveDown = EditorCollectionItemControls.CreateMoveButton(
-                up: false,
-                enabled: itemIndex < DesignPreviewTestValues.CollectionItems(preview, collection).Count - 1);
-            moveDown.Click += (_, args) =>
-            {
-                args.Handled = true;
-                if (owner.IsInstance)
-                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, 1);
-                else
-                    MoveTransientCollectionItem(preview, collection, itemIndex, 1);
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            controls.Children.Add(moveDown);
-            var delete = EditorCollectionItemControls.CreateDeleteButton();
-            delete.Click += async (_, args) =>
-            {
-                args.Handled = true;
-                var label = $"{collection.ItemLabel} {itemIndex + 1}";
-                if (!await _confirmCollectionItemDelete(label)) return;
-                if (owner.IsInstance)
-                    _database.DeleteModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
-                else
-                {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-                    current.RemoveAt(itemIndex);
-                    _setPreviewCollectionTestItems(collection.JsonKey, current);
-                }
-                _onChanged();
-                _reloadAndSelect?.Invoke(owner.Node);
-            };
-            controls.Children.Add(delete);
-            trailing = controls;
-        }
         StackPanel? actionRow = null;
         var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
         void RefreshActionVisibility()
@@ -795,30 +719,6 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         return item;
     }
-
-    private void ActivateNewCollectionItem(
-        RuntimeInputOwner owner,
-        RuntimeInputCollectionDefinition collection,
-        IReadOnlyList<JsonObject> currentItems,
-        JsonObject newItem)
-    {
-        var activeKey = CollectionItemExpansionKey(
-            owner,
-            collection,
-            ItemId(newItem, currentItems.Count));
-        _sessionUiState.SetOnlyExpanded(
-            currentItems.Select((current, index) => CollectionItemExpansionKey(
-                owner,
-                collection,
-                ItemId(current, index))).Append(activeKey),
-            activeKey);
-        _sessionUiState.RequestReveal(activeKey);
-    }
-
-    private static string CollectionItemExpansionKey(
-        RuntimeInputOwner owner,
-        RuntimeInputCollectionDefinition collection,
-        string itemId) => $"{owner.Node.Id}:{collection.Id}:{itemId}:expanded";
 
     private void OpenRuntimeComponentOverrides(
         RuntimeInputOwner owner,
