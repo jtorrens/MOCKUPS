@@ -24,12 +24,21 @@ internal sealed partial class SpikeDatabase
             }
             NormalizeForwardedValueKinds(config);
             NormalizeForwardedValueKinds(metadata);
+            var configJson = config.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson
+                && previewJson == row.DesignPreviewJson
+                && metadataJson == row.MetadataJson)
+            {
+                continue;
+            }
             Execute(connection,
                 "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", row.Id),
-                ("$configJson", config.ToJsonString()),
-                ("$previewJson", preview.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                ("$configJson", configJson),
+                ("$previewJson", previewJson),
+                ("$metadataJson", metadataJson));
         }
 
         foreach (var row in QueryModuleRows(connection))
@@ -40,12 +49,21 @@ internal sealed partial class SpikeDatabase
             NormalizeForwardedValueKinds(config);
             NormalizeForwardedValueKinds(preview);
             NormalizeForwardedValueKinds(metadata);
+            var configJson = config.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            if (configJson == row.ConfigJson
+                && previewJson == row.DesignPreviewJson
+                && metadataJson == row.MetadataJson)
+            {
+                continue;
+            }
             Execute(connection,
                 "UPDATE modules SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", row.Id),
-                ("$configJson", config.ToJsonString()),
-                ("$previewJson", preview.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                ("$configJson", configJson),
+                ("$previewJson", previewJson),
+                ("$metadataJson", metadataJson));
         }
     }
 

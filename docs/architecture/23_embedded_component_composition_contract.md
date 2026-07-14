@@ -269,14 +269,17 @@ Rules:
 ## Runtime Input Forwarding
 
 When a parent Variant embeds a child, every child runtime input crosses a new
-composition boundary. At that boundary the value is Variant-owned by default.
-The designer may explicitly expose it to the parent runtime through generic
-Runtime Input Forwarding.
+composition boundary. The parent component/module design may explicitly keep
+that binding as Runtime or declare it Calculated. Otherwise it becomes
+Variant-owned by default. The designer may explicitly expose a Variant-bound
+value to the parent runtime through generic Runtime Input Forwarding.
 
 The editor represents this with an empty/filled upward triangle, distinct from
 animation keyframe diamonds. Activating the triangle preserves the current
 Variant value as the runtime default and reveals an editable runtime label.
 The technical input id and payload key remain stable when that label changes.
+Only fields already declared as `Runtime` by the child are eligible. Variant
+and Calculated child fields never acquire a forwarding affordance.
 
 Forwarding metadata is stored beside the child input values under
 `$forwardedInputs`. The effective parent runtime contract is its declared
@@ -289,6 +292,15 @@ only through the effective parent Runtime Input. Disabling forwarding restores
 the retained Variant value; transient test values are never copied back into
 the Variant.
 
+Forwarding is recursive but never implicit. At the next parent boundary the
+forwarded value is presented as an ordinary child runtime input. The next
+parent design may explicitly keep it Runtime; otherwise it becomes Variant
+there by default and may be forwarded again deliberately. A
+matching id, label, `ValueKind`, `tableId` or record id does not bind two
+inputs. This is particularly important for Actor references: the Lock Screen
+owner, an Audio Avatar, a Conversation participant and a notification sender
+may all be different Actors.
+
 Structured collections use one shared collection shell for Variant authoring,
 Runtime Test Values and instance runtime. The context is explicit metadata, not
 inferred from a card label or hierarchy depth. Add, duplicate, reorder, delete,
@@ -299,15 +311,74 @@ control, so runtime inputs of a component selected inside an item receive the
 same forwarding triangle. Forward ids include the stable item id, never the
 item index.
 
+JSON-valued inputs retain their declared shape while forwarded. For example,
+`IconSlots` is exposed through the generic `iconList` runtime kind and remains
+an array; it must not be serialized as an opaque text value. Record references
+retain `tableId` and `resolvedJsonKey`. Design and Production resolve those
+references recursively from the contract before preview, but never persist the
+resolved record object beside the authored record id.
+
 Before a component resolver runs, the generic forwarding pass writes resolved
 parent runtime values into their declared child input locations. Component
 resolvers continue to own composition; bridge and renderer never see forwarding
-metadata or implement component-specific routing.
+metadata or implement component-specific routing. The pass traverses nested
+objects and collections, applies every forwarding definition, then removes the
+`$forwardedInputs` marker from the transient resolved config. Therefore a child
+resolver receives only its final values even when the forwarding source is
+several component/collection levels above it.
 
 Stopping forwarding retains the current Variant value. If downstream bindings
 use the effective input id, the operation is blocked and the usage modal must
 offer direct navigation links to those editors. It must never silently cascade
 through parent Variants, Screen payloads or animation tracks.
+
+The downstream-usage blocker and navigation list are the required completion
+rule for disabling a used Forward. Until that usage graph is implemented for a
+particular owner, the editor must at minimum require confirmation and must not
+silently remove data from any parent.
+
+## Shared structured editor surface
+
+`StructuredCollectionEditor` is the common collection shell. Its editing
+context is one of Variant authoring, Runtime Test Values, instance runtime or
+Runtime API. The context controls storage and available affordances; component
+or module names do not select a different editor.
+
+For component items, `ComponentInputBindings` embeds the same grouped Runtime
+Inputs surface used by Test Values:
+
+- sections such as Layout, Playback and Actor come from input UI metadata;
+- Variant authoring adds Forward triangles and runtime-label editing;
+- inputs explicitly declared Runtime by the parent design remain ordinary
+  Runtime inputs and do not need Forward at that boundary;
+- Test Values and instances use the same dictionary controls without Forward;
+- a forwarded field is readonly in the Variant surface;
+- adding an item expands and reveals the new stable item;
+- changing Component constrains the second selector to that Component's
+  Variants and refreshes the child input contract;
+- Override opens the ordinary embedded editor and the breadcrumb returns to the
+  previous tab, expansion and scroll position.
+
+Complex dictionary values (`ComponentInputBindings` and
+`StructuredCollection`) use block layout: a full-width separator opens the
+field, its label occupies the next row when present, and the value editor uses
+the complete following row. No closing separator is added; the next complex
+field opens its own boundary and the containing card closes the final block.
+
+`verticalCards` uses two real panels while enough width is available. The left
+navigation width is session-only and resizable with an always-visible vertical
+splitter. The vertical layout remains active while this fits:
+
+```text
+selected navigation width + splitter width + minimum content width
+```
+
+If the content would fall below its minimum, navigation becomes horizontal.
+It returns to vertical with a small hysteresis margin and restores the last
+vertical width. The block height is natural—the maximum of navigation and
+selected content—not the remaining card height. Navigation widths, selected
+tabs, card expansion and scroll restoration are session-only and are never
+written to window state.
 
 ## Generic Preview Helper Boundary
 

@@ -210,10 +210,29 @@ Internal navigation is a shared control. It owns keyboard navigation,
 selection, responsive content placement, dividers and session state. Editors
 only provide sections and metadata.
 
+While space permits, `verticalCards` is a two-panel surface with an always
+visible draggable vertical splitter. Its responsive threshold is derived from
+the selected navigation width plus splitter width plus the minimum content
+width; it must not use an editor-specific or fixed-window breakpoint. Below
+that threshold the same sections become horizontal tabs. The last vertical
+width and selected section are session-only. The control uses natural height,
+not fill-height, unless its containing layout explicitly requests fill.
+
+Complex dictionary controls such as `ComponentInputBindings` and
+`StructuredCollection` use full-width block layout. A separator precedes the
+block, the optional field label sits above the control and no closing separator
+is emitted. This layout belongs to the shared dictionary host, not to the
+calling editor.
+
 All editor cards start closed in a fresh application session. Expansion,
 internal selection and scroll position may be restored when returning to the
 same editor during that session, but must never be persisted between
 application sessions.
+
+Opening an embedded Override must capture the complete return context. Owner
+breadcrumbs restore the previous internal selection, expanded cards, scroll
+position and session-only navigation widths for both ordinary embedded slots
+and runtime-root overrides.
 
 Compound dictionary controls keep ownership of their internal presentation.
 For `PaletteColorPair`, a group may opt into `pairLayout: sharedHeader`:

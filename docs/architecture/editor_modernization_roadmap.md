@@ -145,6 +145,12 @@ Expansion, selected internal section and scroll restoration are session-only.
 Do not add these values to persisted window state, and do not reopen a default
 card automatically in a fresh process.
 
+`verticalCards` now owns a session-only resizable navigation panel. It keeps a
+visible vertical splitter and natural block height while navigation plus the
+minimum content width fit. Only when that sum no longer fits does it switch to
+horizontal tabs. Complex dictionary values use a separator and full-width
+block layout with their label above the registered control.
+
 ## Phase 6: refine ValueKind
 
 Split broad kinds into semantic kinds before adding local exceptions.

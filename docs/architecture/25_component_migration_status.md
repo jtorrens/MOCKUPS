@@ -65,7 +65,7 @@ is to remove legacy routing risk first.
 The executable source of truth for the status column is the component manifest
 field `migrationStatus`.
 
-## Desktop Editor UX/UI Baseline (2026-07-13)
+## Desktop Editor UX/UI Baseline (2026-07-14)
 
 The component, atom, system and Runtime Inputs editors now use one shared
 metadata-driven organization system:
@@ -77,6 +77,13 @@ metadata-driven organization system:
 - a generic `General` child for direct owner fields when sibling subcards exist;
 - `pairLayout: sharedHeader` for compact two-column Light/Dark palette pairs.
 
+Structured collections now use the same generic shell in Variant authoring,
+Runtime Test Values and instance runtime. Component items embed the normal
+grouped Runtime Inputs surface; only Variant authoring adds Forward triangles.
+Complex dictionary controls occupy a full-width block below their label. Their
+internal `verticalCards` navigation has a session-only splitter, natural height
+and a content-minimum-driven horizontal fallback.
+
 The same shared implementation is used by component classes, atom/system
 classes, Theme groups and Runtime Inputs. No layout mode is selected from a
 component name or editor type. New categories use reusable semantic SVG assets
@@ -85,7 +92,16 @@ from `assets/system/system_icons/components`.
 All editor cards begin closed in a new application session. Card expansion,
 internal selection and scroll state are retained only while the process is
 running and are keyed by editor node. They are not part of persisted window
-state.
+state. Embedded and runtime-root Override breadcrumbs restore that same return
+context, including the selected internal tab and navigation width.
+
+Runtime Input Forwarding is active across nested component and collection
+boundaries. Each parent design may explicitly keep a child input Runtime or
+declare it Calculated; otherwise the input becomes Variant-owned at that new
+boundary and may be promoted through an upward triangle. Forwarding preserves
+structured arrays and record-reference metadata, resolves recursively before
+component resolvers and removes its transient metadata before bridge/renderer
+painting. No Actor or other runtime value propagates by matching name or type.
 
 The retired singular token `theme.typography.size` has been removed from the
 catalog, layout, default tokens and committed themes. Typography uses only

@@ -41,6 +41,12 @@ Screen. The parent binds them as Variant values unless the designer activates
 Forward. Design Test Values and module instances consume only the resulting
 effective Lock Screen runtime contract.
 
+`actor` is not an ambient Actor propagated into Stack descendants. It owns the
+Lock Screen context and wallpaper. An Actor input declared by an Audio, Avatar,
+message or future notification remains that item's Variant value unless the
+designer explicitly forwards it. Equal input names or record types never create
+an automatic binding.
+
 ## Layout
 
 Wallpaper covers the whole screen. Visible bars keep their normal screen-edge
@@ -71,3 +77,9 @@ renderable owns layer order and the available Stack frame. Component Stack owns
 its child collection and deterministic placement. Each selected child resolver
 receives the requested frame state before preview. The registry only routes,
 and the generic renderer receives final groups, boxes, images and surfaces.
+
+Before the Lock Screen resolver runs, the generic forwarding pass resolves all
+promoted values recursively inside `stackInputs`, item overrides and deeper
+component bindings. It consumes the transient `$forwardedInputs` metadata so
+Stack and child resolvers receive only final per-frame values. Structured array
+inputs and record references keep their declared types throughout this pass.

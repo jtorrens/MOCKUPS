@@ -565,9 +565,18 @@ Rules:
   not specialized kinds such as `ActorReference`;
 - screen/module composition must use the same declarations and provide real
   frame values;
-- when a component embeds a child, the child's `Runtime` inputs automatically
-  become runtime inputs of the parent unless the parent deliberately converts a
-  specific value into a `Variant` decision;
+- when a component embeds a child, the parent design may explicitly bind a
+  child input as `Runtime`, `Variant` or `Calculated`; that declaration is
+  authoritative at the new boundary;
+- when the parent design does not explicitly keep a child input as `Runtime` or
+  make it `Calculated`, the child `Runtime` input becomes a parent-owned
+  `Variant` value by default;
+- Runtime Input Forwarding promotes one of those Variant-bound values into the
+  effective runtime contract of the parent; it does not replace or reclassify
+  inputs the parent design already declares as Runtime;
+- input names and record types never create implicit propagation. In
+  particular, a parent `actor` does not replace an Actor reference owned by an
+  embedded Avatar, Audio item, message or future notification;
 - parent-owned variant bindings for embedded children must be edited through the
   generic component input-bindings dictionary control, not by copying child
   scalar fields into the parent field catalog;
@@ -575,6 +584,9 @@ Rules:
 - generic preview shell may hold generic clock/play state only;
 - helpers and renderer must not infer missing inputs or know which concrete
   component declared them.
+
+The canonical recursive forwarding/storage/editor contract is defined in
+`23_embedded_component_composition_contract.md#runtime-input-forwarding`.
 
 ### Preview Actions
 

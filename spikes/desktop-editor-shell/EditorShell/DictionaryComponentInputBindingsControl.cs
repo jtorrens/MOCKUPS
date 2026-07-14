@@ -31,6 +31,8 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         BorderThickness = new Thickness(0);
         Padding = new Thickness(0);
         Background = Brushes.Transparent;
+        VerticalAlignment = VerticalAlignment.Top;
+        _content.VerticalAlignment = VerticalAlignment.Top;
         Child = _content;
         RefreshRows();
     }

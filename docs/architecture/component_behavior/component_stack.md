@@ -58,7 +58,9 @@ recursive Stack trees.
 
 Child overrides open the normal embedded-Variant editor. There is no Stack-
 specific override editor or breadcrumb model. Override state is explicit stored
-state: restoring a field removes that override entry.
+state: restoring a field removes that override entry. Returning through the
+owner breadcrumb restores the Stack item, selected input group, expansion and
+editor scroll position for the current session.
 
 ## Ordering and item editing
 
@@ -72,6 +74,20 @@ application session. Switching to another editor and returning must preserve
 the current session values and collection. A module or parent component later
 provides production values through this exact contract; preview-only Stack
 inputs are forbidden.
+
+In Variant authoring, every item embeds the standard grouped child Runtime
+Inputs editor directly. The Stack design binds those child fields as item
+Variant values by default; an upward triangle may promote one to the containing
+parent's runtime. A future parent design may instead declare a binding Runtime
+directly, in which case no Forward is required at that boundary. Test Values
+never show Forward triangles. Nested component inputs and collections may
+repeat this process at any depth because forwarding ids use stable item ids.
+
+Record references belong to the item that declares them. Selecting an Actor for
+an Audio/Avatar child does not inherit or overwrite a containing module Actor.
+The generic preview-input resolver materializes the record object from the
+item's explicit record id for the requested preview and keeps only the id in
+persisted Stack data.
 
 ## Gap semantics
 

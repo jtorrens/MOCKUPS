@@ -49,6 +49,8 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
         Action<double>? navigationWidthChanged = null)
     {
         Layout = layout;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        VerticalAlignment = VerticalAlignment.Top;
         Content = Compose(subcards, layout, selectedId, selectionChanged, navigationWidth, navigationWidthChanged);
     }
 
