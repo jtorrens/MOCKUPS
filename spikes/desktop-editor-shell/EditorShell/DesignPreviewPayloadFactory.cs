@@ -262,7 +262,11 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
         var appSettings = database.GetModuleAppSettings(node.Id);
         var componentBaseConfigsJson = database.GetComponentClassBaseConfigsJson(settings.ProjectId);
-        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(settings.DesignPreviewJson));
+        var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+            config);
+        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
         var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()

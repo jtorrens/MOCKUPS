@@ -51,6 +51,7 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
         componentPresetConfig(componentBaseConfigs, "componentStack", contract.stackSlot.presetId),
         contract.stackSlot.overrides,
       )),
+      designPreviewJson: JSON.stringify(contract.stackInputs),
     },
     contentBox,
   );

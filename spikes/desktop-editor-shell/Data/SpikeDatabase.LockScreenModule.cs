@@ -28,6 +28,7 @@ internal sealed partial class SpikeDatabase
                 RemoveLockScreenWallpaperSetting(connection, moduleId);
                 NormalizeLockScreenSystemSlots(connection, moduleId, project.Id);
                 NormalizeLockScreenStackSlot(connection, moduleId, project.Id);
+                NormalizeLockScreenStackBindings(connection, moduleId);
                 NormalizeLockScreenDesignPreview(connection, moduleId);
                 continue;
             }
@@ -184,6 +185,13 @@ internal sealed partial class SpikeDatabase
                 ["presetId"] = SeededComponentPresetReference(projectId, "componentStack"),
                 ["overrides"] = new JsonObject(),
             },
+            ["stackInputs"] = new JsonObject
+            {
+                ["sizingMode"] = "fill",
+                ["startGapToken"] = "theme.spacing.none",
+                ["endGapToken"] = "theme.spacing.none",
+                ["items"] = new JsonArray(),
+            },
         },
     }.ToJsonString();
 
@@ -266,12 +274,37 @@ internal sealed partial class SpikeDatabase
             ("$id", moduleId), ("$configJson", next));
     }
 
+    private static void NormalizeLockScreenStackBindings(SqliteConnection connection, string moduleId)
+    {
+        var originalConfig = ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
+        var originalPreview = ScalarString(connection, "SELECT design_preview_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
+        var config = ParseJsonObject(originalConfig);
+        var preview = ParseJsonObject(originalPreview);
+        var lockScreen = config["lockScreen"] as JsonObject ?? new JsonObject();
+        config["lockScreen"] = lockScreen;
+        if (lockScreen["stackInputs"] is not JsonObject stackInputs)
+        {
+            stackInputs = new JsonObject
+            {
+                ["sizingMode"] = preview["sizingMode"]?.DeepClone() ?? "fill",
+                ["startGapToken"] = preview["startGapToken"]?.DeepClone() ?? "theme.spacing.none",
+                ["endGapToken"] = preview["endGapToken"]?.DeepClone() ?? "theme.spacing.none",
+                ["items"] = preview["items"]?.DeepClone() ?? new JsonArray(),
+            };
+            lockScreen["stackInputs"] = stackInputs;
+        }
+        stackInputs["items"] ??= new JsonArray();
+        var next = config.ToJsonString();
+        if (next == originalConfig) return;
+        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+            ("$id", moduleId), ("$configJson", next));
+    }
+
     private static string DefaultLockScreenDesignPreviewJson()
     {
-        var preview = ComponentStackDesignPreview();
-        preview.Remove("componentType");
-        var inputs = preview["inputs"] as JsonArray
-            ?? throw new InvalidOperationException("Component Stack has no runtime input contract.");
+        var preview = new JsonObject();
+        var inputs = new JsonArray();
+        preview["inputs"] = inputs;
         inputs.Insert(0, new JsonObject
         {
             ["id"] = "showNavigationBar",
@@ -310,16 +343,16 @@ internal sealed partial class SpikeDatabase
         var preview = ParseJsonObject(original);
         var defaults = ParseJsonObject(DefaultLockScreenDesignPreviewJson());
         preview["inputs"] = defaults["inputs"]?.DeepClone();
-        preview["collections"] = defaults["collections"]?.DeepClone();
+        preview.Remove("collections");
         preview.Remove("testValues");
         preview.Remove("actor");
         if (string.IsNullOrWhiteSpace(preview["actorId"]?.GetValue<string>())) preview["actorId"] = "actor_alex";
         preview["showStatusBar"] ??= true;
         preview["showNavigationBar"] ??= true;
-        preview["sizingMode"] ??= "fill";
-        preview["startGapToken"] ??= "theme.spacing.none";
-        preview["endGapToken"] ??= "theme.spacing.none";
-        preview["items"] ??= new JsonArray();
+        preview.Remove("sizingMode");
+        preview.Remove("startGapToken");
+        preview.Remove("endGapToken");
+        preview.Remove("items");
         Execute(connection, "UPDATE modules SET design_preview_json = $previewJson WHERE id = $id",
             ("$id", moduleId), ("$previewJson", preview.ToJsonString()));
     }

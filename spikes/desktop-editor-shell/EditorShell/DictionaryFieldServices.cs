@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -15,8 +16,13 @@ internal sealed record DictionaryFieldServices(
     Func<IReadOnlyList<FieldOption>>? GetPaletteColorOptions = null,
     Func<string, IReadOnlyList<FieldOption>>? GetComponentPresetOptions = null,
     Func<string, IReadOnlyList<ComponentInputBindingDefinition>>? GetComponentPresetRuntimeInputs = null,
+    Func<string, JsonObject>? GetComponentPresetRuntimeValues = null,
+    Func<string, IReadOnlyList<RuntimeInputCollectionDefinition>>? GetComponentPresetRuntimeCollections = null,
     Func<string, Task>? OpenComponentPresetReference = null,
     Func<string, Task>? OpenEmbeddedComponent = null,
     Func<FieldDefinition, ComponentInputBindingDefinition, Task>? OpenComponentInputBinding = null,
     Func<FieldDefinition, string, int?>? ResolveBehaviorTimingFrames = null,
-    Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null);
+    Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null,
+    Func<string, JsonObject, Action<JsonObject>, Task>? OpenRuntimeComponentOverrides = null,
+    Func<string, Task<bool>>? ConfirmStructuredCollectionItemDelete = null,
+    EditorSessionUiState? StructuredCollectionUiState = null);

@@ -89,6 +89,8 @@ internal sealed class RecordClassFieldValueService
                     Number: field.Number,
                     RecordReference: field.RecordReference,
                     ComponentInputBindings: field.ComponentInputBindings,
+                    RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
+                    RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
                     Unit: field.Unit),
                 settings.FpsOverride?.ToString() ?? inheritedValue,
                 IsInherited: settings.FpsOverride is null);
@@ -108,6 +110,8 @@ internal sealed class RecordClassFieldValueService
                 Number: field.Number,
                 RecordReference: field.RecordReference,
                 ComponentInputBindings: field.ComponentInputBindings,
+                RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
+                RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
                 Unit: field.Unit),
             value);
     }

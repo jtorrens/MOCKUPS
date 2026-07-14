@@ -822,12 +822,22 @@ static void LockScreenComposesRuntimeStack()
             ?? throw new InvalidOperationException("Missing Lock Screen Runtime Inputs.");
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         SequenceEqual(
-            ["actor", "showStatusBar", "showNavigationBar", "sizingMode", "startGapToken", "endGapToken"],
+            ["actor", "showStatusBar", "showNavigationBar"],
             inputs.Select((input) => input.Id).ToList());
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showStatusBar")));
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showNavigationBar")));
-        var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
-        Equal("items", collection.JsonKey);
+        Equal(0, ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Count);
+        var stackInputs = lockScreen["stackInputs"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen Stack bindings.");
+        Equal("fill", stackInputs["sizingMode"]?.GetValue<string>() ?? "");
+        True(stackInputs["items"] is JsonArray);
+        var lockScreenFields = database.LoadEditorLayout("module.core.lockScreen").Cards
+            .SelectMany((card) => card.VisibleGroups)
+            .SelectMany((group) => group.VisibleFields)
+            .Select((field) => field.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        True(lockScreenFields.Contains("module.lockScreen.stackInputs"));
+        True(lockScreenFields.Contains("module.lockScreen.stackItems"));
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -846,23 +856,45 @@ static void LockScreenComposesRuntimeStack()
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
         var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "label").First().Value;
-        session.SetExternalCollectionItems("items",
-        [
+        var childInputs = database.GetComponentPresetRuntimeInputs(childVariant);
+        var subtitleBinding = database.GetComponentPresetRuntimeInputBindings(childVariant)
+            .Single((input) => input.Id == "sampleSubtext");
+        childInputs[RuntimeInputForwardingContract.StorageKey] = new JsonObject
+        {
+            [subtitleBinding.JsonKey] = RuntimeInputForwardingContract.Definition(
+                new FieldDefinition(
+                    "module.lockScreen.stackItems.lock_screen_label.inputs",
+                    "Component inputs",
+                    ValueKind.ComponentInputBindings),
+                subtitleBinding,
+                "Lock subtitle",
+                "Subtitle"),
+        };
+        database.UpdateModuleField(module.Id, "module.lockScreen.stackItems", new JsonArray
+        {
             new JsonObject
             {
                 ["id"] = "lock_screen_label",
                 ["presetId"] = childVariant,
                 ["overrides"] = new JsonObject(),
-                ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+                ["inputs"] = childInputs,
                 ["alignment"] = "center",
                 ["gapBeforeMode"] = "fixed",
                 ["gapBeforeToken"] = "theme.spacing.none",
                 ["gapBeforeWeight"] = 1,
             },
-        ]);
-        session.SetExternalInputValue("showStatusBar", "false");
-        session.SetExternalInputValue("showNavigationBar", "false");
-        var populated = session.ApplyInputs(payload, "light", settings.ProjectId);
+        }.ToJsonString());
+        var populatedPayload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
+        var populatedSession = new ComponentPreviewInputSession(database, () => { });
+        populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
+        var populatedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(
+            JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject(),
+            JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject());
+        var forwardedSubtitle = populatedInputs.Single((input) => input.Label == "Lock subtitle");
+        populatedSession.SetExternalInputValue(forwardedSubtitle.JsonKey, "Forwarded subtitle");
+        populatedSession.SetExternalInputValue("showStatusBar", "false");
+        populatedSession.SetExternalInputValue("showNavigationBar", "false");
+        var populated = populatedSession.ApplyInputs(populatedPayload, "light", settings.ProjectId);
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",

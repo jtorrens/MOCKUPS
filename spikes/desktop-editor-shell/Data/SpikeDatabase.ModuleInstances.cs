@@ -79,7 +79,9 @@ internal sealed partial class SpikeDatabase
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
         var module = GetModuleSettings(instance.ModuleId);
-        var preview = ParseJsonObject(module.DesignPreviewJson);
+        var preview = RuntimeInputForwardingContract.EffectivePreview(
+            ParseJsonObject(module.DesignPreviewJson),
+            ParseJsonObject(module.ConfigJson));
         var runtime = ParseJsonObject(instance.ContentJson);
         foreach (var (key, value) in runtime)
         {

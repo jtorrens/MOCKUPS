@@ -273,8 +273,8 @@ composition boundary. At that boundary the value is Variant-owned by default.
 The designer may explicitly expose it to the parent runtime through generic
 Runtime Input Forwarding.
 
-The editor represents this with an empty/filled circle (`○` / `●`), distinct
-from animation keyframe diamonds. Activating the circle preserves the current
+The editor represents this with an empty/filled upward triangle, distinct from
+animation keyframe diamonds. Activating the triangle preserves the current
 Variant value as the runtime default and reveals an editable runtime label.
 The technical input id and payload key remain stable when that label changes.
 
@@ -283,6 +283,21 @@ Forwarding metadata is stored beside the child input values under
 runtime contract plus those forwarded definitions. A forwarded input is a
 normal runtime input at the next composition boundary and may be forwarded
 again without knowing its final owner.
+
+Forwarded fields are readonly at the Variant boundary. Their value is edited
+only through the effective parent Runtime Input. Disabling forwarding restores
+the retained Variant value; transient test values are never copied back into
+the Variant.
+
+Structured collections use one shared collection shell for Variant authoring,
+Runtime Test Values and instance runtime. The context is explicit metadata, not
+inferred from a card label or hierarchy depth. Add, duplicate, reorder, delete,
+selection and expansion are shared. Storage and field capabilities come from
+the context adapter. Runtime Test Values and instance runtime never display
+forwarding controls. Variant authoring reuses the normal child input binding
+control, so runtime inputs of a component selected inside an item receive the
+same forwarding triangle. Forward ids include the stable item id, never the
+item index.
 
 Before a component resolver runs, the generic forwarding pass writes resolved
 parent runtime values into their declared child input locations. Component

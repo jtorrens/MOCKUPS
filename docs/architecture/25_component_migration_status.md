@@ -19,9 +19,10 @@ Current summary:
   on the component resolver -> renderable -> generic renderer route.
 - Lock Screen is active on its module resolver -> renderable route. It owns the
   composition of its runtime Component Stack and optional status/navigation
-  presets, and consumes the Actor wallpaper contract without adding bridge or
+  slots, and consumes the Actor wallpaper contract without adding bridge or
   renderer rules. The Stack receives only the available box between visible
-  bars and exposes its unchanged runtime collection contract to the module.
+  bars. Lock Screen binds the Stack runtime contract as Variant data and
+  forwards only explicitly promoted fields to its own runtime contract.
 - The atoms and system bars are active on the same route.
 - The behavior reference records the remaining Conversation shared-time,
   message-schema, generic text/emoji and video-preview limitations.

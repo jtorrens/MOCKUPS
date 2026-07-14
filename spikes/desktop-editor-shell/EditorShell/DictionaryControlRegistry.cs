@@ -92,6 +92,10 @@ internal static class DictionaryControlRegistry
                 request.Definition,
                 request.Value,
                 request.Services),
+            [ValueKind.StructuredCollection] = (request) => new DictionaryStructuredCollectionControl(
+                request.Definition,
+                request.Value,
+                request.Services),
             [ValueKind.EmbeddedComponent] = (request) => new DictionaryEmbeddedComponentControl(
                 request.Definition,
                 request.Value,

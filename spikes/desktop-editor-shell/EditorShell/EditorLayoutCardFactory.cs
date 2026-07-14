@@ -25,6 +25,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
     private readonly Func<string, Task> _openComponentPresetReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
+    private readonly Action<EditorEmbeddedContext> _openRuntimeComponentOverrides;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Action _refreshPreview;
     private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
@@ -43,6 +44,7 @@ internal sealed class EditorLayoutCardFactory
         Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
         Func<string, Task> openComponentPresetReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
+        Action<EditorEmbeddedContext> openRuntimeComponentOverrides,
         Action<ProjectTreeNode> reloadAndSelect,
         Action refreshPreview)
     {
@@ -59,6 +61,7 @@ internal sealed class EditorLayoutCardFactory
         _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
         _openComponentPresetReference = openComponentPresetReference;
         _toggleVariantLock = toggleVariantLock;
+        _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
         _reloadAndSelect = reloadAndSelect;
         _refreshPreview = refreshPreview;
     }
@@ -97,7 +100,8 @@ internal sealed class EditorLayoutCardFactory
                     (fieldId) => _activeFieldControls.ValueOrStored(fieldId, (id) => _fieldValues.CurrentStoredValue(node, id)),
                     _openComponentPresetReference,
                     supportsEmbeddedOverrides && hasEmbeddedSlot ? (fieldId) => _openEmbeddedComponentEditor(node, fieldId) : null,
-                    supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null);
+                    supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null,
+                    _openRuntimeComponentOverrides);
                 var control = new DictionaryFieldControl(
                     field,
                     services);
@@ -215,7 +219,8 @@ internal sealed class EditorLayoutCardFactory
                         _componentClassFieldValues.CreateEmbeddedFieldValue(context, id).Value),
                     _openComponentPresetReference,
                     (fieldId) => _openNestedEmbeddedComponentEditor(context, fieldId),
-                    (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)));
+                    (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
+                    _openRuntimeComponentOverrides);
                 var control = new DictionaryFieldControl(field, services);
                 controls.Add(control);
                 groupControls.Add(control);

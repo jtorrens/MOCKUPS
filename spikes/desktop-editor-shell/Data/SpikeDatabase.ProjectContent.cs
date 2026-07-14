@@ -322,6 +322,8 @@ internal sealed partial class SpikeDatabase
             "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarSlot", "presetId"]),
             "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarSlot", "presetId"]),
             "module.lockScreen.stackVariant" => JsonString(config, ["lockScreen", "stackSlot", "presetId"]),
+            "module.lockScreen.stackInputs" => JsonPath.Get(config, ["lockScreen", "stackInputs"])?.ToJsonString() ?? "{}",
+            "module.lockScreen.stackItems" => JsonPath.Get(config, ["lockScreen", "stackInputs", "items"])?.ToJsonString() ?? "[]",
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
         };
     }
@@ -604,6 +606,12 @@ internal sealed partial class SpikeDatabase
                 break;
             case "module.lockScreen.stackVariant":
                 SetJsonValue(config, ["lockScreen", "stackSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "componentStack", value))!);
+                break;
+            case "module.lockScreen.stackInputs":
+                SetJsonValue(config, ["lockScreen", "stackInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
+                break;
+            case "module.lockScreen.stackItems":
+                SetJsonValue(config, ["lockScreen", "stackInputs", "items"], JsonNode.Parse(value) as JsonArray ?? new JsonArray());
                 break;
             default:
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");

@@ -390,6 +390,21 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
+    public IReadOnlyList<RuntimeInputCollectionDefinition> GetComponentPresetRuntimeCollections(
+        string presetReference)
+    {
+        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        {
+            return [];
+        }
+        var settings = GetComponentClassSettings(componentClassId);
+        var config = GetComponentPresetConfig(presetReference);
+        var effective = RuntimeInputForwardingContract.EffectivePreview(
+            ParseJsonObject(settings.DesignPreviewJson),
+            config);
+        return ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
+    }
+
     public JsonObject GetComponentPresetConfig(string presetReference)
     {
         if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))

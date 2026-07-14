@@ -2,8 +2,10 @@ import type { RenderableNode } from "../visual/renderable/types.js";
 import { conversationModuleToRenderable } from "./conversationModuleRenderable.js";
 import { lockScreenModuleToRenderable } from "./lockScreenModuleRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
 
 export function moduleToRenderable(payload: DesignPreviewPayload): RenderableNode {
+  payload = applyRuntimeInputForwarding(payload);
   if (payload.componentType === "module.core.chat") {
     return conversationModuleToRenderable(payload);
   }

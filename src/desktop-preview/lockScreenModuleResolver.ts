@@ -16,6 +16,7 @@ export function resolveLockScreenModuleFrame(
   const statusBarSlot = requiredRecord(lockScreen, "statusBarSlot", "module.lockScreen.statusBarSlot");
   const navigationBarSlot = requiredRecord(lockScreen, "navigationBarSlot", "module.lockScreen.navigationBarSlot");
   const stackSlot = requiredRecord(lockScreen, "stackSlot", "module.lockScreen.stackSlot");
+  const stackInputs = requiredRecord(lockScreen, "stackInputs", "module.lockScreen.stackInputs");
   return {
     id: "lockScreen",
     statusBarSlot: {
@@ -30,6 +31,7 @@ export function resolveLockScreenModuleFrame(
       presetId: requiredString(stackSlot, "presetId", "module.lockScreen.stackSlot.presetId"),
       overrides: requiredRecord(stackSlot, "overrides", "module.lockScreen.stackSlot.overrides"),
     },
+    stackInputs,
     showStatusBar: requiredBoolean(
       runtime,
       "showStatusBar",

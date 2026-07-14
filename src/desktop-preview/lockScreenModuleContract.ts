@@ -6,6 +6,7 @@ export interface LockScreenModuleContract {
     presetId: string;
     overrides: Record<string, unknown>;
   };
+  stackInputs: Record<string, unknown>;
   showStatusBar: boolean;
   showNavigationBar: boolean;
 }

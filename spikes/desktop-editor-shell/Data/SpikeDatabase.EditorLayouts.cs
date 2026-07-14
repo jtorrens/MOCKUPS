@@ -1141,7 +1141,9 @@ internal sealed partial class SpikeDatabase
               "defaultOpen": false,
               "groups": [
                 { "id": "content-stack", "label": "Content Stack", "order": 10, "visible": true, "fields": [
-                  { "id": "module.lockScreen.stackVariant", "order": 10, "visible": true }
+                  { "id": "module.lockScreen.stackVariant", "order": 10, "visible": true },
+                  { "id": "module.lockScreen.stackInputs", "order": 20, "visible": true },
+                  { "id": "module.lockScreen.stackItems", "order": 30, "visible": true }
                 ] }
               ]
             },

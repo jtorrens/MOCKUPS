@@ -15,21 +15,31 @@ Lock Screen owns four ordered visual layers:
 3. the selected Status Bar Variant when visible;
 4. the selected Navigation Bar Variant when visible.
 
-The Stack is the content container for future Lock Screen components. Its
-Variant reference is module configuration, while all Stack behavior and the
-ordered child collection are Runtime Inputs. Lock Screen does not copy child
-component fields or require a new Stack Variant for each composition.
+The Stack is the content container for future Lock Screen components. Status
+Bar, Navigation Bar and Stack are explicit embedded slots containing
+`presetId` plus local `overrides`.
+
+Component Stack keeps its own public runtime contract. At the Lock Screen
+composition boundary, `stackInputs` binds that contract as module Variant data:
+the Stack scalar inputs and ordered `items` collection are authored in the
+normal Lock Screen card. Any child runtime field may be promoted explicitly to
+the Lock Screen runtime through Runtime Input Forwarding. Lock Screen does not
+copy a component-specific field catalog or require a new Stack Variant for each
+composition.
 
 ## Runtime inputs
 
 - `actor`: selects the Actor whose wallpaper contract supplies the background;
 - `showStatusBar`: independently includes/excludes Status Bar;
 - `showNavigationBar`: independently includes/excludes Navigation Bar;
-- `sizingMode`, `startGapToken`, `endGapToken` and `items`: the public Component
-  Stack runtime contract, exposed unchanged by the parent module.
+- dynamically forwarded Stack or nested item fields chosen by the module
+  designer.
 
-The Design Test Values panel is only a session producer for this contract.
-Module instances use the same fields in their runtime payload.
+`sizingMode`, `startGapToken`, `endGapToken` and `items` remain runtime inputs of
+Component Stack itself. They are not automatically runtime inputs of Lock
+Screen. The parent binds them as Variant values unless the designer activates
+Forward. Design Test Values and module instances consume only the resulting
+effective Lock Screen runtime contract.
 
 ## Layout
 

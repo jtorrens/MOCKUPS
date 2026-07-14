@@ -15,7 +15,9 @@ internal sealed record RecordClassFieldDescriptor(
     RecordReferenceDefinition? RecordReference = null,
     string ComponentPresetType = "",
     string Unit = "",
-    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null);
+    IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    string RuntimeInputComponentPresetFieldId = "",
+    string RuntimeCollectionComponentPresetFieldId = "");
 
 internal static class RecordClassFieldCatalog
 {
@@ -192,6 +194,16 @@ internal static class RecordClassFieldCatalog
             "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentPreset, ComponentPresetType: "navigation_bar"),
         ["module.lockScreen.stackVariant"] = new(
             "module.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentPreset, ComponentPresetType: "componentStack"),
+        ["module.lockScreen.stackInputs"] = new(
+            "module.lockScreen.stackInputs",
+            "Stack inputs",
+            ValueKind.ComponentInputBindings,
+            RuntimeInputComponentPresetFieldId: "module.lockScreen.stackVariant"),
+        ["module.lockScreen.stackItems"] = new(
+            "module.lockScreen.stackItems",
+            "Components",
+            ValueKind.StructuredCollection,
+            RuntimeCollectionComponentPresetFieldId: "module.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),

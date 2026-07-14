@@ -51,6 +51,7 @@ internal static class RuntimeInputForwardingContract
         return new JsonObject
         {
             ["id"] = id,
+            ["sourceInputId"] = input.Id,
             ["label"] = runtimeLabel,
             ["jsonKey"] = jsonKey,
             ["kind"] = InputKind(input.ValueKind),
@@ -94,6 +95,19 @@ internal static class RuntimeInputForwardingContract
                 }
                 break;
         }
+    }
+
+    public static void RebaseIds(JsonNode node, string oldOwnerSegment, string newOwnerSegment)
+    {
+        Visit(node, (_, _, definition) =>
+        {
+            var id = Text(definition["id"]);
+            if (id.Length == 0) return;
+            var nextId = id.Replace(oldOwnerSegment, newOwnerSegment, StringComparison.Ordinal);
+            definition["id"] = nextId;
+            definition["jsonKey"] = string.Join("_", nextId.Select((character) =>
+                char.IsLetterOrDigit(character) ? character : '_'));
+        });
     }
 
     private static string InputKind(ValueKind valueKind) => valueKind switch
