@@ -29,6 +29,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Action _refreshPreview;
     private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, double> _groupNavigationWidths = new(StringComparer.Ordinal);
 
     public EditorLayoutCardFactory(
         EditorFieldValueRouter fieldValues,
@@ -368,11 +369,16 @@ internal sealed class EditorLayoutCardFactory
         EditorSubcardLayout layout)
     {
         _groupNavigationSelections.TryGetValue(stateKey, out var selectedId);
+        var navigationWidth = _groupNavigationWidths.GetValueOrDefault(
+            stateKey,
+            EditorInternalNavigation.DefaultNavigationWidth);
         return new EditorSubcardLayoutHost(
             sections,
             layout,
             selectedId,
-            (nextId) => _groupNavigationSelections[stateKey] = nextId);
+            (nextId) => _groupNavigationSelections[stateKey] = nextId,
+            navigationWidth,
+            (next) => _groupNavigationWidths[stateKey] = next);
     }
 
     private void ComposeOrganizedGroups(

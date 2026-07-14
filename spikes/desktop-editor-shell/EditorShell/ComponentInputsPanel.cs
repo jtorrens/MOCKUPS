@@ -18,6 +18,7 @@ internal sealed class ComponentPreviewInputSession
     public event Action<bool>? PlaybackBusyChanged;
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
+    private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
     private readonly Action _refreshPreview;
     private readonly Func<ComponentPreviewActionDefinition, Task<bool>>? _preparePlaybackFrames;
     private readonly DispatcherTimer _playbackTimer;
@@ -82,6 +83,7 @@ internal sealed class ComponentPreviewInputSession
     {
         _database = database;
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
+        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(database);
         _refreshPreview = refreshPreview;
         _preparePlaybackFrames = preparePlaybackFrames;
         _playbackTimer = new DispatcherTimer
@@ -313,6 +315,7 @@ internal sealed class ComponentPreviewInputSession
             ParseJsonObject(payload.DesignPreviewJson),
             ScopeKey(payload),
             config);
+        _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
@@ -372,7 +375,13 @@ internal sealed class ComponentPreviewInputSession
             ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
         }
 
-        return payload with { DesignPreviewJson = preview.ToJsonString() };
+        _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
+
+        return payload with
+        {
+            ConfigJson = config.ToJsonString(),
+            DesignPreviewJson = preview.ToJsonString(),
+        };
     }
 
     private void ResolveCollectionRecordReferences(

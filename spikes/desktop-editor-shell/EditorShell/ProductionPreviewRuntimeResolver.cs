@@ -12,16 +12,19 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ProductionPreviewRuntimeResolver
 {
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
+    private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
 
     public ProductionPreviewRuntimeResolver(SpikeDatabase database)
     {
         _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
+        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(database);
     }
 
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)
     {
         var preview = ParseObject(payload.DesignPreviewJson);
         var config = ParseObject(payload.ConfigJson);
+        _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
 
         foreach (var input in inputs.Where((input) =>
@@ -67,7 +70,13 @@ internal sealed class ProductionPreviewRuntimeResolver
             }
         }
 
-        return payload with { DesignPreviewJson = preview.ToJsonString() };
+        _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
+
+        return payload with
+        {
+            ConfigJson = config.ToJsonString(),
+            DesignPreviewJson = preview.ToJsonString(),
+        };
     }
 
     private static JsonObject ParseObject(string json)

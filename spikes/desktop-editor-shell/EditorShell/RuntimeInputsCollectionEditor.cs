@@ -1124,11 +1124,16 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorSubcardLayout layout)
     {
         var selectedId = _sessionUiState.Selection(stateKey);
+        var navigationWidth = _sessionUiState.NavigationWidth(
+            stateKey,
+            EditorInternalNavigation.DefaultNavigationWidth);
         return new EditorSubcardLayoutHost(
             sections,
             layout,
             selectedId,
-            (next) => _sessionUiState.Select(stateKey, next));
+            (next) => _sessionUiState.Select(stateKey, next),
+            navigationWidth,
+            (next) => _sessionUiState.SetNavigationWidth(stateKey, next));
     }
 
     private static Control CreateActionContent(ComponentPreviewActionDefinition action)

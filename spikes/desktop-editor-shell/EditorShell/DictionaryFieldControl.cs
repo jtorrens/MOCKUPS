@@ -15,6 +15,10 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly TextBlock _label;
     private readonly IDictionaryValueControl? _valueControl;
     private readonly Button _restoreButton;
+    private readonly bool _valueOnly;
+    private readonly bool _blockLayout;
+    private readonly bool _separatedComplexLayout;
+    private readonly Border? _complexSeparator;
     private bool _isInherited;
     private string _value;
     private string _lastCommittedValue;
@@ -29,15 +33,27 @@ internal sealed class DictionaryFieldControl : Grid
     public DictionaryFieldControl(
         FieldValue fieldValue,
         DictionaryFieldServices? services,
-        bool compact = false)
+        bool compact = false,
+        bool valueOnly = false)
     {
         services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
         _isInherited = fieldValue.IsInherited;
         _value = fieldValue.IsInherited ? fieldValue.Definition.InheritedValue : fieldValue.Value;
         _lastCommittedValue = fieldValue.IsInherited ? fieldValue.Definition.InheritedStorageValue : fieldValue.Value;
+        _valueOnly = valueOnly;
+        _separatedComplexLayout = DictionaryFieldLayoutRules.UsesBlockLayout(_definition.ValueKind);
+        _blockLayout = !valueOnly && _separatedComplexLayout;
 
-        ColumnDefinitions = DictionaryFieldLayoutRules.Columns(_definition.ValueKind, compact);
+        ColumnDefinitions = valueOnly
+            ? new ColumnDefinitions("*")
+            : _blockLayout
+                ? new ColumnDefinitions("*,Auto")
+            : DictionaryFieldLayoutRules.Columns(_definition.ValueKind, compact);
+        if (_separatedComplexLayout)
+        {
+            RowDefinitions = new RowDefinitions(valueOnly ? "Auto,Auto" : "Auto,Auto,Auto");
+        }
         ColumnSpacing = 12;
         MinHeight = DictionaryFieldLayoutRules.MinHeight(_definition.ValueKind);
 
@@ -54,6 +70,7 @@ internal sealed class DictionaryFieldControl : Grid
                 : DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),
         };
         SetColumn(_label, 0);
+        if (_blockLayout) SetRow(_label, 1);
 
         _valueControl = AddValueControl(DictionaryControlRegistry.Create(
             _definition,
@@ -83,10 +100,29 @@ internal sealed class DictionaryFieldControl : Grid
         EditorAccessibility.Describe(
             _restoreButton,
             $"Restore {_definition.DisplayLabel} to its inherited value");
-        SetColumn(_restoreButton, DictionaryFieldLayoutRules.RestoreButtonColumn(_definition.ValueKind));
+        SetColumn(_restoreButton, _blockLayout ? 1 : DictionaryFieldLayoutRules.RestoreButtonColumn(_definition.ValueKind));
+        if (_blockLayout) SetRow(_restoreButton, 1);
 
-        Children.Add(_label);
-        Children.Add(_restoreButton);
+        if (_separatedComplexLayout)
+        {
+            _complexSeparator = new Border
+            {
+                Height = 1,
+                Margin = new Thickness(0, 8, 0, 10),
+            };
+            SetColumn(_complexSeparator, 0);
+            SetColumnSpan(_complexSeparator, _blockLayout ? 2 : 1);
+            SetRow(_complexSeparator, 0);
+            Children.Add(_complexSeparator);
+            ActualThemeVariantChanged += (_, _) => RefreshComplexSeparator();
+            RefreshComplexSeparator();
+        }
+
+        if (!valueOnly)
+        {
+            Children.Add(_label);
+            Children.Add(_restoreButton);
+        }
         UpdateState();
     }
 
@@ -259,11 +295,24 @@ internal sealed class DictionaryFieldControl : Grid
 
         if (valueControl is Control control)
         {
-            SetColumn(control, 1);
+            SetColumn(control, _valueOnly || _blockLayout ? 0 : 1);
+            if (_separatedComplexLayout)
+            {
+                SetRow(control, _valueOnly ? 1 : 2);
+                SetColumnSpan(control, _blockLayout ? 2 : 1);
+                control.Margin = new Thickness(0);
+            }
             Children.Add(control);
         }
 
         return valueControl;
+    }
+
+    private void RefreshComplexSeparator()
+    {
+        if (_complexSeparator is null) return;
+        _complexSeparator.Background = EditorUiVisuals.ScrollbarSeparatorBrush(
+            ActualThemeVariant != ThemeVariant.Light);
     }
 
     private void UpdateState()

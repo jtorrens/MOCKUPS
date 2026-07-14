@@ -11,20 +11,65 @@ internal sealed partial class SpikeDatabase
 {
     private static void NormalizeRuntimeInputForwardingContracts(SqliteConnection connection)
     {
-        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ComponentType == "textInputBar"))
+        foreach (var row in QueryComponentClassRows(connection))
         {
             var config = ParseJsonObject(row.ConfigJson);
             var metadata = ParseJsonObject(row.MetadataJson);
             var preview = ParseJsonObject(row.DesignPreviewJson);
-            NormalizeTextInputBarForwardingNodes(config);
-            NormalizeTextInputBarForwardingNodes(metadata);
-            preview.Remove("sampleText");
+            if (row.ComponentType == "textInputBar")
+            {
+                NormalizeTextInputBarForwardingNodes(config);
+                NormalizeTextInputBarForwardingNodes(metadata);
+                preview.Remove("sampleText");
+            }
+            NormalizeForwardedValueKinds(config);
+            NormalizeForwardedValueKinds(metadata);
             Execute(connection,
                 "UPDATE component_classes SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
                 ("$id", row.Id),
                 ("$configJson", config.ToJsonString()),
                 ("$previewJson", preview.ToJsonString()),
                 ("$metadataJson", metadata.ToJsonString()));
+        }
+
+        foreach (var row in QueryModuleRows(connection))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var preview = ParseJsonObject(row.DesignPreviewJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            NormalizeForwardedValueKinds(config);
+            NormalizeForwardedValueKinds(preview);
+            NormalizeForwardedValueKinds(metadata);
+            Execute(connection,
+                "UPDATE modules SET config_json = $configJson, design_preview_json = $previewJson, metadata_json = $metadataJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", config.ToJsonString()),
+                ("$previewJson", preview.ToJsonString()),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
+    }
+
+    private static void NormalizeForwardedValueKinds(JsonNode? node)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array) NormalizeForwardedValueKinds(child);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+        if (obj[RuntimeInputForwardingContract.StorageKey] is JsonObject forwards)
+        {
+            foreach (var definition in forwards.Select((entry) => entry.Value).OfType<JsonObject>())
+            {
+                if (definition["valueKind"]?.GetValue<string>() == ValueKind.IconSlots.ToString())
+                {
+                    definition["kind"] = "iconList";
+                }
+            }
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList())
+        {
+            NormalizeForwardedValueKinds(child);
         }
     }
 

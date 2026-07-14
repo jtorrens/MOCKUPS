@@ -92,7 +92,12 @@ internal sealed record ComponentInputBindingDefinition(
     NumberDefinition? Number = null,
     string ComponentType = "",
     string UiGroupId = "",
-    string UiGroupLabel = "");
+    string UiGroupLabel = "",
+    string TableId = "",
+    string ResolvedJsonKey = "",
+    string UiParentGroupId = "",
+    int UiOrder = 0,
+    string UiSectionLabel = "");
 
 internal enum ImagePreviewMode
 {

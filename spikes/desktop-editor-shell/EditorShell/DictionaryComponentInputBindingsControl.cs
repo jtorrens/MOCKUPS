@@ -16,11 +16,8 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryFieldServices _services;
-    private readonly TextBlock _summary = new();
-    private readonly TextBlock _indicator = new();
-    private readonly StackPanel _rows = new() { Spacing = 8 };
+    private readonly ContentControl _content = new();
     private JsonObject _value;
-    private bool _isExpanded;
 
     public DictionaryComponentInputBindingsControl(
         FieldDefinition definition,
@@ -31,17 +28,11 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         _services = services;
         _value = ParseValue(value);
 
-        CornerRadius = new CornerRadius(8);
-        BorderThickness = new Thickness(1);
+        BorderThickness = new Thickness(0);
         Padding = new Thickness(0);
-        Background = new SolidColorBrush(Color.Parse("#10FFFFFF"));
-        BorderBrush = new SolidColorBrush(Color.Parse("#24FFFFFF"));
-
-        Child = Build();
-        ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
-        ApplyThemeBrushes();
+        Background = Brushes.Transparent;
+        Child = _content;
         RefreshRows();
-        ApplyExpandedState();
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -54,115 +45,74 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     {
         _value = ParseValue(value);
         RefreshRows();
-        RefreshSummary();
-    }
-
-    private Control Build()
-    {
-        var root = new Grid
-        {
-            RowDefinitions = new RowDefinitions("Auto,Auto"),
-        };
-
-        var header = new Border
-        {
-            Padding = new Thickness(10, 7),
-            Cursor = new Cursor(StandardCursorType.Hand),
-            Background = Brushes.Transparent,
-        };
-        header.PointerPressed += (_, args) =>
-        {
-            IsExpanded = !IsExpanded;
-            args.Handled = true;
-        };
-
-        var headerGrid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = 8,
-        };
-        _summary.VerticalAlignment = VerticalAlignment.Center;
-        _summary.TextTrimming = TextTrimming.CharacterEllipsis;
-        Grid.SetColumn(_summary, 0);
-        headerGrid.Children.Add(_summary);
-
-        _indicator.Width = 20;
-        _indicator.FontSize = 18;
-        _indicator.FontWeight = FontWeight.Bold;
-        _indicator.TextAlignment = TextAlignment.Center;
-        _indicator.VerticalAlignment = VerticalAlignment.Center;
-        _indicator.Opacity = 0.72;
-        Grid.SetColumn(_indicator, 1);
-        headerGrid.Children.Add(_indicator);
-
-        header.Child = headerGrid;
-        Grid.SetRow(header, 0);
-        root.Children.Add(header);
-
-        var content = new Border
-        {
-            Padding = new Thickness(10, 0, 10, 10),
-            Child = _rows,
-        };
-        Grid.SetRow(content, 1);
-        root.Children.Add(content);
-
-        return root;
-    }
-
-    private bool IsExpanded
-    {
-        get => _isExpanded;
-        set
-        {
-            if (_isExpanded == value) return;
-
-            _isExpanded = value;
-            ApplyExpandedState();
-        }
-    }
-
-    private void ApplyExpandedState()
-    {
-        _rows.IsVisible = _isExpanded;
-        _indicator.Text = _isExpanded ? "v" : ">";
-        RefreshSummary();
     }
 
     private void RefreshRows()
     {
-        _rows.Children.Clear();
-        var topLevelInputs = new List<ComponentInputBindingDefinition>();
-        var groups = new List<List<ComponentInputBindingDefinition>>();
-        List<ComponentInputBindingDefinition>? currentGroup = null;
-        foreach (var input in VariantInputs())
+        var inputs = VariantInputs().OrderBy((input) => input.UiOrder).ToList();
+        var sections = new List<EditorInternalNavigationSection>();
+        var ownInputs = inputs.Where((input) => string.IsNullOrWhiteSpace(input.UiGroupId)).ToList();
+        if (ownInputs.Count > 0)
         {
-            if (IsEmbeddedComponentInput(input))
-            {
-                currentGroup = [input];
-                groups.Add(currentGroup);
-                continue;
-            }
-
-            if (currentGroup is null)
-            {
-                topLevelInputs.Add(input);
-            }
-            else
-            {
-                currentGroup.Add(input);
-            }
+            sections.Add(CreateNavigationSection("general", "General", ownInputs));
+        }
+        foreach (var group in inputs
+                     .Where((input) => !string.IsNullOrWhiteSpace(input.UiGroupId))
+                     .GroupBy((input) => input.UiGroupId, StringComparer.Ordinal)
+                     .OrderBy((group) => group.Min((input) => input.UiOrder)))
+        {
+            var groupInputs = group.OrderBy((input) => input.UiOrder).ToList();
+            sections.Add(CreateNavigationSection(
+                group.Key,
+                groupInputs.Select((input) => input.UiGroupLabel)
+                    .FirstOrDefault((label) => !string.IsNullOrWhiteSpace(label)) ?? "Inputs",
+                groupInputs));
         }
 
-        foreach (var control in CreateInputControls(topLevelInputs))
+        if (sections.Count == 0)
         {
-            _rows.Children.Add(control);
+            _content.Content = new TextBlock { Text = "No runtime inputs.", Opacity = 0.68 };
+            return;
         }
 
-        foreach (var group in groups)
+        var stateKey = $"{_definition.Id}:component-inputs";
+        var selectedId = _services.StructuredCollectionUiState?.Selection(stateKey);
+        var navigationWidth = _services.StructuredCollectionUiState?.NavigationWidth(
+            stateKey,
+            EditorInternalNavigation.DefaultNavigationWidth);
+        _content.Content = new EditorSubcardLayoutHost(
+            sections,
+            EditorSubcardLayout.VerticalCards,
+            selectedId,
+            (next) => _services.StructuredCollectionUiState?.Select(stateKey, next),
+            navigationWidth,
+            (next) => _services.StructuredCollectionUiState?.SetNavigationWidth(stateKey, next));
+    }
+
+    private EditorInternalNavigationSection CreateNavigationSection(
+        string id,
+        string label,
+        IReadOnlyList<ComponentInputBindingDefinition> inputs)
+    {
+        var panel = new StackPanel { Spacing = 8 };
+        var sectionLabel = "";
+        foreach (var input in inputs)
         {
-            _rows.Children.Add(CreateInputGroup(group));
+            if (!string.IsNullOrWhiteSpace(input.UiSectionLabel)
+                && !string.Equals(sectionLabel, input.UiSectionLabel, StringComparison.Ordinal))
+            {
+                panel.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
+                sectionLabel = input.UiSectionLabel;
+            }
+            panel.Children.Add(CreateInputField(input));
         }
+        return new EditorInternalNavigationSection(
+            id,
+            label,
+            "Runtime inputs",
+            EditorIcons.SemanticAsset(label),
+            panel,
+            ShowLabel: false);
     }
 
     private static bool IsEmbeddedComponentInput(ComponentInputBindingDefinition input)
@@ -357,7 +307,6 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 SetForwarding(input, enabled: false);
             }
             RefreshRows();
-            RefreshSummary();
         };
         Grid.SetColumn(toggle, 1);
         row.Children.Add(toggle);
@@ -404,7 +353,10 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 _definition.IsEditable && Forwarding(input) is null,
                 input.DefaultValue,
                 Options: options,
-                Number: input.Number),
+                Number: input.Number,
+                RecordReference: input.ValueKind == ValueKind.RecordReference
+                    ? new RecordReferenceDefinition(input.TableId)
+                    : null),
             value);
     }
 
@@ -453,7 +405,6 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         }
         var json = _value.ToJsonString();
         ValueChanged?.Invoke(this, json);
-        RefreshSummary();
         if (commit)
         {
             ValueCommitted?.Invoke(this, json);
@@ -497,16 +448,6 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             ValueCommitted?.Invoke(this, json);
             RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private void RefreshSummary()
-    {
-        var values = VariantInputs()
-            .Select((input) => $"{input.Label}: {DisplayValue(input)}")
-            .ToList();
-        _summary.Text = values.Count == 0
-            ? "No variant inputs"
-            : string.Join("  ·  ", values);
     }
 
     private string DisplayValue(ComponentInputBindingDefinition input)

@@ -823,7 +823,7 @@ static void LockScreenComposesRuntimeStack()
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         SequenceEqual(
             ["actor", "showStatusBar", "showNavigationBar"],
-            inputs.Select((input) => input.Id).ToList());
+            inputs.Take(3).Select((input) => input.Id).ToList());
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showStatusBar")));
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showNavigationBar")));
         Equal(0, ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Count);
@@ -847,6 +847,10 @@ static void LockScreenComposesRuntimeStack()
         var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
         var resolvedPreview = JsonNode.Parse(resolved.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing resolved Lock Screen preview.");
+        foreach (var forwardedInput in inputs.Skip(3))
+        {
+            True(resolvedPreview.ContainsKey(forwardedInput.JsonKey));
+        }
         Equal(1d, resolvedPreview["actor"]?["wallpaper"]?["opacity"]?.GetValue<double>() ?? -1);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),

@@ -12,11 +12,12 @@ internal static class EditorCardHeader
 {
     public static Control Create(string label, string subtitle, Control icon)
     {
-        var header = new StackPanel
+        var header = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 12,
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 12,
             VerticalAlignment = VerticalAlignment.Center,
+            ClipToBounds = true,
         };
         header.Children.Add(icon);
 
@@ -30,6 +31,7 @@ internal static class EditorCardHeader
             Text = label,
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
         });
         if (!string.IsNullOrWhiteSpace(subtitle))
         {
@@ -39,9 +41,11 @@ internal static class EditorCardHeader
                 FontSize = 12,
                 Opacity = 0.72,
                 VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis,
             });
         }
 
+        Grid.SetColumn(textPanel, 1);
         header.Children.Add(textPanel);
         return header;
     }

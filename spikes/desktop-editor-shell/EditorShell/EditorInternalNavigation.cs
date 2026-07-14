@@ -33,6 +33,8 @@ internal sealed record EditorInternalNavigationSection(
     Action<bool>? ExpansionChanged = null,
     string? SelectedSubcardId = null,
     Action<string>? SubcardSelectionChanged = null,
+    double? SubcardNavigationWidth = null,
+    Action<double>? SubcardNavigationWidthChanged = null,
     bool ShowLabel = true,
     bool Reveal = false);
 
@@ -42,10 +44,12 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
         IReadOnlyList<EditorInternalNavigationSection> subcards,
         EditorSubcardLayout layout,
         string? selectedId = null,
-        Action<string>? selectionChanged = null)
+        Action<string>? selectionChanged = null,
+        double? navigationWidth = null,
+        Action<double>? navigationWidthChanged = null)
     {
         Layout = layout;
-        Content = Compose(subcards, layout, selectedId, selectionChanged);
+        Content = Compose(subcards, layout, selectedId, selectionChanged, navigationWidth, navigationWidthChanged);
     }
 
     public EditorSubcardLayout Layout { get; }
@@ -69,7 +73,9 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
                     section.Subcards,
                     section.SubcardLayout,
                     section.SelectedSubcardId,
-                    section.SubcardSelectionChanged),
+                    section.SubcardSelectionChanged,
+                    section.SubcardNavigationWidth,
+                    section.SubcardNavigationWidthChanged),
             },
         };
     }
@@ -78,11 +84,18 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
         IReadOnlyList<EditorInternalNavigationSection> subcards,
         EditorSubcardLayout layout,
         string? selectedId,
-        Action<string>? selectionChanged)
+        Action<string>? selectionChanged,
+        double? navigationWidth = null,
+        Action<double>? navigationWidthChanged = null)
     {
         if (layout == EditorSubcardLayout.VerticalCards)
         {
-            return new EditorInternalNavigation(subcards, selectedId, selectionChanged);
+            return new EditorInternalNavigation(
+                subcards,
+                selectedId,
+                selectionChanged,
+                navigationWidth,
+                navigationWidthChanged);
         }
 
         if (layout == EditorSubcardLayout.SeparatedSections)
@@ -135,31 +148,44 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
 
 internal sealed class EditorInternalNavigation : Grid
 {
-    private const double CompactWidth = 620;
+    public const double DefaultNavigationWidth = 190;
+    private const double MinimumNavigationWidth = 120;
+    private const double MinimumContentWidth = 260;
+    private const double SplitterWidth = 6;
+    private const double ResponsiveHysteresis = 16;
     private readonly IReadOnlyList<EditorInternalNavigationSection> _sections;
     private readonly Action<string>? _selectionChanged;
     private readonly StackPanel _navigation = new() { Spacing = 0 };
     private readonly ScrollViewer _navigationScroller;
     private readonly Border _navigationHost;
     private readonly Border _navigationDivider;
+    private readonly GridSplitter _navigationSplitter;
+    private readonly Action<double>? _navigationWidthChanged;
     private readonly ContentControl _content = new();
     private readonly Dictionary<string, Button> _buttons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _entries = new(StringComparer.Ordinal);
     private string _selectedId;
     private bool _isCompact;
+    private double _navigationWidth;
 
     public EditorInternalNavigation(
         IReadOnlyList<EditorInternalNavigationSection> sections,
         string? selectedId = null,
-        Action<string>? selectionChanged = null)
+        Action<string>? selectionChanged = null,
+        double? navigationWidth = null,
+        Action<double>? navigationWidthChanged = null)
     {
         _sections = sections;
         _selectionChanged = selectionChanged;
+        _navigationWidthChanged = navigationWidthChanged;
+        _navigationWidth = Math.Max(MinimumNavigationWidth, navigationWidth ?? DefaultNavigationWidth);
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        VerticalAlignment = VerticalAlignment.Top;
         _selectedId = sections.Any((section) => section.Id == selectedId)
             ? selectedId!
             : sections.FirstOrDefault()?.Id ?? "";
 
-        ColumnDefinitions = new ColumnDefinitions("190,2,*");
+        ColumnDefinitions = new ColumnDefinitions($"{_navigationWidth},{SplitterWidth},*");
         RowDefinitions = new RowDefinitions("Auto");
         ClipToBounds = true;
 
@@ -185,9 +211,31 @@ internal sealed class EditorInternalNavigation : Grid
         Grid.SetColumn(_navigationDivider, 1);
         Children.Add(_navigationDivider);
 
+        _navigationSplitter = new GridSplitter
+        {
+            Width = SplitterWidth,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            ResizeDirection = GridResizeDirection.Columns,
+            ResizeBehavior = GridResizeBehavior.PreviousAndNext,
+            Background = Brushes.Transparent,
+        };
+        Grid.SetColumn(_navigationSplitter, 1);
+        _navigationSplitter.PointerEntered += (_, _) =>
+            _navigationDivider.Background = EditorSukiWindowTheme.AccentBrush();
+        _navigationSplitter.PointerExited += (_, _) => RefreshVisuals();
+        _navigationSplitter.DragCompleted += (_, _) =>
+        {
+            if (_isCompact) return;
+            _navigationWidth = Math.Max(MinimumNavigationWidth, ColumnDefinitions[0].ActualWidth);
+            _navigationWidthChanged?.Invoke(_navigationWidth);
+        };
+        Children.Add(_navigationSplitter);
+
         var contentHost = new Border
         {
             Padding = new Thickness(18, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Top,
             Child = _content,
         };
         Grid.SetColumn(contentHost, 2);
@@ -301,7 +349,8 @@ internal sealed class EditorInternalNavigation : Grid
 
     private void ApplyResponsiveLayout(double width, Border contentHost)
     {
-        var compact = width > 0 && width < CompactWidth;
+        var verticalMinimum = _navigationWidth + SplitterWidth + MinimumContentWidth;
+        var compact = width > 0 && width < verticalMinimum + (_isCompact ? ResponsiveHysteresis : 0);
         if (_isCompact == compact) return;
         _isCompact = compact;
         if (compact)
@@ -315,14 +364,20 @@ internal sealed class EditorInternalNavigation : Grid
             Grid.SetRow(_navigationDivider, 1);
             _navigationDivider.Width = double.NaN;
             _navigationDivider.Height = 1;
+            _navigationSplitter.IsVisible = false;
             Grid.SetColumn(contentHost, 0);
             Grid.SetRow(contentHost, 2);
             contentHost.Padding = new Thickness(0, 14, 0, 0);
-            foreach (var button in _buttons.Values) button.MinWidth = 142;
+            foreach (var button in _buttons.Values)
+            {
+                button.MinWidth = 142;
+                button.MinHeight = 64;
+                button.Padding = new Thickness(10, 9);
+            }
         }
         else
         {
-            ColumnDefinitions = new ColumnDefinitions("190,2,*");
+            ColumnDefinitions = new ColumnDefinitions($"{_navigationWidth},{SplitterWidth},*");
             RowDefinitions = new RowDefinitions("Auto");
             _navigation.Orientation = Orientation.Vertical;
             _navigationScroller.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
@@ -331,10 +386,18 @@ internal sealed class EditorInternalNavigation : Grid
             Grid.SetRow(_navigationDivider, 0);
             _navigationDivider.Width = 2;
             _navigationDivider.Height = double.NaN;
+            _navigationSplitter.IsVisible = true;
+            Grid.SetColumn(_navigationSplitter, 1);
+            Grid.SetRow(_navigationSplitter, 0);
             Grid.SetColumn(contentHost, 2);
             Grid.SetRow(contentHost, 0);
             contentHost.Padding = new Thickness(18, 0, 0, 0);
-            foreach (var button in _buttons.Values) button.ClearValue(MinWidthProperty);
+            foreach (var button in _buttons.Values)
+            {
+                button.ClearValue(MinWidthProperty);
+                button.MinHeight = 54;
+                button.Padding = new Thickness(10, 7);
+            }
         }
         RefreshVisuals();
     }

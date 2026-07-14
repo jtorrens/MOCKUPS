@@ -102,6 +102,8 @@ internal sealed class StructuredCollectionEditor
                 (next) => _sessionUiState.SetExpanded(expansionKey, next),
                 _sessionUiState.Selection(navigationKey),
                 (next) => _sessionUiState.Select(navigationKey, next),
+                _sessionUiState.NavigationWidth(navigationKey, EditorInternalNavigation.DefaultNavigationWidth),
+                (next) => _sessionUiState.SetNavigationWidth(navigationKey, next),
                 Reveal: _sessionUiState.ConsumeReveal(expansionKey)));
         }
 

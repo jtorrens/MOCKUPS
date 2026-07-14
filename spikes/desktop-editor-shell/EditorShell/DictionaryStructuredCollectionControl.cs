@@ -163,16 +163,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                             ValueKind.ComponentInputBindings,
                             ComponentInputBindings: bindings),
                         inputs.ToJsonString()),
-                    _services);
+                    _services,
+                    valueOnly: true);
                 field.ValueChanged += (_, next) => SetComponentInputs(item, componentItems, next, commit: false);
                 field.ValueCommitted += (_, next) => SetComponentInputs(item, componentItems, next, commit: true);
                 field.RuntimeContractChanged += (_, _) => RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
-                subcards.Add(new EditorInternalNavigationSection(
-                    "componentInputs",
-                    "Component inputs",
-                    EditorUiText.Count(bindings.Count, "runtime input"),
-                    EditorIcons.Component,
-                    field));
+                content.Children.Add(field);
             }
         }
         return new StructuredCollectionItemContent(content, subcards);

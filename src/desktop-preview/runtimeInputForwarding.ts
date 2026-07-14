@@ -33,7 +33,17 @@ function apply(node: unknown, runtime: JsonRecord) {
         throw new Error(`Missing forwarded runtime value ${rawDefinition.jsonKey}`);
       }
       node[targetKey] = runtime[rawDefinition.jsonKey];
+      if (
+        typeof rawDefinition.resolvedJsonKey === "string" &&
+        rawDefinition.resolvedJsonKey &&
+        typeof rawDefinition.targetResolvedJsonKey === "string" &&
+        rawDefinition.targetResolvedJsonKey &&
+        Object.hasOwn(runtime, rawDefinition.resolvedJsonKey)
+      ) {
+        node[rawDefinition.targetResolvedJsonKey] = runtime[rawDefinition.resolvedJsonKey];
+      }
     }
+    delete node[storageKey];
   }
 
   for (const [key, child] of Object.entries(node)) {

@@ -23,7 +23,8 @@ internal sealed class InstantEditorCard : Grid
 
         var headerRow = new Border
         {
-            Padding = EditorUiDensity.CardThickness(12, 10),
+            Padding = EditorUiDensity.CardThickness(12, 12),
+            MinHeight = EditorUiDensity.Card(62),
             Cursor = new Cursor(StandardCursorType.Hand),
             Background = Brushes.Transparent,
         };

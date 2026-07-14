@@ -25,6 +25,8 @@ internal sealed record EditorEmbeddedContext(
 
     public bool IsRuntimeRoot => RuntimeSource is not null && Slots.Count == 0;
 
+    public bool IsNavigationRoot => IsRuntimeRoot || RuntimeSource is null && Slots.Count == 1;
+
     public EditorEmbeddedContext Nested(EmbeddedComponentSlotDefinition slot) =>
         new(OwnerNode, [.. Slots, slot], RuntimeSource);
 

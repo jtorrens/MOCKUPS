@@ -36,6 +36,15 @@ internal static class RuntimeInputForwardingContract
                 effective[jsonKey] = container[targetKey]?.DeepClone()
                     ?? throw new InvalidOperationException($"Forwarded runtime input '{id}' has no variant value.");
             }
+            var resolvedJsonKey = Text(definition["resolvedJsonKey"]);
+            var targetResolvedJsonKey = Text(definition["targetResolvedJsonKey"]);
+            if (resolvedJsonKey.Length > 0
+                && targetResolvedJsonKey.Length > 0
+                && effective[resolvedJsonKey] is null
+                && container[targetResolvedJsonKey] is { } resolvedValue)
+            {
+                effective[resolvedJsonKey] = resolvedValue.DeepClone();
+            }
         });
         return effective;
     }
@@ -59,6 +68,11 @@ internal static class RuntimeInputForwardingContract
             ["defaultValue"] = defaultValue,
             ["source"] = "runtime",
             ["componentType"] = input.ComponentType,
+            ["tableId"] = input.TableId,
+            ["resolvedJsonKey"] = string.IsNullOrWhiteSpace(input.ResolvedJsonKey)
+                ? ""
+                : $"{jsonKey}_resolved",
+            ["targetResolvedJsonKey"] = input.ResolvedJsonKey,
             ["minimum"] = input.Number?.Minimum,
             ["maximum"] = input.Number?.Maximum,
             ["increment"] = input.Number?.Increment,
@@ -104,9 +118,14 @@ internal static class RuntimeInputForwardingContract
             var id = Text(definition["id"]);
             if (id.Length == 0) return;
             var nextId = id.Replace(oldOwnerSegment, newOwnerSegment, StringComparison.Ordinal);
-            definition["id"] = nextId;
-            definition["jsonKey"] = string.Join("_", nextId.Select((character) =>
+            var nextJsonKey = string.Join("_", nextId.Select((character) =>
                 char.IsLetterOrDigit(character) ? character : '_'));
+            definition["id"] = nextId;
+            definition["jsonKey"] = nextJsonKey;
+            if (Text(definition["targetResolvedJsonKey"]).Length > 0)
+            {
+                definition["resolvedJsonKey"] = $"{nextJsonKey}_resolved";
+            }
         });
     }
 
@@ -120,7 +139,7 @@ internal static class RuntimeInputForwardingContract
         ValueKind.ComponentPreset => "componentPreset",
         ValueKind.ThemeToken => "themeToken",
         ValueKind.IconToken => "icon",
-        ValueKind.IconTokenList => "iconList",
+        ValueKind.IconTokenList or ValueKind.IconSlots => "iconList",
         ValueKind.StringMultiline => "multilineText",
         _ => "text",
     };

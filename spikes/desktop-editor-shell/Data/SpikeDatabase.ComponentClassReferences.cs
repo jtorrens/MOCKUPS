@@ -386,7 +386,12 @@ internal sealed partial class SpikeDatabase
                 new NumberDefinition(input.Minimum, input.Maximum, input.Increment),
                 input.ComponentType,
                 input.UiGroupId,
-                input.UiGroupLabel))
+                input.UiGroupLabel,
+                input.TableId,
+                input.ResolvedJsonKey,
+                input.UiParentGroupId,
+                input.UiOrder,
+                input.UiSectionLabel))
             .ToList();
     }
 

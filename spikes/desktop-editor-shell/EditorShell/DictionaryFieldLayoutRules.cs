@@ -10,6 +10,9 @@ internal static class DictionaryFieldLayoutRules
         return new ColumnDefinitions(compact ? "132,*,Auto" : "180,*,Auto");
     }
 
+    public static bool UsesBlockLayout(ValueKind valueKind) =>
+        valueKind is ValueKind.ComponentInputBindings or ValueKind.StructuredCollection;
+
     public static double MinHeight(ValueKind valueKind)
     {
         return valueKind switch

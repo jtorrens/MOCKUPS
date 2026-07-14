@@ -8,6 +8,7 @@ internal sealed class EditorSessionUiState
 {
     private readonly Dictionary<string, string> _selections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, bool> _expansions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, double> _navigationWidths = new(StringComparer.Ordinal);
     private readonly HashSet<string> _pendingReveals = new(StringComparer.Ordinal);
 
     public string? Selection(string key) => _selections.GetValueOrDefault(key);
@@ -17,6 +18,11 @@ internal sealed class EditorSessionUiState
     public bool IsExpanded(string key) => _expansions.GetValueOrDefault(key);
 
     public void SetExpanded(string key, bool value) => _expansions[key] = value;
+
+    public double NavigationWidth(string key, double fallback) =>
+        _navigationWidths.GetValueOrDefault(key, fallback);
+
+    public void SetNavigationWidth(string key, double value) => _navigationWidths[key] = value;
 
     public void SetOnlyExpanded(IEnumerable<string> keys, string activeKey)
     {

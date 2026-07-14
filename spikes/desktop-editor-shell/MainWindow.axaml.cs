@@ -445,7 +445,7 @@ public partial class MainWindow : SukiWindow
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
-        if (context.Slots.Count == 1
+        if (context.IsNavigationRoot
             && _editorViewState.CaptureState(_editorContent.Cards) is { } parentState)
         {
             _embeddedParentViewStates[context.OwnerNode.Id] = parentState;
