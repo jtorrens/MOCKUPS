@@ -25,7 +25,7 @@ import type {
 import { resolveAudioComponentFromRecords } from "./audioComponentResolver.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
@@ -282,12 +282,10 @@ export function resolveBubbleComponent(
       label: actorLabelConfig
         ? resolveLabelComponentFromRecords(
             actorLabelConfig,
-            {
-              sampleText: actorPreview.displayName,
-              sampleSubtext: "",
-            },
+            literalLabelPreview(actorPreview.displayName),
             componentBaseConfigs,
             "component.bubble.actorLabel",
+            staticLabelFrameContext,
           )
         : undefined,
     },

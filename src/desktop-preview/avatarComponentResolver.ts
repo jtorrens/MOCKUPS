@@ -14,7 +14,11 @@ import {
   stringValue,
 } from "./componentResolverCommon.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
-import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import {
+  literalLabelPreview,
+  resolveLabelComponentFromRecords,
+  staticLabelFrameContext,
+} from "./labelComponentResolver.js";
 
 function labelPreview(
   preview: Record<string, unknown>,
@@ -22,9 +26,10 @@ function labelPreview(
   showSubtext: boolean,
 ): Record<string, unknown> {
   return {
-    ...preview,
-    sampleText: title,
-    sampleSubtext: showSubtext ? preview.sampleSubtext : "",
+    ...literalLabelPreview(
+      title,
+      showSubtext && typeof preview.sampleSubtext === "string" ? preview.sampleSubtext : "",
+    ),
   };
 }
 
@@ -91,6 +96,7 @@ export function resolveAvatarComponentFromRecords(
             labelPreview(preview, actor.displayName, showSubtext),
             componentBaseConfigs,
             `${id}.label`,
+            staticLabelFrameContext,
           )
         : undefined,
     },

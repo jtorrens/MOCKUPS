@@ -133,7 +133,8 @@ public partial class MainWindow : SukiWindow
             _database,
             _pathBrowser,
             _domainDialogs,
-            () => _previewController.SelectedThemeId);
+            () => _previewController.SelectedThemeId,
+            _previewController.SetDesignPreviewTestValue);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         _fieldValues = new EditorFieldValueRouter(
             _coreFieldValues,

@@ -25,7 +25,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
-import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
@@ -248,9 +248,10 @@ function resolveMediaTextOverlay(
     ),
     label: resolveLabelComponentFromRecords(
       labelConfig,
-      { sampleText: resolvedText, sampleSubtext: "" },
+      literalLabelPreview(resolvedText),
       componentBaseConfigs,
       `component.media.${playbackState}.label`,
+      staticLabelFrameContext,
     ),
   };
 }

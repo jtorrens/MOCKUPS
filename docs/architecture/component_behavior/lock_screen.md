@@ -35,6 +35,12 @@ composition.
 - dynamically forwarded Stack or nested item fields chosen by the module
   designer.
 
+A Label placed directly in the Stack receives the module instance's explicit
+owner-local frame and project FPS through the generic preview payload. Its
+count-up/count-down text is therefore resolved deterministically before Stack
+measurement and placement; Lock Screen, the bridge and the renderer add no
+clock behavior.
+
 `sizingMode`, `startGapToken`, `endGapToken` and `items` remain runtime inputs of
 Component Stack itself. They are not automatically runtime inputs of Lock
 Screen. The parent binds them as Variant values unless the designer activates

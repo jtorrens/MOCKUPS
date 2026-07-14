@@ -14,6 +14,31 @@ import {
 } from "./componentResolverCommon.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import {
+  resolveCalculatedText,
+  type CalculatedTextMode,
+} from "./calculatedText.js";
+
+export interface LabelFrameContext {
+  localFrame: number;
+  frameRate: number;
+}
+
+export const staticLabelFrameContext: LabelFrameContext = {
+  localFrame: 0,
+  frameRate: 1,
+};
+
+export function literalLabelPreview(sampleText: string, sampleSubtext = "") {
+  return {
+    sampleText,
+    textMode: "literal",
+    textSizeMultiplier: 1,
+    sampleSubtext,
+    subtextMode: "literal",
+    subtextSizeMultiplier: 1,
+  };
+}
 
 function requiredText(
   value: Record<string, unknown>,
@@ -51,6 +76,7 @@ export function resolveLabelComponent(
     preview,
     componentBaseConfigs,
     "component.label",
+    { localFrame: payload.localFrame, frameRate: payload.frameRate },
   );
 }
 
@@ -59,6 +85,7 @@ export function resolveLabelComponentFromRecords(
   preview: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frame: LabelFrameContext,
 ): LabelDesignContract {
   const label = asRecord(config.label);
   const surfaceSlot = asRecord(label.surfaceSlot);
@@ -84,11 +111,17 @@ export function resolveLabelComponentFromRecords(
 
   return {
     id,
-    text: requiredText(preview, "sampleText", "component.label.preview.sampleText"),
-    subtext: requiredText(
+    text: resolveLabelText(preview, "sampleText", "textMode", "text", frame),
+    subtext: resolveLabelText(preview, "sampleSubtext", "subtextMode", "subtext", frame),
+    textSizeMultiplier: positiveMultiplier(
       preview,
-      "sampleSubtext",
-      "component.label.preview.sampleSubtext",
+      "textSizeMultiplier",
+      "component.label.preview.textSizeMultiplier",
+    ),
+    subtextSizeMultiplier: positiveMultiplier(
+      preview,
+      "subtextSizeMultiplier",
+      "component.label.preview.subtextSizeMultiplier",
     ),
     dimensionMode,
     size: { width: size.first, height: size.second },
@@ -127,4 +160,25 @@ export function resolveLabelComponentFromRecords(
       `${id}.surface`,
     ),
   };
+}
+
+function resolveLabelText(
+  preview: Record<string, unknown>,
+  valueKey: string,
+  modeKey: string,
+  path: string,
+  frame: { localFrame: number; frameRate: number },
+) {
+  const value = requiredText(preview, valueKey, `component.label.preview.${valueKey}`);
+  const mode = requiredString(preview, modeKey, `component.label.preview.${modeKey}`);
+  if (mode !== "literal" && mode !== "countUp" && mode !== "countDown") {
+    throw new Error(`Unsupported label ${path} mode ${mode}`);
+  }
+  return resolveCalculatedText(value, mode as CalculatedTextMode, frame.localFrame, frame.frameRate);
+}
+
+function positiveMultiplier(value: Record<string, unknown>, key: string, path: string) {
+  const multiplier = requiredNumber(value, key, path);
+  if (multiplier <= 0) throw new Error(`${path} must be positive`);
+  return multiplier;
 }

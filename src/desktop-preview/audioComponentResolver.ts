@@ -6,7 +6,7 @@ import {
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
-import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import {
   asRecord,
   optionalNumber,
@@ -102,9 +102,10 @@ export function resolveAudioComponentFromRecords(
     padding: toSpacingPair(requiredStringPair(audio, "padding", "component.audio.padding")),
     durationLabel: resolveLabelComponentFromRecords(
       durationLabelConfig,
-      { sampleText: formatDuration(durationSeconds - currentTimeSeconds), sampleSubtext: "" },
+      literalLabelPreview(formatDuration(durationSeconds - currentTimeSeconds)),
       componentBaseConfigs,
       `${id}.durationLabel`,
+      staticLabelFrameContext,
     ),
     playCircleSize: requiredNumber(
       audio,

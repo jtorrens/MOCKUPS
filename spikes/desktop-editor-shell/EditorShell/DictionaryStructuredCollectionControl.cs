@@ -289,6 +289,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private RuntimeInputCollectionDefinition? CollectionDefinition()
     {
+        if (_definition.StructuredCollection is not null)
+        {
+            return _definition.StructuredCollection;
+        }
         if (string.IsNullOrWhiteSpace(_definition.RuntimeCollectionComponentPresetFieldId)
             || _services.GetFieldValue is null
             || _services.GetComponentPresetRuntimeCollections is null)

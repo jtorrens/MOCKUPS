@@ -81,6 +81,13 @@ internal enum ComponentInputBindingSource
     Calculated,
 }
 
+internal sealed record ComponentInputTransitionDefinition(
+    string TargetInputId,
+    IReadOnlyList<string> TriggerValues,
+    string ReplacementValue,
+    string TargetValuePattern = "",
+    bool ForwardedTargetOnly = false);
+
 internal sealed record ComponentInputBindingDefinition(
     string Id,
     string Label,
@@ -97,7 +104,8 @@ internal sealed record ComponentInputBindingDefinition(
     string ResolvedJsonKey = "",
     string UiParentGroupId = "",
     int UiOrder = 0,
-    string UiSectionLabel = "");
+    string UiSectionLabel = "",
+    ComponentInputTransitionDefinition? Transition = null);
 
 internal enum ImagePreviewMode
 {
@@ -127,6 +135,7 @@ internal sealed record FieldDefinition(
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
     string RuntimeInputComponentPresetFieldId = "",
     string RuntimeCollectionComponentPresetFieldId = "",
     bool SelectComponentClass = false,

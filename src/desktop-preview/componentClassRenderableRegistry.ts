@@ -20,6 +20,8 @@ import { labelComponentToRenderable } from "./labelComponentRenderable.js";
 import { resolveLabelComponent } from "./labelComponentResolver.js";
 import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
+import { keypadComponentToRenderable } from "./keypadComponentRenderable.js";
+import { resolveKeypadComponent } from "./keypadComponentResolver.js";
 import { iconBarComponentToRenderable } from "./iconBarComponentRenderable.js";
 import { resolveIconBarComponent } from "./iconBarComponentResolver.js";
 import { iconRowComponentToRenderable } from "./iconRowComponentRenderable.js";
@@ -61,6 +63,8 @@ export const componentRenderableFactories = {
     textInputBarComponentToRenderable(payload, resolveTextInputBarComponent(payload)),
   keyboard: (payload) =>
     keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
+  keypad: (payload) =>
+    keypadComponentToRenderable(payload, resolveKeypadComponent(payload)),
   media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
   bubble: (payload) => bubbleComponentToRenderable(payload, resolveBubbleComponent(payload)),
   status_bar: (payload) =>

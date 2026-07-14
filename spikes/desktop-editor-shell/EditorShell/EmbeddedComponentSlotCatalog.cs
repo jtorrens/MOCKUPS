@@ -120,6 +120,9 @@ internal static class EmbeddedComponentSlotCatalog
             "Icon bar",
             "component.iconBar",
             ["keyboard", "iconBarSlot"]),
+        new("component.keypad.normalKey.editor", "label", "Normal key", "component.label", ["keypad", "normalKeySlot"]),
+        new("component.keypad.activeKey.editor", "label", "Active key", "component.label", ["keypad", "activeKeySlot"]),
+        new("component.keypad.disabledKey.editor", "label", "Disabled key", "component.label", ["keypad", "disabledKeySlot"]),
         new(
             "component.label.surface.editor",
             "surface",

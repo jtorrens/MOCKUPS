@@ -45,9 +45,11 @@ resolver and renderable that own the implementation.
 | Bubble | [bubble.md](bubble.md) | Functional |
 | Text Input Bar | [text_input_bar.md](text_input_bar.md) | Functional |
 | Keyboard | [keyboard.md](keyboard.md) | Functional, parent integration gap noted |
+| Keypad | [keypad.md](keypad.md) | Functional base |
 | Media | [media.md](media.md) | Functional, video buffering remains a limitation |
 | Audio | [audio.md](audio.md) | Functional |
 | Component Stack | [component_stack.md](component_stack.md) | Structural/functional |
+| Label | [label.md](label.md) | Functional |
 | Atoms | [atoms.md](atoms.md) | Functional/structural as stated per atom |
 | System bars | [system_bars.md](system_bars.md) | Functional |
 

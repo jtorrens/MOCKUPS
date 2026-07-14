@@ -4,11 +4,113 @@ using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Text.Json.Nodes;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private static void NormalizeLabelRuntimeInputs(SqliteConnection connection)
+    {
+        foreach (var row in QueryComponentClassRows(connection))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            var preview = ParseJsonObject(row.DesignPreviewJson);
+            NormalizeLabelRuntimeInputNodes(config);
+            NormalizeLabelRuntimeInputNodes(metadata);
+            NormalizeLabelRuntimeInputNodes(preview);
+            var configJson = config.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            if (configJson == row.ConfigJson
+                && metadataJson == row.MetadataJson
+                && previewJson == row.DesignPreviewJson)
+            {
+                continue;
+            }
+            Execute(
+                connection,
+                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson, design_preview_json = $previewJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", configJson),
+                ("$metadataJson", metadataJson),
+                ("$previewJson", previewJson));
+        }
+
+        foreach (var row in QueryModuleRows(connection))
+        {
+            var config = ParseJsonObject(row.ConfigJson);
+            var metadata = ParseJsonObject(row.MetadataJson);
+            var preview = ParseJsonObject(row.DesignPreviewJson);
+            NormalizeLabelRuntimeInputNodes(config);
+            NormalizeLabelRuntimeInputNodes(metadata);
+            NormalizeLabelRuntimeInputNodes(preview);
+            var configJson = config.ToJsonString();
+            var metadataJson = metadata.ToJsonString();
+            var previewJson = preview.ToJsonString();
+            if (configJson == row.ConfigJson
+                && metadataJson == row.MetadataJson
+                && previewJson == row.DesignPreviewJson)
+            {
+                continue;
+            }
+            Execute(
+                connection,
+                "UPDATE modules SET config_json = $configJson, metadata_json = $metadataJson, design_preview_json = $previewJson WHERE id = $id",
+                ("$id", row.Id),
+                ("$configJson", configJson),
+                ("$metadataJson", metadataJson),
+                ("$previewJson", previewJson));
+        }
+    }
+
+    private static void NormalizeLabelRuntimeInputNodes(JsonNode? node)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array) NormalizeLabelRuntimeInputNodes(child);
+            return;
+        }
+        if (node is not JsonObject obj) return;
+        if (obj["componentType"]?.GetValue<string>() == "label")
+        {
+            obj["sampleText"] ??= "Sample";
+            obj["textMode"] ??= "literal";
+            obj["textSizeMultiplier"] ??= 1;
+            obj["sampleSubtext"] ??= "Subtitle";
+            obj["subtextMode"] ??= "literal";
+            obj["subtextSizeMultiplier"] ??= 1;
+            obj["inputs"] = ComponentInputsForComponent("label");
+            NormalizeForwardedCalculatedText(obj, "textMode", "sampleText");
+            NormalizeForwardedCalculatedText(obj, "subtextMode", "sampleSubtext");
+        }
+        foreach (var child in obj.Select((entry) => entry.Value).ToList())
+        {
+            NormalizeLabelRuntimeInputNodes(child);
+        }
+    }
+
+    private static void NormalizeForwardedCalculatedText(
+        JsonObject label,
+        string modeKey,
+        string valueKey)
+    {
+        var mode = label[modeKey]?.GetValue<string>() ?? "";
+        if (mode is not ("countUp" or "countDown")
+            || (label[RuntimeInputForwardingContract.StorageKey] as JsonObject)?[valueKey] is not JsonObject forwarding)
+        {
+            return;
+        }
+        var current = label[valueKey]?.GetValue<string>() ?? "";
+        if (Regex.IsMatch(current, @"^\d+:[0-5]\d$", RegexOptions.CultureInvariant))
+        {
+            return;
+        }
+        label[valueKey] = "00:00";
+        forwarding["defaultValue"] = "00:00";
+    }
+
     private static void NormalizeRuntimeInputForwardingContracts(SqliteConnection connection)
     {
         foreach (var row in QueryComponentClassRows(connection))

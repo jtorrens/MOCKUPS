@@ -227,11 +227,28 @@ contracts with character ellipsis and remains clipped inside the selector while
 the containing grid reserves its trailing action columns. Independent surfaces
 such as dialogs or preview toolbars may declare their own explicit minimum.
 
+Dictionary editability also owns presentation. When a `FieldDefinition` is not
+editable, the shared dictionary host disables and visibly attenuates the value
+control for every registered value kind. A custom control must not remain
+visually active while merely ignoring input. Labels and external contract
+actions such as a Forward indicator remain outside that disabled value surface.
+
+Cross-input normalization is declared by component-input transition metadata.
+The generic embedded-input control may update a related Forward value as part of
+the same edit, including its session test value. Component names and field ids
+must not be hard-coded into the shared control, and resolvers must not use this
+UI behavior as a compatibility fallback.
+
 Complex dictionary controls such as `ComponentInputBindings` and
 `StructuredCollection` use full-width block layout. A separator precedes the
 block, the optional field label sits above the control and no closing separator
 is emitted. This layout belongs to the shared dictionary host, not to the
 calling editor.
+
+A `StructuredCollection` field may receive its schema directly from its
+`FieldDefinition` when the collection is Variant-owned, or derive that schema
+from a selected component Variant when editing a parent boundary. Both routes
+must use the same generic collection surface, item controls and commit path.
 
 All editor cards start closed in a fresh application session. Expansion,
 internal selection and scroll position may be restored when returning to the

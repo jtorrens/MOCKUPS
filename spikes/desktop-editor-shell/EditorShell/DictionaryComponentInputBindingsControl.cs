@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -17,6 +18,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     private readonly FieldDefinition _definition;
     private readonly DictionaryFieldServices _services;
     private readonly ContentControl _content = new();
+    private readonly Dictionary<string, string> _pendingRuntimeTestValues = new(StringComparer.Ordinal);
     private JsonObject _value;
 
     public DictionaryComponentInputBindingsControl(
@@ -405,12 +407,57 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             forwarding["defaultValue"] = next;
         }
+        var transitioned = ApplyTransition(input, next) || _pendingRuntimeTestValues.Count > 0;
         var json = _value.ToJsonString();
         ValueChanged?.Invoke(this, json);
         if (commit)
         {
             ValueCommitted?.Invoke(this, json);
+            foreach (var (jsonKey, value) in _pendingRuntimeTestValues)
+            {
+                _services.SetRuntimeTestValue?.Invoke(jsonKey, value);
+            }
+            _pendingRuntimeTestValues.Clear();
+            if (transitioned) RefreshRows();
         }
+    }
+
+    private bool ApplyTransition(ComponentInputBindingDefinition input, string next)
+    {
+        var transition = input.Transition;
+        if (transition is null || !transition.TriggerValues.Contains(next, StringComparer.Ordinal))
+        {
+            return false;
+        }
+        var target = VariantInputs().FirstOrDefault((candidate) =>
+            candidate.Id.Equals(transition.TargetInputId, StringComparison.Ordinal));
+        if (target is null)
+        {
+            throw new InvalidOperationException(
+                $"Component input transition target '{transition.TargetInputId}' was not declared.");
+        }
+        var targetForwarding = Forwarding(target);
+        if (transition.ForwardedTargetOnly && targetForwarding is null)
+        {
+            return false;
+        }
+        var current = InputValue(target, OptionsFor(target) ?? []);
+        if (!string.IsNullOrWhiteSpace(transition.TargetValuePattern)
+            && Regex.IsMatch(current, transition.TargetValuePattern, RegexOptions.CultureInvariant))
+        {
+            return false;
+        }
+        _value[target.JsonKey] = ToJsonValue(target.ValueKind, transition.ReplacementValue);
+        if (targetForwarding is not null)
+        {
+            targetForwarding["defaultValue"] = transition.ReplacementValue;
+            var runtimeJsonKey = JsonText(targetForwarding["jsonKey"], "");
+            if (!string.IsNullOrWhiteSpace(runtimeJsonKey))
+            {
+                _pendingRuntimeTestValues[runtimeJsonKey] = transition.ReplacementValue;
+            }
+        }
+        return true;
     }
 
     private JsonObject? Forwarding(ComponentInputBindingDefinition input) =>

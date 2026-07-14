@@ -16,6 +16,7 @@ internal sealed record ComponentClassFieldDescriptor(
     PairFieldLabels? PairLabels = null,
     NumberDefinition? Number = null,
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
     string ComponentPresetType = "",
     string RuntimeInputComponentPresetFieldId = "",
     string Unit = "");
@@ -373,6 +374,31 @@ internal static class ComponentClassFieldCatalog
         new("none", "None"),
     ];
 
+    private static readonly RuntimeInputCollectionDefinition KeypadKeysCollection = new(
+        "keys",
+        "Keys",
+        "keys",
+        "Key",
+        [
+            new ComponentInputDefinition(
+                "kind", "Kind", "kind", ComponentInputKind.Option, ValueKind.OptionToken, "key",
+                [new("key", "Key"), new("spacer", "Spacer")]),
+            new ComponentInputDefinition(
+                "value", "Value", "value", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+            new ComponentInputDefinition(
+                "text", "Text", "text", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+            new ComponentInputDefinition(
+                "subtext", "Subtext", "subtext", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+            new ComponentInputDefinition(
+                "disabled", "Disabled", "disabled", ComponentInputKind.Boolean, ValueKind.Boolean, "false"),
+        ],
+        ItemPresentation: new RuntimeInputCollectionItemPresentation(
+            ["text", "subtext", "value"],
+            72,
+            "",
+            "keypad",
+            new Dictionary<string, string>()));
+
     private static readonly FieldOption[] KeyboardLanguageOptions =
     [
         new("es", "Spanish"),
@@ -571,6 +597,17 @@ internal static class ComponentClassFieldCatalog
         ["component.keyboard.iconRowsHeight"] = new("component.keyboard.iconRowsHeight", "Icon zone height", ValueKind.Integer, ["keyboard", "iconRowsHeight"], "52", Number: new NumberDefinition(0, 240, 1, 0)),
         ["component.keyboard.iconEdgePadding"] = new("component.keyboard.iconEdgePadding", "Icon edge padding", ValueKind.ThemeToken, ["keyboard", "iconEdgePadding"], "theme.spacing.none", Options: SpacingTokenOptions),
         ["component.keyboard.iconBar.editor"] = new("component.keyboard.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["keyboard", "iconBarSlot", "presetId"], "default"),
+
+        ["component.keypad.sizingMode"] = new("component.keypad.sizingMode", "Sizing", ValueKind.OptionToken, ["keypad", "sizingMode"], "content", Options: [new("content", "Fit content"), new("fill", "Fill available width")]),
+        ["component.keypad.columns"] = new("component.keypad.columns", "Columns", ValueKind.Integer, ["keypad", "columns"], "3", Number: new NumberDefinition(1, 12, 1, 0)),
+        ["component.keypad.keySize"] = new("component.keypad.keySize", "Key size", ValueKind.IntegerPair, ["keypad", "keySize"], "72|72", PairLabels: new("W", "H")),
+        ["component.keypad.padding"] = new("component.keypad.padding", "Padding", ValueKind.ThemeTokenPair, ["keypad", "padding"], "theme.spacing.none|theme.spacing.none", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.keypad.columnGapToken"] = new("component.keypad.columnGapToken", "Column gap", ValueKind.ThemeToken, ["keypad", "columnGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.keypad.rowGapToken"] = new("component.keypad.rowGapToken", "Row gap", ValueKind.ThemeToken, ["keypad", "rowGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.keypad.keys"] = new("component.keypad.keys", "Keys", ValueKind.StructuredCollection, ["keypad", "keys"], "[]", StructuredCollection: KeypadKeysCollection),
+        ["component.keypad.normalKey.editor"] = new("component.keypad.normalKey.editor", "Normal key", ValueKind.ComponentPreset, ["keypad", "normalKeySlot", "presetId"], "default"),
+        ["component.keypad.activeKey.editor"] = new("component.keypad.activeKey.editor", "Active key", ValueKind.ComponentPreset, ["keypad", "activeKeySlot", "presetId"], "default"),
+        ["component.keypad.disabledKey.editor"] = new("component.keypad.disabledKey.editor", "Disabled key", ValueKind.ComponentPreset, ["keypad", "disabledKeySlot", "presetId"], "default"),
 
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),

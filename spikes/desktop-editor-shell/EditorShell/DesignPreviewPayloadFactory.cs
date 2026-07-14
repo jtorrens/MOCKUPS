@@ -27,7 +27,8 @@ internal sealed record DesignPreviewPayload(
     int FrameRate = 25,
     string ThemeMode = "",
     string ThemeStatusBarPresetId = "",
-    string ThemeNavigationBarPresetId = "");
+    string ThemeNavigationBarPresetId = "",
+    int LocalFrame = 0);
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -77,6 +78,9 @@ internal static class DesignPreviewPayloadFactory
             {
                 ThemeStatusBarPresetId = theme.StatusBarId,
                 ThemeNavigationBarPresetId = theme.NavigationBarId,
+                LocalFrame = node.Kind is ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.Shot
+                    ? payload.LocalFrame
+                    : Math.Max(0, timelineFrame),
             };
     }
 
@@ -188,7 +192,8 @@ internal static class DesignPreviewPayloadFactory
             instanceJson.ToJsonString(),
             deviceId,
             shot.Fps,
-            effectiveThemeMode);
+            effectiveThemeMode,
+            LocalFrame: Math.Max(0, localTimelineFrame ?? 0));
     }
 
     private static DesignPreviewPayload? FromShot(

@@ -25,8 +25,14 @@ export function measureLabelComponent(
   payload: DesignPreviewPayload,
 ) {
   const scale = renderScale(payload);
-  const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
-  const subtextTypography = resolveTypographyStyle(payload, label.subtextTypography, scale);
+  const textTypography = scaleTypography(
+    resolveTypographyStyle(payload, label.textTypography, scale),
+    label.textSizeMultiplier,
+  );
+  const subtextTypography = scaleTypography(
+    resolveTypographyStyle(payload, label.subtextTypography, scale),
+    label.subtextSizeMultiplier,
+  );
   return labelSize(label, textTypography, subtextTypography, scale, payload);
 }
 
@@ -133,8 +139,14 @@ export function labelComponentToRenderableAt(
   } = {},
 ): RenderableNode {
   const scale = renderScale(payload);
-  const textTypography = resolveTypographyStyle(payload, label.textTypography, scale);
-  const subtextTypography = resolveTypographyStyle(payload, label.subtextTypography, scale);
+  const textTypography = scaleTypography(
+    resolveTypographyStyle(payload, label.textTypography, scale),
+    label.textSizeMultiplier,
+  );
+  const subtextTypography = scaleTypography(
+    resolveTypographyStyle(payload, label.subtextTypography, scale),
+    label.subtextSizeMultiplier,
+  );
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const size = labelSize(label, textTypography, subtextTypography, scale, payload);
   const content = labelContentLayout(
@@ -236,5 +248,17 @@ export function labelComponentToRenderableAt(
         ],
       },
     ],
+  };
+}
+
+function scaleTypography(
+  typography: ReturnType<typeof resolveTypographyStyle>,
+  multiplier: number,
+): ReturnType<typeof resolveTypographyStyle> {
+  return {
+    ...typography,
+    fontSize: typography.fontSize * multiplier,
+    lineHeight: typography.lineHeight * multiplier,
+    measureTextWidth: (text) => typography.measureTextWidth(text) * multiplier,
   };
 }

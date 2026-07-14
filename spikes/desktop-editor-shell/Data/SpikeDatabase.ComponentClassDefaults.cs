@@ -25,6 +25,7 @@ internal sealed partial class SpikeDatabase
             "componentStack" => "Component stack atom",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
+            "keypad" => "Keypad component",
             "button" => "Button component",
             "label" => "Label component",
             "audio" => "Audio component",
@@ -99,6 +100,50 @@ internal sealed partial class SpikeDatabase
             ["iconColorToken"] = iconColorToken,
         };
     }
+
+    private static JsonObject KeypadLabelSlot(string textColorToken)
+    {
+        return new JsonObject
+        {
+            ["presetId"] = DefaultComponentPresetId,
+            ["overrides"] = new JsonObject
+            {
+                ["label"] = new JsonObject
+                {
+                    ["dimensionMode"] = "fixed",
+                    ["padding"] = "theme.spacing.none|theme.spacing.none",
+                    ["textColorToken"] = textColorToken,
+                    ["textAlign"] = "center",
+                },
+            },
+        };
+    }
+
+    private static JsonArray DefaultKeypadKeys() =>
+    [
+        KeypadKey("key_1", "1", "1", ""),
+        KeypadKey("key_2", "2", "2", "ABC"),
+        KeypadKey("key_3", "3", "3", "DEF"),
+        KeypadKey("key_4", "4", "4", "GHI"),
+        KeypadKey("key_5", "5", "5", "JKL"),
+        KeypadKey("key_6", "6", "6", "MNO"),
+        KeypadKey("key_7", "7", "7", "PQRS"),
+        KeypadKey("key_8", "8", "8", "TUV"),
+        KeypadKey("key_9", "9", "9", "WXYZ"),
+        KeypadKey("key_star", "*", "*", ""),
+        KeypadKey("key_0", "0", "0", "+"),
+        KeypadKey("key_hash", "#", "#", ""),
+    ];
+
+    private static JsonObject KeypadKey(string id, string value, string text, string subtext) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "key",
+        ["value"] = value,
+        ["text"] = text,
+        ["subtext"] = subtext,
+        ["disabled"] = false,
+    };
 
     private static JsonObject MediaTextOverlayDefault(
         bool enabled,
@@ -314,6 +359,22 @@ internal sealed partial class SpikeDatabase
                     ["motion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 };
                 break;
+            case "keypad":
+                config.Remove("style");
+                config["keypad"] = new JsonObject
+                {
+                    ["sizingMode"] = "content",
+                    ["columns"] = 3,
+                    ["keySize"] = "72|72",
+                    ["padding"] = "theme.spacing.none|theme.spacing.none",
+                    ["columnGapToken"] = "theme.spacing.l",
+                    ["rowGapToken"] = "theme.spacing.l",
+                    ["keys"] = DefaultKeypadKeys(),
+                    ["normalKeySlot"] = KeypadLabelSlot("theme.colors.textPrimary"),
+                    ["activeKeySlot"] = KeypadLabelSlot("theme.colors.accent"),
+                    ["disabledKeySlot"] = KeypadLabelSlot("theme.colors.textSecondary"),
+                };
+                break;
             case "button":
                 config["button"] = new JsonObject
                 {
@@ -509,6 +570,13 @@ internal sealed partial class SpikeDatabase
         {
             preview["size"] = "180|104";
         }
+        if (componentType == "label")
+        {
+            preview["textMode"] = "literal";
+            preview["textSizeMultiplier"] = 1;
+            preview["subtextMode"] = "literal";
+            preview["subtextSizeMultiplier"] = 1;
+        }
         if (componentType == "textBox")
         {
             preview["size"] = "220|44";
@@ -673,6 +741,12 @@ internal sealed partial class SpikeDatabase
                 },
             };
         }
+        if (componentType == "keypad")
+        {
+            preview["availableWidth"] = 280;
+            preview["activeKey"] = "";
+            preview["enabled"] = true;
+        }
         if (componentType == "media")
         {
             preview["mediaSource"] = "";
@@ -811,7 +885,35 @@ internal sealed partial class SpikeDatabase
             "label" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
+                ComponentInput(
+                    "textMode",
+                    "Content source",
+                    "textMode",
+                    "option",
+                    "literal",
+                    options:
+                    [
+                        new FieldOption("literal", "Text"),
+                        new FieldOption("countUp", "Count up"),
+                        new FieldOption("countDown", "Count down"),
+                    ],
+                    transition: CalculatedTextTransition("sampleText")),
+                ComponentInput("textSizeMultiplier", "Size multiplier", "textSizeMultiplier", ValueKind.Decimal, "1", minimum: 0.1m, maximum: 20, increment: 0.1m),
                 ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Subtitle"),
+                ComponentInput(
+                    "subtextMode",
+                    "Content source",
+                    "subtextMode",
+                    "option",
+                    "literal",
+                    options:
+                    [
+                        new FieldOption("literal", "Text"),
+                        new FieldOption("countUp", "Count up"),
+                        new FieldOption("countDown", "Count down"),
+                    ],
+                    transition: CalculatedTextTransition("sampleSubtext")),
+                ComponentInput("subtextSizeMultiplier", "Size multiplier", "subtextSizeMultiplier", ValueKind.Decimal, "1", minimum: 0.1m, maximum: 20, increment: 0.1m),
             ],
             "surface" =>
             [
@@ -954,6 +1056,12 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("text", "Text", "text", "multilineText", "Hola 😀😃😄"),
                 ComponentInput("currentCharacter", "Current character", "currentCharacter", "number", "1", minimum: 1, maximum: 9999, increment: 1),
                 ComponentInput("trigger", "Trigger", "trigger", "boolean", "false"),
+            ],
+            "keypad" =>
+            [
+                ComponentInput("availableWidth", "Available width", "availableWidth", "number", "280", minimum: 1, maximum: 10000, increment: 1),
+                ComponentInput("activeKey", "Active key", "activeKey", "text", ""),
+                ComponentInput("enabled", "Enabled", "enabled", "boolean", "true"),
             ],
             "audio" =>
             [
@@ -1159,6 +1267,10 @@ internal sealed partial class SpikeDatabase
     {
         switch (componentType)
         {
+            case "label":
+                SetComponentInputGroup(inputs, ["sampleText", "textMode", "textSizeMultiplier"], "text", "Text", 10);
+                SetComponentInputGroup(inputs, ["sampleSubtext", "subtextMode", "subtextSizeMultiplier"], "subtext", "Subtext", 20);
+                break;
             case "textBox":
                 SetComponentInputGroup(inputs, ["sampleText", "placeholder", "maxLines"], "text", "Text", 10);
                 SetComponentInputGroup(inputs, ["fixedSize", "contentMaxWidth", "growSize"], "layout", "Layout", 20);
@@ -1227,6 +1339,15 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static JsonObject CalculatedTextTransition(string targetInputId) => new()
+    {
+        ["targetInputId"] = targetInputId,
+        ["triggerValues"] = new JsonArray("countUp", "countDown"),
+        ["replacementValue"] = "00:00",
+        ["targetValuePattern"] = @"^\d+:[0-5]\d$",
+        ["forwardedTargetOnly"] = true,
+    };
+
     private static JsonObject ComponentInput(
         string id,
         string label,
@@ -1249,7 +1370,8 @@ internal sealed partial class SpikeDatabase
         string uiGroupId = "",
         string uiGroupLabel = "",
         string uiParentGroupId = "",
-        string unit = "")
+        string unit = "",
+        JsonObject? transition = null)
     {
         return ComponentInput(
             id,
@@ -1274,7 +1396,8 @@ internal sealed partial class SpikeDatabase
             uiGroupId,
             uiGroupLabel,
             uiParentGroupId,
-            unit);
+            unit,
+            transition);
     }
 
     private static JsonObject ComponentInput(
@@ -1300,7 +1423,8 @@ internal sealed partial class SpikeDatabase
         string uiGroupId = "",
         string uiGroupLabel = "",
         string uiParentGroupId = "",
-        string unit = "")
+        string unit = "",
+        JsonObject? transition = null)
     {
         return new JsonObject
         {
@@ -1326,6 +1450,7 @@ internal sealed partial class SpikeDatabase
             ["uiGroupId"] = uiGroupId,
             ["uiGroupLabel"] = uiGroupLabel,
             ["uiParentGroupId"] = uiParentGroupId,
+            ["transition"] = transition,
             ["unit"] = unit,
         };
     }
@@ -1517,6 +1642,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
+        NewComponentSeed("keypad", "component.keypad", "Default Keypad"),
         NewComponentSeed("button", "component.button", "Default Button"),
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),

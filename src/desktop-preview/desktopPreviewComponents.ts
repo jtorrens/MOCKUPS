@@ -65,7 +65,7 @@ export const desktopPreviewComponents = {
     contract: "./componentStackComponentContract",
     resolver: "./componentStackComponentResolver",
     renderable: "./componentStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "avatar", "button", "audio", "textInputBar", "keyboard", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "media", "bubble", "status_bar", "navigation_bar"],
   },
   avatar: {
     category: "component",
@@ -106,6 +106,14 @@ export const desktopPreviewComponents = {
     resolver: "./keyboardComponentResolver",
     renderable: "./keyboardComponentRenderable",
     embeds: ["iconBar"],
+  },
+  keypad: {
+    category: "system",
+    migrationStatus: "functional",
+    contract: "./keypadComponentContract",
+    resolver: "./keypadComponentResolver",
+    renderable: "./keypadComponentRenderable",
+    embeds: ["label"],
   },
   media: {
     category: "component",

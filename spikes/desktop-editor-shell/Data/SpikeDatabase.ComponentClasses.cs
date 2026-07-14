@@ -154,6 +154,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             value,
@@ -183,6 +184,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             value,
@@ -214,6 +216,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             localValue,
@@ -259,6 +262,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
                 Unit: descriptor.Unit),
             localValue,
@@ -385,6 +389,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride);
@@ -429,6 +434,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride,
@@ -506,6 +512,7 @@ internal sealed partial class SpikeDatabase
                 PairLabels: descriptor.PairLabels,
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
+                StructuredCollection: descriptor.StructuredCollection,
                 RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
             localValue,
             IsInherited: !hasOverride,
@@ -811,6 +818,9 @@ internal sealed partial class SpikeDatabase
             ValueKind.ComponentInputBindings => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
+            ValueKind.StructuredCollection => node is JsonArray
+                ? node.ToJsonString()
+                : descriptor.DefaultValue,
             _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
                 ? text
                 : node.ToJsonString().Trim('"'),
@@ -837,6 +847,8 @@ internal sealed partial class SpikeDatabase
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             ValueKind.ComponentInputBindings => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)
                 ?? new JsonObject(),
+            ValueKind.StructuredCollection => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)
+                ?? new JsonArray(),
             _ => JsonValue.Create(value)!,
         };
     }

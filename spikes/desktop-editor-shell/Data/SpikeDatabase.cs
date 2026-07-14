@@ -56,6 +56,7 @@ internal sealed partial class SpikeDatabase
             EnsureThemeTokens(connection);
             EnsureButtonComponentClasses(connection);
             EnsureComponentStackClasses(connection);
+            EnsureKeypadComponentClasses(connection);
             EnsureLockScreenModule(connection);
             NormalizeIconRowButtonCollections(connection);
             RetireButtonIconComponentClasses(connection);
@@ -63,6 +64,7 @@ internal sealed partial class SpikeDatabase
             NormalizeModuleAppearanceModes(connection);
             NormalizeKeyboardConfiguration(connection);
             NormalizeRuntimeInputContracts(connection);
+            NormalizeLabelRuntimeInputs(connection);
             NormalizeRuntimeInputForwardingContracts(connection);
             NormalizeConversationModuleInstanceBehavior(connection);
             NormalizeModuleInstanceRuntimePayloads(connection);
@@ -89,6 +91,7 @@ internal sealed partial class SpikeDatabase
         SeedComponentClassesIfEmpty(connection);
         EnsureButtonComponentClasses(connection);
         EnsureComponentStackClasses(connection);
+        EnsureKeypadComponentClasses(connection);
         EnsureLockScreenModule(connection);
         NormalizeIconRowButtonCollections(connection);
         RetireButtonIconComponentClasses(connection);
@@ -99,6 +102,7 @@ internal sealed partial class SpikeDatabase
         NormalizeModuleAppearanceModes(connection);
         NormalizeKeyboardConfiguration(connection);
         NormalizeRuntimeInputContracts(connection);
+        NormalizeLabelRuntimeInputs(connection);
         NormalizeRuntimeInputForwardingContracts(connection);
         NormalizeConversationModuleInstanceBehavior(connection);
         NormalizeModuleInstanceRuntimePayloads(connection);

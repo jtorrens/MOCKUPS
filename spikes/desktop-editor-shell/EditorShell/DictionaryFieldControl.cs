@@ -295,6 +295,11 @@ internal sealed class DictionaryFieldControl : Grid
 
         if (valueControl is Control control)
         {
+            if (!_definition.IsEditable)
+            {
+                control.IsEnabled = false;
+                control.Opacity = 0.58;
+            }
             SetColumn(control, _valueOnly || _blockLayout ? 0 : 1);
             if (_separatedComplexLayout)
             {

@@ -391,7 +391,8 @@ internal sealed partial class SpikeDatabase
                 input.ResolvedJsonKey,
                 input.UiParentGroupId,
                 input.UiOrder,
-                input.UiSectionLabel))
+                input.UiSectionLabel,
+                input.Transition))
             .ToList();
     }
 

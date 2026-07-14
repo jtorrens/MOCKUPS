@@ -41,6 +41,7 @@ var tests = new (string Name, Action Run)[]
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
+    ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
 };
@@ -775,6 +776,55 @@ static void ComponentStackSeedOpensAndRenders()
         var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
         Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void KeypadSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-keypad-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var keypad = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "keypad");
+        Equal("System", keypad.Parent?.Name ?? "");
+        var defaultVariant = keypad.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+        var settings = database.GetComponentClassSettings(keypad.Id);
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Keypad config.");
+        var keypadConfig = config["keypad"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Keypad contract.");
+        Equal(3, keypadConfig["columns"]?.GetValue<int>() ?? -1);
+        Equal(12, (keypadConfig["keys"] as JsonArray)?.Count ?? -1);
+        var keysField = database.CreateComponentPresetFieldValue(defaultVariant, "component.keypad.keys");
+        True(keysField.Definition.StructuredCollection is not null);
+        Equal(5, keysField.Definition.StructuredCollection?.Fields.Count ?? -1);
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Keypad preview.");
+        SequenceEqual(
+            ["availableWidth", "activeKey", "enabled"],
+            ComponentPreviewInputSession.ReadRuntimeInputs(preview, config).Select((input) => input.Id).ToList());
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        inputSession.SetExternalInputValue("activeKey", "5");
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            resolvedPayload).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
     }
     finally
     {

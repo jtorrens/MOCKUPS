@@ -28,6 +28,7 @@ internal static class RuntimeInputForwardingContract
                 throw new InvalidOperationException("Forwarded runtime inputs require stable id and jsonKey values.");
             }
             var next = definition.DeepClone() as JsonObject ?? new JsonObject();
+            RebaseTransitionForParent(next, container);
             next["source"] = "runtime";
             next["defaultValue"] = StorageText(container[targetKey]);
             if (existingIds.Add(id)) inputs.Add(next);
@@ -47,6 +48,22 @@ internal static class RuntimeInputForwardingContract
             }
         });
         return effective;
+    }
+
+    private static void RebaseTransitionForParent(JsonObject definition, JsonObject container)
+    {
+        if (definition["transition"] is not JsonObject transition) return;
+        var targetSourceInputId = Text(transition["targetInputId"]);
+        var sibling = (container[StorageKey] as JsonObject)?
+            .Select((entry) => entry.Value as JsonObject)
+            .FirstOrDefault((candidate) => candidate is not null
+                && Text(candidate["sourceInputId"]).Equals(targetSourceInputId, StringComparison.Ordinal));
+        if (sibling is null)
+        {
+            definition.Remove("transition");
+            return;
+        }
+        transition["targetInputId"] = Text(sibling["id"]);
     }
 
     public static JsonObject Definition(
@@ -83,8 +100,22 @@ internal static class RuntimeInputForwardingContract
                     ["value"] = option.Value,
                     ["label"] = option.Label,
                 }).ToArray()),
+            ["transition"] = TransitionNode(input.Transition),
         };
     }
+
+    private static JsonObject? TransitionNode(ComponentInputTransitionDefinition? transition) =>
+        transition is null
+            ? null
+            : new JsonObject
+            {
+                ["targetInputId"] = transition.TargetInputId,
+                ["triggerValues"] = new JsonArray(
+                    transition.TriggerValues.Select((value) => (JsonNode?)value).ToArray()),
+                ["replacementValue"] = transition.ReplacementValue,
+                ["targetValuePattern"] = transition.TargetValuePattern,
+                ["forwardedTargetOnly"] = transition.ForwardedTargetOnly,
+            };
 
     public static void Visit(
         JsonNode? node,

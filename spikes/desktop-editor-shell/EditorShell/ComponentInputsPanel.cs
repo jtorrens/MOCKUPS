@@ -1328,6 +1328,7 @@ internal sealed class ComponentPreviewInputSession
             {
                 Animation = ReadAnimationDefinition(item),
                 BehaviorTiming = ReadBehaviorTimingDefinition(item),
+                Transition = ReadInputTransitionDefinition(item),
             });
         }
 
@@ -1515,6 +1516,28 @@ internal sealed class ComponentPreviewInputSession
         return interpolations.Count > 0
             ? new AnimationFieldDefinition(interpolations, extendsOwnerDuration)
             : new AnimationFieldDefinition(["hold"], extendsOwnerDuration);
+    }
+
+    private static ComponentInputTransitionDefinition? ReadInputTransitionDefinition(JsonObject input)
+    {
+        if (input["transition"] is not JsonObject transition)
+        {
+            return null;
+        }
+        var targetInputId = JsonString(transition, "targetInputId");
+        var replacementValue = JsonString(transition, "replacementValue");
+        var triggerValues = JsonStringArray(transition, "triggerValues");
+        if (string.IsNullOrWhiteSpace(targetInputId)
+            || triggerValues.Count == 0)
+        {
+            throw new InvalidOperationException("Component input transitions require targetInputId and triggerValues.");
+        }
+        return new ComponentInputTransitionDefinition(
+            targetInputId,
+            triggerValues,
+            replacementValue,
+            JsonString(transition, "targetValuePattern"),
+            transition["forwardedTargetOnly"]?.GetValue<bool>() == true);
     }
 
     private static string InputSignature(ComponentInputDefinition input)
@@ -1774,7 +1797,8 @@ internal sealed record ComponentInputDefinition(
     string UiSectionLabel = "",
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
-    BehaviorTimingDefinition? BehaviorTiming = null);
+    BehaviorTimingDefinition? BehaviorTiming = null,
+    ComponentInputTransitionDefinition? Transition = null);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

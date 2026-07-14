@@ -9,6 +9,8 @@ export interface LabelDesignContract {
   id: string;
   text: string;
   subtext: string;
+  textSizeMultiplier: number;
+  subtextSizeMultiplier: number;
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
   padding: SpacingPairContract;

@@ -8,7 +8,7 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import type { ButtonContentMode, ButtonDesignContract, ButtonState, ButtonStateDesignContract } from "./buttonComponentContract.js";
-import { resolveLabelComponentFromRecords } from "./labelComponentResolver.js";
+import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDesignContract {
@@ -75,9 +75,10 @@ function resolveButtonStateStyle(
         componentPresetConfig(bases, "label", requiredString(labelSlot, "presetId", `component.button.states.${state}.label.presetId`)),
         asRecord(labelSlot.overrides),
       ),
-      { ...preview, sampleText: text, sampleSubtext: "", textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
+      { ...literalLabelPreview(text), textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
       bases,
       `component.button.${state}.label`,
+      staticLabelFrameContext,
     ),
     surface: resolveSurfaceComponentAtSize(
       mergeComponentDefaults(

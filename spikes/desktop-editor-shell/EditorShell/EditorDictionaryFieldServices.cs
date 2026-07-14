@@ -12,18 +12,21 @@ internal sealed class EditorDictionaryFieldServices
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly Func<string?> _selectedThemeId;
+    private readonly Action<string, string> _setRuntimeTestValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
 
     public EditorDictionaryFieldServices(
         SpikeDatabase database,
         EditorPathBrowser pathBrowser,
         EditorDomainDialogService domainDialogs,
-        Func<string?> selectedThemeId)
+        Func<string?> selectedThemeId,
+        Action<string, string> setRuntimeTestValue)
     {
         _database = database;
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
         _selectedThemeId = selectedThemeId;
+        _setRuntimeTestValue = setRuntimeTestValue;
     }
 
     public DictionaryFieldServices ForNode(
@@ -109,6 +112,7 @@ internal sealed class EditorDictionaryFieldServices
             OpenRuntimeComponentOverrides: openRuntimeComponentOverrides is null ? null : OpenRuntimeOverrides,
             ConfirmStructuredCollectionItemDelete: _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs: _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
+            SetRuntimeTestValue: _setRuntimeTestValue,
             StructuredCollectionUiState: _structuredCollectionUiState);
     }
 

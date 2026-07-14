@@ -180,6 +180,7 @@ internal static class WebDesignPreviewRenderer
             appConfigJson = payload.AppConfigJson,
             instanceJson = payload.InstanceJson,
             frameRate = payload.FrameRate,
+            localFrame = payload.LocalFrame,
             previewFrame = new
             {
                 canvasWidth = metrics.CanvasWidth,
