@@ -64,10 +64,17 @@ internal sealed partial class SpikeDatabase
                 ("$metadataJson", existingMetadata.ToJsonString()));
         }
 
-        Execute(
+        var existingLayout = ScalarString(
             connection,
-            "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.keypad', $layoutJson)",
-            ("$layoutJson", KeypadEditorLayoutJson()));
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.keypad'");
+        if (string.IsNullOrWhiteSpace(existingLayout)
+            || !existingLayout.Contains("\"simplified\"", StringComparison.Ordinal))
+        {
+            Execute(
+                connection,
+                "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.keypad', $layoutJson)",
+                ("$layoutJson", KeypadEditorLayoutJson()));
+        }
     }
 
     private static void NormalizeKeypadConfig(
@@ -207,6 +214,63 @@ internal sealed partial class SpikeDatabase
     private static string KeypadEditorLayoutJson() =>
         """
         {
+          "simplified": {
+            "groups": [
+              {
+                "id": "component",
+                "label": "Component",
+                "icon": "general",
+                "order": 10,
+                "entries": [
+                  { "id": "keypad-sizing", "kind": "field", "fieldId": "component.keypad.sizingMode", "order": 10, "enabled": true },
+                  { "id": "keypad-key-size", "kind": "field", "fieldId": "component.keypad.keySize", "order": 20, "enabled": true }
+                ]
+              },
+              {
+                "id": "component.keypad.label.editor",
+                "label": "Label",
+                "icon": "label",
+                "order": 20,
+                "groups": [
+                  {
+                    "id": "component.label.surface.editor",
+                    "label": "Surface",
+                    "icon": "style",
+                    "order": 10,
+                    "entries": [
+                      {
+                        "id": "keypad-label-surface-radius",
+                        "kind": "embeddedField",
+                        "fieldId": "component.style.cornerRadiusToken",
+                        "slotFieldIds": ["component.keypad.label.editor", "component.label.surface.editor"],
+                        "order": 10,
+                        "enabled": true,
+                        "captured": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "keys",
+                "label": "Keys",
+                "icon": "keypad",
+                "order": 30,
+                "groups": [
+                  {
+                    "id": "key_star",
+                    "label": "Key 10",
+                    "icon": "keypad",
+                    "order": 10,
+                    "entries": [
+                      { "id": "keypad-key10-kind", "kind": "collectionField", "collectionFieldId": "component.keypad.keys", "itemId": "key_star", "itemFieldId": "kind", "order": 10, "enabled": true },
+                      { "id": "keypad-key10-icon", "kind": "collectionField", "collectionFieldId": "component.keypad.keys", "itemId": "key_star", "itemFieldId": "iconToken", "order": 20, "enabled": true }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
           "cards": [
             {
               "id": "general",

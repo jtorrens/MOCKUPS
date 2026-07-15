@@ -15,6 +15,8 @@ internal sealed class EditorContentController
     private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
+    private readonly Dictionary<string, EditorPresentationMode> _presentationModes = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _simplifiedExpansionStates = new(StringComparer.Ordinal);
 
     public EditorContentController(
         SpikeDatabase database,
@@ -39,21 +41,54 @@ internal sealed class EditorContentController
     public void Build(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
     {
         var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
+        var projection = new EditorSimplifiedProjectionState(_database, layoutNode.RecordClassId, layout);
+        var presentationKey = $"{layoutNode.RecordClassId}:{dataNode.Id}";
+        var mode = _presentationModes.GetValueOrDefault(
+            presentationKey,
+            projection.IsAvailable ? EditorPresentationMode.Simplified : EditorPresentationMode.Complete);
         ResetRegistries();
-        var cards = layout.Cards
-                     .Where((card) => card.Visible)
-                     .OrderBy((card) => card.Order)
-                     .ThenBy((card) => card.Label)
-                     .Select((layoutCard) => _layoutCards.Create(dataNode, layoutCard))
-                     .Concat(_collectionCards.Create(dataNode))
-                     .ToList();
-        _cardHost.Replace(cards);
+        var simplifiedMode = mode == EditorPresentationMode.Simplified && projection.IsAvailable;
+        List<InstantEditorCard> cards;
+        if (simplifiedMode)
+        {
+            var simplifiedCard = _layoutCards.CreateSimplified(
+                dataNode,
+                projection,
+                _simplifiedExpansionStates.GetValueOrDefault(presentationKey, true));
+            simplifiedCard.ExpansionChanged += (expanded) =>
+                _simplifiedExpansionStates[presentationKey] = expanded;
+            cards = [simplifiedCard];
+        }
+        else
+        {
+            cards = layout.Cards
+                .Where((card) => card.Visible)
+                .OrderBy((card) => card.Order)
+                .ThenBy((card) => card.Label)
+                .Select((layoutCard) => _layoutCards.Create(dataNode, layoutCard, projection))
+                .Concat(_collectionCards.Create(dataNode))
+                .ToList();
+        }
+        var selector = projection.IsAvailable
+            ? EditorPresentationModeSelector.Create(mode, (next) =>
+            {
+                if (next == mode) return;
+                _presentationModes[presentationKey] = next;
+                Build(layoutNode, dataNode);
+            })
+            : null;
+        _cardHost.Replace(cards, selector, resetExpansion: !simplifiedMode);
     }
 
     public void BuildEmbedded(EditorEmbeddedContext context)
     {
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
+        var ownerLayout = _database.LoadEditorLayout(context.OwnerNode.RecordClassId);
+        var projection = new EditorSimplifiedProjectionState(
+            _database,
+            context.OwnerNode.RecordClassId,
+            ownerLayout);
 
         if (!context.IsRuntimeRoot
             && EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
@@ -80,7 +115,7 @@ internal sealed class EditorContentController
                             .ToList(),
                     },
                 ],
-            }));
+            }, projection));
         }
 
         var layout = _database.LoadEditorLayout(context.RecordClassId);
@@ -89,7 +124,7 @@ internal sealed class EditorContentController
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard));
+            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard, projection));
         }
         _cardHost.Replace(cards);
     }

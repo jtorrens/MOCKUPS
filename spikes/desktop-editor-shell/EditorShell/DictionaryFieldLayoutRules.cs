@@ -1,13 +1,45 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class DictionaryFieldLayoutRules
 {
+    public const double MinimumLabelWidth = 72;
+
+    public static double MaximumLabelWidth(bool compact) => compact ? 132 : 180;
+
+    public static double ResponsiveLabelWidth(double availableWidth, bool compact)
+    {
+        if (availableWidth <= 0 || double.IsInfinity(availableWidth))
+        {
+            return MaximumLabelWidth(compact);
+        }
+
+        return Math.Clamp(
+            availableWidth * (compact ? 0.30 : 0.34),
+            MinimumLabelWidth,
+            MaximumLabelWidth(compact));
+    }
+
+    public static bool UsesStackedActions(
+        double availableWidth,
+        double contentMinimumWidth,
+        double actionsMinimumWidth,
+        int columnGapCount,
+        double columnSpacing)
+    {
+        return availableWidth > 0
+            && !double.IsInfinity(availableWidth)
+            && availableWidth < contentMinimumWidth
+                + actionsMinimumWidth
+                + (columnGapCount * columnSpacing);
+    }
+
     public static ColumnDefinitions Columns(ValueKind valueKind, bool compact = false)
     {
-        return new ColumnDefinitions(compact ? "132,*,Auto" : "180,*,Auto");
+        return new ColumnDefinitions($"{MaximumLabelWidth(compact)},*,Auto");
     }
 
     public static bool UsesBlockLayout(ValueKind valueKind) =>

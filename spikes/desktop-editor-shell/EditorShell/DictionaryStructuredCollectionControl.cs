@@ -145,8 +145,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var content = new StackPanel { Spacing = 8 };
         foreach (var input in collection.Fields)
         {
-            if (!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(item, input, itemIndex)) continue;
-            content.Children.Add(CreateItemField(collection, item, input));
+            if (!CollectionFieldAvailability.IsEnabled(item, input, itemIndex)) continue;
+            content.Children.Add(CreateItemField(collection, item, itemIndex, input));
         }
 
         var subcards = new List<EditorInternalNavigationSection>();
@@ -183,6 +183,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private Control CreateItemField(
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
+        int itemIndex,
         ComponentInputDefinition input)
     {
         var componentItems = collection.ComponentItems;
@@ -272,7 +273,24 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
         };
-        return control;
+        return EditorSimplifiedPromotionControl.Wrap(
+            control,
+            _services.SimplifiedProjection,
+            EditorSimplifiedFieldReference.Collection(
+                _definition.Id,
+                ItemId(item, itemIndex),
+                input.Id,
+                [
+                    new EditorSimplifiedGroupIdentity(
+                        collection.Id,
+                        collection.Label,
+                        EditorIcons.Component),
+                    new EditorSimplifiedGroupIdentity(
+                        ItemId(item, itemIndex),
+                        $"{collection.ItemLabel} {itemIndex + 1}",
+                        EditorIcons.Component),
+                ],
+                _services.SimplifiedSlotFieldIds));
     }
 
     private void SetComponentInputs(

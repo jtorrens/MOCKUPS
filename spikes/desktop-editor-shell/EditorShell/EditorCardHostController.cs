@@ -28,7 +28,10 @@ internal sealed class EditorCardHostController
 
     public IReadOnlyList<InstantEditorCard> Cards => _cards;
 
-    public void Replace(IReadOnlyList<InstantEditorCard> cards)
+    public void Replace(
+        IReadOnlyList<InstantEditorCard> cards,
+        Control? header = null,
+        bool resetExpansion = true)
     {
         var candidateCards = cards.ToList();
         var candidateWrappers = candidateCards.Select(CreateWrapper).ToList();
@@ -36,9 +39,16 @@ internal sealed class EditorCardHostController
         _host.Children.Clear();
         _cards.Clear();
         _wrappers.Clear();
+        if (header is not null)
+        {
+            _host.Children.Add(header);
+        }
         foreach (var card in candidateCards)
         {
-            card.IsExpanded = false;
+            if (resetExpansion)
+            {
+                card.IsExpanded = false;
+            }
             card.Expanded += (_, _) =>
             {
                 foreach (var other in _cards.Where((item) => item != card).ToList())

@@ -830,7 +830,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     return Task.CompletedTask;
                 }
                 : null));
-        var fieldIsActive = CollectionFieldIsEnabled(item, input, itemIndex);
+        var fieldIsActive = CollectionFieldAvailability.IsEnabled(item, input, itemIndex);
         control.IsEnabled = fieldIsActive;
         control.IsVisible = fieldIsActive;
         control.ValueCommitted += (_, next) =>
@@ -1074,25 +1074,6 @@ internal sealed class RuntimeInputsCollectionEditor
             content,
             Subcards: childSubcards,
             SubcardLayout: EditorSubcardLayout.FlatStack);
-    }
-
-    internal static bool CollectionFieldIsEnabled(
-        JsonObject item,
-        ComponentInputDefinition input,
-        int itemIndex = 0)
-    {
-        if (itemIndex < input.MinimumItemIndex) return false;
-        if (string.IsNullOrWhiteSpace(input.EnabledWhenItemJsonKey)
-            || input.EnabledWhenItemValues is not { Count: > 0 })
-        {
-            return true;
-        }
-
-        var current = item[input.EnabledWhenItemJsonKey] is JsonValue value
-            && value.TryGetValue<string>(out var text)
-            ? text
-            : "";
-        return input.EnabledWhenItemValues.Contains(current, StringComparer.Ordinal);
     }
 
     private EditorInternalNavigationSection CreateTestValueGroupSubcard(

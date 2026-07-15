@@ -42,10 +42,31 @@ var tests = new (string Name, Action Run)[]
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
+    ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
+    ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
 };
+
+static void DictionaryFieldsRespondToCompactWidths()
+{
+    Equal(180d, DictionaryFieldLayoutRules.ResponsiveLabelWidth(1000, compact: false));
+    Equal(136d, DictionaryFieldLayoutRules.ResponsiveLabelWidth(400, compact: false));
+    Equal(72d, DictionaryFieldLayoutRules.ResponsiveLabelWidth(120, compact: true));
+    True(DictionaryFieldLayoutRules.UsesStackedActions(
+        availableWidth: 250,
+        contentMinimumWidth: 106,
+        actionsMinimumWidth: 154,
+        columnGapCount: 2,
+        columnSpacing: 8));
+    True(!DictionaryFieldLayoutRules.UsesStackedActions(
+        availableWidth: 300,
+        contentMinimumWidth: 106,
+        actionsMinimumWidth: 154,
+        columnGapCount: 2,
+        columnSpacing: 8));
+}
 
 var failures = new List<string>();
 foreach (var (name, run) in tests)
@@ -64,6 +85,66 @@ foreach (var (name, run) in tests)
 
 Console.WriteLine($"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
+
+static void SimplifiedEditorCapturesKeypadDefaults()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-simplified-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var keypadLayout = database.LoadEditorLayout("component.keypad");
+        True(keypadLayout.Simplified is not null);
+        var enabledChildCount = keypadLayout.Simplified!.Entries.Count((entry) => entry.Enabled);
+        True(enabledChildCount >= 5);
+        True(keypadLayout.Simplified.Entries.Any((entry) =>
+            entry.FieldId == "component.keypad.sizingMode" && entry.Enabled));
+        True(keypadLayout.Simplified.Entries.Any((entry) =>
+            entry.CollectionFieldId == "component.keypad.keys"
+            && entry.ItemId == "key_star"
+            && entry.ItemFieldId == "kind"
+            && entry.Enabled));
+
+        var passwordLayout = database.LoadEditorLayout("component.password");
+        var passwordProjection = new EditorSimplifiedProjectionState(
+            database,
+            "component.password",
+            passwordLayout);
+        True(passwordProjection.IsAvailable);
+        var captured = passwordProjection.Layout!.Entries
+            .Where((entry) => entry.Captured
+                && entry.SlotFieldIds.FirstOrDefault() == "component.password.keypad.editor")
+            .ToList();
+        Equal(enabledChildCount, captured.Count);
+
+        keypadLayout.Simplified.Groups[0].Entries.Add(new EditorSimplifiedEntry
+        {
+            Id = "late-child-field",
+            Kind = "field",
+            FieldId = "component.keypad.columns",
+            Order = 999,
+            Enabled = true,
+        });
+        database.SaveEditorLayout("component.keypad", keypadLayout);
+
+        var reopenedPassword = database.LoadEditorLayout("component.password");
+        var reopenedProjection = new EditorSimplifiedProjectionState(
+            database,
+            "component.password",
+            reopenedPassword);
+        var recaptured = reopenedProjection.Layout!.Entries
+            .Where((entry) => entry.Captured
+                && entry.SlotFieldIds.FirstOrDefault() == "component.password.keypad.editor")
+            .ToList();
+        Equal(enabledChildCount, recaptured.Count);
+        True(recaptured.All((entry) => !entry.Id.EndsWith(":late-child-field", StringComparison.Ordinal)));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
 
 static void ForwardedChildInputsBecomeParentRuntimeInputs()
 {
@@ -601,12 +682,12 @@ static void ComponentStackSeedOpensAndRenders()
         var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");
         var reflowWeightField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeWeight");
         var fixedGapItem = new JsonObject { ["gapBeforeMode"] = "fixed" };
-        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, fixedGapField, 0));
-        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, fixedGapField, 1));
-        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(fixedGapItem, reflowWeightField, 1));
+        True(!CollectionFieldAvailability.IsEnabled(fixedGapItem, fixedGapField, 0));
+        True(CollectionFieldAvailability.IsEnabled(fixedGapItem, fixedGapField, 1));
+        True(!CollectionFieldAvailability.IsEnabled(fixedGapItem, reflowWeightField, 1));
         var reflowGapItem = new JsonObject { ["gapBeforeMode"] = "reflow" };
-        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(reflowGapItem, fixedGapField, 1));
-        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(reflowGapItem, reflowWeightField, 1));
+        True(!CollectionFieldAvailability.IsEnabled(reflowGapItem, fixedGapField, 1));
+        True(CollectionFieldAvailability.IsEnabled(reflowGapItem, reflowWeightField, 1));
         var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-componentStack");
         True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
         True(componentOptions.All((option) => !string.IsNullOrWhiteSpace(option.GroupValue)));
@@ -817,9 +898,9 @@ static void KeypadSeedOpensAndRenders()
         Equal(6, keysField.Definition.StructuredCollection?.Fields.Count ?? -1);
         var iconField = keysField.Definition.StructuredCollection!.Fields.Single((field) => field.Id == "iconToken");
         Equal(ValueKind.IconToken, iconField.ValueKind);
-        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(
+        True(CollectionFieldAvailability.IsEnabled(
             new JsonObject { ["kind"] = "icon" }, iconField, 0));
-        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(
+        True(!CollectionFieldAvailability.IsEnabled(
             new JsonObject { ["kind"] = "text" }, iconField, 0));
         Equal("text", keypadConfig["keys"]?[0]?["kind"]?.GetValue<string>() ?? "");
         True(keypadConfig["labelSlot"] is JsonObject);

@@ -27,4 +27,6 @@ internal sealed record DictionaryFieldServices(
     Func<string, Task<bool>>? ConfirmStructuredCollectionItemDelete = null,
     Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     Action<string, string>? SetRuntimeTestValue = null,
-    EditorSessionUiState? StructuredCollectionUiState = null);
+    EditorSessionUiState? StructuredCollectionUiState = null,
+    EditorSimplifiedProjectionState? SimplifiedProjection = null,
+    IReadOnlyList<string>? SimplifiedSlotFieldIds = null);

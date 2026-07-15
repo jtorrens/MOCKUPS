@@ -21,6 +21,16 @@ internal sealed partial class SpikeDatabase
             ?? throw new InvalidOperationException($"Invalid editor layout JSON for record class '{recordClassId}'.");
     }
 
+    public void SaveEditorLayout(string recordClassId, EditorLayout layout)
+    {
+        using var connection = OpenConnection();
+        Execute(
+            connection,
+            "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
+            ("$recordClassId", recordClassId),
+            ("$layoutJson", JsonSerializer.Serialize(layout, new JsonSerializerOptions { WriteIndented = true })));
+    }
+
     internal static void SeedEditorLayouts(SqliteConnection connection)
     {
         var recordClassIds = new[]

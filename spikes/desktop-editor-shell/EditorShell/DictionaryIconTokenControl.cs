@@ -10,11 +10,15 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl, IDictionaryPreviewValueControl
 {
+    private const double TokenMinimumWidth = 72;
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
     private readonly bool _isEditable;
     private readonly Border _previewBox;
     private readonly TextBlock _tokenText;
+    private readonly Grid _actions;
+    private readonly Button _pickButton;
+    private readonly Button _clearButton;
     private string _value;
 
     public DictionaryIconTokenControl(
@@ -28,8 +32,9 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
 
-        ColumnDefinitions = new ColumnDefinitions("38,*,Auto,Auto");
         ColumnSpacing = 8;
+        RowSpacing = 8;
+        MinWidth = 0;
 
         _previewBox = new Border
         {
@@ -52,15 +57,15 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
         Grid.SetColumn(_tokenText, 1);
         Children.Add(_tokenText);
 
-        var pickButton = new Button
+        _pickButton = new Button
         {
             Content = "Pick icon...",
             MinWidth = 92,
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = _isEditable && _showIconTokenPicker is not null,
         };
-        EditorAccessibility.Describe(pickButton, "Pick an icon token from the active Icon Theme");
-        pickButton.Click += async (_, _) =>
+        EditorAccessibility.Describe(_pickButton, "Pick an icon token from the active Icon Theme");
+        _pickButton.Click += async (_, _) =>
         {
             if (_showIconTokenPicker is null) return;
 
@@ -72,18 +77,15 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
             ValueChanged?.Invoke(this, _value);
             ValueCommitted?.Invoke(this, _value);
         };
-        Grid.SetColumn(pickButton, 2);
-        Children.Add(pickButton);
-
-        var clearButton = new Button
+        _clearButton = new Button
         {
             Content = "Clear",
             MinWidth = 54,
             VerticalAlignment = VerticalAlignment.Center,
             IsEnabled = _isEditable,
         };
-        EditorAccessibility.Describe(clearButton, "Clear the selected icon token");
-        clearButton.Click += (_, _) =>
+        EditorAccessibility.Describe(_clearButton, "Clear the selected icon token");
+        _clearButton.Click += (_, _) =>
         {
             if (!_isEditable || string.IsNullOrWhiteSpace(_value)) return;
 
@@ -92,9 +94,21 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
             ValueChanged?.Invoke(this, _value);
             ValueCommitted?.Invoke(this, _value);
         };
-        Grid.SetColumn(clearButton, 3);
-        Children.Add(clearButton);
+        _actions = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto"),
+            ColumnSpacing = 8,
+            Children =
+            {
+                _pickButton,
+                _clearButton,
+            },
+        };
+        SetColumn(_clearButton, 1);
+        Children.Add(_actions);
 
+        SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width);
+        ApplyResponsiveLayout(double.PositiveInfinity);
         RefreshPreview();
     }
 
@@ -117,5 +131,40 @@ internal sealed class DictionaryIconTokenControl : Grid, IDictionaryValueControl
             : _createIconPreview?.Invoke(_value);
         _tokenText.Text = string.IsNullOrWhiteSpace(_value) ? "Select icon token..." : _value;
         _tokenText.Opacity = string.IsNullOrWhiteSpace(_value) ? 0.58 : 1;
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        var actionsMinimumWidth = _pickButton.MinWidth
+            + _clearButton.MinWidth
+            + _actions.ColumnSpacing;
+        var stacked = DictionaryFieldLayoutRules.UsesStackedActions(
+            width,
+            _previewBox.Width + TokenMinimumWidth,
+            actionsMinimumWidth,
+            columnGapCount: 2,
+            ColumnSpacing);
+        ColumnDefinitions = stacked
+            ? new ColumnDefinitions("38,*")
+            : new ColumnDefinitions("38,*,Auto");
+        RowDefinitions = stacked
+            ? new RowDefinitions("Auto,Auto")
+            : new RowDefinitions("Auto");
+
+        SetColumn(_previewBox, 0);
+        SetRow(_previewBox, 0);
+        SetColumn(_tokenText, 1);
+        SetRow(_tokenText, 0);
+        SetColumn(_actions, stacked ? 0 : 2);
+        SetColumnSpan(_actions, stacked ? 2 : 1);
+        SetRow(_actions, stacked ? 1 : 0);
+        _actions.ColumnDefinitions = stacked
+            ? new ColumnDefinitions("*,*")
+            : new ColumnDefinitions("Auto,Auto");
+        _actions.HorizontalAlignment = stacked
+            ? HorizontalAlignment.Stretch
+            : HorizontalAlignment.Right;
+        _pickButton.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _clearButton.HorizontalAlignment = HorizontalAlignment.Stretch;
     }
 }

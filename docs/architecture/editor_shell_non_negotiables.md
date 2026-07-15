@@ -210,6 +210,16 @@ Internal navigation is a shared control. It owns keyboard navigation,
 selection, responsive content placement, dividers and session state. Editors
 only provide sections and metadata.
 
+Simplified editing is also a shared metadata projection. Component editor
+layouts may declare promoted direct, embedded and structured-collection fields,
+but the Simplified surface must resolve them through their existing
+`FieldDefinition`, ValueKind, dictionary control and commit route. The selected
+Simplified/Complete mode is session-only. Embedded Simplified defaults are
+materialized as a parent-owned snapshot exactly once; they are never live UI
+inheritance. A provenance lock may identify a captured entry, but it must not
+make the underlying field read-only or couple later child changes back into the
+parent projection.
+
 While space permits, `verticalCards` is a two-panel surface with an always
 visible draggable vertical splitter. Its responsive threshold is derived from
 the selected navigation width plus splitter width plus the minimum content
@@ -226,6 +236,12 @@ must not impose a field-level minimum width: selected text stays on one line,
 contracts with character ellipsis and remains clipped inside the selector while
 the containing grid reserves its trailing action columns. Independent surfaces
 such as dialogs or preview toolbars may declare their own explicit minimum.
+Inline dictionary labels follow the same rule: their shared column contracts
+with the field, the label remains on one line and uses character ellipsis. A
+compound dictionary value with multiple actions owns its responsive layout and
+moves those actions to a second row when its declared content and action minima
+no longer fit. The host and individual editors must not clip those actions or
+introduce editor-specific breakpoints.
 
 Dictionary editability also owns presentation. When a `FieldDefinition` is not
 editable, the shared dictionary host disables and visibly attenuates the value

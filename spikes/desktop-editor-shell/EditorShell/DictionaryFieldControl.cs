@@ -18,7 +18,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly bool _valueOnly;
     private readonly bool _blockLayout;
     private readonly bool _separatedComplexLayout;
-    private readonly double _labelColumnWidth;
+    private readonly bool _compact;
     private readonly Border? _complexSeparator;
     private bool _isInherited;
     private string _value;
@@ -45,7 +45,7 @@ internal sealed class DictionaryFieldControl : Grid
         _valueOnly = valueOnly;
         _separatedComplexLayout = DictionaryFieldLayoutRules.UsesBlockLayout(_definition.ValueKind);
         _blockLayout = !valueOnly && _separatedComplexLayout;
-        _labelColumnWidth = compact ? 132 : 180;
+        _compact = compact;
 
         MinWidth = 0;
         ClipToBounds = true;
@@ -73,6 +73,9 @@ internal sealed class DictionaryFieldControl : Grid
             Margin = _definition.SelectComponentClass
                 ? new Thickness(0, 7, 0, 0)
                 : DictionaryFieldLayoutRules.LabelMargin(_definition.ValueKind),
+            MinWidth = 0,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap,
         };
         SetColumn(_label, 0);
         if (_blockLayout) SetRow(_label, 1);
@@ -368,9 +371,17 @@ internal sealed class DictionaryFieldControl : Grid
             return;
         }
 
+        var labelWidth = _valueOnly || _blockLayout
+            ? 0
+            : DictionaryFieldLayoutRules.ResponsiveLabelWidth(availableWidth, _compact);
+        if (!_valueOnly && !_blockLayout)
+        {
+            ColumnDefinitions[0].Width = new GridLength(labelWidth);
+        }
+
         var reservedWidth = _valueOnly || _blockLayout
             ? 0
-            : _labelColumnWidth
+            : labelWidth
               + (2 * ColumnSpacing)
               + (_restoreButton.IsVisible ? _restoreButton.Width : 0);
         var valueWidth = Math.Max(0, availableWidth - reservedWidth);
