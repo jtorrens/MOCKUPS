@@ -451,10 +451,12 @@ internal sealed partial class SpikeDatabase
             return CreateEmbeddedComponentFieldValue(ownerNode.Id, slots, embeddedFieldId);
         }
 
-        if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+        if (ownerNode.Kind is ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant)
         {
             if (slots.Count == 0) throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
-            var moduleSettings = GetModuleSettings(ownerNode.Id);
+            var moduleSettings = ownerNode.Kind == ProjectTreeNodeKind.Module
+                ? GetModuleSettings(ownerNode.Id)
+                : GetModuleVariantSettings(ownerNode);
             var moduleDescriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
             using var moduleConnection = OpenConnection();
             var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
@@ -603,14 +605,16 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+        if (ownerNode.Kind is ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant)
         {
             if (slots.Count == 0) throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
             var moduleDescriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
             lock (WriteGate)
             {
                 using var connection = OpenConnection();
-                var settings = GetModuleSettings(ownerNode.Id);
+                var settings = ownerNode.Kind == ProjectTreeNodeKind.Module
+                    ? GetModuleSettings(ownerNode.Id)
+                    : GetModuleVariantSettings(ownerNode);
                 var config = ParseJsonObject(settings.ConfigJson);
                 var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                     ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
@@ -619,8 +623,11 @@ internal sealed partial class SpikeDatabase
                     RemoveJsonValue(overrides, moduleDescriptor.JsonPath);
                 else
                     SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value));
-                Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
-                    ("$id", ownerNode.Id), ("$configJson", config.ToJsonString()));
+                if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+                    Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+                        ("$id", ownerNode.Id), ("$configJson", config.ToJsonString()));
+                else
+                    ReplaceModuleVariantConfig(ownerNode, config.ToJsonString());
             }
             return;
         }

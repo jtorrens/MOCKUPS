@@ -206,6 +206,7 @@ internal static class RecordClassFieldCatalog
             RuntimeCollectionComponentPresetFieldId: "module.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
+        ["moduleInstance.variant"] = new("moduleInstance.variant", "Variant", ValueKind.ComponentPreset),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",

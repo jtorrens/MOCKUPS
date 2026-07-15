@@ -23,6 +23,12 @@ Current summary:
   renderer rules. The Stack receives only the available box between visible
   bars. Lock Screen binds the Stack runtime contract as Variant data and
   forwards only explicitly promoted fields to its own runtime contract.
+- Module Variants are implemented generically. Module classes own resolver and
+  schema while protected `Default` and user Variants own concrete config
+  snapshots. The tree selects concrete Variants, and Screen instances persist
+  a full `moduleId::variant::variantId` reference. Runtime forwarding, preview,
+  duration and animation use the selected Variant contract; no Actor/Device
+  inference chooses module composition.
 - The atoms and system bars are active on the same route.
 - Keypad is a System component with Variant-owned ordered text/icon/spacer keys,
   generic structured collection editing and runtime active/pushed/disabled

@@ -33,20 +33,20 @@ internal sealed class EditorVariantHistoryService
             return;
         }
 
-        if (previousNode?.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (previousNode?.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
-            Leave(previousNode, _database.GetComponentPresetSettings(previousNode).ConfigJson, previousViewState);
+            Leave(previousNode, VariantConfig(previousNode), previousViewState);
         }
 
-        if (nextNode.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (nextNode.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
-            Enter(nextNode, _database.GetComponentPresetSettings(nextNode).ConfigJson);
+            Enter(nextNode, VariantConfig(nextNode));
         }
     }
 
     private void Enter(ProjectTreeNode node, string configJson)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -56,7 +56,7 @@ internal sealed class EditorVariantHistoryService
 
     private void Leave(ProjectTreeNode? node, string configJson, EditorViewState? viewState)
     {
-        if (node?.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (node?.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -74,11 +74,18 @@ internal sealed class EditorVariantHistoryService
 
     public IReadOnlyList<EditorVariantHistorySnapshot> Snapshots(ProjectTreeNode node)
     {
-        return node.Kind == ProjectTreeNodeKind.ComponentPreset
+        return node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant
             && _snapshotsByVariant.TryGetValue(node.Id, out var snapshots)
                 ? snapshots
                 : [];
     }
+
+    private string VariantConfig(ProjectTreeNode node) => node.Kind switch
+    {
+        ProjectTreeNodeKind.ComponentPreset => _database.GetComponentPresetSettings(node).ConfigJson,
+        ProjectTreeNodeKind.ModuleVariant => _database.GetModuleVariantSettings(node).ConfigJson,
+        _ => throw new InvalidOperationException($"'{node.Kind}' is not a variant."),
+    };
 
     public EditorVariantHistoryStore ExportState()
     {

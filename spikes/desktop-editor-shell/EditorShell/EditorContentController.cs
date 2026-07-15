@@ -131,7 +131,7 @@ internal sealed class EditorContentController
     }
 
     internal static string OwnerLayoutRecordClassId(ProjectTreeNode ownerNode) =>
-        ownerNode.Kind == ProjectTreeNodeKind.ComponentPreset
+        ownerNode.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant
             ? ownerNode.Parent?.RecordClassId
                 ?? throw new InvalidOperationException("A component Variant must have its parent component class.")
             : ownerNode.RecordClassId;

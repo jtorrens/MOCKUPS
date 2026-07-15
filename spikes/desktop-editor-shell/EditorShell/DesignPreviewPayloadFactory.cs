@@ -68,6 +68,7 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(database, node, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.Module => FromModule(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
+            ProjectTreeNodeKind.ModuleVariant => FromModuleVariant(database, node, themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces),
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces, ModuleInstanceLocalFrame(database, node.Id, timelineFrame)),
             ProjectTreeNodeKind.Shot => FromShot(database, node, ResolveDeviceId(database, node), themeMode, theme.TokensJson, paletteColors, paletteNeutralColors, projectMediaRoot, iconTheme, fontFaces, timelineFrame),
             _ => null,
@@ -138,7 +139,7 @@ internal static class DesignPreviewPayloadFactory
         int? localTimelineFrame = null)
     {
         var instance = database.GetModuleInstanceSettings(node.Id);
-        var module = database.GetModuleSettings(instance.ModuleId);
+        var module = database.GetModuleInstanceVariantSettings(node.Id);
         var effectiveThemeMode = EffectiveThemeMode(module.ConfigJson, themeMode);
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
@@ -290,6 +291,47 @@ internal static class DesignPreviewPayloadFactory
             settings.RecordClassId,
             runtimePreview.ToJsonString(),
             componentBaseConfigsJson,
+            appSettings.ConfigJson,
+            ThemeMode: effectiveThemeMode);
+    }
+
+    private static DesignPreviewPayload FromModuleVariant(
+        SpikeDatabase database,
+        ProjectTreeNode node,
+        string themeMode,
+        string themeTokensJson,
+        IReadOnlyDictionary<string, string> paletteColors,
+        IReadOnlyDictionary<string, bool> paletteNeutralColors,
+        string projectMediaRoot,
+        SpikeDatabase.IconThemeSettings? iconTheme,
+        IReadOnlyList<SpikeDatabase.ProductionFontFace> fontFaces)
+    {
+        var settings = database.GetModuleVariantSettings(node);
+        var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
+        var appSettings = database.GetModuleAppSettings(node.Parent?.Id
+            ?? throw new InvalidOperationException("Module variant has no parent module."));
+        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+            DesignPreviewTestValues.Parse(settings.ConfigJson));
+        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
+        var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
+        runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
+            ? ActorPreviewInputFactory.CreateSample()
+            : ActorPreviewInputFactory.Create(database, actorId, effectiveThemeMode, paletteColors);
+        return new DesignPreviewPayload(
+            "module",
+            node.Name,
+            settings.ConfigJson,
+            themeTokensJson,
+            paletteColors,
+            paletteNeutralColors,
+            projectMediaRoot,
+            iconTheme?.AssetRoot ?? "",
+            iconTheme?.MappingJson ?? "{}",
+            fontFaces,
+            settings.RecordClassId,
+            runtimePreview.ToJsonString(),
+            database.GetComponentClassBaseConfigsJson(settings.ProjectId),
             appSettings.ConfigJson,
             ThemeMode: effectiveThemeMode);
     }

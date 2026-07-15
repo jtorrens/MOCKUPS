@@ -21,6 +21,7 @@ internal enum ProjectTreeNodeKind
     EpisodesRoot,
     App,
     Module,
+    ModuleVariant,
     Episode,
     Shot,
     ModuleInstance,
@@ -88,6 +89,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot;
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
+        or ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
@@ -97,8 +99,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
-    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentClass
-        or ProjectTreeNodeKind.ComponentPreset;
+    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module
+        || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected);
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.Episode
@@ -110,7 +112,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
         or ProjectTreeNodeKind.ProductionFont
-        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected && !IsLocked);
+        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected && !IsLocked)
+        || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected && !IsLocked);
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
@@ -124,7 +127,8 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot
-        and not ProjectTreeNodeKind.ComponentPreset;
+        and not ProjectTreeNodeKind.ComponentPreset
+        and not ProjectTreeNodeKind.ModuleVariant;
 
     public string Display => Name;
 
@@ -154,6 +158,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.Module => "module.generic",
+            ProjectTreeNodeKind.ModuleVariant => "module.variant",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.ModuleInstance => "module_instance",

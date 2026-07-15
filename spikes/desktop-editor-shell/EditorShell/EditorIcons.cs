@@ -112,6 +112,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.ProductionFontsRoot => Typography,
             ProjectTreeNodeKind.App => App,
             ProjectTreeNodeKind.Module => Module,
+            ProjectTreeNodeKind.ModuleVariant => Module,
             ProjectTreeNodeKind.EpisodesRoot => Episodes,
             ProjectTreeNodeKind.Episode => Episode,
             ProjectTreeNodeKind.Shot => Shot,
@@ -130,7 +131,7 @@ internal static class EditorIcons
 
     public static string ForNavigationTreeNode(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
+        if ((node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null)
         {
             return ForNavigationTreeNode(node.Parent);
         }

@@ -228,6 +228,13 @@ resolve(request) -> fully resolved owner state -> standard renderable atoms
 
 The resolver evaluates typed animation and module semantics at the requested frame. Conversation applies its field/target mapping and message-relative origins in its owning frame resolver before its renderable is called. Component renderables emit standard atoms. Common helpers may convert frame deltas to milliseconds and tokens to final values. The bridge and HTML/raster renderer paint only those resolved atoms; none may branch on Conversation, Bubble, Media, Audio, Keyboard, or a field name, or run a timer.
 
+Module instances select an explicit full Module Variant reference. Timeline
+discovery, initial keyframes and duration consume the effective contract formed
+from that Variant config and the module's shared runtime declarations. Changing
+Variant removes runtime values and tracks whose fields or stable targets no
+longer exist. The timeline never falls back to class config or infers a Variant
+from Actor, Device or Theme.
+
 The sequence provider accepts either Design action frames or Production frames, then shares preparation and presentation. Starting either source cancels the other; navigation, context, route, active Screen, FPS, asset/font, runtime or animation changes cancel stale preparation. Cache identity includes source, Shot id, Screen id, global and local frame, effective FPS, device/theme/mode, runtime and animation signatures, asset/font signatures, route, and geometry.
 
 ## 9. Migration

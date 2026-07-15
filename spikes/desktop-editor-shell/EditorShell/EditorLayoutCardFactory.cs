@@ -477,7 +477,8 @@ internal sealed class EditorLayoutCardFactory
         var field = _fieldValues.Create(node, fieldId);
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
             or ProjectTreeNodeKind.ComponentPreset
-            or ProjectTreeNodeKind.Module;
+            or ProjectTreeNodeKind.Module
+            or ProjectTreeNodeKind.ModuleVariant;
         var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
         var services = _dictionaryFieldServices.ForNode(
             node,

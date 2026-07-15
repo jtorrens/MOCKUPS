@@ -104,7 +104,7 @@ internal sealed class EditorCollectionCardFactory
             ],
             ProjectTreeNodeKind.ComponentClass =>
                 CreateComponentClassCollectionCards(node),
-            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance =>
+            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.ModuleVariant =>
             [
                 CreateRuntimeInputsCard(node, animationEditor),
             ],
@@ -117,7 +117,7 @@ internal sealed class EditorCollectionCardFactory
             _ => [],
         };
 
-        if (node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
             cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _navigateToNode).Create(node)];
         }

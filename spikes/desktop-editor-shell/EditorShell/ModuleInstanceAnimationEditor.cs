@@ -49,7 +49,7 @@ internal sealed class ModuleInstanceAnimationEditor
     public AnimationTargetEditorContent CreateTargetContent(ProjectTreeNode node, string targetId)
     {
         var instance = _database.GetModuleInstanceSettings(node.Id);
-        var module = _database.GetModuleSettings(instance.ModuleId);
+        var module = _database.GetModuleInstanceVariantSettings(node.Id);
         var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
         var config = DesignPreviewTestValues.Parse(module.ConfigJson);
         var animation = DesignPreviewTestValues.Parse(instance.AnimationJson);

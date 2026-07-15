@@ -119,11 +119,11 @@ internal sealed class EditorNavigationRenderer
             options.Add(new($"Rename {EditorNavigationMetadata.Title(node)}", EditorIcons.Edit, () => _ = _renameNode(node)));
         }
         EditorNavigationRowAction? lockedAction = null;
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsLocked)
+        if ((node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant) && node.IsLocked)
         {
             lockedAction = new($"Unlock {EditorNavigationMetadata.Title(node)} variant editing", EditorIcons.Lock, () => _ = _toggleVariantLock(node));
         }
-        else if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        else if (node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
             options.Add(new($"Lock {EditorNavigationMetadata.Title(node)} variant editing", EditorIcons.Unlock, () => _ = _toggleVariantLock(node)));
         }
@@ -158,7 +158,7 @@ internal sealed class EditorNavigationRenderer
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup,
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup && siblingIndex > 0,
             isLastSibling,
-            node.Kind == ProjectTreeNodeKind.ComponentClassGroup ? 46 : node.Kind == ProjectTreeNodeKind.ComponentPreset ? 40 : 42,
+            node.Kind == ProjectTreeNodeKind.ComponentClassGroup ? 46 : node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant ? 40 : 42,
             lockedAction,
             add,
             options);
@@ -427,7 +427,7 @@ internal sealed class EditorNavigationRenderer
             }));
         }
 
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
             actions.Children.Add(CreateVariantLockButton(node));
         }
@@ -501,5 +501,8 @@ internal sealed class EditorNavigationRenderer
         selected?.Id == node.Id
             || (node.Kind == ProjectTreeNodeKind.ComponentClass
                 && selected?.Kind == ProjectTreeNodeKind.ComponentPreset
+                && selected.Parent?.Id == node.Id)
+            || (node.Kind == ProjectTreeNodeKind.Module
+                && selected?.Kind == ProjectTreeNodeKind.ModuleVariant
                 && selected.Parent?.Id == node.Id);
 }

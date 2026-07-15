@@ -7,17 +7,21 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorNodeSelectionState
 {
     private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _lastModuleVariantNodeIds = new(StringComparer.Ordinal);
 
     public static bool CanSelectTreeNode(ProjectTreeNode node)
     {
-        return node.CanOpenEditor || node.Kind == ProjectTreeNodeKind.ComponentPreset;
+        return node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant;
     }
 
     public ProjectTreeNode ResolveSelectionNode(ProjectTreeNode node)
     {
-        return node.Kind == ProjectTreeNodeKind.ComponentClass
-            ? PreferredPresetNode(node)
-            : node;
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentClass => PreferredPresetNode(node),
+            ProjectTreeNodeKind.Module => PreferredModuleVariantNode(node),
+            _ => node,
+        };
     }
 
     public ProjectTreeNode PreferredPresetNode(ProjectTreeNode componentClassNode)
@@ -42,6 +46,23 @@ internal sealed class EditorNodeSelectionState
         {
             _lastComponentPresetNodeIds[node.Parent.Id] = node.Id;
         }
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant
+            && node.Parent?.Kind == ProjectTreeNodeKind.Module)
+        {
+            _lastModuleVariantNodeIds[node.Parent.Id] = node.Id;
+        }
+    }
+
+    public ProjectTreeNode PreferredModuleVariantNode(ProjectTreeNode moduleNode)
+    {
+        if (_lastModuleVariantNodeIds.TryGetValue(moduleNode.Id, out var variantNodeId)
+            && moduleNode.Children.FirstOrDefault((child) => child.Id == variantNodeId) is { } remembered)
+            return remembered;
+        return moduleNode.Children.FirstOrDefault((child) =>
+                child.Kind == ProjectTreeNodeKind.ModuleVariant
+                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+            ?? moduleNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant)
+            ?? moduleNode;
     }
 
     public IReadOnlyDictionary<string, string> ExportComponentPresetSelections()
@@ -71,7 +92,7 @@ internal sealed class EditorNodeSelectionState
 
     public static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
     {
-        return node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null
+        return (node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null
             ? node.Parent
             : node;
     }

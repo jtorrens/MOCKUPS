@@ -2888,8 +2888,7 @@ internal sealed class EditorPreviewController
             }
         }
         if (string.IsNullOrWhiteSpace(instanceId)) return "inherit";
-        var instance = _database.GetModuleInstanceSettings(instanceId);
-        var config = DesignPreviewTestValues.Parse(_database.GetModuleSettings(instance.ModuleId).ConfigJson);
+        var config = DesignPreviewTestValues.Parse(_database.GetModuleInstanceVariantSettings(instanceId).ConfigJson);
         return config["appearanceMode"]?.GetValue<string>() ?? "inherit";
     }
 

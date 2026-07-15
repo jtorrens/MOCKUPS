@@ -178,7 +178,8 @@ internal sealed partial class SpikeDatabase
         int SortOrder,
         int DurationFrames,
         string TransitionJson,
-        string ModuleName);
+        string ModuleName,
+        string MetadataJson);
     private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
     private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);

@@ -328,6 +328,17 @@ internal sealed partial class SpikeDatabase
                 ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
         }
 
+        var moduleInstanceLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'module_instance'");
+        if (!string.IsNullOrWhiteSpace(moduleInstanceLayout)
+            && !moduleInstanceLayout.Contains("moduleInstance.variant", StringComparison.Ordinal))
+        {
+            Execute(connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'module_instance'",
+                ("$layoutJson", MinimalEditorLayoutJson("module_instance")));
+        }
+
     }
 
     private static bool IsValidLayoutJson(string layoutJson)
@@ -451,10 +462,11 @@ internal sealed partial class SpikeDatabase
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "moduleInstance.module", "order": 20, "visible": true },
-                    { "id": "moduleInstance.durationFrames", "order": 30, "visible": true },
-                    { "id": "moduleInstance.transition", "order": 40, "visible": true },
-                    { "id": "moduleInstance.sortOrder", "order": 50, "visible": false },
-                    { "id": "core.notes", "order": 60, "visible": true }
+                    { "id": "moduleInstance.variant", "order": 30, "visible": true },
+                    { "id": "moduleInstance.durationFrames", "order": 40, "visible": true },
+                    { "id": "moduleInstance.transition", "order": 50, "visible": true },
+                    { "id": "moduleInstance.sortOrder", "order": 60, "visible": false },
+                    { "id": "core.notes", "order": 70, "visible": true }
                   """
             : recordClassId == "render_preset"
                 ? """

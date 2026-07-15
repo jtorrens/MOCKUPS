@@ -78,7 +78,7 @@ internal sealed partial class SpikeDatabase
     public string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId)
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleSettings(instance.ModuleId);
+        var module = GetModuleInstanceVariantSettings(moduleInstanceId);
         var preview = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(module.DesignPreviewJson),
             ParseJsonObject(module.ConfigJson));
@@ -369,10 +369,10 @@ internal sealed partial class SpikeDatabase
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              transition_json, content_json, behavior_json, animation_json)
+              transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 1,
-              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson)
+              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", id),
             ("$shotId", shot.Id),
@@ -383,7 +383,11 @@ internal sealed partial class SpikeDatabase
             ("$sortOrder", index),
             ("$contentJson", "{}"),
             ("$behaviorJson", "{}"),
-            ("$animationJson", DefaultModuleAnimationJson()));
+            ("$animationJson", DefaultModuleAnimationJson()),
+            ("$metadataJson", new JsonObject
+            {
+                ["moduleVariantReference"] = ModuleVariantNodeId(module.Id, DefaultModuleVariantId),
+            }.ToJsonString()));
         NormalizeModuleInstanceRuntimePayloads(connection);
         SynchronizeTimelineDurations(connection);
         var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
@@ -428,6 +432,9 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         switch (fieldId)
         {
+            case "moduleInstance.variant":
+                UpdateModuleInstanceVariant(moduleInstanceId, value);
+                return;
             case "moduleInstance.durationFrames":
                 Execute(
                     connection,
@@ -782,7 +789,7 @@ internal sealed partial class SpikeDatabase
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT mi.id, mi.shot_id, mi.app_id, mi.module_id, mi.name, mi.notes,
-                   mi.sort_order, mi.duration_frames, mi.transition_json, m.name
+                   mi.sort_order, mi.duration_frames, mi.transition_json, m.name, mi.metadata_json
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
             ORDER BY mi.shot_id, mi.sort_order, mi.name
@@ -800,7 +807,8 @@ internal sealed partial class SpikeDatabase
                 reader.GetInt32(6),
                 reader.GetInt32(7),
                 ReadString(reader, 8),
-                reader.GetString(9)));
+                reader.GetString(9),
+                ReadString(reader, 10)));
         }
 
         return rows;

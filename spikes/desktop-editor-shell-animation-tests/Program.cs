@@ -51,7 +51,60 @@ var tests = new (string Name, Action Run)[]
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
+    ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ModuleVariantsAreExplicit()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-variants-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var roots = database.LoadProjectTree();
+        var module = Descendants(roots).First((node) => node.Kind == ProjectTreeNodeKind.Module
+            && node.RecordClassId == "module.core.lockScreen");
+        var defaultVariant = module.Children.Single((node) => node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+        True(defaultVariant.IsProtected);
+
+        var android = database.SaveModuleVariant(defaultVariant, "Android");
+        database.UpdateModuleVariantField(android, "module.appearanceMode", "dark");
+        Equal("dark", JsonNode.Parse(database.GetModuleVariantSettings(android).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+        Equal("inherit", JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+
+        var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
+        var screen = database.AddModuleInstance(shot, new SpikeDatabase.ShotModuleChoice(
+            module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId));
+        database.UpdateModuleInstanceRuntimeValue(screen.Id, "orphan", JsonValue.Create("remove me"));
+        database.UpdateModuleInstanceAnimationJson(screen.Id,
+            "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"targetId\":\"\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
+        database.UpdateModuleInstanceVariant(screen.Id, android.Id);
+        Equal(android.Id, database.GetModuleInstanceVariantReference(screen.Id));
+        Equal("dark", JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+        True(JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).ContentJson)?["orphan"] is null);
+        Equal(0, JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).AnimationJson)?["tracks"]?.AsArray().Count);
+        Throws<InvalidOperationException>(() => database.DeleteModuleVariant(android));
+
+        database.UpdateModuleInstanceVariant(screen.Id, defaultVariant.Id);
+        database.DeleteModuleVariant(android);
+        True(!database.GetModuleVariantOptions(module.Id).Any((option) => option.Value == android.Id));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nodes)
+{
+    foreach (var node in nodes)
+    {
+        yield return node;
+        foreach (var child in Descendants(node.Children)) yield return child;
+    }
+}
 
 static void LabelSubtextPlacementMigrates()
 {
@@ -594,13 +647,13 @@ static void LegacyEventsAreRejected()
     using (var command = connection.CreateCommand())
     {
         command.CommandText = """
-            CREATE TABLE modules (id TEXT PRIMARY KEY, design_preview_json TEXT NOT NULL);
-            CREATE TABLE module_instances (id TEXT PRIMARY KEY, module_id TEXT NOT NULL, animation_json TEXT NOT NULL, content_json TEXT NOT NULL);
-            INSERT INTO modules VALUES ('module', '{}');
+            CREATE TABLE modules (id TEXT PRIMARY KEY, design_preview_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
+            CREATE TABLE module_instances (id TEXT PRIMARY KEY, module_id TEXT NOT NULL, animation_json TEXT NOT NULL, content_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
+            INSERT INTO modules VALUES ('module', '{}', '{"variants":[{"id":"default","name":"Default","protected":true,"locked":false,"config":{}}]}');
             INSERT INTO module_instances VALUES (
               'instance', 'module',
               '{"schemaVersion":1,"tracks":[{"parameterId":"text","events":[{"frame":0}]}]}',
-              '{}');
+              '{}', '{"moduleVariantReference":"module::variant::default"}');
             """;
         command.ExecuteNonQuery();
     }

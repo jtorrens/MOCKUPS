@@ -116,10 +116,13 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id).ProjectId,
             ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode).ProjectId,
             ProjectTreeNodeKind.Module => GetModuleSettings(ownerNode.Id).ProjectId,
+            ProjectTreeNodeKind.ModuleVariant => GetModuleVariantSettings(ownerNode).ProjectId,
             _ => throw new InvalidOperationException($"Embedded component variants are not supported for '{ownerNode.Kind}'."),
         };
-        var ownerConfigJson = ownerNode.Kind == ProjectTreeNodeKind.Module
-            ? GetModuleSettings(ownerNode.Id).ConfigJson
+        var ownerConfigJson = ownerNode.Kind is ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant
+            ? ownerNode.Kind == ProjectTreeNodeKind.Module
+                ? GetModuleSettings(ownerNode.Id).ConfigJson
+                : GetModuleVariantSettings(ownerNode).ConfigJson
             : ownerNode.Kind == ProjectTreeNodeKind.ComponentClass
                 ? GetComponentClassSettings(connection, ownerNode.Id).ConfigJson
                 : GetComponentPresetSettings(connection, ownerNode).ConfigJson;

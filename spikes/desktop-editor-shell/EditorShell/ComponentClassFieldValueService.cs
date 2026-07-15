@@ -56,7 +56,7 @@ internal sealed class ComponentClassFieldValueService
         string embeddedComponentType,
         string embeddedFieldId)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module and not ProjectTreeNodeKind.ModuleVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
@@ -75,7 +75,7 @@ internal sealed class ComponentClassFieldValueService
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module and not ProjectTreeNodeKind.ModuleVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
@@ -90,7 +90,7 @@ internal sealed class ComponentClassFieldValueService
         string embeddedFieldId,
         string value)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module and not ProjectTreeNodeKind.ModuleVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
@@ -112,7 +112,7 @@ internal sealed class ComponentClassFieldValueService
         string embeddedFieldId,
         string value)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentClass and not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.Module and not ProjectTreeNodeKind.ModuleVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
@@ -130,7 +130,7 @@ internal sealed class ComponentClassFieldValueService
 
     private static FieldValue ApplyPresetLock(ProjectTreeNode node, FieldValue fieldValue)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentPreset || !node.IsLocked)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant || !node.IsLocked)
         {
             return fieldValue;
         }

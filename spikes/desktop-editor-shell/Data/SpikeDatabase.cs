@@ -72,15 +72,16 @@ internal sealed partial class SpikeDatabase
             NormalizeLabelRuntimeInputs(connection);
             NormalizeRuntimeInputForwardingContracts(connection);
             NormalizeConversationModuleInstanceBehavior(connection);
-            NormalizeModuleInstanceRuntimePayloads(connection);
-            NormalizeAnimationJson(connection);
-            SynchronizeTimelineDurations(connection);
             NormalizeConversationHeaderComposition(connection);
             NormalizeCalculatedLabelComposition(connection);
             NormalizeComponentSpacingTokens(connection);
             NormalizeBubbleStatusGapTokens(connection);
             NormalizeEditorLayouts(connection);
             NormalizeDefaultComponentConfigAuthority(connection);
+            NormalizeModuleVariants(connection);
+            NormalizeModuleInstanceRuntimePayloads(connection);
+            NormalizeAnimationJson(connection);
+            SynchronizeTimelineDurations(connection);
             return;
         }
 
@@ -115,15 +116,16 @@ internal sealed partial class SpikeDatabase
         NormalizeLabelRuntimeInputs(connection);
         NormalizeRuntimeInputForwardingContracts(connection);
         NormalizeConversationModuleInstanceBehavior(connection);
-        NormalizeModuleInstanceRuntimePayloads(connection);
-        NormalizeAnimationJson(connection);
-        SynchronizeTimelineDurations(connection);
         NormalizeConversationHeaderComposition(connection);
         NormalizeCalculatedLabelComposition(connection);
         NormalizeComponentSpacingTokens(connection);
         NormalizeBubbleStatusGapTokens(connection);
         NormalizeEditorLayouts(connection);
         NormalizeDefaultComponentConfigAuthority(connection);
+        NormalizeModuleVariants(connection);
+        NormalizeModuleInstanceRuntimePayloads(connection);
+        NormalizeAnimationJson(connection);
+        SynchronizeTimelineDurations(connection);
         ValidateSchemaV1(connection);
     }
 

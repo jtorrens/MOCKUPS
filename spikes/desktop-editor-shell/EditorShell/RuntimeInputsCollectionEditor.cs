@@ -1205,6 +1205,14 @@ internal sealed class RuntimeInputsCollectionEditor
                 (json) => _database.UpdateModuleDesignPreviewJson(node.Id, json), false);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
+        {
+            var settings = _database.GetModuleVariantSettings(node);
+            return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
+                (json) => _database.UpdateModuleDesignPreviewJson(node.Parent?.Id
+                    ?? throw new InvalidOperationException("Module variant has no parent module."), json), false);
+        }
+
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
         {
             var settings = _database.GetComponentPresetSettings(node);
@@ -1215,7 +1223,7 @@ internal sealed class RuntimeInputsCollectionEditor
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
             var instance = _database.GetModuleInstanceSettings(node.Id);
-            var module = _database.GetModuleSettings(instance.ModuleId);
+            var module = _database.GetModuleInstanceVariantSettings(node.Id);
             return new RuntimeInputOwner(
                 node,
                 module.ConfigJson,

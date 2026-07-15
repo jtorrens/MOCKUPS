@@ -150,6 +150,8 @@ internal sealed class EditorHeaderController
                 new[] { new EditorContextIdentity("Component", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
             ProjectTreeNodeKind.ComponentClass =>
                 new[] { new EditorContextIdentity("Component", selected.Name), new EditorContextIdentity("Variant", _nodeSelection.PreferredPresetNode(selected).Name) },
+            ProjectTreeNodeKind.ModuleVariant when selected.Parent is not null =>
+                new[] { new EditorContextIdentity("Module", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
             ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
             ProjectTreeNodeKind.ModuleInstance => [new EditorContextIdentity("Screen", selected.Name)],
             ProjectTreeNodeKind.App => [new EditorContextIdentity("App", selected.Name)],
@@ -197,6 +199,19 @@ internal sealed class EditorHeaderController
 
     private Control? CreateHeaderActionsForSelectedComponent()
     {
+        if (_selectedNode() is { Kind: ProjectTreeNodeKind.ModuleVariant } moduleVariant)
+        {
+            return new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    CreateHistoryComboBox(moduleVariant),
+                    CreateSavePresetButton(moduleVariant),
+                },
+            };
+        }
         var node = EditorNodeSelectionState.SelectedComponentClassNode(_selectedNode());
         if (node is null)
         {
