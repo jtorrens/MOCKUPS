@@ -40,12 +40,12 @@ internal sealed class RuntimeTestActionControl : Border
         BorderThickness = new Thickness(1);
         BorderBrush = EditorSukiWindowTheme.AccentBrush(0x70);
         Background = EditorSukiWindowTheme.AccentBrush(0x12);
-        HorizontalAlignment = HorizontalAlignment.Stretch;
+        HorizontalAlignment = HorizontalAlignment.Left;
 
         var hasTargetOptions = targetOptions is { Count: > 0 };
         var layout = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"),
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -58,7 +58,8 @@ internal sealed class RuntimeTestActionControl : Border
                 SelectedItem = options.FirstOrDefault((option) => option.Value != currentTargetValue)
                     ?? options.First(),
                 DisabledValues = string.IsNullOrWhiteSpace(currentTargetValue) ? [] : [currentTargetValue],
-                MinWidth = 0,
+                MinWidth = 220,
+                MaxWidth = 360,
             };
             layout.Children.Add(_targetCombo);
         }

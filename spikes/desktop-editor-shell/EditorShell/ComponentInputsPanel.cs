@@ -1021,6 +1021,7 @@ internal sealed class ComponentPreviewInputSession
         {
             _heldFinalActionId = action.Id;
             StopPlayback();
+            PlaybackBusyChanged?.Invoke(false);
             return;
         }
 
@@ -1028,6 +1029,7 @@ internal sealed class ComponentPreviewInputSession
         _values[ActionStateKey(action)] = "false";
         SyncBooleanInput(ActionStateKey(action));
         StopPlayback();
+        PlaybackBusyChanged?.Invoke(false);
     }
 
     private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)

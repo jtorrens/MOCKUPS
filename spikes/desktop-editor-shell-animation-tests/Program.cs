@@ -1155,6 +1155,41 @@ static void NotificationsSeedOpensAndRenders()
             True(!html.Contains("preview-error", StringComparison.Ordinal));
         }
 
+        var transitionPayload = Required(DesignPreviewPayloadFactory.Create(database, notificationVariant, theme.Id));
+        var transitionPreview = JsonNode.Parse(transitionPayload.DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notification transition preview.");
+        var transitionAction = ComponentPreviewActions.ReadWithEmbedded(database, transitionPreview)
+            .Single((action) => action.Id == "changeDisplayMode");
+        var transitionSession = new ComponentPreviewInputSession(database, () => { });
+        var transitionBusy = false;
+        transitionSession.PlaybackBusyChanged += (value) => transitionBusy = value;
+        transitionSession.UpdateForPayload(transitionPayload, database.GetComponentClassSettings(notification.Id).ProjectId);
+        var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
+            "DurationFrames",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing shared preview action duration resolver.");
+        var transitionFrames = (int)(durationMethod.Invoke(transitionSession, [transitionAction]) ?? -1);
+        var reflowDurationMs = JsonNode.Parse(transitionPayload.ThemeTokensJson)?["motion"]?["reflowDurationMs"]?.GetValue<double>()
+            ?? throw new InvalidOperationException("Missing Theme reflow duration.");
+        Equal(
+            Math.Max(1, (int)Math.Ceiling(reflowDurationMs / 1000 * transitionSession.PlaybackFrameRate)),
+            transitionFrames);
+        transitionSession.PresentEveryPlaybackFrame = true;
+        True(transitionSession.TriggerAction(transitionAction.Id, "detail"));
+        True(transitionBusy);
+        transitionSession.NotifyPlaybackFramePresented();
+        var advanceMethod = typeof(ComponentPreviewInputSession).GetMethod(
+            "AdvancePlaybackFrame",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing shared preview frame advance.");
+        for (var frame = 1; frame <= transitionFrames; frame++)
+        {
+            advanceMethod.Invoke(transitionSession, null);
+            transitionSession.NotifyPlaybackFramePresented();
+        }
+        True(!transitionSession.IsPlaybackActive);
+        True(!transitionBusy);
+
         var wrappingSettings = database.GetComponentClassSettings(notification.Id);
         var wrappingPreview = JsonNode.Parse(wrappingSettings.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing Notification wrapping preview.");
@@ -1350,6 +1385,8 @@ static void PasswordSeedOpensAndRenders()
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
         var inputSession = new ComponentPreviewInputSession(database, () => { });
+        var playbackBusy = false;
+        inputSession.PlaybackBusyChanged += (value) => playbackBusy = value;
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
             "DurationFrames",
@@ -1362,6 +1399,7 @@ static void PasswordSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing shared preview frame advance.");
         inputSession.PresentEveryPlaybackFrame = true;
         True(inputSession.TriggerAction(action.Id));
+        True(playbackBusy);
         inputSession.NotifyPlaybackFramePresented();
         for (var frame = 1; frame <= 16; frame++)
         {
@@ -1369,6 +1407,7 @@ static void PasswordSeedOpensAndRenders()
             inputSession.NotifyPlaybackFramePresented();
         }
         True(!inputSession.IsPlaybackActive);
+        True(!playbackBusy);
         Equal(16, inputSession.CurrentPreviewFrame);
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
         var finalPreview = JsonNode.Parse(resolvedPayload.DesignPreviewJson) as JsonObject
