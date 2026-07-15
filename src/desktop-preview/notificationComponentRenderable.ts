@@ -13,10 +13,15 @@ export function notificationComponentToRenderable(
 ): RenderableNode {
   const scale = renderScale(payload);
   const avatarSize = notification.avatar.size * scale;
-  const labelSize = measureLabelComponent(notification.label, payload);
   const gap = Math.max(0, numberToken(payload, notification.gapToken) * scale);
   const paddingX = numberToken(payload, notification.padding.xToken) * scale;
   const paddingY = numberToken(payload, notification.padding.yToken) * scale;
+  const maximumWidth = notification.availableWidth * scale;
+  const maximumLabelWidth = Math.max(1, maximumWidth - paddingX * 2 - avatarSize - gap);
+  const labelLayout = notification.dimensionMode === "content"
+    ? { maximumWidth: maximumLabelWidth }
+    : {};
+  const labelSize = measureLabelComponent(notification.label, payload, labelLayout);
   const contentWidth = avatarSize + gap + labelSize.width;
   const contentHeight = Math.max(avatarSize, labelSize.height);
   const width = notification.dimensionMode === "fixed" ? notification.size.width * scale : contentWidth + paddingX * 2;
@@ -54,7 +59,7 @@ export function notificationComponentToRenderable(
     [labelBox, avatarBox] = separated;
   }
   const avatar = avatarComponentToRenderableAt(payload, notification.avatar, avatarBox);
-  const label = labelComponentToRenderableAt(payload, notification.label, labelBox);
+  const label = labelComponentToRenderableAt(payload, notification.label, labelBox, labelLayout);
   const surface = surfaceComponentToRenderableAt(payload, notification.surface, box);
   return {
     id: notification.id,

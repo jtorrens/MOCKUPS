@@ -603,6 +603,10 @@ Rules:
   generic component input-bindings dictionary control, not by copying child
   scalar fields into the parent field catalog;
 - resolvers decide how input values affect component atoms;
+- a parent may pass an explicit layout constraint such as maximum available
+  width to an owned Label renderable without adding that constraint to the
+  Label Variant; Label resolves wrapping into measured lines before the preview
+  boundary, and neither the bridge nor renderer performs text reflow;
 - generic preview shell may hold generic clock/play state only;
 - helpers and renderer must not infer missing inputs or know which concrete
   component declared them.

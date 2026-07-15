@@ -12,8 +12,10 @@ import {
   variants,
 } from "./componentRenderableCommon.js";
 import {
+  measuredWrappedTextLines,
   measuredTextWidth,
   resolveTypographyStyle,
+  type ResolvedTypographyStyle,
 } from "./previewTextHelpers.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import type { SurfaceColorOverride } from "./surfaceComponentRenderable.js";
@@ -21,6 +23,7 @@ import type { SurfaceColorOverride } from "./surfaceComponentRenderable.js";
 export function measureLabelComponent(
   label: LabelDesignContract,
   payload: DesignPreviewPayload,
+  options: LabelLayoutOptions = {},
 ) {
   const scale = renderScale(payload);
   const textTypography = scaleTypography(
@@ -31,7 +34,11 @@ export function measureLabelComponent(
     resolveTypographyStyle(payload, label.subtextTypography, scale),
     label.subtextSizeMultiplier,
   );
-  return labelSize(label, textTypography, subtextTypography, scale, payload);
+  return labelSize(label, textTypography, subtextTypography, scale, payload, options);
+}
+
+export interface LabelLayoutOptions {
+  maximumWidth?: number;
 }
 
 function labelSize(
@@ -40,6 +47,7 @@ function labelSize(
   subtextTypography: ReturnType<typeof resolveTypographyStyle>,
   scale: number,
   payload: DesignPreviewPayload,
+  options: LabelLayoutOptions = {},
 ) {
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
   const paddingY = numberToken(payload, label.padding.yToken) * scale;
@@ -49,6 +57,9 @@ function labelSize(
     subtextTypography,
     scale,
     payload,
+    label.dimensionMode === "content" && options.maximumWidth !== undefined
+      ? Math.max(1, options.maximumWidth - paddingX * 2)
+      : undefined,
   );
   if (label.dimensionMode === "fixed") {
     return {
@@ -75,36 +86,55 @@ function labelContentLayout(
   subtextTypography: ReturnType<typeof resolveTypographyStyle>,
   scale: number,
   payload: DesignPreviewPayload,
-  textWidth?: number,
+  maximumContentWidth?: number,
+  fixedTextWidth?: number,
 ) {
-  const measuredPrimaryWidth = Math.max(1, measuredTextWidth(label.text, textTypography));
+  const primary = measuredLabelTextBlock(label.text, textTypography, maximumContentWidth);
+  const measuredPrimaryWidth = primary.width;
   const textBox = {
     x: 0,
     y: 0,
-    width: Math.max(1, textWidth ?? measuredPrimaryWidth),
-    height: textTypography.lineHeight,
+    width: Math.max(1, fixedTextWidth ?? measuredPrimaryWidth),
+    height: primary.height,
   };
   const hasSubtext = label.subtext.trim().length > 0;
   if (!hasSubtext && !label.reserveSubtextSpace) {
-    return { textBox, subtextBox: undefined, bounds: textBox, hasSubtext };
+    return { textBox, textLines: primary.lines, subtextBox: undefined, subtextLines: [], bounds: textBox, hasSubtext };
   }
 
   const gap = numberToken(payload, label.textGapToken) * scale;
-  const subtextWidth = Math.max(1, hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 1);
+  const subtext = measuredLabelTextBlock(hasSubtext ? label.subtext : "", subtextTypography, maximumContentWidth);
   const subtextBox = subtextBoxRelativeToText(
     textBox,
     measuredPrimaryWidth,
     label.textAlign,
-    { width: subtextWidth, height: subtextTypography.lineHeight },
+    { width: subtext.width, height: subtext.height },
     label.subtextHorizontalAlign,
     label.subtextVerticalPosition,
     gap,
   );
   return {
     textBox,
+    textLines: primary.lines,
     subtextBox,
+    subtextLines: subtext.lines,
     bounds: unionBoxes([textBox, subtextBox]),
     hasSubtext,
+  };
+}
+
+export function measuredLabelTextBlock(
+  text: string,
+  typography: ResolvedTypographyStyle,
+  maximumWidth?: number,
+) {
+  const lines = maximumWidth === undefined
+    ? [text]
+    : measuredWrappedTextLines(text, typography, Math.max(1, maximumWidth));
+  return {
+    lines,
+    width: Math.max(1, ...lines.map((line) => measuredTextWidth(line, typography))),
+    height: Math.max(1, lines.length) * typography.lineHeight,
   };
 }
 
@@ -158,6 +188,7 @@ export function labelComponentToRenderableAt(
     surfaceColors?: SurfaceColorOverride;
     textColor?: string;
     subtextColor?: string;
+    maximumWidth?: number;
   } = {},
 ): RenderableNode {
   const scale = renderScale(payload);
@@ -170,13 +201,16 @@ export function labelComponentToRenderableAt(
     label.subtextSizeMultiplier,
   );
   const paddingX = numberToken(payload, label.padding.xToken) * scale;
-  const size = labelSize(label, textTypography, subtextTypography, scale, payload);
+  const size = labelSize(label, textTypography, subtextTypography, scale, payload, options);
   const content = labelContentLayout(
     label,
     textTypography,
     subtextTypography,
     scale,
     payload,
+    label.dimensionMode === "content" && options.maximumWidth !== undefined
+      ? Math.max(1, options.maximumWidth - paddingX * 2)
+      : undefined,
     label.dimensionMode === "fixed"
       ? Math.max(1, box.width - paddingX * 2)
       : undefined,
@@ -225,13 +259,11 @@ export function labelComponentToRenderableAt(
           ),
         },
         children: [
-          {
-            id: `${label.id}.text`,
-            type: "text",
-            frame: 0,
-            box: textBox,
-            text: label.text,
-            style: {
+          ...labelTextBlockNodes(
+            `${label.id}.text`,
+            content.textLines,
+            textBox,
+            {
               textColor,
               fontSize: textTypography.fontSize,
               fontFamily: textTypography.fontFamily,
@@ -241,18 +273,15 @@ export function labelComponentToRenderableAt(
               overflow: "hidden",
               fontStyle: textTypography.fontStyle,
               fontWeight: textTypography.fontWeight,
-              whiteSpace: "nowrap",
+              whiteSpace: "pre",
             },
-          },
+          ),
           ...(size.hasSubtext && subtextBox
-            ? [
+            ? labelTextBlockNodes(
+                `${label.id}.subtext`,
+                content.subtextLines,
+                subtextBox,
                 {
-                  id: `${label.id}.subtext`,
-                  type: "text",
-                  frame: 0,
-                  box: subtextBox,
-                  text: label.subtext,
-                  style: {
                     textColor: subtextColor,
                     fontSize: subtextTypography.fontSize,
                     fontFamily: subtextTypography.fontFamily,
@@ -262,15 +291,36 @@ export function labelComponentToRenderableAt(
                     overflow: "hidden",
                     fontStyle: subtextTypography.fontStyle,
                     fontWeight: subtextTypography.fontWeight,
-                    whiteSpace: "nowrap",
+                    whiteSpace: "pre",
                   },
-                } satisfies RenderableNode,
-              ]
+              )
             : []),
         ],
       },
     ],
   };
+}
+
+function labelTextBlockNodes(
+  id: string,
+  lines: string[],
+  box: RenderableBox,
+  style: Record<string, unknown>,
+): RenderableNode[] {
+  const lineHeight = box.height / Math.max(1, lines.length);
+  return lines.map((line, index) => ({
+    id: index === 0 ? id : `${id}.${index}`,
+    type: "text",
+    frame: 0,
+    box: {
+      x: box.x,
+      y: box.y + index * lineHeight,
+      width: box.width,
+      height: lineHeight,
+    },
+    text: line,
+    style,
+  }));
 }
 
 function scaleTypography(

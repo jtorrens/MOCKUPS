@@ -1155,11 +1155,27 @@ static void NotificationsSeedOpensAndRenders()
             True(!html.Contains("preview-error", StringComparison.Ordinal));
         }
 
+        var wrappingSettings = database.GetComponentClassSettings(notification.Id);
+        var wrappingPreview = JsonNode.Parse(wrappingSettings.DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notification wrapping preview.");
+        wrappingPreview["availableWidth"] = 160;
+        wrappingPreview["summaryText"] = "A deliberately long notification title that must wrap";
+        database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
+        var wrappingPayload = Required(DesignPreviewPayloadFactory.Create(database, notificationVariant, theme.Id));
+        var wrappingSession = new ComponentPreviewInputSession(database, () => { });
+        wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
+        var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            wrappingSession.ApplyInputs(wrappingPayload, "light", wrappingSettings.ProjectId)).GetAwaiter().GetResult();
+        True(wrappingHtml.Contains("component.notification.label.text.1", StringComparison.Ordinal));
+        database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingSettings.DesignPreviewJson);
+
         var settings = database.GetComponentClassSettings(notifications.Id);
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Notifications preview.");
         var reference = notificationVariant.Id;
         var notificationInputs = database.GetComponentPresetRuntimeInputs(reference);
+        Equal(320, notificationInputs["availableWidth"]?.GetValue<int>() ?? 0);
         True(notificationInputs["displayMode"] is JsonValue);
         preview["items"] = new JsonArray
         {

@@ -1,6 +1,6 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
+import { asRecord, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import type { NotificationDesignContract } from "./notificationComponentContract.js";
@@ -30,6 +30,7 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
   const surfaceConfig = embeddedConfig(asRecord(notification.surfaceSlot), "surface", bases, "component.notification.surfaceSlot");
   return {
     id: "component.notification",
+    availableWidth: Math.max(1, requiredNumber(preview, "availableWidth", "component.notification.runtime.availableWidth")),
     dimensionMode,
     size: { width: rawSize.first, height: rawSize.second },
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },

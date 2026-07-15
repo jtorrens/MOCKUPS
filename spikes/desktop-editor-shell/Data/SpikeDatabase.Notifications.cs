@@ -116,6 +116,7 @@ internal sealed partial class SpikeDatabase
 
     private static void NormalizeNotificationPreview(JsonObject preview)
     {
+        preview["availableWidth"] ??= 320;
         preview["actorId"] ??= "actor_alex";
         preview["displayMode"] ??= "summary";
         preview["summaryText"] ??= preview["sampleText"]?.DeepClone() ?? "New notification";
@@ -168,6 +169,7 @@ internal sealed partial class SpikeDatabase
             {
                 var inputs = item["inputs"] as JsonObject ?? new JsonObject();
                 item["inputs"] = inputs;
+                inputs["availableWidth"] ??= 320;
                 inputs["displayMode"] ??= "summary";
                 inputs["summaryText"] ??= inputs["sampleText"]?.DeepClone() ?? "New notification";
                 inputs["summarySubtext"] ??= inputs["sampleSubtext"]?.DeepClone() ?? "Now";

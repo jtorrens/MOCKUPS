@@ -15,13 +15,19 @@ Notification is one reusable item. Its Variant owns only composition:
 - independent generic placement for Avatar and Label relative to the padded Surface frame.
 - explicit Avatar Badge values: visibility, icon/text mode, content, diameter and palette colors.
 
-Runtime Inputs own the notification data: Actor, `displayMode`, Summary text/subtext
-and Detail text/subtext. `displayMode` is the orthogonal `summary`/`detail`
+Runtime Inputs own the notification data: `Available width`, Actor, `displayMode`,
+Summary text/subtext and Detail text/subtext. `displayMode` is the orthogonal `summary`/`detail`
 state; it does not encode item presence. The Actor is
 resolved through the ordinary record-reference path and passed explicitly to
 Avatar. The selected concrete Label receives final literal text/subtext values. Notification owns the
-horizontal relationship. In Content mode the final Surface frame is measured as
-Avatar + Gap + Label plus padding. In Fixed mode the authored width/height owns
+horizontal relationship. In Content mode `Available width` is the explicit
+maximum frame width supplied by the parent. Notification subtracts its padding,
+Avatar and Gap, then supplies the remaining width as a constraint to the embedded
+Label. Label resolves deterministic wrapped lines with the shared production-font
+measurement helpers before the renderable frame is emitted; the resulting line
+count determines Notification height. The final Surface frame is measured as
+Avatar + Gap + constrained Label plus padding and may remain narrower than the
+available maximum. In Fixed mode the authored width/height owns
 the frame. Each child placement is resolved against the padded Surface frame;
 the gap is enforced as their minimum horizontal separation. An `insideEdge`
 child remains constrained to the padded inner frame while the other child uses
