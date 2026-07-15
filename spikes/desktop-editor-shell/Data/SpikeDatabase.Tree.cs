@@ -200,13 +200,30 @@ internal sealed partial class SpikeDatabase
         {
             if (!appNodes.TryGetValue(module.AppId, out var app)) continue;
 
-            app.AddChild(new ProjectTreeNode(
+            var moduleNode = new ProjectTreeNode(
                 ProjectTreeNodeKind.Module,
                 module.Id,
                 module.Name,
                 module.Notes,
                 module.RecordClassId,
-                app));
+                app);
+            app.AddChild(moduleNode);
+            foreach (var variant in ModuleVariants(module.MetadataJson))
+            {
+                var reference = ModuleVariantNodeId(module.Id, variant.Id);
+                var used = moduleInstances.Any((instance) =>
+                    ParseJsonObject(instance.MetadataJson)["moduleVariantReference"]?.GetValue<string>() == reference);
+                moduleNode.AddChild(new ProjectTreeNode(
+                    ProjectTreeNodeKind.ModuleVariant,
+                    reference,
+                    variant.Name,
+                    variant.IsProtected ? "Protected module variant" : "Module variant",
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant),
+                    moduleNode,
+                    isUsed: used,
+                    isProtected: variant.IsProtected,
+                    isLocked: variant.IsLocked));
+            }
         }
 
         foreach (var episode in episodes.OrderBy((episode) => episode.SortOrder).ThenBy((episode) => episode.Name))
@@ -431,7 +448,7 @@ internal sealed partial class SpikeDatabase
         return componentType switch
         {
             "status_bar" or "navigation_bar" or "keyboard" or "keypad" or "fingerprint" or "faceRecognition" or "drawPassword" or "password" or "textInputBar" => ComponentClassNavigationGroup.System,
-            "surface" or "cursor" or "textBox" or "iconRow" or "iconBar" or "componentStack" or "codeIndicator" or "button" or "label" or "avatar" => ComponentClassNavigationGroup.Atoms,
+            "surface" or "cursor" or "textBox" or "iconRow" or "iconBar" or "componentStack" or "collectionStack" or "badge" or "codeIndicator" or "button" or "label" or "avatar" => ComponentClassNavigationGroup.Atoms,
             _ => ComponentClassNavigationGroup.Components,
         };
     }
@@ -729,14 +746,15 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO module_instances (id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, transition_json, content_json, behavior_json, animation_json)
-                VALUES ($id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 240, '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson)
+                INSERT INTO module_instances (id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
+                VALUES ($id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 240, '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
                 """,
                 ("$id", id), ("$shotId", parent.Id), ("$appId", appId), ("$moduleId", moduleId),
                 ("$name", name), ("$notes", "Conversation module instance."), ("$sortOrder", index),
                 ("$contentJson", DefaultConversationModuleContentJson()),
                 ("$behaviorJson", DefaultConversationModuleBehaviorJson()),
-                ("$animationJson", DefaultModuleAnimationJson()));
+                ("$animationJson", DefaultModuleAnimationJson()),
+                ("$metadataJson", new JsonObject { ["moduleVariantReference"] = ModuleVariantNodeId(moduleId, DefaultModuleVariantId) }.ToJsonString()));
             NormalizeModuleInstanceRuntimePayloads(connection);
             SynchronizeTimelineDurations(connection);
             var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
@@ -966,8 +984,8 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
-                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder, metadata_json
+                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json)
+                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder, config_json, design_preview_json, metadata_json
                 FROM modules
                 WHERE id = $sourceId
                 """,
@@ -1090,6 +1108,11 @@ internal sealed partial class SpikeDatabase
             return DuplicateComponentPreset(node);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
+        {
+            return SaveModuleVariant(node, $"{node.Name} copy");
+        }
+
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
     }
 
@@ -1098,6 +1121,12 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
         {
             DeleteComponentPreset(node);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
+        {
+            DeleteModuleVariant(node);
             return;
         }
 
@@ -1143,6 +1172,18 @@ internal sealed partial class SpikeDatabase
         {
             using var presetConnection = OpenConnection();
             return GetComponentPresetReferenceUsages(presetConnection, node);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
+        {
+            using var variantConnection = OpenConnection();
+            using var command = variantConnection.CreateCommand();
+            command.CommandText = "SELECT name FROM module_instances WHERE json_extract(metadata_json, '$.moduleVariantReference') = $reference ORDER BY name";
+            command.Parameters.AddWithValue("$reference", node.Id);
+            using var reader = command.ExecuteReader();
+            var usages = new List<string>();
+            while (reader.Read()) usages.Add($"Screen: {reader.GetString(0)}");
+            return usages;
         }
 
         using var connection = OpenConnection();
@@ -1259,6 +1300,8 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.ComponentClass => RenameComponentClass(node, name),
             ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
+            ProjectTreeNodeKind.Module => RenameModuleClass(node, name),
+            ProjectTreeNodeKind.ModuleVariant => RenameModuleVariant(node, name),
             _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
         };
     }

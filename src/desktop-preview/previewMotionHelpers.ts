@@ -74,6 +74,49 @@ export function wrapMotionFrame(
   };
 }
 
+export function wrapExitMotionFrame(
+  payload: DesignPreviewPayload,
+  node: RenderableNode,
+  motion: ComponentMotionContract,
+  frame: ComponentMotionFrameContract,
+  finalBox: RenderableBox,
+  parentBox: RenderableBox,
+): RenderableNode {
+  if (!frame.trigger || (motion.transition === "none" && !motion.fade)) return node;
+  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
+  if (timing.durationMs <= 0) return node;
+  const progress = easingProgress(
+    timing.easing,
+    linearMotionProgress(frame.elapsedMs, timing),
+    timing.intensity,
+  );
+  const endBox = motion.translate ? entranceStartBox(finalBox, parentBox, motion.direction) : finalBox;
+  return {
+    id: `${node.id}.exit-motion`,
+    type: "group",
+    frame: node.frame ?? 0,
+    box: parentBox,
+    style: { overflow: "hidden" },
+    children: [{
+      ...node,
+      box: finalBox,
+      transform: {
+        ...(node.transform ?? {}),
+        x: lerp(0, endBox.x - finalBox.x, progress),
+        y: lerp(0, endBox.y - finalBox.y, progress),
+        opacity: motion.fade ? 1 - clampedProgress(progress) : 1,
+        scale: motion.scale ? lerp(1, 0.92, progress) : 1,
+      },
+    }],
+  };
+}
+
+export function motionTotalDurationMs(payload: DesignPreviewPayload, motion: ComponentMotionContract) {
+  if (motion.transition === "none" && !motion.fade) return 0;
+  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
+  return Math.max(0, timing.delayMs + timing.durationMs);
+}
+
 export function motionFrameProgress(
   payload: DesignPreviewPayload,
   motion: ComponentMotionContract,
@@ -179,7 +222,7 @@ function entranceStartBox(
   }
 }
 
-function easingProgress(easing: string, progress: number, intensity: number) {
+export function easingProgress(easing: string, progress: number, intensity: number) {
   if (progress <= 0 || progress >= 1 || easing === "linear") {
     return progress;
   }

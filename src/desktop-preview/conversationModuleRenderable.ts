@@ -683,6 +683,9 @@ function headerNode(
       {
         ...preview,
         sampleSubtext: subtitle,
+        showBadge: false,
+        badgeIconToken: "system_check",
+        badgeText: "1",
       },
       componentBaseConfigs,
       "module.conversation.header.avatar",

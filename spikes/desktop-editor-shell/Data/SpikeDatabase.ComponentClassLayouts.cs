@@ -194,6 +194,10 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.avatar.label.showSubtext", "order": 20, "visible": true },
                   { "id": "component.avatar.label.placement", "order": 30, "visible": true },
                   { "id": "component.avatar.label.editor", "order": 40, "visible": true }
+                ] },
+                { "id": "avatarBadge", "label": "Badge", "order": 30, "visible": true, "fields": [
+                  { "id": "component.avatar.badge.editor", "order": 10, "visible": true },
+                  { "id": "component.avatar.badge.placement", "order": 20, "visible": true }
                 ] }
               ]
             }
@@ -362,7 +366,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.button.padding", "order": 30, "visible": true }
                 ] },
                 { "id": "interaction", "label": "Interaction", "icon": "{{EditorIcons.SemanticAsset("Interaction")}}", "presentation": "verticalCards", "order": 30, "visible": true, "fields": [
-                  { "id": "component.button.pushedDurationToken", "order": 10, "visible": true }
+                  { "id": "component.button.pushedDurationToken", "order": 10, "visible": true },
+                  { "id": "component.button.badge.editor", "order": 20, "visible": true }
                 ] },
                 { "id": "normalState", "label": "Normal", "icon": "{{EditorIcons.SemanticAsset("Normal")}}", "presentation": "verticalCards", "order": 40, "visible": true, "fields": [
                   { "id": "component.button.states.normal.surface.editor", "order": 10, "visible": true },
@@ -411,9 +416,10 @@ internal sealed partial class SpikeDatabase
                 { "id": "labelSubtext", "label": "Subtext", "order": 20, "visible": true, "fields": [
                   { "id": "component.label.textGapToken", "order": 10, "visible": true },
                   { "id": "component.label.reserveSubtextSpace", "order": 20, "visible": true },
-                  { "id": "component.label.subtextPlacement", "order": 30, "visible": true },
-                  { "id": "component.label.subtextColorToken", "order": 40, "visible": true },
-                  { "id": "component.label.subtextTypography", "order": 50, "visible": true }
+                  { "id": "component.label.subtextVerticalPosition", "order": 30, "visible": true },
+                  { "id": "component.label.subtextHorizontalAlign", "order": 40, "visible": true },
+                  { "id": "component.label.subtextColorToken", "order": 50, "visible": true },
+                  { "id": "component.label.subtextTypography", "order": 60, "visible": true }
                 ] },
                 { "id": "labelTransparency", "label": "Transparency", "order": 30, "visible": false, "fields": [] }
               ]

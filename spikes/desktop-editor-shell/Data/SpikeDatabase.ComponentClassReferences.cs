@@ -116,10 +116,13 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id).ProjectId,
             ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode).ProjectId,
             ProjectTreeNodeKind.Module => GetModuleSettings(ownerNode.Id).ProjectId,
+            ProjectTreeNodeKind.ModuleVariant => GetModuleVariantSettings(ownerNode).ProjectId,
             _ => throw new InvalidOperationException($"Embedded component variants are not supported for '{ownerNode.Kind}'."),
         };
-        var ownerConfigJson = ownerNode.Kind == ProjectTreeNodeKind.Module
-            ? GetModuleSettings(ownerNode.Id).ConfigJson
+        var ownerConfigJson = ownerNode.Kind is ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant
+            ? ownerNode.Kind == ProjectTreeNodeKind.Module
+                ? GetModuleSettings(ownerNode.Id).ConfigJson
+                : GetModuleVariantSettings(ownerNode).ConfigJson
             : ownerNode.Kind == ProjectTreeNodeKind.ComponentClass
                 ? GetComponentClassSettings(connection, ownerNode.Id).ConfigJson
                 : GetComponentPresetSettings(connection, ownerNode).ConfigJson;
@@ -349,6 +352,12 @@ internal sealed partial class SpikeDatabase
 
     public JsonObject GetComponentPresetRuntimeInputs(string presetReference)
     {
+        var effective = GetComponentPresetRuntimeContract(presetReference);
+        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+    }
+
+    public JsonObject GetComponentPresetRuntimeContract(string presetReference)
+    {
         if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
@@ -359,7 +368,7 @@ internal sealed partial class SpikeDatabase
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
-        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+        return effective;
     }
 
     public IReadOnlyList<ComponentInputBindingDefinition> GetComponentPresetRuntimeInputBindings(

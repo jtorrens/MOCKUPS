@@ -11,9 +11,8 @@ internal static class ModuleInstanceTimeline
     public static int DurationFrames(SpikeDatabase database, string moduleInstanceId)
     {
         var instance = database.GetModuleInstanceSettings(moduleInstanceId);
-        var module = database.GetModuleSettings(instance.ModuleId);
         return RuntimeTimeline.DurationFrames(
-            module.DesignPreviewJson,
+            database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),
             instance.ContentJson,
             instance.AnimationJson,
             instance.DurationFrames,
@@ -38,8 +37,7 @@ internal static class ModuleInstanceTimeline
     public static IReadOnlyList<int> KeyframeFrames(SpikeDatabase database, string moduleInstanceId)
     {
         var instance = database.GetModuleInstanceSettings(moduleInstanceId);
-        var module = database.GetModuleSettings(instance.ModuleId);
-        var contract = Parse(module.DesignPreviewJson);
+        var contract = Parse(database.GetModuleInstanceEffectiveContractJson(moduleInstanceId));
         var runtime = Parse(database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId));
         var animation = Parse(instance.AnimationJson);
         var themeTokens = Parse(database.GetModuleInstanceThemeTokensJson(moduleInstanceId));

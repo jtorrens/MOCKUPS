@@ -212,6 +212,15 @@ Values restores defaults. Password uses `holdFinal` so its correct or incorrect
 result remains visible. This policy belongs to the action host and contains no
 component-specific branch.
 
+An action may additionally declare a generic target input. `toggle` actions
+invert a boolean baseline; `option` actions select one explicit destination.
+The action host snapshots the target, trigger, time and activation fields before
+the first run, applies the destination before resolving frame zero, and owns
+per-action Restore. A `targetFromJsonKey` may expose the captured source state
+to the owning resolver for bidirectional Reflow. The component resolver still
+owns every intermediate frame; neither the editor, bridge nor renderer infers
+component transitions.
+
 ## 8. Context, resolver, and presentation boundaries
 
 Production owns one global Shot cursor and one playback owner. Its Screen scope only changes the displayed range; it never creates an independent clock. Design actions are isolated fixtures: their action frame and Test Values do not read Shot navigation and are never persisted into Production animation.
@@ -227,6 +236,21 @@ resolve(request) -> fully resolved owner state -> standard renderable atoms
 ```
 
 The resolver evaluates typed animation and module semantics at the requested frame. Conversation applies its field/target mapping and message-relative origins in its owning frame resolver before its renderable is called. Component renderables emit standard atoms. Common helpers may convert frame deltas to milliseconds and tokens to final values. The bridge and HTML/raster renderer paint only those resolved atoms; none may branch on Conversation, Bubble, Media, Audio, Keyboard, or a field name, or run a timer.
+
+Runtime size or position changes of one logical element retain stable renderable
+ids and use Theme Reflow by default. The owner resolves complete source and
+destination trees, then recursively interpolates matching boxes for each
+requested frame; parent layout and owned child geometry therefore move on the
+same clock. A contract may explicitly choose another transition or `none`.
+Static Variant/Test Value edits without a runtime source frame update directly
+and do not invent a transition. The renderer never performs this interpolation.
+
+Module instances select an explicit full Module Variant reference. Timeline
+discovery, initial keyframes and duration consume the effective contract formed
+from that Variant config and the module's shared runtime declarations. Changing
+Variant removes runtime values and tracks whose fields or stable targets no
+longer exist. The timeline never falls back to class config or infers a Variant
+from Actor, Device or Theme.
 
 The sequence provider accepts either Design action frames or Production frames, then shares preparation and presentation. Starting either source cancels the other; navigation, context, route, active Screen, FPS, asset/font, runtime or animation changes cancel stale preparation. Cache identity includes source, Shot id, Screen id, global and local frame, effective FPS, device/theme/mode, runtime and animation signatures, asset/font signatures, route, and geometry.
 

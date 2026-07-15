@@ -319,6 +319,12 @@ internal static class DesignPreviewTestValues
         {
             return JsonNode.Parse(BehaviorTimingValue.Parse(value).ToJson());
         }
+        if (input.ValueKind is ValueKind.StructuredCollection or ValueKind.Motion)
+        {
+            return JsonNode.Parse(string.IsNullOrWhiteSpace(value)
+                ? input.ValueKind == ValueKind.StructuredCollection ? "[]" : "{}"
+                : value);
+        }
         return input.Kind switch
         {
             ComponentInputKind.Number when double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),

@@ -51,7 +51,12 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            var preset = _database.SaveComponentPreset(node, presetName);
+            var preset = node.Kind switch
+            {
+                ProjectTreeNodeKind.ComponentPreset => _database.SaveComponentPreset(node, presetName),
+                ProjectTreeNodeKind.ModuleVariant => _database.SaveModuleVariant(node, presetName),
+                _ => throw new InvalidOperationException("Variants can only be saved from a selected variant."),
+            };
             _reloadAndSelect(preset);
         }
         catch (Exception exception)
@@ -62,7 +67,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task RestoreComponentPresetSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -85,7 +90,10 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            _database.ReplaceComponentPresetConfig(node, snapshot.ConfigJson);
+            if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+                _database.ReplaceComponentPresetConfig(node, snapshot.ConfigJson);
+            else
+                _database.ReplaceModuleVariantConfig(node, snapshot.ConfigJson);
             _reloadAndSelectWithViewState(node, snapshot.ViewState);
         }
         catch (Exception exception)
@@ -146,14 +154,16 @@ internal sealed class EditorNodeCommandController
 
     public Task ToggleComponentPresetLock(ProjectTreeNode node)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
         {
             return Task.CompletedTask;
         }
 
         try
         {
-            var toggled = _database.ToggleComponentPresetLock(node);
+            var toggled = node.Kind == ProjectTreeNodeKind.ComponentPreset
+                ? _database.ToggleComponentPresetLock(node)
+                : _database.ToggleModuleVariantLock(node);
             _reloadAndSelect(toggled);
         }
         catch (Exception exception)

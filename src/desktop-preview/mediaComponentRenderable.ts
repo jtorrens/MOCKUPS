@@ -109,19 +109,18 @@ function mediaBoxesFromInlineBox(
     root: inlineBox,
     media: inlineBox,
   };
-  if (media.displayState !== "fullframe") {
-    return inline;
-  }
-
   const fullframe = fullframeMediaBoxes(payload, media);
   const progress = mediaFullframeTransitionProgress(payload, media);
   if (!media.motionFrame.trigger || progress >= 1) {
-    return fullframe;
+    return media.displayState === "fullframe" ? fullframe : inline;
   }
 
+  const from = media.motionFrame.reverse ? fullframe : inline;
+  const to = media.motionFrame.reverse ? inline : fullframe;
+
   return {
-    root: interpolateBox(inline.root, fullframe.root, progress),
-    media: interpolateBox(inline.media, fullframe.media, progress),
+    root: interpolateBox(from.root, to.root, progress),
+    media: interpolateBox(from.media, to.media, progress),
   };
 }
 
@@ -210,9 +209,9 @@ function mediaBars(
   media: MediaDesignContract,
   boxes: MediaRenderBoxes,
 ): RenderableNode[] {
-  if (media.displayState !== "fullframe") return [];
   const transitionProgress = mediaFullframeTransitionProgress(payload, media);
   const isTransitioning = media.motionFrame.trigger && transitionProgress < 1;
+  if (media.displayState !== "fullframe" && !isTransitioning) return [];
   const transitionRadius = numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload);
   const bars: RenderableNode[] = [
     {

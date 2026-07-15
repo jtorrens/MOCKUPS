@@ -4,11 +4,47 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActions
 {
+    public static IReadOnlyList<ComponentPreviewActionDefinition> ReadWithEmbedded(
+        SpikeDatabase database,
+        JsonObject preview)
+    {
+        var definitions = Read(preview).ToList();
+        if (preview["collections"] is not JsonArray collections) return definitions;
+        foreach (var collection in collections.OfType<JsonObject>())
+        {
+            var collectionJsonKey = JsonString(collection, "jsonKey");
+            var componentItems = collection["componentItems"] as JsonObject;
+            if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
+            var presetJsonKey = JsonString(componentItems, "presetJsonKey");
+            var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
+            if (string.IsNullOrWhiteSpace(presetJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
+            if (preview[collectionJsonKey] is not JsonArray items) continue;
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                var itemId = JsonString(item, "id");
+                var presetReference = JsonString(item, presetJsonKey);
+                if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(presetReference)) continue;
+                var childContract = database.GetComponentPresetRuntimeContract(presetReference);
+                definitions.AddRange(Read(childContract)
+                    .Where((action) => !action.IsCollectionItemAction)
+                    .Select((action) => action with
+                    {
+                        Id = $"embedded:{collectionJsonKey}:{itemId}:{inputsJsonKey}:{action.Id}",
+                        CollectionJsonKey = collectionJsonKey,
+                        CollectionItemId = itemId,
+                        TargetJsonPath = inputsJsonKey,
+                    }));
+            }
+        }
+        return definitions;
+    }
+
     public static IReadOnlyList<ComponentPreviewActionDefinition> Read(JsonObject preview)
     {
         var definitions = new List<ComponentPreviewActionDefinition>();
@@ -96,6 +132,25 @@ internal static class ComponentPreviewActions
         }
     }
 
+    public static void SetStoredValue(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string key,
+        string value)
+    {
+        var target = Target(preview, action);
+        if (target is null) return;
+        target[key] = target[key] switch
+        {
+            JsonValue existing when existing.TryGetValue<bool>(out _) => JsonValue.Create(BooleanText.Parse(value)),
+            JsonValue existing when existing.TryGetValue<int>(out _)
+                && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer) => JsonValue.Create(integer),
+            JsonValue existing when existing.TryGetValue<double>(out _)
+                && double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
+            _ => JsonValue.Create(value),
+        };
+    }
+
     public static void RemoveValue(
         JsonObject preview,
         ComponentPreviewActionDefinition action,
@@ -137,12 +192,19 @@ internal static class ComponentPreviewActions
             return preview;
         }
 
-        return preview[action.CollectionJsonKey] is JsonArray items
+        var item = preview[action.CollectionJsonKey] is JsonArray items
             ? items.OfType<JsonObject>().FirstOrDefault((item) =>
                 item["id"] is JsonValue value
                 && value.TryGetValue<string>(out var id)
                 && id == action.CollectionItemId)
             : null;
+        if (item is null || string.IsNullOrWhiteSpace(action.TargetJsonPath)) return item;
+        JsonNode? target = item;
+        foreach (var segment in action.TargetJsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
+        {
+            target = target is JsonObject owner ? owner[segment] : null;
+        }
+        return target as JsonObject;
     }
 
     private static ComponentPreviewActionDefinition? ParseAction(
@@ -204,10 +266,37 @@ internal static class ComponentPreviewActions
             JsonString(action, "prewarmWhenValue"),
             JsonStringArray(action, "activateInputIds"),
             JsonStringArray(action, "deactivateInputIds"),
+            JsonString(action, "targetInputId"),
+            ParseTargetMode(JsonString(action, "targetMode")),
+            JsonString(action, "targetFromJsonKey"),
+            ParseTargetOptions(action),
             collectionJsonKey,
             collectionItemId,
+            "",
             JsonString(action, "visibleWhenItemJsonKey"),
             JsonStringArray(action, "visibleWhenItemValues"));
+    }
+
+    private static ComponentPreviewActionTargetMode ParseTargetMode(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "" => ComponentPreviewActionTargetMode.None,
+            "toggle" => ComponentPreviewActionTargetMode.Toggle,
+            "option" => ComponentPreviewActionTargetMode.Option,
+            "value" => ComponentPreviewActionTargetMode.Value,
+            _ => throw new InvalidOperationException($"Unknown component preview action targetMode '{value}'."),
+        };
+    }
+
+    private static IReadOnlyList<FieldOption> ParseTargetOptions(JsonObject action)
+    {
+        return action["targetOptions"] is JsonArray options
+            ? options.OfType<JsonObject>()
+                .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
+                .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+                .ToList()
+            : [];
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
@@ -313,13 +402,26 @@ internal sealed record ComponentPreviewActionDefinition(
     string PrewarmWhenValue,
     IReadOnlyList<string> ActivateInputIds,
     IReadOnlyList<string> DeactivateInputIds,
+    string TargetInputId,
+    ComponentPreviewActionTargetMode TargetMode,
+    string TargetFromJsonKey,
+    IReadOnlyList<FieldOption> TargetOptions,
     string CollectionJsonKey = "",
     string CollectionItemId = "",
+    string TargetJsonPath = "",
     string VisibleWhenItemJsonKey = "",
     IReadOnlyList<string>? VisibleWhenItemValues = null)
 {
     public bool IsCollectionItemAction => !string.IsNullOrWhiteSpace(CollectionJsonKey)
         && !string.IsNullOrWhiteSpace(CollectionItemId);
+}
+
+internal enum ComponentPreviewActionTargetMode
+{
+    None,
+    Toggle,
+    Option,
+    Value,
 }
 
 internal enum ComponentPreviewActionTimeUnit

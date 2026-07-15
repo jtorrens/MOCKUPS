@@ -421,7 +421,8 @@ internal sealed partial class SpikeDatabase
         {
             if (!appProjectIds.TryGetValue(module.AppId, out var projectId)
                 || !projectId.Equals(owner.ProjectId, StringComparison.Ordinal)
-                || !JsonContainsString(module.ConfigJson, targetReference))
+                || (!JsonContainsString(module.ConfigJson, targetReference)
+                    && !JsonContainsString(module.MetadataJson, targetReference)))
             {
                 continue;
             }

@@ -8,7 +8,6 @@ import {
   parseObject,
   requiredBoolean,
   requiredNumber,
-  requiredPlacement,
   requiredString,
   requiredStringPair,
   requiredTypographyStyle,
@@ -109,6 +108,22 @@ export function resolveLabelComponentFromRecords(
   if (textAlign !== "left" && textAlign !== "center" && textAlign !== "right") {
     throw new Error(`Unsupported label text align ${textAlign}`);
   }
+  const subtextVerticalPosition = requiredString(
+    label,
+    "subtextVerticalPosition",
+    "component.label.subtextVerticalPosition",
+  );
+  if (subtextVerticalPosition !== "top" && subtextVerticalPosition !== "bottom") {
+    throw new Error(`Unsupported label subtext vertical position ${subtextVerticalPosition}`);
+  }
+  const subtextHorizontalAlign = requiredString(
+    label,
+    "subtextHorizontalAlign",
+    "component.label.subtextHorizontalAlign",
+  );
+  if (subtextHorizontalAlign !== "left" && subtextHorizontalAlign !== "center" && subtextHorizontalAlign !== "right") {
+    throw new Error(`Unsupported label subtext horizontal align ${subtextHorizontalAlign}`);
+  }
 
   return {
     id,
@@ -145,11 +160,8 @@ export function resolveLabelComponentFromRecords(
       "reserveSubtextSpace",
       "component.label.reserveSubtextSpace",
     ),
-    subtextPlacement: requiredPlacement(
-      label,
-      "subtextPlacement",
-      "component.label.subtextPlacement",
-    ),
+    subtextVerticalPosition,
+    subtextHorizontalAlign,
     subtextColorToken: requiredString(
       label,
       "subtextColorToken",

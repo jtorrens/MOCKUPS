@@ -1590,18 +1590,17 @@ internal abstract class WebPreviewPane : Grid
                     }
 
                     nextLayer.style.opacity = "1";
-                    requestAnimationFrame(() => {
-                      for (const child of [...scaleLayer.children]) {
-                        if (child !== nextLayer && child !== previewRasterDeck) child.remove();
-                      }
-                      calculatePreviewFit();
-                      recordPatchEvent("commit", {
-                        patch: sequence,
-                        mode: "replace",
-                        images: images.length,
-                        ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
-                      });
+                    for (const child of [...scaleLayer.children]) {
+                      if (child !== nextLayer && child !== previewRasterDeck) child.remove();
+                    }
+                    calculatePreviewFit();
+                    recordPatchEvent("commit", {
+                      patch: sequence,
+                      mode: "replace",
+                      images: images.length,
+                      ms: Math.round((performance.now() - startedAt) * 1000) / 1000,
                     });
+                    requestAnimationFrame(calculatePreviewFit);
                   });
                   return sequence;
                 };

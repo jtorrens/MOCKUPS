@@ -106,6 +106,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     var newId = $"{collection.Id}_{Guid.NewGuid():N}";
                     copy["id"] = newId;
                     RuntimeInputForwardingContract.RebaseIds(copy, oldId, newId);
+                    var mappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
+                        .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
+                    mappings[oldId] = newId;
+                    _services.DuplicateStructuredCollectionAnimationTargets?.Invoke(mappings);
                     editor!.ActivateOnly(copy, items.Count);
                     _items.Insert(index + 1, copy);
                     Commit(runtimeContractChanged: true);
@@ -130,6 +134,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         : _services.ConfirmStructuredCollectionItemDelete is null
                           || await _services.ConfirmStructuredCollectionItemDelete($"{collection.ItemLabel} {index + 1}");
                     if (!confirmed) return;
+                    _services.RemoveStructuredCollectionAnimationTargets?.Invoke(
+                        StructuredCollectionItemIdentity.TargetIds(items[index]));
                     _items.RemoveAt(index);
                     Commit(runtimeContractChanged: true);
                 }),
@@ -192,7 +198,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var options = input.ValueKind switch
         {
             ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                _services.GetComponentPresetOptions?.Invoke(input.ComponentType) ?? [],
+                ComponentPresetOptions(input),
             ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
             _ => input.Options ?? [],
         };
@@ -208,7 +214,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 : null,
             SelectComponentClass: input.ValueKind == ValueKind.ComponentPreset
                 && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Contains("*", StringComparer.Ordinal));
+                    .Contains("*", StringComparer.Ordinal),
+            StructuredCollection: input.StructuredCollection);
         var overrides = componentItems is null
             ? null
             : item[componentItems.OverridesJsonKey] as JsonObject;
@@ -273,8 +280,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
         };
+        Control decorated = _services.DecorateStructuredCollectionField?.Invoke(
+            input,
+            ItemId(item, itemIndex),
+            control) ?? control;
         return EditorSimplifiedPromotionControl.Wrap(
-            control,
+            decorated,
             _services.SimplifiedProjection,
             EditorSimplifiedFieldReference.Collection(
                 _definition.Id,
@@ -330,12 +341,24 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private string DefaultValue(ComponentInputDefinition input)
     {
-        if (input.ValueKind != ValueKind.ComponentPreset || !string.IsNullOrWhiteSpace(input.DefaultValue))
+        if (input.ValueKind != ValueKind.ComponentPreset
+            || input.AllowEmptyComponentPreset
+            || !string.IsNullOrWhiteSpace(input.DefaultValue))
         {
             return input.DefaultValue;
         }
         return _services.GetComponentPresetOptions?.Invoke(input.ComponentType)
             .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? "";
+    }
+
+    private IReadOnlyList<FieldOption> ComponentPresetOptions(ComponentInputDefinition input)
+    {
+        var options = (_services.GetComponentPresetOptions?.Invoke(input.ComponentType) ?? []).ToList();
+        if (input.AllowEmptyComponentPreset && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
+        {
+            options.Insert(0, new FieldOption("", "None"));
+        }
+        return options;
     }
 
     private void InitializeComponentItem(RuntimeInputCollectionDefinition collection, JsonObject item)

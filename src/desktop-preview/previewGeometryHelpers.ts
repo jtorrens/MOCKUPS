@@ -18,6 +18,15 @@ export function renderScale(payload: DesignPreviewPayload) {
     : 1;
 }
 
+export function screenPercentToDesignWidth(
+  payload: DesignPreviewPayload,
+  percent: number,
+) {
+  const scale = renderScale(payload);
+  const screenDesignWidth = payload.previewFrame.screenWidth / scale;
+  return Math.max(1, screenDesignWidth * (percent / 100));
+}
+
 export function centerBox(payload: DesignPreviewPayload, width: number, height: number) {
   const { previewFrame } = payload;
   return {
@@ -85,11 +94,14 @@ function placeAxis(
   childSize: number,
   align: number,
   offset: number,
-  mode: "center" | "edge",
+  mode: "center" | "insideEdge" | "outsideEdge",
 ) {
   const clamped = Math.max(0, Math.min(1, align));
   if (mode === "center") {
     return parentStart + parentSize * clamped - childSize / 2 + offset;
+  }
+  if (mode === "insideEdge") {
+    return parentStart + (parentSize - childSize) * clamped + offset;
   }
 
   const center = parentStart + parentSize / 2 - childSize / 2;
@@ -205,5 +217,35 @@ export function translateRenderableNode(
     ...node,
     box: boxOverride ?? (node.box ? translateBox(node.box, origin) : undefined),
     children: node.children?.map((child) => translateRenderableNode(child, origin)),
+  };
+}
+
+export function interpolateBox(
+  from: RenderableBox,
+  to: RenderableBox,
+  progress: number,
+): RenderableBox {
+  const p = Math.max(0, Math.min(1, progress));
+  return {
+    x: lerp(from.x, to.x, p),
+    y: lerp(from.y, to.y, p),
+    width: lerp(from.width, to.width, p),
+    height: lerp(from.height, to.height, p),
+  };
+}
+
+export function interpolateRenderableGeometry(
+  from: RenderableNode,
+  to: RenderableNode,
+  progress: number,
+): RenderableNode {
+  const previousChildren = new Map((from.children ?? []).map((child) => [child.id, child]));
+  return {
+    ...to,
+    box: from.box && to.box ? interpolateBox(from.box, to.box, progress) : to.box,
+    children: to.children?.map((child) => {
+      const previous = previousChildren.get(child.id);
+      return previous ? interpolateRenderableGeometry(previous, child, progress) : child;
+    }),
   };
 }

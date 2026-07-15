@@ -14,6 +14,13 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (args.Contains("--migrate-database", StringComparer.Ordinal))
+        {
+            _ = new SpikeDatabase(SpikeDatabase.DefaultDatabasePath());
+            Console.WriteLine("Desktop editor database migrations completed.");
+            return;
+        }
+
         if (SchemaV1DatabaseConsolidator.TryRun(args))
         {
             return;

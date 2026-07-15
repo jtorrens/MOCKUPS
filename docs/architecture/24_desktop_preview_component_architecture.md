@@ -29,6 +29,28 @@ Generic preview helpers own token, palette, tint, alpha, asset, scaling and mode
 The final paint tree contains resolved mode-variant values, not unresolved token names.
 ```
 
+### Module Variants and Screen Instances
+
+Modules use the same explicit class/Variant boundary as components without
+turning modules into components. The module row owns the record class, resolver
+identity, editor layout, shared runtime declaration surface and its ordered
+Variant list. Every module has a protected `Default` Variant. A Module Variant
+owns one complete module config snapshot and is addressed by the full reference
+`moduleId::variant::variantId`.
+
+Selecting a module class resolves to a concrete child Variant; editor fields and
+the isolated design preview read that Variant config. Saving or duplicating a
+Variant clones the selected Variant, never an ambiguous class value. User
+Variants can be renamed, locked and deleted only while unused.
+
+A Screen/module instance persists one explicit `moduleVariantReference` in its
+metadata. It never infers composition from Actor, Device or Theme. The selected
+Variant config is combined with the module's shared runtime declarations through
+the generic forwarding contract. Instance content retains only runtime fields
+published by the newly selected Variant, and animation tracks whose owner or
+target survives that selection. Preview, duration and animation authoring all
+consume that same effective contract.
+
 ```text
 After the component renderable/helper boundary, preview data must not contain
 component field names, component slot names, unresolved token names, inheritance
@@ -581,6 +603,15 @@ Rules:
   generic component input-bindings dictionary control, not by copying child
   scalar fields into the parent field catalog;
 - resolvers decide how input values affect component atoms;
+- a parent may pass an explicit layout constraint such as maximum available
+  width to an owned Label renderable without adding that constraint to the
+  Label Variant; Label resolves wrapping into measured lines before the preview
+  boundary, and neither the bridge nor renderer performs text reflow;
+- reusable runtime geometry changes retain stable renderable ids and are
+  resolved through the common recursive box interpolation route. An owner may
+  explicitly declare another transition or `none`; otherwise a detected
+  same-element size/position change uses Theme Reflow and reaches the renderer
+  as final geometry for the requested frame;
 - generic preview shell may hold generic clock/play state only;
 - helpers and renderer must not infer missing inputs or know which concrete
   component declared them.

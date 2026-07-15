@@ -47,14 +47,15 @@ internal sealed partial class SpikeDatabase
     private static void NormalizeModuleInstanceRuntimePayloads(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT mi.id, mi.content_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
+        select.CommandText = "SELECT mi.id, mi.content_json, m.design_preview_json, m.id, m.metadata_json, mi.metadata_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, string Json)>();
         while (reader.Read())
         {
             var original = ReadString(reader, 1);
             var content = ParseJsonObject(original);
-            var contract = ParseJsonObject(ReadString(reader, 2));
+            var contract = EffectiveModuleInstanceContract(
+                reader.GetString(3), ReadString(reader, 4), ReadString(reader, 5), ReadString(reader, 2));
             foreach (var input in (contract["inputs"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
                 var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
@@ -109,7 +110,7 @@ internal sealed partial class SpikeDatabase
                    COALESCE(
                      (SELECT t.tokens_json FROM shots s JOIN actors actor ON actor.id = s.owner_actor_id JOIN themes t ON t.id = actor.default_theme_id WHERE s.id = mi.shot_id),
                      (SELECT t.tokens_json FROM apps a JOIN themes t ON t.project_id = a.project_id WHERE a.id = mi.app_id ORDER BY t.name, t.id LIMIT 1),
-                     '{}')
+                     '{}'), m.id, m.metadata_json, mi.metadata_json
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
             """;
@@ -118,7 +119,9 @@ internal sealed partial class SpikeDatabase
         while (reader.Read())
         {
             var stored = reader.GetInt32(1);
-            var duration = RuntimeTimeline.DurationFrames(ReadString(reader, 4), ReadString(reader, 2), ReadString(reader, 3), stored, ReadString(reader, 5));
+            var contract = EffectiveModuleInstanceContract(
+                reader.GetString(6), ReadString(reader, 7), ReadString(reader, 8), ReadString(reader, 4));
+            var duration = RuntimeTimeline.DurationFrames(contract.ToJsonString(), ReadString(reader, 2), ReadString(reader, 3), stored, ReadString(reader, 5));
             if (duration != stored) updates.Add((reader.GetString(0), duration));
         }
         reader.Close();
@@ -136,16 +139,18 @@ internal sealed partial class SpikeDatabase
     private static void NormalizeAnimationJson(SqliteConnection connection)
     {
         using var select = connection.CreateCommand();
-        select.CommandText = "SELECT mi.id, mi.animation_json, mi.content_json, m.design_preview_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
+        select.CommandText = "SELECT mi.id, mi.animation_json, mi.content_json, m.design_preview_json, m.id, m.metadata_json, mi.metadata_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id";
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, string Json)>();
         while (reader.Read())
         {
             var animation = ParseJsonObject(ReadString(reader, 1));
+            var contract = EffectiveModuleInstanceContract(
+                reader.GetString(4), ReadString(reader, 5), ReadString(reader, 6), ReadString(reader, 3));
             var version = animation["schemaVersion"]?.GetValue<int>() ?? 1;
             if (version == 2)
             {
-                if (EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), ParseJsonObject(ReadString(reader, 3))))
+                if (EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), contract))
                     updates.Add((reader.GetString(0), animation.ToJsonString()));
                 ValidateAnimationJson(animation, reader.GetString(0));
                 continue;
@@ -172,7 +177,7 @@ internal sealed partial class SpikeDatabase
                 }
             }
             animation["schemaVersion"] = 2;
-            EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), ParseJsonObject(ReadString(reader, 3)));
+            EnsureInitialAnimationKeyframes(animation, ParseJsonObject(ReadString(reader, 2)), contract);
             ValidateAnimationJson(animation, reader.GetString(0));
             updates.Add((reader.GetString(0), animation.ToJsonString()));
         }
@@ -243,13 +248,21 @@ internal sealed partial class SpikeDatabase
             var definition = (collection["fields"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
                 candidate["id"]?.GetValue<string>() == fieldId
                 && candidate["animatable"]?.GetValue<bool>() == true);
-            if (definition is null) continue;
             var collectionKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
                 ?? collection["jsonKey"]?.GetValue<string>()
                 ?? "";
             runtimeOwner = (runtime[collectionKey] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((item) =>
                 item["id"]?.GetValue<string>() == targetId);
-            if (runtimeOwner is not null) return definition;
+            if (runtimeOwner is null) continue;
+            if (definition is not null) return definition;
+            var inputsJsonKey = collection["componentItems"]?["inputsJsonKey"]?.GetValue<string>() ?? "";
+            if (string.IsNullOrWhiteSpace(inputsJsonKey) || runtimeOwner[inputsJsonKey] is not JsonObject componentInputs) continue;
+            definition = (componentInputs["inputs"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
+                candidate["id"]?.GetValue<string>() == fieldId
+                && candidate["animatable"]?.GetValue<bool>() == true);
+            if (definition is null) continue;
+            runtimeOwner = componentInputs;
+            return definition;
         }
         return null;
     }

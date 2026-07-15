@@ -11,6 +11,7 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
+    ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
@@ -41,13 +42,130 @@ var tests = new (string Name, Action Run)[]
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
+    ("Collection Stack exposes one runtime-owned Default Variant", CollectionStackSeedOpensAndRenders),
+    ("Notifications composes Notification items through Collection Stack", NotificationsSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
+    ("Label subtext placement migrates to explicit relative alignment", LabelSubtextPlacementMigrates),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
+    ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ModuleVariantsAreExplicit()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-variants-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var roots = database.LoadProjectTree();
+        var module = Descendants(roots).First((node) => node.Kind == ProjectTreeNodeKind.Module
+            && node.RecordClassId == "module.core.lockScreen");
+        var defaultVariant = module.Children.Single((node) => node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+        True(defaultVariant.IsProtected);
+
+        var android = database.SaveModuleVariant(defaultVariant, "Android");
+        database.UpdateModuleVariantField(android, "module.appearanceMode", "dark");
+        Equal("dark", JsonNode.Parse(database.GetModuleVariantSettings(android).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+        Equal("inherit", JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+
+        var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
+        var screen = database.AddModuleInstance(shot, new SpikeDatabase.ShotModuleChoice(
+            module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId));
+        database.UpdateModuleInstanceRuntimeValue(screen.Id, "orphan", JsonValue.Create("remove me"));
+        database.UpdateModuleInstanceAnimationJson(screen.Id,
+            "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"targetId\":\"\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
+        database.UpdateModuleInstanceVariant(screen.Id, android.Id);
+        Equal(android.Id, database.GetModuleInstanceVariantReference(screen.Id));
+        Equal("dark", JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)?["appearanceMode"]?.GetValue<string>());
+        True(JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).ContentJson)?["orphan"] is null);
+        Equal(0, JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).AnimationJson)?["tracks"]?.AsArray().Count);
+        Throws<InvalidOperationException>(() => database.DeleteModuleVariant(android));
+
+        database.UpdateModuleInstanceVariant(screen.Id, defaultVariant.Id);
+        database.DeleteModuleVariant(android);
+        True(!database.GetModuleVariantOptions(module.Id).Any((option) => option.Value == android.Id));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nodes)
+{
+    foreach (var node in nodes)
+    {
+        yield return node;
+        foreach (var child in Descendants(node.Children)) yield return child;
+    }
+}
+
+static void LabelSubtextPlacementMigrates()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-label-layout-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var select = connection.CreateCommand();
+            select.CommandText = "SELECT config_json, metadata_json FROM component_classes WHERE component_type = 'label' LIMIT 1";
+            using var reader = select.ExecuteReader();
+            True(reader.Read());
+            var config = JsonNode.Parse(reader.GetString(0))?.AsObject()
+                ?? throw new InvalidOperationException("Missing Label config.");
+            var metadata = JsonNode.Parse(reader.GetString(1))?.AsObject()
+                ?? throw new InvalidOperationException("Missing Label metadata.");
+            static void RestoreLegacyPlacement(JsonObject owner)
+            {
+                var label = owner["label"]?.AsObject()
+                    ?? throw new InvalidOperationException("Missing Label values.");
+                label.Remove("subtextVerticalPosition");
+                label.Remove("subtextHorizontalAlign");
+                label["subtextPlacement"] = JsonNode.Parse(
+                    """{"mode":"outsideEdge","alignX":0.9,"alignY":0.25,"offsetX":19,"offsetY":-7}""");
+            }
+            RestoreLegacyPlacement(config);
+            foreach (var preset in metadata["presets"]?.AsArray().OfType<JsonObject>() ?? [])
+            {
+                if (preset["config"] is JsonObject presetConfig) RestoreLegacyPlacement(presetConfig);
+            }
+            reader.Close();
+            using var update = connection.CreateCommand();
+            update.CommandText = "UPDATE component_classes SET config_json = $config, metadata_json = $metadata WHERE component_type = 'label'";
+            update.Parameters.AddWithValue("$config", config.ToJsonString());
+            update.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
+            update.ExecuteNonQuery();
+        }
+
+        var database = new SpikeDatabase(temporary);
+        var settings = database.GetComponentClassSettings("component_project_foqn_s2_label");
+        var migrated = JsonNode.Parse(settings.ConfigJson)?["label"]?.AsObject()
+            ?? throw new InvalidOperationException("Missing migrated Label values.");
+        True(migrated["subtextPlacement"] is null);
+        Equal("top", migrated["subtextVerticalPosition"]?.GetValue<string>() ?? "");
+        Equal("center", migrated["subtextHorizontalAlign"]?.GetValue<string>() ?? "");
+        var subtextFields = database.LoadEditorLayout("component.label").Cards
+            .SelectMany((card) => card.VisibleGroups)
+            .Single((group) => group.Id == "labelSubtext")
+            .VisibleFields.OrderBy((field) => field.Order).Select((field) => field.Id).ToList();
+        SequenceEqual(
+            ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography"],
+            subtextFields);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
 
 static void DictionaryFieldsRespondToCompactWidths()
 {
@@ -205,6 +323,19 @@ static void TrackTargetsRoundTrip()
     True(tracks.Single(track => track["fieldId"]!.GetValue<string>() == "subtitle")["targetId"] is null);
     var reloaded = new ModuleInstanceAnimationDocument(document.ToJson());
     Equal("message-1", Required(reloaded.Track("text", "message-1")).TargetId);
+}
+
+static void NestedCollectionTargetsFollowIdentity()
+{
+    var document = EmptyDocument();
+    document.AddTrack("active", "state-1", JsonValue.Create(false)!, "hold");
+    document.UpsertKeyframe("active", "state-1", 8, JsonValue.Create(true)!, "hold");
+    document.DuplicateTargets(new Dictionary<string, string> { ["state-1"] = "state-2" });
+    var duplicate = Required(document.Track("active", "state-2"));
+    SequenceEqual([0, 8], duplicate.Keyframes.Select((keyframe) => keyframe.Frame));
+    document.RemoveTarget("state-1");
+    True(document.Track("active", "state-1") is null);
+    True(document.Track("active", "state-2") is not null);
 }
 
 static void KeyframeUpsertUpdatesAndOrders()
@@ -516,13 +647,13 @@ static void LegacyEventsAreRejected()
     using (var command = connection.CreateCommand())
     {
         command.CommandText = """
-            CREATE TABLE modules (id TEXT PRIMARY KEY, design_preview_json TEXT NOT NULL);
-            CREATE TABLE module_instances (id TEXT PRIMARY KEY, module_id TEXT NOT NULL, animation_json TEXT NOT NULL, content_json TEXT NOT NULL);
-            INSERT INTO modules VALUES ('module', '{}');
+            CREATE TABLE modules (id TEXT PRIMARY KEY, design_preview_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
+            CREATE TABLE module_instances (id TEXT PRIMARY KEY, module_id TEXT NOT NULL, animation_json TEXT NOT NULL, content_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
+            INSERT INTO modules VALUES ('module', '{}', '{"variants":[{"id":"default","name":"Default","protected":true,"locked":false,"config":{}}]}');
             INSERT INTO module_instances VALUES (
               'instance', 'module',
               '{"schemaVersion":1,"tracks":[{"parameterId":"text","events":[{"frame":0}]}]}',
-              '{}');
+              '{}', '{"moduleVariantReference":"module::variant::default"}');
             """;
         command.ExecuteNonQuery();
     }
@@ -679,6 +810,8 @@ static void ComponentStackSeedOpensAndRenders()
         var collections = designPreview["collections"] as JsonArray ?? throw new InvalidOperationException("Missing Component Stack collection contract.");
         Equal("items", collections.OfType<JsonObject>().Single()["jsonKey"]?.GetValue<string>() ?? "");
         var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
+        var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
+            ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
         var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");
         var reflowWeightField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeWeight");
         var fixedGapItem = new JsonObject { ["gapBeforeMode"] = "fixed" };
@@ -713,13 +846,24 @@ static void ComponentStackSeedOpensAndRenders()
         True(RuntimeInputFieldDefinitionFactory.Create(
             database,
             defaultVariant,
-            runtimeCollection.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
+            alternatives.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
         var runtimeItem = new JsonObject
         {
             ["id"] = "test_button",
-            ["presetId"] = childVariant,
-            ["overrides"] = new JsonObject(),
-            ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+            ["alternatives"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "test_button_default",
+                    ["presetId"] = childVariant,
+                    ["overrides"] = new JsonObject(),
+                    ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+                    ["active"] = false,
+                    ["behavior"] = "replace",
+                    ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                },
+            },
             ["alignment"] = "center",
             ["gapBeforeMode"] = "fixed",
             ["gapBeforeToken"] = "theme.spacing.m",
@@ -858,6 +1002,225 @@ static void ComponentStackSeedOpensAndRenders()
         var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
         Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void CollectionStackSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-collection-stack-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "collectionStack");
+        Equal("Atoms", stack.Parent?.Name ?? "");
+        var variants = stack.Children.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset).ToList();
+        Equal(1, variants.Count);
+        Equal("Default", variants[0].Name);
+        True(variants[0].IsLocked);
+
+        var settings = database.GetComponentClassSettings(stack.Id);
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Collection Stack config.");
+        Equal(0, (config["collectionStack"] as JsonObject)?.Count ?? -1);
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Collection Stack preview.");
+        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        SequenceEqual(
+            ["distributionMode", "sizingMode", "startGapToken", "endGapToken", "stackDirection", "stackOffsetToken", "itemSizingMode", "scaleRatio", "opacityRatio"],
+            runtimeInputs.Select((input) => input.Id).ToList());
+        True(runtimeInputs.Single((input) => input.Id == "distributionMode").RefreshOnCommit);
+        Equal("distributionMode", runtimeInputs.Single((input) => input.Id == "sizingMode").EnabledWhenPath);
+        Equal("flow", runtimeInputs.Single((input) => input.Id == "sizingMode").EnabledWhenValue);
+        Equal("stacked", runtimeInputs.Single((input) => input.Id == "scaleRatio").EnabledWhenValue);
+        Equal("stacked", runtimeInputs.Single((input) => input.Id == "opacityRatio").EnabledWhenValue);
+        Equal("stacked", preview["distributionMode"]?.GetValue<string>() ?? "");
+        Equal("content", preview["sizingMode"]?.GetValue<string>() ?? "");
+        var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
+        Equal("items", collection.JsonKey);
+        Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "presetId").ComponentType);
+
+        var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-collectionStack");
+        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
+        True(componentOptions.Any((option) => option.GroupValue.EndsWith("componentStack", StringComparison.Ordinal)));
+
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, variants[0], theme.Id));
+        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            inputSession.ApplyInputs(payload, "light", settings.ProjectId)).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void NotificationsSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-notifications-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var notification = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "notification");
+        var notifications = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "notifications");
+        var badge = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "badge");
+        Equal("Components", notification.Parent?.Name ?? "");
+        Equal("Components", notifications.Parent?.Name ?? "");
+        Equal("Atoms", badge.Parent?.Name ?? "");
+        Equal("component.surface", Required(EmbeddedComponentSlotCatalog.Get("component.notification.surface.editor")).RecordClassId);
+        Equal("component.label", Required(EmbeddedComponentSlotCatalog.Get("component.notification.summaryLabel.editor")).RecordClassId);
+        Equal("component.label", Required(EmbeddedComponentSlotCatalog.Get("component.notification.detailLabel.editor")).RecordClassId);
+        Equal("component.badge", Required(EmbeddedComponentSlotCatalog.Get("component.notifications.badge.editor")).RecordClassId);
+        var avatarLayout = database.LoadEditorLayout("component.avatar");
+        SequenceEqual(
+            ["component.avatar.badge.editor", "component.avatar.badge.placement"],
+            avatarLayout.Cards.Single((card) => card.Id == "avatar").VisibleGroups
+                .Single((group) => group.Id == "avatarBadge").VisibleFields
+                .OrderBy((field) => field.Order)
+                .Select((field) => field.Id)
+                .ToList());
+        var notificationVariant = notification.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var notificationsVariant = notifications.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var notificationLayout = database.LoadEditorLayout("component.notification");
+        Equal("component.notification", EditorContentController.OwnerLayoutRecordClassId(notificationVariant));
+        SequenceEqual(["general", "layout", "avatar", "summaryLabel", "detailLabel"],
+            notificationLayout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
+        SequenceEqual(
+            ["component.notification.dimensionMode", "component.notification.size", "component.notification.padding", "component.notification.gapToken", "component.notification.surface.editor"],
+            notificationLayout.Cards.Single((card) => card.Id == "layout").VisibleGroups
+                .SelectMany((group) => group.VisibleFields)
+                .OrderBy((field) => field.Order)
+                .Select((field) => field.Id)
+                .ToList());
+        SequenceEqual(
+            ["component.notification.avatar.editor", "component.notification.avatarPlacement", "component.notification.avatar.inputs"],
+            notificationLayout.Cards.Single((card) => card.Id == "avatar").VisibleGroups
+                .SelectMany((group) => group.VisibleFields)
+                .OrderBy((field) => field.Order)
+                .Select((field) => field.Id)
+                .ToList());
+        SequenceEqual(
+            ["component.notification.summaryLabel.editor", "component.notification.labelPlacement"],
+            notificationLayout.Cards.Single((card) => card.Id == "summaryLabel").VisibleGroups
+                .SelectMany((group) => group.VisibleFields)
+                .OrderBy((field) => field.Order)
+                .Select((field) => field.Id)
+                .ToList());
+        var notificationConfig = JsonNode.Parse(database.GetComponentClassSettings(notification.Id).ConfigJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notification config.");
+        True(notificationConfig["notification"]?["surfaceSlot"] is JsonObject);
+        True(notificationConfig["notification"]?["avatarPosition"] is null);
+        True(notificationConfig["notification"]?["avatarInputs"]?["showBadge"] is JsonValue);
+        True(notificationConfig["notification"]?["summaryLabelSlot"] is JsonObject);
+        True(notificationConfig["notification"]?["detailLabelSlot"] is JsonObject);
+        True(notificationConfig["notification"]?["labelSlot"] is null);
+        Equal("icon", notificationConfig["notification"]?["avatarInputs"]?["badgeContentMode"]?.GetValue<string>() ?? "");
+        Equal(20, notificationConfig["notification"]?["avatarInputs"]?["badgeSize"]?.GetValue<int>() ?? 0);
+        var notificationsConfig = JsonNode.Parse(database.GetComponentClassSettings(notifications.Id).ConfigJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notifications config.");
+        True(notificationsConfig["notifications"]?["badgeSlot"] is JsonObject);
+        Equal(3, notificationsConfig["notifications"]?["closedItemLimit"]?.GetValue<int>() ?? 0);
+
+        foreach (var variant in new[] { notificationVariant, notificationsVariant })
+        {
+            var payload = Required(DesignPreviewPayloadFactory.Create(database, variant, theme.Id));
+            var inputSession = new ComponentPreviewInputSession(database, () => { });
+            inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
+            var html = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(device.Id), "light", false,
+                inputSession.ApplyInputs(payload, "light", database.GetComponentClassSettings(variant.Parent.Id).ProjectId)).GetAwaiter().GetResult();
+            True(!html.Contains("preview-error", StringComparison.Ordinal));
+        }
+
+        var wrappingSettings = database.GetComponentClassSettings(notification.Id);
+        var wrappingPreview = JsonNode.Parse(wrappingSettings.DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notification wrapping preview.");
+        wrappingPreview["maxWidth"] = 45;
+        wrappingPreview["summaryText"] = "A deliberately long notification title that must wrap";
+        database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
+        var wrappingPayload = Required(DesignPreviewPayloadFactory.Create(database, notificationVariant, theme.Id));
+        var wrappingSession = new ComponentPreviewInputSession(database, () => { });
+        wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
+        var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            wrappingSession.ApplyInputs(wrappingPayload, "light", wrappingSettings.ProjectId)).GetAwaiter().GetResult();
+        True(wrappingHtml.Contains("component.notification.label.text.1", StringComparison.Ordinal));
+        database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingSettings.DesignPreviewJson);
+
+        var settings = database.GetComponentClassSettings(notifications.Id);
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Notifications preview.");
+        var reference = notificationVariant.Id;
+        var notificationInputs = database.GetComponentPresetRuntimeInputs(reference);
+        Equal(90, notificationInputs["maxWidth"]?.GetValue<int>() ?? 0);
+        True(notificationInputs["availableWidth"] is null);
+        True(notificationInputs["displayMode"] is JsonValue);
+        preview["items"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "notification_1", ["presetId"] = reference,
+                ["overrides"] = new JsonObject(), ["inputs"] = notificationInputs.DeepClone(),
+                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
+                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
+                ["present"] = true, ["presenceMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+            },
+            new JsonObject
+            {
+                ["id"] = "notification_2", ["presetId"] = reference,
+                ["overrides"] = new JsonObject(), ["inputs"] = notificationInputs.DeepClone(),
+                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
+                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
+                ["present"] = true, ["presenceMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+            },
+        };
+        database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
+        var populated = Required(DesignPreviewPayloadFactory.Create(database, notificationsVariant, theme.Id));
+        var populatedSession = new ComponentPreviewInputSession(database, () => { });
+        populatedSession.UpdateForPayload(populated, settings.ProjectId);
+        var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing populated Notifications contract.");
+        var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(database, populatedContract)
+            .Where((action) => !string.IsNullOrWhiteSpace(action.TargetJsonPath))
+            .ToList();
+        Equal(2, embeddedActions.Count);
+        True(embeddedActions.All((action) => action.TargetJsonPath == "inputs"));
+        var firstDisplayAction = embeddedActions.Single((action) => action.CollectionItemId == "notification_1");
+        True(populatedSession.TriggerAction(firstDisplayAction.Id, "detail"));
+        var targetedPayload = populatedSession.ApplyInputs(populated, "light", settings.ProjectId);
+        var targetedItems = JsonNode.Parse(targetedPayload.DesignPreviewJson)?["items"]?.AsArray()
+            ?? throw new InvalidOperationException("Missing targeted Notification items.");
+        Equal("detail", targetedItems[0]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
+        Equal("summary", targetedItems[1]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
+        True(populatedSession.RestoreAction(firstDisplayAction.Id));
+        var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
+        True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
+        True(populatedHtml.Contains("component.notifications.badge", StringComparison.Ordinal));
     }
     finally
     {
@@ -1019,6 +1382,14 @@ static void PasswordSeedOpensAndRenders()
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
+        True(inputSession.CanRestoreAction(action.Id));
+        True(inputSession.RestoreAction(action.Id));
+        True(!inputSession.CanRestoreAction(action.Id));
+        var restoredPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var restoredPreview = JsonNode.Parse(restoredPayload.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing restored Password preview.");
+        Equal(false, restoredPreview["entryTrigger"]?.GetValue<bool>() ?? true);
+        Equal(0, restoredPreview["entryFrame"]?.GetValue<int>() ?? -1);
         True(inputSession.TriggerAction(action.Id));
         Equal(0, inputSession.CurrentPreviewFrame);
         True(inputSession.IsPlaybackActive);
@@ -1159,9 +1530,20 @@ static void LockScreenComposesRuntimeStack()
             new JsonObject
             {
                 ["id"] = "lock_screen_label",
-                ["presetId"] = childVariant,
-                ["overrides"] = new JsonObject(),
-                ["inputs"] = childInputs,
+                ["alternatives"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "lock_screen_label_default",
+                        ["presetId"] = childVariant,
+                        ["overrides"] = new JsonObject(),
+                        ["inputs"] = childInputs,
+                        ["active"] = false,
+                        ["behavior"] = "replace",
+                        ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                        ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    },
+                },
                 ["alignment"] = "center",
                 ["gapBeforeMode"] = "fixed",
                 ["gapBeforeToken"] = "theme.spacing.none",

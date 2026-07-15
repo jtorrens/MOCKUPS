@@ -1257,15 +1257,27 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void TriggerDesignPreviewAction(string actionId)
+    public void TriggerDesignPreviewAction(string actionId, string? targetValue = null)
     {
-        if (_designInputsPanel.TriggerAction(actionId))
+        if (_designInputsPanel.TriggerAction(actionId, targetValue))
         {
             return;
         }
 
         Refresh();
-        _designInputsPanel.TriggerAction(actionId);
+        _designInputsPanel.TriggerAction(actionId, targetValue);
+    }
+
+    public bool CanRestoreDesignPreviewAction(string actionId)
+    {
+        return _designInputsPanel.CanRestoreAction(actionId);
+    }
+
+    public void RestoreDesignPreviewAction(string actionId)
+    {
+        if (_designInputsPanel.RestoreAction(actionId)) return;
+        Refresh();
+        _designInputsPanel.RestoreAction(actionId);
     }
 
     public void SetDesignPreviewTestValue(string jsonKey, string value)
@@ -2888,8 +2900,7 @@ internal sealed class EditorPreviewController
             }
         }
         if (string.IsNullOrWhiteSpace(instanceId)) return "inherit";
-        var instance = _database.GetModuleInstanceSettings(instanceId);
-        var config = DesignPreviewTestValues.Parse(_database.GetModuleSettings(instance.ModuleId).ConfigJson);
+        var config = DesignPreviewTestValues.Parse(_database.GetModuleInstanceVariantSettings(instanceId).ConfigJson);
         return config["appearanceMode"]?.GetValue<string>() ?? "inherit";
     }
 

@@ -294,7 +294,12 @@ internal sealed partial class SpikeDatabase
     public string GetModuleConfigFieldValue(string moduleId, string fieldId)
     {
         var settings = GetModuleSettings(moduleId);
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        return ModuleConfigFieldValue(settings.ConfigJson, fieldId);
+    }
+
+    private static string ModuleConfigFieldValue(string configJson, string fieldId)
+    {
+        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
         return fieldId switch
         {
             "module.appearanceMode" => JsonString(config, ["appearanceMode"]) is "light" or "dark" ? JsonString(config, ["appearanceMode"]) : "inherit",
@@ -533,6 +538,17 @@ internal sealed partial class SpikeDatabase
             """,
             ("$id", moduleId)) ?? "";
 
+        UpdateModuleConfigFieldValue(connection, projectId, config, fieldId, value);
+        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
+    }
+
+    private static void UpdateModuleConfigFieldValue(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config,
+        string fieldId,
+        string value)
+    {
         switch (fieldId)
         {
             case "module.appearanceMode":
@@ -617,7 +633,6 @@ internal sealed partial class SpikeDatabase
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");
         }
 
-        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
     }
 
     private static JsonObject DefaultConversationConfigJson(string projectId)
@@ -793,6 +808,20 @@ internal sealed partial class SpikeDatabase
                             ["durationEnabledInputId"] = "isPlaying",
                             ["visibleWhenItemJsonKey"] = "mediaType",
                             ["visibleWhenItemValues"] = new JsonArray { "audio" },
+                        },
+                        new JsonObject
+                        {
+                            ["id"] = "fullScreen",
+                            ["label"] = "Full screen",
+                            ["playInputId"] = "fullScreenTransition",
+                            ["targetInputId"] = "isFullScreen",
+                            ["targetMode"] = "toggle",
+                            ["durationSeconds"] = 0.3,
+                            ["timeJsonKey"] = "motionElapsedMs",
+                            ["timeUnit"] = "milliseconds",
+                            ["prewarmFrames"] = false,
+                            ["visibleWhenItemJsonKey"] = "mediaType",
+                            ["visibleWhenItemValues"] = new JsonArray { "video" },
                         },
                     },
                 },

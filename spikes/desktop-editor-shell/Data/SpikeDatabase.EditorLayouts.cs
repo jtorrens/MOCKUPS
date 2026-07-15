@@ -134,7 +134,9 @@ internal sealed partial class SpikeDatabase
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.label'");
         if (!string.IsNullOrWhiteSpace(labelLayout)
             && (labelLayout.Contains("component.label.textGap\"", StringComparison.Ordinal)
-                || !labelLayout.Contains("component.label.subtextPlacement", StringComparison.Ordinal)))
+                || labelLayout.Contains("component.label.subtextPlacement", StringComparison.Ordinal)
+                || !labelLayout.Contains("component.label.subtextVerticalPosition", StringComparison.Ordinal)
+                || !labelLayout.Contains("component.label.subtextHorizontalAlign", StringComparison.Ordinal)))
         {
             Execute(connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.label'",
@@ -207,6 +209,7 @@ internal sealed partial class SpikeDatabase
             && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyGap", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.motion.buttonPushedDurationMs", StringComparison.Ordinal)
+                || !themeLayout.Contains("\"id\": \"theme.motion.reflow\"", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.motion.naturalPace.normal", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyBorder", StringComparison.Ordinal)
                 || themeLayout.Contains("theme.keyboard.popoverBackground", StringComparison.Ordinal)
@@ -291,6 +294,7 @@ internal sealed partial class SpikeDatabase
         {
             ("component.iconRow", "component.iconRow.sizeSource", ""),
             ("component.button", "component.button.contentGapToken", "component.button.iconSizeToken"),
+            ("component.avatar", "component.avatar.badge.placement", ""),
         })
         {
             var layout = ScalarString(connection, "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId", ("$recordClassId", recordClassId));
@@ -323,6 +327,17 @@ internal sealed partial class SpikeDatabase
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
                 ("$recordClassId", recordClassId),
                 ("$layoutJson", MinimalEditorLayoutJson(recordClassId)));
+        }
+
+        var moduleInstanceLayout = ScalarString(
+            connection,
+            "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'module_instance'");
+        if (!string.IsNullOrWhiteSpace(moduleInstanceLayout)
+            && !moduleInstanceLayout.Contains("moduleInstance.variant", StringComparison.Ordinal))
+        {
+            Execute(connection,
+                "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'module_instance'",
+                ("$layoutJson", MinimalEditorLayoutJson("module_instance")));
         }
 
     }
@@ -448,10 +463,11 @@ internal sealed partial class SpikeDatabase
                 ? """
                     { "id": "core.name", "order": 10, "visible": true },
                     { "id": "moduleInstance.module", "order": 20, "visible": true },
-                    { "id": "moduleInstance.durationFrames", "order": 30, "visible": true },
-                    { "id": "moduleInstance.transition", "order": 40, "visible": true },
-                    { "id": "moduleInstance.sortOrder", "order": 50, "visible": false },
-                    { "id": "core.notes", "order": 60, "visible": true }
+                    { "id": "moduleInstance.variant", "order": 30, "visible": true },
+                    { "id": "moduleInstance.durationFrames", "order": 40, "visible": true },
+                    { "id": "moduleInstance.transition", "order": 50, "visible": true },
+                    { "id": "moduleInstance.sortOrder", "order": 60, "visible": false },
+                    { "id": "core.notes", "order": 70, "visible": true }
                   """
             : recordClassId == "render_preset"
                 ? """
@@ -789,7 +805,8 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.motion.slide", "order": 20, "visible": true },
                     { "id": "theme.motion.swipe", "order": 30, "visible": true },
                     { "id": "theme.motion.scale", "order": 40, "visible": true },
-                    { "id": "theme.motion.buttonPushedDurationMs", "order": 50, "visible": true }
+                    { "id": "theme.motion.buttonPushedDurationMs", "order": 50, "visible": true },
+                    { "id": "theme.motion.reflow", "order": 60, "visible": true }
                   ]
                 },
                 {

@@ -19,6 +19,7 @@ import {
   resolveLabelComponentFromRecords,
   staticLabelFrameContext,
 } from "./labelComponentResolver.js";
+import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 
 function labelPreview(
   preview: Record<string, unknown>,
@@ -55,6 +56,7 @@ export function resolveAvatarComponentFromRecords(
 ): AvatarDesignContract {
   const avatar = asRecord(config.avatar);
   const labelSlot = asRecord(avatar.labelSlot);
+  const badgeSlot = asRecord(avatar.badgeSlot);
   const style = asRecord(config.style);
   const showLabel = requiredBoolean(
     labelSlot,
@@ -72,6 +74,7 @@ export function resolveAvatarComponentFromRecords(
     overrides,
   );
   const actor = resolveActorPreview(preview);
+  const showBadge = requiredBoolean(preview, "showBadge", "component.avatar.input.showBadge");
 
   return {
     id,
@@ -100,6 +103,24 @@ export function resolveAvatarComponentFromRecords(
           )
         : undefined,
     },
+    badge: showBadge ? {
+      ...resolveBadgeComponentFromRecords(
+        mergeComponentDefaults(
+          componentPresetConfig(componentBaseConfigs, "badge", requiredString(badgeSlot, "presetId", "component.avatar.badgeSlot.presetId")),
+          asRecord(badgeSlot.overrides),
+        ),
+        {
+          contentMode: requiredString(preview, "badgeContentMode", "component.avatar.input.badgeContentMode"),
+          iconToken: requiredString(preview, "badgeIconToken", "component.avatar.input.badgeIconToken"),
+          text: requiredString(preview, "badgeText", "component.avatar.input.badgeText"),
+          size: requiredNumber(preview, "badgeSize", "component.avatar.input.badgeSize"),
+          backgroundPaletteColor: requiredString(preview, "badgeBackgroundPaletteColor", "component.avatar.input.badgeBackgroundPaletteColor"),
+          contentPaletteColor: requiredString(preview, "badgeContentPaletteColor", "component.avatar.input.badgeContentPaletteColor"),
+        },
+        `${id}.badge`,
+      ),
+      placement: requiredPlacement(badgeSlot, "placement", "component.avatar.badgeSlot.placement"),
+    } : undefined,
     surface: {
       shadowEnabled: requiredBoolean(
         style,

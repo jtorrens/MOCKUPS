@@ -168,6 +168,14 @@ internal sealed partial class SpikeDatabase
         {
             return JsonString(tokens, easingPath);
         }
+        if (fieldId == "theme.motion.reflow")
+        {
+            return new JsonObject
+            {
+                ["durationMs"] = JsonPath.Get(tokens, ["motion", "reflowDurationMs"])?.DeepClone(),
+                ["easing"] = JsonPath.Get(tokens, ["motion", "reflowEasing"])?.DeepClone(),
+            }.ToJsonString();
+        }
 
         return fieldId switch
         {
@@ -385,6 +393,22 @@ internal sealed partial class SpikeDatabase
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
             SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+        if (fieldId == "theme.motion.reflow")
+        {
+            var reflow = JsonNode.Parse(value) as JsonObject
+                ?? throw new InvalidOperationException("Theme reflow timing must be a JSON object.");
+            var durationMs = reflow["durationMs"]?.GetValue<int>()
+                ?? throw new InvalidOperationException("Theme reflow timing requires durationMs.");
+            var easing = reflow["easing"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(easing))
+            {
+                throw new InvalidOperationException("Theme reflow timing requires easing.");
+            }
+            SetJsonValue(tokens, ["motion", "reflowDurationMs"], JsonValue.Create(durationMs)!);
+            SetJsonValue(tokens, ["motion", "reflowEasing"], JsonValue.Create(easing)!);
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }
@@ -612,6 +636,8 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["buttonPushedDurationMs"] = 120,
+            ["reflowDurationMs"] = 240,
+            ["reflowEasing"] = "ease-out",
             ["naturalPace"] = new JsonObject
             {
                 ["verySlow"] = 2,

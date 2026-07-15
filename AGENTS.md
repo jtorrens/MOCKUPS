@@ -205,3 +205,17 @@ and validated sequentially.
 When a completed phase is intended to become the version used on other PCs,
 integrate it into `main`, push `main`, switch the local checkout to `main` and
 verify that local `main` and `origin/main` identify the same commit.
+
+## Delivery rule: handoff checklist, current app and local commits
+
+After every implemented update, the final handoff must include:
+
+- a concise summary of what changed;
+- a concrete list of manual checks for the user;
+- confirmation that the latest validated build of the desktop app has been
+  opened for review, or an explicit reason why it could not be opened.
+
+When an implemented change is substantial enough to form a coherent revision,
+prepare it as an actual local git commit after the relevant checks pass. Include
+all required parity data and assets in that commit and verify the working tree is
+clean. Do not push that commit until the user explicitly requests a push.

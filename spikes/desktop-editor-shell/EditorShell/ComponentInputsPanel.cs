@@ -39,6 +39,7 @@ internal sealed class ComponentPreviewInputSession
     private double _playbackStartedAtSeconds;
     private int _lastPlaybackRefreshFrame = -1;
     private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Dictionary<string, ActionValueSnapshot>> _actionSnapshots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, JsonObject> _transientCollectionTestValuesByScope = new(StringComparer.Ordinal);
     private bool _presentEveryPlaybackFrame;
     private bool _awaitingPlaybackPresentation;
@@ -121,7 +122,7 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.Read(preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             _scopeKey = "";
@@ -170,6 +171,10 @@ internal sealed class ComponentPreviewInputSession
             _inputDefaults.Remove(key);
         }
         _transientCollectionTestValuesByScope.Remove(scopeKey);
+        foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            _actionSnapshots.Remove(key);
+        }
     }
 
     public bool IsPlaybackActive => SupportsPlayback()
@@ -183,11 +188,13 @@ internal sealed class ComponentPreviewInputSession
         ? CurrentPlaybackFrame(action)
         : 0;
 
-    public bool TriggerAction(string actionId)
+    public bool TriggerAction(string actionId, string? targetValue = null)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
+            CaptureActionSnapshot(action);
+            ApplyActionTarget(action, targetValue);
             TogglePlayback(action);
             return true;
         }
@@ -198,6 +205,42 @@ internal sealed class ComponentPreviewInputSession
             ("action", actionId),
             ("availableActions", string.Join(",", _actions.Select((candidate) => candidate.Id))));
         return false;
+    }
+
+    public bool CanRestoreAction(string actionId)
+    {
+        return _actions.Any((candidate) => candidate.Id == actionId)
+            && _actionSnapshots.ContainsKey(ActionSnapshotKey(actionId));
+    }
+
+    public bool RestoreAction(string actionId)
+    {
+        var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
+        if (action is null
+            || !_actionSnapshots.Remove(ActionSnapshotKey(actionId), out var snapshot))
+        {
+            return false;
+        }
+
+        StopPlayback();
+        foreach (var (key, value) in snapshot)
+        {
+            if (value.Exists)
+            {
+                _values[key] = value.Value;
+            }
+            else
+            {
+                _values.Remove(key);
+            }
+            SyncBooleanInput(key);
+        }
+        _playbackSecondsByActionId.Remove(action.Id);
+        if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
+        if (_activeActionId == action.Id) _activeActionId = "";
+        UpdateActionButtons();
+        _refreshPreview();
+        return true;
     }
 
     public void SetExternalInputValue(string jsonKey, string value)
@@ -301,6 +344,11 @@ internal sealed class ComponentPreviewInputSession
         _activeActionId = "";
         _heldFinalActionId = "";
         _playbackSecondsByActionId.Clear();
+        foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            _actionSnapshots.Remove(key);
+            removed = true;
+        }
         UpdateActionButtons();
         if (removed) _refreshPreview();
         return removed;
@@ -322,7 +370,7 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.Read(preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             return payload;
@@ -359,8 +407,19 @@ internal sealed class ComponentPreviewInputSession
         }
         foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
         {
+            if (action.IsCollectionItemAction
+                && !string.IsNullOrWhiteSpace(action.TargetInputId)
+                && _values.TryGetValue(ActionTargetStorageKey(action), out var targetValue))
+            {
+                ComponentPreviewActions.SetStoredValue(preview, action, action.TargetInputId, targetValue);
+            }
             ComponentPreviewActions.SetValue(preview, action, action.PlayInputId, IsPlaying(action));
             ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
+            if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey)
+                && _values.TryGetValue(ActionTargetFromKey(action), out var fromValue))
+            {
+                ComponentPreviewActions.SetValue(preview, action, action.TargetFromJsonKey, fromValue);
+            }
         }
 
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
@@ -505,6 +564,18 @@ internal sealed class ComponentPreviewInputSession
                     JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
                     JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
                     _ => "0",
+                };
+            }
+            if (action.IsCollectionItemAction
+                && !string.IsNullOrWhiteSpace(action.TargetInputId)
+                && !_values.ContainsKey(ActionTargetStorageKey(action)))
+            {
+                _values[ActionTargetStorageKey(action)] = ComponentPreviewActions.Value(preview, action, action.TargetInputId) switch
+                {
+                    JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+                    JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
+                    _ => "",
                 };
             }
         }
@@ -1219,6 +1290,67 @@ internal sealed class ComponentPreviewInputSession
             .Select((id) => $"{_scopeKey}:{id}");
     }
 
+    private IEnumerable<string> DeactivatedPlaybackInputKeys(ComponentPreviewActionDefinition action)
+    {
+        return action.DeactivateInputIds
+            .Where((id) => !string.IsNullOrWhiteSpace(id))
+            .Select((id) => $"{_scopeKey}:{id}");
+    }
+
+    private void CaptureActionSnapshot(ComponentPreviewActionDefinition action)
+    {
+        var snapshotKey = ActionSnapshotKey(action.Id);
+        if (_actionSnapshots.ContainsKey(snapshotKey)) return;
+
+        var keys = new[] { ActionStateKey(action), ActionTimeKey(action), ActionTargetFromKey(action) }
+            .Concat(ActivatedPlaybackInputKeys(action))
+            .Concat(DeactivatedPlaybackInputKeys(action))
+            .Concat(ActionTargetInputKeys(action))
+            .Distinct(StringComparer.Ordinal);
+        _actionSnapshots[snapshotKey] = keys.ToDictionary(
+            (key) => key,
+            (key) => _values.TryGetValue(key, out var value)
+                ? new ActionValueSnapshot(true, value)
+                : new ActionValueSnapshot(false, ""),
+            StringComparer.Ordinal);
+    }
+
+    private string ActionSnapshotKey(string actionId) => $"{_scopeKey}:action-snapshot:{actionId}";
+
+    private IEnumerable<string> ActionTargetInputKeys(ComponentPreviewActionDefinition action)
+    {
+        return string.IsNullOrWhiteSpace(action.TargetInputId)
+            ? []
+            : [ActionTargetStorageKey(action)];
+    }
+
+    private void ApplyActionTarget(ComponentPreviewActionDefinition action, string? explicitValue)
+    {
+        if (string.IsNullOrWhiteSpace(action.TargetInputId)) return;
+        var key = ActionTargetStorageKey(action);
+        var current = _values.GetValueOrDefault(key, InputDefault(key, "false"));
+        if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey))
+        {
+            _values[ActionTargetFromKey(action)] = current;
+        }
+        var target = action.TargetMode switch
+        {
+            ComponentPreviewActionTargetMode.Toggle => StringToBool(current) ? "false" : "true",
+            ComponentPreviewActionTargetMode.Option or ComponentPreviewActionTargetMode.Value
+                when !string.IsNullOrWhiteSpace(explicitValue) => explicitValue,
+            _ => "",
+        };
+        if (!string.IsNullOrWhiteSpace(target)) _values[key] = target;
+    }
+
+    private string ActionTargetFromKey(ComponentPreviewActionDefinition action) =>
+        $"{_scopeKey}:action:{action.Id}:target-from";
+
+    private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
+        action.IsCollectionItemAction
+            ? $"{_scopeKey}:action:{action.Id}:target-value"
+            : $"{_scopeKey}:{action.TargetInputId}";
+
     private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
         foreach (var key in ActivatedPlaybackInputKeys(action))
@@ -1229,9 +1361,8 @@ internal sealed class ComponentPreviewInputSession
 
     private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
-        foreach (var inputId in action.DeactivateInputIds.Where((id) => !string.IsNullOrWhiteSpace(id)))
+        foreach (var key in DeactivatedPlaybackInputKeys(action))
         {
-            var key = $"{_scopeKey}:{inputId}";
             _values[key] = "false";
             SyncBooleanInput(key);
         }
@@ -1250,6 +1381,8 @@ internal sealed class ComponentPreviewInputSession
     }
 
     private static void SyncBooleanInput(string key) { }
+
+    private readonly record struct ActionValueSnapshot(bool Exists, string Value);
 
     private static double ParseDouble(string? value)
     {
@@ -1346,6 +1479,9 @@ internal sealed class ComponentPreviewInputSession
             {
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
+                EnabledWhenPath = JsonString(item, "enabledWhenPath"),
+                EnabledWhenValue = JsonString(item, "enabledWhenValue"),
+                RefreshOnCommit = item["refreshOnCommit"]?.GetValue<bool>() == true,
             };
             definitions.Add(definition with
             {
@@ -1435,6 +1571,8 @@ internal sealed class ComponentPreviewInputSession
                 {
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
+                    StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
+                    AllowEmptyComponentPreset = field["allowEmpty"]?.GetValue<bool>() == true,
                 });
             }
 
@@ -1453,6 +1591,13 @@ internal sealed class ComponentPreviewInputSession
         }
 
         return definitions;
+    }
+
+    private static RuntimeInputCollectionDefinition? ReadRuntimeCollection(JsonObject? collection)
+    {
+        if (collection is null) return null;
+        var wrapper = new JsonObject { ["collections"] = new JsonArray(collection.DeepClone()) };
+        return ReadRuntimeCollections(wrapper, new JsonObject()).SingleOrDefault();
     }
 
     private static RuntimeInputCollectionItemPresentation? ReadItemPresentation(JsonObject collection)
@@ -1823,7 +1968,12 @@ internal sealed record ComponentInputDefinition(
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null,
-    ComponentInputTransitionDefinition? Transition = null);
+    ComponentInputTransitionDefinition? Transition = null,
+    string EnabledWhenPath = "",
+    string EnabledWhenValue = "",
+    bool RefreshOnCommit = false,
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
+    bool AllowEmptyComponentPreset = false);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

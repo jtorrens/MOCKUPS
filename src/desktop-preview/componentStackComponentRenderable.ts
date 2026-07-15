@@ -1,77 +1,115 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
+import type { ComponentCollectionLayoutItem } from "./componentCollectionContract.js";
+import {
+  embeddedComponentPayload,
+  previewScreenBox,
+  unionBoxes,
+} from "./componentRenderableCommon.js";
 import type {
+  ComponentStackAlternativeContract,
   ComponentStackChildRenderer,
   ComponentStackDesignContract,
-  ComponentStackItemContract,
+  ComponentStackSlotContract,
 } from "./componentStackComponentContract.js";
-import { boundedCenterBox, embeddedComponentPayload, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
+import { renderComponentCollectionFlowResolved } from "./componentCollectionRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-
-interface MeasuredItem {
-  item: ComponentStackItemContract;
-  node: RenderableNode;
-  box: RenderableBox;
-  fixedGapBefore: number;
-}
+import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
 export function componentStackComponentToRenderable(
   payload: DesignPreviewPayload,
   stack: ComponentStackDesignContract,
   renderChild: ComponentStackChildRenderer,
 ): RenderableNode {
-  const scale = renderScale(payload);
-  const startGap = Math.max(0, numberToken(payload, stack.startGapToken) * scale);
-  const endGap = Math.max(0, numberToken(payload, stack.endGapToken) * scale);
-  const measured: MeasuredItem[] = stack.items.map((item) => {
-    const node = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
-    if (!node.box) throw new Error(`Component stack item ${item.id} has no resolved box`);
-    return {
-      item,
-      node,
-      box: node.box,
-      fixedGapBefore: item.gapBeforeMode === "fixed"
-        ? Math.max(0, numberToken(payload, item.gapBeforeToken) * scale)
-        : 0,
-    };
-  });
-  const naturalWidth = measured.length ? Math.max(...measured.map(({ box }) => box.width)) : 0;
-  const naturalHeight = startGap + endGap + measured.reduce((sum, current, index) =>
-    sum + current.box.height + (index > 0 ? current.fixedGapBefore : 0), 0);
-  const stackBox = stack.sizingMode === "fill"
-    ? previewScreenBox(payload)
-    : boundedCenterBox(payload, naturalWidth, naturalHeight);
-  const fixedHeight = startGap + endGap + measured.reduce((sum, current, index) =>
-    sum + current.box.height + (index > 0 ? current.fixedGapBefore : 0), 0);
-  const totalWeight = measured.slice(1).reduce((sum, current) =>
-    sum + (current.item.gapBeforeMode === "reflow" ? current.item.gapBeforeWeight : 0), 0);
-  const reflowSpace = stack.sizingMode === "fill" ? Math.max(0, stackBox.height - fixedHeight) : 0;
-  let cursorY = stackBox.y + startGap;
-  const children = measured.map((current, index) => {
-    if (index > 0) {
-      cursorY += current.item.gapBeforeMode === "fixed"
-        ? current.fixedGapBefore
-        : totalWeight > 0 ? reflowSpace * current.item.gapBeforeWeight / totalWeight : 0;
-    }
-    const x = alignedX(stackBox, current.box, current.item.alignment);
-    const translated = translateRenderableNode(current.node, {
-      x: x - current.box.x,
-      y: cursorY - current.box.y,
-    });
-    cursorY += current.box.height;
-    return translated;
-  });
-  return {
+  const slots = stack.slots.map(slotLayoutItem);
+  const byId = new Map(stack.slots.map((slot) => [slot.id, slot]));
+  return renderComponentCollectionFlowResolved(payload, slots, (item) => {
+    const slot = byId.get(item.id);
+    if (!slot) throw new Error(`Missing resolved Component Stack slot ${item.id}`);
+    return renderSlot(payload, slot, renderChild);
+  }, {
     id: stack.id,
-    type: "group",
-    frame: 0,
-    box: stackBox,
-    style: { overflow: "visible" },
-    children,
+    sizingMode: stack.sizingMode,
+    startGapToken: stack.startGapToken,
+    endGapToken: stack.endGapToken,
+  });
+}
+
+function renderSlot(
+  payload: DesignPreviewPayload,
+  slot: ComponentStackSlotContract,
+  renderChild: ComponentStackChildRenderer,
+): RenderableNode {
+  const nodes = slot.alternatives
+    .filter((alternative) => alternative.component !== undefined)
+    .map((alternative) => renderAlternative(payload, alternative, renderChild));
+  if (nodes.length === 0) {
+    const screen = previewScreenBox(payload);
+    return group(slot.id, { x: screen.x + screen.width / 2, y: screen.y + screen.height / 2, width: 0, height: 0 }, []);
+  }
+  const boxes = nodes.flatMap((node) => node.box ? [node.box] : []);
+  if (boxes.length !== nodes.length) throw new Error(`Component Stack slot ${slot.id} contains an unresolved box`);
+  return group(slot.id, unionBoxes(boxes), nodes);
+}
+
+function renderAlternative(
+  payload: DesignPreviewPayload,
+  alternative: ComponentStackAlternativeContract,
+  renderChild: ComponentStackChildRenderer,
+): RenderableNode {
+  const component = alternative.component!;
+  const activationFrame = alternative.activationFrame ?? 0;
+  const localFrame = alternative.exitFrame === undefined
+    ? Math.max(0, payload.localFrame - activationFrame)
+    : Math.max(0, alternative.exitFrame - activationFrame);
+  const childPayload = embeddedComponentPayload(
+    { ...payload, localFrame },
+    component.componentType,
+    component.config,
+    component.inputs,
+  );
+  const node = renderChild(childPayload);
+  if (!node.box) throw new Error(`Component Stack state ${alternative.id} has no resolved box`);
+  if (alternative.exitFrame !== undefined) {
+    const exitElapsedFrames = Math.max(0, payload.localFrame - alternative.exitFrame);
+    const wrapped = wrapExitMotionFrame(
+      payload,
+      node,
+      alternative.exitMotion,
+      { trigger: true, elapsedMs: exitElapsedFrames / Math.max(1, payload.frameRate) * 1000 },
+      node.box,
+      previewScreenBox(payload),
+    );
+    return { ...wrapped, box: node.box };
+  }
+  if (alternative.isDefault || alternative.activationFrame === undefined) return node;
+  const wrapped = wrapMotionFrame(
+    payload,
+    node,
+    alternative.enterMotion,
+    { trigger: true, elapsedMs: localFrame / Math.max(1, payload.frameRate) * 1000 },
+    node.box,
+    previewScreenBox(payload),
+  );
+  return { ...wrapped, box: node.box };
+}
+
+function slotLayoutItem(slot: ComponentStackSlotContract): ComponentCollectionLayoutItem {
+  return {
+    id: slot.id,
+    alignment: slot.alignment,
+    gapBeforeMode: slot.gapBeforeMode,
+    gapBeforeToken: slot.gapBeforeToken,
+    gapBeforeWeight: slot.gapBeforeWeight,
   };
 }
 
-function alignedX(parent: RenderableBox, child: RenderableBox, alignment: ComponentStackItemContract["alignment"]) {
-  if (alignment === "start") return parent.x;
-  if (alignment === "end") return parent.x + parent.width - child.width;
-  return parent.x + (parent.width - child.width) / 2;
+function group(id: string, box: RenderableBox, children: RenderableNode[]): RenderableNode {
+  return {
+    id,
+    type: "group",
+    frame: 0,
+    box,
+    style: { overflow: "visible" },
+    children,
+  };
 }

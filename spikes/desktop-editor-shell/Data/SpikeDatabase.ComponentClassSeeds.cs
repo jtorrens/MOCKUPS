@@ -400,8 +400,9 @@ internal sealed partial class SpikeDatabase
         }
         if (obj["label"] is JsonObject labelConfig)
         {
-            labelConfig["subtextPlacement"] ??= JsonNode.Parse(
-                """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}""");
+            MigrateLabelSubtextPlacement(labelConfig);
+            labelConfig["subtextVerticalPosition"] ??= "bottom";
+            labelConfig["subtextHorizontalAlign"] ??= "center";
             labelConfig["reserveSubtextSpace"] ??= false;
         }
         if (obj["avatar"]?["labelSlot"] is JsonObject labelSlot)

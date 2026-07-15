@@ -78,7 +78,7 @@ internal sealed partial class SpikeDatabase
     public string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId)
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleSettings(instance.ModuleId);
+        var module = GetModuleInstanceVariantSettings(moduleInstanceId);
         var preview = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(module.DesignPreviewJson),
             ParseJsonObject(module.ConfigJson));
@@ -161,7 +161,8 @@ internal sealed partial class SpikeDatabase
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
-        string duplicateItemId)
+        JsonObject duplicate,
+        IReadOnlyDictionary<string, string> targetIdMappings)
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
         var content = ParseJsonObject(settings.ContentJson);
@@ -178,20 +179,18 @@ internal sealed partial class SpikeDatabase
             break;
         }
         if (source is null) throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        var duplicate = source.DeepClone().AsObject();
-        duplicate["id"] = duplicateItemId;
-        items.Insert(currentIndex + 1, duplicate);
+        items.Insert(currentIndex + 1, duplicate.DeepClone());
 
         var animation = ParseJsonObject(settings.AnimationJson);
         if (animation["tracks"] is JsonArray tracks)
         {
             foreach (var sourceTrack in tracks.OfType<JsonObject>()
-                .Where((track) => track["targetId"]?.GetValue<string>() == itemId)
+                .Where((track) => targetIdMappings.ContainsKey(track["targetId"]?.GetValue<string>() ?? ""))
                 .ToList())
             {
                 var duplicateTrack = sourceTrack.DeepClone().AsObject();
                 duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
-                duplicateTrack["targetId"] = duplicateItemId;
+                duplicateTrack["targetId"] = targetIdMappings[sourceTrack["targetId"]?.GetValue<string>() ?? ""];
                 foreach (var keyframe in (duplicateTrack["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
                 {
                     keyframe["id"] = $"keyframe_{Guid.NewGuid():N}";
@@ -219,11 +218,12 @@ internal sealed partial class SpikeDatabase
         var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
         items.Remove(item);
+        var removedTargetIds = CollectionTargetIds(item);
         var animation = ParseJsonObject(settings.AnimationJson);
         if (animation["tracks"] is JsonArray tracks)
         {
             foreach (var track in tracks.OfType<JsonObject>()
-                .Where((candidate) => candidate["targetId"]?.GetValue<string>() == itemId)
+                .Where((candidate) => removedTargetIds.Contains(candidate["targetId"]?.GetValue<string>() ?? ""))
                 .ToList())
             {
                 tracks.Remove(track);
@@ -237,6 +237,30 @@ internal sealed partial class SpikeDatabase
             ("$animationJson", animation.ToJsonString()),
             ("$id", moduleInstanceId));
         SynchronizeTimelineDurations(connection);
+    }
+
+    private static HashSet<string> CollectionTargetIds(JsonNode root)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        void Visit(JsonNode? node)
+        {
+            if (node is JsonObject value)
+            {
+                if (value["id"] is JsonValue idValue
+                    && idValue.TryGetValue<string>(out var id)
+                    && !string.IsNullOrWhiteSpace(id))
+                {
+                    result.Add(id);
+                }
+                foreach (var child in value.Select((entry) => entry.Value)) Visit(child);
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (var child in array) Visit(child);
+            }
+        }
+        Visit(root);
+        return result;
     }
 
     public void MoveModuleInstanceRuntimeCollectionItem(
@@ -345,10 +369,10 @@ internal sealed partial class SpikeDatabase
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              transition_json, content_json, behavior_json, animation_json)
+              transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 1,
-              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson)
+              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", id),
             ("$shotId", shot.Id),
@@ -359,7 +383,11 @@ internal sealed partial class SpikeDatabase
             ("$sortOrder", index),
             ("$contentJson", "{}"),
             ("$behaviorJson", "{}"),
-            ("$animationJson", DefaultModuleAnimationJson()));
+            ("$animationJson", DefaultModuleAnimationJson()),
+            ("$metadataJson", new JsonObject
+            {
+                ["moduleVariantReference"] = ModuleVariantNodeId(module.Id, DefaultModuleVariantId),
+            }.ToJsonString()));
         NormalizeModuleInstanceRuntimePayloads(connection);
         SynchronizeTimelineDurations(connection);
         var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
@@ -404,6 +432,9 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         switch (fieldId)
         {
+            case "moduleInstance.variant":
+                UpdateModuleInstanceVariant(moduleInstanceId, value);
+                return;
             case "moduleInstance.durationFrames":
                 Execute(
                     connection,
@@ -758,7 +789,7 @@ internal sealed partial class SpikeDatabase
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT mi.id, mi.shot_id, mi.app_id, mi.module_id, mi.name, mi.notes,
-                   mi.sort_order, mi.duration_frames, mi.transition_json, m.name
+                   mi.sort_order, mi.duration_frames, mi.transition_json, m.name, mi.metadata_json
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
             ORDER BY mi.shot_id, mi.sort_order, mi.name
@@ -776,7 +807,8 @@ internal sealed partial class SpikeDatabase
                 reader.GetInt32(6),
                 reader.GetInt32(7),
                 ReadString(reader, 8),
-                reader.GetString(9)));
+                reader.GetString(9),
+                ReadString(reader, 10)));
         }
 
         return rows;

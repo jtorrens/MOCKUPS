@@ -17,7 +17,8 @@ internal sealed record RecordClassFieldDescriptor(
     string Unit = "",
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
     string RuntimeInputComponentPresetFieldId = "",
-    string RuntimeCollectionComponentPresetFieldId = "");
+    string RuntimeCollectionComponentPresetFieldId = "",
+    MotionTimingDefinition? MotionTiming = null);
 
 internal static class RecordClassFieldCatalog
 {
@@ -206,6 +207,7 @@ internal static class RecordClassFieldCatalog
             RuntimeCollectionComponentPresetFieldId: "module.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
+        ["moduleInstance.variant"] = new("moduleInstance.variant", "Variant", ValueKind.ComponentPreset),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",
@@ -342,6 +344,12 @@ internal static class RecordClassFieldCatalog
         ["theme.motion.swipe"] = new("theme.motion.swipe", "Swipe", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.scale"] = new("theme.motion.scale", "Scale", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.buttonPushedDurationMs"] = new("theme.motion.buttonPushedDurationMs", "Button pushed", ValueKind.Integer, Unit: "ms"),
+        ["theme.motion.reflow"] = new(
+            "theme.motion.reflow",
+            "Reflow",
+            ValueKind.MotionTiming,
+            Options: MotionEasingOptions,
+            MotionTiming: new MotionTimingDefinition(ShowDelay: false, ShowIntensity: false)),
         ["theme.motion.naturalPace.verySlow"] = new("theme.motion.naturalPace.verySlow", "Very slow", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
         ["theme.motion.naturalPace.slow"] = new("theme.motion.naturalPace.slow", "Slow", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),
         ["theme.motion.naturalPace.normal"] = new("theme.motion.naturalPace.normal", "Normal", ValueKind.Decimal, Number: new NumberDefinition(0.1m, 10, 0.05m, 2)),

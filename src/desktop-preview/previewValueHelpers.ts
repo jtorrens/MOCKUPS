@@ -157,7 +157,7 @@ export function requiredPlacement(
 ): AlignmentPlacementContract {
   const raw = requiredRecord(value, key, path);
   const mode = requiredString(raw, "mode", `${path}.mode`);
-  if (mode !== "center" && mode !== "edge") {
+  if (mode !== "center" && mode !== "insideEdge" && mode !== "outsideEdge") {
     throw new Error(`Unsupported alignment placement mode ${mode}`);
   }
 

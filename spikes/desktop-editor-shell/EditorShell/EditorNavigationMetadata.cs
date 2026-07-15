@@ -18,7 +18,7 @@ internal static class EditorNavigationMetadata
         return kind switch
         {
             ProjectTreeNodeKind.Project => EditorWorkspaceScope.Both,
-            ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.App or ProjectTreeNodeKind.Module => EditorWorkspaceScope.Design,
+            ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.App or ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.PaletteColor => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.IconThemesRoot or ProjectTreeNodeKind.IconTheme => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ComponentClassesRoot or ProjectTreeNodeKind.ComponentClassGroup

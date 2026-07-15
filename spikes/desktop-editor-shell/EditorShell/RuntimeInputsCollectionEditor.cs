@@ -17,7 +17,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
-    private readonly Action<string> _triggerAction;
+    private readonly Action<string, string?> _triggerAction;
+    private readonly Action<string> _restoreAction;
+    private readonly Func<string, bool> _canRestoreAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
@@ -38,7 +40,9 @@ internal sealed class RuntimeInputsCollectionEditor
         SpikeDatabase database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
-        Action<string> triggerAction,
+        Action<string, string?> triggerAction,
+        Action<string> restoreAction,
+        Func<string, bool> canRestoreAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
@@ -58,6 +62,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
+        _restoreAction = restoreAction;
+        _canRestoreAction = canRestoreAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -82,7 +88,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
-        var actions = ComponentPreviewActions.Read(preview);
+        var actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         var tabs = new TabControl
         {
             Items =
@@ -228,21 +234,6 @@ internal sealed class RuntimeInputsCollectionEditor
             buttons.Children.Add(saveDefaults);
             RefreshSaveState();
         }
-        foreach (var action in actions.Where((candidate) => !candidate.IsCollectionItemAction))
-        {
-            var button = new Button
-            {
-                MinWidth = 92,
-                Content = CreateActionContent(action),
-            };
-            ToolTip.SetTip(button, action.Label);
-            button.Click += (_, args) =>
-            {
-                args.Handled = true;
-                _triggerAction(action.Id);
-            };
-            buttons.Children.Add(button);
-        }
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
         panel.Children.Add(header);
@@ -255,6 +246,16 @@ internal sealed class RuntimeInputsCollectionEditor
                 Opacity = 0.7,
                 TextWrapping = TextWrapping.Wrap,
             });
+        }
+        var rootActions = actions.Where((candidate) => !candidate.IsCollectionItemAction).ToList();
+        if (rootActions.Count > 0)
+        {
+            var actionPanel = new StackPanel { Spacing = 6 };
+            foreach (var action in rootActions)
+            {
+                actionPanel.Children.Add(CreateActionControl(action, inputs, preview));
+            }
+            panel.Children.Add(actionPanel);
         }
         if (inputs.Count == 0 && collections.Count == 0)
         {
@@ -409,6 +410,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var control = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
         {
             _setPreviewTestValue(input.JsonKey, next);
@@ -425,8 +427,30 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 DesignPreviewTestValues.SetValue(preview, input, next);
             }
+            if (input.RefreshOnCommit)
+            {
+                _reloadAndSelect?.Invoke(owner.Node);
+            }
         };
         return DecorateAnimationToggle(owner, input, "", control);
+    }
+
+    private static bool RuntimeInputIsEnabled(
+        JsonObject preview,
+        JsonObject config,
+        ComponentInputDefinition input)
+    {
+        if (string.IsNullOrWhiteSpace(input.EnabledWhenPath)
+            || string.IsNullOrWhiteSpace(input.EnabledWhenValue))
+        {
+            return true;
+        }
+
+        var path = input.EnabledWhenPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        var current = JsonPath.Get(preview, path) ?? JsonPath.Get(config, path);
+        return current is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            && text.Equals(input.EnabledWhenValue, StringComparison.Ordinal);
     }
 
     private Control CreateTestValueCollectionContent(
@@ -476,10 +500,19 @@ internal sealed class RuntimeInputsCollectionEditor
                 var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
                 var copy = CloneObject(item);
                 copy["id"] = duplicateId;
+                RuntimeInputForwardingContract.RebaseIds(copy, itemId, duplicateId);
+                var idMappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
+                    .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
+                idMappings[itemId] = duplicateId;
                 editor!.ActivateOnly(copy, items.Count);
                 if (owner.IsInstance)
                 {
-                    _database.DuplicateModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, duplicateId);
+                    _database.DuplicateModuleInstanceRuntimeCollectionItem(
+                        owner.Node.Id,
+                        StorageCollectionKey(collection),
+                        itemId,
+                        copy,
+                        idMappings);
                 }
                 else
                 {
@@ -564,50 +597,35 @@ internal sealed class RuntimeInputsCollectionEditor
         var itemActions = actions
             .Where((action) => action.IsCollectionItemAction
                 && action.CollectionJsonKey == collection.JsonKey
-                && action.CollectionItemId == itemId)
+                && action.CollectionItemId == itemId
+                && string.IsNullOrWhiteSpace(action.TargetJsonPath))
             .ToList();
         StackPanel? actionRow = null;
-        var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
+        var actionControls = new List<(ComponentPreviewActionDefinition Action, RuntimeTestActionControl Control)>();
         void RefreshActionVisibility()
         {
             var currentItem = DesignPreviewTestValues.CollectionItems(preview, collection)
                 .ElementAtOrDefault(itemIndex) ?? item;
-            foreach (var (action, button) in actionButtons)
+            foreach (var (action, control) in actionControls)
             {
-                button.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
+                control.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
             }
             if (actionRow is not null)
             {
-                actionRow.IsVisible = actionButtons.Any((entry) => entry.Button.IsVisible);
+                actionRow.IsVisible = actionControls.Any((entry) => entry.Control.IsVisible);
             }
         }
         if (itemActions.Count > 0)
         {
             actionRow = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
                 Spacing = 6,
             };
             foreach (var action in itemActions)
             {
-                var button = new Button
-                {
-                    MinWidth = 128,
-                    Height = 34,
-                    FontWeight = FontWeight.SemiBold,
-                    Background = EditorSukiWindowTheme.AccentBrush(0x24),
-                    BorderBrush = EditorSukiWindowTheme.AccentBrush(0x80),
-                    BorderThickness = new Thickness(1),
-                    Content = CreateActionContent(action),
-                };
-                ToolTip.SetTip(button, action.Label);
-                button.Click += (_, args) =>
-                {
-                    args.Handled = true;
-                    _triggerAction(action.Id);
-                };
-                actionButtons.Add((action, button));
-                actionRow.Children.Add(button);
+                var control = CreateActionControl(action, collection.Fields, item);
+                actionControls.Add((action, control));
+                actionRow.Children.Add(control);
             }
             RefreshActionVisibility();
             content.Children.Add(actionRow);
@@ -646,9 +664,20 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             var componentConfig = _database.GetComponentPresetConfig(componentPresetReference);
             var nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(componentInputs, componentConfig);
-            if (nestedInputs.Count > 0)
+            var nestedActions = actions.Where((action) =>
+                    action.IsCollectionItemAction
+                    && action.CollectionJsonKey == collection.JsonKey
+                    && action.CollectionItemId == itemId
+                    && action.TargetJsonPath == componentItemDefinition.InputsJsonKey)
+                .ToList();
+            if (nestedInputs.Count > 0 || nestedActions.Count > 0)
             {
                 var nestedPanel = new StackPanel { Spacing = 6 };
+                foreach (var nestedAction in nestedActions.Where((action) =>
+                             ComponentPreviewActions.AppliesToItem(action, componentInputs)))
+                {
+                    nestedPanel.Children.Add(CreateActionControl(nestedAction, nestedInputs, componentInputs));
+                }
                 foreach (var nestedInput in nestedInputs)
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
@@ -657,7 +686,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 groupSubcards.Add(new EditorInternalNavigationSection(
                     "componentInputs",
                     "Component inputs",
-                    EditorUiText.Count(nestedInputs.Count, "runtime input"),
+                    $"{EditorUiText.Count(nestedInputs.Count, "runtime input")} · {EditorUiText.Count(nestedActions.Count, "action")}",
                     EditorIcons.Component,
                     nestedPanel));
             }
@@ -808,28 +837,55 @@ internal sealed class RuntimeInputsCollectionEditor
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
             && ComponentOverrideCount(currentOverrides) > 0;
+        var services = _dictionaryServices.ForNode(owner.Node, (fieldId) =>
+        {
+            var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
+            return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
+        },
+        openComponentPresetReference: (reference) =>
+        {
+            _navigateToNode(reference);
+            return Task.CompletedTask;
+        },
+        openEmbeddedComponent: selectsComponent && openComponentOverrides is not null
+            ? (_) =>
+            {
+                openComponentOverrides();
+                return Task.CompletedTask;
+            }
+            : null,
+        openRuntimeComponentOverrides: _openEmbeddedContext) with
+        {
+            DecorateStructuredCollectionField = owner.IsInstance
+                ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
+                : null,
+            RemoveStructuredCollectionAnimationTargets = owner.IsInstance
+                ? (targetIds) =>
+                {
+                    var document = new ModuleInstanceAnimationDocument(
+                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                    foreach (var targetId in targetIds) document.RemoveTarget(targetId);
+                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _onChanged();
+                }
+                : null,
+            DuplicateStructuredCollectionAnimationTargets = owner.IsInstance
+                ? (targetIds) =>
+                {
+                    var document = new ModuleInstanceAnimationDocument(
+                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                    document.DuplicateTargets(targetIds);
+                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _onChanged();
+                }
+                : null,
+        };
         var control = new DictionaryFieldControl(
             new FieldValue(
                 RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
-            _dictionaryServices.ForNode(owner.Node, (fieldId) =>
-            {
-                var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
-                return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
-            },
-            (reference) =>
-            {
-                _navigateToNode(reference);
-                return Task.CompletedTask;
-            },
-            selectsComponent && openComponentOverrides is not null
-                ? (_) =>
-                {
-                    openComponentOverrides();
-                    return Task.CompletedTask;
-                }
-                : null));
+            services);
         var fieldIsActive = CollectionFieldAvailability.IsEnabled(item, input, itemIndex);
         control.IsEnabled = fieldIsActive;
         control.IsVisible = fieldIsActive;
@@ -1117,24 +1173,28 @@ internal sealed class RuntimeInputsCollectionEditor
             (next) => _sessionUiState.SetNavigationWidth(stateKey, next));
     }
 
-    private static Control CreateActionContent(ComponentPreviewActionDefinition action)
+    private RuntimeTestActionControl CreateActionControl(
+        ComponentPreviewActionDefinition action,
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        JsonObject values)
     {
-        var content = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            ColumnSpacing = 5,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        content.Children.Add(EditorIcons.CreateSemantic(action.Label, EditorIcons.Play, 12));
-        var label = new TextBlock
-        {
-            Text = action.Label,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(label, 1);
-        content.Children.Add(label);
-        return content;
+        var targetInput = string.IsNullOrWhiteSpace(action.TargetInputId)
+            ? null
+            : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
+        var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
+            ? action.TargetOptions.Count > 0 ? action.TargetOptions : targetInput?.Options
+            : null;
+        var currentTargetValue = targetInput is null
+            ? ""
+            : DesignPreviewTestValues.Value(values, targetInput);
+        return new RuntimeTestActionControl(
+            action.Label,
+            (targetValue) => _triggerAction(action.Id, targetValue),
+            () => _restoreAction(action.Id),
+            () => _canRestoreAction(action.Id),
+            _playbackState,
+            targetOptions,
+            currentTargetValue);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)
@@ -1144,6 +1204,14 @@ internal sealed class RuntimeInputsCollectionEditor
             var settings = _database.GetModuleSettings(node.Id);
             return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
                 (json) => _database.UpdateModuleDesignPreviewJson(node.Id, json), false);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
+        {
+            var settings = _database.GetModuleVariantSettings(node);
+            return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
+                (json) => _database.UpdateModuleDesignPreviewJson(node.Parent?.Id
+                    ?? throw new InvalidOperationException("Module variant has no parent module."), json), false);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
@@ -1156,7 +1224,7 @@ internal sealed class RuntimeInputsCollectionEditor
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
             var instance = _database.GetModuleInstanceSettings(node.Id);
-            var module = _database.GetModuleSettings(instance.ModuleId);
+            var module = _database.GetModuleInstanceVariantSettings(node.Id);
             return new RuntimeInputOwner(
                 node,
                 module.ConfigJson,

@@ -31,8 +31,8 @@ export class RuntimeOwnerTimeline {
     for (const collection of records(contract.collections)) {
       const values = records(runtime[collectionKey(collection)]);
       let cursor = 0;
-      const fields = records(collection.fields);
       for (const item of values) {
+        const fields = itemFields(collection, item);
         const targetId = optionalString(item, "id");
         if (!targetId) continue;
         const timeline = asRecord(collection.animationTimeline);
@@ -157,7 +157,7 @@ export class RuntimeOwnerTimeline {
   private itemField(item: ItemTiming, fieldId: string) {
     const existing = item.fields.get(fieldId);
     if (existing) return existing;
-    const fields = records(item.collection.fields);
+    const fields = itemFields(item.collection, item.item);
     const definition = fields.find((field) => optionalString(field, "id") === fieldId);
     const timing = definition
       ? this.resolveFieldTiming(definition, item.item, optionalString(item.item, "id"), fields, new Set())
@@ -167,7 +167,7 @@ export class RuntimeOwnerTimeline {
   }
 
   private itemDurations(collection: JsonRecord, item: JsonRecord, targetId: string) {
-    const fields = records(collection.fields);
+    const fields = itemFields(collection, item);
     let sequenceBodyEnd = 0;
     let spanEnd = 0;
     for (const definition of fields) {
@@ -267,7 +267,7 @@ export class RuntimeOwnerTimeline {
   private fieldDefinition(fieldId: string, targetId: string) {
     if (!targetId) return records(this.contract.inputs).find((field) => optionalString(field, "id") === fieldId) ?? {};
     const item = this.items.get(targetId);
-    return records(item?.collection.fields).find((field) => optionalString(field, "id") === fieldId) ?? {};
+    return item ? itemFields(item.collection, item.item).find((field) => optionalString(field, "id") === fieldId) ?? {} : {};
   }
 
   private track(fieldId: string, targetId: string) {
@@ -300,9 +300,24 @@ function collectionKey(collection: JsonRecord) {
   return optionalString(collection, "sourceCollectionJsonKey") || optionalString(collection, "jsonKey");
 }
 
+function itemFields(collection: JsonRecord, item: JsonRecord) {
+  const direct = records(collection.fields);
+  const inputsKey = optionalString(asRecord(collection.componentItems), "inputsJsonKey");
+  const embedded = inputsKey ? records(asRecord(item[inputsKey]).inputs) : [];
+  return [...direct, ...embedded];
+}
+
 function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
   const definition = fields.find((field) => optionalString(field, "id") === fieldId);
-  return Math.max(0, optionalNumber(owner, optionalString(definition ?? {}, "jsonKey"), 0));
+  const jsonKey = optionalString(definition ?? {}, "jsonKey");
+  if (Object.hasOwn(owner, jsonKey)) return Math.max(0, optionalNumber(owner, jsonKey, 0));
+  for (const value of Object.values(owner)) {
+    const embedded = asRecord(value);
+    if (records(embedded.inputs).some((field) => optionalString(field, "id") === fieldId)) {
+      return Math.max(0, optionalNumber(embedded, jsonKey, 0));
+    }
+  }
+  return 0;
 }
 
 function enabledKeyframes(track?: JsonRecord) {

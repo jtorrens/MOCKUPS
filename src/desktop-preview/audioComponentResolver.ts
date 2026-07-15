@@ -177,7 +177,7 @@ export function resolveAudioComponentFromRecords(
       avatar: showAvatar
         ? resolveAvatarComponentFromRecords(
             avatarConfig,
-            inputs,
+            { ...inputs, showBadge: false, badgeIconToken: "system_check", badgeText: "1" },
             componentBaseConfigs,
             "component.audio.avatar",
           )
@@ -208,6 +208,9 @@ export function resolveAudioComponentFromRecords(
                 sampleText: "",
                 pushTrigger: false,
                 pushElapsedMs: 0,
+                showBadge: false,
+                badgeIconToken: "system_check",
+                badgeText: "1",
               },
               componentBaseConfigs,
               "component.audio.badge",

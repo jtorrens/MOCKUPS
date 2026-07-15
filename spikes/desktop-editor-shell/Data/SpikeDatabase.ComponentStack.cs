@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -45,6 +46,7 @@ internal sealed partial class SpikeDatabase
                 migratedItems = ComponentStackItemsFromRuntimePreview(previousPreview);
             }
             migratedItems = MigrateComponentStackGapBefore(migratedItems);
+            migratedItems = MigrateComponentStackSlots(migratedItems);
             NormalizeComponentStackConfig(classConfig);
 
             var metadata = ParseJsonObject(row.MetadataJson);
@@ -166,6 +168,44 @@ internal sealed partial class SpikeDatabase
             item["gapBeforeToken"] = precedingGapOwner?["gapToken"]?.DeepClone() ?? "theme.spacing.none";
             item["gapBeforeWeight"] = precedingGapOwner?["reflowWeight"]?.DeepClone() ?? 1;
             migrated.Add(item);
+        }
+        return migrated;
+    }
+
+    internal static JsonArray MigrateComponentStackSlots(JsonArray items)
+    {
+        if (items.OfType<JsonObject>().All((item) => item["alternatives"] is JsonArray))
+        {
+            return items;
+        }
+
+        var migrated = new JsonArray();
+        foreach (var source in items.OfType<JsonObject>())
+        {
+            var slot = source.DeepClone() as JsonObject ?? new JsonObject();
+            var slotId = slot["id"]?.GetValue<string>()
+                ?? throw new InvalidOperationException("Component Stack slot is missing its stable id.");
+            var presetId = slot["presetId"]?.DeepClone();
+            var overrides = slot["overrides"]?.DeepClone() ?? new JsonObject();
+            var inputs = slot["inputs"]?.DeepClone() ?? new JsonObject();
+            slot.Remove("presetId");
+            slot.Remove("overrides");
+            slot.Remove("inputs");
+            slot["alternatives"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = $"{slotId}_default",
+                    ["presetId"] = presetId,
+                    ["overrides"] = overrides,
+                    ["inputs"] = inputs,
+                    ["active"] = false,
+                    ["behavior"] = "replace",
+                    ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                },
+            };
+            migrated.Add(slot);
         }
         return migrated;
     }
