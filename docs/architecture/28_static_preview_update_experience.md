@@ -118,6 +118,13 @@ visual result.
 ## Design and Production input boundary
 
 Design preview may apply transient Test Values and declarative action clocks.
+Every declared action is presented by the same mixed Test Values control: a
+label, or a target-state selector for option actions, followed by compact Play
+and Restore buttons. Play always starts at action frame zero and leaves the
+resolved final frame visible. Restore returns only that action and its declared
+target inputs to the snapshot captured before its first Play; Reset Test Values
+continues to clear the complete Design fixture. The currently effective option
+remains visible in a target selector but is disabled as a destination.
 Production preview must use only persisted Shot/Screen runtime state and the
 global-Shot-to-local-Screen frame selected by production navigation.
 

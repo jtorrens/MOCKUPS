@@ -212,6 +212,15 @@ Values restores defaults. Password uses `holdFinal` so its correct or incorrect
 result remains visible. This policy belongs to the action host and contains no
 component-specific branch.
 
+An action may additionally declare a generic target input. `toggle` actions
+invert a boolean baseline; `option` actions select one explicit destination.
+The action host snapshots the target, trigger, time and activation fields before
+the first run, applies the destination before resolving frame zero, and owns
+per-action Restore. A `targetFromJsonKey` may expose the captured source state
+to the owning resolver for bidirectional Reflow. The component resolver still
+owns every intermediate frame; neither the editor, bridge nor renderer infers
+component transitions.
+
 ## 8. Context, resolver, and presentation boundaries
 
 Production owns one global Shot cursor and one playback owner. Its Screen scope only changes the displayed range; it never creates an independent clock. Design actions are isolated fixtures: their action frame and Test Values do not read Shot navigation and are never persisted into Production animation.
