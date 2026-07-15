@@ -228,6 +228,14 @@ resolve(request) -> fully resolved owner state -> standard renderable atoms
 
 The resolver evaluates typed animation and module semantics at the requested frame. Conversation applies its field/target mapping and message-relative origins in its owning frame resolver before its renderable is called. Component renderables emit standard atoms. Common helpers may convert frame deltas to milliseconds and tokens to final values. The bridge and HTML/raster renderer paint only those resolved atoms; none may branch on Conversation, Bubble, Media, Audio, Keyboard, or a field name, or run a timer.
 
+Runtime size or position changes of one logical element retain stable renderable
+ids and use Theme Reflow by default. The owner resolves complete source and
+destination trees, then recursively interpolates matching boxes for each
+requested frame; parent layout and owned child geometry therefore move on the
+same clock. A contract may explicitly choose another transition or `none`.
+Static Variant/Test Value edits without a runtime source frame update directly
+and do not invent a transition. The renderer never performs this interpolation.
+
 Module instances select an explicit full Module Variant reference. Timeline
 discovery, initial keyframes and duration consume the effective contract formed
 from that Variant config and the module's shared runtime declarations. Changing

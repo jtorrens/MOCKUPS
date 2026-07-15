@@ -16,7 +16,7 @@ export function notificationComponentToRenderable(
   const gap = Math.max(0, numberToken(payload, notification.gapToken) * scale);
   const paddingX = numberToken(payload, notification.padding.xToken) * scale;
   const paddingY = numberToken(payload, notification.padding.yToken) * scale;
-  const maximumWidth = notification.availableWidth * scale;
+  const maximumWidth = notification.maxWidth * scale;
   const maximumLabelWidth = Math.max(1, maximumWidth - paddingX * 2 - avatarSize - gap);
   const labelLayout = notification.dimensionMode === "content"
     ? { maximumWidth: maximumLabelWidth }

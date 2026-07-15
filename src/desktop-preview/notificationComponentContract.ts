@@ -5,7 +5,7 @@ import type { AlignmentPlacementContract, SpacingPairContract } from "./previewC
 
 export interface NotificationDesignContract {
   id: "component.notification";
-  availableWidth: number;
+  maxWidth: number;
   dimensionMode: "fixed" | "content";
   size: { width: number; height: number };
   padding: SpacingPairContract;

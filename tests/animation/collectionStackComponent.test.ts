@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { collectionStackComponentToRenderable } from "../../src/desktop-preview/collectionStackComponentRenderable.js";
+import { interpolateComponentCollectionReflow } from "../../src/desktop-preview/componentCollectionRenderableCommon.js";
 import type { CollectionStackDesignContract } from "../../src/desktop-preview/collectionStackComponentContract.js";
 import { resolveCollectionStackComponent } from "../../src/desktop-preview/collectionStackComponentResolver.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
@@ -232,4 +233,37 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
   });
   assert.equal(resolved.items[0]?.inputs.displayMode, "detail");
   assert.equal(resolved.reflow?.fromItems[0]?.inputs.displayMode, "summary");
+});
+
+test("Reflow interpolates the complete stable child geometry instead of scaling its frame", () => {
+  const [item] = items;
+  const from: RenderableNode = {
+    id: "collectionStack", type: "group", frame: 0,
+    box: { x: 100, y: 200, width: 100, height: 40 },
+    children: [{
+      id: "component.notification", type: "group", frame: 0,
+      box: { x: 100, y: 200, width: 100, height: 40 },
+      children: [{
+        id: "component.notification.surface", type: "surface", frame: 0,
+        box: { x: 100, y: 200, width: 100, height: 40 },
+      }],
+    }],
+  };
+  const to: RenderableNode = {
+    id: "collectionStack", type: "group", frame: 0,
+    box: { x: 80, y: 170, width: 140, height: 100 },
+    children: [{
+      id: "component.notification", type: "group", frame: 0,
+      box: { x: 80, y: 170, width: 140, height: 100 },
+      children: [{
+        id: "component.notification.surface", type: "surface", frame: 0,
+        box: { x: 80, y: 170, width: 140, height: 100 },
+      }],
+    }],
+  };
+  const result = interpolateComponentCollectionReflow(from, [item!], to, [item!], 0.5);
+  assert.deepEqual(result.box, { x: 90, y: 185, width: 120, height: 70 });
+  assert.deepEqual(result.children?.[0]?.box, { x: 90, y: 185, width: 120, height: 70 });
+  assert.deepEqual(result.children?.[0]?.children?.[0]?.box, { x: 90, y: 185, width: 120, height: 70 });
+  assert.equal(result.children?.[0]?.transform?.scale, undefined);
 });

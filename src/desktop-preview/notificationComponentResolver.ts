@@ -1,6 +1,7 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
+import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import type { NotificationDesignContract } from "./notificationComponentContract.js";
@@ -28,9 +29,13 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
   const subtextKey = displayMode === "summary" ? "summarySubtext" : "detailSubtext";
   const labelConfig = embeddedConfig(asRecord(notification[labelSlotKey]), "label", bases, `component.notification.${labelSlotKey}`);
   const surfaceConfig = embeddedConfig(asRecord(notification.surfaceSlot), "surface", bases, "component.notification.surfaceSlot");
+  const maxWidthPercent = Math.min(
+    100,
+    Math.max(1, requiredNumber(preview, "maxWidth", "component.notification.runtime.maxWidth")),
+  );
   return {
     id: "component.notification",
-    availableWidth: Math.max(1, requiredNumber(preview, "availableWidth", "component.notification.runtime.availableWidth")),
+    maxWidth: screenPercentToDesignWidth(payload, maxWidthPercent),
     dimensionMode,
     size: { width: rawSize.first, height: rawSize.second },
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },

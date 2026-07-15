@@ -27,7 +27,7 @@ import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js"
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
-import { renderScale } from "./previewGeometryHelpers.js";
+import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
@@ -394,12 +394,6 @@ function bubbleMediaType(value: string): BubbleMediaType {
     return value;
   }
   throw new Error(`Unsupported bubble media type ${value}`);
-}
-
-function screenPercentToDesignWidth(payload: DesignPreviewPayload, percent: number) {
-  const scale = renderScale(payload);
-  const screenDesignWidth = payload.previewFrame.screenWidth / scale;
-  return Math.max(1, screenDesignWidth * (percent / 100));
 }
 
 function bubbleMediaPosition(value: string): BubbleMediaPosition {

@@ -15,13 +15,15 @@ Notification is one reusable item. Its Variant owns only composition:
 - independent generic placement for Avatar and Label relative to the padded Surface frame.
 - explicit Avatar Badge values: visibility, icon/text mode, content, diameter and palette colors.
 
-Runtime Inputs own the notification data: `Available width`, Actor, `displayMode`,
+Runtime Inputs own the notification data: `Max width %`, Actor, `displayMode`,
 Summary text/subtext and Detail text/subtext. `displayMode` is the orthogonal `summary`/`detail`
 state; it does not encode item presence. The Actor is
 resolved through the ordinary record-reference path and passed explicitly to
 Avatar. The selected concrete Label receives final literal text/subtext values. Notification owns the
-horizontal relationship. In Content mode `Available width` is the explicit
-maximum frame width supplied by the parent. Notification subtracts its padding,
+horizontal relationship. In Content mode `Max width %` is the explicit maximum
+frame width relative to the resolved screen width. Its seeded value is `90` and
+it shares the common percentage-to-design-width conversion used by Bubble.
+Notification subtracts its padding,
 Avatar and Gap, then supplies the remaining width as a constraint to the embedded
 Label. Label resolves deterministic wrapped lines with the shared production-font
 measurement helpers before the renderable frame is emitted; the resulting line
@@ -76,7 +78,10 @@ embedded Collection Stack, which invokes the ordinary component registry.
 outgoing renderable for the reversed Presence Motion. Only after that finite
 exit completes does the item leave layout; the surviving boxes then interpolate
 through generic Reflow. A Summary/Detail change skips presence motion and starts
-Reflow directly from the previous resolved Notification geometry.
+Reflow directly from the previous resolved Notification geometry. Surface size,
+Avatar/Label geometry and the remaining item positions are interpolated frame by
+frame with stable renderable ids; label content selects the destination state at
+the keyframe while geometry completes over the Theme Reflow duration.
 
 The default contract uses Stacked + Fit content + Largest item, with scale and
 opacity ratios at `1`. All Notification Surfaces therefore use the maximum

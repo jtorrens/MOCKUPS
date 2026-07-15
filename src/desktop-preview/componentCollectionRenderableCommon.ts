@@ -5,7 +5,7 @@ import type {
   ComponentCollectionLayoutItem,
   ComponentCollectionSizingMode,
 } from "./componentCollectionContract.js";
-import { boundedCenterBox, embeddedComponentPayload, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
+import { boundedCenterBox, embeddedComponentPayload, interpolateBox, interpolateRenderableGeometry, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
@@ -150,24 +150,11 @@ export function interpolateComponentCollectionReflow(
   const p = Math.max(0, Math.min(1, progress));
   return {
     ...to,
+    box: from.box && to.box ? interpolateBox(from.box, to.box, p) : to.box,
     children: toItems.map((item, index) => {
       const node = toChildren[index];
       const previous = fromById.get(item.id);
-      if (!node?.box || !previous?.box) return node;
-      const translated = translateRenderableNode(node, {
-        x: (previous.box.x - node.box.x) * (1 - p),
-        y: (previous.box.y - node.box.y) * (1 - p),
-      });
-      const widthRatio = node.box.width > 0 ? previous.box.width / node.box.width : 1;
-      const heightRatio = node.box.height > 0 ? previous.box.height / node.box.height : 1;
-      const startScale = Math.min(widthRatio, heightRatio);
-      return {
-        ...translated,
-        transform: {
-          ...translated.transform,
-          scale: (translated.transform?.scale ?? 1) * (startScale + (1 - startScale) * p),
-        },
-      };
+      return node && previous ? interpolateRenderableGeometry(previous, node, p) : node;
     }).filter((node): node is RenderableNode => node !== undefined),
   };
 }

@@ -98,10 +98,14 @@ false transition retains the outgoing child through the reversed Presence
 Motion. The child leaves layout only at the exact finite exit completion.
 
 That completion starts generic Reflow. Reflow measures the previous and next
-resolved layouts and interpolates surviving positions and size scale. A change
+resolved layouts and recursively interpolates the boxes of every surviving
+stable-id renderable. This includes the item frame, its Surface and its owned
+children; it is not approximated by uniformly scaling the final item. A change
 to an embedded animatable runtime input, such as Notification `displayMode`,
 starts the same layout interpolation directly from the field keyframe. The
-renderer receives only the resulting boxes/transforms for the requested frame.
+changed item morphs between its resolved Summary and Detail geometry while its
+siblings move to their next positions. The renderer receives only the resulting
+per-frame boxes.
 
 Reflow timing is Theme-owned through `theme.motion.reflowDurationMs` and
 `theme.motion.reflowEasing`. The seeded duration is 240 ms, equivalent to six

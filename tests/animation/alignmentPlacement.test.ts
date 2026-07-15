@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { placeChild } from "../../src/desktop-preview/previewGeometryHelpers.js";
+import { placeChild, screenPercentToDesignWidth } from "../../src/desktop-preview/previewGeometryHelpers.js";
 
 const parent = { x: 10, y: 20, width: 100, height: 80 };
 const child = { width: 20, height: 10 };
@@ -26,4 +26,24 @@ test("inside edge uses the padded box supplied by its parent", () => {
     placeChild(paddedParent, child, { mode: "insideEdge", alignX: 1, alignY: 0, offsetX: 0, offsetY: 0 }),
     { x: 82, y: 28, width: 20, height: 10 },
   );
+});
+
+test("screen percentage resolves to design width independently of preview scale", () => {
+  assert.equal(screenPercentToDesignWidth({
+    kind: "componentClass",
+    frameRate: 25,
+    localFrame: 0,
+    configJson: "{}",
+    previewFrame: {
+      canvasWidth: 720,
+      canvasHeight: 1440,
+      screenX: 0,
+      screenY: 0,
+      screenWidth: 720,
+      screenHeight: 1440,
+      scaleToPixels: 2,
+    },
+    themeMode: "light",
+    themeTokensJson: "{}",
+  }, 90), 324);
 });

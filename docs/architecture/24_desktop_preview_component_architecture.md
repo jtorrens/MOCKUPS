@@ -607,6 +607,11 @@ Rules:
   width to an owned Label renderable without adding that constraint to the
   Label Variant; Label resolves wrapping into measured lines before the preview
   boundary, and neither the bridge nor renderer performs text reflow;
+- reusable runtime geometry changes retain stable renderable ids and are
+  resolved through the common recursive box interpolation route. An owner may
+  explicitly declare another transition or `none`; otherwise a detected
+  same-element size/position change uses Theme Reflow and reaches the renderer
+  as final geometry for the requested frame;
 - generic preview shell may hold generic clock/play state only;
 - helpers and renderer must not infer missing inputs or know which concrete
   component declared them.

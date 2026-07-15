@@ -818,7 +818,7 @@ internal sealed partial class SpikeDatabase
         }
         if (componentType == "notification")
         {
-            preview["availableWidth"] = 320;
+            preview["maxWidth"] = 90;
             preview["actorId"] = "actor_alex";
         }
         if (componentType == "badge")
@@ -1385,7 +1385,7 @@ internal sealed partial class SpikeDatabase
             ],
             "notification" =>
             [
-                ComponentInput("availableWidth", "Available width", "availableWidth", ValueKind.Integer, "320", minimum: 1, maximum: 10000, increment: 1),
+                ComponentInput("maxWidth", "Max width %", "maxWidth", ValueKind.Integer, "90", minimum: 1, maximum: 100, increment: 1, unit: "%"),
                 ComponentInput("actorId", "Actor", "actorId", "recordReference", "actor_alex", tableId: "actors", resolvedJsonKey: "actor"),
                 AnimatableComponentInput(ComponentInput("displayMode", "Display mode", "displayMode", "option", "summary", options: [new("summary", "Summary"), new("detail", "Detail")])),
                 ComponentInput("summaryText", "Summary text", "summaryText", "text", "New notification"),
