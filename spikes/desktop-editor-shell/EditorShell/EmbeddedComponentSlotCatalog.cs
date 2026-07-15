@@ -32,6 +32,9 @@ internal static class EmbeddedComponentSlotCatalog
             "Stack",
             "component.componentStack",
             ["lockScreen", "stackSlot"]),
+        new("component.notification.avatar.editor", "avatar", "Avatar", "component.avatar", ["notification", "avatarSlot"]),
+        new("component.notification.label.editor", "label", "Label", "component.label", ["notification", "labelSlot"]),
+        new("component.notifications.collectionStack.editor", "collectionStack", "Collection Stack", "component.collectionStack", ["notifications", "collectionStackSlot"]),
         new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
         new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(

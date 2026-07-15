@@ -24,6 +24,8 @@ internal sealed partial class SpikeDatabase
             "iconBar" => "Icon bar component",
             "componentStack" => "Component stack atom",
             "collectionStack" => "Collection stack atom",
+            "notification" => "Notification component",
+            "notifications" => "Notifications component",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "keypad" => "Keypad component",
@@ -284,6 +286,37 @@ internal sealed partial class SpikeDatabase
             case "collectionStack":
                 config.Remove("style");
                 config["collectionStack"] = new JsonObject();
+                break;
+            case "notification":
+                config.Remove("style");
+                config["notification"] = new JsonObject
+                {
+                    ["avatarPosition"] = "start",
+                    ["gapToken"] = "theme.spacing.m",
+                    ["avatarSlot"] = new JsonObject
+                    {
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["overrides"] = new JsonObject
+                        {
+                            ["avatar"] = new JsonObject
+                            {
+                                ["labelSlot"] = new JsonObject
+                                {
+                                    ["showLabel"] = false,
+                                    ["showSubtext"] = false,
+                                },
+                            },
+                        },
+                    },
+                    ["labelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                };
+                break;
+            case "notifications":
+                config.Remove("style");
+                config["notifications"] = new JsonObject
+                {
+                    ["collectionStackSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                };
                 break;
             case "surface":
                 config["surface"] = new JsonObject
@@ -716,6 +749,10 @@ internal sealed partial class SpikeDatabase
         {
             return CollectionStackDesignPreview().ToJsonString();
         }
+        if (componentType == "notifications")
+        {
+            return NotificationsDesignPreview().ToJsonString();
+        }
 
         var preview = new JsonObject
         {
@@ -728,9 +765,10 @@ internal sealed partial class SpikeDatabase
                 "audio" => "0:05",
                 "media" => "",
                 "bubble" => "Message",
+                "notification" => "New notification",
                 _ => "Sample",
             },
-            ["sampleSubtext"] = componentType is "label" or "avatar" ? "Subtitle" : "",
+            ["sampleSubtext"] = componentType is "label" or "avatar" ? "Subtitle" : componentType == "notification" ? "Now" : "",
             ["sampleSize"] = 256,
             ["inputs"] = ComponentInputsForComponent(componentType),
         };
@@ -744,6 +782,10 @@ internal sealed partial class SpikeDatabase
             preview["textSizeMultiplier"] = 1;
             preview["subtextMode"] = "literal";
             preview["subtextSizeMultiplier"] = 1;
+        }
+        if (componentType == "notification")
+        {
+            preview["actorId"] = "actor_alex";
         }
         if (componentType == "textBox")
         {
@@ -1043,6 +1085,27 @@ internal sealed partial class SpikeDatabase
         ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-collectionStack") },
     };
 
+    private static JsonObject NotificationsDesignPreview(
+        JsonArray? items = null,
+        string distributionMode = "stacked",
+        string sizingMode = "content",
+        string startGapToken = "theme.spacing.none",
+        string endGapToken = "theme.spacing.none",
+        string stackDirection = "down",
+        string stackOffsetToken = "theme.spacing.m") => new()
+    {
+        ["componentType"] = "notifications",
+        ["distributionMode"] = distributionMode,
+        ["sizingMode"] = sizingMode,
+        ["startGapToken"] = startGapToken,
+        ["endGapToken"] = endGapToken,
+        ["stackDirection"] = stackDirection,
+        ["stackOffsetToken"] = stackOffsetToken,
+        ["inputs"] = CollectionStackRuntimeInputs(),
+        ["items"] = items ?? new JsonArray(),
+        ["collections"] = new JsonArray { ComponentCollectionDefinition("notification") },
+    };
+
     private static JsonObject ComponentCollectionDefinition(string componentTypeFilter) => new()
     {
         ["id"] = "items",
@@ -1115,6 +1178,13 @@ internal sealed partial class SpikeDatabase
         {
             "componentStack" => ComponentStackRuntimeInputs(),
             "collectionStack" => CollectionStackRuntimeInputs(),
+            "notifications" => CollectionStackRuntimeInputs(),
+            "notification" =>
+            [
+                ComponentInput("actorId", "Actor", "actorId", "recordReference", "actor_alex", tableId: "actors", resolvedJsonKey: "actor"),
+                ComponentInput("sampleText", "Text", "sampleText", "text", "New notification"),
+                ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Now"),
+            ],
             "label" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
@@ -2000,6 +2070,8 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("iconBar", "component.iconBar", "Default Icon Bar"),
         NewComponentSeed("componentStack", "component.componentStack", "Default Component Stack"),
         NewComponentSeed("collectionStack", "component.collectionStack", "Default Collection Stack"),
+        NewComponentSeed("notification", "component.notification", "Default Notification"),
+        NewComponentSeed("notifications", "component.notifications", "Default Notifications"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

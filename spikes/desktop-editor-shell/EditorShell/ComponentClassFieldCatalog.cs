@@ -711,6 +711,12 @@ internal static class ComponentClassFieldCatalog
         ["component.password.drawPassword.editor"] = new("component.password.drawPassword.editor", "Draw password", ValueKind.ComponentPreset, ["password", "drawPasswordSlot", "presetId"], "default"),
         ["component.password.iconBar.editor"] = new("component.password.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["password", "iconBarSlot", "presetId"], "default"),
 
+        ["component.notification.avatarPosition"] = new("component.notification.avatarPosition", "Avatar position", ValueKind.OptionToken, ["notification", "avatarPosition"], "start", Options: [new("start", "Left"), new("end", "Right")]),
+        ["component.notification.gapToken"] = new("component.notification.gapToken", "Gap", ValueKind.ThemeToken, ["notification", "gapToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.notification.avatar.editor"] = new("component.notification.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["notification", "avatarSlot", "presetId"], "default"),
+        ["component.notification.label.editor"] = new("component.notification.label.editor", "Label", ValueKind.ComponentPreset, ["notification", "labelSlot", "presetId"], "default"),
+        ["component.notifications.collectionStack.editor"] = new("component.notifications.collectionStack.editor", "Collection Stack", ValueKind.ComponentPreset, ["notifications", "collectionStackSlot", "presetId"], "default"),
+
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),
         ["component.button.padding"] = new("component.button.padding", "Padding", ValueKind.ThemeTokenPair, ["button", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),

@@ -65,7 +65,7 @@ export const desktopPreviewComponents = {
     contract: "./componentStackComponentContract",
     resolver: "./componentStackComponentResolver",
     renderable: "./componentStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
   },
   collectionStack: {
     category: "atom",
@@ -73,7 +73,23 @@ export const desktopPreviewComponents = {
     contract: "./collectionStackComponentContract",
     resolver: "./collectionStackComponentResolver",
     renderable: "./collectionStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+  },
+  notification: {
+    category: "component",
+    migrationStatus: "structural",
+    contract: "./notificationComponentContract",
+    resolver: "./notificationComponentResolver",
+    renderable: "./notificationComponentRenderable",
+    embeds: ["avatar", "label"],
+  },
+  notifications: {
+    category: "component",
+    migrationStatus: "structural",
+    contract: "./notificationsComponentContract",
+    resolver: "./notificationsComponentResolver",
+    renderable: "./notificationsComponentRenderable",
+    embeds: ["collectionStack"],
   },
   codeIndicator: {
     category: "atom",

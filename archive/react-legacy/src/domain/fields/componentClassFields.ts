@@ -26,6 +26,8 @@ export const COMPONENT_CLASS_FIELDS = defineFields({
         "iconBar",
         "componentStack",
         "collectionStack",
+        "notification",
+        "notifications",
         "codeIndicator",
         "iconRow",
         "keyboard",

@@ -42,6 +42,7 @@ var tests = new (string Name, Action Run)[]
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
     ("Collection Stack exposes one runtime-owned Default Variant", CollectionStackSeedOpensAndRenders),
+    ("Notifications composes Notification items through Collection Stack", NotificationsSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
@@ -918,6 +919,73 @@ static void CollectionStackSeedOpensAndRenders()
             inputSession.ApplyInputs(payload, "light", settings.ProjectId)).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void NotificationsSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-notifications-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var notification = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "notification");
+        var notifications = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "notifications");
+        Equal("Components", notification.Parent?.Name ?? "");
+        Equal("Components", notifications.Parent?.Name ?? "");
+        var notificationVariant = notification.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var notificationsVariant = notifications.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+
+        foreach (var variant in new[] { notificationVariant, notificationsVariant })
+        {
+            var payload = Required(DesignPreviewPayloadFactory.Create(database, variant, theme.Id));
+            var inputSession = new ComponentPreviewInputSession(database, () => { });
+            inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
+            var html = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(device.Id), "light", false,
+                inputSession.ApplyInputs(payload, "light", database.GetComponentClassSettings(variant.Parent.Id).ProjectId)).GetAwaiter().GetResult();
+            True(!html.Contains("preview-error", StringComparison.Ordinal));
+        }
+
+        var settings = database.GetComponentClassSettings(notifications.Id);
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Notifications preview.");
+        var reference = notificationVariant.Id;
+        preview["items"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "notification_1", ["presetId"] = reference,
+                ["overrides"] = new JsonObject(), ["inputs"] = database.GetComponentPresetRuntimeInputs(reference),
+                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
+                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
+            },
+            new JsonObject
+            {
+                ["id"] = "notification_2", ["presetId"] = reference,
+                ["overrides"] = new JsonObject(), ["inputs"] = database.GetComponentPresetRuntimeInputs(reference),
+                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
+                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
+            },
+        };
+        database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
+        var populated = Required(DesignPreviewPayloadFactory.Create(database, notificationsVariant, theme.Id));
+        var populatedSession = new ComponentPreviewInputSession(database, () => { });
+        populatedSession.UpdateForPayload(populated, settings.ProjectId);
+        var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
+        True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
     }
     finally
     {

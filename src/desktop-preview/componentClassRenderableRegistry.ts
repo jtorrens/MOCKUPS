@@ -13,6 +13,10 @@ import { componentStackComponentToRenderable } from "./componentStackComponentRe
 import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
 import { collectionStackComponentToRenderable } from "./collectionStackComponentRenderable.js";
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
+import { notificationComponentToRenderable } from "./notificationComponentRenderable.js";
+import { resolveNotificationComponent } from "./notificationComponentResolver.js";
+import { notificationsComponentToRenderable } from "./notificationsComponentRenderable.js";
+import { resolveNotificationsComponent } from "./notificationsComponentResolver.js";
 import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import {
@@ -70,6 +74,10 @@ export const componentRenderableFactories = {
     componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
   collectionStack: (payload) =>
     collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), componentClassToRenderable),
+  notification: (payload) =>
+    notificationComponentToRenderable(payload, resolveNotificationComponent(payload)),
+  notifications: (payload) =>
+    notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), componentClassToRenderable),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),

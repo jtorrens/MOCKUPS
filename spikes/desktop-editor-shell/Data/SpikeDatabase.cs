@@ -57,6 +57,7 @@ internal sealed partial class SpikeDatabase
             EnsureButtonComponentClasses(connection);
             EnsureComponentStackClasses(connection);
             EnsureCollectionStackClasses(connection);
+            EnsureNotificationComponentClasses(connection);
             EnsureKeypadComponentClasses(connection);
             EnsurePasswordComponentClasses(connection);
             EnsureLockScreenModule(connection);
@@ -95,6 +96,7 @@ internal sealed partial class SpikeDatabase
         EnsureButtonComponentClasses(connection);
         EnsureComponentStackClasses(connection);
         EnsureCollectionStackClasses(connection);
+        EnsureNotificationComponentClasses(connection);
         EnsureKeypadComponentClasses(connection);
         EnsurePasswordComponentClasses(connection);
         EnsureLockScreenModule(connection);
