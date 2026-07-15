@@ -16,6 +16,11 @@ internal sealed class RuntimeTestActionControl : Border
     private readonly Button _restoreButton;
     private readonly Func<bool> _canRestore;
     private readonly PreviewPlaybackState _playbackState;
+    private readonly IReadOnlyList<FieldOption> _targetOptions;
+    private readonly string _initialTargetValue;
+    private EditorInstantComboBox? _targetCombo;
+    private string? _pendingTargetValue;
+    private bool _wasBusy;
 
     public RuntimeTestActionControl(
         string label,
@@ -28,6 +33,8 @@ internal sealed class RuntimeTestActionControl : Border
     {
         _canRestore = canRestore;
         _playbackState = playbackState;
+        _targetOptions = targetOptions ?? [];
+        _initialTargetValue = currentTargetValue;
         Padding = new Thickness(8, 5);
         CornerRadius = new CornerRadius(8);
         BorderThickness = new Thickness(1);
@@ -42,11 +49,10 @@ internal sealed class RuntimeTestActionControl : Border
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        EditorInstantComboBox? targetCombo = null;
         if (hasTargetOptions)
         {
             var options = targetOptions!;
-            targetCombo = new EditorInstantComboBox
+            _targetCombo = new EditorInstantComboBox
             {
                 ItemsSource = options,
                 SelectedItem = options.FirstOrDefault((option) => option.Value != currentTargetValue)
@@ -54,7 +60,7 @@ internal sealed class RuntimeTestActionControl : Border
                 DisabledValues = string.IsNullOrWhiteSpace(currentTargetValue) ? [] : [currentTargetValue],
                 MinWidth = 0,
             };
-            layout.Children.Add(targetCombo);
+            layout.Children.Add(_targetCombo);
         }
         else
         {
@@ -71,7 +77,8 @@ internal sealed class RuntimeTestActionControl : Border
         _playButton.Click += (_, args) =>
         {
             args.Handled = true;
-            play(targetCombo?.SelectedItem?.Value);
+            _pendingTargetValue = _targetCombo?.SelectedItem?.Value;
+            play(_pendingTargetValue);
             RefreshState();
         };
         Grid.SetColumn(_playButton, 1);
@@ -82,6 +89,8 @@ internal sealed class RuntimeTestActionControl : Border
         {
             args.Handled = true;
             restore();
+            _pendingTargetValue = null;
+            UpdateTargetCombo(_initialTargetValue);
             RefreshState();
         };
         Grid.SetColumn(_restoreButton, 2);
@@ -107,7 +116,24 @@ internal sealed class RuntimeTestActionControl : Border
         return button;
     }
 
-    private void OnPlaybackStateChanged() => RefreshState();
+    private void OnPlaybackStateChanged()
+    {
+        if (_wasBusy && !_playbackState.IsBusy && !string.IsNullOrWhiteSpace(_pendingTargetValue))
+        {
+            UpdateTargetCombo(_pendingTargetValue);
+            _pendingTargetValue = null;
+        }
+        _wasBusy = _playbackState.IsBusy;
+        RefreshState();
+    }
+
+    private void UpdateTargetCombo(string currentValue)
+    {
+        if (_targetCombo is null || _targetOptions.Count == 0) return;
+        _targetCombo.DisabledValues = string.IsNullOrWhiteSpace(currentValue) ? [] : [currentValue];
+        _targetCombo.SelectedItem = _targetOptions.FirstOrDefault((option) => option.Value != currentValue)
+            ?? _targetOptions.First();
+    }
 
     private void RefreshState()
     {

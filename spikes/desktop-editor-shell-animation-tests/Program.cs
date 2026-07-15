@@ -1367,6 +1367,14 @@ static void PasswordSeedOpensAndRenders()
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
+        True(inputSession.CanRestoreAction(action.Id));
+        True(inputSession.RestoreAction(action.Id));
+        True(!inputSession.CanRestoreAction(action.Id));
+        var restoredPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var restoredPreview = JsonNode.Parse(restoredPayload.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing restored Password preview.");
+        Equal(false, restoredPreview["entryTrigger"]?.GetValue<bool>() ?? true);
+        Equal(0, restoredPreview["entryFrame"]?.GetValue<int>() ?? -1);
         True(inputSession.TriggerAction(action.Id));
         Equal(0, inputSession.CurrentPreviewFrame);
         True(inputSession.IsPlaybackActive);

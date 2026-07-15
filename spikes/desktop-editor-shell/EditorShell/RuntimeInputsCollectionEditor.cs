@@ -1170,7 +1170,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ? null
             : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
         var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
-            ? targetInput?.Options
+            ? action.TargetOptions.Count > 0 ? action.TargetOptions : targetInput?.Options
             : null;
         var currentTargetValue = targetInput is null
             ? ""

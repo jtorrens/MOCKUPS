@@ -407,8 +407,19 @@ internal sealed class ComponentPreviewInputSession
         }
         foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
         {
+            if (action.IsCollectionItemAction
+                && !string.IsNullOrWhiteSpace(action.TargetInputId)
+                && _values.TryGetValue(ActionTargetStorageKey(action), out var targetValue))
+            {
+                ComponentPreviewActions.SetStoredValue(preview, action, action.TargetInputId, targetValue);
+            }
             ComponentPreviewActions.SetValue(preview, action, action.PlayInputId, IsPlaying(action));
             ComponentPreviewActions.SetValue(preview, action, action.TimeJsonKey, PlaybackTimeValue(action));
+            if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey)
+                && _values.TryGetValue(ActionTargetFromKey(action), out var fromValue))
+            {
+                ComponentPreviewActions.SetValue(preview, action, action.TargetFromJsonKey, fromValue);
+            }
         }
 
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
@@ -553,6 +564,18 @@ internal sealed class ComponentPreviewInputSession
                     JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
                     JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
                     _ => "0",
+                };
+            }
+            if (action.IsCollectionItemAction
+                && !string.IsNullOrWhiteSpace(action.TargetInputId)
+                && !_values.ContainsKey(ActionTargetStorageKey(action)))
+            {
+                _values[ActionTargetStorageKey(action)] = ComponentPreviewActions.Value(preview, action, action.TargetInputId) switch
+                {
+                    JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
+                    JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
+                    _ => "",
                 };
             }
         }
@@ -1279,7 +1302,7 @@ internal sealed class ComponentPreviewInputSession
         var snapshotKey = ActionSnapshotKey(action.Id);
         if (_actionSnapshots.ContainsKey(snapshotKey)) return;
 
-        var keys = new[] { ActionStateKey(action), ActionTimeKey(action) }
+        var keys = new[] { ActionStateKey(action), ActionTimeKey(action), ActionTargetFromKey(action) }
             .Concat(ActivatedPlaybackInputKeys(action))
             .Concat(DeactivatedPlaybackInputKeys(action))
             .Concat(ActionTargetInputKeys(action))
@@ -1296,16 +1319,20 @@ internal sealed class ComponentPreviewInputSession
 
     private IEnumerable<string> ActionTargetInputKeys(ComponentPreviewActionDefinition action)
     {
-        return string.IsNullOrWhiteSpace(action.TargetInputId) || action.IsCollectionItemAction
+        return string.IsNullOrWhiteSpace(action.TargetInputId)
             ? []
-            : [$"{_scopeKey}:{action.TargetInputId}"];
+            : [ActionTargetStorageKey(action)];
     }
 
     private void ApplyActionTarget(ComponentPreviewActionDefinition action, string? explicitValue)
     {
-        if (string.IsNullOrWhiteSpace(action.TargetInputId) || action.IsCollectionItemAction) return;
-        var key = $"{_scopeKey}:{action.TargetInputId}";
+        if (string.IsNullOrWhiteSpace(action.TargetInputId)) return;
+        var key = ActionTargetStorageKey(action);
         var current = _values.GetValueOrDefault(key, InputDefault(key, "false"));
+        if (!string.IsNullOrWhiteSpace(action.TargetFromJsonKey))
+        {
+            _values[ActionTargetFromKey(action)] = current;
+        }
         var target = action.TargetMode switch
         {
             ComponentPreviewActionTargetMode.Toggle => StringToBool(current) ? "false" : "true",
@@ -1315,6 +1342,14 @@ internal sealed class ComponentPreviewInputSession
         };
         if (!string.IsNullOrWhiteSpace(target)) _values[key] = target;
     }
+
+    private string ActionTargetFromKey(ComponentPreviewActionDefinition action) =>
+        $"{_scopeKey}:action:{action.Id}:target-from";
+
+    private string ActionTargetStorageKey(ComponentPreviewActionDefinition action) =>
+        action.IsCollectionItemAction
+            ? $"{_scopeKey}:action:{action.Id}:target-value"
+            : $"{_scopeKey}:{action.TargetInputId}";
 
     private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {

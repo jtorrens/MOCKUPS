@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveComponentCollectionItems } from "./componentCollectionResolverCommon.js";
-import { parseObject, requiredNumber, requiredString } from "./componentResolverCommon.js";
+import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredString } from "./componentResolverCommon.js";
 import type {
   CollectionStackDesignContract,
   CollectionStackDirection,
@@ -33,7 +33,8 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
   const opacityRatio = requiredUnitRatio(preview, "opacityRatio", "collectionStack.runtime.opacityRatio", true);
   const allItems = resolveComponentCollectionItems(payload, preview, "collectionStack");
   const items = allItems.filter((item) => item.present || item.exitFrame !== undefined);
-  const reflow = resolveReflow(payload, allItems, items);
+  const reflow = resolveDistributionReflow(payload, preview, allItems, items)
+    ?? resolveReflow(payload, allItems, items);
   return {
     id: "collectionStack",
     distributionMode: distributionMode as CollectionStackDistributionMode,
@@ -47,6 +48,28 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
     opacityRatio,
     items,
     reflow,
+  };
+}
+
+function resolveDistributionReflow(
+  payload: DesignPreviewPayload,
+  preview: Record<string, unknown>,
+  allItems: CollectionStackDesignContract["items"],
+  items: CollectionStackDesignContract["items"],
+) {
+  if (!optionalBoolean(preview, "distributionTransition")) return undefined;
+  const fromDistributionMode = optionalString(preview, "distributionFrom");
+  if (fromDistributionMode !== "flow" && fromDistributionMode !== "stacked") return undefined;
+  const root = parseObject(payload.themeTokensJson);
+  const motion = asRecord(root.motion);
+  const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
+  const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
+  const intensity = optionalNumber(motion, "reflowIntensity", 1);
+  const elapsedMs = Math.max(0, optionalNumber(preview, "distributionElapsedMs", 0));
+  return {
+    progress: easingProgress(easing, durationMs <= 0 ? 1 : elapsedMs / durationMs, intensity),
+    fromItems: allItems.length > 0 ? allItems : items,
+    fromDistributionMode,
   };
 }
 

@@ -820,6 +820,13 @@ internal sealed partial class SpikeDatabase
         {
             preview["maxWidth"] = 90;
             preview["actorId"] = "actor_alex";
+            preview["displayModeTransition"] = false;
+            preview["displayModeElapsedMs"] = 0;
+            preview["displayModeFrom"] = "summary";
+            preview["actions"] = new JsonArray
+            {
+                ReflowTargetAction("changeDisplayMode", "Display mode", "displayMode", "displayModeTransition", "displayModeElapsedMs", "displayModeFrom"),
+            };
         }
         if (componentType == "badge")
         {
@@ -1011,6 +1018,30 @@ internal sealed partial class SpikeDatabase
             preview["activeKey"] = "";
             preview["pushedKey"] = "";
             preview["enabled"] = true;
+            preview["pushTrigger"] = false;
+            preview["pushElapsedMs"] = 0;
+            preview["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "pushKey",
+                    ["label"] = "Push key",
+                    ["playInputId"] = "pushTrigger",
+                    ["targetInputId"] = "pushedKey",
+                    ["targetMode"] = "option",
+                    ["targetOptions"] = new JsonArray(DefaultKeypadKeys().OfType<JsonObject>().Select((key) =>
+                        (JsonNode?)new JsonObject
+                        {
+                            ["value"] = key["value"]?.DeepClone(),
+                            ["label"] = key["text"]?.DeepClone(),
+                        }).ToArray()),
+                    ["durationThemeToken"] = "theme.motion.buttonPushedDurationMs",
+                    ["timeJsonKey"] = "pushElapsedMs",
+                    ["timeUnit"] = "milliseconds",
+                    ["prewarmFrames"] = false,
+                    ["completionBehavior"] = "holdFinal",
+                },
+            };
         }
         if (componentType == "codeIndicator")
         {
@@ -1144,6 +1175,13 @@ internal sealed partial class SpikeDatabase
         ["inputs"] = CollectionStackRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
         ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-collectionStack") },
+        ["distributionTransition"] = false,
+        ["distributionElapsedMs"] = 0,
+        ["distributionFrom"] = distributionMode,
+        ["actions"] = new JsonArray
+        {
+            ReflowTargetAction("changeDistribution", "Distribution", "distributionMode", "distributionTransition", "distributionElapsedMs", "distributionFrom"),
+        },
     };
 
     private static JsonObject NotificationsDesignPreview(
@@ -1171,6 +1209,34 @@ internal sealed partial class SpikeDatabase
         ["inputs"] = NotificationsRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
         ["collections"] = new JsonArray { ComponentCollectionDefinition("notification") },
+        ["distributionTransition"] = false,
+        ["distributionElapsedMs"] = 0,
+        ["distributionFrom"] = distributionMode,
+        ["actions"] = new JsonArray
+        {
+            ReflowTargetAction("changeDistribution", "Distribution", "distributionMode", "distributionTransition", "distributionElapsedMs", "distributionFrom"),
+        },
+    };
+
+    private static JsonObject ReflowTargetAction(
+        string id,
+        string label,
+        string targetInputId,
+        string playInputId,
+        string timeJsonKey,
+        string targetFromJsonKey) => new()
+    {
+        ["id"] = id,
+        ["label"] = label,
+        ["playInputId"] = playInputId,
+        ["targetInputId"] = targetInputId,
+        ["targetMode"] = "option",
+        ["targetFromJsonKey"] = targetFromJsonKey,
+        ["durationThemeToken"] = "theme.motion.reflowDurationMs",
+        ["timeJsonKey"] = timeJsonKey,
+        ["timeUnit"] = "milliseconds",
+        ["prewarmFrames"] = false,
+        ["completionBehavior"] = "reset",
     };
 
     private static JsonObject ComponentCollectionDefinition(string componentTypeFilter) => new()
@@ -1241,6 +1307,22 @@ internal sealed partial class SpikeDatabase
                 ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
                 ["enabledWhenItemJsonKey"] = "gapBeforeMode",
                 ["enabledWhenItemValues"] = new JsonArray("reflow"),
+            },
+        },
+        ["itemActions"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "togglePresent",
+                ["label"] = "Presence",
+                ["playInputId"] = "presenceTransition",
+                ["targetInputId"] = "present",
+                ["targetMode"] = "toggle",
+                ["durationSeconds"] = 0.3,
+                ["timeJsonKey"] = "presenceElapsedMs",
+                ["timeUnit"] = "milliseconds",
+                ["prewarmFrames"] = false,
+                ["completionBehavior"] = "reset",
             },
         },
         ["itemPresentation"] = new JsonObject

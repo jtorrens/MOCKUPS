@@ -22,10 +22,20 @@ export function notificationComponentToRenderable(
     ? { maximumWidth: maximumLabelWidth }
     : {};
   const labelSize = measureLabelComponent(notification.label, payload, labelLayout);
+  const fromLabelSize = notification.reflow
+    ? measureLabelComponent(notification.reflow.fromLabel, payload, labelLayout)
+    : labelSize;
   const contentWidth = avatarSize + gap + labelSize.width;
   const contentHeight = Math.max(avatarSize, labelSize.height);
-  const width = notification.dimensionMode === "fixed" ? notification.size.width * scale : contentWidth + paddingX * 2;
-  const height = notification.dimensionMode === "fixed" ? notification.size.height * scale : contentHeight + paddingY * 2;
+  const fromContentWidth = avatarSize + gap + fromLabelSize.width;
+  const fromContentHeight = Math.max(avatarSize, fromLabelSize.height);
+  const targetWidth = notification.dimensionMode === "fixed" ? notification.size.width * scale : contentWidth + paddingX * 2;
+  const targetHeight = notification.dimensionMode === "fixed" ? notification.size.height * scale : contentHeight + paddingY * 2;
+  const fromWidth = notification.dimensionMode === "fixed" ? targetWidth : fromContentWidth + paddingX * 2;
+  const fromHeight = notification.dimensionMode === "fixed" ? targetHeight : fromContentHeight + paddingY * 2;
+  const progress = notification.reflow?.progress ?? 1;
+  const width = lerp(fromWidth, targetWidth, progress);
+  const height = lerp(fromHeight, targetHeight, progress);
   const box = assignedBox ?? boundedCenterBox(payload, width, height);
   const innerBox = {
     x: box.x + paddingX,
@@ -61,14 +71,32 @@ export function notificationComponentToRenderable(
   const avatar = avatarComponentToRenderableAt(payload, notification.avatar, avatarBox);
   const label = labelComponentToRenderableAt(payload, notification.label, labelBox, labelLayout);
   const surface = surfaceComponentToRenderableAt(payload, notification.surface, box);
+  const labels = notification.reflow
+    ? [
+        {
+          ...labelComponentToRenderableAt(
+            payload,
+            notification.reflow.fromLabel,
+            placeChild(innerBox, fromLabelSize, scalePlacement(notification.labelPlacement, scale)),
+            labelLayout,
+          ),
+          transform: { opacity: 1 - progress },
+        },
+        { ...label, transform: { opacity: progress } },
+      ]
+    : [label];
   return {
     id: notification.id,
     type: "group",
     frame: 0,
     box,
     style: { overflow: "visible" },
-    children: [surface, avatar, label],
+    children: [surface, avatar, ...labels],
   };
+}
+
+function lerp(start: number, end: number, amount: number) {
+  return start + (end - start) * Math.max(0, Math.min(1, amount));
 }
 
 function enforceHorizontalGap(

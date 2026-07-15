@@ -15,4 +15,8 @@ export interface NotificationDesignContract {
   surface: SurfaceDesignContract;
   avatar: AvatarDesignContract;
   label: LabelDesignContract;
+  reflow?: {
+    progress: number;
+    fromLabel: LabelDesignContract;
+  };
 }

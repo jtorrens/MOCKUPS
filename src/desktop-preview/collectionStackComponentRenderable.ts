@@ -22,10 +22,24 @@ export function collectionStackComponentToRenderable(
     endGapToken: stack.endGapToken,
     itemSizingMode: stack.itemSizingMode,
   };
-  if (stack.distributionMode === "flow") {
-    const current = renderComponentCollectionFlow(payload, stack.items, renderChild, base);
-    if (!stack.reflow) return current;
-    const previous = renderComponentCollectionFlow(payload, stack.reflow.fromItems, renderChild, base);
+  const renderDistribution = (
+    distributionMode: CollectionStackDesignContract["distributionMode"],
+    items: CollectionStackDesignContract["items"],
+  ) => distributionMode === "flow"
+    ? renderComponentCollectionFlow(payload, items, renderChild, base)
+    : renderComponentCollectionStacked(payload, items, renderChild, {
+        ...base,
+        direction: stack.stackDirection,
+        offsetToken: stack.stackOffsetToken,
+        scaleRatio: stack.scaleRatio,
+        opacityRatio: stack.opacityRatio,
+      });
+  const current = renderDistribution(stack.distributionMode, stack.items);
+  if (stack.reflow) {
+    const previous = renderDistribution(
+      stack.reflow.fromDistributionMode ?? stack.distributionMode,
+      stack.reflow.fromItems,
+    );
     return interpolateComponentCollectionReflow(
       previous,
       stack.reflow.fromItems,
@@ -34,11 +48,5 @@ export function collectionStackComponentToRenderable(
       stack.reflow.progress,
     );
   }
-  return renderComponentCollectionStacked(payload, stack.items, renderChild, {
-        ...base,
-        direction: stack.stackDirection,
-        offsetToken: stack.stackOffsetToken,
-        scaleRatio: stack.scaleRatio,
-        opacityRatio: stack.opacityRatio,
-      });
+  return current;
 }

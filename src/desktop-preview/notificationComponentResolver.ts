@@ -1,11 +1,12 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
+import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import type { NotificationDesignContract } from "./notificationComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { easingProgress } from "./previewMotionHelpers.js";
 
 export function resolveNotificationComponent(payload: DesignPreviewPayload): NotificationDesignContract {
   const config = parseObject(payload.configJson);
@@ -24,15 +25,43 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
   if (displayMode !== "summary" && displayMode !== "detail") {
     throw new Error(`Unsupported Notification display mode ${displayMode}`);
   }
-  const labelSlotKey = displayMode === "summary" ? "summaryLabelSlot" : "detailLabelSlot";
-  const textKey = displayMode === "summary" ? "summaryText" : "detailText";
-  const subtextKey = displayMode === "summary" ? "summarySubtext" : "detailSubtext";
-  const labelConfig = embeddedConfig(asRecord(notification[labelSlotKey]), "label", bases, `component.notification.${labelSlotKey}`);
   const surfaceConfig = embeddedConfig(asRecord(notification.surfaceSlot), "surface", bases, "component.notification.surfaceSlot");
   const maxWidthPercent = Math.min(
     100,
     Math.max(1, requiredNumber(preview, "maxWidth", "component.notification.runtime.maxWidth")),
   );
+  const resolveDisplayLabel = (mode: "summary" | "detail") => {
+    const modeSlotKey = mode === "summary" ? "summaryLabelSlot" : "detailLabelSlot";
+    const modeTextKey = mode === "summary" ? "summaryText" : "detailText";
+    const modeSubtextKey = mode === "summary" ? "summarySubtext" : "detailSubtext";
+    return resolveLabelComponentFromRecords(
+      embeddedConfig(asRecord(notification[modeSlotKey]), "label", bases, `component.notification.${modeSlotKey}`),
+      literalLabelPreview(
+        requiredString(preview, modeTextKey, `component.notification.runtime.${modeTextKey}`),
+        requiredString(preview, modeSubtextKey, `component.notification.runtime.${modeSubtextKey}`),
+      ),
+      bases,
+      "component.notification.label",
+      staticLabelFrameContext,
+    );
+  };
+  const label = resolveDisplayLabel(displayMode);
+  const fromMode = optionalString(preview, "displayModeFrom");
+  const transitionActive = optionalBoolean(preview, "displayModeTransition")
+    && (fromMode === "summary" || fromMode === "detail")
+    && fromMode !== displayMode;
+  const motion = asRecord(parseObject(payload.themeTokensJson).motion);
+  const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
+  const reflow = transitionActive
+    ? {
+        progress: easingProgress(
+          requiredString(motion, "reflowEasing", "theme.motion.reflowEasing"),
+          durationMs <= 0 ? 1 : Math.max(0, optionalNumber(preview, "displayModeElapsedMs", 0)) / durationMs,
+          optionalNumber(motion, "reflowIntensity", 1),
+        ),
+        fromLabel: resolveDisplayLabel(fromMode as "summary" | "detail"),
+      }
+    : undefined;
   return {
     id: "component.notification",
     maxWidth: screenPercentToDesignWidth(payload, maxWidthPercent),
@@ -52,21 +81,17 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
       {
         ...avatarInputs,
         actor: requiredRecord(preview, "actor", "component.notification.runtime.actor"),
-        sampleSubtext: requiredString(preview, subtextKey, `component.notification.runtime.${subtextKey}`),
+        sampleSubtext: requiredString(
+          preview,
+          displayMode === "summary" ? "summarySubtext" : "detailSubtext",
+          `component.notification.runtime.${displayMode === "summary" ? "summarySubtext" : "detailSubtext"}`,
+        ),
       },
       bases,
       "component.notification.avatar",
     ),
-    label: resolveLabelComponentFromRecords(
-      labelConfig,
-      literalLabelPreview(
-        requiredString(preview, textKey, `component.notification.runtime.${textKey}`),
-        requiredString(preview, subtextKey, `component.notification.runtime.${subtextKey}`),
-      ),
-      bases,
-      "component.notification.label",
-      staticLabelFrameContext,
-    ),
+    label,
+    reflow,
   };
 }
 

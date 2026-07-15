@@ -23,6 +23,7 @@ export interface CollectionStackDesignContract {
   reflow?: {
     progress: number;
     fromItems: ComponentCollectionItemContract[];
+    fromDistributionMode?: CollectionStackDistributionMode;
   };
 }
 

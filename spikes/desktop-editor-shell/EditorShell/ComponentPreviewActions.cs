@@ -96,6 +96,25 @@ internal static class ComponentPreviewActions
         }
     }
 
+    public static void SetStoredValue(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string key,
+        string value)
+    {
+        var target = Target(preview, action);
+        if (target is null) return;
+        target[key] = target[key] switch
+        {
+            JsonValue existing when existing.TryGetValue<bool>(out _) => JsonValue.Create(BooleanText.Parse(value)),
+            JsonValue existing when existing.TryGetValue<int>(out _)
+                && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer) => JsonValue.Create(integer),
+            JsonValue existing when existing.TryGetValue<double>(out _)
+                && double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
+            _ => JsonValue.Create(value),
+        };
+    }
+
     public static void RemoveValue(
         JsonObject preview,
         ComponentPreviewActionDefinition action,
@@ -206,6 +225,8 @@ internal static class ComponentPreviewActions
             JsonStringArray(action, "deactivateInputIds"),
             JsonString(action, "targetInputId"),
             ParseTargetMode(JsonString(action, "targetMode")),
+            JsonString(action, "targetFromJsonKey"),
+            ParseTargetOptions(action),
             collectionJsonKey,
             collectionItemId,
             JsonString(action, "visibleWhenItemJsonKey"),
@@ -222,6 +243,16 @@ internal static class ComponentPreviewActions
             "value" => ComponentPreviewActionTargetMode.Value,
             _ => throw new InvalidOperationException($"Unknown component preview action targetMode '{value}'."),
         };
+    }
+
+    private static IReadOnlyList<FieldOption> ParseTargetOptions(JsonObject action)
+    {
+        return action["targetOptions"] is JsonArray options
+            ? options.OfType<JsonObject>()
+                .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
+                .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+                .ToList()
+            : [];
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
@@ -329,6 +360,8 @@ internal sealed record ComponentPreviewActionDefinition(
     IReadOnlyList<string> DeactivateInputIds,
     string TargetInputId,
     ComponentPreviewActionTargetMode TargetMode,
+    string TargetFromJsonKey,
+    IReadOnlyList<FieldOption> TargetOptions,
     string CollectionJsonKey = "",
     string CollectionItemId = "",
     string VisibleWhenItemJsonKey = "",
