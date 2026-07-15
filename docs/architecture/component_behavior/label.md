@@ -56,3 +56,9 @@ The concrete Label Variant owns content/fixed sizing, tokenized padding, text
 and subtext colors, typography, alignment, text gap, generic subtext placement
 and the embedded Surface Variant. Runtime multipliers do not extend the Theme
 typography token vocabulary.
+
+`reserveSubtextSpace` is an explicit Variant boolean. When enabled, an empty
+subtext still participates in Label measurement using the configured subtext
+line height and placement, while no empty text node is painted. This keeps
+primary text aligned with sibling labels that contain subtext without relying
+on whitespace content. Keypad enables it in its state-owned Label slots.

@@ -86,25 +86,34 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             : TypographyStyleValue.Parse(value);
 
         RowDefinitions = new RowDefinitions("Auto");
+        MinWidth = 0;
+        ClipToBounds = true;
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
         var innerGrid = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,Auto"),
+            MinWidth = 0,
+            ClipToBounds = true,
         };
         _container = new Border
         {
             CornerRadius = new CornerRadius(8),
             BorderThickness = new Thickness(0),
+            MinWidth = 0,
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             Child = innerGrid,
         };
         Children.Add(_container);
 
         _summaryText = new TextBlock
         {
+            MinWidth = 0,
             Margin = new Thickness(10, 0, 4, 0),
             IsHitTestVisible = false,
             TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap,
             VerticalAlignment = VerticalAlignment.Center,
         };
         var chevron = new TextBlock
@@ -120,13 +129,22 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             Opacity = 0.72,
             IsHitTestVisible = false,
         };
+        var headerContent = new DockPanel
+        {
+            LastChildFill = true,
+            MinWidth = 0,
+            ClipToBounds = true,
+            MinHeight = 36,
+        };
+        DockPanel.SetDock(chevron, Dock.Right);
+        headerContent.Children.Add(chevron);
+        headerContent.Children.Add(_summaryText);
         var headerGrid = new Grid
         {
+            MinWidth = 0,
+            ClipToBounds = true,
             MinHeight = 36,
-            ColumnDefinitions = new ColumnDefinitions("*,22"),
         };
-        SetColumn(_summaryText, 0);
-        SetColumn(chevron, 1);
         _headerButton = new Button
         {
             MinHeight = 36,
@@ -137,10 +155,8 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
             BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(8),
         };
-        SetColumnSpan(_headerButton, 2);
         headerGrid.Children.Add(_headerButton);
-        headerGrid.Children.Add(_summaryText);
-        headerGrid.Children.Add(chevron);
+        headerGrid.Children.Add(headerContent);
         innerGrid.Children.Add(headerGrid);
 
         _contentGrid = new Grid

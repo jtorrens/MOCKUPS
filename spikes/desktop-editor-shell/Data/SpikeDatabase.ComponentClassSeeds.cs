@@ -402,6 +402,7 @@ internal sealed partial class SpikeDatabase
         {
             labelConfig["subtextPlacement"] ??= JsonNode.Parse(
                 """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}""");
+            labelConfig["reserveSubtextSpace"] ??= false;
         }
         if (obj["avatar"]?["labelSlot"] is JsonObject labelSlot)
         {

@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueControl, IDictionaryLocalHorizontalScrollControl
+internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueControl
 {
+    private const double CompactThreshold = 380;
+    private readonly TextBlock _firstLabel;
+    private readonly TextBlock _secondLabel;
     private readonly DictionaryThemeTokenControl _firstControl;
     private readonly DictionaryThemeTokenControl _secondControl;
     private string _firstValue;
@@ -19,19 +22,19 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
         string value,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker)
     {
-        ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*");
         ColumnSpacing = 8;
+        RowSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Stretch;
+        MinWidth = 0;
 
         var pair = DictionaryFieldPairText.Split(value);
         var labels = DictionaryFieldPairText.Labels(definition);
         _firstValue = pair.First;
         _secondValue = pair.Second;
 
-        var firstLabel = CreateLabel(labels.First);
-        SetColumn(firstLabel, 0);
-        Children.Add(firstLabel);
+        _firstLabel = CreateLabel(labels.First);
+        Children.Add(_firstLabel);
 
         _firstControl = new DictionaryThemeTokenControl(
             definition,
@@ -39,12 +42,10 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
             showThemeTokenPicker);
         _firstControl.ValueChanged += (_, nextValue) => SetFirstValue(nextValue);
         _firstControl.ValueCommitted += (_, _) => CommitValue();
-        SetColumn(_firstControl, 1);
         Children.Add(_firstControl);
 
-        var secondLabel = CreateLabel(labels.Second);
-        SetColumn(secondLabel, 2);
-        Children.Add(secondLabel);
+        _secondLabel = CreateLabel(labels.Second);
+        Children.Add(_secondLabel);
 
         _secondControl = new DictionaryThemeTokenControl(
             definition,
@@ -52,8 +53,9 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
             showThemeTokenPicker);
         _secondControl.ValueChanged += (_, nextValue) => SetSecondValue(nextValue);
         _secondControl.ValueCommitted += (_, _) => CommitValue();
-        SetColumn(_secondControl, 3);
         Children.Add(_secondControl);
+        SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width);
+        ApplyResponsiveLayout(double.PositiveInfinity);
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -104,5 +106,25 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
         };
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        var compact = width > 0 && width < CompactThreshold;
+        ColumnDefinitions = compact
+            ? new ColumnDefinitions("57,*")
+            : new ColumnDefinitions("57,*,57,*");
+        RowDefinitions = compact
+            ? new RowDefinitions("Auto,Auto")
+            : new RowDefinitions("Auto");
+
+        SetColumn(_firstLabel, 0);
+        SetRow(_firstLabel, 0);
+        SetColumn(_firstControl, 1);
+        SetRow(_firstControl, 0);
+        SetColumn(_secondLabel, compact ? 0 : 2);
+        SetRow(_secondLabel, compact ? 1 : 0);
+        SetColumn(_secondControl, compact ? 1 : 3);
+        SetRow(_secondControl, compact ? 1 : 0);
     }
 }

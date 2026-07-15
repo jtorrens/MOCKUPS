@@ -86,7 +86,7 @@ function labelContentLayout(
     height: textTypography.lineHeight,
   };
   const hasSubtext = label.subtext.trim().length > 0;
-  if (!hasSubtext) {
+  if (!hasSubtext && !label.reserveSubtextSpace) {
     return { textBox, subtextBox: undefined, bounds: textBox, hasSubtext };
   }
 
@@ -103,7 +103,7 @@ function labelContentLayout(
   const subtextBox = placeChild(
     placementParent,
     {
-      width: Math.max(1, measuredTextWidth(label.subtext, subtextTypography)),
+      width: Math.max(1, hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 1),
       height: subtextTypography.lineHeight,
     },
     placement,

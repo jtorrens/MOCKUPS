@@ -261,6 +261,18 @@ position and session-only navigation widths for both ordinary embedded slots
 and runtime-root overrides.
 
 Compound dictionary controls keep ownership of their internal presentation.
+The shared row host assigns every value control the real remaining width after
+its field label and outer action. A compound control must then reserve its own
+trailing actions before measuring flexible content: selected Component/Variant
+text and Typography summaries truncate with ellipsis while Open, Override and
+chevron actions remain visible. Do not recover from narrow panels with a local
+editor width, clipping exception or horizontal viewport.
+
+Generic two-value controls are responsive units. `IntegerPair` and
+`ThemeTokenPair` remain horizontal while their two labelled values fit, then
+switch to two internal rows below their content minimum. Their logical value,
+commit path and field id do not change when presentation reflows.
+
 For `PaletteColorPair`, a group may opt into `pairLayout: sharedHeader`:
 
 - `Light` and `Dark` appear once as shared column headings;

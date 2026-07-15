@@ -170,3 +170,13 @@ concept, constraints or alternatives. Do not inspect broadly, edit files, run
 implementation commands or start a new phase merely because an answer suggests
 one. Begin implementation only when the user gives an explicit instruction to
 execute, such as "implement", "start", "continue", "apply" or equivalent.
+
+## Collaboration rule: confirm designs before implementation
+
+When the user proposes, changes or discusses a design, data model, interaction
+or behavior mechanism, do not implement it immediately. First return a brief,
+concrete summary of how the proposal has been interpreted, including the
+important ownership and behavior boundaries. Wait for the user's explicit
+confirmation before editing files or running implementation commands, even when
+the proposal sounds imperative. Once confirmed, execute the agreed design
+without repeating the confirmation step for routine implementation details.

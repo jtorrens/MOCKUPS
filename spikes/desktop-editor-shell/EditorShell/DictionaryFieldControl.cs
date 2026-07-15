@@ -18,6 +18,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly bool _valueOnly;
     private readonly bool _blockLayout;
     private readonly bool _separatedComplexLayout;
+    private readonly double _labelColumnWidth;
     private readonly Border? _complexSeparator;
     private bool _isInherited;
     private string _value;
@@ -44,7 +45,11 @@ internal sealed class DictionaryFieldControl : Grid
         _valueOnly = valueOnly;
         _separatedComplexLayout = DictionaryFieldLayoutRules.UsesBlockLayout(_definition.ValueKind);
         _blockLayout = !valueOnly && _separatedComplexLayout;
+        _labelColumnWidth = compact ? 132 : 180;
 
+        MinWidth = 0;
+        ClipToBounds = true;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
         ColumnDefinitions = valueOnly
             ? new ColumnDefinitions("*")
             : _blockLayout
@@ -124,6 +129,7 @@ internal sealed class DictionaryFieldControl : Grid
             Children.Add(_restoreButton);
         }
         UpdateState();
+        SizeChanged += (_, args) => ConstrainValueControlWidth(args.NewSize.Width);
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -131,6 +137,19 @@ internal sealed class DictionaryFieldControl : Grid
     public event EventHandler<string>? ValueCommitted;
 
     public event EventHandler? RuntimeContractChanged;
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (!double.IsInfinity(availableSize.Width))
+        {
+            ConstrainValueControlWidth(availableSize.Width);
+        }
+        var measured = base.MeasureOverride(availableSize);
+        var width = double.IsInfinity(availableSize.Width)
+            ? measured.Width
+            : Math.Min(measured.Width, availableSize.Width);
+        return new Size(width, measured.Height);
+    }
 
     public bool IsDefault => _definition.CanInherit
         ? _isInherited
@@ -334,5 +353,29 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         PseudoClasses.Set(":changed", !isDefault);
+        if (Bounds.Width > 0)
+        {
+            ConstrainValueControlWidth(Bounds.Width);
+        }
+    }
+
+    private void ConstrainValueControlWidth(double availableWidth)
+    {
+        if (_valueControl is not Control control
+            || availableWidth <= 0
+            || double.IsInfinity(availableWidth))
+        {
+            return;
+        }
+
+        var reservedWidth = _valueOnly || _blockLayout
+            ? 0
+            : _labelColumnWidth
+              + (2 * ColumnSpacing)
+              + (_restoreButton.IsVisible ? _restoreButton.Width : 0);
+        var valueWidth = Math.Max(0, availableWidth - reservedWidth);
+        control.Width = valueWidth;
+        control.MaxWidth = valueWidth;
+        control.HorizontalAlignment = HorizontalAlignment.Stretch;
     }
 }

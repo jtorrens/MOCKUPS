@@ -18,6 +18,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
     private readonly EditorInstantComboBox? _componentCombo;
     private readonly EditorInstantComboBox _variantCombo;
     private readonly Button? _openButton;
+    private readonly Button? _overrideButton;
     private bool _isUpdating;
 
     public DictionaryComponentPresetControl(
@@ -30,7 +31,10 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
         _definition = definition;
         _references = definition.Options ?? [];
         var selectsComponentClass = definition.SelectComponentClass;
-        ColumnDefinitions = new ColumnDefinitions(selectsComponentClass ? "72,*,Auto,Auto" : "*,Auto,Auto");
+        MinWidth = 0;
+        ClipToBounds = true;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        ColumnDefinitions = new ColumnDefinitions(selectsComponentClass ? "72,*" : "*");
         RowDefinitions = new RowDefinitions(selectsComponentClass ? "Auto,Auto" : "Auto");
         ColumnSpacing = 8;
         RowSpacing = 6;
@@ -51,13 +55,6 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
             ? CreateComboBox()
             : DictionaryOptionSelector.CreateComboBox(definition, value);
         _variantCombo.SelectionChanged += (_, _) => VariantChanged();
-        SetColumn(_variantCombo, selectsComponentClass ? 1 : 0);
-        SetRow(_variantCombo, selectsComponentClass ? 1 : 0);
-        Children.Add(_variantCombo);
-
-        var actionRow = selectsComponentClass ? 1 : 0;
-        var openColumn = selectsComponentClass ? 2 : 1;
-        var overrideColumn = selectsComponentClass ? 3 : 2;
 
         if (openComponentPresetReference is not null)
         {
@@ -82,14 +79,11 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
                     await openComponentPresetReference(selectedReference);
                 }
             };
-            SetColumn(_openButton, openColumn);
-            SetRow(_openButton, actionRow);
-            Children.Add(_openButton);
         }
 
         if (openEmbeddedComponent is not null)
         {
-            var editButton = new Button
+            _overrideButton = new Button
             {
                 Content = EditorIcons.CreateSemantic("Edit overrides", EditorIcons.Edit, 15),
                 Width = 40,
@@ -99,13 +93,33 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
                 VerticalContentAlignment = VerticalAlignment.Center,
                 IsEnabled = definition.IsEditable,
             };
-            EditorAccessibility.Describe(editButton, $"Edit overrides for {_definition.DisplayLabel}");
-            EditorOverrideVisuals.ApplyActionButton(editButton, isHighlighted);
-            editButton.Click += async (_, _) => await openEmbeddedComponent(_definition.Id);
-            SetColumn(editButton, overrideColumn);
-            SetRow(editButton, actionRow);
-            Children.Add(editButton);
+            EditorAccessibility.Describe(_overrideButton, $"Edit overrides for {_definition.DisplayLabel}");
+            EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
+            _overrideButton.Click += async (_, _) => await openEmbeddedComponent(_definition.Id);
         }
+
+        var variantRow = new DockPanel
+        {
+            LastChildFill = true,
+            MinWidth = 0,
+            ClipToBounds = true,
+        };
+        if (_overrideButton is not null)
+        {
+            _overrideButton.Margin = new Thickness(8, 0, 0, 0);
+            DockPanel.SetDock(_overrideButton, Dock.Right);
+            variantRow.Children.Add(_overrideButton);
+        }
+        if (_openButton is not null)
+        {
+            _openButton.Margin = new Thickness(8, 0, 0, 0);
+            DockPanel.SetDock(_openButton, Dock.Right);
+            variantRow.Children.Add(_openButton);
+        }
+        variantRow.Children.Add(_variantCombo);
+        SetColumn(variantRow, selectsComponentClass ? 1 : 0);
+        SetRow(variantRow, selectsComponentClass ? 1 : 0);
+        Children.Add(variantRow);
 
         SetValue(value);
     }
@@ -135,7 +149,9 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
 
     private EditorInstantComboBox CreateComboBox() => new()
     {
+        MinWidth = 0,
         MinHeight = 36,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
         IsEnabled = _definition.IsEditable,
     };
 

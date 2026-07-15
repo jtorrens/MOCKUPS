@@ -19,6 +19,7 @@ internal sealed class EditorCardHostController
     {
         _host = host;
         _availableWidth = availableWidth;
+        _host.SizeChanged += (_, _) => UpdateWrapperWidths();
         if (widthObserver is not null)
         {
             widthObserver.SizeChanged += (_, _) => UpdateWrapperWidths();
@@ -73,7 +74,9 @@ internal sealed class EditorCardHostController
 
     private void UpdateWrapperWidths()
     {
-        var width = _availableWidth?.Invoke() ?? 0;
+        var width = _host.Bounds.Width > 0
+            ? _host.Bounds.Width
+            : _availableWidth?.Invoke() ?? 0;
         if (width <= 0)
         {
             return;

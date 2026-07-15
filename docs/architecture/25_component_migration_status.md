@@ -24,9 +24,11 @@ Current summary:
   bars. Lock Screen binds the Stack runtime contract as Variant data and
   forwards only explicitly promoted fields to its own runtime contract.
 - The atoms and system bars are active on the same route.
-- Keypad is a System component with Variant-owned ordered keys, generic
-  structured collection editing, runtime active/disabled state and Label-owned
-  key visuals. Parent stacks own all surrounding display and action chrome.
+- Keypad is a System component with Variant-owned ordered text/icon/spacer keys,
+  generic structured collection editing and runtime active/pushed/disabled
+  state. One shared Label owns key geometry and style; states override only
+  background/text color and background/border alpha. Parent stacks own all
+  surrounding display and action chrome.
 - The behavior reference records the remaining Conversation shared-time,
   message-schema, generic text/emoji and video-preview limitations.
 
@@ -123,7 +125,10 @@ scope instead of coercing legacy short references.
 The dictionary `ComponentPreset` control presents these references in two
 levels: Component first, then only the Variants owned by that component. The
 compound control still commits one full reference and does not persist its
-intermediate Component selection separately.
+intermediate Component selection separately. Compound selectors reserve fixed
+space for Open/Override/chevron actions and ellipsize their flexible text.
+`IntegerPair` and `ThemeTokenPair` reflow from two columns to two rows when the
+value column becomes too narrow; the calling editor does not own that behavior.
 
 | Component type | Category | Status | Notes |
 | --- | --- | --- | --- |
@@ -141,6 +146,7 @@ intermediate Component selection separately.
 | `navigation_bar` | system | Structural/functional enough for current preview | Routed as a system component with its own resolver/renderable. Further device-specific variant work may refine it. |
 | `textInputBar` | system | Structurally migrated | Preview renders a screen-width bar with embedded `surface`, `textBox` and one `iconBar` slot. `idle` vs `typing` is derived from whether runtime text is empty. Icon token lists are variant data inside the embedded `iconBar`, not runtime preview inputs. Text content is runtime data passed into the embedded `textBox`; placeholder is fixed by the parent variant through generic input bindings. |
 | `keyboard` | system | Structurally migrated | Preview renders a generic keyboard surface, keys and bottom icons. It is the first component using component-level motion intent plus theme timing tokens; preview animation is resolved as frame data and launched from a generic preview action before the generic web renderer paints it. Final keyboard layout model and interaction states still need definition. |
+| `keypad` | system | Structurally migrated | Generic ordered grid of `text`, `icon` and `spacer` keys. Layout and Keys are independent first-level editor cards; Normal, Active, Pushed and Disabled share vertical state navigation. One embedded Label Variant owns common key geometry and style, while each state overrides only background/text color and background/border alpha. Runtime inputs provide available width, active key, pushed key and enabled state; timing and surrounding chrome remain parent-owned. |
 | `media` | component | Structurally migrated | Replaces the old desktop `video` component route. Preview renders an embedded `surface` variant plus separate inline and full-screen top/center/bottom `iconBar` overlays. Runtime inputs cover image/video source type, viewport size, decimal media scale/offset, play/pause, current/duration time, full screen on/off and fullframe orientation. Component motion is the inline-to-fullframe transition, not component entrance, and is launched through a separate generic `Full screen` preview action. Video playback is not owned by the web preview; local video sources are resolved at the requested time into cached frame files and then painted through the same generic image primitive used by still images. |
 | `bubble` | component | Structurally migrated | Embeds `surface`, `textBox`, optional actor `label`, optional actor `avatar`, and an optional selected media attachment slot. Variant data selects `none`, `image`, `video` or `audio`, stores one variant slot for each media kind, and chooses media position relative to text (`top`, `bottom`, `left`, `right`); image/video resolve through `media`, audio resolves through `audio`. Runtime inputs define state (`incoming`, `system`, `outgoing`), max text width as a screen-width percentage, text, actor, write-on timing in frames, status text/state, media source/viewport/playback and media actions. Variant data owns text padding, per-state light/dark palette color pairs, status icons/colors/icon-size token/text-size token, actor label placement and avatar placement. Status text and icons are composed as one bottom-right status block. The parent will own message alignment. The bubble resolver owns state-to-tail mapping: incoming = left tail, system = no tail, outgoing = right tail; tail vertical/geometry stays in the selected surface variant. Text reveal currently uses the shared simple write-on frame helper and is prepared for richer future typing plans. |
 

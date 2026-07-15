@@ -262,6 +262,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     : _services.GetComponentPresetRuntimeValues?.Invoke(next) ?? new JsonObject();
             }
             Publish(commit: true);
+            if (collection.Fields.Any((candidate) =>
+                    candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
+            {
+                Rebuild();
+            }
             if (componentChanged)
             {
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);

@@ -1,48 +1,45 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using System;
-using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl, IDictionaryLocalHorizontalScrollControl
+internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
 {
+    private const double CompactThreshold = 320;
+    private readonly TextBlock _firstLabel;
+    private readonly TextBlock _secondLabel;
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
     private bool _isUpdating;
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
     {
-        var boxWidth = EditorUiDensity.TextAwareWidth(90);
-        var boxColumn = boxWidth.ToString(CultureInfo.InvariantCulture);
-        ColumnDefinitions = new ColumnDefinitions($"Auto,{boxColumn},Auto,{boxColumn}");
         ColumnSpacing = 8;
+        RowSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
-        HorizontalAlignment = HorizontalAlignment.Left;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        MinWidth = 0;
 
         var pair = DictionaryFieldPairText.Split(value);
         var labels = DictionaryFieldPairText.Labels(definition);
 
-        var firstLabel = CreateLabel(labels.First);
-        SetColumn(firstLabel, 0);
+        _firstLabel = CreateLabel(labels.First);
 
         _firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.First);
         _firstTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
         EditorTextBoxBehavior.AttachDeferredCommit(_firstTextBox, CommitValue);
-        SetColumn(_firstTextBox, 1);
-
-        var secondLabel = CreateLabel(labels.Second);
-        SetColumn(secondLabel, 2);
+        _secondLabel = CreateLabel(labels.Second);
 
         _secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.Second);
         _secondTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
         EditorTextBoxBehavior.AttachDeferredCommit(_secondTextBox, CommitValue);
-        SetColumn(_secondTextBox, 3);
-
-        Children.Add(firstLabel);
+        Children.Add(_firstLabel);
         Children.Add(_firstTextBox);
-        Children.Add(secondLabel);
+        Children.Add(_secondLabel);
         Children.Add(_secondTextBox);
+        SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width);
+        ApplyResponsiveLayout(double.PositiveInfinity);
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -91,5 +88,25 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
             VerticalAlignment = VerticalAlignment.Center,
             Opacity = 0.78,
         };
+    }
+
+    private void ApplyResponsiveLayout(double width)
+    {
+        var compact = width > 0 && width < CompactThreshold;
+        ColumnDefinitions = compact
+            ? new ColumnDefinitions("57,*")
+            : new ColumnDefinitions("57,*,57,*");
+        RowDefinitions = compact
+            ? new RowDefinitions("Auto,Auto")
+            : new RowDefinitions("Auto");
+
+        SetColumn(_firstLabel, 0);
+        SetRow(_firstLabel, 0);
+        SetColumn(_firstTextBox, 1);
+        SetRow(_firstTextBox, 0);
+        SetColumn(_secondLabel, compact ? 0 : 2);
+        SetRow(_secondLabel, compact ? 1 : 0);
+        SetColumn(_secondTextBox, compact ? 1 : 3);
+        SetRow(_secondTextBox, compact ? 1 : 0);
     }
 }

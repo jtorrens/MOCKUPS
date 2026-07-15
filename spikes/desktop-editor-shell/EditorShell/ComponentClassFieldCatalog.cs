@@ -381,21 +381,28 @@ internal static class ComponentClassFieldCatalog
         "Key",
         [
             new ComponentInputDefinition(
-                "kind", "Kind", "kind", ComponentInputKind.Option, ValueKind.OptionToken, "key",
-                [new("key", "Key"), new("spacer", "Spacer")]),
+                "kind", "Kind", "kind", ComponentInputKind.Option, ValueKind.OptionToken, "text",
+                [new("text", "Text"), new("icon", "Icon"), new("spacer", "Spacer")]),
             new ComponentInputDefinition(
-                "value", "Value", "value", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+                "value", "Value", "value", ComponentInputKind.Text, ValueKind.StringSingleLine, "",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text", "icon"]),
             new ComponentInputDefinition(
-                "text", "Text", "text", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+                "text", "Text", "text", ComponentInputKind.Text, ValueKind.StringSingleLine, "",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text"]),
             new ComponentInputDefinition(
-                "subtext", "Subtext", "subtext", ComponentInputKind.Text, ValueKind.StringSingleLine, ""),
+                "subtext", "Subtext", "subtext", ComponentInputKind.Text, ValueKind.StringSingleLine, "",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text"]),
             new ComponentInputDefinition(
-                "disabled", "Disabled", "disabled", ComponentInputKind.Boolean, ValueKind.Boolean, "false"),
+                "iconToken", "Icon", "iconToken", ComponentInputKind.Icon, ValueKind.IconToken, "app_clock",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["icon"]),
+            new ComponentInputDefinition(
+                "disabled", "Disabled", "disabled", ComponentInputKind.Boolean, ValueKind.Boolean, "false",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text", "icon"]),
         ],
         ItemPresentation: new RuntimeInputCollectionItemPresentation(
             ["text", "subtext", "value"],
             72,
-            "",
+            "iconToken",
             "keypad",
             new Dictionary<string, string>()));
 
@@ -604,10 +611,25 @@ internal static class ComponentClassFieldCatalog
         ["component.keypad.padding"] = new("component.keypad.padding", "Padding", ValueKind.ThemeTokenPair, ["keypad", "padding"], "theme.spacing.none|theme.spacing.none", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.keypad.columnGapToken"] = new("component.keypad.columnGapToken", "Column gap", ValueKind.ThemeToken, ["keypad", "columnGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
         ["component.keypad.rowGapToken"] = new("component.keypad.rowGapToken", "Row gap", ValueKind.ThemeToken, ["keypad", "rowGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.keypad.iconSizeToken"] = new("component.keypad.iconSizeToken", "Icon size", ValueKind.ThemeToken, ["keypad", "iconSizeToken"], "theme.iconSizes.m", Options: IconSizeTokenOptions),
         ["component.keypad.keys"] = new("component.keypad.keys", "Keys", ValueKind.StructuredCollection, ["keypad", "keys"], "[]", StructuredCollection: KeypadKeysCollection),
-        ["component.keypad.normalKey.editor"] = new("component.keypad.normalKey.editor", "Normal key", ValueKind.ComponentPreset, ["keypad", "normalKeySlot", "presetId"], "default"),
-        ["component.keypad.activeKey.editor"] = new("component.keypad.activeKey.editor", "Active key", ValueKind.ComponentPreset, ["keypad", "activeKeySlot", "presetId"], "default"),
-        ["component.keypad.disabledKey.editor"] = new("component.keypad.disabledKey.editor", "Disabled key", ValueKind.ComponentPreset, ["keypad", "disabledKeySlot", "presetId"], "default"),
+        ["component.keypad.label.editor"] = new("component.keypad.label.editor", "Label", ValueKind.ComponentPreset, ["keypad", "labelSlot", "presetId"], "default"),
+        ["component.keypad.states.normal.backgroundColorToken"] = new("component.keypad.states.normal.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keypad", "states", "normal", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
+        ["component.keypad.states.normal.textColorToken"] = new("component.keypad.states.normal.textColorToken", "Text / icon", ValueKind.ThemeToken, ["keypad", "states", "normal", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
+        ["component.keypad.states.normal.backgroundAlpha"] = new("component.keypad.states.normal.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keypad", "states", "normal", "backgroundAlpha"], "1"),
+        ["component.keypad.states.normal.borderAlpha"] = new("component.keypad.states.normal.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "normal", "borderAlpha"], "1"),
+        ["component.keypad.states.active.backgroundColorToken"] = new("component.keypad.states.active.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keypad", "states", "active", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
+        ["component.keypad.states.active.textColorToken"] = new("component.keypad.states.active.textColorToken", "Text / icon", ValueKind.ThemeToken, ["keypad", "states", "active", "textColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.keypad.states.active.backgroundAlpha"] = new("component.keypad.states.active.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keypad", "states", "active", "backgroundAlpha"], "1"),
+        ["component.keypad.states.active.borderAlpha"] = new("component.keypad.states.active.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "active", "borderAlpha"], "1"),
+        ["component.keypad.states.pushed.backgroundColorToken"] = new("component.keypad.states.pushed.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keypad", "states", "pushed", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
+        ["component.keypad.states.pushed.textColorToken"] = new("component.keypad.states.pushed.textColorToken", "Text / icon", ValueKind.ThemeToken, ["keypad", "states", "pushed", "textColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.keypad.states.pushed.backgroundAlpha"] = new("component.keypad.states.pushed.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keypad", "states", "pushed", "backgroundAlpha"], "1"),
+        ["component.keypad.states.pushed.borderAlpha"] = new("component.keypad.states.pushed.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "pushed", "borderAlpha"], "1"),
+        ["component.keypad.states.disabled.backgroundColorToken"] = new("component.keypad.states.disabled.backgroundColorToken", "Background", ValueKind.ThemeToken, ["keypad", "states", "disabled", "backgroundColorToken"], "theme.colors.surface", Options: ThemeColorOptions),
+        ["component.keypad.states.disabled.textColorToken"] = new("component.keypad.states.disabled.textColorToken", "Text / icon", ValueKind.ThemeToken, ["keypad", "states", "disabled", "textColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.keypad.states.disabled.backgroundAlpha"] = new("component.keypad.states.disabled.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keypad", "states", "disabled", "backgroundAlpha"], "1"),
+        ["component.keypad.states.disabled.borderAlpha"] = new("component.keypad.states.disabled.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "disabled", "borderAlpha"], "1"),
 
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),
@@ -636,6 +658,7 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textTypography"] = new("component.label.textTypography", "Text typography", ValueKind.TypographyStyle, ["label", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
         ["component.label.textGapToken"] = new("component.label.textGapToken", "Text gap", ValueKind.ThemeToken, ["label", "textGapToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
+        ["component.label.reserveSubtextSpace"] = new("component.label.reserveSubtextSpace", "Reserve empty subtext", ValueKind.Boolean, ["label", "reserveSubtextSpace"], "false"),
         ["component.label.subtextPlacement"] = new("component.label.subtextPlacement", "Placement", ValueKind.AlignmentPlacement, ["label", "subtextPlacement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextTypography"] = new("component.label.subtextTypography", "Subtext typography", ValueKind.TypographyStyle, ["label", "subtextTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),

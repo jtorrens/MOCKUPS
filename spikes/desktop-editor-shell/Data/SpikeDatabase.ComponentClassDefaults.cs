@@ -114,10 +114,19 @@ internal sealed partial class SpikeDatabase
                     ["padding"] = "theme.spacing.none|theme.spacing.none",
                     ["textColorToken"] = textColorToken,
                     ["textAlign"] = "center",
+                    ["reserveSubtextSpace"] = true,
                 },
             },
         };
     }
+
+    private static JsonObject KeypadStateStyle(string textColorToken) => new()
+    {
+        ["backgroundColorToken"] = "theme.colors.surface",
+        ["textColorToken"] = textColorToken,
+        ["backgroundAlpha"] = 1,
+        ["borderAlpha"] = 1,
+    };
 
     private static JsonArray DefaultKeypadKeys() =>
     [
@@ -138,10 +147,11 @@ internal sealed partial class SpikeDatabase
     private static JsonObject KeypadKey(string id, string value, string text, string subtext) => new()
     {
         ["id"] = id,
-        ["kind"] = "key",
+        ["kind"] = "text",
         ["value"] = value,
         ["text"] = text,
         ["subtext"] = subtext,
+        ["iconToken"] = "app_clock",
         ["disabled"] = false,
     };
 
@@ -369,10 +379,16 @@ internal sealed partial class SpikeDatabase
                     ["padding"] = "theme.spacing.none|theme.spacing.none",
                     ["columnGapToken"] = "theme.spacing.l",
                     ["rowGapToken"] = "theme.spacing.l",
+                    ["iconSizeToken"] = "theme.iconSizes.m",
                     ["keys"] = DefaultKeypadKeys(),
-                    ["normalKeySlot"] = KeypadLabelSlot("theme.colors.textPrimary"),
-                    ["activeKeySlot"] = KeypadLabelSlot("theme.colors.accent"),
-                    ["disabledKeySlot"] = KeypadLabelSlot("theme.colors.textSecondary"),
+                    ["labelSlot"] = KeypadLabelSlot("theme.colors.textPrimary"),
+                    ["states"] = new JsonObject
+                    {
+                        ["normal"] = KeypadStateStyle("theme.colors.textPrimary"),
+                        ["active"] = KeypadStateStyle("theme.colors.accent"),
+                        ["pushed"] = KeypadStateStyle("theme.colors.accent"),
+                        ["disabled"] = KeypadStateStyle("theme.colors.textSecondary"),
+                    },
                 };
                 break;
             case "button":
@@ -404,6 +420,7 @@ internal sealed partial class SpikeDatabase
                     ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["textAlign"] = "center",
                     ["textGapToken"] = "theme.spacing.xs",
+                    ["reserveSubtextSpace"] = false,
                     ["subtextPlacement"] = JsonNode.Parse("""{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
                     ["subtextColorToken"] = "theme.colors.textSecondary",
                     ["subtextTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
@@ -745,6 +762,7 @@ internal sealed partial class SpikeDatabase
         {
             preview["availableWidth"] = 280;
             preview["activeKey"] = "";
+            preview["pushedKey"] = "";
             preview["enabled"] = true;
         }
         if (componentType == "media")
@@ -1061,6 +1079,7 @@ internal sealed partial class SpikeDatabase
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "280", minimum: 1, maximum: 10000, increment: 1),
                 ComponentInput("activeKey", "Active key", "activeKey", "text", ""),
+                ComponentInput("pushedKey", "Pushed key", "pushedKey", "text", ""),
                 ComponentInput("enabled", "Enabled", "enabled", "boolean", "true"),
             ],
             "audio" =>

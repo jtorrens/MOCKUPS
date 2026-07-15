@@ -6,6 +6,7 @@ import {
 import {
   asRecord,
   parseObject,
+  requiredBoolean,
   requiredNumber,
   requiredPlacement,
   requiredString,
@@ -139,6 +140,11 @@ export function resolveLabelComponentFromRecords(
     },
     textAlign,
     textGapToken: requiredString(label, "textGapToken", "component.label.textGapToken"),
+    reserveSubtextSpace: requiredBoolean(
+      label,
+      "reserveSubtextSpace",
+      "component.label.reserveSubtextSpace",
+    ),
     subtextPlacement: requiredPlacement(
       label,
       "subtextPlacement",

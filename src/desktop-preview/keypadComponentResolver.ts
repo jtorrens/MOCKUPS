@@ -6,6 +6,7 @@ import {
 import {
   asRecord,
   parseObject,
+  requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
@@ -44,6 +45,7 @@ export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDes
   }
   const paddingPair = requiredStringPair(keypad, "padding", "component.keypad.padding");
   const activeKey = requiredPossiblyEmptyString(preview, "activeKey", "component.keypad.runtime.activeKey");
+  const pushedKey = requiredPossiblyEmptyString(preview, "pushedKey", "component.keypad.runtime.pushedKey");
   const enabled = requiredBoolean(preview, "enabled", "component.keypad.runtime.enabled");
   if (!Array.isArray(keypad.keys)) {
     throw new Error("Missing component.keypad.keys collection");
@@ -56,27 +58,46 @@ export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDes
     if (!ids.add(id)) throw new Error(`Duplicate keypad key id ${id}`);
     const kind = keypadKeyKind(requiredString(key, "kind", `component.keypad.keys[${index}].kind`));
     const value = requiredPossiblyEmptyString(key, "value", `component.keypad.keys[${index}].value`);
-    if (kind === "key" && value && !values.add(value)) {
+    if (kind !== "spacer" && value && !values.add(value)) {
       throw new Error(`Duplicate keypad key value ${value}`);
     }
     const text = requiredPossiblyEmptyString(key, "text", `component.keypad.keys[${index}].text`);
     const subtext = requiredPossiblyEmptyString(key, "subtext", `component.keypad.keys[${index}].subtext`);
+    const iconToken = requiredPossiblyEmptyString(key, "iconToken", `component.keypad.keys[${index}].iconToken`);
+    if (kind === "icon" && !iconToken.trim()) {
+      throw new Error(`Missing component.keypad.keys[${index}].iconToken`);
+    }
     const disabled = requiredBoolean(key, "disabled", `component.keypad.keys[${index}].disabled`);
     const state: KeypadKeyState = !enabled || disabled
       ? "disabled"
-      : activeKey && (activeKey === id || activeKey === value)
-        ? "active"
-        : "normal";
+      : pushedKey && (pushedKey === id || pushedKey === value)
+        ? "pushed"
+        : activeKey && (activeKey === id || activeKey === value)
+          ? "active"
+          : "normal";
+    const stateStyle = kind === "spacer"
+      ? undefined
+      : resolveKeyStateStyle(
+          keypad,
+          state,
+          kind === "text" ? text : "",
+          kind === "text" ? subtext : "",
+          bases,
+          index,
+        );
     return {
       id,
       kind,
       value,
       text,
       subtext,
+      iconToken,
       state,
-      label: kind === "spacer"
-        ? undefined
-        : resolveKeyLabel(keypad, state, text, subtext, bases, index),
+      backgroundColorToken: stateStyle?.backgroundColorToken,
+      textColorToken: stateStyle?.textColorToken,
+      backgroundAlpha: stateStyle?.backgroundAlpha,
+      borderAlpha: stateStyle?.borderAlpha,
+      label: stateStyle?.label,
     };
   });
 
@@ -89,11 +110,12 @@ export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDes
     padding: { xToken: paddingPair.first, yToken: paddingPair.second },
     columnGapToken: requiredString(keypad, "columnGapToken", "component.keypad.columnGapToken"),
     rowGapToken: requiredString(keypad, "rowGapToken", "component.keypad.rowGapToken"),
+    iconSizeToken: requiredString(keypad, "iconSizeToken", "component.keypad.iconSizeToken"),
     keys,
   };
 }
 
-function resolveKeyLabel(
+function resolveKeyStateStyle(
   keypad: Record<string, unknown>,
   state: KeypadKeyState,
   text: string,
@@ -101,24 +123,48 @@ function resolveKeyLabel(
   bases: Record<string, unknown>,
   index: number,
 ) {
-  const slotKey = state === "active"
-    ? "activeKeySlot"
-    : state === "disabled" ? "disabledKeySlot" : "normalKeySlot";
-  const slot = asRecord(keypad[slotKey]);
-  const presetId = requiredString(slot, "presetId", `component.keypad.${slotKey}.presetId`);
-  return resolveLabelComponentFromRecords(
-    mergeComponentDefaults(
-      componentPresetConfig(bases, "label", presetId),
-      asRecord(slot.overrides),
+  const states = asRecord(keypad.states);
+  const style = asRecord(states[state]);
+  const labelSlot = asRecord(keypad.labelSlot);
+  return {
+    backgroundColorToken: requiredString(
+      style,
+      "backgroundColorToken",
+      `component.keypad.states.${state}.backgroundColorToken`,
     ),
-    literalLabelPreview(text, subtext),
-    bases,
-    `component.keypad.key.${index}`,
-    staticLabelFrameContext,
-  );
+    textColorToken: requiredString(
+      style,
+      "textColorToken",
+      `component.keypad.states.${state}.textColorToken`,
+    ),
+    backgroundAlpha: requiredAlpha(
+      style,
+      "backgroundAlpha",
+      `component.keypad.states.${state}.backgroundAlpha`,
+    ),
+    borderAlpha: requiredAlpha(
+      style,
+      "borderAlpha",
+      `component.keypad.states.${state}.borderAlpha`,
+    ),
+    label: resolveLabelComponentFromRecords(
+      mergeComponentDefaults(
+        componentPresetConfig(
+          bases,
+          "label",
+          requiredString(labelSlot, "presetId", "component.keypad.labelSlot.presetId"),
+        ),
+        asRecord(labelSlot.overrides),
+      ),
+      literalLabelPreview(text, subtext),
+      bases,
+      `component.keypad.key.${index}.label`,
+      staticLabelFrameContext,
+    ),
+  };
 }
 
 function keypadKeyKind(value: string): KeypadKeyKind {
-  if (value === "key" || value === "spacer") return value;
+  if (value === "text" || value === "icon" || value === "spacer") return value;
   throw new Error(`Unsupported keypad key kind ${value}`);
 }

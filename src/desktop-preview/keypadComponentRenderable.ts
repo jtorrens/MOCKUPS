@@ -1,5 +1,13 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
-import { boundedCenterBox, numberToken, renderScale } from "./componentRenderableCommon.js";
+import {
+  boundedCenterBox,
+  colorForMode,
+  iconTokenStyle,
+  numberToken,
+  renderScale,
+  selectedColor,
+  variants,
+} from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { KeypadDesignContract } from "./keypadComponentContract.js";
 import { labelComponentToRenderableAt } from "./labelComponentRenderable.js";
@@ -31,7 +39,11 @@ export function keypadComponentToRenderable(
   );
   const box = boundedCenterBox(payload, width, height);
   const children = keypad.keys.flatMap((key, index) => {
-    if (!key.label) return [];
+    if (!key.label
+      || !key.backgroundColorToken
+      || !key.textColorToken
+      || key.backgroundAlpha === undefined
+      || key.borderAlpha === undefined) return [];
     const row = Math.floor(index / keypad.columns);
     const column = index % keypad.columns;
     const keyBox: RenderableBox = {
@@ -40,7 +52,64 @@ export function keypadComponentToRenderable(
       width: keyWidth,
       height: keyHeight,
     };
-    return [labelComponentToRenderableAt(payload, key.label, keyBox)];
+    const textColor = selectedColor(payload, key.textColorToken);
+    const keyChildren: RenderableNode[] = [labelComponentToRenderableAt(
+      payload,
+      key.label,
+      keyBox,
+      {
+        textColor,
+        subtextColor: textColor,
+        surfaceColors: {
+          background: selectedColor(payload, key.backgroundColorToken, key.backgroundAlpha),
+          borderColor: selectedColor(
+            payload,
+            key.label.surface.surface.borderColorToken,
+            key.borderAlpha,
+          ),
+          colorModes: Object.fromEntries(
+            variants(payload).map((mode) => [
+              mode,
+              {
+                background: colorForMode(
+                  payload,
+                  key.backgroundColorToken!,
+                  mode,
+                  key.backgroundAlpha!,
+                ),
+                borderColor: colorForMode(
+                  payload,
+                  key.label!.surface.surface.borderColorToken,
+                  mode,
+                  key.borderAlpha!,
+                ),
+              },
+            ]),
+          ),
+        },
+      },
+    )];
+    if (key.kind === "icon") {
+      const iconSize = Math.max(1, numberToken(payload, keypad.iconSizeToken) * scale);
+      keyChildren.push({
+        id: `${key.label.id}.icon`,
+        type: "icon",
+        frame: 0,
+        box: {
+          x: keyBox.x + (keyBox.width - iconSize) * 0.5,
+          y: keyBox.y + (keyBox.height - iconSize) * 0.5,
+          width: iconSize,
+          height: iconSize,
+        },
+        text: key.iconToken,
+        style: iconTokenStyle(
+          payload,
+          key.iconToken,
+          textColor,
+        ),
+      });
+    }
+    return keyChildren;
   });
   return {
     id: keypad.id,

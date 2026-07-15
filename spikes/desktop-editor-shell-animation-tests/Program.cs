@@ -797,6 +797,14 @@ static void KeypadSeedOpensAndRenders()
         Equal("System", keypad.Parent?.Name ?? "");
         var defaultVariant = keypad.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
         var settings = database.GetComponentClassSettings(keypad.Id);
+        var layout = database.LoadEditorLayout("component.keypad");
+        SequenceEqual(["general", "layout", "keys", "states"],
+            layout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
+        Equal("stacked", layout.Cards.Single((card) => card.Id == "layout").GroupLayout);
+        var statesCard = layout.Cards.Single((card) => card.Id == "states");
+        Equal("verticalCards", statesCard.GroupLayout);
+        SequenceEqual(["normalState", "activeState", "pushedState", "disabledState"],
+            statesCard.VisibleGroups.Select((group) => group.Id).ToList());
         var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Keypad config.");
         var keypadConfig = config["keypad"] as JsonObject
@@ -805,11 +813,22 @@ static void KeypadSeedOpensAndRenders()
         Equal(12, (keypadConfig["keys"] as JsonArray)?.Count ?? -1);
         var keysField = database.CreateComponentPresetFieldValue(defaultVariant, "component.keypad.keys");
         True(keysField.Definition.StructuredCollection is not null);
-        Equal(5, keysField.Definition.StructuredCollection?.Fields.Count ?? -1);
+        Equal(6, keysField.Definition.StructuredCollection?.Fields.Count ?? -1);
+        var iconField = keysField.Definition.StructuredCollection!.Fields.Single((field) => field.Id == "iconToken");
+        Equal(ValueKind.IconToken, iconField.ValueKind);
+        True(RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(
+            new JsonObject { ["kind"] = "icon" }, iconField, 0));
+        True(!RuntimeInputsCollectionEditor.CollectionFieldIsEnabled(
+            new JsonObject { ["kind"] = "text" }, iconField, 0));
+        Equal("text", keypadConfig["keys"]?[0]?["kind"]?.GetValue<string>() ?? "");
+        True(keypadConfig["labelSlot"] is JsonObject);
+        Equal("theme.colors.surface", keypadConfig["states"]?["normal"]?["backgroundColorToken"]?.GetValue<string>() ?? "");
+        Equal("theme.colors.accent", keypadConfig["states"]?["pushed"]?["textColorToken"]?.GetValue<string>() ?? "");
+        Equal(1d, keypadConfig["states"]?["disabled"]?["borderAlpha"]?.GetValue<double>() ?? -1);
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Keypad preview.");
         SequenceEqual(
-            ["availableWidth", "activeKey", "enabled"],
+            ["availableWidth", "activeKey", "pushedKey", "enabled"],
             ComponentPreviewInputSession.ReadRuntimeInputs(preview, config).Select((input) => input.Id).ToList());
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -817,6 +836,7 @@ static void KeypadSeedOpensAndRenders()
         var inputSession = new ComponentPreviewInputSession(database, () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         inputSession.SetExternalInputValue("activeKey", "5");
+        inputSession.SetExternalInputValue("pushedKey", "5");
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),

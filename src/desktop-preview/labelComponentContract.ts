@@ -18,6 +18,7 @@ export interface LabelDesignContract {
   textTypography: TypographyStyleContract;
   textAlign: "left" | "center" | "right";
   textGapToken: string;
+  reserveSubtextSpace: boolean;
   subtextPlacement: AlignmentPlacementContract;
   subtextColorToken: string;
   subtextTypography: TypographyStyleContract;
