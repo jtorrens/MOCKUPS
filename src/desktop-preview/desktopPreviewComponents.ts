@@ -65,7 +65,15 @@ export const desktopPreviewComponents = {
     contract: "./componentStackComponentContract",
     resolver: "./componentStackComponentResolver",
     renderable: "./componentStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+  },
+  collectionStack: {
+    category: "atom",
+    migrationStatus: "structural",
+    contract: "./collectionStackComponentContract",
+    resolver: "./collectionStackComponentResolver",
+    renderable: "./collectionStackComponentRenderable",
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
   },
   codeIndicator: {
     category: "atom",

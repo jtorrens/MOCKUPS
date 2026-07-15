@@ -409,6 +409,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var control = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
+        control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
         {
             _setPreviewTestValue(input.JsonKey, next);
@@ -425,8 +426,30 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 DesignPreviewTestValues.SetValue(preview, input, next);
             }
+            if (input.RefreshOnCommit)
+            {
+                _reloadAndSelect?.Invoke(owner.Node);
+            }
         };
         return DecorateAnimationToggle(owner, input, "", control);
+    }
+
+    private static bool RuntimeInputIsEnabled(
+        JsonObject preview,
+        JsonObject config,
+        ComponentInputDefinition input)
+    {
+        if (string.IsNullOrWhiteSpace(input.EnabledWhenPath)
+            || string.IsNullOrWhiteSpace(input.EnabledWhenValue))
+        {
+            return true;
+        }
+
+        var path = input.EnabledWhenPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        var current = JsonPath.Get(preview, path) ?? JsonPath.Get(config, path);
+        return current is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            && text.Equals(input.EnabledWhenValue, StringComparison.Ordinal);
     }
 
     private Control CreateTestValueCollectionContent(

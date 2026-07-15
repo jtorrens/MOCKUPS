@@ -11,6 +11,8 @@ import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
 import { resolveCursorComponent } from "./cursorComponentResolver.js";
 import { componentStackComponentToRenderable } from "./componentStackComponentRenderable.js";
 import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
+import { collectionStackComponentToRenderable } from "./collectionStackComponentRenderable.js";
+import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import {
@@ -66,6 +68,8 @@ export const componentRenderableFactories = {
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
   componentStack: (payload) =>
     componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
+  collectionStack: (payload) =>
+    collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), componentClassToRenderable),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),

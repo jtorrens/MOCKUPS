@@ -23,6 +23,7 @@ internal sealed partial class SpikeDatabase
             "iconRow" => "Icon row component",
             "iconBar" => "Icon bar component",
             "componentStack" => "Component stack atom",
+            "collectionStack" => "Collection stack atom",
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "keypad" => "Keypad component",
@@ -279,6 +280,10 @@ internal sealed partial class SpikeDatabase
             case "componentStack":
                 config.Remove("style");
                 config["componentStack"] = new JsonObject();
+                break;
+            case "collectionStack":
+                config.Remove("style");
+                config["collectionStack"] = new JsonObject();
                 break;
             case "surface":
                 config["surface"] = new JsonObject
@@ -707,6 +712,10 @@ internal sealed partial class SpikeDatabase
         {
             return ComponentStackDesignPreview().ToJsonString();
         }
+        if (componentType == "collectionStack")
+        {
+            return CollectionStackDesignPreview().ToJsonString();
+        }
 
         var preview = new JsonObject
         {
@@ -1010,76 +1019,93 @@ internal sealed partial class SpikeDatabase
         ["endGapToken"] = endGapToken,
         ["inputs"] = ComponentStackRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
-        ["collections"] = new JsonArray
+        ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-componentStack") },
+    };
+
+    private static JsonObject CollectionStackDesignPreview(
+        JsonArray? items = null,
+        string distributionMode = "stacked",
+        string sizingMode = "content",
+        string startGapToken = "theme.spacing.none",
+        string endGapToken = "theme.spacing.none",
+        string stackDirection = "down",
+        string stackOffsetToken = "theme.spacing.m") => new()
+    {
+        ["componentType"] = "collectionStack",
+        ["distributionMode"] = distributionMode,
+        ["sizingMode"] = sizingMode,
+        ["startGapToken"] = startGapToken,
+        ["endGapToken"] = endGapToken,
+        ["stackDirection"] = stackDirection,
+        ["stackOffsetToken"] = stackOffsetToken,
+        ["inputs"] = CollectionStackRuntimeInputs(),
+        ["items"] = items ?? new JsonArray(),
+        ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-collectionStack") },
+    };
+
+    private static JsonObject ComponentCollectionDefinition(string componentTypeFilter) => new()
+    {
+        ["id"] = "items",
+        ["label"] = "Components",
+        ["jsonKey"] = "items",
+        ["itemLabel"] = "Component",
+        ["componentItems"] = new JsonObject
+        {
+            ["presetJsonKey"] = "presetId",
+            ["overridesJsonKey"] = "overrides",
+            ["inputsJsonKey"] = "inputs",
+        },
+        ["fields"] = new JsonArray
         {
             new JsonObject
             {
-                ["id"] = "items",
-                ["label"] = "Components",
-                ["jsonKey"] = "items",
-                ["itemLabel"] = "Component",
-                ["componentItems"] = new JsonObject
+                ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
+                ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = componentTypeFilter,
+            },
+            new JsonObject
+            {
+                ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
+                ["kind"] = "option", ["defaultValue"] = "center",
+                ["options"] = new JsonArray
                 {
-                    ["presetJsonKey"] = "presetId",
-                    ["overridesJsonKey"] = "overrides",
-                    ["inputsJsonKey"] = "inputs",
-                },
-                ["fields"] = new JsonArray
-                {
-                    new JsonObject
-                    {
-                        ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
-                        ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = "*,-componentStack",
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
-                        ["kind"] = "option", ["defaultValue"] = "center",
-                        ["options"] = new JsonArray
-                        {
-                            new JsonObject { ["value"] = "start", ["label"] = "Left" },
-                            new JsonObject { ["value"] = "center", ["label"] = "Center" },
-                            new JsonObject { ["value"] = "end", ["label"] = "Right" },
-                        },
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
-                        ["kind"] = "option", ["defaultValue"] = "fixed",
-                        ["minimumItemIndex"] = 1,
-                        ["options"] = new JsonArray
-                        {
-                            new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
-                            new JsonObject { ["value"] = "reflow", ["label"] = "Reflow" },
-                        },
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
-                        ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m",
-                        ["minimumItemIndex"] = 1,
-                        ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
-                            .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
-                        ["enabledWhenItemJsonKey"] = "gapBeforeMode",
-                        ["enabledWhenItemValues"] = new JsonArray("fixed"),
-                    },
-                    new JsonObject
-                    {
-                        ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
-                        ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
-                        ["minimumItemIndex"] = 1,
-                        ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
-                        ["enabledWhenItemJsonKey"] = "gapBeforeMode",
-                        ["enabledWhenItemValues"] = new JsonArray("reflow"),
-                    },
-                },
-                ["itemPresentation"] = new JsonObject
-                {
-                    ["subtitleFieldIds"] = new JsonArray("presetId", "alignment"),
-                    ["subtitleMaxCharacters"] = 72,
-                    ["fallbackIcon"] = "component",
+                    new JsonObject { ["value"] = "start", ["label"] = "Left" },
+                    new JsonObject { ["value"] = "center", ["label"] = "Center" },
+                    new JsonObject { ["value"] = "end", ["label"] = "Right" },
                 },
             },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
+                ["kind"] = "option", ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
+                ["options"] = new JsonArray
+                {
+                    new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
+                    new JsonObject { ["value"] = "reflow", ["label"] = "Reflow" },
+                },
+            },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
+                ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
+                ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                    .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+                ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                ["enabledWhenItemValues"] = new JsonArray("fixed"),
+            },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
+                ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
+                ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
+                ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                ["enabledWhenItemValues"] = new JsonArray("reflow"),
+            },
+        },
+        ["itemPresentation"] = new JsonObject
+        {
+            ["subtitleFieldIds"] = new JsonArray("presetId", "alignment"),
+            ["subtitleMaxCharacters"] = 72,
+            ["fallbackIcon"] = "component",
         },
     };
 
@@ -1088,6 +1114,7 @@ internal sealed partial class SpikeDatabase
         JsonArray inputs = componentType switch
         {
             "componentStack" => ComponentStackRuntimeInputs(),
+            "collectionStack" => CollectionStackRuntimeInputs(),
             "label" =>
             [
                 ComponentInput("sampleText", "Text", "sampleText", "text", "Sample"),
@@ -1505,6 +1532,62 @@ internal sealed partial class SpikeDatabase
         },
     ];
 
+    private static JsonArray CollectionStackRuntimeInputs() =>
+    [
+        new JsonObject
+        {
+            ["id"] = "distributionMode", ["label"] = "Distribution", ["jsonKey"] = "distributionMode",
+            ["kind"] = "option", ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
+            ["options"] = new JsonArray
+            {
+                new JsonObject { ["value"] = "flow", ["label"] = "Flow" },
+                new JsonObject { ["value"] = "stacked", ["label"] = "Stacked" },
+            },
+        },
+        new JsonObject
+        {
+            ["id"] = "sizingMode", ["label"] = "Sizing", ["jsonKey"] = "sizingMode",
+            ["kind"] = "option", ["defaultValue"] = "content",
+            ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "flow",
+            ["options"] = new JsonArray
+            {
+                new JsonObject { ["value"] = "fill", ["label"] = "Fill container" },
+                new JsonObject { ["value"] = "content", ["label"] = "Fit content" },
+            },
+        },
+        new JsonObject
+        {
+            ["id"] = "startGapToken", ["label"] = "Start gap", ["jsonKey"] = "startGapToken",
+            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+        },
+        new JsonObject
+        {
+            ["id"] = "endGapToken", ["label"] = "End gap", ["jsonKey"] = "endGapToken",
+            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+        },
+        new JsonObject
+        {
+            ["id"] = "stackDirection", ["label"] = "Stack direction", ["jsonKey"] = "stackDirection",
+            ["kind"] = "option", ["defaultValue"] = "down",
+            ["options"] = new JsonArray
+            {
+                new JsonObject { ["value"] = "down", ["label"] = "Down" },
+                new JsonObject { ["value"] = "up", ["label"] = "Up" },
+            },
+        },
+        new JsonObject
+        {
+            ["id"] = "stackOffsetToken", ["label"] = "Stack offset", ["jsonKey"] = "stackOffsetToken",
+            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m",
+            ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+        },
+    ];
+
     private static void ApplyComponentInputLayout(string componentType, JsonArray inputs)
     {
         switch (componentType)
@@ -1916,6 +1999,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("iconRow", "component.iconRow", "Default Icon Row"),
         NewComponentSeed("iconBar", "component.iconBar", "Default Icon Bar"),
         NewComponentSeed("componentStack", "component.componentStack", "Default Component Stack"),
+        NewComponentSeed("collectionStack", "component.collectionStack", "Default Collection Stack"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),
         NewComponentSeed("navigation_bar", "component.navigation_bar", "Default Navigation Bar"),
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),

@@ -41,6 +41,7 @@ var tests = new (string Name, Action Run)[]
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
+    ("Collection Stack exposes one runtime-owned Default Variant", CollectionStackSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
@@ -858,6 +859,65 @@ static void ComponentStackSeedOpensAndRenders()
         var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
         Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void CollectionStackSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-collection-stack-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "collectionStack");
+        Equal("Atoms", stack.Parent?.Name ?? "");
+        var variants = stack.Children.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset).ToList();
+        Equal(1, variants.Count);
+        Equal("Default", variants[0].Name);
+        True(variants[0].IsLocked);
+
+        var settings = database.GetComponentClassSettings(stack.Id);
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Collection Stack config.");
+        Equal(0, (config["collectionStack"] as JsonObject)?.Count ?? -1);
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Collection Stack preview.");
+        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        SequenceEqual(
+            ["distributionMode", "sizingMode", "startGapToken", "endGapToken", "stackDirection", "stackOffsetToken"],
+            runtimeInputs.Select((input) => input.Id).ToList());
+        True(runtimeInputs.Single((input) => input.Id == "distributionMode").RefreshOnCommit);
+        Equal("distributionMode", runtimeInputs.Single((input) => input.Id == "sizingMode").EnabledWhenPath);
+        Equal("flow", runtimeInputs.Single((input) => input.Id == "sizingMode").EnabledWhenValue);
+        Equal("stacked", preview["distributionMode"]?.GetValue<string>() ?? "");
+        Equal("content", preview["sizingMode"]?.GetValue<string>() ?? "");
+        var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
+        Equal("items", collection.JsonKey);
+        Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "presetId").ComponentType);
+
+        var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-collectionStack");
+        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
+        True(componentOptions.Any((option) => option.GroupValue.EndsWith("componentStack", StringComparison.Ordinal)));
+
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, variants[0], theme.Id));
+        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            inputSession.ApplyInputs(payload, "light", settings.ProjectId)).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
     }
     finally
     {

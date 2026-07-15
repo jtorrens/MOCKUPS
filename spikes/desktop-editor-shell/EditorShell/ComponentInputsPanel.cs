@@ -1346,6 +1346,9 @@ internal sealed class ComponentPreviewInputSession
             {
                 UiOrder = (int)JsonDecimal(item, "uiOrder", 0),
                 UiSectionLabel = JsonString(item, "uiSectionLabel"),
+                EnabledWhenPath = JsonString(item, "enabledWhenPath"),
+                EnabledWhenValue = JsonString(item, "enabledWhenValue"),
+                RefreshOnCommit = item["refreshOnCommit"]?.GetValue<bool>() == true,
             };
             definitions.Add(definition with
             {
@@ -1823,7 +1826,10 @@ internal sealed record ComponentInputDefinition(
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null,
-    ComponentInputTransitionDefinition? Transition = null);
+    ComponentInputTransitionDefinition? Transition = null,
+    string EnabledWhenPath = "",
+    string EnabledWhenValue = "",
+    bool RefreshOnCommit = false);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

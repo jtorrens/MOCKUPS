@@ -10,6 +10,7 @@ export const ComponentClassTypeSchema = z.enum([
   "cursor",
   "iconBar",
   "componentStack",
+  "collectionStack",
   "codeIndicator",
   "iconRow",
   "keyboard",

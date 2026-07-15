@@ -138,6 +138,18 @@ space. `content` hugs its children. Every item from the second onward owns its
 gap before itself; the first and final boundaries are owned by the container.
 See the full canonical contract in [component_stack.md](component_stack.md).
 
+## Collection Stack
+
+**Purpose/ownership.** Generic runtime collection for variable component
+groups. It shares Component Stack's concrete Variant, local override, embedded
+Runtime Inputs and alignment contract, but adds runtime `Flow` and `Stacked`
+distribution modes. Its protected `Default` Variant contains no composition.
+
+**Layout.** `Flow` uses the ordinary vertical gap/reflow model. `Stacked` places
+all children in one region; collection order is paint order and a tokenized
+offset is applied downwards or upwards. The atom owns no notification semantics
+or clock. See [collection_stack.md](collection_stack.md).
+
 ## Shared atom motion and data boundary
 
 Atoms do not own a wall-clock. A component or module supplies the requested
