@@ -200,7 +200,9 @@ Generic Design Preview actions may name a `BehaviorTiming` runtime input as
 their finite duration source. The action host calls the same shared resolver
 used by owner timelines; it does not inspect the owning component or reproduce
 its unit/rate formula. The component still owns all state distribution inside
-the resulting duration.
+the resulting duration. Password applies that resolved duration to PIN,
+fingerprint, face-recognition and draw-pattern sequences; every child receives
+only its final state/progress for the requested frame.
 
 Finite Design Preview actions also declare a generic completion behavior.
 `reset` switches the action off after its final frame and is declared explicitly

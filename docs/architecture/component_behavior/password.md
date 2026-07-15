@@ -12,21 +12,28 @@ Password owns a vertical interaction composed, in order, from:
 
 1. one state-selected Label;
 2. one Code Indicator;
-3. one Keypad;
+3. one mode-selected input component;
 4. one Icon Bar.
 
-All four slots reference concrete child Variants and retain the shared Open and
+The input component is Keypad, Fingerprint, Face Recognition or Draw Password
+according to the Password Variant's explicit `mode`. All slots reference
+concrete child Variants and retain the shared Open and
 Override route. The Password Variant owns the three Label strings and Variants,
 the child Variants, its vertical anchor modes, tokenized gaps and the Icon Bar
 height. The empty Icon Bar Variant hides that region without switches or a
 component-specific exception.
 
-The Password frame is the complete frame supplied by its parent. Keypad is
-always centered horizontally and vertically in that frame. Label and Code
+The four input slots are presented in one `Modes` editor card using the shared
+vertical-card navigation: Keypad, Fingerprint, Face Recognition and Draw
+Password. This is layout metadata only; it does not alter composition.
+
+The Password frame is the complete frame supplied by its parent. The selected
+input component is always centered horizontally and vertically in that frame. Label and Code
 Indicator form one horizontally centered upper block; Icon Bar is the
 horizontally centered lower block. Each block independently anchors either to
-its container edge or to Keypad. Container anchoring uses `startGapToken` or
-`endGapToken`; Keypad anchoring uses `upperGapToken` or `lowerGapToken`. The
+its container edge or to the input component. Container anchoring uses
+`startGapToken` or `endGapToken`; input anchoring uses `upperGapToken` or
+`lowerGapToken`. The
 upper block also owns `labelIndicatorGapToken`. No free placement coordinates
 or Password-specific layout rule crosses the component boundary.
 
@@ -44,6 +51,19 @@ persistent start switch.
 Every attempted digit must map to an enabled emitted value in the selected
 Keypad Variant. A malformed value, length mismatch or unavailable digit is an
 explicit resolver error; the resolver does not coerce or substitute values.
+
+PIN accepts digits, requires equal expected/attempt lengths and validates every
+attempt digit against the selected Keypad. Draw Password accepts unique digits
+1-9 as one-based nodes in its 3x3 grid. Fingerprint and Face Recognition accept
+explicit non-empty credential strings. All modes compare the two explicit
+values only at the final frame.
+
+The seeded Password Variants are PIN (`Default`), Fingerprint, Face Recognition
+and Draw Password. The three non-PIN Variants explicitly select the `Empty`
+Code Indicator Variant, whose `displayMode: collapsed` removes both its visual
+box and the adjacent Label/Indicator gap. This is stored composition, not a
+mode-specific visibility branch, and can be replaced through the normal
+embedded Variant/override route.
 
 ## Frame behavior
 
@@ -70,7 +90,8 @@ each child before render.
 
 ## Composition boundary
 
-Password explicitly embeds Label, Code Indicator, Keypad and Icon Bar. Its
+Password explicitly embeds Label, Code Indicator, Keypad, Fingerprint, Face
+Recognition, Draw Password and Icon Bar. Its
 resolver owns validation, state selection and layout inputs; its renderable
 owns their vertical placement. The bridge, generic renderer and `MainWindow`
 contain no Password rules.

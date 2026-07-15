@@ -132,6 +132,9 @@ internal static class EmbeddedComponentSlotCatalog
         new("component.password.incorrectLabel.editor", "label", "Incorrect label", "component.label", ["password", "incorrectLabelSlot"]),
         new("component.password.indicator.editor", "codeIndicator", "Code indicator", "component.codeIndicator", ["password", "indicatorSlot"]),
         new("component.password.keypad.editor", "keypad", "Keypad", "component.keypad", ["password", "keypadSlot"]),
+        new("component.password.fingerprint.editor", "fingerprint", "Fingerprint", "component.fingerprint", ["password", "fingerprintSlot"]),
+        new("component.password.faceRecognition.editor", "faceRecognition", "Face recognition", "component.faceRecognition", ["password", "faceRecognitionSlot"]),
+        new("component.password.drawPassword.editor", "drawPassword", "Draw password", "component.drawPassword", ["password", "drawPasswordSlot"]),
         new("component.password.iconBar.editor", "iconBar", "Icon bar", "component.iconBar", ["password", "iconBarSlot"]),
         new(
             "component.label.surface.editor",

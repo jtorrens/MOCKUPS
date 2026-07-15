@@ -26,6 +26,9 @@ internal sealed partial class SpikeDatabase
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "keypad" => "Keypad component",
+            "fingerprint" => "Fingerprint component",
+            "faceRecognition" => "Face recognition component",
+            "drawPassword" => "Draw password component",
             "codeIndicator" => "Code indicator atom",
             "password" => "Password component",
             "button" => "Button component",
@@ -134,6 +137,17 @@ internal sealed partial class SpikeDatabase
     {
         ["emptySurfaceSlot"] = CodeIndicatorSurfaceSlot(emptyColorToken, 0, 1),
         ["filledSurfaceSlot"] = CodeIndicatorSurfaceSlot(filledColorToken, 1, 1),
+    };
+
+    private static JsonObject RecognitionStateStyle(string colorToken) => new()
+    {
+        ["colorToken"] = colorToken,
+    };
+
+    private static JsonObject DrawPasswordStateStyle(string colorToken) => new()
+    {
+        ["nodeColorToken"] = colorToken,
+        ["lineColorToken"] = colorToken,
     };
 
     private static JsonObject CodeIndicatorSurfaceSlot(
@@ -427,6 +441,7 @@ internal sealed partial class SpikeDatabase
                 config.Remove("style");
                 config["codeIndicator"] = new JsonObject
                 {
+                    ["displayMode"] = "visible",
                     ["glyphSize"] = "16|16",
                     ["gapToken"] = "theme.spacing.m",
                     ["states"] = new JsonObject
@@ -437,10 +452,65 @@ internal sealed partial class SpikeDatabase
                     },
                 };
                 break;
+            case "fingerprint":
+                config.Remove("style");
+                config["fingerprint"] = new JsonObject
+                {
+                    ["size"] = "120|120",
+                    ["iconToken"] = "print",
+                    ["iconSizeToken"] = "theme.iconSizes.xl",
+                    ["iconSizeMultiplier"] = 1,
+                    ["scanLineThickness"] = 3,
+                    ["states"] = new JsonObject
+                    {
+                        ["initial"] = RecognitionStateStyle("theme.colors.textSecondary"),
+                        ["active"] = RecognitionStateStyle("theme.colors.accent"),
+                        ["correct"] = RecognitionStateStyle("theme.colors.accent"),
+                        ["incorrect"] = RecognitionStateStyle("theme.colors.textSecondary"),
+                    },
+                };
+                break;
+            case "faceRecognition":
+                config.Remove("style");
+                config["faceRecognition"] = new JsonObject
+                {
+                    ["size"] = "140|140",
+                    ["iconToken"] = "face",
+                    ["iconSizeToken"] = "theme.iconSizes.xl",
+                    ["iconSizeMultiplier"] = 1,
+                    ["strokeWidth"] = 3,
+                    ["states"] = new JsonObject
+                    {
+                        ["initial"] = RecognitionStateStyle("theme.colors.textSecondary"),
+                        ["active"] = RecognitionStateStyle("theme.colors.accent"),
+                        ["correct"] = RecognitionStateStyle("theme.colors.accent"),
+                        ["incorrect"] = RecognitionStateStyle("theme.colors.textSecondary"),
+                    },
+                };
+                break;
+            case "drawPassword":
+                config.Remove("style");
+                config["drawPassword"] = new JsonObject
+                {
+                    ["grid"] = "3|3",
+                    ["nodeSize"] = 18,
+                    ["columnGapToken"] = "theme.spacing.xl",
+                    ["rowGapToken"] = "theme.spacing.xl",
+                    ["lineWidth"] = 3,
+                    ["states"] = new JsonObject
+                    {
+                        ["initial"] = DrawPasswordStateStyle("theme.colors.textSecondary"),
+                        ["active"] = DrawPasswordStateStyle("theme.colors.accent"),
+                        ["correct"] = DrawPasswordStateStyle("theme.colors.accent"),
+                        ["incorrect"] = DrawPasswordStateStyle("theme.colors.textSecondary"),
+                    },
+                };
+                break;
             case "password":
                 config.Remove("style");
                 config["password"] = new JsonObject
                 {
+                    ["mode"] = "pin",
                     ["initialText"] = "Enter password",
                     ["correctText"] = "Password correct",
                     ["incorrectText"] = "Password incorrect",
@@ -457,6 +527,9 @@ internal sealed partial class SpikeDatabase
                     ["incorrectLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["indicatorSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["keypadSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["fingerprintSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["faceRecognitionSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["drawPasswordSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["iconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                 };
                 break;
@@ -840,6 +913,17 @@ internal sealed partial class SpikeDatabase
             preview["filledCount"] = 2;
             preview["state"] = "initial";
         }
+        if (componentType == "fingerprint" || componentType == "faceRecognition")
+        {
+            preview["state"] = "active";
+            preview["progress"] = 0.5;
+        }
+        if (componentType == "drawPassword")
+        {
+            preview["state"] = "active";
+            preview["pattern"] = "1258";
+            preview["visibleCount"] = 3;
+        }
         if (componentType == "password")
         {
             preview["expectedPassword"] = "2345";
@@ -1196,6 +1280,29 @@ internal sealed partial class SpikeDatabase
                     new FieldOption("correct", "Correct"),
                     new FieldOption("incorrect", "Incorrect"),
                 ]),
+            ],
+            "fingerprint" or "faceRecognition" =>
+            [
+                ComponentInput("state", "State", "state", "option", "active", options:
+                [
+                    new FieldOption("initial", "Initial"),
+                    new FieldOption("active", "Active"),
+                    new FieldOption("correct", "Correct"),
+                    new FieldOption("incorrect", "Incorrect"),
+                ]),
+                ComponentInput("progress", "Progress", "progress", ValueKind.Decimal, "0.5", minimum: 0, maximum: 1, increment: 0.05m),
+            ],
+            "drawPassword" =>
+            [
+                ComponentInput("state", "State", "state", "option", "active", options:
+                [
+                    new FieldOption("initial", "Initial"),
+                    new FieldOption("active", "Active"),
+                    new FieldOption("correct", "Correct"),
+                    new FieldOption("incorrect", "Incorrect"),
+                ]),
+                ComponentInput("pattern", "Pattern", "pattern", "text", "1258"),
+                ComponentInput("visibleCount", "Visible nodes", "visibleCount", ValueKind.Integer, "3", minimum: 0, maximum: 9, increment: 1),
             ],
             "password" => PasswordRuntimeInputs(),
             "audio" =>
@@ -1815,6 +1922,9 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
         NewComponentSeed("keypad", "component.keypad", "Default Keypad"),
         NewComponentSeed("codeIndicator", "component.codeIndicator", "Default Code Indicator"),
+        NewComponentSeed("fingerprint", "component.fingerprint", "Default Fingerprint"),
+        NewComponentSeed("faceRecognition", "component.faceRecognition", "Default Face Recognition"),
+        NewComponentSeed("drawPassword", "component.drawPassword", "Default Draw Password"),
         NewComponentSeed("password", "component.password", "Default Password"),
         NewComponentSeed("button", "component.button", "Default Button"),
         NewComponentSeed("label", "component.label", "Default Label"),

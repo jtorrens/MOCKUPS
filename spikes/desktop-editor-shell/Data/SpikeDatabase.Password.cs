@@ -11,6 +11,24 @@ internal sealed partial class SpikeDatabase
     {
         EnsurePasswordOwnedComponentClass(
             connection,
+            "fingerprint",
+            NormalizeFingerprintConfig,
+            FingerprintEditorLayoutJson(),
+            _ => { });
+        EnsurePasswordOwnedComponentClass(
+            connection,
+            "faceRecognition",
+            NormalizeFaceRecognitionConfig,
+            FaceRecognitionEditorLayoutJson(),
+            _ => { });
+        EnsurePasswordOwnedComponentClass(
+            connection,
+            "drawPassword",
+            (_, _) => { },
+            DrawPasswordEditorLayoutJson(),
+            _ => { });
+        EnsurePasswordOwnedComponentClass(
+            connection,
             "codeIndicator",
             NormalizeCodeIndicatorConfig,
             CodeIndicatorEditorLayoutJson(),
@@ -21,6 +39,10 @@ internal sealed partial class SpikeDatabase
             NormalizePasswordConfig,
             PasswordEditorLayoutJson(),
             NormalizePasswordPreview);
+        foreach (var projectId in QueryProjectRows(connection).Select((project) => project.Id))
+        {
+            EnsurePasswordVariants(connection, projectId);
+        }
     }
 
     private static void EnsurePasswordOwnedComponentClass(
@@ -96,6 +118,7 @@ internal sealed partial class SpikeDatabase
     {
         var indicator = config["codeIndicator"] as JsonObject
             ?? throw new InvalidOperationException("Missing Code Indicator config.");
+        indicator["displayMode"] ??= "visible";
         var states = indicator["states"] as JsonObject
             ?? throw new InvalidOperationException("Missing Code Indicator states.");
         foreach (var stateId in new[] { "initial", "correct", "incorrect" })
@@ -107,6 +130,20 @@ internal sealed partial class SpikeDatabase
         }
     }
 
+    private static void NormalizeFingerprintConfig(JsonObject config, string projectId)
+    {
+        var fingerprint = config["fingerprint"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Fingerprint config.");
+        fingerprint["iconSizeMultiplier"] ??= 1;
+    }
+
+    private static void NormalizeFaceRecognitionConfig(JsonObject config, string projectId)
+    {
+        var faceRecognition = config["faceRecognition"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Face Recognition config.");
+        faceRecognition["iconSizeMultiplier"] ??= 1;
+    }
+
     private static void NormalizePasswordConfig(JsonObject config, string projectId)
     {
         var password = config["password"] as JsonObject
@@ -114,6 +151,9 @@ internal sealed partial class SpikeDatabase
         password.Remove("labelGapToken");
         password.Remove("indicatorGapToken");
         password.Remove("keypadGapToken");
+        password["mode"] ??= "pin";
+        if (password["upperAnchor"]?.GetValue<string>() == "keypad") password["upperAnchor"] = "input";
+        if (password["lowerAnchor"]?.GetValue<string>() == "keypad") password["lowerAnchor"] = "input";
         password["upperAnchor"] ??= "container";
         password["lowerAnchor"] ??= "container";
         password["labelIndicatorGapToken"] ??= "theme.spacing.l";
@@ -121,12 +161,47 @@ internal sealed partial class SpikeDatabase
         password["upperGapToken"] ??= "theme.spacing.xl";
         password["lowerGapToken"] ??= "theme.spacing.l";
         password["endGapToken"] ??= "theme.spacing.l";
+        password["fingerprintSlot"] ??= ComponentSurfaceSlot(SeededComponentPresetReference(projectId, "fingerprint"));
+        password["faceRecognitionSlot"] ??= ComponentSurfaceSlot(SeededComponentPresetReference(projectId, "faceRecognition"));
+        password["drawPasswordSlot"] ??= ComponentSurfaceSlot(SeededComponentPresetReference(projectId, "drawPassword"));
         QualifyOwnedSlot(password, "initialLabelSlot", projectId, "label");
         QualifyOwnedSlot(password, "correctLabelSlot", projectId, "label");
         QualifyOwnedSlot(password, "incorrectLabelSlot", projectId, "label");
         QualifyOwnedSlot(password, "indicatorSlot", projectId, "codeIndicator");
         QualifyOwnedSlot(password, "keypadSlot", projectId, "keypad");
+        QualifyOwnedSlot(password, "fingerprintSlot", projectId, "fingerprint");
+        QualifyOwnedSlot(password, "faceRecognitionSlot", projectId, "faceRecognition");
+        QualifyOwnedSlot(password, "drawPasswordSlot", projectId, "drawPassword");
         QualifyOwnedSlot(password, "iconBarSlot", projectId, "iconBar");
+    }
+
+    private static void EnsurePasswordVariants(SqliteConnection connection, string projectId)
+    {
+        EnsureSeededComponentVariant(connection, projectId, "codeIndicator", "empty", "Empty", (config) =>
+        {
+            config["codeIndicator"]!["displayMode"] = "collapsed";
+        });
+        EnsurePasswordModeVariant(connection, projectId, "fingerprint", "Fingerprint");
+        EnsurePasswordModeVariant(connection, projectId, "faceRecognition", "Face Recognition");
+        EnsurePasswordModeVariant(connection, projectId, "drawPassword", "Draw Password");
+    }
+
+    private static void EnsurePasswordModeVariant(
+        SqliteConnection connection,
+        string projectId,
+        string mode,
+        string name)
+    {
+        EnsureSeededComponentVariant(connection, projectId, "password", mode, name, (config) =>
+        {
+            var password = config["password"] as JsonObject
+                ?? throw new InvalidOperationException("Missing Password config.");
+            password["mode"] = mode;
+            if (password["indicatorSlot"] is JsonObject indicatorSlot)
+            {
+                indicatorSlot["presetId"] = $"component_{projectId}_codeIndicator::preset::empty";
+            }
+        });
     }
 
     private static void NormalizePasswordPreview(JsonObject preview)
@@ -190,8 +265,9 @@ internal sealed partial class SpikeDatabase
             ] },
             { "id": "layout", "label": "Layout", "subtitle": "Glyph geometry", "icon": "layout", "order": 20, "visible": true, "defaultOpen": false, "groups": [
               { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
-                { "id": "component.codeIndicator.glyphSize", "order": 10, "visible": true },
-                { "id": "component.codeIndicator.gapToken", "order": 20, "visible": true }
+                { "id": "component.codeIndicator.displayMode", "order": 10, "visible": true },
+                { "id": "component.codeIndicator.glyphSize", "order": 20, "visible": true },
+                { "id": "component.codeIndicator.gapToken", "order": 30, "visible": true }
               ] }
             ] },
             { "id": "states", "label": "States", "subtitle": "Empty and filled glyph surfaces", "icon": "variants", "order": 30, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
@@ -212,6 +288,73 @@ internal sealed partial class SpikeDatabase
         }
         """;
 
+    private static string FingerprintEditorLayoutJson() => RecognitionEditorLayoutJson(
+        "Fingerprint", "fingerprint", "scanLineThickness");
+
+    private static string FaceRecognitionEditorLayoutJson() => RecognitionEditorLayoutJson(
+        "Face Recognition", "faceRecognition", "strokeWidth");
+
+    private static string RecognitionEditorLayoutJson(string title, string prefix, string strokeField) => $$"""
+        {
+          "cards": [
+            { "id": "general", "label": "General", "subtitle": "Identity", "icon": "general", "order": 10, "visible": true, "defaultOpen": false, "groups": [
+              { "id": "identity", "label": "Identity", "order": 10, "visible": true, "fields": [
+                { "id": "core.name", "order": 10, "visible": true },
+                { "id": "component.type", "order": 20, "visible": true },
+                { "id": "core.notes", "order": 30, "visible": true }
+              ] }
+            ] },
+            { "id": "layout", "label": "Layout", "subtitle": "{{title}} geometry", "icon": "layout", "order": 20, "visible": true, "defaultOpen": false, "groups": [
+              { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                { "id": "component.{{prefix}}.size", "order": 10, "visible": true },
+                { "id": "component.{{prefix}}.iconToken", "order": 20, "visible": true },
+                { "id": "component.{{prefix}}.iconSizeToken", "order": 30, "visible": true },
+                { "id": "component.{{prefix}}.iconSizeMultiplier", "order": 40, "visible": true },
+                { "id": "component.{{prefix}}.{{strokeField}}", "order": 50, "visible": true }
+              ] }
+            ] },
+            { "id": "states", "label": "States", "subtitle": "Resolved colors", "icon": "variants", "order": 30, "visible": true, "defaultOpen": false, "groups": [
+              { "id": "states", "label": "States", "order": 10, "visible": true, "fields": [
+                { "id": "component.{{prefix}}.states.initial.colorToken", "order": 10, "visible": true },
+                { "id": "component.{{prefix}}.states.active.colorToken", "order": 20, "visible": true },
+                { "id": "component.{{prefix}}.states.correct.colorToken", "order": 30, "visible": true },
+                { "id": "component.{{prefix}}.states.incorrect.colorToken", "order": 40, "visible": true }
+              ] }
+            ] }
+          ]
+        }
+        """;
+
+    private static string DrawPasswordEditorLayoutJson() =>
+        """
+        {
+          "cards": [
+            { "id": "general", "label": "General", "subtitle": "Identity", "icon": "general", "order": 10, "visible": true, "defaultOpen": false, "groups": [
+              { "id": "identity", "label": "Identity", "order": 10, "visible": true, "fields": [
+                { "id": "core.name", "order": 10, "visible": true },
+                { "id": "component.type", "order": 20, "visible": true },
+                { "id": "core.notes", "order": 30, "visible": true }
+              ] }
+            ] },
+            { "id": "layout", "label": "Layout", "subtitle": "Pattern grid", "icon": "layout", "order": 20, "visible": true, "defaultOpen": false, "groups": [
+              { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
+                { "id": "component.drawPassword.grid", "order": 10, "visible": true },
+                { "id": "component.drawPassword.nodeSize", "order": 20, "visible": true },
+                { "id": "component.drawPassword.columnGapToken", "order": 30, "visible": true },
+                { "id": "component.drawPassword.rowGapToken", "order": 40, "visible": true },
+                { "id": "component.drawPassword.lineWidth", "order": 50, "visible": true }
+              ] }
+            ] },
+            { "id": "states", "label": "States", "subtitle": "Node and line colors", "icon": "variants", "order": 30, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
+              { "id": "initial", "label": "Initial", "order": 10, "visible": true, "fields": [ { "id": "component.drawPassword.states.initial.nodeColorToken", "order": 10, "visible": true }, { "id": "component.drawPassword.states.initial.lineColorToken", "order": 20, "visible": true } ] },
+              { "id": "active", "label": "Active", "order": 20, "visible": true, "fields": [ { "id": "component.drawPassword.states.active.nodeColorToken", "order": 10, "visible": true }, { "id": "component.drawPassword.states.active.lineColorToken", "order": 20, "visible": true } ] },
+              { "id": "correct", "label": "Correct", "order": 30, "visible": true, "fields": [ { "id": "component.drawPassword.states.correct.nodeColorToken", "order": 10, "visible": true }, { "id": "component.drawPassword.states.correct.lineColorToken", "order": 20, "visible": true } ] },
+              { "id": "incorrect", "label": "Incorrect", "order": 40, "visible": true, "fields": [ { "id": "component.drawPassword.states.incorrect.nodeColorToken", "order": 10, "visible": true }, { "id": "component.drawPassword.states.incorrect.lineColorToken", "order": 20, "visible": true } ] }
+            ] }
+          ]
+        }
+        """;
+
     private static string PasswordEditorLayoutJson() =>
         """
         {
@@ -225,14 +368,15 @@ internal sealed partial class SpikeDatabase
             ] },
             { "id": "layout", "label": "Layout", "subtitle": "Centered keypad and anchored blocks", "icon": "layout", "order": 20, "visible": true, "defaultOpen": false, "groups": [
               { "id": "layout", "label": "Layout", "order": 10, "visible": true, "fields": [
-                { "id": "component.password.upperAnchor", "order": 10, "visible": true },
-                { "id": "component.password.lowerAnchor", "order": 20, "visible": true },
-                { "id": "component.password.labelIndicatorGapToken", "order": 30, "visible": true },
-                { "id": "component.password.startGapToken", "order": 40, "visible": true },
-                { "id": "component.password.upperGapToken", "order": 50, "visible": true },
-                { "id": "component.password.lowerGapToken", "order": 60, "visible": true },
-                { "id": "component.password.endGapToken", "order": 70, "visible": true },
-                { "id": "component.password.iconBarHeight", "order": 80, "visible": true }
+                { "id": "component.password.mode", "order": 10, "visible": true },
+                { "id": "component.password.upperAnchor", "order": 20, "visible": true },
+                { "id": "component.password.lowerAnchor", "order": 30, "visible": true },
+                { "id": "component.password.labelIndicatorGapToken", "order": 40, "visible": true },
+                { "id": "component.password.startGapToken", "order": 50, "visible": true },
+                { "id": "component.password.upperGapToken", "order": 60, "visible": true },
+                { "id": "component.password.lowerGapToken", "order": 70, "visible": true },
+                { "id": "component.password.endGapToken", "order": 80, "visible": true },
+                { "id": "component.password.iconBarHeight", "order": 90, "visible": true }
               ] }
             ] },
             { "id": "labels", "label": "Labels", "subtitle": "Text and variant for each result state", "icon": "label", "order": 30, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
@@ -254,9 +398,18 @@ internal sealed partial class SpikeDatabase
                 { "id": "component.password.indicator.editor", "order": 10, "visible": true }
               ] }
             ] },
-            { "id": "keypad", "label": "Keypad", "subtitle": "Input pad", "icon": "keypad", "order": 50, "visible": true, "defaultOpen": false, "groups": [
+            { "id": "modes", "label": "Modes", "subtitle": "Input component for each authentication mode", "icon": "keypad", "order": 50, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
               { "id": "keypad", "label": "Keypad", "order": 10, "visible": true, "fields": [
                 { "id": "component.password.keypad.editor", "order": 10, "visible": true }
+              ] },
+              { "id": "fingerprint", "label": "Fingerprint", "order": 20, "visible": true, "fields": [
+                { "id": "component.password.fingerprint.editor", "order": 10, "visible": true }
+              ] },
+              { "id": "faceRecognition", "label": "Face Recognition", "order": 30, "visible": true, "fields": [
+                { "id": "component.password.faceRecognition.editor", "order": 10, "visible": true }
+              ] },
+              { "id": "drawPassword", "label": "Draw Password", "order": 40, "visible": true, "fields": [
+                { "id": "component.password.drawPassword.editor", "order": 10, "visible": true }
               ] }
             ] },
             { "id": "iconBar", "label": "Icon Bar", "subtitle": "Optional actions", "icon": "component", "order": 60, "visible": true, "defaultOpen": false, "groups": [

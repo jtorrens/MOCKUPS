@@ -41,6 +41,10 @@ export function resolveCodeIndicatorComponentFromRecords(
   );
   if (filledCount > count) throw new Error(`${id}.runtime.filledCount must not exceed count`);
   const state = codeIndicatorState(requiredString(inputs, "state", `${id}.runtime.state`));
+  const displayMode = requiredString(indicator, "displayMode", `${id}.displayMode`);
+  if (displayMode !== "visible" && displayMode !== "collapsed") {
+    throw new Error(`${id}.displayMode must be visible or collapsed`);
+  }
   const size = requiredNumberPair(indicator, "glyphSize", `${id}.glyphSize`);
   if (size.first <= 0 || size.second <= 0) throw new Error(`${id}.glyphSize must be positive`);
   const stateConfig = asRecord(asRecord(indicator.states)[state]);
@@ -49,6 +53,7 @@ export function resolveCodeIndicatorComponentFromRecords(
     count,
     filledCount,
     state,
+    displayMode,
     glyphSize: { width: size.first, height: size.second },
     gapToken: requiredString(indicator, "gapToken", `${id}.gapToken`),
     emptySurface: resolveGlyphSurface(stateConfig, "emptySurfaceSlot", size, bases, `${id}.${state}.empty`),

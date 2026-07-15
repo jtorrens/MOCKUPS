@@ -2,12 +2,22 @@ import type { CodeIndicatorDesignContract, CodeIndicatorState } from "./codeIndi
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { KeypadDesignContract } from "./keypadComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { FingerprintDesignContract } from "./fingerprintComponentContract.js";
+import type { FaceRecognitionDesignContract } from "./faceRecognitionComponentContract.js";
+import type { DrawPasswordDesignContract } from "./drawPasswordComponentContract.js";
 
 export type PasswordState = CodeIndicatorState;
-export type PasswordVerticalAnchor = "container" | "keypad";
+export type PasswordVerticalAnchor = "container" | "input";
+export type PasswordMode = "pin" | "fingerprint" | "faceRecognition" | "drawPassword";
+export type PasswordInputContract =
+  | { kind: "keypad"; component: KeypadDesignContract }
+  | { kind: "fingerprint"; component: FingerprintDesignContract }
+  | { kind: "faceRecognition"; component: FaceRecognitionDesignContract }
+  | { kind: "drawPassword"; component: DrawPasswordDesignContract };
 
 export interface PasswordDesignContract {
   id: "component.password";
+  mode: PasswordMode;
   state: PasswordState;
   durationFrames: number;
   filledCount: number;
@@ -21,6 +31,6 @@ export interface PasswordDesignContract {
   endGapToken: string;
   label: LabelDesignContract;
   indicator: CodeIndicatorDesignContract;
-  keypad: KeypadDesignContract;
+  input: PasswordInputContract;
   iconBar: IconBarDesignContract;
 }

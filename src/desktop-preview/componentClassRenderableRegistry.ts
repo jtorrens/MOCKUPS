@@ -24,6 +24,12 @@ import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js"
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
 import { keypadComponentToRenderable } from "./keypadComponentRenderable.js";
 import { resolveKeypadComponent } from "./keypadComponentResolver.js";
+import { fingerprintComponentToRenderable } from "./fingerprintComponentRenderable.js";
+import { resolveFingerprintComponent } from "./fingerprintComponentResolver.js";
+import { faceRecognitionComponentToRenderable } from "./faceRecognitionComponentRenderable.js";
+import { resolveFaceRecognitionComponent } from "./faceRecognitionComponentResolver.js";
+import { drawPasswordComponentToRenderable } from "./drawPasswordComponentRenderable.js";
+import { resolveDrawPasswordComponent } from "./drawPasswordComponentResolver.js";
 import { passwordComponentToRenderable } from "./passwordComponentRenderable.js";
 import { resolvePasswordComponent } from "./passwordComponentResolver.js";
 import { iconBarComponentToRenderable } from "./iconBarComponentRenderable.js";
@@ -71,6 +77,12 @@ export const componentRenderableFactories = {
     keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
   keypad: (payload) =>
     keypadComponentToRenderable(payload, resolveKeypadComponent(payload)),
+  fingerprint: (payload) =>
+    fingerprintComponentToRenderable(payload, resolveFingerprintComponent(payload)),
+  faceRecognition: (payload) =>
+    faceRecognitionComponentToRenderable(payload, resolveFaceRecognitionComponent(payload)),
+  drawPassword: (payload) =>
+    drawPasswordComponentToRenderable(payload, resolveDrawPasswordComponent(payload)),
   password: (payload) =>
     passwordComponentToRenderable(payload, resolvePasswordComponent(payload)),
   media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),

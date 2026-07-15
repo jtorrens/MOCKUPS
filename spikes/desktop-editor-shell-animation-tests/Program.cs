@@ -871,9 +871,10 @@ static void PasswordSeedOpensAndRenders()
         var defaultVariant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
         var settings = database.GetComponentClassSettings(password.Id);
         var layout = database.LoadEditorLayout("component.password");
-        SequenceEqual(["general", "layout", "labels", "indicator", "keypad", "iconBar"],
+        SequenceEqual(["general", "layout", "labels", "indicator", "modes", "iconBar"],
             layout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
         Equal("verticalCards", layout.Cards.Single((card) => card.Id == "labels").GroupLayout);
+        Equal("verticalCards", layout.Cards.Single((card) => card.Id == "modes").GroupLayout);
 
         var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Password config.");
@@ -895,8 +896,8 @@ static void PasswordSeedOpensAndRenders()
         Equal(ComponentPreviewActionCompletionBehavior.HoldFinal, action.CompletionBehavior);
         var passwordConfig = config["password"]?.AsObject()
             ?? throw new InvalidOperationException("Missing Password config block.");
-        Equal("container", passwordConfig["upperAnchor"]?.GetValue<string>() ?? "");
-        Equal("container", passwordConfig["lowerAnchor"]?.GetValue<string>() ?? "");
+        True(new[] { "container", "input" }.Contains(passwordConfig["upperAnchor"]?.GetValue<string>() ?? ""));
+        True(new[] { "container", "input" }.Contains(passwordConfig["lowerAnchor"]?.GetValue<string>() ?? ""));
         True(passwordConfig["labelGapToken"] is null);
         True(passwordConfig["indicatorGapToken"] is null);
         True(passwordConfig["keypadGapToken"] is null);
@@ -941,6 +942,38 @@ static void PasswordSeedOpensAndRenders()
         Equal(0, inputSession.CurrentPreviewFrame);
         True(inputSession.IsPlaybackActive);
         True(inputSession.ResetCurrentTestValues());
+
+        foreach (var componentType in new[] { "fingerprint", "faceRecognition", "drawPassword" })
+        {
+            var component = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+                && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
+            Equal("System", component.Parent?.Name ?? "");
+            var componentVariant = component.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+            var componentPayload = Required(DesignPreviewPayloadFactory.Create(database, componentVariant, theme.Id));
+            var componentHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(device.Id),
+                "light",
+                false,
+                componentPayload).GetAwaiter().GetResult();
+            True(!componentHtml.Contains("preview-error", StringComparison.Ordinal));
+        }
+
+        foreach (var mode in new[] { "fingerprint", "faceRecognition", "drawPassword" })
+        {
+            var variant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Id.EndsWith($"::preset::{mode}", StringComparison.Ordinal));
+            var modePayload = Required(DesignPreviewPayloadFactory.Create(database, variant, theme.Id));
+            var modePreview = JsonNode.Parse(modePayload.DesignPreviewJson)?.AsObject()
+                ?? throw new InvalidOperationException($"Missing {mode} Password preview.");
+            modePreview["entryTrigger"] = true;
+            modePreview["entryFrame"] = 16;
+            modePayload = modePayload with { DesignPreviewJson = modePreview.ToJsonString() };
+            var modeHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(device.Id),
+                "light",
+                false,
+                modePayload).GetAwaiter().GetResult();
+            True(!modeHtml.Contains("preview-error", StringComparison.Ordinal));
+        }
     }
     finally
     {

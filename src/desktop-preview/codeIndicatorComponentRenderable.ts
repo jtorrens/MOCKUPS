@@ -8,6 +8,7 @@ export function measureCodeIndicatorComponent(
   payload: DesignPreviewPayload,
   indicator: CodeIndicatorDesignContract,
 ) {
+  if (indicator.displayMode === "collapsed") return { width: 0, height: 0, gap: 0 };
   const scale = renderScale(payload);
   const gap = Math.max(0, numberToken(payload, indicator.gapToken) * scale);
   return {
@@ -34,6 +35,9 @@ export function codeIndicatorComponentToRenderableAt(
   indicator: CodeIndicatorDesignContract,
   box: RenderableBox,
 ): RenderableNode {
+  if (indicator.displayMode === "collapsed") {
+    return { id: indicator.id, type: "group", frame: 0, box, style: { overflow: "visible" }, children: [] };
+  }
   const size = measureCodeIndicatorComponent(payload, indicator);
   const glyphWidth = indicator.glyphSize.width * renderScale(payload);
   const glyphHeight = indicator.glyphSize.height * renderScale(payload);

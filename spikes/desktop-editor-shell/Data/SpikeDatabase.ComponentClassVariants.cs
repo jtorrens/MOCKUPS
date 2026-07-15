@@ -561,6 +561,40 @@ internal sealed partial class SpikeDatabase
             .OfType<JsonObject>()
             .FirstOrDefault((preset) => JsonPath.String(preset, "id", "").Equals(presetId, StringComparison.Ordinal));
 
+    private static void EnsureSeededComponentVariant(
+        SqliteConnection connection,
+        string projectId,
+        string componentType,
+        string presetId,
+        string presetName,
+        Action<JsonObject> apply)
+    {
+        var componentId = ScalarString(connection,
+            "SELECT id FROM component_classes WHERE project_id = $projectId AND component_type = $componentType",
+            ("$projectId", projectId), ("$componentType", componentType))
+            ?? throw new InvalidOperationException($"Project '{projectId}' has no {componentType} component class.");
+        var settings = GetComponentClassSettings(connection, componentId);
+        var metadata = ParseJsonObject(settings.MetadataJson);
+        var presets = EnsurePresetArray(metadata);
+        if (FindPreset(presets, presetId) is not null) return;
+        var source = FindPreset(presets, DefaultComponentPresetId)
+            ?? throw new InvalidOperationException($"Component class '{componentId}' has no Default variant.");
+        var config = (source["config"] as JsonObject)?.DeepClone() as JsonObject
+            ?? throw new InvalidOperationException($"Component class '{componentId}' has an invalid Default variant.");
+        apply(config);
+        presets.Add(new JsonObject
+        {
+            ["id"] = presetId,
+            ["name"] = presetName,
+            ["protected"] = false,
+            ["locked"] = false,
+            ["config"] = config,
+        });
+        Execute(connection,
+            "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
+            ("$id", componentId), ("$metadataJson", metadata.ToJsonString()));
+    }
+
     private static string UniquePresetId(JsonArray presets, string name)
     {
         var baseId = new string(name

@@ -7,6 +7,7 @@ export interface CodeIndicatorDesignContract {
   count: number;
   filledCount: number;
   state: CodeIndicatorState;
+  displayMode: "visible" | "collapsed";
   glyphSize: { width: number; height: number };
   gapToken: string;
   emptySurface: SurfaceDesignContract;

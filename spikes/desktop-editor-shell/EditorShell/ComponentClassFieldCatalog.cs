@@ -95,7 +95,15 @@ internal static class ComponentClassFieldCatalog
     private static readonly FieldOption[] PasswordAnchorOptions =
     [
         new("container", "Container"),
-        new("keypad", "Keypad"),
+        new("input", "Input component"),
+    ];
+
+    private static readonly FieldOption[] PasswordModeOptions =
+    [
+        new("pin", "PIN"),
+        new("fingerprint", "Fingerprint"),
+        new("faceRecognition", "Face recognition"),
+        new("drawPassword", "Draw password"),
     ];
 
     private static readonly FieldOption[] ButtonPushedDurationTokenOptions =
@@ -638,6 +646,7 @@ internal static class ComponentClassFieldCatalog
         ["component.keypad.states.disabled.borderAlpha"] = new("component.keypad.states.disabled.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "disabled", "borderAlpha"], "1"),
 
         ["component.codeIndicator.glyphSize"] = new("component.codeIndicator.glyphSize", "Glyph size", ValueKind.IntegerPair, ["codeIndicator", "glyphSize"], "16|16", PairLabels: new("W", "H")),
+        ["component.codeIndicator.displayMode"] = new("component.codeIndicator.displayMode", "Display", ValueKind.OptionToken, ["codeIndicator", "displayMode"], "visible", Options: [new("visible", "Visible"), new("collapsed", "Collapsed")]),
         ["component.codeIndicator.gapToken"] = new("component.codeIndicator.gapToken", "Gap", ValueKind.ThemeToken, ["codeIndicator", "gapToken"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.codeIndicator.states.initial.empty.editor"] = new("component.codeIndicator.states.initial.empty.editor", "Empty", ValueKind.ComponentPreset, ["codeIndicator", "states", "initial", "emptySurfaceSlot", "presetId"], "default"),
         ["component.codeIndicator.states.initial.filled.editor"] = new("component.codeIndicator.states.initial.filled.editor", "Filled", ValueKind.ComponentPreset, ["codeIndicator", "states", "initial", "filledSurfaceSlot", "presetId"], "default"),
@@ -646,6 +655,41 @@ internal static class ComponentClassFieldCatalog
         ["component.codeIndicator.states.incorrect.empty.editor"] = new("component.codeIndicator.states.incorrect.empty.editor", "Empty", ValueKind.ComponentPreset, ["codeIndicator", "states", "incorrect", "emptySurfaceSlot", "presetId"], "default"),
         ["component.codeIndicator.states.incorrect.filled.editor"] = new("component.codeIndicator.states.incorrect.filled.editor", "Filled", ValueKind.ComponentPreset, ["codeIndicator", "states", "incorrect", "filledSurfaceSlot", "presetId"], "default"),
 
+        ["component.fingerprint.size"] = new("component.fingerprint.size", "Size", ValueKind.IntegerPair, ["fingerprint", "size"], "120|120", PairLabels: new("W", "H")),
+        ["component.fingerprint.iconToken"] = new("component.fingerprint.iconToken", "Icon", ValueKind.IconToken, ["fingerprint", "iconToken"], "print"),
+        ["component.fingerprint.iconSizeToken"] = new("component.fingerprint.iconSizeToken", "Icon size", ValueKind.ThemeToken, ["fingerprint", "iconSizeToken"], "theme.iconSizes.xl", Options: IconSizeTokenOptions),
+        ["component.fingerprint.iconSizeMultiplier"] = new("component.fingerprint.iconSizeMultiplier", "Icon size multiplier", ValueKind.Decimal, ["fingerprint", "iconSizeMultiplier"], "1", Number: new NumberDefinition(0.1m, 20, 0.1m, 2)),
+        ["component.fingerprint.scanLineThickness"] = new("component.fingerprint.scanLineThickness", "Scan line", ValueKind.Decimal, ["fingerprint", "scanLineThickness"], "3", Number: new NumberDefinition(0.1m, 100, 0.1m, 1)),
+        ["component.fingerprint.states.initial.colorToken"] = new("component.fingerprint.states.initial.colorToken", "Initial", ValueKind.ThemeToken, ["fingerprint", "states", "initial", "colorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.fingerprint.states.active.colorToken"] = new("component.fingerprint.states.active.colorToken", "Active", ValueKind.ThemeToken, ["fingerprint", "states", "active", "colorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.fingerprint.states.correct.colorToken"] = new("component.fingerprint.states.correct.colorToken", "Correct", ValueKind.ThemeToken, ["fingerprint", "states", "correct", "colorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.fingerprint.states.incorrect.colorToken"] = new("component.fingerprint.states.incorrect.colorToken", "Incorrect", ValueKind.ThemeToken, ["fingerprint", "states", "incorrect", "colorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+
+        ["component.faceRecognition.size"] = new("component.faceRecognition.size", "Size", ValueKind.IntegerPair, ["faceRecognition", "size"], "140|140", PairLabels: new("W", "H")),
+        ["component.faceRecognition.iconToken"] = new("component.faceRecognition.iconToken", "Icon", ValueKind.IconToken, ["faceRecognition", "iconToken"], "face"),
+        ["component.faceRecognition.iconSizeToken"] = new("component.faceRecognition.iconSizeToken", "Icon size", ValueKind.ThemeToken, ["faceRecognition", "iconSizeToken"], "theme.iconSizes.xl", Options: IconSizeTokenOptions),
+        ["component.faceRecognition.iconSizeMultiplier"] = new("component.faceRecognition.iconSizeMultiplier", "Icon size multiplier", ValueKind.Decimal, ["faceRecognition", "iconSizeMultiplier"], "1", Number: new NumberDefinition(0.1m, 20, 0.1m, 2)),
+        ["component.faceRecognition.strokeWidth"] = new("component.faceRecognition.strokeWidth", "Frame stroke", ValueKind.Decimal, ["faceRecognition", "strokeWidth"], "3", Number: new NumberDefinition(0.1m, 100, 0.1m, 1)),
+        ["component.faceRecognition.states.initial.colorToken"] = new("component.faceRecognition.states.initial.colorToken", "Initial", ValueKind.ThemeToken, ["faceRecognition", "states", "initial", "colorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.faceRecognition.states.active.colorToken"] = new("component.faceRecognition.states.active.colorToken", "Active", ValueKind.ThemeToken, ["faceRecognition", "states", "active", "colorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.faceRecognition.states.correct.colorToken"] = new("component.faceRecognition.states.correct.colorToken", "Correct", ValueKind.ThemeToken, ["faceRecognition", "states", "correct", "colorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.faceRecognition.states.incorrect.colorToken"] = new("component.faceRecognition.states.incorrect.colorToken", "Incorrect", ValueKind.ThemeToken, ["faceRecognition", "states", "incorrect", "colorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+
+        ["component.drawPassword.grid"] = new("component.drawPassword.grid", "Grid", ValueKind.IntegerPair, ["drawPassword", "grid"], "3|3", PairLabels: new("Columns", "Rows")),
+        ["component.drawPassword.nodeSize"] = new("component.drawPassword.nodeSize", "Node size", ValueKind.Decimal, ["drawPassword", "nodeSize"], "18", Number: new NumberDefinition(1, 1000, 1, 0)),
+        ["component.drawPassword.columnGapToken"] = new("component.drawPassword.columnGapToken", "Column gap", ValueKind.ThemeToken, ["drawPassword", "columnGapToken"], "theme.spacing.xl", Options: SpacingTokenOptions),
+        ["component.drawPassword.rowGapToken"] = new("component.drawPassword.rowGapToken", "Row gap", ValueKind.ThemeToken, ["drawPassword", "rowGapToken"], "theme.spacing.xl", Options: SpacingTokenOptions),
+        ["component.drawPassword.lineWidth"] = new("component.drawPassword.lineWidth", "Line width", ValueKind.Decimal, ["drawPassword", "lineWidth"], "3", Number: new NumberDefinition(0.1m, 100, 0.1m, 1)),
+        ["component.drawPassword.states.initial.nodeColorToken"] = new("component.drawPassword.states.initial.nodeColorToken", "Node", ValueKind.ThemeToken, ["drawPassword", "states", "initial", "nodeColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.drawPassword.states.initial.lineColorToken"] = new("component.drawPassword.states.initial.lineColorToken", "Line", ValueKind.ThemeToken, ["drawPassword", "states", "initial", "lineColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.drawPassword.states.active.nodeColorToken"] = new("component.drawPassword.states.active.nodeColorToken", "Node", ValueKind.ThemeToken, ["drawPassword", "states", "active", "nodeColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.drawPassword.states.active.lineColorToken"] = new("component.drawPassword.states.active.lineColorToken", "Line", ValueKind.ThemeToken, ["drawPassword", "states", "active", "lineColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.drawPassword.states.correct.nodeColorToken"] = new("component.drawPassword.states.correct.nodeColorToken", "Node", ValueKind.ThemeToken, ["drawPassword", "states", "correct", "nodeColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.drawPassword.states.correct.lineColorToken"] = new("component.drawPassword.states.correct.lineColorToken", "Line", ValueKind.ThemeToken, ["drawPassword", "states", "correct", "lineColorToken"], "theme.colors.accent", Options: ThemeColorOptions),
+        ["component.drawPassword.states.incorrect.nodeColorToken"] = new("component.drawPassword.states.incorrect.nodeColorToken", "Node", ValueKind.ThemeToken, ["drawPassword", "states", "incorrect", "nodeColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+        ["component.drawPassword.states.incorrect.lineColorToken"] = new("component.drawPassword.states.incorrect.lineColorToken", "Line", ValueKind.ThemeToken, ["drawPassword", "states", "incorrect", "lineColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
+
+        ["component.password.mode"] = new("component.password.mode", "Mode", ValueKind.OptionToken, ["password", "mode"], "pin", Options: PasswordModeOptions),
         ["component.password.initialText"] = new("component.password.initialText", "Initial text", ValueKind.StringSingleLine, ["password", "initialText"], "Enter password"),
         ["component.password.correctText"] = new("component.password.correctText", "Correct text", ValueKind.StringSingleLine, ["password", "correctText"], "Password correct"),
         ["component.password.incorrectText"] = new("component.password.incorrectText", "Incorrect text", ValueKind.StringSingleLine, ["password", "incorrectText"], "Password incorrect"),
@@ -662,6 +706,9 @@ internal static class ComponentClassFieldCatalog
         ["component.password.incorrectLabel.editor"] = new("component.password.incorrectLabel.editor", "Incorrect label", ValueKind.ComponentPreset, ["password", "incorrectLabelSlot", "presetId"], "default"),
         ["component.password.indicator.editor"] = new("component.password.indicator.editor", "Code indicator", ValueKind.ComponentPreset, ["password", "indicatorSlot", "presetId"], "default"),
         ["component.password.keypad.editor"] = new("component.password.keypad.editor", "Keypad", ValueKind.ComponentPreset, ["password", "keypadSlot", "presetId"], "default"),
+        ["component.password.fingerprint.editor"] = new("component.password.fingerprint.editor", "Fingerprint", ValueKind.ComponentPreset, ["password", "fingerprintSlot", "presetId"], "default"),
+        ["component.password.faceRecognition.editor"] = new("component.password.faceRecognition.editor", "Face recognition", ValueKind.ComponentPreset, ["password", "faceRecognitionSlot", "presetId"], "default"),
+        ["component.password.drawPassword.editor"] = new("component.password.drawPassword.editor", "Draw password", ValueKind.ComponentPreset, ["password", "drawPasswordSlot", "presetId"], "default"),
         ["component.password.iconBar.editor"] = new("component.password.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["password", "iconBarSlot", "presetId"], "default"),
 
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),

@@ -47,6 +47,7 @@ resolver and renderable that own the implementation.
 | Keyboard | [keyboard.md](keyboard.md) | Functional, parent integration gap noted |
 | Keypad | [keypad.md](keypad.md) | Functional base |
 | Password | [password.md](password.md) | Functional |
+| Authentication inputs | [authentication_inputs.md](authentication_inputs.md) | Functional |
 | Code Indicator | [code_indicator.md](code_indicator.md) | Functional atom |
 | Media | [media.md](media.md) | Functional, video buffering remains a limitation |
 | Audio | [audio.md](audio.md) | Functional |
