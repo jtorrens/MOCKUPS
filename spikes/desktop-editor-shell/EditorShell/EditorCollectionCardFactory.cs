@@ -17,7 +17,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<string, ValueKind, Task<string?>> _browsePath;
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
-    private readonly Action<string> _triggerPreviewAction;
+    private readonly Action<string, string?> _triggerPreviewAction;
     private readonly Action<string> _restorePreviewAction;
     private readonly Func<string, bool> _canRestorePreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
@@ -42,7 +42,7 @@ internal sealed class EditorCollectionCardFactory
         Func<string, ValueKind, Task<string?>> browsePath,
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
-        Action<string> triggerPreviewAction,
+        Action<string, string?> triggerPreviewAction,
         Action<string> restorePreviewAction,
         Func<string, bool> canRestorePreviewAction,
         Action<string, string> setPreviewTestValue,

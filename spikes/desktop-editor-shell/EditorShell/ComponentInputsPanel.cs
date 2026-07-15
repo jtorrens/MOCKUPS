@@ -188,12 +188,13 @@ internal sealed class ComponentPreviewInputSession
         ? CurrentPlaybackFrame(action)
         : 0;
 
-    public bool TriggerAction(string actionId)
+    public bool TriggerAction(string actionId, string? targetValue = null)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
             CaptureActionSnapshot(action);
+            ApplyActionTarget(action, targetValue);
             TogglePlayback(action);
             return true;
         }
@@ -1281,6 +1282,7 @@ internal sealed class ComponentPreviewInputSession
         var keys = new[] { ActionStateKey(action), ActionTimeKey(action) }
             .Concat(ActivatedPlaybackInputKeys(action))
             .Concat(DeactivatedPlaybackInputKeys(action))
+            .Concat(ActionTargetInputKeys(action))
             .Distinct(StringComparer.Ordinal);
         _actionSnapshots[snapshotKey] = keys.ToDictionary(
             (key) => key,
@@ -1291,6 +1293,28 @@ internal sealed class ComponentPreviewInputSession
     }
 
     private string ActionSnapshotKey(string actionId) => $"{_scopeKey}:action-snapshot:{actionId}";
+
+    private IEnumerable<string> ActionTargetInputKeys(ComponentPreviewActionDefinition action)
+    {
+        return string.IsNullOrWhiteSpace(action.TargetInputId) || action.IsCollectionItemAction
+            ? []
+            : [$"{_scopeKey}:{action.TargetInputId}"];
+    }
+
+    private void ApplyActionTarget(ComponentPreviewActionDefinition action, string? explicitValue)
+    {
+        if (string.IsNullOrWhiteSpace(action.TargetInputId) || action.IsCollectionItemAction) return;
+        var key = $"{_scopeKey}:{action.TargetInputId}";
+        var current = _values.GetValueOrDefault(key, InputDefault(key, "false"));
+        var target = action.TargetMode switch
+        {
+            ComponentPreviewActionTargetMode.Toggle => StringToBool(current) ? "false" : "true",
+            ComponentPreviewActionTargetMode.Option or ComponentPreviewActionTargetMode.Value
+                when !string.IsNullOrWhiteSpace(explicitValue) => explicitValue,
+            _ => "",
+        };
+        if (!string.IsNullOrWhiteSpace(target)) _values[key] = target;
+    }
 
     private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {

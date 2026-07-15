@@ -3,7 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -16,10 +19,12 @@ internal sealed class RuntimeTestActionControl : Border
 
     public RuntimeTestActionControl(
         string label,
-        Action play,
+        Action<string?> play,
         Action restore,
         Func<bool> canRestore,
-        PreviewPlaybackState playbackState)
+        PreviewPlaybackState playbackState,
+        IReadOnlyList<FieldOption>? targetOptions = null,
+        string currentTargetValue = "")
     {
         _canRestore = canRestore;
         _playbackState = playbackState;
@@ -30,25 +35,43 @@ internal sealed class RuntimeTestActionControl : Border
         Background = EditorSukiWindowTheme.AccentBrush(0x12);
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
+        var hasTargetOptions = targetOptions is { Count: > 0 };
         var layout = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        layout.Children.Add(new TextBlock
+        EditorInstantComboBox? targetCombo = null;
+        if (hasTargetOptions)
         {
-            Text = label,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+            var options = targetOptions!;
+            targetCombo = new EditorInstantComboBox
+            {
+                ItemsSource = options,
+                SelectedItem = options.FirstOrDefault((option) => option.Value != currentTargetValue)
+                    ?? options.First(),
+                DisabledValues = string.IsNullOrWhiteSpace(currentTargetValue) ? [] : [currentTargetValue],
+                MinWidth = 0,
+            };
+            layout.Children.Add(targetCombo);
+        }
+        else
+        {
+            layout.Children.Add(new TextBlock
+            {
+                Text = label,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                FontWeight = FontWeight.SemiBold,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        }
 
         _playButton = CreateButton(EditorIcons.Play, $"Play {label}");
         _playButton.Click += (_, args) =>
         {
             args.Handled = true;
-            play();
+            play(targetCombo?.SelectedItem?.Value);
             RefreshState();
         };
         Grid.SetColumn(_playButton, 1);

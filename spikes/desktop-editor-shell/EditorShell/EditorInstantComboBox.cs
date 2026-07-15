@@ -25,6 +25,7 @@ public sealed class EditorInstantComboBox : Grid
     private readonly StackPanel _itemsPanel;
     private TopLevel? _dismissRoot;
     private IReadOnlyList<FieldOption> _items = [];
+    private IReadOnlySet<string> _disabledValues = new HashSet<string>(StringComparer.Ordinal);
     private FieldOption? _selectedItem;
     private int _highlightedIndex = -1;
 
@@ -136,6 +137,16 @@ public sealed class EditorInstantComboBox : Grid
         }
     }
 
+    internal IEnumerable<string>? DisabledValues
+    {
+        get => _disabledValues;
+        set
+        {
+            _disabledValues = new HashSet<string>(value ?? [], StringComparer.Ordinal);
+            RebuildItems();
+        }
+    }
+
     private void TogglePopup()
     {
         if (_items.Count == 0) return;
@@ -166,6 +177,7 @@ public sealed class EditorInstantComboBox : Grid
 
     private void Select(FieldOption option)
     {
+        if (_disabledValues.Contains(option.Value)) return;
         SetPopupOpen(false);
         SelectedItem = option;
     }
@@ -288,6 +300,7 @@ public sealed class EditorInstantComboBox : Grid
                 BorderThickness = isSelected ? new Thickness(3, 0, 0, 0) : new Thickness(0),
                 Cursor = new Cursor(StandardCursorType.Hand),
                 Focusable = false,
+                IsEnabled = !_disabledValues.Contains(item.Value),
             };
             button.Click += (_, _) => Select(item);
             _itemsPanel.Children.Add(button);

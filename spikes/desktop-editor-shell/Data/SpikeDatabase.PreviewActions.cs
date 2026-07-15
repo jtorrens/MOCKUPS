@@ -34,10 +34,24 @@ internal sealed partial class SpikeDatabase
     private static void NormalizePreviewActionCompletion(JsonObject preview)
     {
         SetMissingCompletionBehavior(preview["actions"] as JsonArray);
+        NormalizeFullScreenTarget(preview["actions"] as JsonArray);
         if (preview["collections"] is not JsonArray collections) return;
         foreach (var collection in collections.OfType<JsonObject>())
         {
             SetMissingCompletionBehavior(collection["itemActions"] as JsonArray);
+            NormalizeFullScreenTarget(collection["itemActions"] as JsonArray);
+        }
+    }
+
+    private static void NormalizeFullScreenTarget(JsonArray? actions)
+    {
+        if (actions is null) return;
+        foreach (var action in actions.OfType<JsonObject>().Where((candidate) =>
+                     candidate["id"]?.GetValue<string>() == "fullScreen"))
+        {
+            action.Remove("activateInputIds");
+            action["targetInputId"] = "isFullScreen";
+            action["targetMode"] = "toggle";
         }
     }
 

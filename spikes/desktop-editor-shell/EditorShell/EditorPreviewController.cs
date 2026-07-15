@@ -1257,15 +1257,15 @@ internal sealed class EditorPreviewController
         }
     }
 
-    public void TriggerDesignPreviewAction(string actionId)
+    public void TriggerDesignPreviewAction(string actionId, string? targetValue = null)
     {
-        if (_designInputsPanel.TriggerAction(actionId))
+        if (_designInputsPanel.TriggerAction(actionId, targetValue))
         {
             return;
         }
 
         Refresh();
-        _designInputsPanel.TriggerAction(actionId);
+        _designInputsPanel.TriggerAction(actionId, targetValue);
     }
 
     public bool CanRestoreDesignPreviewAction(string actionId)

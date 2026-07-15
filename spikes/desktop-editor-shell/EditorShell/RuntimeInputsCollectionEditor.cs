@@ -17,7 +17,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
-    private readonly Action<string> _triggerAction;
+    private readonly Action<string, string?> _triggerAction;
     private readonly Action<string> _restoreAction;
     private readonly Func<string, bool> _canRestoreAction;
     private readonly Action<string, string> _setPreviewTestValue;
@@ -40,7 +40,7 @@ internal sealed class RuntimeInputsCollectionEditor
         SpikeDatabase database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
-        Action<string> triggerAction,
+        Action<string, string?> triggerAction,
         Action<string> restoreAction,
         Func<string, bool> canRestoreAction,
         Action<string, string> setPreviewTestValue,
@@ -253,7 +253,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var actionPanel = new StackPanel { Spacing = 6 };
             foreach (var action in rootActions)
             {
-                actionPanel.Children.Add(CreateActionControl(action));
+                actionPanel.Children.Add(CreateActionControl(action, inputs, preview));
             }
             panel.Children.Add(actionPanel);
         }
@@ -622,7 +622,7 @@ internal sealed class RuntimeInputsCollectionEditor
             };
             foreach (var action in itemActions)
             {
-                var control = CreateActionControl(action);
+                var control = CreateActionControl(action, collection.Fields, item);
                 actionControls.Add((action, control));
                 actionRow.Children.Add(control);
             }
@@ -1161,14 +1161,28 @@ internal sealed class RuntimeInputsCollectionEditor
             (next) => _sessionUiState.SetNavigationWidth(stateKey, next));
     }
 
-    private RuntimeTestActionControl CreateActionControl(ComponentPreviewActionDefinition action)
+    private RuntimeTestActionControl CreateActionControl(
+        ComponentPreviewActionDefinition action,
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        JsonObject values)
     {
+        var targetInput = string.IsNullOrWhiteSpace(action.TargetInputId)
+            ? null
+            : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
+        var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
+            ? targetInput?.Options
+            : null;
+        var currentTargetValue = targetInput is null
+            ? ""
+            : DesignPreviewTestValues.Value(values, targetInput);
         return new RuntimeTestActionControl(
             action.Label,
-            () => _triggerAction(action.Id),
+            (targetValue) => _triggerAction(action.Id, targetValue),
             () => _restoreAction(action.Id),
             () => _canRestoreAction(action.Id),
-            _playbackState);
+            _playbackState,
+            targetOptions,
+            currentTargetValue);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)

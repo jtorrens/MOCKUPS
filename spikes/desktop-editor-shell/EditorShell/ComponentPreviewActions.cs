@@ -204,10 +204,24 @@ internal static class ComponentPreviewActions
             JsonString(action, "prewarmWhenValue"),
             JsonStringArray(action, "activateInputIds"),
             JsonStringArray(action, "deactivateInputIds"),
+            JsonString(action, "targetInputId"),
+            ParseTargetMode(JsonString(action, "targetMode")),
             collectionJsonKey,
             collectionItemId,
             JsonString(action, "visibleWhenItemJsonKey"),
             JsonStringArray(action, "visibleWhenItemValues"));
+    }
+
+    private static ComponentPreviewActionTargetMode ParseTargetMode(string value)
+    {
+        return value.ToLowerInvariant() switch
+        {
+            "" => ComponentPreviewActionTargetMode.None,
+            "toggle" => ComponentPreviewActionTargetMode.Toggle,
+            "option" => ComponentPreviewActionTargetMode.Option,
+            "value" => ComponentPreviewActionTargetMode.Value,
+            _ => throw new InvalidOperationException($"Unknown component preview action targetMode '{value}'."),
+        };
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
@@ -313,6 +327,8 @@ internal sealed record ComponentPreviewActionDefinition(
     string PrewarmWhenValue,
     IReadOnlyList<string> ActivateInputIds,
     IReadOnlyList<string> DeactivateInputIds,
+    string TargetInputId,
+    ComponentPreviewActionTargetMode TargetMode,
     string CollectionJsonKey = "",
     string CollectionItemId = "",
     string VisibleWhenItemJsonKey = "",
@@ -320,6 +336,14 @@ internal sealed record ComponentPreviewActionDefinition(
 {
     public bool IsCollectionItemAction => !string.IsNullOrWhiteSpace(CollectionJsonKey)
         && !string.IsNullOrWhiteSpace(CollectionItemId);
+}
+
+internal enum ComponentPreviewActionTargetMode
+{
+    None,
+    Toggle,
+    Option,
+    Value,
 }
 
 internal enum ComponentPreviewActionTimeUnit

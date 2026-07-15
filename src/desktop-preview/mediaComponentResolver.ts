@@ -198,8 +198,9 @@ export function resolveMediaComponentFromRecords(
     ),
     motion: requiredMotionContract(media, "motion", "component.media.motion"),
     motionFrame: {
-      trigger: fullScreenTransition && isFullScreen,
+      trigger: fullScreenTransition,
       elapsedMs: optionalNumber(inputs, "motionElapsedMs", 0),
+      reverse: fullScreenTransition && !isFullScreen,
     },
   };
 }
