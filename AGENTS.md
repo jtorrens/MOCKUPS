@@ -180,3 +180,28 @@ important ownership and behavior boundaries. Wait for the user's explicit
 confirmation before editing files or running implementation commands, even when
 the proposal sounds imperative. Once confirmed, execute the agreed design
 without repeating the confirmation step for routine implementation details.
+
+## Collaboration rule: serialize code-writing threads
+
+This repository is normally maintained by one person, so only one thread may
+modify tracked project code or parity data in the shared checkout at a time.
+Before another code-writing thread starts, the active thread must:
+
+- stop the desktop editor and any other process that can keep writing project
+  files, especially `data/desktop-editor-spike.sqlite`;
+- run the checks appropriate to its change;
+- commit and push all intended project and parity changes;
+- verify that the working tree is clean; and
+- report the branch name and final commit so the next thread can verify and
+  continue from that exact remote state.
+
+The next code-writing thread must fetch the remote state, confirm the expected
+branch/commit and a clean working tree before editing. Parallel threads are
+allowed only for read-only investigation or work that is fully isolated from
+tracked project files. If parallel code changes are explicitly required, each
+thread must use its own worktree and branch and the changes must be integrated
+and validated sequentially.
+
+When a completed phase is intended to become the version used on other PCs,
+integrate it into `main`, push `main`, switch the local checkout to `main` and
+verify that local `main` and `origin/main` identify the same commit.
