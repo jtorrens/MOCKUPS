@@ -11,6 +11,7 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
+    ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
@@ -207,6 +208,19 @@ static void TrackTargetsRoundTrip()
     True(tracks.Single(track => track["fieldId"]!.GetValue<string>() == "subtitle")["targetId"] is null);
     var reloaded = new ModuleInstanceAnimationDocument(document.ToJson());
     Equal("message-1", Required(reloaded.Track("text", "message-1")).TargetId);
+}
+
+static void NestedCollectionTargetsFollowIdentity()
+{
+    var document = EmptyDocument();
+    document.AddTrack("active", "state-1", JsonValue.Create(false)!, "hold");
+    document.UpsertKeyframe("active", "state-1", 8, JsonValue.Create(true)!, "hold");
+    document.DuplicateTargets(new Dictionary<string, string> { ["state-1"] = "state-2" });
+    var duplicate = Required(document.Track("active", "state-2"));
+    SequenceEqual([0, 8], duplicate.Keyframes.Select((keyframe) => keyframe.Frame));
+    document.RemoveTarget("state-1");
+    True(document.Track("active", "state-1") is null);
+    True(document.Track("active", "state-2") is not null);
 }
 
 static void KeyframeUpsertUpdatesAndOrders()
@@ -681,6 +695,8 @@ static void ComponentStackSeedOpensAndRenders()
         var collections = designPreview["collections"] as JsonArray ?? throw new InvalidOperationException("Missing Component Stack collection contract.");
         Equal("items", collections.OfType<JsonObject>().Single()["jsonKey"]?.GetValue<string>() ?? "");
         var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
+        var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
+            ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
         var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");
         var reflowWeightField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeWeight");
         var fixedGapItem = new JsonObject { ["gapBeforeMode"] = "fixed" };
@@ -715,13 +731,24 @@ static void ComponentStackSeedOpensAndRenders()
         True(RuntimeInputFieldDefinitionFactory.Create(
             database,
             defaultVariant,
-            runtimeCollection.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
+            alternatives.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
         var runtimeItem = new JsonObject
         {
             ["id"] = "test_button",
-            ["presetId"] = childVariant,
-            ["overrides"] = new JsonObject(),
-            ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+            ["alternatives"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "test_button_default",
+                    ["presetId"] = childVariant,
+                    ["overrides"] = new JsonObject(),
+                    ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+                    ["active"] = false,
+                    ["behavior"] = "replace",
+                    ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                },
+            },
             ["alignment"] = "center",
             ["gapBeforeMode"] = "fixed",
             ["gapBeforeToken"] = "theme.spacing.m",
@@ -1287,9 +1314,20 @@ static void LockScreenComposesRuntimeStack()
             new JsonObject
             {
                 ["id"] = "lock_screen_label",
-                ["presetId"] = childVariant,
-                ["overrides"] = new JsonObject(),
-                ["inputs"] = childInputs,
+                ["alternatives"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "lock_screen_label_default",
+                        ["presetId"] = childVariant,
+                        ["overrides"] = new JsonObject(),
+                        ["inputs"] = childInputs,
+                        ["active"] = false,
+                        ["behavior"] = "replace",
+                        ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                        ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    },
+                },
                 ["alignment"] = "center",
                 ["gapBeforeMode"] = "fixed",
                 ["gapBeforeToken"] = "theme.spacing.none",

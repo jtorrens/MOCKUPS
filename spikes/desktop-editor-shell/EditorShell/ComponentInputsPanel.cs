@@ -1438,6 +1438,8 @@ internal sealed class ComponentPreviewInputSession
                 {
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
+                    StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
+                    AllowEmptyComponentPreset = field["allowEmpty"]?.GetValue<bool>() == true,
                 });
             }
 
@@ -1456,6 +1458,13 @@ internal sealed class ComponentPreviewInputSession
         }
 
         return definitions;
+    }
+
+    private static RuntimeInputCollectionDefinition? ReadRuntimeCollection(JsonObject? collection)
+    {
+        if (collection is null) return null;
+        var wrapper = new JsonObject { ["collections"] = new JsonArray(collection.DeepClone()) };
+        return ReadRuntimeCollections(wrapper, new JsonObject()).SingleOrDefault();
     }
 
     private static RuntimeInputCollectionItemPresentation? ReadItemPresentation(JsonObject collection)
@@ -1829,7 +1838,9 @@ internal sealed record ComponentInputDefinition(
     ComponentInputTransitionDefinition? Transition = null,
     string EnabledWhenPath = "",
     string EnabledWhenValue = "",
-    bool RefreshOnCommit = false);
+    bool RefreshOnCommit = false,
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
+    bool AllowEmptyComponentPreset = false);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

@@ -161,7 +161,8 @@ internal sealed partial class SpikeDatabase
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
-        string duplicateItemId)
+        JsonObject duplicate,
+        IReadOnlyDictionary<string, string> targetIdMappings)
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
         var content = ParseJsonObject(settings.ContentJson);
@@ -178,20 +179,18 @@ internal sealed partial class SpikeDatabase
             break;
         }
         if (source is null) throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        var duplicate = source.DeepClone().AsObject();
-        duplicate["id"] = duplicateItemId;
-        items.Insert(currentIndex + 1, duplicate);
+        items.Insert(currentIndex + 1, duplicate.DeepClone());
 
         var animation = ParseJsonObject(settings.AnimationJson);
         if (animation["tracks"] is JsonArray tracks)
         {
             foreach (var sourceTrack in tracks.OfType<JsonObject>()
-                .Where((track) => track["targetId"]?.GetValue<string>() == itemId)
+                .Where((track) => targetIdMappings.ContainsKey(track["targetId"]?.GetValue<string>() ?? ""))
                 .ToList())
             {
                 var duplicateTrack = sourceTrack.DeepClone().AsObject();
                 duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
-                duplicateTrack["targetId"] = duplicateItemId;
+                duplicateTrack["targetId"] = targetIdMappings[sourceTrack["targetId"]?.GetValue<string>() ?? ""];
                 foreach (var keyframe in (duplicateTrack["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
                 {
                     keyframe["id"] = $"keyframe_{Guid.NewGuid():N}";
@@ -219,11 +218,12 @@ internal sealed partial class SpikeDatabase
         var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
         items.Remove(item);
+        var removedTargetIds = CollectionTargetIds(item);
         var animation = ParseJsonObject(settings.AnimationJson);
         if (animation["tracks"] is JsonArray tracks)
         {
             foreach (var track in tracks.OfType<JsonObject>()
-                .Where((candidate) => candidate["targetId"]?.GetValue<string>() == itemId)
+                .Where((candidate) => removedTargetIds.Contains(candidate["targetId"]?.GetValue<string>() ?? ""))
                 .ToList())
             {
                 tracks.Remove(track);
@@ -237,6 +237,30 @@ internal sealed partial class SpikeDatabase
             ("$animationJson", animation.ToJsonString()),
             ("$id", moduleInstanceId));
         SynchronizeTimelineDurations(connection);
+    }
+
+    private static HashSet<string> CollectionTargetIds(JsonNode root)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        void Visit(JsonNode? node)
+        {
+            if (node is JsonObject value)
+            {
+                if (value["id"] is JsonValue idValue
+                    && idValue.TryGetValue<string>(out var id)
+                    && !string.IsNullOrWhiteSpace(id))
+                {
+                    result.Add(id);
+                }
+                foreach (var child in value.Select((entry) => entry.Value)) Visit(child);
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (var child in array) Visit(child);
+            }
+        }
+        Visit(root);
+        return result;
     }
 
     public void MoveModuleInstanceRuntimeCollectionItem(

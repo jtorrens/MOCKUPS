@@ -1061,7 +1061,7 @@ internal sealed partial class SpikeDatabase
         ["endGapToken"] = endGapToken,
         ["inputs"] = ComponentStackRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
-        ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-componentStack") },
+        ["collections"] = new JsonArray { ComponentStackSlotCollectionDefinition() },
     };
 
     private static JsonObject CollectionStackDesignPreview(
@@ -1167,6 +1167,124 @@ internal sealed partial class SpikeDatabase
         ["itemPresentation"] = new JsonObject
         {
             ["subtitleFieldIds"] = new JsonArray("presetId", "alignment"),
+            ["subtitleMaxCharacters"] = 72,
+            ["fallbackIcon"] = "component",
+        },
+    };
+
+    private static JsonObject ComponentStackSlotCollectionDefinition() => new()
+    {
+        ["id"] = "items",
+        ["label"] = "Slots",
+        ["jsonKey"] = "items",
+        ["itemLabel"] = "Slot",
+        ["fields"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "alternatives", ["label"] = "States", ["jsonKey"] = "alternatives",
+                ["kind"] = "text", ["valueKind"] = "StructuredCollection", ["defaultValue"] = "[]",
+                ["structuredCollection"] = ComponentStackAlternativeCollectionDefinition(),
+            },
+            new JsonObject
+            {
+                ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
+                ["kind"] = "option", ["defaultValue"] = "center",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject { ["value"] = "start", ["label"] = "Left" },
+                    new JsonObject { ["value"] = "center", ["label"] = "Center" },
+                    new JsonObject { ["value"] = "end", ["label"] = "Right" },
+                },
+            },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
+                ["kind"] = "option", ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
+                ["options"] = new JsonArray
+                {
+                    new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
+                    new JsonObject { ["value"] = "reflow", ["label"] = "Reflow" },
+                },
+            },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
+                ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
+                ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
+                    .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
+                ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                ["enabledWhenItemValues"] = new JsonArray("fixed"),
+            },
+            new JsonObject
+            {
+                ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
+                ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
+                ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
+                ["enabledWhenItemJsonKey"] = "gapBeforeMode",
+                ["enabledWhenItemValues"] = new JsonArray("reflow"),
+            },
+        },
+        ["itemPresentation"] = new JsonObject
+        {
+            ["subtitleFieldIds"] = new JsonArray("alignment"),
+            ["subtitleMaxCharacters"] = 72,
+            ["fallbackIcon"] = "component",
+        },
+    };
+
+    private static JsonObject ComponentStackAlternativeCollectionDefinition() => new()
+    {
+        ["id"] = "alternatives",
+        ["label"] = "States",
+        ["jsonKey"] = "alternatives",
+        ["itemLabel"] = "State",
+        ["componentItems"] = new JsonObject
+        {
+            ["presetJsonKey"] = "presetId",
+            ["overridesJsonKey"] = "overrides",
+            ["inputsJsonKey"] = "inputs",
+        },
+        ["fields"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
+                ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = "*,-componentStack",
+                ["allowEmpty"] = true,
+            },
+            new JsonObject
+            {
+                ["id"] = "active", ["label"] = "Active", ["jsonKey"] = "active",
+                ["kind"] = "boolean", ["defaultValue"] = "false", ["minimumItemIndex"] = 1,
+                ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
+            },
+            new JsonObject
+            {
+                ["id"] = "behavior", ["label"] = "Behavior", ["jsonKey"] = "behavior",
+                ["kind"] = "option", ["defaultValue"] = "replace", ["minimumItemIndex"] = 1,
+                ["options"] = new JsonArray
+                {
+                    new JsonObject { ["value"] = "replace", ["label"] = "Replace" },
+                    new JsonObject { ["value"] = "overlay", ["label"] = "Overlay" },
+                },
+            },
+            new JsonObject
+            {
+                ["id"] = "enterMotion", ["label"] = "Enter transition", ["jsonKey"] = "enterMotion",
+                ["kind"] = "text", ["valueKind"] = "Motion",
+                ["defaultValue"] = MotionVariantValue.Default.ToJsonString(),
+            },
+            new JsonObject
+            {
+                ["id"] = "exitMotion", ["label"] = "Exit transition", ["jsonKey"] = "exitMotion",
+                ["kind"] = "text", ["valueKind"] = "Motion",
+                ["defaultValue"] = MotionVariantValue.Default.ToJsonString(),
+            },
+        },
+        ["itemPresentation"] = new JsonObject
+        {
+            ["subtitleFieldIds"] = new JsonArray("presetId", "behavior"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",
         },

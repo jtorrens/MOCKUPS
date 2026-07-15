@@ -499,10 +499,19 @@ internal sealed class RuntimeInputsCollectionEditor
                 var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
                 var copy = CloneObject(item);
                 copy["id"] = duplicateId;
+                RuntimeInputForwardingContract.RebaseIds(copy, itemId, duplicateId);
+                var idMappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
+                    .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
+                idMappings[itemId] = duplicateId;
                 editor!.ActivateOnly(copy, items.Count);
                 if (owner.IsInstance)
                 {
-                    _database.DuplicateModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, duplicateId);
+                    _database.DuplicateModuleInstanceRuntimeCollectionItem(
+                        owner.Node.Id,
+                        StorageCollectionKey(collection),
+                        itemId,
+                        copy,
+                        idMappings);
                 }
                 else
                 {
@@ -831,28 +840,55 @@ internal sealed class RuntimeInputsCollectionEditor
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
             && ComponentOverrideCount(currentOverrides) > 0;
+        var services = _dictionaryServices.ForNode(owner.Node, (fieldId) =>
+        {
+            var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
+            return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
+        },
+        openComponentPresetReference: (reference) =>
+        {
+            _navigateToNode(reference);
+            return Task.CompletedTask;
+        },
+        openEmbeddedComponent: selectsComponent && openComponentOverrides is not null
+            ? (_) =>
+            {
+                openComponentOverrides();
+                return Task.CompletedTask;
+            }
+            : null,
+        openRuntimeComponentOverrides: _openEmbeddedContext) with
+        {
+            DecorateStructuredCollectionField = owner.IsInstance
+                ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
+                : null,
+            RemoveStructuredCollectionAnimationTargets = owner.IsInstance
+                ? (targetIds) =>
+                {
+                    var document = new ModuleInstanceAnimationDocument(
+                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                    foreach (var targetId in targetIds) document.RemoveTarget(targetId);
+                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _onChanged();
+                }
+                : null,
+            DuplicateStructuredCollectionAnimationTargets = owner.IsInstance
+                ? (targetIds) =>
+                {
+                    var document = new ModuleInstanceAnimationDocument(
+                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                    document.DuplicateTargets(targetIds);
+                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _onChanged();
+                }
+                : null,
+        };
         var control = new DictionaryFieldControl(
             new FieldValue(
                 RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
-            _dictionaryServices.ForNode(owner.Node, (fieldId) =>
-            {
-                var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
-                return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
-            },
-            (reference) =>
-            {
-                _navigateToNode(reference);
-                return Task.CompletedTask;
-            },
-            selectsComponent && openComponentOverrides is not null
-                ? (_) =>
-                {
-                    openComponentOverrides();
-                    return Task.CompletedTask;
-                }
-                : null));
+            services);
         var fieldIsActive = CollectionFieldAvailability.IsEnabled(item, input, itemIndex);
         control.IsEnabled = fieldIsActive;
         control.IsVisible = fieldIsActive;

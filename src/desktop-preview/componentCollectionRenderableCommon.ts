@@ -2,13 +2,14 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import type {
   ComponentCollectionChildRenderer,
   ComponentCollectionItemContract,
+  ComponentCollectionLayoutItem,
   ComponentCollectionSizingMode,
 } from "./componentCollectionContract.js";
 import { boundedCenterBox, embeddedComponentPayload, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 interface MeasuredItem {
-  item: ComponentCollectionItemContract;
+  item: ComponentCollectionLayoutItem;
   node: RenderableNode;
   box: RenderableBox;
   fixedGapBefore: number;
@@ -32,10 +33,27 @@ export function renderComponentCollectionFlow(
   renderChild: ComponentCollectionChildRenderer,
   options: FlowOptions,
 ): RenderableNode {
+  return renderComponentCollectionFlowResolved(
+    payload,
+    items,
+    (item) => {
+      const component = item as ComponentCollectionItemContract;
+      return renderChild(embeddedComponentPayload(payload, component.componentType, component.config, component.inputs));
+    },
+    options,
+  );
+}
+
+export function renderComponentCollectionFlowResolved(
+  payload: DesignPreviewPayload,
+  items: ComponentCollectionLayoutItem[],
+  resolveNode: (item: ComponentCollectionLayoutItem) => RenderableNode,
+  options: FlowOptions,
+): RenderableNode {
   const scale = renderScale(payload);
   const startGap = Math.max(0, numberToken(payload, options.startGapToken) * scale);
   const endGap = Math.max(0, numberToken(payload, options.endGapToken) * scale);
-  const measured = measureItems(payload, items, renderChild);
+  const measured = measureResolvedItems(payload, items, resolveNode);
   const naturalWidth = measured.length ? Math.max(...measured.map(({ box }) => box.width)) : 0;
   const naturalHeight = startGap + endGap + measured.reduce((sum, current, index) =>
     sum + current.box.height + (index > 0 ? current.fixedGapBefore : 0), 0);
@@ -102,6 +120,26 @@ function measureItems(
   const scale = renderScale(payload);
   return items.map((item) => {
     const node = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
+    if (!node.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
+    return {
+      item,
+      node,
+      box: node.box,
+      fixedGapBefore: item.gapBeforeMode === "fixed"
+        ? Math.max(0, numberToken(payload, item.gapBeforeToken) * scale)
+        : 0,
+    };
+  });
+}
+
+function measureResolvedItems(
+  payload: DesignPreviewPayload,
+  items: ComponentCollectionLayoutItem[],
+  resolveNode: (item: ComponentCollectionLayoutItem) => RenderableNode,
+): MeasuredItem[] {
+  const scale = renderScale(payload);
+  return items.map((item) => {
+    const node = resolveNode(item);
     if (!node.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
     return {
       item,

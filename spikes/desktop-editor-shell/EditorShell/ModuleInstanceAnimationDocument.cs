@@ -99,6 +99,34 @@ internal sealed class ModuleInstanceAnimationDocument
         if (track is not null) _tracks.Remove(track);
     }
 
+    public void RemoveTarget(string targetId)
+    {
+        foreach (var track in _tracks.OfType<JsonObject>()
+            .Where((candidate) => (candidate["targetId"]?.GetValue<string>() ?? "") == targetId)
+            .ToList())
+        {
+            _tracks.Remove(track);
+        }
+        SetTargetDurationFrames(targetId, null);
+    }
+
+    public void DuplicateTargets(IReadOnlyDictionary<string, string> targetIdMappings)
+    {
+        foreach (var source in _tracks.OfType<JsonObject>()
+            .Where((track) => targetIdMappings.ContainsKey(track["targetId"]?.GetValue<string>() ?? ""))
+            .ToList())
+        {
+            var copy = source.DeepClone().AsObject();
+            copy["id"] = $"track-{Guid.NewGuid():N}";
+            copy["targetId"] = targetIdMappings[source["targetId"]?.GetValue<string>() ?? ""];
+            foreach (var keyframe in (copy["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                keyframe["id"] = $"keyframe-{Guid.NewGuid():N}";
+            }
+            _tracks.Add(copy);
+        }
+    }
+
     public void UpsertKeyframe(
         string fieldId,
         string targetId,

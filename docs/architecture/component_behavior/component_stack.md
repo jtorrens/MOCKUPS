@@ -1,149 +1,102 @@
 # Component Stack
 
-Status: active structural atom. Component Stack is a generic vertical container
-whose complete composition is supplied through Runtime Inputs.
+Status: active structural atom with deterministic slot states.
 
 Source of truth: `src/desktop-preview/componentStackComponentContract.ts`,
 `componentStackComponentResolver.ts`, `componentStackComponentRenderable.ts`
-and the generic Runtime Inputs collection editor in the desktop shell.
+and the recursive generic Structured Collection dictionary control.
 
 ## Purpose and ownership
 
-Component Stack places an ordered collection of concrete component Variants in
-one vertical flow. It owns only the relationships between those children:
+Component Stack places ordered slots in one vertical flow. Every slot owns an
+ordered collection of allowed states, so one stable position may show a default
+clock, replace it with Password, overlay another component, or resolve to an
+explicit empty state without changing the Stack schema.
 
-- collection order;
-- horizontal alignment inside the Stack;
-- the gap before each child;
-- the leading and trailing container gaps;
-- fill-container or fit-content sizing.
+The Stack owns slot order, horizontal alignment, the gap before each slot,
+leading/trailing container gaps, fill/content sizing and state selection inside
+each slot. It does not copy child schemas. The class therefore has only its
+protected `Default` Variant; complete composition is supplied through Runtime
+Inputs by a containing component or module.
 
-It does not copy the child component schema and it does not require a different
-Stack Variant for each combination. The containing module/component supplies
-the collection and may govern every child Variant, override and runtime input
-through the same public runtime contract.
+## Runtime contract
 
-The Stack class therefore needs only its protected `Default` Variant. That
-Variant has no compositional properties; the class configuration contains only
-the empty `componentStack` contract root.
+Scalar inputs are `sizingMode`, `startGapToken` and `endGapToken`. The `items`
+Runtime collection contains stable slots. Each slot contains:
 
-## Runtime input contract
+- `alternatives`: ordered nested state collection;
+- `alignment`: Left, Center or Right (`start`, `center`, `end` in storage);
+- `gapBeforeMode`: Fixed or Reflow;
+- `gapBeforeToken`: fixed `theme.spacing.*` token;
+- `gapBeforeWeight`: positive proportional Reflow weight.
 
-The scalar Runtime Inputs are:
+Each state has a stable id and contains:
 
-- `sizingMode`: `fill` or `content`;
-- `startGapToken`: `theme.spacing.*` token between the container start and the
-  first child;
-- `endGapToken`: `theme.spacing.*` token between the final child and the
-  container end.
+- a full `componentClassId::preset::presetId` reference, or explicit None;
+- local Overrides and the selected child Variant's Runtime Inputs;
+- `active`: animatable boolean for states after the first;
+- `behavior`: Replace or Overlay for states after the first;
+- generic `enterMotion` and `exitMotion` values.
 
-The ordered `items` collection is also a Runtime Input. Every item has a stable
-id and contains:
+State 1 is always the default. It has no editable Active or Behavior fields and
+is treated as active/Replace. Later active states are evaluated in collection
+order: Replace clears the current visible set; Overlay appends above it. None is
+a valid state and can therefore clear a slot through Replace without a switch,
+fallback or renderer exception.
 
-- `presetId`: full concrete Variant reference in
-  `componentClassId::preset::presetId` form;
-- `overrides`: explicit field-level overrides local to this Stack item;
-- `inputs`: the selected child Variant's runtime values;
-- `alignment`: stored as `start`, `center` or `end` and presented in the UI as
-  Left, Center or Right;
-- `gapBeforeMode`: `fixed` or `reflow`;
-- `gapBeforeToken`: fixed `theme.spacing.*` gap;
-- `gapBeforeWeight`: positive relative weight used by reflow.
+## Generic nested collection editing
 
-Component selection uses the shared two-level `ComponentPreset` dictionary
-control: first Component, then one of that Component's Variants. Changing the
-Component refreshes the available Variants and child runtime contract. The
-Stack itself is excluded as a child choice so the current contract cannot form
-recursive Stack trees.
+Both collection levels use the same recursive `StructuredCollection`
+dictionary control. Nested collection support is part of the generic field
+contract, not a Component Stack editor. It preserves standard Component then
+Variant selection, View Variant, Overrides, child Inputs,
+add/duplicate/delete/reorder, session expansion and reveal behavior at every
+depth.
 
-Child overrides open the normal embedded-Variant editor. There is no Stack-
-specific override editor or breadcrumb model. Override state is explicit stored
-state: restoring a field removes that override entry. Returning through the
-owner breadcrumb restores the Stack item, selected input group, expansion and
-editor scroll position for the current session.
+Changing or deleting a component uses the shared forwarded-input confirmation.
+Nested animatable fields use their own stable item id as v2 `targetId`. Test
+Values never show animation/Forward affordances that only make sense at an
+authoring boundary.
 
-## Ordering and item editing
+## Layout
 
-Collection order is visual order. Add, duplicate, delete and reorder use the
-shared Runtime Inputs collection machinery. A newly added item becomes the only
-expanded item and is revealed immediately.
+Start and End gaps belong to the container. Every slot after the first owns its
+gap relative to its predecessor; the first slot's gap controls are ignored.
+Fixed gaps resolve a spacing token. Reflow weights divide only positive
+remaining height in Fill mode and collapse in Content mode.
 
-Runtime Test Values are session-only inspection data. They are initialized from
-the declared defaults only the first time that contract is opened in an
-application session. Switching to another editor and returning must preserve
-the current session values and collection. A module or parent component later
-provides production values through this exact contract; preview-only Stack
-inputs are forbidden.
+Fill uses the complete parent box. Content computes the widest visible slot and
+the sum of visible slot heights plus boundaries/fixed gaps, leaving final
+placement to the parent. Visible Overlay states share the same slot region and
+collection order is paint order.
 
-In Variant authoring, every item embeds the standard grouped child Runtime
-Inputs editor directly. The Stack design binds those child fields as item
-Variant values by default; an upward triangle may promote one to the containing
-parent's runtime. A future parent design may instead declare a binding Runtime
-directly, in which case no Forward is required at that boundary. Test Values
-never show Forward triangles. Nested component inputs and collections may
-repeat this process at any depth because forwarding ids use stable item ids.
+## Frame and transition contract
 
-Record references belong to the item that declares them. Selecting an Actor for
-an Audio/Avatar child does not inherit or overwrite a containing module Actor.
-The generic preview-input resolver materializes the record object from the
-item's explicit record id for the requested preview and keeps only the id in
-persisted Stack data.
+Active persists only as v2 hold keyframes addressed by `fieldId` and the stable
+state `targetId`. For an arbitrary requested frame the resolver evaluates all
+state tracks and applies ordered Replace/Overlay semantics. It compares the
+resolved visible sets at track change frames so a displaced or deactivated
+state remains explicitly resolved during its finite Exit Motion.
 
-## Gap semantics
+Entry gives the child local frame zero at its activation keyframe. Re-entry
+restarts it. During exit the child is frozen at its final internal frame while
+the generic Motion helper resolves the outgoing transform. There are no timers,
+CSS animations or inferred renderer state. The bridge and web renderer receive
+only generic nodes for the requested frame.
 
-Container boundaries and item relationships are deliberately separate:
+## Preview boundary
 
-- `startGapToken` owns the space before the first item;
-- `endGapToken` owns the space after the final item;
-- every item from the second onward owns the gap before itself, relative to its
-  predecessor;
-- the first item's gap-before controls are disabled and ignored.
+The component resolver validates the slot/state contract, resolves concrete
+Variants, merges local Overrides and resolves the visible set. The renderable
+invokes the normal component registry, measures generic child nodes and emits a
+generic group. Common collection helpers know only layout records. The bridge,
+renderer and `MainWindow` contain no Component Stack or Lock Screen rule.
 
-For a fixed gap, the renderable resolves `gapBeforeToken` to final pixels. For a
-reflow gap, `gapBeforeWeight` participates in deterministic proportional
-distribution of the remaining vertical space. Fixed child heights, Start/End
-gaps and fixed inter-item gaps are removed first; only positive remaining space
-is distributed.
+## Explicit migrations
 
-Reflow has an effect only in `fill` mode. In `content` mode there is no surplus
-container height, so reflow gaps collapse to zero. The Fixed gap field is
-disabled when mode is Reflow, and Reflow weight is disabled when mode is Fixed.
-
-## Sizing and placement
-
-`fill` uses the complete box supplied by the parent. It is the mode for layouts
-where weighted reflow should consume available height.
-
-`content` computes the natural width as the widest child and the natural height
-as child heights plus Start/End and fixed gaps. The resulting frame hugs its
-contents; its parent remains responsible for final placement. The isolated
-Design Preview centers that natural frame only as preview presentation.
-
-Each child is aligned independently across the Stack width. Left aligns its
-left edge, Center centers it, and Right aligns its right edge. Alignment does
-not change child size.
-
-## Resolver and preview boundary
-
-The Stack resolver validates all runtime values, resolves each full Variant
-reference to its owning component type and merges that Variant config with the
-item-local overrides. Missing references, item ids, child inputs or unsupported
-enum values are errors; there are no compatibility fallbacks.
-
-The Stack renderable invokes the normal component registry for each child,
-requires the child to return a resolved box, calculates deterministic placement
-and emits one generic `group` containing translated generic child primitives.
-The common bridge and web renderer receive only final boxes and paint data.
-They contain no Component Stack branch, child-component rule, inheritance rule
-or runtime collection logic.
-
-Component Stack owns no clock or animation timeline. If a child is animated,
-its resolver receives the already requested frame state through its normal
-runtime input contract; Stack only places the resulting resolved frame.
-
-## Explicit migration rule
-
-The retired Variant-owned `order`/`slots` model and item-owned `gapAfter` fields
-are migrated once into Runtime Inputs. The old gap after item N becomes the gap
-before item N+1. Retired fields are removed from every Stack Variant and from
-the committed desktop database; runtime compatibility aliases are not kept.
+The retired Variant-owned `order`/`slots` model and `gapAfter` fields were
+migrated once into Runtime Inputs; old gap N became gap-before N+1. The later
+flat runtime item shape is also migrated once: every old item becomes a slot and
+its former Component/Variant/Overrides/Inputs become state 1. Lock Screen stack
+bindings and the committed desktop database are migrated in the same change.
+No aliases, coercions or compatibility fallbacks remain.
