@@ -32,7 +32,7 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
   const scaleRatio = requiredUnitRatio(preview, "scaleRatio", "collectionStack.runtime.scaleRatio", false);
   const opacityRatio = requiredUnitRatio(preview, "opacityRatio", "collectionStack.runtime.opacityRatio", true);
   const allItems = resolveComponentCollectionItems(payload, preview, "collectionStack");
-  const items = allItems.filter((item) => item.present || item.exitFrame !== undefined);
+  const items = allItems.filter((item) => item.present || item.exitFrame !== undefined || item.presenceTransition);
   const reflow = resolveDistributionReflow(payload, preview, allItems, items)
     ?? resolveReflow(payload, allItems, items);
   return {

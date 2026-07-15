@@ -88,7 +88,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
-        var actions = ComponentPreviewActions.Read(preview);
+        var actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         var tabs = new TabControl
         {
             Items =
@@ -597,7 +597,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var itemActions = actions
             .Where((action) => action.IsCollectionItemAction
                 && action.CollectionJsonKey == collection.JsonKey
-                && action.CollectionItemId == itemId)
+                && action.CollectionItemId == itemId
+                && string.IsNullOrWhiteSpace(action.TargetJsonPath))
             .ToList();
         StackPanel? actionRow = null;
         var actionControls = new List<(ComponentPreviewActionDefinition Action, RuntimeTestActionControl Control)>();
@@ -663,9 +664,20 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             var componentConfig = _database.GetComponentPresetConfig(componentPresetReference);
             var nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(componentInputs, componentConfig);
-            if (nestedInputs.Count > 0)
+            var nestedActions = actions.Where((action) =>
+                    action.IsCollectionItemAction
+                    && action.CollectionJsonKey == collection.JsonKey
+                    && action.CollectionItemId == itemId
+                    && action.TargetJsonPath == componentItemDefinition.InputsJsonKey)
+                .ToList();
+            if (nestedInputs.Count > 0 || nestedActions.Count > 0)
             {
                 var nestedPanel = new StackPanel { Spacing = 6 };
+                foreach (var nestedAction in nestedActions.Where((action) =>
+                             ComponentPreviewActions.AppliesToItem(action, componentInputs)))
+                {
+                    nestedPanel.Children.Add(CreateActionControl(nestedAction, nestedInputs, componentInputs));
+                }
                 foreach (var nestedInput in nestedInputs)
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
@@ -674,7 +686,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 groupSubcards.Add(new EditorInternalNavigationSection(
                     "componentInputs",
                     "Component inputs",
-                    EditorUiText.Count(nestedInputs.Count, "runtime input"),
+                    $"{EditorUiText.Count(nestedInputs.Count, "runtime input")} · {EditorUiText.Count(nestedActions.Count, "action")}",
                     EditorIcons.Component,
                     nestedPanel));
             }

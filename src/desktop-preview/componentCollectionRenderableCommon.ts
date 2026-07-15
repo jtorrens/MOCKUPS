@@ -215,6 +215,13 @@ function applyPresenceMotion(
 ) {
   if (!node.box) return node;
   const parentBox = previewScreenBox(payload);
+  if (item.presenceTransition) {
+    const frame = { trigger: true, elapsedMs: item.presenceElapsedMs ?? 0 };
+    const wrapped = item.present
+      ? wrapMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox)
+      : wrapExitMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox);
+    return { ...wrapped, box: node.box };
+  }
   if (item.exitFrame !== undefined) {
     const elapsedFrames = Math.max(0, payload.localFrame - item.exitFrame);
     const wrapped = wrapExitMotionFrame(

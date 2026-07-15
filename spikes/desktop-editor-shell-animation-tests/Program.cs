@@ -1201,6 +1201,21 @@ static void NotificationsSeedOpensAndRenders()
         var populated = Required(DesignPreviewPayloadFactory.Create(database, notificationsVariant, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(database, () => { });
         populatedSession.UpdateForPayload(populated, settings.ProjectId);
+        var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing populated Notifications contract.");
+        var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(database, populatedContract)
+            .Where((action) => !string.IsNullOrWhiteSpace(action.TargetJsonPath))
+            .ToList();
+        Equal(2, embeddedActions.Count);
+        True(embeddedActions.All((action) => action.TargetJsonPath == "inputs"));
+        var firstDisplayAction = embeddedActions.Single((action) => action.CollectionItemId == "notification_1");
+        True(populatedSession.TriggerAction(firstDisplayAction.Id, "detail"));
+        var targetedPayload = populatedSession.ApplyInputs(populated, "light", settings.ProjectId);
+        var targetedItems = JsonNode.Parse(targetedPayload.DesignPreviewJson)?["items"]?.AsArray()
+            ?? throw new InvalidOperationException("Missing targeted Notification items.");
+        Equal("detail", targetedItems[0]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
+        Equal("summary", targetedItems[1]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
+        True(populatedSession.RestoreAction(firstDisplayAction.Id));
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), "light", false,
             populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();

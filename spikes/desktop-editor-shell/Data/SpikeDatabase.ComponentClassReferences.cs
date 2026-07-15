@@ -352,6 +352,12 @@ internal sealed partial class SpikeDatabase
 
     public JsonObject GetComponentPresetRuntimeInputs(string presetReference)
     {
+        var effective = GetComponentPresetRuntimeContract(presetReference);
+        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+    }
+
+    public JsonObject GetComponentPresetRuntimeContract(string presetReference)
+    {
         if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
@@ -362,7 +368,7 @@ internal sealed partial class SpikeDatabase
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
-        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+        return effective;
     }
 
     public IReadOnlyList<ComponentInputBindingDefinition> GetComponentPresetRuntimeInputBindings(

@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { asRecord, optionalBoolean, optionalNumber, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import type {
@@ -48,6 +48,8 @@ export function resolveComponentCollectionItem(
       `${itemPath}.${ownsPresence ? "presenceMotion" : "enterMotion"}`,
     );
     const present = presence.value === true;
+    const presenceTransition = optionalBoolean(item, "presenceTransition");
+    const presenceElapsedMs = Math.max(0, optionalNumber(item, "presenceElapsedMs", 0));
     const exitDurationFrames = Math.ceil(
       motionTotalDurationMs(payload, presenceMotion) / 1000 * Math.max(1, payload.frameRate),
     );
@@ -94,6 +96,8 @@ export function resolveComponentCollectionItem(
       exitFrame,
       reflowStartFrame,
       reflowFromInputs: inputResolution.previousValues,
+      presenceTransition,
+      presenceElapsedMs,
     };
 }
 

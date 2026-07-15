@@ -125,6 +125,11 @@ resolved final frame visible. Restore returns only that action and its declared
 target inputs to the snapshot captured before its first Play; Reset Test Values
 continues to clear the complete Design fixture. The currently effective option
 remains visible in a target selector but is disabled as a destination.
+Action placement follows ownership without promotion: root actions live at the
+root Test Values level, collection-item actions live inside that item, and an
+embedded component action lives inside the embedded component-input section of
+its owning item. Stable collection id, item id and nested input path form the
+action scope, so equal child action ids never share Play or Restore state.
 Production preview must use only persisted Shot/Screen runtime state and the
 global-Shot-to-local-Screen frame selected by production navigation.
 

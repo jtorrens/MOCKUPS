@@ -25,6 +25,8 @@ export interface ComponentCollectionItemContract extends ComponentCollectionLayo
   exitFrame?: number;
   reflowStartFrame?: number;
   reflowFromInputs?: Record<string, unknown>;
+  presenceTransition?: boolean;
+  presenceElapsedMs?: number;
 }
 
 export type ComponentCollectionChildRenderer = (payload: DesignPreviewPayload, assignedBox?: RenderableBox) => RenderableNode;

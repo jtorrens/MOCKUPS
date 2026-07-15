@@ -122,7 +122,7 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.Read(preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             _scopeKey = "";
@@ -370,7 +370,7 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.Read(preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             return payload;

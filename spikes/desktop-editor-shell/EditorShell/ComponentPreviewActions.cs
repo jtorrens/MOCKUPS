@@ -4,11 +4,47 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActions
 {
+    public static IReadOnlyList<ComponentPreviewActionDefinition> ReadWithEmbedded(
+        SpikeDatabase database,
+        JsonObject preview)
+    {
+        var definitions = Read(preview).ToList();
+        if (preview["collections"] is not JsonArray collections) return definitions;
+        foreach (var collection in collections.OfType<JsonObject>())
+        {
+            var collectionJsonKey = JsonString(collection, "jsonKey");
+            var componentItems = collection["componentItems"] as JsonObject;
+            if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
+            var presetJsonKey = JsonString(componentItems, "presetJsonKey");
+            var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
+            if (string.IsNullOrWhiteSpace(presetJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
+            if (preview[collectionJsonKey] is not JsonArray items) continue;
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                var itemId = JsonString(item, "id");
+                var presetReference = JsonString(item, presetJsonKey);
+                if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(presetReference)) continue;
+                var childContract = database.GetComponentPresetRuntimeContract(presetReference);
+                definitions.AddRange(Read(childContract)
+                    .Where((action) => !action.IsCollectionItemAction)
+                    .Select((action) => action with
+                    {
+                        Id = $"embedded:{collectionJsonKey}:{itemId}:{inputsJsonKey}:{action.Id}",
+                        CollectionJsonKey = collectionJsonKey,
+                        CollectionItemId = itemId,
+                        TargetJsonPath = inputsJsonKey,
+                    }));
+            }
+        }
+        return definitions;
+    }
+
     public static IReadOnlyList<ComponentPreviewActionDefinition> Read(JsonObject preview)
     {
         var definitions = new List<ComponentPreviewActionDefinition>();
@@ -156,12 +192,19 @@ internal static class ComponentPreviewActions
             return preview;
         }
 
-        return preview[action.CollectionJsonKey] is JsonArray items
+        var item = preview[action.CollectionJsonKey] is JsonArray items
             ? items.OfType<JsonObject>().FirstOrDefault((item) =>
                 item["id"] is JsonValue value
                 && value.TryGetValue<string>(out var id)
                 && id == action.CollectionItemId)
             : null;
+        if (item is null || string.IsNullOrWhiteSpace(action.TargetJsonPath)) return item;
+        JsonNode? target = item;
+        foreach (var segment in action.TargetJsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
+        {
+            target = target is JsonObject owner ? owner[segment] : null;
+        }
+        return target as JsonObject;
     }
 
     private static ComponentPreviewActionDefinition? ParseAction(
@@ -229,6 +272,7 @@ internal static class ComponentPreviewActions
             ParseTargetOptions(action),
             collectionJsonKey,
             collectionItemId,
+            "",
             JsonString(action, "visibleWhenItemJsonKey"),
             JsonStringArray(action, "visibleWhenItemValues"));
     }
@@ -364,6 +408,7 @@ internal sealed record ComponentPreviewActionDefinition(
     IReadOnlyList<FieldOption> TargetOptions,
     string CollectionJsonKey = "",
     string CollectionItemId = "",
+    string TargetJsonPath = "",
     string VisibleWhenItemJsonKey = "",
     IReadOnlyList<string>? VisibleWhenItemValues = null)
 {
