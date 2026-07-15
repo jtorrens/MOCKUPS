@@ -1,23 +1,107 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredString } from "./componentResolverCommon.js";
+import { asRecord, parseObject, requiredBoolean, requiredNumber, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
+import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
+import { requiredMotionContract } from "./previewMotionHelpers.js";
+import { motionTotalDurationMs } from "./previewMotionHelpers.js";
+import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
 
 export function resolveNotificationsComponent(payload: DesignPreviewPayload): NotificationsDesignContract {
   const config = parseObject(payload.configJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
-  const slot = asRecord(asRecord(config.notifications).collectionStackSlot);
+  const notifications = asRecord(config.notifications);
+  const slot = asRecord(notifications.collectionStackSlot);
+  const badgeSlot = asRecord(notifications.badgeSlot);
+  const badgeInputs = asRecord(notifications.badgeInputs);
+  const preview = parseObject(payload.designPreviewJson);
+  const distributionMotion = requiredMotionContract(notifications, "distributionMotion", "component.notifications.distributionMotion");
+  const distribution = resolveDistribution(payload, preview, distributionMotion);
   const stackConfig = mergeComponentDefaults(
     componentPresetConfig(bases, "collectionStack", requiredString(slot, "presetId", "component.notifications.collectionStackSlot.presetId")),
     asRecord(slot.overrides),
   );
+  const stack = resolveCollectionStackComponent({
+    ...payload,
+    componentType: "collectionStack",
+    configJson: JSON.stringify(stackConfig),
+    designPreviewJson: JSON.stringify({ ...preview, distributionMode: distribution.mode }),
+  });
+  const closedItemLimit = Math.max(1, Math.floor(requiredNumber(notifications, "closedItemLimit", "component.notifications.closedItemLimit")));
+  const presentCount = stack.items.filter((item) => item.present).length;
+  const visibleStack = stack.distributionMode === "stacked"
+    ? {
+        ...stack,
+        items: stack.items.slice(0, closedItemLimit),
+        reflow: stack.reflow
+          ? { ...stack.reflow, fromItems: stack.reflow.fromItems.slice(0, closedItemLimit) }
+          : undefined,
+      }
+    : stack;
+  const distributionTransition = distribution.transition
+    ? {
+        ...distribution.transition,
+        fromStack: {
+          ...stack,
+          distributionMode: distribution.transition.fromMode,
+          sizingMode: distribution.transition.fromMode === "stacked"
+            ? "content" as const
+            : requiredString(preview, "sizingMode", "component.notifications.runtime.sizingMode") as "fill" | "content",
+          items: distribution.transition.fromMode === "stacked"
+            ? stack.items.slice(0, closedItemLimit)
+            : stack.items,
+          reflow: undefined,
+        },
+      }
+    : undefined;
+  const showBadge = requiredBoolean(preview, "showBadge", "component.notifications.input.showBadge");
+  const badgeConfig = mergeComponentDefaults(
+    componentPresetConfig(bases, "badge", requiredString(badgeSlot, "presetId", "component.notifications.badgeSlot.presetId")),
+    asRecord(badgeSlot.overrides),
+  );
   return {
     id: "component.notifications",
-    stack: resolveCollectionStackComponent({
-      ...payload,
-      componentType: "collectionStack",
-      configJson: JSON.stringify(stackConfig),
-    }),
+    stack: visibleStack,
+    closedItemLimit,
+    distributionMotion,
+    distributionTransition,
+    badge: showBadge ? resolveBadgeComponentFromRecords(
+      badgeConfig,
+      { ...badgeInputs, iconToken: "", text: String(presentCount), contentMode: "text" },
+      "component.notifications.badge",
+    ) : undefined,
+  };
+}
+
+function resolveDistribution(
+  payload: DesignPreviewPayload,
+  preview: Record<string, unknown>,
+  motion: NotificationsDesignContract["distributionMotion"],
+) {
+  const base = requiredString(preview, "distributionMode", "component.notifications.runtime.distributionMode");
+  if (base !== "flow" && base !== "stacked") throw new Error(`Unsupported Notifications distribution ${base}`);
+  const instance = parseObject(payload.instanceJson ?? "{}");
+  const animation = asRecord(instance.animation);
+  const frame = Math.max(0, payload.localFrame);
+  const resolved = resolveParameterAnimation(animation, "distributionMode", "", frame, base);
+  const mode = resolved.value;
+  if (mode !== "flow" && mode !== "stacked") throw new Error(`Unsupported Notifications distribution ${String(mode)}`);
+  const forwardedTransition = asRecord(asRecord(preview.__runtimeTransitions).distributionMode);
+  const forwardedSource = Number(forwardedTransition.sourceFrame);
+  const source = resolved.sourceKeyframeFrame
+    ?? (Number.isFinite(forwardedSource) && forwardedSource > 0 ? forwardedSource : undefined);
+  if (source === undefined || source <= 0) return { mode: mode as CollectionStackDistributionMode, transition: undefined };
+  const durationFrames = Math.ceil(motionTotalDurationMs(payload, motion) / 1000 * Math.max(1, payload.frameRate));
+  if (durationFrames <= 0 || frame - source >= durationFrames) {
+    return { mode: mode as CollectionStackDistributionMode, transition: undefined };
+  }
+  const previous = forwardedTransition.previousValue
+    ?? resolveParameterAnimation(animation, "distributionMode", "", Math.max(0, source - 1), base).value;
+  if (previous !== "flow" && previous !== "stacked") throw new Error(`Unsupported previous Notifications distribution ${String(previous)}`);
+  return {
+    mode: mode as CollectionStackDistributionMode,
+    transition: { fromMode: previous as CollectionStackDistributionMode, elapsedFrames: frame - source },
   };
 }

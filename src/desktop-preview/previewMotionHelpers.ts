@@ -222,7 +222,7 @@ function entranceStartBox(
   }
 }
 
-function easingProgress(easing: string, progress: number, intensity: number) {
+export function easingProgress(easing: string, progress: number, intensity: number) {
   if (progress <= 0 || progress >= 1 || easing === "linear") {
     return progress;
   }

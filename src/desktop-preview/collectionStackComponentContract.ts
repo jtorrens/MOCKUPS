@@ -6,6 +6,7 @@ import type {
 
 export type CollectionStackDistributionMode = "flow" | "stacked";
 export type CollectionStackDirection = "down" | "up";
+export type CollectionStackItemSizingMode = "intrinsic" | "largest";
 
 export interface CollectionStackDesignContract {
   id: "collectionStack";
@@ -15,7 +16,14 @@ export interface CollectionStackDesignContract {
   endGapToken: string;
   stackDirection: CollectionStackDirection;
   stackOffsetToken: string;
+  itemSizingMode: CollectionStackItemSizingMode;
+  scaleRatio: number;
+  opacityRatio: number;
   items: ComponentCollectionItemContract[];
+  reflow?: {
+    progress: number;
+    fromItems: ComponentCollectionItemContract[];
+  };
 }
 
 export type CollectionStackChildRenderer = ComponentCollectionChildRenderer;

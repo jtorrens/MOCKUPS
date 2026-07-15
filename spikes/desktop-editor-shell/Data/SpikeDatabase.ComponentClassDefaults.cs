@@ -24,6 +24,7 @@ internal sealed partial class SpikeDatabase
             "iconBar" => "Icon bar component",
             "componentStack" => "Component stack atom",
             "collectionStack" => "Collection stack atom",
+            "badge" => "Badge atom",
             "notification" => "Notification component",
             "notifications" => "Notifications component",
             "textInputBar" => "Text input bar component",
@@ -287,12 +288,27 @@ internal sealed partial class SpikeDatabase
                 config.Remove("style");
                 config["collectionStack"] = new JsonObject();
                 break;
+            case "badge":
+                config.Remove("style");
+                config["badge"] = new JsonObject
+                {
+                    ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
+                    ["paddingToken"] = "theme.spacing.xs",
+                    ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":0,"offsetX":0,"offsetY":0}"""),
+                };
+                break;
             case "notification":
                 config.Remove("style");
                 config["notification"] = new JsonObject
                 {
-                    ["avatarPosition"] = "start",
+                    ["dimensionMode"] = "content",
+                    ["size"] = "320|88",
+                    ["padding"] = "theme.spacing.m|theme.spacing.m",
                     ["gapToken"] = "theme.spacing.m",
+                    ["avatarPlacement"] = JsonNode.Parse("""{"mode":"center","alignX":0.25,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
+                    ["labelPlacement"] = JsonNode.Parse("""{"mode":"center","alignX":0.75,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
+                    ["avatarInputs"] = DefaultAvatarBadgeInputs(),
+                    ["surfaceSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["avatarSlot"] = new JsonObject
                     {
                         ["presetId"] = DefaultComponentPresetId,
@@ -308,7 +324,8 @@ internal sealed partial class SpikeDatabase
                             },
                         },
                     },
-                    ["labelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["summaryLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["detailLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                 };
                 break;
             case "notifications":
@@ -316,6 +333,19 @@ internal sealed partial class SpikeDatabase
                 config["notifications"] = new JsonObject
                 {
                     ["collectionStackSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["closedItemLimit"] = 3,
+                    ["distributionMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["badgeSlot"] = new JsonObject
+                    {
+                        ["presetId"] = DefaultComponentPresetId,
+                        ["overrides"] = new JsonObject(),
+                    },
+                    ["badgeInputs"] = new JsonObject
+                    {
+                        ["size"] = 20,
+                        ["backgroundPaletteColor"] = "blue",
+                        ["contentPaletteColor"] = "gray_100",
+                    },
                 };
                 break;
             case "surface":
@@ -378,6 +408,7 @@ internal sealed partial class SpikeDatabase
                         ["placement"] = JsonNode.Parse(AlignmentPlacementValue.Default.ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
+                    ["badgeSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                 };
                 break;
             case "iconRow":
@@ -580,6 +611,7 @@ internal sealed partial class SpikeDatabase
                     ["contentGapToken"] = "theme.spacing.s",
                     ["iconToken"] = "media_play_fill",
                     ["pushedDurationToken"] = "theme.motion.buttonPushedDurationMs",
+                    ["badgeSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                     ["states"] = new JsonObject
                     {
                         ["normal"] = ButtonStateStyle("theme.colors.icon"),
@@ -601,7 +633,8 @@ internal sealed partial class SpikeDatabase
                     ["textAlign"] = "center",
                     ["textGapToken"] = "theme.spacing.xs",
                     ["reserveSubtextSpace"] = false,
-                    ["subtextPlacement"] = JsonNode.Parse("""{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
+                    ["subtextVerticalPosition"] = "bottom",
+                    ["subtextHorizontalAlign"] = "center",
                     ["subtextColorToken"] = "theme.colors.textSecondary",
                     ["subtextTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
                 };
@@ -627,7 +660,7 @@ internal sealed partial class SpikeDatabase
                     {
                         ["showAvatar"] = true,
                         ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalOutsideEdge("left", 8).ToJsonString()),
                         ["overrides"] = new JsonObject
                         {
                             ["avatar"] = new JsonObject
@@ -694,14 +727,14 @@ internal sealed partial class SpikeDatabase
                         ["showLabel"] = false,
                         ["useActorColor"] = false,
                         ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("top", -4).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalOutsideEdge("top", -4).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
                     ["avatarSlot"] = new JsonObject
                     {
                         ["showAvatar"] = false,
                         ["presetId"] = DefaultComponentPresetId,
-                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalEdge("left", 8).ToJsonString()),
+                        ["placement"] = JsonNode.Parse(AlignmentPlacementValue.FromDirectionalOutsideEdge("left", 8).ToJsonString()),
                         ["overrides"] = new JsonObject(),
                     },
                     ["status"] = new JsonObject
@@ -786,6 +819,25 @@ internal sealed partial class SpikeDatabase
         if (componentType == "notification")
         {
             preview["actorId"] = "actor_alex";
+        }
+        if (componentType == "badge")
+        {
+            preview["contentMode"] = "icon";
+            preview["iconToken"] = "system_check";
+            preview["text"] = "3";
+            preview["size"] = 20;
+            preview["backgroundPaletteColor"] = "blue";
+            preview["contentPaletteColor"] = "gray_100";
+        }
+        if (componentType is "avatar" or "button")
+        {
+            preview["showBadge"] = false;
+            preview["badgeContentMode"] = "icon";
+            preview["badgeIconToken"] = "system_check";
+            preview["badgeText"] = "1";
+            preview["badgeSize"] = 20;
+            preview["badgeBackgroundPaletteColor"] = "blue";
+            preview["badgeContentPaletteColor"] = "gray_100";
         }
         if (componentType == "textBox")
         {
@@ -1071,7 +1123,10 @@ internal sealed partial class SpikeDatabase
         string startGapToken = "theme.spacing.none",
         string endGapToken = "theme.spacing.none",
         string stackDirection = "down",
-        string stackOffsetToken = "theme.spacing.m") => new()
+        string stackOffsetToken = "theme.spacing.m",
+        string itemSizingMode = "intrinsic",
+        decimal scaleRatio = 1,
+        decimal opacityRatio = 1) => new()
     {
         ["componentType"] = "collectionStack",
         ["distributionMode"] = distributionMode,
@@ -1080,6 +1135,9 @@ internal sealed partial class SpikeDatabase
         ["endGapToken"] = endGapToken,
         ["stackDirection"] = stackDirection,
         ["stackOffsetToken"] = stackOffsetToken,
+        ["itemSizingMode"] = itemSizingMode,
+        ["scaleRatio"] = scaleRatio,
+        ["opacityRatio"] = opacityRatio,
         ["inputs"] = CollectionStackRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
         ["collections"] = new JsonArray { ComponentCollectionDefinition("*,-collectionStack") },
@@ -1092,7 +1150,10 @@ internal sealed partial class SpikeDatabase
         string startGapToken = "theme.spacing.none",
         string endGapToken = "theme.spacing.none",
         string stackDirection = "down",
-        string stackOffsetToken = "theme.spacing.m") => new()
+        string stackOffsetToken = "theme.spacing.m",
+        string itemSizingMode = "largest",
+        decimal scaleRatio = 1,
+        decimal opacityRatio = 1) => new()
     {
         ["componentType"] = "notifications",
         ["distributionMode"] = distributionMode,
@@ -1101,7 +1162,10 @@ internal sealed partial class SpikeDatabase
         ["endGapToken"] = endGapToken,
         ["stackDirection"] = stackDirection,
         ["stackOffsetToken"] = stackOffsetToken,
-        ["inputs"] = CollectionStackRuntimeInputs(),
+        ["itemSizingMode"] = itemSizingMode,
+        ["scaleRatio"] = scaleRatio,
+        ["opacityRatio"] = opacityRatio,
+        ["inputs"] = NotificationsRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
         ["collections"] = new JsonArray { ComponentCollectionDefinition("notification") },
     };
@@ -1124,6 +1188,18 @@ internal sealed partial class SpikeDatabase
             {
                 ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
                 ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = componentTypeFilter,
+            },
+            new JsonObject
+            {
+                ["id"] = "present", ["label"] = "Present", ["jsonKey"] = "present",
+                ["kind"] = "boolean", ["defaultValue"] = "true",
+                ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
+            },
+            new JsonObject
+            {
+                ["id"] = "presenceMotion", ["label"] = "Presence transition", ["jsonKey"] = "presenceMotion",
+                ["kind"] = "text", ["valueKind"] = "Motion",
+                ["defaultValue"] = MotionVariantValue.Default.ToJsonString(),
             },
             new JsonObject
             {
@@ -1166,7 +1242,7 @@ internal sealed partial class SpikeDatabase
         },
         ["itemPresentation"] = new JsonObject
         {
-            ["subtitleFieldIds"] = new JsonArray("presetId", "alignment"),
+            ["subtitleFieldIds"] = new JsonArray("presetId", "present", "alignment"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",
         },
@@ -1296,12 +1372,24 @@ internal sealed partial class SpikeDatabase
         {
             "componentStack" => ComponentStackRuntimeInputs(),
             "collectionStack" => CollectionStackRuntimeInputs(),
-            "notifications" => CollectionStackRuntimeInputs(),
+            "notifications" => NotificationsRuntimeInputs(),
+            "badge" =>
+            [
+                ComponentInput("contentMode", "Content", "contentMode", "option", "icon", options: [new("icon", "Icon"), new("text", "Text")]),
+                ComponentInput("iconToken", "Icon", "iconToken", "icon", "system_check"),
+                ComponentInput("text", "Text", "text", "text", "3"),
+                ComponentInput("size", "Size", "size", ValueKind.Integer, "20", minimum: 1, maximum: 512, increment: 1),
+                ComponentInput("backgroundPaletteColor", "Background", "backgroundPaletteColor", ValueKind.PaletteColorToken, "blue"),
+                ComponentInput("contentPaletteColor", "Icon / text color", "contentPaletteColor", ValueKind.PaletteColorToken, "gray_100"),
+            ],
             "notification" =>
             [
                 ComponentInput("actorId", "Actor", "actorId", "recordReference", "actor_alex", tableId: "actors", resolvedJsonKey: "actor"),
-                ComponentInput("sampleText", "Text", "sampleText", "text", "New notification"),
-                ComponentInput("sampleSubtext", "Subtext", "sampleSubtext", "text", "Now"),
+                AnimatableComponentInput(ComponentInput("displayMode", "Display mode", "displayMode", "option", "summary", options: [new("summary", "Summary"), new("detail", "Detail")])),
+                ComponentInput("summaryText", "Summary text", "summaryText", "text", "New notification"),
+                ComponentInput("summarySubtext", "Summary subtext", "summarySubtext", "text", "Now"),
+                ComponentInput("detailText", "Detail text", "detailText", "text", "New notification"),
+                ComponentInput("detailSubtext", "Detail subtext", "detailSubtext", "text", "Notification detail"),
             ],
             "label" =>
             [
@@ -1456,6 +1544,13 @@ internal sealed partial class SpikeDatabase
                     tableId: "actors",
                     resolvedJsonKey: "actor"),
                 ComponentInput("sampleSubtext", "Subtitle", "sampleSubtext", "text", "Subtitle"),
+                ComponentInput("showBadge", "Show badge", "showBadge", "boolean", "false"),
+                ComponentInput("badgeContentMode", "Badge content", "badgeContentMode", "option", "icon", options: [new("icon", "Icon"), new("text", "Text")]),
+                ComponentInput("badgeIconToken", "Badge icon", "badgeIconToken", "icon", "system_check"),
+                ComponentInput("badgeText", "Badge text", "badgeText", "text", "1"),
+                ComponentInput("badgeSize", "Badge size", "badgeSize", ValueKind.Integer, "20", minimum: 1, maximum: 512, increment: 1),
+                ComponentInput("badgeBackgroundPaletteColor", "Badge background", "badgeBackgroundPaletteColor", ValueKind.PaletteColorToken, "blue"),
+                ComponentInput("badgeContentPaletteColor", "Badge icon / text color", "badgeContentPaletteColor", ValueKind.PaletteColorToken, "gray_100"),
             ],
             "button" =>
             [
@@ -1467,6 +1562,13 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("textSizeToken", "Text size", "textSizeToken", ValueKind.ThemeToken, "theme.typography.sizes.s", options: ComponentClassFieldCatalog.TypographySizeOptions),
                 ComponentInput("pushTrigger", "Push", "pushTrigger", "boolean", "false", source: "calculated"),
                 ComponentInput("pushElapsedMs", "Push elapsed", "pushElapsedMs", ValueKind.Decimal, "0", minimum: 0, maximum: 60000, increment: 10, source: "calculated", unit: "ms"),
+                ComponentInput("showBadge", "Show badge", "showBadge", "boolean", "false"),
+                ComponentInput("badgeContentMode", "Badge content", "badgeContentMode", "option", "icon", options: [new("icon", "Icon"), new("text", "Text")]),
+                ComponentInput("badgeIconToken", "Badge icon", "badgeIconToken", "icon", "system_check"),
+                ComponentInput("badgeText", "Badge text", "badgeText", "text", "1"),
+                ComponentInput("badgeSize", "Badge size", "badgeSize", ValueKind.Integer, "20", minimum: 1, maximum: 512, increment: 1),
+                ComponentInput("badgeBackgroundPaletteColor", "Badge background", "badgeBackgroundPaletteColor", ValueKind.PaletteColorToken, "blue"),
+                ComponentInput("badgeContentPaletteColor", "Badge icon / text color", "badgeContentPaletteColor", ValueKind.PaletteColorToken, "gray_100"),
             ],
             "textInputBar" =>
             [
@@ -1726,6 +1828,7 @@ internal sealed partial class SpikeDatabase
         {
             ["id"] = "distributionMode", ["label"] = "Distribution", ["jsonKey"] = "distributionMode",
             ["kind"] = "option", ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
+            ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
             ["options"] = new JsonArray
             {
                 new JsonObject { ["value"] = "flow", ["label"] = "Flow" },
@@ -1774,7 +1877,38 @@ internal sealed partial class SpikeDatabase
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
+        new JsonObject
+        {
+            ["id"] = "itemSizingMode", ["label"] = "Item sizing", ["jsonKey"] = "itemSizingMode",
+            ["kind"] = "option", ["defaultValue"] = "intrinsic",
+            ["options"] = new JsonArray
+            {
+                new JsonObject { ["value"] = "intrinsic", ["label"] = "Intrinsic" },
+                new JsonObject { ["value"] = "largest", ["label"] = "Largest item" },
+            },
+        },
+        new JsonObject
+        {
+            ["id"] = "scaleRatio", ["label"] = "Scale ratio", ["jsonKey"] = "scaleRatio",
+            ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
+            ["minimum"] = 0.01, ["maximum"] = 1, ["increment"] = 0.01,
+            ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "stacked",
+        },
+        new JsonObject
+        {
+            ["id"] = "opacityRatio", ["label"] = "Opacity ratio", ["jsonKey"] = "opacityRatio",
+            ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
+            ["minimum"] = 0, ["maximum"] = 1, ["increment"] = 0.01,
+            ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "stacked",
+        },
     ];
+
+    private static JsonArray NotificationsRuntimeInputs()
+    {
+        var inputs = CollectionStackRuntimeInputs();
+        inputs.Add(ComponentInput("showBadge", "Show badge", "showBadge", "boolean", "true"));
+        return inputs;
+    }
 
     private static void ApplyComponentInputLayout(string componentType, JsonArray inputs)
     {
@@ -1797,11 +1931,16 @@ internal sealed partial class SpikeDatabase
                 break;
             case "avatar":
                 SetComponentInputGroup(inputs, ["actorId", "sampleSubtext"], "identity", "Identity", 10);
+                SetComponentInputGroup(inputs, ["showBadge", "badgeContentMode", "badgeIconToken", "badgeText", "badgeSize", "badgeBackgroundPaletteColor", "badgeContentPaletteColor"], "badge", "Badge", 20);
+                break;
+            case "badge":
+                SetComponentInputGroup(inputs, ["contentMode", "iconToken", "text", "size", "backgroundPaletteColor", "contentPaletteColor"], "content", "Content", 10);
                 break;
             case "button":
                 SetComponentInputGroup(inputs, ["state"], "state", "State", 10);
                 SetComponentInputGroup(inputs, ["contentMode", "sampleText", "iconToken", "iconSizeToken", "textSizeToken"], "content", "Content", 20);
                 SetComponentInputGroup(inputs, ["pushTrigger", "pushElapsedMs"], "action", "Action", 30);
+                SetComponentInputGroup(inputs, ["showBadge", "badgeContentMode", "badgeIconToken", "badgeText", "badgeSize", "badgeBackgroundPaletteColor", "badgeContentPaletteColor"], "badge", "Badge", 40);
                 break;
             case "textInputBar":
                 SetComponentInputGroup(inputs, ["availableWidth"], "layout", "Layout", 10);
@@ -1947,6 +2086,13 @@ internal sealed partial class SpikeDatabase
             uiParentGroupId,
             unit,
             transition);
+    }
+
+    private static JsonObject AnimatableComponentInput(JsonObject input)
+    {
+        input["animatable"] = true;
+        input["animationInterpolations"] = new JsonArray("hold");
+        return input;
     }
 
     private static JsonObject ComponentInput(
@@ -2188,6 +2334,7 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("iconBar", "component.iconBar", "Default Icon Bar"),
         NewComponentSeed("componentStack", "component.componentStack", "Default Component Stack"),
         NewComponentSeed("collectionStack", "component.collectionStack", "Default Collection Stack"),
+        NewComponentSeed("badge", "component.badge", "Default Badge"),
         NewComponentSeed("notification", "component.notification", "Default Notification"),
         NewComponentSeed("notifications", "component.notifications", "Default Notifications"),
         NewComponentSeed("status_bar", "component.status_bar", "Default Status Bar"),

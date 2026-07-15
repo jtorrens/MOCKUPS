@@ -18,6 +18,7 @@ import {
   labelComponentToRenderableAt,
   measureLabelComponent,
 } from "./labelComponentRenderable.js";
+import { badgeComponentToRenderableAt } from "./badgeComponentRenderable.js";
 
 export function avatarComponentToRenderable(
   payload: DesignPreviewPayload,
@@ -178,6 +179,7 @@ function avatarRenderableNode(
             ),
           ]
         : []),
+      ...(avatar.badge ? [badgeComponentToRenderableAt(payload, avatar.badge, avatarBox)] : []),
     ],
   };
 }

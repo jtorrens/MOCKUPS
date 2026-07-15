@@ -1,4 +1,4 @@
-import type { RenderableNode } from "../visual/renderable/types.js";
+import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { audioComponentToRenderable } from "./audioComponentRenderable.js";
 import { resolveAudioComponent } from "./audioComponentResolver.js";
 import { avatarComponentToRenderable } from "./avatarComponentRenderable.js";
@@ -55,8 +55,10 @@ import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js
 import { mediaComponentToRenderable } from "./mediaComponentRenderable.js";
 import { resolveMediaComponent } from "./mediaComponentResolver.js";
 import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
+import { badgeComponentToRenderable } from "./badgeComponentRenderable.js";
+import { resolveBadgeComponent } from "./badgeComponentResolver.js";
 
-type ComponentRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
+type ComponentRenderableFactory = (payload: DesignPreviewPayload, assignedBox?: RenderableBox) => RenderableNode;
 
 export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
@@ -74,8 +76,9 @@ export const componentRenderableFactories = {
     componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
   collectionStack: (payload) =>
     collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), componentClassToRenderable),
-  notification: (payload) =>
-    notificationComponentToRenderable(payload, resolveNotificationComponent(payload)),
+  badge: (payload) => badgeComponentToRenderable(payload, resolveBadgeComponent(payload)),
+  notification: (payload, assignedBox) =>
+    notificationComponentToRenderable(payload, resolveNotificationComponent(payload), assignedBox),
   notifications: (payload) =>
     notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), componentClassToRenderable),
   codeIndicator: (payload) =>
@@ -105,14 +108,14 @@ export const componentRenderableFactories = {
     navigationBarComponentToRenderable(payload, resolveNavigationBarComponent(payload)),
 } satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
-export function componentClassToRenderable(payload: DesignPreviewPayload): RenderableNode {
+export function componentClassToRenderable(payload: DesignPreviewPayload, assignedBox?: RenderableBox): RenderableNode {
   payload = applyRuntimeInputForwarding(payload);
   const componentType = payload.componentType ?? "";
   const factory = isRoutedComponentClass(componentType)
     ? componentRenderableFactories[componentType]
     : undefined;
   if (factory) {
-    return factory(payload);
+    return factory(payload, assignedBox);
   }
 
   const box = {

@@ -39,12 +39,12 @@ The parent supplies frame state; Cursor does not own a clock.
 **Purpose/ownership.** One or two text lines with optional Surface and
 placement when embedded. **Runtime inputs.** Primary/subtext and, where used,
 actor-derived label data. **Variant/config.** Typography chains, colors,
-alignment, gap, subtext placement, Surface and style settings.
+alignment, tokenized vertical gap, subtext Top/Bottom position and relative
+Left/Center/Right alignment, Surface and style settings.
 
-**Layout.** Empty subtext takes no layout space. The generic alignment
-placement positions subtext relative to the primary text; its initial value is
-the former centered-below layout, while the spacing token remains the semantic
-distance between both texts. Text alignment is local to Label; parent placement
+**Layout.** Empty subtext takes no layout space. Subtext is placed above or
+below the primary text and aligned to its measured left edge, center or right
+edge. The spacing token is the vertical distance between both texts. Text alignment is local to Label; parent placement
 is separate. Parent can use Label's visual bounds for its own intrusion rules.
 
 **Motion.** No independent clock. **Limitations.** Font/emoji measurement is
@@ -146,9 +146,12 @@ Runtime Inputs and alignment contract, but adds runtime `Flow` and `Stacked`
 distribution modes. Its protected `Default` Variant contains no composition.
 
 **Layout.** `Flow` uses the ordinary vertical gap/reflow model. `Stacked` places
-all children in one region; collection order is paint order and a tokenized
-offset is applied downwards or upwards. The atom owns no notification semantics
-or clock. See [collection_stack.md](collection_stack.md).
+all children in one region; item zero is foreground and a tokenized offset is
+applied downwards or upwards. Intrinsic or Largest-item frames are explicit;
+Stacked depth may reduce scale and opacity exponentially by collection index.
+Each child owns animatable Present and one Presence Motion. After a completed
+exit, Theme-timed Reflow moves the surviving resolved boxes. The atom owns no
+notification semantics or clock. See [collection_stack.md](collection_stack.md).
 
 ## Shared atom motion and data boundary
 

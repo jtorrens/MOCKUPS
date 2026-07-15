@@ -61,6 +61,7 @@ internal sealed partial class SpikeDatabase
             EnsureKeypadComponentClasses(connection);
             EnsurePasswordComponentClasses(connection);
             EnsureLockScreenModule(connection);
+            NormalizeAlignmentPlacementModes(connection);
             NormalizePreviewActionCompletionContracts(connection);
             NormalizeIconRowButtonCollections(connection);
             RetireButtonIconComponentClasses(connection);
@@ -100,6 +101,7 @@ internal sealed partial class SpikeDatabase
         EnsureKeypadComponentClasses(connection);
         EnsurePasswordComponentClasses(connection);
         EnsureLockScreenModule(connection);
+        NormalizeAlignmentPlacementModes(connection);
         NormalizePreviewActionCompletionContracts(connection);
         NormalizeIconRowButtonCollections(connection);
         RetireButtonIconComponentClasses(connection);

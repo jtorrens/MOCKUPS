@@ -134,7 +134,9 @@ internal sealed partial class SpikeDatabase
             "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.label'");
         if (!string.IsNullOrWhiteSpace(labelLayout)
             && (labelLayout.Contains("component.label.textGap\"", StringComparison.Ordinal)
-                || !labelLayout.Contains("component.label.subtextPlacement", StringComparison.Ordinal)))
+                || labelLayout.Contains("component.label.subtextPlacement", StringComparison.Ordinal)
+                || !labelLayout.Contains("component.label.subtextVerticalPosition", StringComparison.Ordinal)
+                || !labelLayout.Contains("component.label.subtextHorizontalAlign", StringComparison.Ordinal)))
         {
             Execute(connection,
                 "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = 'component.label'",
@@ -291,6 +293,7 @@ internal sealed partial class SpikeDatabase
         {
             ("component.iconRow", "component.iconRow.sizeSource", ""),
             ("component.button", "component.button.contentGapToken", "component.button.iconSizeToken"),
+            ("component.avatar", "component.avatar.badge.placement", ""),
         })
         {
             var layout = ScalarString(connection, "SELECT layout_json FROM editor_layouts WHERE record_class_id = $recordClassId", ("$recordClassId", recordClassId));
@@ -789,7 +792,9 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.motion.slide", "order": 20, "visible": true },
                     { "id": "theme.motion.swipe", "order": 30, "visible": true },
                     { "id": "theme.motion.scale", "order": 40, "visible": true },
-                    { "id": "theme.motion.buttonPushedDurationMs", "order": 50, "visible": true }
+                    { "id": "theme.motion.buttonPushedDurationMs", "order": 50, "visible": true },
+                    { "id": "theme.motion.reflowDurationMs", "order": 60, "visible": true },
+                    { "id": "theme.motion.reflowEasing", "order": 70, "visible": true }
                   ]
                 },
                 {

@@ -43,6 +43,7 @@ internal sealed partial class SpikeDatabase
             var items = previous["items"] is JsonArray previousItems
                 ? previousItems.DeepClone() as JsonArray ?? new JsonArray()
                 : new JsonArray();
+            NormalizeComponentCollectionItems(items);
             var preview = CollectionStackDesignPreview(
                 items,
                 previous["distributionMode"]?.GetValue<string>() ?? "stacked",
@@ -50,7 +51,10 @@ internal sealed partial class SpikeDatabase
                 previous["startGapToken"]?.GetValue<string>() ?? "theme.spacing.none",
                 previous["endGapToken"]?.GetValue<string>() ?? "theme.spacing.none",
                 previous["stackDirection"]?.GetValue<string>() ?? "down",
-                previous["stackOffsetToken"]?.GetValue<string>() ?? "theme.spacing.m");
+                previous["stackOffsetToken"]?.GetValue<string>() ?? "theme.spacing.m",
+                previous["itemSizingMode"]?.GetValue<string>() ?? "intrinsic",
+                previous["scaleRatio"]?.GetValue<decimal>() ?? 1,
+                previous["opacityRatio"]?.GetValue<decimal>() ?? 1);
 
             var metadata = ParseJsonObject(row.MetadataJson);
             if (metadata["presets"] is JsonArray presets)
@@ -80,5 +84,14 @@ internal sealed partial class SpikeDatabase
         Execute(connection,
             "INSERT OR REPLACE INTO editor_layouts (record_class_id, layout_json) VALUES ('component.collectionStack', $layoutJson)",
             ("$layoutJson", MinimalEditorLayoutJson("component.collectionStack")));
+    }
+
+    private static void NormalizeComponentCollectionItems(JsonArray items)
+    {
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            item["present"] ??= true;
+            item["presenceMotion"] ??= JsonNode.Parse(Mockups.DesktopEditorShell.EditorShell.MotionVariantValue.Default.ToJsonString());
+        }
     }
 }

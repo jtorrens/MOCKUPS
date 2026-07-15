@@ -2,6 +2,7 @@ import type {
   AlignmentPlacementContract,
 } from "./previewComponentContracts.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { BadgeDesignContract } from "./badgeComponentContract.js";
 
 export interface AvatarActorDesignContract {
   id: string;
@@ -30,6 +31,7 @@ export interface AvatarDesignContract {
     placement: AlignmentPlacementContract;
     label?: LabelDesignContract;
   };
+  badge?: BadgeDesignContract;
   surface: {
     shadowEnabled: boolean;
     reliefEnabled: boolean;

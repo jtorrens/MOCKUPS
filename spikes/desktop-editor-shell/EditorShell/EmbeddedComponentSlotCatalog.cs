@@ -33,8 +33,11 @@ internal static class EmbeddedComponentSlotCatalog
             "component.componentStack",
             ["lockScreen", "stackSlot"]),
         new("component.notification.avatar.editor", "avatar", "Avatar", "component.avatar", ["notification", "avatarSlot"]),
-        new("component.notification.label.editor", "label", "Label", "component.label", ["notification", "labelSlot"]),
+        new("component.notification.summaryLabel.editor", "label", "Summary label", "component.label", ["notification", "summaryLabelSlot"]),
+        new("component.notification.detailLabel.editor", "label", "Detail label", "component.label", ["notification", "detailLabelSlot"]),
+        new("component.notification.surface.editor", "surface", "Surface", "component.surface", ["notification", "surfaceSlot"]),
         new("component.notifications.collectionStack.editor", "collectionStack", "Collection Stack", "component.collectionStack", ["notifications", "collectionStackSlot"]),
+        new("component.notifications.badge.editor", "badge", "Badge", "component.badge", ["notifications", "badgeSlot"]),
         new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
         new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(
@@ -43,6 +46,8 @@ internal static class EmbeddedComponentSlotCatalog
             "Label",
             "component.label",
             ["avatar", "labelSlot"]),
+        new("component.avatar.badge.editor", "badge", "Badge", "component.badge", ["avatar", "badgeSlot"]),
+        new("component.button.badge.editor", "badge", "Badge", "component.badge", ["button", "badgeSlot"]),
         new(
             "component.textInput.barSurface.editor",
             "surface",

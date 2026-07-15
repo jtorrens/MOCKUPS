@@ -85,11 +85,14 @@ function placeAxis(
   childSize: number,
   align: number,
   offset: number,
-  mode: "center" | "edge",
+  mode: "center" | "insideEdge" | "outsideEdge",
 ) {
   const clamped = Math.max(0, Math.min(1, align));
   if (mode === "center") {
     return parentStart + parentSize * clamped - childSize / 2 + offset;
+  }
+  if (mode === "insideEdge") {
+    return parentStart + (parentSize - childSize) * clamped + offset;
   }
 
   const center = parentStart + parentSize / 2 - childSize / 2;

@@ -65,7 +65,7 @@ export const desktopPreviewComponents = {
     contract: "./componentStackComponentContract",
     resolver: "./componentStackComponentResolver",
     renderable: "./componentStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
   },
   collectionStack: {
     category: "atom",
@@ -73,7 +73,15 @@ export const desktopPreviewComponents = {
     contract: "./collectionStackComponentContract",
     resolver: "./collectionStackComponentResolver",
     renderable: "./collectionStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"],
+  },
+  badge: {
+    category: "atom",
+    migrationStatus: "functional",
+    contract: "./badgeComponentContract",
+    resolver: "./badgeComponentResolver",
+    renderable: "./badgeComponentRenderable",
+    embeds: [],
   },
   notification: {
     category: "component",
@@ -81,7 +89,7 @@ export const desktopPreviewComponents = {
     contract: "./notificationComponentContract",
     resolver: "./notificationComponentResolver",
     renderable: "./notificationComponentRenderable",
-    embeds: ["avatar", "label"],
+    embeds: ["surface", "avatar", "label"],
   },
   notifications: {
     category: "component",
@@ -89,7 +97,7 @@ export const desktopPreviewComponents = {
     contract: "./notificationsComponentContract",
     resolver: "./notificationsComponentResolver",
     renderable: "./notificationsComponentRenderable",
-    embeds: ["collectionStack"],
+    embeds: ["collectionStack", "badge"],
   },
   codeIndicator: {
     category: "atom",
@@ -105,7 +113,7 @@ export const desktopPreviewComponents = {
     contract: "./avatarComponentContract",
     resolver: "./avatarComponentResolver",
     renderable: "./avatarComponentRenderable",
-    embeds: ["label"],
+    embeds: ["label", "badge"],
   },
   button: {
     category: "atom",
@@ -113,7 +121,7 @@ export const desktopPreviewComponents = {
     contract: "./buttonComponentContract",
     resolver: "./buttonComponentResolver",
     renderable: "./buttonComponentRenderable",
-    embeds: ["surface", "label"],
+    embeds: ["surface", "label", "badge"],
   },
   audio: {
     category: "component",

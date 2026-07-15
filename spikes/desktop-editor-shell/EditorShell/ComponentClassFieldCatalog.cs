@@ -152,6 +152,12 @@ internal static class ComponentClassFieldCatalog
         new("right", "Right"),
     ];
 
+    private static readonly FieldOption[] SubtextVerticalPositionOptions =
+    [
+        new("top", "Top"),
+        new("bottom", "Bottom"),
+    ];
+
     internal static readonly FieldOption[] BubbleStatusStateOptions =
     [
         new("none", "None"),
@@ -357,6 +363,17 @@ internal static class ComponentClassFieldCatalog
             ComponentInputBindingSource.Calculated,
             "220",
             Number: new NumberDefinition(1, 9999, 1, 0)),
+    ];
+
+    private static readonly ComponentInputBindingDefinition[] AvatarBadgeParentInputBindings =
+    [
+        new("showBadge", "Show badge", "showBadge", ValueKind.Boolean, ComponentInputBindingSource.Variant, "false", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 10),
+        new("badgeContentMode", "Content", "badgeContentMode", ValueKind.OptionToken, ComponentInputBindingSource.Variant, "icon", Options: [new("icon", "Icon"), new("text", "Text")], UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 20),
+        new("badgeIconToken", "Icon", "badgeIconToken", ValueKind.IconToken, ComponentInputBindingSource.Variant, "system_check", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 30),
+        new("badgeText", "Text", "badgeText", ValueKind.StringSingleLine, ComponentInputBindingSource.Variant, "1", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 40),
+        new("badgeSize", "Size", "badgeSize", ValueKind.Integer, ComponentInputBindingSource.Variant, "20", Number: new NumberDefinition(1, 512, 1, 0), UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 50),
+        new("badgeBackgroundPaletteColor", "Background", "badgeBackgroundPaletteColor", ValueKind.PaletteColorToken, ComponentInputBindingSource.Variant, "blue", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 60),
+        new("badgeContentPaletteColor", "Icon / text color", "badgeContentPaletteColor", ValueKind.PaletteColorToken, ComponentInputBindingSource.Variant, "gray_100", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 70),
     ];
 
     internal static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
@@ -572,7 +589,9 @@ internal static class ComponentClassFieldCatalog
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.full", Options: RadiusTokenOptions),
         ["component.avatar.label.showLabel"] = new("component.avatar.label.showLabel", "Show label", ValueKind.Boolean, ["avatar", "labelSlot", "showLabel"], "false"),
         ["component.avatar.label.showSubtext"] = new("component.avatar.label.showSubtext", "Show subtext", ValueKind.Boolean, ["avatar", "labelSlot", "showSubtext"], "false"),
-        ["component.avatar.label.placement"] = new("component.avatar.label.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "labelSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
+        ["component.avatar.label.placement"] = new("component.avatar.label.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "labelSlot", "placement"], """{"mode":"outsideEdge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
+        ["component.avatar.badge.placement"] = new("component.avatar.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":0,"offsetX":0,"offsetY":0}"""),
+        ["component.avatar.badge.editor"] = new("component.avatar.badge.editor", "Badge", ValueKind.ComponentPreset, ["avatar", "badgeSlot", "presetId"], "default"),
         ["component.avatar.label.presetId"] = new("component.avatar.label.presetId", "Variant", ValueKind.OptionToken, ["avatar", "labelSlot", "presetId"], "default"),
         ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.ComponentPreset, ["avatar", "labelSlot", "presetId"], "default"),
 
@@ -711,11 +730,31 @@ internal static class ComponentClassFieldCatalog
         ["component.password.drawPassword.editor"] = new("component.password.drawPassword.editor", "Draw password", ValueKind.ComponentPreset, ["password", "drawPasswordSlot", "presetId"], "default"),
         ["component.password.iconBar.editor"] = new("component.password.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["password", "iconBarSlot", "presetId"], "default"),
 
-        ["component.notification.avatarPosition"] = new("component.notification.avatarPosition", "Avatar position", ValueKind.OptionToken, ["notification", "avatarPosition"], "start", Options: [new("start", "Left"), new("end", "Right")]),
+        ["component.notification.dimensionMode"] = new("component.notification.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["notification", "dimensionMode"], "content", Options: DimensionModeOptions),
+        ["component.notification.size"] = new("component.notification.size", "Fixed size", ValueKind.IntegerPair, ["notification", "size"], "320|88", PairLabels: new("W", "H")),
+        ["component.notification.padding"] = new("component.notification.padding", "Padding", ValueKind.ThemeTokenPair, ["notification", "padding"], "theme.spacing.m|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.notification.gapToken"] = new("component.notification.gapToken", "Gap", ValueKind.ThemeToken, ["notification", "gapToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.notification.avatarPlacement"] = new("component.notification.avatarPlacement", "Avatar placement", ValueKind.AlignmentPlacement, ["notification", "avatarPlacement"], """{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
+        ["component.notification.labelPlacement"] = new("component.notification.labelPlacement", "Label placement", ValueKind.AlignmentPlacement, ["notification", "labelPlacement"], """{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
         ["component.notification.avatar.editor"] = new("component.notification.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["notification", "avatarSlot", "presetId"], "default"),
-        ["component.notification.label.editor"] = new("component.notification.label.editor", "Label", ValueKind.ComponentPreset, ["notification", "labelSlot", "presetId"], "default"),
+        ["component.notification.avatar.inputs"] = new(
+            "component.notification.avatar.inputs",
+            "Badge settings",
+            ValueKind.ComponentInputBindings,
+            ["notification", "avatarInputs"],
+            """{"showBadge":false,"badgeContentMode":"icon","badgeIconToken":"system_check","badgeText":"1","badgeSize":20,"badgeBackgroundPaletteColor":"blue","badgeContentPaletteColor":"gray_100"}""",
+            ComponentInputBindings: AvatarBadgeParentInputBindings),
+        ["component.notification.summaryLabel.editor"] = new("component.notification.summaryLabel.editor", "Summary label", ValueKind.ComponentPreset, ["notification", "summaryLabelSlot", "presetId"], "default"),
+        ["component.notification.detailLabel.editor"] = new("component.notification.detailLabel.editor", "Detail label", ValueKind.ComponentPreset, ["notification", "detailLabelSlot", "presetId"], "default"),
+        ["component.notification.surface.editor"] = new("component.notification.surface.editor", "Surface", ValueKind.ComponentPreset, ["notification", "surfaceSlot", "presetId"], "default"),
         ["component.notifications.collectionStack.editor"] = new("component.notifications.collectionStack.editor", "Collection Stack", ValueKind.ComponentPreset, ["notifications", "collectionStackSlot", "presetId"], "default"),
+        ["component.notifications.badge.editor"] = new("component.notifications.badge.editor", "Badge", ValueKind.ComponentPreset, ["notifications", "badgeSlot", "presetId"], "default"),
+        ["component.notifications.closedItemLimit"] = new("component.notifications.closedItemLimit", "Closed item limit", ValueKind.Integer, ["notifications", "closedItemLimit"], "3", Number: new NumberDefinition(1, 100, 1, 0)),
+        ["component.notifications.distributionMotion"] = new("component.notifications.distributionMotion", "Distribution transition", ValueKind.Motion, ["notifications", "distributionMotion"], MotionVariantValue.Default.ToJsonString()),
+
+        ["component.badge.textTypography"] = new("component.badge.textTypography", "Text typography", ValueKind.TypographyStyle, ["badge", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
+        ["component.badge.paddingToken"] = new("component.badge.paddingToken", "Padding", ValueKind.ThemeToken, ["badge", "paddingToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
+        ["component.badge.placement"] = new("component.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["badge", "placement"], """{"mode":"center","alignX":1,"alignY":0,"offsetX":0,"offsetY":0}"""),
 
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),
@@ -723,6 +762,7 @@ internal static class ComponentClassFieldCatalog
         ["component.button.contentGapToken"] = new("component.button.contentGapToken", "Content gap", ValueKind.ThemeToken, ["button", "contentGapToken"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.button.iconToken"] = new("component.button.iconToken", "Default icon", ValueKind.IconToken, ["button", "iconToken"], "media_play_fill"),
         ["component.button.pushedDurationToken"] = new("component.button.pushedDurationToken", "Pushed duration", ValueKind.ThemeToken, ["button", "pushedDurationToken"], "theme.motion.buttonPushedDurationMs", Options: ButtonPushedDurationTokenOptions),
+        ["component.button.badge.editor"] = new("component.button.badge.editor", "Badge", ValueKind.ComponentPreset, ["button", "badgeSlot", "presetId"], "default"),
         ["component.button.states.normal.surface.editor"] = new("component.button.states.normal.surface.editor", "Surface", ValueKind.ComponentPreset, ["button", "states", "normal", "surfaceSlot", "presetId"], "default"),
         ["component.button.states.normal.label.editor"] = new("component.button.states.normal.label.editor", "Label", ValueKind.ComponentPreset, ["button", "states", "normal", "labelSlot", "presetId"], "default"),
         ["component.button.states.normal.iconColorToken"] = new("component.button.states.normal.iconColorToken", "Icon color", ValueKind.ThemeToken, ["button", "states", "normal", "iconColorToken"], "theme.colors.icon", Options: ThemeColorOptions),
@@ -745,7 +785,8 @@ internal static class ComponentClassFieldCatalog
         ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
         ["component.label.textGapToken"] = new("component.label.textGapToken", "Text gap", ValueKind.ThemeToken, ["label", "textGapToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
         ["component.label.reserveSubtextSpace"] = new("component.label.reserveSubtextSpace", "Reserve empty subtext", ValueKind.Boolean, ["label", "reserveSubtextSpace"], "false"),
-        ["component.label.subtextPlacement"] = new("component.label.subtextPlacement", "Placement", ValueKind.AlignmentPlacement, ["label", "subtextPlacement"], """{"mode":"edge","alignX":0.5,"alignY":1,"offsetX":0,"offsetY":0}"""),
+        ["component.label.subtextVerticalPosition"] = new("component.label.subtextVerticalPosition", "Vertical position", ValueKind.OptionToken, ["label", "subtextVerticalPosition"], "bottom", Options: SubtextVerticalPositionOptions),
+        ["component.label.subtextHorizontalAlign"] = new("component.label.subtextHorizontalAlign", "Horizontal align", ValueKind.OptionToken, ["label", "subtextHorizontalAlign"], "center", Options: TextAlignOptions),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextTypography"] = new("component.label.subtextTypography", "Subtext typography", ValueKind.TypographyStyle, ["label", "subtextTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
 
@@ -764,7 +805,7 @@ internal static class ComponentClassFieldCatalog
         ["component.audio.waveformMaxHeight"] = new("component.audio.waveformMaxHeight", "Waveform max height", ValueKind.Integer, ["audio", "waveformMaxHeight"], "22"),
         ["component.audio.progressKnobSize"] = new("component.audio.progressKnobSize", "Progress knob", ValueKind.Integer, ["audio", "progressKnobSize"], "9"),
         ["component.audio.avatar.showAvatar"] = new("component.audio.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["audio", "avatarSlot", "showAvatar"], "true"),
-        ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"edge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
+        ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"outsideEdge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
         ["component.audio.avatar.presetId"] = new("component.audio.avatar.presetId", "Variant", ValueKind.OptionToken, ["audio", "avatarSlot", "presetId"], "default"),
         ["component.audio.avatar.editor"] = new("component.audio.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["audio", "avatarSlot", "presetId"], "default"),
         ["component.audio.badge.showBadge"] = new("component.audio.badge.showBadge", "Show badge", ValueKind.Boolean, ["audio", "badgeSlot", "showBadge"], "false"),
@@ -838,10 +879,10 @@ internal static class ComponentClassFieldCatalog
         ["component.bubble.outgoingText"] = new("component.bubble.outgoingText", "Outgoing text", ValueKind.PaletteColorPair, ["bubble", "outgoingText"], "gray_100|gray_100", PairLabels: new("Light", "Dark")),
         ["component.bubble.actorLabel.showLabel"] = new("component.bubble.actorLabel.showLabel", "Show actor label", ValueKind.Boolean, ["bubble", "actorLabelSlot", "showLabel"], "false"),
         ["component.bubble.actorLabel.useActorColor"] = new("component.bubble.actorLabel.useActorColor", "Use actor color", ValueKind.Boolean, ["bubble", "actorLabelSlot", "useActorColor"], "false"),
-        ["component.bubble.actorLabel.placement"] = new("component.bubble.actorLabel.placement", "Actor label placement", ValueKind.AlignmentPlacement, ["bubble", "actorLabelSlot", "placement"], """{"mode":"edge","alignX":0.5,"alignY":0,"offsetX":0,"offsetY":-4}"""),
+        ["component.bubble.actorLabel.placement"] = new("component.bubble.actorLabel.placement", "Actor label placement", ValueKind.AlignmentPlacement, ["bubble", "actorLabelSlot", "placement"], """{"mode":"outsideEdge","alignX":0.5,"alignY":0,"offsetX":0,"offsetY":-4}"""),
         ["component.bubble.actorLabel.editor"] = new("component.bubble.actorLabel.editor", "Actor label", ValueKind.ComponentPreset, ["bubble", "actorLabelSlot", "presetId"], "default"),
         ["component.bubble.avatar.showAvatar"] = new("component.bubble.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["bubble", "avatarSlot", "showAvatar"], "false"),
-        ["component.bubble.avatar.placement"] = new("component.bubble.avatar.placement", "Avatar placement", ValueKind.AlignmentPlacement, ["bubble", "avatarSlot", "placement"], """{"mode":"edge","alignX":0,"alignY":1,"offsetX":-8,"offsetY":0}"""),
+        ["component.bubble.avatar.placement"] = new("component.bubble.avatar.placement", "Avatar placement", ValueKind.AlignmentPlacement, ["bubble", "avatarSlot", "placement"], """{"mode":"outsideEdge","alignX":0,"alignY":1,"offsetX":-8,"offsetY":0}"""),
         ["component.bubble.avatar.editor"] = new("component.bubble.avatar.editor", "Avatar", ValueKind.ComponentPreset, ["bubble", "avatarSlot", "presetId"], "default"),
         ["component.bubble.status.size"] = new("component.bubble.status.size", "Status icon size", ValueKind.ThemeToken, ["bubble", "status", "sizeToken"], "theme.iconSizes.s", Options: IconSizeTokenOptions),
         ["component.bubble.status.textSize"] = new("component.bubble.status.textSize", "Status text size", ValueKind.ThemeToken, ["bubble", "status", "textSizeToken"], "theme.iconSizes.s", Options: IconSizeTokenOptions),

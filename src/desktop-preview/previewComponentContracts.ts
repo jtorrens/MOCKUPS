@@ -1,5 +1,5 @@
 export interface AlignmentPlacementContract {
-  mode: "center" | "edge";
+  mode: "center" | "insideEdge" | "outsideEdge";
   alignX: number;
   alignY: number;
   offsetX: number;

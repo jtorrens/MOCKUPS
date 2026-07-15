@@ -7,6 +7,7 @@ import type {
 } from "./componentCollectionContract.js";
 import { boundedCenterBox, embeddedComponentPayload, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
 interface MeasuredItem {
   item: ComponentCollectionLayoutItem;
@@ -20,11 +21,14 @@ interface FlowOptions {
   sizingMode: ComponentCollectionSizingMode;
   startGapToken: string;
   endGapToken: string;
+  itemSizingMode?: "intrinsic" | "largest";
 }
 
 interface StackedOptions extends FlowOptions {
   direction: "down" | "up";
   offsetToken: string;
+  scaleRatio: number;
+  opacityRatio: number;
 }
 
 export function renderComponentCollectionFlow(
@@ -33,6 +37,9 @@ export function renderComponentCollectionFlow(
   renderChild: ComponentCollectionChildRenderer,
   options: FlowOptions,
 ): RenderableNode {
+  if (options.itemSizingMode === "largest") {
+    return renderMeasuredFlow(payload, measureItems(payload, items, renderChild, "largest"), options);
+  }
   return renderComponentCollectionFlowResolved(
     payload,
     items,
@@ -50,10 +57,18 @@ export function renderComponentCollectionFlowResolved(
   resolveNode: (item: ComponentCollectionLayoutItem) => RenderableNode,
   options: FlowOptions,
 ): RenderableNode {
+  const measured = measureResolvedItems(payload, items, resolveNode);
+  return renderMeasuredFlow(payload, measured, options);
+}
+
+function renderMeasuredFlow(
+  payload: DesignPreviewPayload,
+  measured: MeasuredItem[],
+  options: FlowOptions,
+): RenderableNode {
   const scale = renderScale(payload);
   const startGap = Math.max(0, numberToken(payload, options.startGapToken) * scale);
   const endGap = Math.max(0, numberToken(payload, options.endGapToken) * scale);
-  const measured = measureResolvedItems(payload, items, resolveNode);
   const naturalWidth = measured.length ? Math.max(...measured.map(({ box }) => box.width)) : 0;
   const naturalHeight = startGap + endGap + measured.reduce((sum, current, index) =>
     sum + current.box.height + (index > 0 ? current.fixedGapBefore : 0), 0);
@@ -91,7 +106,7 @@ export function renderComponentCollectionStacked(
   const startGap = Math.max(0, numberToken(payload, options.startGapToken) * scale);
   const endGap = Math.max(0, numberToken(payload, options.endGapToken) * scale);
   const offset = Math.max(0, numberToken(payload, options.offsetToken) * scale);
-  const measured = measureItems(payload, items, renderChild);
+  const measured = measureItems(payload, items, renderChild, options.itemSizingMode ?? "intrinsic");
   const naturalWidth = measured.length ? Math.max(...measured.map(({ box }) => box.width)) : 0;
   const naturalHeight = measured.length
     ? startGap + endGap + Math.max(...measured.map(({ box }, index) => box.height + index * offset))
@@ -104,22 +119,69 @@ export function renderComponentCollectionStacked(
     const y = options.direction === "down"
       ? parentBox.y + startGap + index * offset
       : parentBox.y + parentBox.height - endGap - current.box.height - index * offset;
-    return translateRenderableNode(current.node, {
+    const translated = translateRenderableNode(current.node, {
       x: x - current.box.x,
       y: y - current.box.y,
     });
-  });
+    const depthScale = Math.pow(options.scaleRatio, index);
+    const depthOpacity = Math.pow(options.opacityRatio, index);
+    return {
+      ...translated,
+      transform: {
+        ...translated.transform,
+        scale: (translated.transform?.scale ?? 1) * depthScale,
+        opacity: Math.max(0, Math.min(1, (translated.transform?.opacity ?? 1) * depthOpacity)),
+      },
+    };
+  }).reverse();
   return collectionGroup(options.id, parentBox, children);
+}
+
+export function interpolateComponentCollectionReflow(
+  from: RenderableNode,
+  fromItems: ComponentCollectionLayoutItem[],
+  to: RenderableNode,
+  toItems: ComponentCollectionLayoutItem[],
+  progress: number,
+) {
+  const fromChildren = from.children ?? [];
+  const toChildren = to.children ?? [];
+  const fromById = new Map(fromItems.map((item, index) => [item.id, fromChildren[index]]));
+  const p = Math.max(0, Math.min(1, progress));
+  return {
+    ...to,
+    children: toItems.map((item, index) => {
+      const node = toChildren[index];
+      const previous = fromById.get(item.id);
+      if (!node?.box || !previous?.box) return node;
+      const translated = translateRenderableNode(node, {
+        x: (previous.box.x - node.box.x) * (1 - p),
+        y: (previous.box.y - node.box.y) * (1 - p),
+      });
+      const widthRatio = node.box.width > 0 ? previous.box.width / node.box.width : 1;
+      const heightRatio = node.box.height > 0 ? previous.box.height / node.box.height : 1;
+      const startScale = Math.min(widthRatio, heightRatio);
+      return {
+        ...translated,
+        transform: {
+          ...translated.transform,
+          scale: (translated.transform?.scale ?? 1) * (startScale + (1 - startScale) * p),
+        },
+      };
+    }).filter((node): node is RenderableNode => node !== undefined),
+  };
 }
 
 function measureItems(
   payload: DesignPreviewPayload,
   items: ComponentCollectionItemContract[],
   renderChild: ComponentCollectionChildRenderer,
+  itemSizingMode: "intrinsic" | "largest",
 ): MeasuredItem[] {
   const scale = renderScale(payload);
-  return items.map((item) => {
-    const node = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
+  const intrinsic = items.map((item) => {
+    const resolved = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
+    const node = applyPresenceMotion(payload, item, resolved);
     if (!node.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
     return {
       item,
@@ -130,6 +192,65 @@ function measureItems(
         : 0,
     };
   });
+  if (itemSizingMode === "intrinsic" || intrinsic.length === 0) return intrinsic;
+  const width = Math.max(...intrinsic.map(({ box }) => box.width));
+  const height = Math.max(...intrinsic.map(({ box }) => box.height));
+  const assignedBox = boundedCenterBox(payload, width, height);
+  return items.map((item) => {
+    const child = renderChild(
+      embeddedComponentPayload(payload, item.componentType, item.config, item.inputs),
+      assignedBox,
+    );
+    const resolved = applyPresenceMotion(payload, item, child);
+    if (!resolved.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
+    const node = Math.abs(resolved.box.width - width) <= 0.001
+        && Math.abs(resolved.box.height - height) <= 0.001
+      ? resolved
+      : translateRenderableNode(resolved, {
+          x: assignedBox.x + (assignedBox.width - resolved.box.width) / 2 - resolved.box.x,
+          y: assignedBox.y + (assignedBox.height - resolved.box.height) / 2 - resolved.box.y,
+        }, assignedBox);
+    return {
+      item,
+      node,
+      box: assignedBox,
+      fixedGapBefore: item.gapBeforeMode === "fixed"
+        ? Math.max(0, numberToken(payload, item.gapBeforeToken) * scale)
+        : 0,
+    };
+  });
+}
+
+function applyPresenceMotion(
+  payload: DesignPreviewPayload,
+  item: ComponentCollectionItemContract,
+  node: RenderableNode,
+) {
+  if (!node.box) return node;
+  const parentBox = previewScreenBox(payload);
+  if (item.exitFrame !== undefined) {
+    const elapsedFrames = Math.max(0, payload.localFrame - item.exitFrame);
+    const wrapped = wrapExitMotionFrame(
+      payload,
+      node,
+      item.presenceMotion,
+      { trigger: true, elapsedMs: elapsedFrames / Math.max(1, payload.frameRate) * 1000 },
+      node.box,
+      parentBox,
+    );
+    return { ...wrapped, box: node.box };
+  }
+  if (item.activationFrame === undefined || item.activationFrame <= 0) return node;
+  const elapsedFrames = Math.max(0, payload.localFrame - item.activationFrame);
+  const wrapped = wrapMotionFrame(
+    payload,
+    node,
+    item.presenceMotion,
+    { trigger: true, elapsedMs: elapsedFrames / Math.max(1, payload.frameRate) * 1000 },
+    node.box,
+    parentBox,
+  );
+  return { ...wrapped, box: node.box };
 }
 
 function measureResolvedItems(

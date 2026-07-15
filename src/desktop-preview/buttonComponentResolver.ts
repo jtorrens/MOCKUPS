@@ -3,6 +3,7 @@ import { componentPresetConfig, mergeComponentDefaults } from "./componentPrevie
 import {
   asRecord,
   parseObject,
+  requiredNumber,
   requiredNumberPair,
   requiredStringPair,
   requiredString,
@@ -10,6 +11,8 @@ import {
 import type { ButtonContentMode, ButtonDesignContract, ButtonState, ButtonStateDesignContract } from "./buttonComponentContract.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { requiredBoolean } from "./componentResolverCommon.js";
+import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 
 export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDesignContract {
   const config = parseObject(payload.configJson);
@@ -37,6 +40,8 @@ export function resolveButtonComponentFromRecords(
   const size = { width: rawSize.first, height: rawSize.second };
   const rawPadding = requiredStringPair(button, "padding", "component.button.padding");
   const text = typeof preview.sampleText === "string" ? preview.sampleText : "";
+  const badgeSlot = asRecord(button.badgeSlot);
+  const showBadge = requiredBoolean(preview, "showBadge", "component.button.input.showBadge");
 
   return {
     id,
@@ -52,6 +57,21 @@ export function resolveButtonComponentFromRecords(
     iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
     pushedDurationToken: requiredString(button, "pushedDurationToken", "component.button.pushedDurationToken"),
     stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
+    badge: showBadge ? resolveBadgeComponentFromRecords(
+      mergeComponentDefaults(
+        componentPresetConfig(bases, "badge", requiredString(badgeSlot, "presetId", "component.button.badgeSlot.presetId")),
+        asRecord(badgeSlot.overrides),
+      ),
+      {
+        contentMode: requiredString(preview, "badgeContentMode", "component.button.input.badgeContentMode"),
+        iconToken: requiredString(preview, "badgeIconToken", "component.button.input.badgeIconToken"),
+        text: requiredString(preview, "badgeText", "component.button.input.badgeText"),
+        size: requiredNumber(preview, "badgeSize", "component.button.input.badgeSize"),
+        backgroundPaletteColor: requiredString(preview, "badgeBackgroundPaletteColor", "component.button.input.badgeBackgroundPaletteColor"),
+        contentPaletteColor: requiredString(preview, "badgeContentPaletteColor", "component.button.input.badgeContentPaletteColor"),
+      },
+      `${id}.badge`,
+    ) : undefined,
   };
 }
 

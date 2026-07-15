@@ -84,10 +84,11 @@ internal sealed class EditorContentController
     {
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
-        var ownerLayout = _database.LoadEditorLayout(context.OwnerNode.RecordClassId);
+        var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
+        var ownerLayout = _database.LoadEditorLayout(ownerLayoutRecordClassId);
         var projection = new EditorSimplifiedProjectionState(
             _database,
-            context.OwnerNode.RecordClassId,
+            ownerLayoutRecordClassId,
             ownerLayout);
 
         if (!context.IsRuntimeRoot
@@ -128,6 +129,12 @@ internal sealed class EditorContentController
         }
         _cardHost.Replace(cards);
     }
+
+    internal static string OwnerLayoutRecordClassId(ProjectTreeNode ownerNode) =>
+        ownerNode.Kind == ProjectTreeNodeKind.ComponentPreset
+            ? ownerNode.Parent?.RecordClassId
+                ?? throw new InvalidOperationException("A component Variant must have its parent component class.")
+            : ownerNode.RecordClassId;
 
     private void ResetRegistries()
     {

@@ -5,9 +5,7 @@ import {
   centerBox,
   colorForMode,
   numberToken,
-  placeChild,
   renderScale,
-  scalePlacement,
   selectedColor,
   translateBox,
   unionBoxes,
@@ -79,10 +77,11 @@ function labelContentLayout(
   payload: DesignPreviewPayload,
   textWidth?: number,
 ) {
+  const measuredPrimaryWidth = Math.max(1, measuredTextWidth(label.text, textTypography));
   const textBox = {
     x: 0,
     y: 0,
-    width: Math.max(1, textWidth ?? measuredTextWidth(label.text, textTypography)),
+    width: Math.max(1, textWidth ?? measuredPrimaryWidth),
     height: textTypography.lineHeight,
   };
   const hasSubtext = label.subtext.trim().length > 0;
@@ -90,23 +89,16 @@ function labelContentLayout(
     return { textBox, subtextBox: undefined, bounds: textBox, hasSubtext };
   }
 
-  const placement = scalePlacement(label.subtextPlacement, scale);
   const gap = numberToken(payload, label.textGapToken) * scale;
-  const placementParent = placement.mode === "edge"
-    ? {
-        x: textBox.x - gap,
-        y: textBox.y - gap,
-        width: textBox.width + gap * 2,
-        height: textBox.height + gap * 2,
-      }
-    : textBox;
-  const subtextBox = placeChild(
-    placementParent,
-    {
-      width: Math.max(1, hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 1),
-      height: subtextTypography.lineHeight,
-    },
-    placement,
+  const subtextWidth = Math.max(1, hasSubtext ? measuredTextWidth(label.subtext, subtextTypography) : 1);
+  const subtextBox = subtextBoxRelativeToText(
+    textBox,
+    measuredPrimaryWidth,
+    label.textAlign,
+    { width: subtextWidth, height: subtextTypography.lineHeight },
+    label.subtextHorizontalAlign,
+    label.subtextVerticalPosition,
+    gap,
   );
   return {
     textBox,
@@ -114,6 +106,36 @@ function labelContentLayout(
     bounds: unionBoxes([textBox, subtextBox]),
     hasSubtext,
   };
+}
+
+export function subtextBoxRelativeToText(
+  textBox: RenderableBox,
+  primaryTextWidth: number,
+  textAlign: "left" | "center" | "right",
+  subtextSize: { width: number; height: number },
+  horizontalAlign: "left" | "center" | "right",
+  verticalPosition: "top" | "bottom",
+  gap: number,
+): RenderableBox {
+  const primaryTextX = textBox.x + alignedOffset(textBox.width, primaryTextWidth, textAlign);
+  return {
+    x: primaryTextX + alignedOffset(primaryTextWidth, subtextSize.width, horizontalAlign),
+    y: verticalPosition === "top"
+      ? textBox.y - gap - subtextSize.height
+      : textBox.y + textBox.height + gap,
+    width: subtextSize.width,
+    height: subtextSize.height,
+  };
+}
+
+function alignedOffset(
+  referenceWidth: number,
+  childWidth: number,
+  alignment: "left" | "center" | "right",
+) {
+  if (alignment === "left") return 0;
+  if (alignment === "right") return referenceWidth - childWidth;
+  return (referenceWidth - childWidth) / 2;
 }
 
 export function labelComponentToRenderable(

@@ -10,6 +10,7 @@ import {
 } from "./componentRenderableCommon.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import { badgeComponentToRenderableAt } from "./badgeComponentRenderable.js";
 
 export function buttonComponentToRenderable(payload: DesignPreviewPayload, button: ButtonDesignContract): RenderableNode {
   const size = measureButtonComponent(payload, button);
@@ -64,6 +65,7 @@ export function buttonComponentToRenderableAt(
     };
     children.push(labelComponentToRenderableAt(payload, button.stateStyle.label, labelBox));
   }
+  if (button.badge) children.push(badgeComponentToRenderableAt(payload, button.badge, box));
 
   return {
     id: button.id,

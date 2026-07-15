@@ -53,12 +53,20 @@ kinds can be added without changing the literal fields or preview boundary.
 ## Variant data
 
 The concrete Label Variant owns content/fixed sizing, tokenized padding, text
-and subtext colors, typography, alignment, text gap, generic subtext placement
-and the embedded Surface Variant. Runtime multipliers do not extend the Theme
+and subtext colors, typography, alignment, text gap, subtext vertical position
+(`Top`/`Bottom`), subtext horizontal alignment (`Left`/`Center`/`Right`) and the
+embedded Surface Variant. Horizontal alignment uses the measured bounds of the
+primary text, not the complete Label frame. The tokenized text gap is the exact
+vertical separation. Runtime multipliers do not extend the Theme
 typography token vocabulary.
+
+The retired generic subtext placement is migrated explicitly. Its X alignment
+and offsets are discarded, horizontal alignment becomes `Center`, and `alignY`
+values below `0.5` become `Top`; values at or above `0.5` become `Bottom`.
+There is no compatibility fallback for the retired field.
 
 `reserveSubtextSpace` is an explicit Variant boolean. When enabled, an empty
 subtext still participates in Label measurement using the configured subtext
-line height and placement, while no empty text node is painted. This keeps
+line height, relative alignment and gap, while no empty text node is painted. This keeps
 primary text aligned with sibling labels that contain subtext without relying
 on whitespace content. Keypad enables it in its state-owned Label slots.

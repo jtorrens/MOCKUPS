@@ -1,41 +1,103 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
-import { boundedCenterBox, numberToken, renderScale, unionBoxes } from "./componentRenderableCommon.js";
+import { boundedCenterBox, numberToken, placeChild, renderScale, scalePlacement } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import type { NotificationDesignContract } from "./notificationComponentContract.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
 export function notificationComponentToRenderable(
   payload: DesignPreviewPayload,
   notification: NotificationDesignContract,
+  assignedBox?: { x: number; y: number; width: number; height: number },
 ): RenderableNode {
   const scale = renderScale(payload);
   const avatarSize = notification.avatar.size * scale;
   const labelSize = measureLabelComponent(notification.label, payload);
   const gap = Math.max(0, numberToken(payload, notification.gapToken) * scale);
-  const width = avatarSize + gap + labelSize.width;
-  const height = Math.max(avatarSize, labelSize.height);
-  const box = boundedCenterBox(payload, width, height);
-  const avatarBox = {
-    x: notification.avatarPosition === "start" ? box.x : box.x + labelSize.width + gap,
-    y: box.y + (box.height - avatarSize) / 2,
-    width: avatarSize,
-    height: avatarSize,
+  const paddingX = numberToken(payload, notification.padding.xToken) * scale;
+  const paddingY = numberToken(payload, notification.padding.yToken) * scale;
+  const contentWidth = avatarSize + gap + labelSize.width;
+  const contentHeight = Math.max(avatarSize, labelSize.height);
+  const width = notification.dimensionMode === "fixed" ? notification.size.width * scale : contentWidth + paddingX * 2;
+  const height = notification.dimensionMode === "fixed" ? notification.size.height * scale : contentHeight + paddingY * 2;
+  const box = assignedBox ?? boundedCenterBox(payload, width, height);
+  const innerBox = {
+    x: box.x + paddingX,
+    y: box.y + paddingY,
+    width: Math.max(0, box.width - paddingX * 2),
+    height: Math.max(0, box.height - paddingY * 2),
   };
-  const labelBox = {
-    x: notification.avatarPosition === "start" ? box.x + avatarSize + gap : box.x,
-    y: box.y + (box.height - labelSize.height) / 2,
-    width: labelSize.width,
-    height: labelSize.height,
-  };
+  let avatarBox = placeChild(innerBox, { width: avatarSize, height: avatarSize }, scalePlacement(notification.avatarPlacement, scale));
+  let labelBox = placeChild(innerBox, labelSize, scalePlacement(notification.labelPlacement, scale));
+  const avatarIsFirst = avatarBox.x + avatarBox.width / 2 <= labelBox.x + labelBox.width / 2;
+  const separated = avatarIsFirst
+    ? enforceHorizontalGap(
+        avatarBox,
+        labelBox,
+        notification.avatarPlacement.mode,
+        notification.labelPlacement.mode,
+        gap,
+        innerBox,
+      )
+    : enforceHorizontalGap(
+        labelBox,
+        avatarBox,
+        notification.labelPlacement.mode,
+        notification.avatarPlacement.mode,
+        gap,
+        innerBox,
+      );
+  if (avatarIsFirst) {
+    [avatarBox, labelBox] = separated;
+  } else {
+    [labelBox, avatarBox] = separated;
+  }
   const avatar = avatarComponentToRenderableAt(payload, notification.avatar, avatarBox);
   const label = labelComponentToRenderableAt(payload, notification.label, labelBox);
+  const surface = surfaceComponentToRenderableAt(payload, notification.surface, box);
   return {
     id: notification.id,
     type: "group",
     frame: 0,
-    box: unionBoxes([avatar.box ?? avatarBox, label.box ?? labelBox]),
+    box,
     style: { overflow: "visible" },
-    children: notification.avatarPosition === "start" ? [avatar, label] : [label, avatar],
+    children: [surface, avatar, label],
   };
+}
+
+function enforceHorizontalGap(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+  firstMode: NotificationDesignContract["avatarPlacement"]["mode"],
+  secondMode: NotificationDesignContract["avatarPlacement"]["mode"],
+  gap: number,
+  bounds: { x: number; width: number },
+) {
+  let remaining = gap - (second.x - (first.x + first.width));
+  if (remaining <= 0) return [first, second] as const;
+
+  const maxFirstShift = firstMode === "insideEdge"
+    ? Math.max(0, first.x - bounds.x)
+    : Number.POSITIVE_INFINITY;
+  const boundsRight = bounds.x + bounds.width;
+  const maxSecondShift = secondMode === "insideEdge"
+    ? Math.max(0, boundsRight - (second.x + second.width))
+    : Number.POSITIVE_INFINITY;
+  let firstShift = Math.min(remaining / 2, maxFirstShift);
+  let secondShift = Math.min(remaining - firstShift, maxSecondShift);
+  remaining -= firstShift + secondShift;
+  if (remaining > 0) {
+    const extraFirst = Math.min(remaining, maxFirstShift - firstShift);
+    firstShift += extraFirst;
+    remaining -= extraFirst;
+  }
+  if (remaining > 0) {
+    const extraSecond = Math.min(remaining, maxSecondShift - secondShift);
+    secondShift += extraSecond;
+  }
+  return [
+    { ...first, x: first.x - firstShift },
+    { ...second, x: second.x + secondShift },
+  ] as const;
 }

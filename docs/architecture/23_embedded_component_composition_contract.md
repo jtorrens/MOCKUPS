@@ -453,7 +453,7 @@ Avatar label placement uses the generic alignment placement value:
 
 ```json
 {
-  "mode": "edge",
+  "mode": "outsideEdge",
   "alignX": 1,
   "alignY": 0.5,
   "offsetX": 4,
@@ -462,9 +462,12 @@ Avatar label placement uses the generic alignment placement value:
 ```
 
 `mode: "center"` places the child center on a normalized parent point.
-`mode: "edge"` interpolates from outside-start edge, through center, to
-outside-end edge. Offsets are design pixels and are scaled by generic preview
-helpers.
+`mode: "insideEdge"` keeps the child inside the supplied parent box and
+interpolates from aligned start edges, through center, to aligned end edges.
+`mode: "outsideEdge"` interpolates from the child end edge touching the parent
+start edge, through center, to the child start edge touching the parent end
+edge. Offsets are design pixels and are scaled by generic preview helpers. A
+parent that owns padding supplies its already-padded inner box to placement.
 
 Current storage shape:
 
@@ -475,7 +478,7 @@ Current storage shape:
       "showLabel": true,
       "showSubtext": true,
       "placement": {
-        "mode": "edge",
+        "mode": "outsideEdge",
         "alignX": 1,
         "alignY": 0.5,
         "offsetX": 4,

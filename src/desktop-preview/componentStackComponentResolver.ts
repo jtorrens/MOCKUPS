@@ -101,7 +101,7 @@ function resolveAlternative(
         gapBeforeMode,
         gapBeforeToken,
         gapBeforeWeight,
-      }, path)
+      }, path, undefined, false)
     : undefined;
   return {
     id,

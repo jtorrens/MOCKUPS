@@ -243,13 +243,21 @@ internal sealed partial class SpikeDatabase
             var definition = (collection["fields"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
                 candidate["id"]?.GetValue<string>() == fieldId
                 && candidate["animatable"]?.GetValue<bool>() == true);
-            if (definition is null) continue;
             var collectionKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
                 ?? collection["jsonKey"]?.GetValue<string>()
                 ?? "";
             runtimeOwner = (runtime[collectionKey] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((item) =>
                 item["id"]?.GetValue<string>() == targetId);
-            if (runtimeOwner is not null) return definition;
+            if (runtimeOwner is null) continue;
+            if (definition is not null) return definition;
+            var inputsJsonKey = collection["componentItems"]?["inputsJsonKey"]?.GetValue<string>() ?? "";
+            if (string.IsNullOrWhiteSpace(inputsJsonKey) || runtimeOwner[inputsJsonKey] is not JsonObject componentInputs) continue;
+            definition = (componentInputs["inputs"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
+                candidate["id"]?.GetValue<string>() == fieldId
+                && candidate["animatable"]?.GetValue<bool>() == true);
+            if (definition is null) continue;
+            runtimeOwner = componentInputs;
+            return definition;
         }
         return null;
     }

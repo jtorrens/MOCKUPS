@@ -39,6 +39,12 @@ internal sealed partial class SpikeDatabase
                 (transition) => new[] { "motion", "transitions", transition, "easing" },
                 StringComparer.Ordinal);
 
+    private static readonly Dictionary<string, string[]> ThemeReflowPaths = new(StringComparer.Ordinal)
+    {
+        ["theme.motion.reflowDurationMs"] = ["motion", "reflowDurationMs"],
+        ["theme.motion.reflowEasing"] = ["motion", "reflowEasing"],
+    };
+
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
         using var connection = OpenConnection();
@@ -167,6 +173,12 @@ internal sealed partial class SpikeDatabase
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
             return JsonString(tokens, easingPath);
+        }
+        if (ThemeReflowPaths.TryGetValue(fieldId, out var reflowPath))
+        {
+            return fieldId.EndsWith("DurationMs", StringComparison.Ordinal)
+                ? JsonNumberString(tokens, reflowPath)
+                : JsonString(tokens, reflowPath);
         }
 
         return fieldId switch
@@ -385,6 +397,14 @@ internal sealed partial class SpikeDatabase
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
             SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
+            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            return;
+        }
+        if (ThemeReflowPaths.TryGetValue(fieldId, out var reflowPath))
+        {
+            SetJsonValue(tokens, reflowPath, fieldId.EndsWith("DurationMs", StringComparison.Ordinal)
+                ? NumberNode(value)
+                : JsonValue.Create(value)!);
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }
@@ -612,6 +632,8 @@ internal sealed partial class SpikeDatabase
         return new JsonObject
         {
             ["buttonPushedDurationMs"] = 120,
+            ["reflowDurationMs"] = 240,
+            ["reflowEasing"] = "ease-out",
             ["naturalPace"] = new JsonObject
             {
                 ["verySlow"] = 2,

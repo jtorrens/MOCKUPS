@@ -99,10 +99,11 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         {
             ItemsSource =
             [
-                new FieldOption(AlignmentPlacementValue.EdgeMode, "Edge anchor"),
                 new FieldOption(AlignmentPlacementValue.CenterMode, "Center anchor"),
+                new FieldOption(AlignmentPlacementValue.InsideEdgeMode, "Inside edge"),
+                new FieldOption(AlignmentPlacementValue.OutsideEdgeMode, "Outside edge"),
             ],
-            SelectedItem = new FieldOption(_value.Mode, _value.Mode == AlignmentPlacementValue.CenterMode ? "Center anchor" : "Edge anchor"),
+            SelectedItem = ModeOption(_value.Mode),
             IsEnabled = definition.IsEditable,
         };
         _modeCombo.SelectionChanged += (_, _) =>
@@ -282,9 +283,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private void UpdateControls()
     {
         _isUpdating = true;
-        var selected = _value.Mode == AlignmentPlacementValue.CenterMode
-            ? new FieldOption(AlignmentPlacementValue.CenterMode, "Center anchor")
-            : new FieldOption(AlignmentPlacementValue.EdgeMode, "Edge anchor");
+        var selected = ModeOption(_value.Mode);
         _modeCombo.SelectedItem = selected;
         _alignXSlider.Value = _value.AlignX;
         _alignYSlider.Value = _value.AlignY;
@@ -489,9 +488,19 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
 
     private static string Summary(AlignmentPlacementValue value)
     {
-        var mode = value.Mode == AlignmentPlacementValue.CenterMode ? "center" : "edge";
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{mode} ({FormatAlign(value.AlignX)}, {FormatAlign(value.AlignY)}) ({value.OffsetX}, {value.OffsetY})");
+            $"{value.Mode} ({FormatAlign(value.AlignX)}, {FormatAlign(value.AlignY)}) ({value.OffsetX}, {value.OffsetY})");
+    }
+
+    private static FieldOption ModeOption(string mode)
+    {
+        return mode switch
+        {
+            AlignmentPlacementValue.CenterMode => new FieldOption(AlignmentPlacementValue.CenterMode, "Center anchor"),
+            AlignmentPlacementValue.InsideEdgeMode => new FieldOption(AlignmentPlacementValue.InsideEdgeMode, "Inside edge"),
+            AlignmentPlacementValue.OutsideEdgeMode => new FieldOption(AlignmentPlacementValue.OutsideEdgeMode, "Outside edge"),
+            _ => throw new InvalidOperationException($"Alignment placement mode '{mode}' is not supported."),
+        };
     }
 }

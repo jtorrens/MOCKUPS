@@ -1,12 +1,15 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveComponentCollectionItems } from "./componentCollectionResolverCommon.js";
-import { parseObject, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredNumber, requiredString } from "./componentResolverCommon.js";
 import type {
   CollectionStackDesignContract,
   CollectionStackDirection,
   CollectionStackDistributionMode,
+  CollectionStackItemSizingMode,
 } from "./collectionStackComponentContract.js";
 import type { ComponentCollectionSizingMode } from "./componentCollectionContract.js";
+import { asRecord } from "./componentResolverCommon.js";
+import { easingProgress } from "./previewMotionHelpers.js";
 
 export function resolveCollectionStackComponent(payload: DesignPreviewPayload): CollectionStackDesignContract {
   const preview = parseObject(payload.designPreviewJson);
@@ -22,6 +25,15 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
   if (stackDirection !== "down" && stackDirection !== "up") {
     throw new Error(`Unsupported collection stack direction ${stackDirection}`);
   }
+  const itemSizingMode = requiredString(preview, "itemSizingMode", "collectionStack.runtime.itemSizingMode");
+  if (itemSizingMode !== "intrinsic" && itemSizingMode !== "largest") {
+    throw new Error(`Unsupported collection stack item sizing mode ${itemSizingMode}`);
+  }
+  const scaleRatio = requiredUnitRatio(preview, "scaleRatio", "collectionStack.runtime.scaleRatio", false);
+  const opacityRatio = requiredUnitRatio(preview, "opacityRatio", "collectionStack.runtime.opacityRatio", true);
+  const allItems = resolveComponentCollectionItems(payload, preview, "collectionStack");
+  const items = allItems.filter((item) => item.present || item.exitFrame !== undefined);
+  const reflow = resolveReflow(payload, allItems, items);
   return {
     id: "collectionStack",
     distributionMode: distributionMode as CollectionStackDistributionMode,
@@ -30,6 +42,52 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
     endGapToken: requiredString(preview, "endGapToken", "collectionStack.runtime.endGapToken"),
     stackDirection: stackDirection as CollectionStackDirection,
     stackOffsetToken: requiredString(preview, "stackOffsetToken", "collectionStack.runtime.stackOffsetToken"),
-    items: resolveComponentCollectionItems(payload, preview, "collectionStack"),
+    itemSizingMode: itemSizingMode as CollectionStackItemSizingMode,
+    scaleRatio,
+    opacityRatio,
+    items,
+    reflow,
   };
+}
+
+function resolveReflow(
+  payload: DesignPreviewPayload,
+  allItems: CollectionStackDesignContract["items"],
+  items: CollectionStackDesignContract["items"],
+) {
+  const root = parseObject(payload.themeTokensJson);
+  const motion = asRecord(root.motion);
+  const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
+  const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
+  const durationFrames = Math.max(0, durationMs / 1000 * Math.max(1, payload.frameRate));
+  if (durationFrames <= 0) return undefined;
+  const frame = Math.max(0, payload.localFrame);
+  const starts = allItems
+    .flatMap((item) => item.reflowStartFrame === undefined ? [] : [item.reflowStartFrame])
+    .filter((start) => start <= frame && frame < start + durationFrames)
+    .sort((a, b) => b - a);
+  const start = starts[0];
+  if (start === undefined) return undefined;
+  const fromItems = allItems.filter((item) =>
+    item.present || item.exitFrame !== undefined || item.reflowStartFrame === start)
+    .map((item) => item.reflowStartFrame === start && item.reflowFromInputs
+      ? { ...item, inputs: item.reflowFromInputs }
+      : item);
+  return {
+    progress: easingProgress(easing, (frame - start) / durationFrames, 1),
+    fromItems,
+  };
+}
+
+function requiredUnitRatio(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+  allowZero: boolean,
+) {
+  const ratio = requiredNumber(value, key, path);
+  if (ratio > 1 || ratio < (allowZero ? 0 : 0.01)) {
+    throw new Error(`${path} must be between ${allowZero ? 0 : 0.01} and 1`);
+  }
+  return ratio;
 }

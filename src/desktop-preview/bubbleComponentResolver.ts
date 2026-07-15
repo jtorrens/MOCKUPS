@@ -302,6 +302,9 @@ export function resolveBubbleComponent(
             {
               ...preview,
               actor: actorPreview,
+              showBadge: false,
+              badgeIconToken: "system_check",
+              badgeText: "1",
             },
             componentBaseConfigs,
             "component.bubble.avatar",

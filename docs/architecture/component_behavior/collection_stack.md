@@ -26,6 +26,7 @@ Collection Stack and Component Stack share the generic child contract:
 - the selected child Variant's runtime inputs;
 - Left, Center or Right alignment;
 - fixed-token or weighted-reflow gap before the item.
+- runtime/animatable `Present` plus one generic Presence Motion.
 
 The selector excludes Collection Stack itself to prevent recursive collection
 trees. It may contain Component Stack; Component Stack may contain Collection
@@ -40,7 +41,11 @@ The scalar Runtime Inputs are:
 - `sizingMode`: `fill` or `content` while Distribution is Flow;
 - `startGapToken` and `endGapToken`: tokenized container boundaries;
 - `stackDirection`: `down` or `up` in Stacked mode;
-- `stackOffsetToken`: tokenized displacement between successive layers.
+- `stackOffsetToken`: tokenized displacement between successive layers;
+- `itemSizingMode`: intrinsic child frames or one uniform frame measured from
+  the largest child;
+- `scaleRatio` and `opacityRatio`: Stacked-only depth multipliers in the `0..1`
+  range (`scaleRatio` has a positive minimum).
 
 The `items` collection uses the same generic collection editor, two-level
 Component/Variant selector, standard View Variant and Overrides actions,
@@ -57,8 +62,9 @@ mode; it collapses in `content` mode.
 
 ## Stacked distribution
 
-Stacked children share one region. Collection order is also paint order: later
-items are above earlier items. Each item keeps its own horizontal alignment.
+Stacked children share one region. Item zero is the foreground item. Later
+items accumulate depth and are painted behind it. Each item keeps its own
+horizontal alignment.
 
 With direction `down`, item zero starts at the Start boundary and every later
 item is displaced downward by `stackOffsetToken`. With direction `up`, item
@@ -69,28 +75,44 @@ is disabled while Stacked is selected. A stale persisted `fill` value is not a
 fallback and cannot alter the resolved Stacked frame—it becomes relevant again
 only after Distribution returns to Flow.
 
+`Largest item` first resolves every intrinsic child, chooses the maximum width
+and height and assigns that frame to every item. A child that accepts an
+assigned frame may fill it directly; otherwise the common collection layout
+centers its intrinsic content inside that explicit frame. This is a generic
+layout constraint and contains no Notification knowledge.
+
+Depth ratios are exponential and use collection position: item zero resolves
+to scale/opacity `1`, item one to `ratio`, item two to `ratio²`, and so on.
+Scale is centered and visual only: it does not rewrite the uniform frame,
+offset or natural Stack bounds. Opacity applies to the complete child group.
+
 Flow-only per-item gap values remain part of the runtime item schema so
 switching distribution does not destroy authored intent; Stacked layout ignores
 them explicitly and uses only the shared stack offset.
 
 ## Temporal boundary
 
-Collection Stack owns no clock, timer or implicit presence state. This first
-structural phase keeps stable item identities so a later generic presence
-contract can give each item deterministic enter/exit phases and a local frame
-origin. Until that contract is connected, adding, removing or reordering the
-runtime collection changes the resolved frame directly; the renderer still
-receives only final translated primitives.
+Collection Stack owns no wall clock or renderer state. Its resolver evaluates
+`Present` against the stable item id and requested owner-local frame. A true to
+false transition retains the outgoing child through the reversed Presence
+Motion. The child leaves layout only at the exact finite exit completion.
 
-Exit motion must not be inferred from a current boolean because the outgoing
-item must remain renderable during its exit interval. The future presence
-contract therefore has to resolve that interval before this component's
-renderable boundary rather than add a timer or fallback here.
+That completion starts generic Reflow. Reflow measures the previous and next
+resolved layouts and interpolates surviving positions and size scale. A change
+to an embedded animatable runtime input, such as Notification `displayMode`,
+starts the same layout interpolation directly from the field keyframe. The
+renderer receives only the resulting boxes/transforms for the requested frame.
+
+Reflow timing is Theme-owned through `theme.motion.reflowDurationMs` and
+`theme.motion.reflowEasing`. The seeded duration is 240 ms, equivalent to six
+frames at the project's 25 fps reference rate; the stored token remains a
+physical reusable UI duration and is converted by the resolver for the active
+Shot FPS. Easing uses the existing generic Motion vocabulary.
 
 ## Preview boundary
 
 The owning resolver validates every runtime value and concrete Variant
-reference. Shared component-collection helpers resolve child presets and
-measure/translate generic renderables. The registry only routes the new atom;
+reference. Shared component-collection helpers resolve child presets, assign
+optional uniform frames and measure/translate generic renderables. The registry only routes the new atom;
 the common bridge, web renderer and `MainWindow` contain no Collection Stack
 layout or component-specific rules.

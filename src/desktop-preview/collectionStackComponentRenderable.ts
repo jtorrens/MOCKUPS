@@ -2,6 +2,7 @@ import type { RenderableNode } from "../visual/renderable/types.js";
 import {
   renderComponentCollectionFlow,
   renderComponentCollectionStacked,
+  interpolateComponentCollectionReflow,
 } from "./componentCollectionRenderableCommon.js";
 import type {
   CollectionStackChildRenderer,
@@ -19,12 +20,25 @@ export function collectionStackComponentToRenderable(
     sizingMode: stack.sizingMode,
     startGapToken: stack.startGapToken,
     endGapToken: stack.endGapToken,
+    itemSizingMode: stack.itemSizingMode,
   };
-  return stack.distributionMode === "flow"
-    ? renderComponentCollectionFlow(payload, stack.items, renderChild, base)
-    : renderComponentCollectionStacked(payload, stack.items, renderChild, {
+  if (stack.distributionMode === "flow") {
+    const current = renderComponentCollectionFlow(payload, stack.items, renderChild, base);
+    if (!stack.reflow) return current;
+    const previous = renderComponentCollectionFlow(payload, stack.reflow.fromItems, renderChild, base);
+    return interpolateComponentCollectionReflow(
+      previous,
+      stack.reflow.fromItems,
+      current,
+      stack.items,
+      stack.reflow.progress,
+    );
+  }
+  return renderComponentCollectionStacked(payload, stack.items, renderChild, {
         ...base,
         direction: stack.stackDirection,
         offsetToken: stack.stackOffsetToken,
+        scaleRatio: stack.scaleRatio,
+        opacityRatio: stack.opacityRatio,
       });
 }

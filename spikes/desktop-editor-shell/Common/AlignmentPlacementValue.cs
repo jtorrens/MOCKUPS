@@ -12,9 +12,10 @@ internal sealed record AlignmentPlacementValue(
     int OffsetY)
 {
     public const string CenterMode = "center";
-    public const string EdgeMode = "edge";
+    public const string InsideEdgeMode = "insideEdge";
+    public const string OutsideEdgeMode = "outsideEdge";
 
-    public static AlignmentPlacementValue Default { get; } = new(EdgeMode, 1, 0.5, 4, 0);
+    public static AlignmentPlacementValue Default { get; } = new(OutsideEdgeMode, 1, 0.5, 4, 0);
 
     public static AlignmentPlacementValue Parse(string value)
     {
@@ -34,14 +35,14 @@ internal sealed record AlignmentPlacementValue(
             RequiredInteger(node, "offsetY"));
     }
 
-    public static AlignmentPlacementValue FromDirectionalEdge(string position, double gap)
+    public static AlignmentPlacementValue FromDirectionalOutsideEdge(string position, double gap)
     {
         return position switch
         {
-            "top" => new AlignmentPlacementValue(EdgeMode, 0.5, 0, 0, -(int)Math.Round(gap)),
-            "left" => new AlignmentPlacementValue(EdgeMode, 0, 0.5, -(int)Math.Round(gap), 0),
-            "right" => new AlignmentPlacementValue(EdgeMode, 1, 0.5, (int)Math.Round(gap), 0),
-            _ => new AlignmentPlacementValue(EdgeMode, 0.5, 1, 0, (int)Math.Round(gap)),
+            "top" => new AlignmentPlacementValue(OutsideEdgeMode, 0.5, 0, 0, -(int)Math.Round(gap)),
+            "left" => new AlignmentPlacementValue(OutsideEdgeMode, 0, 0.5, -(int)Math.Round(gap), 0),
+            "right" => new AlignmentPlacementValue(OutsideEdgeMode, 1, 0.5, (int)Math.Round(gap), 0),
+            _ => new AlignmentPlacementValue(OutsideEdgeMode, 0.5, 1, 0, (int)Math.Round(gap)),
         };
     }
 
@@ -64,7 +65,13 @@ internal sealed record AlignmentPlacementValue(
 
     private static string NormalizeMode(string value)
     {
-        return value.Equals(CenterMode, StringComparison.Ordinal) ? CenterMode : EdgeMode;
+        return value switch
+        {
+            CenterMode => CenterMode,
+            InsideEdgeMode => InsideEdgeMode,
+            OutsideEdgeMode => OutsideEdgeMode,
+            _ => throw new InvalidOperationException($"Alignment placement mode '{value}' is not supported."),
+        };
     }
 
     private static double Clamp01(double value)
@@ -82,7 +89,7 @@ internal sealed record AlignmentPlacementValue(
     private static string RequiredMode(JsonObject node)
     {
         var mode = RequiredString(node, "mode");
-        return mode is CenterMode or EdgeMode
+        return mode is CenterMode or InsideEdgeMode or OutsideEdgeMode
             ? mode
             : throw new InvalidOperationException($"Alignment placement mode '{mode}' is not supported.");
     }
