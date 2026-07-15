@@ -74,6 +74,12 @@ internal sealed record BehaviorTimingDefinition(
     string Unit,
     double BaseFramesPerUnit);
 
+internal sealed record MotionTimingDefinition(
+    bool ShowDuration = true,
+    bool ShowDelay = true,
+    bool ShowEasing = true,
+    bool ShowIntensity = true);
+
 internal enum ComponentInputBindingSource
 {
     Variant,
@@ -141,7 +147,8 @@ internal sealed record FieldDefinition(
     bool SelectComponentClass = false,
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
-    BehaviorTimingDefinition? BehaviorTiming = null)
+    BehaviorTimingDefinition? BehaviorTiming = null,
+    MotionTimingDefinition? MotionTiming = null)
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

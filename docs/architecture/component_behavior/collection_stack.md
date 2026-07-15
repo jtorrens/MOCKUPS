@@ -111,7 +111,9 @@ Reflow timing is Theme-owned through `theme.motion.reflowDurationMs` and
 `theme.motion.reflowEasing`. The seeded duration is 240 ms, equivalent to six
 frames at the project's 25 fps reference rate; the stored token remains a
 physical reusable UI duration and is converted by the resolver for the active
-Shot FPS. Easing uses the existing generic Motion vocabulary.
+Shot FPS. Easing uses the existing generic Motion vocabulary. Theme edits the
+pair through one `Reflow` Motion Timing dictionary row containing Duration and
+Easing only; this presentation does not add delay or intensity semantics.
 
 ## Preview boundary
 

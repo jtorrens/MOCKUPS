@@ -96,7 +96,8 @@ internal sealed class RecordClassFieldValueService
                     ComponentInputBindings: field.ComponentInputBindings,
                     RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
                     RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
-                    Unit: field.Unit),
+                    Unit: field.Unit,
+                    MotionTiming: field.MotionTiming),
                 settings.FpsOverride?.ToString() ?? inheritedValue,
                 IsInherited: settings.FpsOverride is null);
         }
@@ -117,7 +118,8 @@ internal sealed class RecordClassFieldValueService
                 ComponentInputBindings: field.ComponentInputBindings,
                 RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
                 RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
-                Unit: field.Unit),
+                Unit: field.Unit,
+                MotionTiming: field.MotionTiming),
             value);
         return node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked
             ? result with { Definition = result.Definition with { IsEditable = false } }

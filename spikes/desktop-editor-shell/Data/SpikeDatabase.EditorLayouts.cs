@@ -209,6 +209,7 @@ internal sealed partial class SpikeDatabase
             && (!themeLayout.Contains("Keyboard dimensions and color tokens", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyGap", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.motion.buttonPushedDurationMs", StringComparison.Ordinal)
+                || !themeLayout.Contains("\"id\": \"theme.motion.reflow\"", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.motion.naturalPace.normal", StringComparison.Ordinal)
                 || !themeLayout.Contains("theme.keyboard.keyBorder", StringComparison.Ordinal)
                 || themeLayout.Contains("theme.keyboard.popoverBackground", StringComparison.Ordinal)
@@ -805,8 +806,7 @@ internal sealed partial class SpikeDatabase
                     { "id": "theme.motion.swipe", "order": 30, "visible": true },
                     { "id": "theme.motion.scale", "order": 40, "visible": true },
                     { "id": "theme.motion.buttonPushedDurationMs", "order": 50, "visible": true },
-                    { "id": "theme.motion.reflowDurationMs", "order": 60, "visible": true },
-                    { "id": "theme.motion.reflowEasing", "order": 70, "visible": true }
+                    { "id": "theme.motion.reflow", "order": 60, "visible": true }
                   ]
                 },
                 {

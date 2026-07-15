@@ -39,12 +39,6 @@ internal sealed partial class SpikeDatabase
                 (transition) => new[] { "motion", "transitions", transition, "easing" },
                 StringComparer.Ordinal);
 
-    private static readonly Dictionary<string, string[]> ThemeReflowPaths = new(StringComparer.Ordinal)
-    {
-        ["theme.motion.reflowDurationMs"] = ["motion", "reflowDurationMs"],
-        ["theme.motion.reflowEasing"] = ["motion", "reflowEasing"],
-    };
-
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
         using var connection = OpenConnection();
@@ -174,11 +168,13 @@ internal sealed partial class SpikeDatabase
         {
             return JsonString(tokens, easingPath);
         }
-        if (ThemeReflowPaths.TryGetValue(fieldId, out var reflowPath))
+        if (fieldId == "theme.motion.reflow")
         {
-            return fieldId.EndsWith("DurationMs", StringComparison.Ordinal)
-                ? JsonNumberString(tokens, reflowPath)
-                : JsonString(tokens, reflowPath);
+            return new JsonObject
+            {
+                ["durationMs"] = JsonPath.Get(tokens, ["motion", "reflowDurationMs"])?.DeepClone(),
+                ["easing"] = JsonPath.Get(tokens, ["motion", "reflowEasing"])?.DeepClone(),
+            }.ToJsonString();
         }
 
         return fieldId switch
@@ -400,11 +396,19 @@ internal sealed partial class SpikeDatabase
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }
-        if (ThemeReflowPaths.TryGetValue(fieldId, out var reflowPath))
+        if (fieldId == "theme.motion.reflow")
         {
-            SetJsonValue(tokens, reflowPath, fieldId.EndsWith("DurationMs", StringComparison.Ordinal)
-                ? NumberNode(value)
-                : JsonValue.Create(value)!);
+            var reflow = JsonNode.Parse(value) as JsonObject
+                ?? throw new InvalidOperationException("Theme reflow timing must be a JSON object.");
+            var durationMs = reflow["durationMs"]?.GetValue<int>()
+                ?? throw new InvalidOperationException("Theme reflow timing requires durationMs.");
+            var easing = reflow["easing"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(easing))
+            {
+                throw new InvalidOperationException("Theme reflow timing requires easing.");
+            }
+            SetJsonValue(tokens, ["motion", "reflowDurationMs"], JsonValue.Create(durationMs)!);
+            SetJsonValue(tokens, ["motion", "reflowEasing"], JsonValue.Create(easing)!);
             Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
             return;
         }

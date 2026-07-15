@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -23,7 +24,6 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
         _lastCommittedValue = _value.ToJsonString();
         _easingOptions = definition.Options?.ToArray() ?? [];
 
-        ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto");
         ColumnSpacing = EditorUiDensity.Card(8);
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
@@ -61,19 +61,32 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
             ValueKind.Decimal,
             IsEditable: definition.IsEditable);
 
-        Children.Add(FieldShell(durationDefinition, _duration, EditorUiDensity.TextAwareWidth(104)));
+        var presentation = definition.MotionTiming ?? new MotionTimingDefinition();
+        var fields = new List<(Control Shell, GridLength Width)>();
+        if (presentation.ShowDuration)
+        {
+            fields.Add((FieldShell(durationDefinition, _duration, EditorUiDensity.TextAwareWidth(104)), GridLength.Auto));
+        }
+        if (presentation.ShowDelay)
+        {
+            fields.Add((FieldShell(delayDefinition, _delay, EditorUiDensity.TextAwareWidth(104)), GridLength.Auto));
+        }
+        if (presentation.ShowEasing)
+        {
+            fields.Add((FieldShell(easingDefinition, _easing, 0), new GridLength(1, GridUnitType.Star)));
+        }
+        if (presentation.ShowIntensity)
+        {
+            fields.Add((FieldShell(intensityDefinition, _intensity, EditorUiDensity.TextAwareWidth(104)), GridLength.Auto));
+        }
 
-        var delayShell = FieldShell(delayDefinition, _delay, EditorUiDensity.TextAwareWidth(104));
-        Grid.SetColumn(delayShell, 1);
-        Children.Add(delayShell);
-
-        var easingShell = FieldShell(easingDefinition, _easing, 0);
-        Grid.SetColumn(easingShell, 2);
-        Children.Add(easingShell);
-
-        var intensityShell = FieldShell(intensityDefinition, _intensity, EditorUiDensity.TextAwareWidth(104));
-        Grid.SetColumn(intensityShell, 3);
-        Children.Add(intensityShell);
+        ColumnDefinitions = new ColumnDefinitions();
+        for (var index = 0; index < fields.Count; index++)
+        {
+            ColumnDefinitions.Add(new ColumnDefinition(fields[index].Width));
+            Grid.SetColumn(fields[index].Shell, index);
+            Children.Add(fields[index].Shell);
+        }
 
         _duration.PropertyChanged += (_, change) =>
         {

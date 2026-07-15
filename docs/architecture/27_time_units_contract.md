@@ -17,6 +17,9 @@ Generic layout Reflow follows the reusable UI rule. Theme stores
 `theme.motion.reflowDurationMs` and `theme.motion.reflowEasing`; the seeded
 240 ms duration is the six-frame reference at the default 25 fps, while every
 requested frame is still resolved against the effective Shot FPS before render.
+The Theme Motion card exposes both tokens as one dictionary-backed `Reflow`
+row. It uses the generic Motion Timing control with only Duration and Easing
+enabled; Delay and Intensity are not part of the Reflow contract.
 
 Field and runtime-input definitions carry a `unit` label (`frames`, `fps`, `s`
 or `ms`). The shared dictionary control renders it beside the logical label.
