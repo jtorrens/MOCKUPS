@@ -1,6 +1,6 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredBoolean, requiredNumber, requiredString } from "./componentResolverCommon.js";
+import { asRecord, parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
@@ -14,6 +14,8 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   const bases = parseObject(payload.componentBaseConfigsJson);
   const notifications = asRecord(config.notifications);
   const slot = asRecord(notifications.collectionStackSlot);
+  const notificationSlot = asRecord(notifications.notificationSlot);
+  const notificationInputs = requiredRecord(notifications, "notificationInputs", "component.notifications.notificationInputs");
   const badgeSlot = asRecord(notifications.badgeSlot);
   const badgeInputs = asRecord(notifications.badgeInputs);
   const preview = parseObject(payload.designPreviewJson);
@@ -23,11 +25,42 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
     componentPresetConfig(bases, "collectionStack", requiredString(slot, "presetId", "component.notifications.collectionStackSlot.presetId")),
     asRecord(slot.overrides),
   );
+  const notificationPresetReference = requiredString(
+    notificationSlot,
+    "presetId",
+    "component.notifications.notificationSlot.presetId",
+  );
+  const notificationConfig = mergeComponentDefaults(
+    componentPresetConfig(bases, "notification", notificationPresetReference),
+    asRecord(notificationSlot.overrides),
+  );
+  if (!Array.isArray(preview.items)) throw new Error("Missing component.notifications runtime items");
+  const stackItems = preview.items.map((rawItem, index) => notificationStackItem(
+    asRecord(rawItem),
+    index,
+    notificationPresetReference,
+    notificationConfig,
+    notificationInputs,
+    notifications,
+  ));
+  const stackPreview = {
+    ...preview,
+    distributionMode: distribution.mode,
+    sizingMode: requiredString(notifications, "sizingMode", "component.notifications.sizingMode"),
+    startGapToken: requiredString(notifications, "startGapToken", "component.notifications.startGapToken"),
+    endGapToken: requiredString(notifications, "endGapToken", "component.notifications.endGapToken"),
+    stackDirection: requiredString(notifications, "stackDirection", "component.notifications.stackDirection"),
+    stackOffsetToken: requiredString(notifications, "stackOffsetToken", "component.notifications.stackOffsetToken"),
+    itemSizingMode: requiredString(notifications, "itemSizingMode", "component.notifications.itemSizingMode"),
+    scaleRatio: requiredNumber(notifications, "scaleRatio", "component.notifications.scaleRatio"),
+    opacityRatio: requiredNumber(notifications, "opacityRatio", "component.notifications.opacityRatio"),
+    items: stackItems,
+  };
   const stack = resolveCollectionStackComponent({
     ...payload,
     componentType: "collectionStack",
     configJson: JSON.stringify(stackConfig),
-    designPreviewJson: JSON.stringify({ ...preview, distributionMode: distribution.mode }),
+    designPreviewJson: JSON.stringify(stackPreview),
   });
   const closedItemLimit = Math.max(1, Math.floor(requiredNumber(notifications, "closedItemLimit", "component.notifications.closedItemLimit")));
   const presentCount = stack.items.filter((item) => item.present).length;
@@ -48,7 +81,7 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
           distributionMode: distribution.transition.fromMode,
           sizingMode: distribution.transition.fromMode === "stacked"
             ? "content" as const
-            : requiredString(preview, "sizingMode", "component.notifications.runtime.sizingMode") as "fill" | "content",
+            : requiredString(notifications, "sizingMode", "component.notifications.sizingMode") as "fill" | "content",
           items: distribution.transition.fromMode === "stacked"
             ? stack.items.slice(0, closedItemLimit)
             : stack.items,
@@ -56,7 +89,7 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
         },
       }
     : undefined;
-  const showBadge = requiredBoolean(preview, "showBadge", "component.notifications.input.showBadge");
+  const showBadge = requiredBoolean(notifications, "showBadge", "component.notifications.showBadge");
   const badgeConfig = mergeComponentDefaults(
     componentPresetConfig(bases, "badge", requiredString(badgeSlot, "presetId", "component.notifications.badgeSlot.presetId")),
     asRecord(badgeSlot.overrides),
@@ -72,6 +105,64 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
       { ...badgeInputs, iconToken: "", text: String(presentCount), contentMode: "text" },
       "component.notifications.badge",
     ) : undefined,
+  };
+}
+
+const notificationItemKeys = new Set([
+  "id",
+  "actorId",
+  "actor",
+  "displayMode",
+  "summaryText",
+  "summarySubtext",
+  "detailText",
+  "detailSubtext",
+  "present",
+  "presenceTransition",
+  "presenceElapsedMs",
+  "displayModeTransition",
+  "displayModeElapsedMs",
+  "displayModeFrom",
+]);
+
+function notificationStackItem(
+  item: Record<string, unknown>,
+  index: number,
+  presetReference: string,
+  notificationConfig: Record<string, unknown>,
+  baseInputs: Record<string, unknown>,
+  notificationsConfig: Record<string, unknown>,
+) {
+  const path = `component.notifications.items[${index}]`;
+  const unknown = Object.keys(item).filter((key) => !notificationItemKeys.has(key));
+  if (unknown.length > 0) {
+    throw new Error(`${path} contains undeclared fields: ${unknown.join(", ")}`);
+  }
+  return {
+    id: requiredString(item, "id", `${path}.id`),
+    presetId: presetReference,
+    overrides: notificationConfig,
+    inputs: {
+      ...baseInputs,
+      actorId: requiredString(item, "actorId", `${path}.actorId`),
+      actor: requiredRecord(item, "actor", `${path}.actor`),
+      displayMode: requiredString(item, "displayMode", `${path}.displayMode`),
+      summaryText: requiredString(item, "summaryText", `${path}.summaryText`),
+      summarySubtext: requiredString(item, "summarySubtext", `${path}.summarySubtext`),
+      detailText: requiredString(item, "detailText", `${path}.detailText`),
+      detailSubtext: requiredString(item, "detailSubtext", `${path}.detailSubtext`),
+      ...(item.displayModeTransition === undefined ? {} : { displayModeTransition: item.displayModeTransition }),
+      ...(item.displayModeElapsedMs === undefined ? {} : { displayModeElapsedMs: item.displayModeElapsedMs }),
+      ...(item.displayModeFrom === undefined ? {} : { displayModeFrom: item.displayModeFrom }),
+    },
+    present: item.present,
+    presenceMotion: requiredRecord(notificationsConfig, "itemPresenceMotion", "component.notifications.itemPresenceMotion"),
+    ...(item.presenceTransition === undefined ? {} : { presenceTransition: item.presenceTransition }),
+    ...(item.presenceElapsedMs === undefined ? {} : { presenceElapsedMs: item.presenceElapsedMs }),
+    alignment: requiredString(notificationsConfig, "itemAlignment", "component.notifications.itemAlignment"),
+    gapBeforeMode: requiredString(notificationsConfig, "itemGapBeforeMode", "component.notifications.itemGapBeforeMode"),
+    gapBeforeToken: requiredString(notificationsConfig, "itemGapBeforeToken", "component.notifications.itemGapBeforeToken"),
+    gapBeforeWeight: requiredNumber(notificationsConfig, "itemGapBeforeWeight", "component.notifications.itemGapBeforeWeight"),
   };
 }
 

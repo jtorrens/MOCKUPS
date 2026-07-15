@@ -250,10 +250,10 @@ internal sealed class RuntimeInputsCollectionEditor
         var rootActions = actions.Where((candidate) => !candidate.IsCollectionItemAction).ToList();
         if (rootActions.Count > 0)
         {
-            var actionPanel = new StackPanel { Spacing = 6 };
+            var actionPanel = CreateActionPanel();
             foreach (var action in rootActions)
             {
-                actionPanel.Children.Add(CreateActionControl(action, inputs, preview));
+                AddActionControl(actionPanel, CreateActionControl(action, inputs, preview));
             }
             panel.Children.Add(actionPanel);
         }
@@ -600,7 +600,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionItemId == itemId
                 && string.IsNullOrWhiteSpace(action.TargetJsonPath))
             .ToList();
-        StackPanel? actionRow = null;
+        WrapPanel? actionRow = null;
         var actionControls = new List<(ComponentPreviewActionDefinition Action, RuntimeTestActionControl Control)>();
         void RefreshActionVisibility()
         {
@@ -617,15 +617,12 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         if (itemActions.Count > 0)
         {
-            actionRow = new StackPanel
-            {
-                Spacing = 6,
-            };
+            actionRow = CreateActionPanel();
             foreach (var action in itemActions)
             {
                 var control = CreateActionControl(action, collection.Fields, item);
                 actionControls.Add((action, control));
-                actionRow.Children.Add(control);
+                AddActionControl(actionRow, control);
             }
             RefreshActionVisibility();
             content.Children.Add(actionRow);
@@ -673,10 +670,17 @@ internal sealed class RuntimeInputsCollectionEditor
             if (nestedInputs.Count > 0 || nestedActions.Count > 0)
             {
                 var nestedPanel = new StackPanel { Spacing = 6 };
-                foreach (var nestedAction in nestedActions.Where((action) =>
-                             ComponentPreviewActions.AppliesToItem(action, componentInputs)))
+                var applicableNestedActions = nestedActions.Where((action) =>
+                        ComponentPreviewActions.AppliesToItem(action, componentInputs))
+                    .ToList();
+                if (applicableNestedActions.Count > 0)
                 {
-                    nestedPanel.Children.Add(CreateActionControl(nestedAction, nestedInputs, componentInputs));
+                    var nestedActionPanel = CreateActionPanel();
+                    foreach (var nestedAction in applicableNestedActions)
+                    {
+                        AddActionControl(nestedActionPanel, CreateActionControl(nestedAction, nestedInputs, componentInputs));
+                    }
+                    nestedPanel.Children.Add(nestedActionPanel);
                 }
                 foreach (var nestedInput in nestedInputs)
                 {
@@ -1195,6 +1199,18 @@ internal sealed class RuntimeInputsCollectionEditor
             _playbackState,
             targetOptions,
             currentTargetValue);
+    }
+
+    private static WrapPanel CreateActionPanel() => new()
+    {
+        Orientation = Orientation.Horizontal,
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+    };
+
+    private static void AddActionControl(WrapPanel panel, RuntimeTestActionControl control)
+    {
+        control.Margin = new Thickness(0, 0, 6, 6);
+        panel.Children.Add(control);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)

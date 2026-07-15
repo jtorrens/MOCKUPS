@@ -37,6 +37,7 @@ internal static class EmbeddedComponentSlotCatalog
         new("component.notification.detailLabel.editor", "label", "Detail label", "component.label", ["notification", "detailLabelSlot"]),
         new("component.notification.surface.editor", "surface", "Surface", "component.surface", ["notification", "surfaceSlot"]),
         new("component.notifications.collectionStack.editor", "collectionStack", "Collection Stack", "component.collectionStack", ["notifications", "collectionStackSlot"]),
+        new("component.notifications.notification.editor", "notification", "Notification", "component.notification", ["notifications", "notificationSlot"]),
         new("component.notifications.badge.editor", "badge", "Badge", "component.badge", ["notifications", "badgeSlot"]),
         new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
         new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),

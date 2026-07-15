@@ -376,6 +376,18 @@ internal static class ComponentClassFieldCatalog
         new("badgeContentPaletteColor", "Icon / text color", "badgeContentPaletteColor", ValueKind.PaletteColorToken, ComponentInputBindingSource.Variant, "gray_100", UiGroupId: "badge", UiGroupLabel: "Badge", UiOrder: 70),
     ];
 
+    private static readonly ComponentInputBindingDefinition[] NotificationsBaseInputBindings =
+    [
+        new(
+            "maxWidth",
+            "Max width %",
+            "maxWidth",
+            ValueKind.Integer,
+            ComponentInputBindingSource.Variant,
+            "90",
+            Number: new NumberDefinition(1, 100, 1, 0)),
+    ];
+
     internal static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
     {
         return componentType switch
@@ -748,8 +760,31 @@ internal static class ComponentClassFieldCatalog
         ["component.notification.detailLabel.editor"] = new("component.notification.detailLabel.editor", "Detail label", ValueKind.ComponentPreset, ["notification", "detailLabelSlot", "presetId"], "default"),
         ["component.notification.surface.editor"] = new("component.notification.surface.editor", "Surface", ValueKind.ComponentPreset, ["notification", "surfaceSlot", "presetId"], "default"),
         ["component.notifications.collectionStack.editor"] = new("component.notifications.collectionStack.editor", "Collection Stack", ValueKind.ComponentPreset, ["notifications", "collectionStackSlot", "presetId"], "default"),
+        ["component.notifications.notification.editor"] = new("component.notifications.notification.editor", "Notification", ValueKind.ComponentPreset, ["notifications", "notificationSlot", "presetId"], "default"),
+        ["component.notifications.notification.inputs"] = new(
+            "component.notifications.notification.inputs",
+            "Notification settings",
+            ValueKind.ComponentInputBindings,
+            ["notifications", "notificationInputs"],
+            "{\"maxWidth\":90}",
+            ComponentInputBindings: NotificationsBaseInputBindings),
         ["component.notifications.badge.editor"] = new("component.notifications.badge.editor", "Badge", ValueKind.ComponentPreset, ["notifications", "badgeSlot", "presetId"], "default"),
         ["component.notifications.closedItemLimit"] = new("component.notifications.closedItemLimit", "Closed item limit", ValueKind.Integer, ["notifications", "closedItemLimit"], "3", Number: new NumberDefinition(1, 100, 1, 0)),
+        ["component.notifications.distributionMode"] = new("component.notifications.distributionMode", "Initial distribution", ValueKind.OptionToken, ["notifications", "distributionMode"], "stacked", Options: [new("stacked", "Stacked"), new("flow", "Flow")]),
+        ["component.notifications.sizingMode"] = new("component.notifications.sizingMode", "Sizing", ValueKind.OptionToken, ["notifications", "sizingMode"], "content", Options: [new("content", "Fit content"), new("fill", "Fill container")]),
+        ["component.notifications.startGapToken"] = new("component.notifications.startGapToken", "Start gap", ValueKind.ThemeToken, ["notifications", "startGapToken"], "theme.spacing.none", Options: SpacingTokenOptions),
+        ["component.notifications.endGapToken"] = new("component.notifications.endGapToken", "End gap", ValueKind.ThemeToken, ["notifications", "endGapToken"], "theme.spacing.none", Options: SpacingTokenOptions),
+        ["component.notifications.stackDirection"] = new("component.notifications.stackDirection", "Stack direction", ValueKind.OptionToken, ["notifications", "stackDirection"], "down", Options: [new("down", "Down"), new("up", "Up")]),
+        ["component.notifications.stackOffsetToken"] = new("component.notifications.stackOffsetToken", "Stack offset", ValueKind.ThemeToken, ["notifications", "stackOffsetToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.notifications.itemSizingMode"] = new("component.notifications.itemSizingMode", "Item sizing", ValueKind.OptionToken, ["notifications", "itemSizingMode"], "largest", Options: [new("largest", "Largest item"), new("intrinsic", "Intrinsic")]),
+        ["component.notifications.scaleRatio"] = new("component.notifications.scaleRatio", "Scale ratio", ValueKind.Decimal, ["notifications", "scaleRatio"], "1", Number: new NumberDefinition(0.01m, 1, 0.01m, 2)),
+        ["component.notifications.opacityRatio"] = new("component.notifications.opacityRatio", "Opacity ratio", ValueKind.Decimal, ["notifications", "opacityRatio"], "1", Number: new NumberDefinition(0, 1, 0.01m, 2)),
+        ["component.notifications.itemAlignment"] = new("component.notifications.itemAlignment", "Item alignment", ValueKind.OptionToken, ["notifications", "itemAlignment"], "center", Options: [new("start", "Left"), new("center", "Center"), new("end", "Right")]),
+        ["component.notifications.itemGapBeforeMode"] = new("component.notifications.itemGapBeforeMode", "Gap before", ValueKind.OptionToken, ["notifications", "itemGapBeforeMode"], "fixed", Options: [new("fixed", "Fixed"), new("reflow", "Reflow")]),
+        ["component.notifications.itemGapBeforeToken"] = new("component.notifications.itemGapBeforeToken", "Fixed gap before", ValueKind.ThemeToken, ["notifications", "itemGapBeforeToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.notifications.itemGapBeforeWeight"] = new("component.notifications.itemGapBeforeWeight", "Reflow gap before weight", ValueKind.Decimal, ["notifications", "itemGapBeforeWeight"], "1", Number: new NumberDefinition(0.01m, 100, 0.1m, 2)),
+        ["component.notifications.itemPresenceMotion"] = new("component.notifications.itemPresenceMotion", "Presence transition", ValueKind.Motion, ["notifications", "itemPresenceMotion"], MotionVariantValue.Default.ToJsonString()),
+        ["component.notifications.showBadge"] = new("component.notifications.showBadge", "Show badge", ValueKind.Boolean, ["notifications", "showBadge"], "true"),
         ["component.notifications.distributionMotion"] = new("component.notifications.distributionMotion", "Distribution transition", ValueKind.Motion, ["notifications", "distributionMotion"], MotionVariantValue.Default.ToJsonString()),
 
         ["component.badge.textTypography"] = new("component.badge.textTypography", "Text typography", ValueKind.TypographyStyle, ["badge", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),

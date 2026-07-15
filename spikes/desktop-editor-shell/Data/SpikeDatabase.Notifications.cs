@@ -132,56 +132,56 @@ internal sealed partial class SpikeDatabase
     {
         var notifications = config["notifications"] as JsonObject
             ?? throw new System.InvalidOperationException("Missing Notifications config.");
-        notifications["closedItemLimit"] ??= 3;
-        notifications["distributionMotion"] ??= JsonNode.Parse(Mockups.DesktopEditorShell.EditorShell.MotionVariantValue.Default.ToJsonString());
-        QualifyOwnedSlot(notifications, "collectionStackSlot", projectId, "collectionStack");
-        notifications["badgeSlot"] ??= new JsonObject
+        foreach (var key in new[]
+                 {
+                     "closedItemLimit", "distributionMode", "sizingMode", "startGapToken", "endGapToken",
+                     "stackDirection", "stackOffsetToken", "itemSizingMode", "scaleRatio", "opacityRatio",
+                     "itemAlignment", "itemGapBeforeMode", "itemGapBeforeToken", "itemGapBeforeWeight",
+                     "itemPresenceMotion", "showBadge", "distributionMotion",
+                 })
         {
-            ["presetId"] = DefaultComponentPresetId,
-            ["overrides"] = new JsonObject(),
-        };
-        if (notifications["badgeSlot"] is JsonObject badgeSlot) NormalizeBadgeSlotOverrides(badgeSlot);
-        var badgeInputs = notifications["badgeInputs"] as JsonObject;
-        if (badgeInputs is null)
-        {
-            badgeInputs = new JsonObject();
-            notifications["badgeInputs"] = badgeInputs;
+            if (notifications[key] is null)
+                throw new System.InvalidOperationException($"Missing Notifications Variant value '{key}'.");
         }
+        QualifyOwnedSlot(notifications, "collectionStackSlot", projectId, "collectionStack");
+        _ = notifications["notificationSlot"] as JsonObject
+            ?? throw new System.InvalidOperationException("Missing Notifications Notification slot.");
+        _ = notifications["notificationInputs"] as JsonObject
+            ?? throw new System.InvalidOperationException("Missing Notifications Notification Variant inputs.");
+        QualifyOwnedSlot(notifications, "notificationSlot", projectId, "notification");
+        _ = notifications["badgeSlot"] as JsonObject
+            ?? throw new System.InvalidOperationException("Missing Notifications Badge slot.");
+        if (notifications["badgeSlot"] is JsonObject badgeSlot) NormalizeBadgeSlotOverrides(badgeSlot);
+        var badgeInputs = notifications["badgeInputs"] as JsonObject
+            ?? throw new System.InvalidOperationException("Missing Notifications Badge Variant inputs.");
         MergeMissingValues(badgeInputs, DefaultNotificationsBadgeInputs());
         QualifyOwnedSlot(notifications, "badgeSlot", projectId, "badge");
     }
 
     private static void NormalizeNotificationsPreview(JsonObject preview)
     {
-        preview["distributionMode"] = "stacked";
-        preview["sizingMode"] = "content";
-        preview["startGapToken"] ??= "theme.spacing.none";
-        preview["endGapToken"] ??= "theme.spacing.none";
-        preview["stackDirection"] ??= "down";
-        preview["stackOffsetToken"] ??= "theme.spacing.m";
-        preview["itemSizingMode"] ??= "largest";
-        preview["scaleRatio"] ??= 1;
-        preview["opacityRatio"] ??= 1;
-        preview["items"] ??= new JsonArray();
-        if (preview["items"] is JsonArray items)
+        if (preview["distributionMode"] is null)
+            throw new System.InvalidOperationException("Missing Notifications runtime Distribution value.");
+        preview["inputs"] = NotificationsRuntimeInputs();
+        preview["collections"] = new JsonArray { NotificationsCollectionDefinition() };
+        preview["actions"] = new JsonArray
         {
-            NormalizeComponentCollectionItems(items);
-            foreach (var item in items.OfType<JsonObject>())
+            ReflowTargetAction("changeDistribution", "Distribution", "distributionMode", "distributionTransition", "distributionElapsedMs", "distributionFrom"),
+        };
+        if (preview["items"] is not JsonArray items)
+            throw new System.InvalidOperationException("Missing Notifications runtime items.");
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            foreach (var key in new[]
+                     {
+                         "id", "actorId", "displayMode", "summaryText", "summarySubtext", "detailText",
+                         "detailSubtext", "present",
+                     })
             {
-                var inputs = item["inputs"] as JsonObject ?? new JsonObject();
-                item["inputs"] = inputs;
-                inputs.Remove("availableWidth");
-                inputs["maxWidth"] ??= 90;
-                inputs["displayMode"] ??= "summary";
-                inputs["summaryText"] ??= inputs["sampleText"]?.DeepClone() ?? "New notification";
-                inputs["summarySubtext"] ??= inputs["sampleSubtext"]?.DeepClone() ?? "Now";
-                inputs["detailText"] ??= inputs["summaryText"]?.DeepClone() ?? "New notification";
-                inputs["detailSubtext"] ??= "Notification detail";
-                inputs.Remove("sampleText");
-                inputs.Remove("sampleSubtext");
+                if (item[key] is null)
+                    throw new System.InvalidOperationException($"Notification item is missing current field '{key}'.");
             }
         }
-        preview["showBadge"] ??= true;
     }
 
     private static void NormalizeBadgeConfig(JsonObject config, string projectId)
@@ -330,20 +330,41 @@ internal sealed partial class SpikeDatabase
     private static string NotificationsEditorLayoutJson() =>
         """
         { "cards": [
-          { "id": "general", "label": "General", "subtitle": "Closed notification presentation", "icon": "general", "order": 10, "visible": true, "defaultOpen": false, "groups": [
-            { "id": "general", "label": "General", "order": 10, "visible": true, "fields": [
-              { "id": "component.notifications.closedItemLimit", "order": 10, "visible": true }
+          { "id": "general", "label": "General", "subtitle": "Identity", "icon": "general", "order": 10, "visible": true, "defaultOpen": false, "groups": [
+            { "id": "identity", "label": "Identity", "order": 10, "visible": true, "fields": [
+              { "id": "core.name", "order": 10, "visible": true },
+              { "id": "component.type", "order": 20, "visible": true },
+              { "id": "core.notes", "order": 30, "visible": true }
             ] }
           ] },
-          { "id": "composition", "label": "Composition", "subtitle": "Runtime notification collection", "icon": "component", "order": 20, "visible": true, "defaultOpen": false, "groups": [
-            { "id": "stack", "label": "Collection Stack", "order": 10, "visible": true, "fields": [
-              { "id": "component.notifications.collectionStack.editor", "order": 10, "visible": true },
+          { "id": "layout", "label": "Layout", "subtitle": "Stack, notification, badge and motion", "icon": "layout", "order": 20, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
+            { "id": "stack", "label": "Stack", "order": 10, "visible": true, "fields": [
+              { "id": "component.notifications.closedItemLimit", "order": 10, "visible": true },
+              { "id": "component.notifications.distributionMode", "order": 20, "visible": true },
+              { "id": "component.notifications.sizingMode", "order": 30, "visible": true },
+              { "id": "component.notifications.startGapToken", "order": 40, "visible": true },
+              { "id": "component.notifications.endGapToken", "order": 50, "visible": true },
+              { "id": "component.notifications.stackDirection", "order": 60, "visible": true },
+              { "id": "component.notifications.stackOffsetToken", "order": 70, "visible": true },
+              { "id": "component.notifications.itemSizingMode", "order": 80, "visible": true },
+              { "id": "component.notifications.scaleRatio", "order": 90, "visible": true },
+              { "id": "component.notifications.opacityRatio", "order": 100, "visible": true },
+              { "id": "component.notifications.itemAlignment", "order": 110, "visible": true },
+              { "id": "component.notifications.itemGapBeforeMode", "order": 120, "visible": true },
+              { "id": "component.notifications.itemGapBeforeToken", "order": 130, "visible": true },
+              { "id": "component.notifications.itemGapBeforeWeight", "order": 140, "visible": true }
+            ] },
+            { "id": "notification", "label": "Notification", "order": 20, "visible": true, "fields": [
+              { "id": "component.notifications.notification.editor", "order": 10, "visible": true },
+              { "id": "component.notifications.notification.inputs", "order": 20, "visible": true }
+            ] },
+            { "id": "badge", "label": "Badge", "order": 30, "visible": true, "fields": [
+              { "id": "component.notifications.showBadge", "order": 10, "visible": true },
               { "id": "component.notifications.badge.editor", "order": 20, "visible": true }
-            ] }
-          ] },
-          { "id": "behavior", "label": "Behavior", "subtitle": "Distribution state transition", "icon": "animation", "order": 30, "visible": true, "defaultOpen": false, "groups": [
-            { "id": "motion", "label": "Motion", "order": 10, "visible": true, "fields": [
-              { "id": "component.notifications.distributionMotion", "order": 10, "visible": true }
+            ] },
+            { "id": "motion", "label": "Motion", "order": 40, "visible": true, "fields": [
+              { "id": "component.notifications.distributionMotion", "order": 10, "visible": true },
+              { "id": "component.notifications.itemPresenceMotion", "order": 20, "visible": true }
             ] }
           ] }
         ] }

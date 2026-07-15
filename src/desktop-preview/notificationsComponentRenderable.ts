@@ -12,14 +12,24 @@ export function notificationsComponentToRenderable(
   renderChild: NotificationsChildRenderer,
 ): RenderableNode {
   const current = collectionStackComponentToRenderable(payload, notifications.stack, renderChild);
-  const node = notifications.distributionTransition
-    ? renderDistributionTransition(payload, notifications, current, renderChild)
+  if (notifications.distributionTransition) {
+    return renderDistributionTransition(payload, notifications, current, renderChild);
+  }
+  const node = notifications.stack.distributionMode === "stacked"
+    ? withBadge(payload, current, notifications)
     : current;
-  if (!notifications.badge) return { ...node, id: notifications.id };
+  return { ...node, id: notifications.id };
+}
+
+function withBadge(
+  payload: DesignPreviewPayload,
+  node: RenderableNode,
+  notifications: NotificationsDesignContract,
+) {
+  if (!notifications.badge) return node;
   if (!node.box) throw new Error("Notifications Collection Stack must resolve a box before Badge placement");
   return {
     ...node,
-    id: notifications.id,
     style: { ...node.style, overflow: "visible" },
     children: [...(node.children ?? []), badgeComponentToRenderableAt(payload, notifications.badge, node.box)],
   };
@@ -32,7 +42,13 @@ function renderDistributionTransition(
   renderChild: NotificationsChildRenderer,
 ) {
   const transition = notifications.distributionTransition!;
-  const previous = collectionStackComponentToRenderable(payload, transition.fromStack, renderChild);
+  const previousStack = collectionStackComponentToRenderable(payload, transition.fromStack, renderChild);
+  const previous = transition.fromMode === "stacked"
+    ? withBadge(payload, previousStack, notifications)
+    : previousStack;
+  const decoratedCurrent = notifications.stack.distributionMode === "stacked"
+    ? withBadge(payload, current, notifications)
+    : current;
   if (!current.box || !previous.box) throw new Error("Notifications distribution transition requires resolved boxes");
   const elapsedMs = transition.elapsedFrames / Math.max(1, payload.frameRate) * 1000;
   const parent = previewScreenBox(payload);
@@ -46,17 +62,17 @@ function renderDistributionTransition(
   );
   const incoming = wrapMotionFrame(
     payload,
-    current,
+    decoratedCurrent,
     notifications.distributionMotion,
     { trigger: true, elapsedMs },
-    current.box,
+    decoratedCurrent.box!,
     parent,
   );
   return {
     id: `${notifications.id}.distribution-transition`,
     type: "group" as const,
     frame: 0,
-    box: unionBoxes([previous.box, current.box]),
+    box: unionBoxes([previous.box, decoratedCurrent.box!]),
     style: { overflow: "visible" },
     children: [outgoing, incoming],
   };

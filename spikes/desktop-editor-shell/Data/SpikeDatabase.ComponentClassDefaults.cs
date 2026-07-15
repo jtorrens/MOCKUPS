@@ -333,7 +333,24 @@ internal sealed partial class SpikeDatabase
                 config["notifications"] = new JsonObject
                 {
                     ["collectionStackSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["notificationSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["notificationInputs"] = new JsonObject { ["maxWidth"] = 90 },
                     ["closedItemLimit"] = 3,
+                    ["distributionMode"] = "stacked",
+                    ["sizingMode"] = "content",
+                    ["startGapToken"] = "theme.spacing.none",
+                    ["endGapToken"] = "theme.spacing.none",
+                    ["stackDirection"] = "down",
+                    ["stackOffsetToken"] = "theme.spacing.m",
+                    ["itemSizingMode"] = "largest",
+                    ["scaleRatio"] = 1,
+                    ["opacityRatio"] = 1,
+                    ["itemAlignment"] = "center",
+                    ["itemGapBeforeMode"] = "fixed",
+                    ["itemGapBeforeToken"] = "theme.spacing.m",
+                    ["itemGapBeforeWeight"] = 1,
+                    ["itemPresenceMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                    ["showBadge"] = true,
                     ["distributionMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                     ["badgeSlot"] = new JsonObject
                     {
@@ -1186,29 +1203,13 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject NotificationsDesignPreview(
         JsonArray? items = null,
-        string distributionMode = "stacked",
-        string sizingMode = "content",
-        string startGapToken = "theme.spacing.none",
-        string endGapToken = "theme.spacing.none",
-        string stackDirection = "down",
-        string stackOffsetToken = "theme.spacing.m",
-        string itemSizingMode = "largest",
-        decimal scaleRatio = 1,
-        decimal opacityRatio = 1) => new()
+        string distributionMode = "stacked") => new()
     {
         ["componentType"] = "notifications",
         ["distributionMode"] = distributionMode,
-        ["sizingMode"] = sizingMode,
-        ["startGapToken"] = startGapToken,
-        ["endGapToken"] = endGapToken,
-        ["stackDirection"] = stackDirection,
-        ["stackOffsetToken"] = stackOffsetToken,
-        ["itemSizingMode"] = itemSizingMode,
-        ["scaleRatio"] = scaleRatio,
-        ["opacityRatio"] = opacityRatio,
         ["inputs"] = NotificationsRuntimeInputs(),
         ["items"] = items ?? new JsonArray(),
-        ["collections"] = new JsonArray { ComponentCollectionDefinition("notification") },
+        ["collections"] = new JsonArray { NotificationsCollectionDefinition() },
         ["distributionTransition"] = false,
         ["distributionElapsedMs"] = 0,
         ["distributionFrom"] = distributionMode,
@@ -1217,6 +1218,58 @@ internal sealed partial class SpikeDatabase
             ReflowTargetAction("changeDistribution", "Distribution", "distributionMode", "distributionTransition", "distributionElapsedMs", "distributionFrom"),
         },
     };
+
+    private static JsonObject NotificationsCollectionDefinition()
+    {
+        var definition = ComponentCollectionDefinition("notification");
+        definition["label"] = "Notifications";
+        definition["itemLabel"] = "Notification";
+        definition.Remove("componentItems");
+        var fields = definition["fields"]?.AsArray()
+            ?? throw new InvalidOperationException("Missing component collection fields.");
+        var variantOwnedFields = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "presetId", "presenceMotion", "alignment", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight",
+        };
+        for (var index = fields.Count - 1; index >= 0; index--)
+        {
+            if (fields[index] is JsonObject field
+                && field["id"] is JsonValue idValue
+                && idValue.TryGetValue<string>(out var id)
+                && variantOwnedFields.Contains(id))
+            {
+                fields.RemoveAt(index);
+            }
+        }
+        fields.Insert(0, ComponentInput("actorId", "Actor", "actorId", "recordReference", "actor_alex", tableId: "actors", resolvedJsonKey: "actor"));
+        fields.Insert(1, AnimatableComponentInput(ComponentInput(
+            "displayMode",
+            "Display mode",
+            "displayMode",
+            "option",
+            "summary",
+            options: [new("summary", "Summary"), new("detail", "Detail")])));
+        fields.Insert(2, ComponentInput("summaryText", "Summary text", "summaryText", "text", "New notification"));
+        fields.Insert(3, ComponentInput("summarySubtext", "Summary subtext", "summarySubtext", "text", "Now"));
+        fields.Insert(4, ComponentInput("detailText", "Detail text", "detailText", "text", "New notification"));
+        fields.Insert(5, ComponentInput("detailSubtext", "Detail subtext", "detailSubtext", "text", "Notification detail"));
+        var actions = definition["itemActions"]?.AsArray()
+            ?? throw new InvalidOperationException("Missing component collection item actions.");
+        actions.Add(ReflowTargetAction(
+            "changeDisplayMode",
+            "Display mode",
+            "displayMode",
+            "displayModeTransition",
+            "displayModeElapsedMs",
+            "displayModeFrom"));
+        definition["itemPresentation"] = new JsonObject
+        {
+            ["subtitleFieldIds"] = new JsonArray("summaryText", "actorId", "present"),
+            ["subtitleMaxCharacters"] = 72,
+            ["fallbackIcon"] = "component",
+        };
+        return definition;
+    }
 
     private static JsonObject ReflowTargetAction(
         string id,
@@ -1991,9 +2044,20 @@ internal sealed partial class SpikeDatabase
 
     private static JsonArray NotificationsRuntimeInputs()
     {
-        var inputs = CollectionStackRuntimeInputs();
-        inputs.Add(ComponentInput("showBadge", "Show badge", "showBadge", "boolean", "true"));
-        return inputs;
+        return
+        [
+            new JsonObject
+            {
+                ["id"] = "distributionMode", ["label"] = "Distribution", ["jsonKey"] = "distributionMode",
+                ["kind"] = "option", ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
+                ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
+                ["options"] = new JsonArray
+                {
+                    new JsonObject { ["value"] = "flow", ["label"] = "Flow" },
+                    new JsonObject { ["value"] = "stacked", ["label"] = "Stacked" },
+                },
+            },
+        ];
     }
 
     private static void ApplyComponentInputLayout(string componentType, JsonArray inputs)

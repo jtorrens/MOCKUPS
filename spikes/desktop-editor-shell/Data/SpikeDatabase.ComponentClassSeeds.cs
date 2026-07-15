@@ -567,7 +567,11 @@ internal sealed partial class SpikeDatabase
                 "actionIconColor", "buttonIconPresetId", "buttonIconOverrides", "iconColorTokenOverride",
             }) obj.Remove(retired);
         }
-        if (obj["items"] is JsonArray items)
+        if (obj["items"] is JsonArray items
+            && (obj["sizeSource"] is not null
+                || items.OfType<JsonObject>().Any(item =>
+                    item["buttonPresetId"] is not null
+                    || (item["contentMode"] is not null && item["buttonOverrides"] is not null))))
         {
             foreach (var item in items.OfType<JsonObject>())
             {

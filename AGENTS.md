@@ -159,6 +159,12 @@ remove the retired value. Do not retain aliases, silent coercions, or hidden
 compatibility paths for old values. Any exception requires explicit user
 direction.
 
+A migration must be self-contained and temporary: convert the seed and committed
+database, validate the resulting new contract, and remove the migration routine
+in the same delivery. Normal startup, normalization, resolvers and editors must
+know only the current schema. They must not keep reading, deleting, translating
+or supplying defaults for retired fields after the committed data has migrated.
+
 ## When in doubt
 
 Stop and extract. Do not add a local exception to make one editor work.

@@ -1142,7 +1142,26 @@ static void NotificationsSeedOpensAndRenders()
         var notificationsConfig = JsonNode.Parse(database.GetComponentClassSettings(notifications.Id).ConfigJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing Notifications config.");
         True(notificationsConfig["notifications"]?["badgeSlot"] is JsonObject);
+        True(notificationsConfig["notifications"]?["notificationSlot"] is JsonObject);
+        True(notificationsConfig["notifications"]?["notificationInputs"] is JsonObject);
+        Equal("center", notificationsConfig["notifications"]?["itemAlignment"]?.GetValue<string>() ?? "");
+        Equal("fixed", notificationsConfig["notifications"]?["itemGapBeforeMode"]?.GetValue<string>() ?? "");
+        True(notificationsConfig["notifications"]?["itemPresenceMotion"] is JsonObject);
         Equal(3, notificationsConfig["notifications"]?["closedItemLimit"]?.GetValue<int>() ?? 0);
+        var notificationsPreview = JsonNode.Parse(database.GetComponentClassSettings(notifications.Id).DesignPreviewJson)?.AsObject()
+            ?? throw new InvalidOperationException("Missing Notifications design preview.");
+        var notificationsCollectionFields = notificationsPreview["collections"]?[0]?["fields"]?.AsArray()
+            .OfType<JsonObject>()
+            .Select((field) => field["id"]?.GetValue<string>() ?? "")
+            .ToHashSet(StringComparer.Ordinal)
+            ?? throw new InvalidOperationException("Missing Notifications collection fields.");
+        True(notificationsCollectionFields.Contains("present"));
+        True(!notificationsCollectionFields.Overlaps(["presetId", "presenceMotion", "alignment", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight"]));
+        var notificationsLayout = database.LoadEditorLayout("component.notifications");
+        SequenceEqual(["general", "layout"], notificationsLayout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
+        SequenceEqual(
+            ["stack", "notification", "badge", "motion"],
+            notificationsLayout.Cards.Single((card) => card.Id == "layout").VisibleGroups.OrderBy((group) => group.Order).Select((group) => group.Id).ToList());
 
         foreach (var variant in new[] { notificationVariant, notificationsVariant })
         {
@@ -1217,21 +1236,28 @@ static void NotificationsSeedOpensAndRenders()
         {
             new JsonObject
             {
-                ["id"] = "notification_1", ["presetId"] = reference,
-                ["overrides"] = new JsonObject(), ["inputs"] = notificationInputs.DeepClone(),
-                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
-                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
-                ["present"] = true, ["presenceMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                ["id"] = "notification_1",
+                ["actorId"] = notificationInputs["actorId"]?.DeepClone(),
+                ["displayMode"] = notificationInputs["displayMode"]?.DeepClone(),
+                ["summaryText"] = notificationInputs["summaryText"]?.DeepClone(),
+                ["summarySubtext"] = notificationInputs["summarySubtext"]?.DeepClone(),
+                ["detailText"] = notificationInputs["detailText"]?.DeepClone(),
+                ["detailSubtext"] = notificationInputs["detailSubtext"]?.DeepClone(),
+                ["present"] = true,
             },
             new JsonObject
             {
-                ["id"] = "notification_2", ["presetId"] = reference,
-                ["overrides"] = new JsonObject(), ["inputs"] = notificationInputs.DeepClone(),
-                ["alignment"] = "center", ["gapBeforeMode"] = "fixed",
-                ["gapBeforeToken"] = "theme.spacing.none", ["gapBeforeWeight"] = 1,
-                ["present"] = true, ["presenceMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+                ["id"] = "notification_2",
+                ["actorId"] = notificationInputs["actorId"]?.DeepClone(),
+                ["displayMode"] = notificationInputs["displayMode"]?.DeepClone(),
+                ["summaryText"] = notificationInputs["summaryText"]?.DeepClone(),
+                ["summarySubtext"] = notificationInputs["summarySubtext"]?.DeepClone(),
+                ["detailText"] = notificationInputs["detailText"]?.DeepClone(),
+                ["detailSubtext"] = notificationInputs["detailSubtext"]?.DeepClone(),
+                ["present"] = true,
             },
         };
+        preview["distributionMode"] = "stacked";
         database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
         var populated = Required(DesignPreviewPayloadFactory.Create(database, notificationsVariant, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(database, () => { });
@@ -1239,23 +1265,33 @@ static void NotificationsSeedOpensAndRenders()
         var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
         var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(database, populatedContract)
-            .Where((action) => !string.IsNullOrWhiteSpace(action.TargetJsonPath))
+            .Where((action) => action.TargetInputId == "displayMode")
             .ToList();
         Equal(2, embeddedActions.Count);
-        True(embeddedActions.All((action) => action.TargetJsonPath == "inputs"));
+        True(embeddedActions.All((action) => string.IsNullOrWhiteSpace(action.TargetJsonPath)));
         var firstDisplayAction = embeddedActions.Single((action) => action.CollectionItemId == "notification_1");
         True(populatedSession.TriggerAction(firstDisplayAction.Id, "detail"));
         var targetedPayload = populatedSession.ApplyInputs(populated, "light", settings.ProjectId);
         var targetedItems = JsonNode.Parse(targetedPayload.DesignPreviewJson)?["items"]?.AsArray()
             ?? throw new InvalidOperationException("Missing targeted Notification items.");
-        Equal("detail", targetedItems[0]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
-        Equal("summary", targetedItems[1]?["inputs"]?["displayMode"]?.GetValue<string>() ?? "");
+        Equal("detail", targetedItems[0]?["displayMode"]?.GetValue<string>() ?? "");
+        Equal("summary", targetedItems[1]?["displayMode"]?.GetValue<string>() ?? "");
         True(populatedSession.RestoreAction(firstDisplayAction.Id));
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), "light", false,
             populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
-        True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
-        True(populatedHtml.Contains("component.notifications.badge", StringComparison.Ordinal));
+        if (populatedHtml.Contains("preview-error", StringComparison.Ordinal))
+            throw new InvalidOperationException("Stacked Notifications preview failed.");
+        if (!populatedHtml.Contains("component.notifications.badge", StringComparison.Ordinal))
+            throw new InvalidOperationException("Stacked Notifications preview omitted its Badge.");
+        populatedSession.SetExternalInputValue("distributionMode", "flow");
+        var flowHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
+        if (flowHtml.Contains("preview-error", StringComparison.Ordinal))
+            throw new InvalidOperationException("Flow Notifications preview failed.");
+        if (flowHtml.Contains("component.notifications.badge", StringComparison.Ordinal))
+            throw new InvalidOperationException("Flow Notifications preview retained its Badge.");
     }
     finally
     {

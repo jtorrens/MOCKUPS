@@ -49,14 +49,21 @@ component layout.
 
 ## Notifications
 
-Notifications owns embedded Collection Stack and Badge Variants. Its public Runtime
-Inputs reproduce that child's runtime contract: Stacked/Flow distribution,
-tokenized boundaries and offsets, uniform/intrinsic item sizing, depth scale
-and opacity ratios, plus the ordered `items` collection. The
-collection's Component selector is restricted to Notification Variants.
+Notifications owns one internal Collection Stack, one concrete base Notification
+Variant and one Badge Variant. The Collection Stack is an implementation detail:
+it is not exposed as a selectable child in the Notifications editor. The
+Notifications Variant owns its layout contract: tokenized boundaries and offsets,
+uniform/intrinsic item sizing, depth scale and opacity ratios, initial distribution,
+`Closed item limit`, Badge visibility and one generic Distribution Motion.
 
-The Notifications Variant additionally owns `Closed item limit` and one generic
-Distribution Motion. Stacked shows `min(present items, limit)` while Flow shows
+The editor retains the mandatory first-level `General` identity card and exposes
+the Variant values in a separate first-level `Layout` card with vertical `Stack`,
+`Notification`, `Badge` and `Motion` tabs. `Notification` selects
+the common base Variant and its overrides, which every item shares. `Badge` owns
+its Variant and visibility. Only the ordered item collection and Distribution
+action remain public Runtime state.
+
+Stacked shows `min(present items, limit)` while Flow shows
 every present item. The limit changes only the closed visual stack: it never
 truncates the runtime collection and the Badge count remains the complete
 logical present count. `distributionMode` is the runtime state/action itself.
@@ -65,14 +72,18 @@ for the finite Distribution Motion; closing uses that same Motion reversed.
 
 `showBadge` controls the Badge overlay. When enabled, Notifications derives its
 text deterministically from the resolved collection length; its Variant keeps
-an explicit diameter and palette colors. Badge placement is
-relative to the Collection Stack frame and does not change its layout bounds.
+an explicit diameter and palette colors. Badge placement is relative to the
+Collection Stack frame and does not change its layout bounds. The Badge exists
+only in Stacked state and follows the stacked side during a finite distribution
+transition; Flow never retains it.
 
-Each item stores a stable id, full Notification Variant reference, local
-overrides, Notification runtime inputs, a runtime/animatable `Present` boolean
-and one Presence Motion. Notifications does not inspect Actor,
-text or Avatar fields inside an item; it passes the complete values to the
-embedded Collection Stack, which invokes the ordinary component registry.
+Each item stores a stable id, explicit Actor, Summary/Detail state and four text
+values, plus a runtime/animatable `Present` boolean. Presence Motion, item
+alignment and gap-before policy are common Notifications Variant values. An item
+does not store a Notification Variant or local overrides: values not declared by
+the item come from the common base Notification Variant. The Notifications
+resolver validates the item vocabulary strictly, resolves each item against that
+base and then supplies concrete children to the internal Collection Stack.
 
 `Present=false` does not remove the child immediately. The resolver retains the
 outgoing renderable for the reversed Presence Motion. Only after that finite
@@ -83,8 +94,7 @@ Avatar/Label geometry and the remaining item positions are interpolated frame by
 frame with stable renderable ids; label content selects the destination state at
 the keyframe while geometry completes over the Theme Reflow duration.
 
-The default contract uses Stacked + Fit content + Largest item, with scale and
-opacity ratios at `1`. All Notification Surfaces therefore use the maximum
+The default contract uses Stacked + Fit content + Largest item. All Notification Surfaces therefore use the maximum
 resolved item width and height while their internal content keeps its own
 padding and placement. Item zero is the foreground notification; successive
 items are painted behind it and receive exponential scale/opacity reduction.
