@@ -152,6 +152,7 @@ internal static class ComponentPreviewActions
     {
         var playInputId = JsonString(action, "playInputId");
         var durationInputId = JsonString(action, "durationInputId");
+        var durationBehaviorTimingInputId = JsonString(action, "durationBehaviorTimingInputId");
         var durationCollectionJsonKey = JsonString(action, "durationCollectionJsonKey");
         var durationThemeToken = JsonString(action, "durationThemeToken");
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
@@ -159,6 +160,7 @@ internal static class ComponentPreviewActions
         var timeJsonKey = JsonString(action, "timeJsonKey");
         if (string.IsNullOrWhiteSpace(playInputId)
             || (string.IsNullOrWhiteSpace(durationInputId)
+                && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
                 && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
                 && string.IsNullOrWhiteSpace(durationThemeToken)
                 && !durationOwnerTimeline
@@ -185,6 +187,7 @@ internal static class ComponentPreviewActions
             label,
             playInputId,
             durationInputId,
+            durationBehaviorTimingInputId,
             durationSeconds,
             durationCollectionJsonKey,
             durationThemeToken,
@@ -194,6 +197,7 @@ internal static class ComponentPreviewActions
             durationOwnerTimeline,
             timeJsonKey,
             ParseTimeUnit(JsonString(action, "timeUnit")),
+            ParseCompletionBehavior(JsonString(action, "completionBehavior")),
             JsonBoolean(action, "prewarmFrames", true),
             JsonString(action, "prewarmWhenJsonKey"),
             JsonString(action, "prewarmWhenConfigPath"),
@@ -215,6 +219,19 @@ internal static class ComponentPreviewActions
         return value.Equals("frames", StringComparison.OrdinalIgnoreCase)
             ? ComponentPreviewActionTimeUnit.Frames
             : ComponentPreviewActionTimeUnit.Seconds;
+    }
+
+    private static ComponentPreviewActionCompletionBehavior ParseCompletionBehavior(string value)
+    {
+        if (value.Equals("reset", StringComparison.OrdinalIgnoreCase))
+        {
+            return ComponentPreviewActionCompletionBehavior.Reset;
+        }
+        if (value.Equals("holdFinal", StringComparison.OrdinalIgnoreCase))
+        {
+            return ComponentPreviewActionCompletionBehavior.HoldFinal;
+        }
+        throw new InvalidOperationException($"Missing or unknown component preview action completionBehavior '{value}'.");
     }
 
     private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
@@ -279,6 +296,7 @@ internal sealed record ComponentPreviewActionDefinition(
     string Label,
     string PlayInputId,
     string DurationInputId,
+    string DurationBehaviorTimingInputId,
     double DurationSeconds,
     string DurationCollectionJsonKey,
     string DurationThemeToken,
@@ -288,6 +306,7 @@ internal sealed record ComponentPreviewActionDefinition(
     bool DurationOwnerTimeline,
     string TimeJsonKey,
     ComponentPreviewActionTimeUnit TimeUnit,
+    ComponentPreviewActionCompletionBehavior CompletionBehavior,
     bool PrewarmFrames,
     string PrewarmWhenJsonKey,
     string PrewarmWhenConfigPath,
@@ -308,4 +327,10 @@ internal enum ComponentPreviewActionTimeUnit
     Seconds,
     Frames,
     Milliseconds,
+}
+
+internal enum ComponentPreviewActionCompletionBehavior
+{
+    Reset,
+    HoldFinal,
 }

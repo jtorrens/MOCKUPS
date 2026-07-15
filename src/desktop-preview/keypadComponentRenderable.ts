@@ -16,6 +16,18 @@ export function keypadComponentToRenderable(
   payload: DesignPreviewPayload,
   keypad: KeypadDesignContract,
 ): RenderableNode {
+  const size = measureKeypadComponent(payload, keypad);
+  return keypadComponentToRenderableAt(
+    payload,
+    keypad,
+    boundedCenterBox(payload, size.width, size.height),
+  );
+}
+
+export function measureKeypadComponent(
+  payload: DesignPreviewPayload,
+  keypad: KeypadDesignContract,
+) {
   const scale = renderScale(payload);
   const paddingX = Math.max(0, numberToken(payload, keypad.padding.xToken) * scale);
   const paddingY = Math.max(0, numberToken(payload, keypad.padding.yToken) * scale);
@@ -37,7 +49,24 @@ export function keypadComponentToRenderable(
     1,
     paddingY * 2 + keyHeight * rowCount + rowGap * Math.max(0, rowCount - 1),
   );
-  const box = boundedCenterBox(payload, width, height);
+  return { width, height };
+}
+
+export function keypadComponentToRenderableAt(
+  payload: DesignPreviewPayload,
+  keypad: KeypadDesignContract,
+  box: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const paddingX = Math.max(0, numberToken(payload, keypad.padding.xToken) * scale);
+  const paddingY = Math.max(0, numberToken(payload, keypad.padding.yToken) * scale);
+  const columnGap = Math.max(0, numberToken(payload, keypad.columnGapToken) * scale);
+  const rowGap = Math.max(0, numberToken(payload, keypad.rowGapToken) * scale);
+  const keyHeight = keypad.keySize.height * scale;
+  const innerWidth = Math.max(1, box.width - paddingX * 2);
+  const keyWidth = keypad.sizingMode === "fill"
+    ? Math.max(1, (innerWidth - columnGap * Math.max(0, keypad.columns - 1)) / keypad.columns)
+    : keypad.keySize.width * scale;
   const children = keypad.keys.flatMap((key, index) => {
     if (!key.label
       || !key.backgroundColorToken

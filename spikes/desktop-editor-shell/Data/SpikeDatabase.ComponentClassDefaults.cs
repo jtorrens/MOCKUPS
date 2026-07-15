@@ -26,6 +26,8 @@ internal sealed partial class SpikeDatabase
             "textInputBar" => "Text input bar component",
             "keyboard" => "Keyboard component",
             "keypad" => "Keypad component",
+            "codeIndicator" => "Code indicator atom",
+            "password" => "Password component",
             "button" => "Button component",
             "label" => "Label component",
             "audio" => "Audio component",
@@ -126,6 +128,36 @@ internal sealed partial class SpikeDatabase
         ["textColorToken"] = textColorToken,
         ["backgroundAlpha"] = 1,
         ["borderAlpha"] = 1,
+    };
+
+    private static JsonObject CodeIndicatorStateSlots(string emptyColorToken, string filledColorToken) => new()
+    {
+        ["emptySurfaceSlot"] = CodeIndicatorSurfaceSlot(emptyColorToken, 0, 1),
+        ["filledSurfaceSlot"] = CodeIndicatorSurfaceSlot(filledColorToken, 1, 1),
+    };
+
+    private static JsonObject CodeIndicatorSurfaceSlot(
+        string backgroundColorToken,
+        double backgroundAlpha,
+        double borderAlpha) => new()
+    {
+        ["presetId"] = DefaultComponentPresetId,
+        ["overrides"] = new JsonObject
+        {
+            ["surface"] = new JsonObject
+            {
+                ["backgroundColorToken"] = backgroundColorToken,
+                ["backgroundAlpha"] = backgroundAlpha,
+                ["borderAlpha"] = borderAlpha,
+            },
+            ["style"] = new JsonObject
+            {
+                ["borderWidth"] = 1,
+                ["cornerRadiusToken"] = "theme.radii.full",
+                ["shadowEnabled"] = false,
+                ["reliefEnabled"] = false,
+            },
+        },
     };
 
     private static JsonArray DefaultKeypadKeys() =>
@@ -389,6 +421,43 @@ internal sealed partial class SpikeDatabase
                         ["pushed"] = KeypadStateStyle("theme.colors.accent"),
                         ["disabled"] = KeypadStateStyle("theme.colors.textSecondary"),
                     },
+                };
+                break;
+            case "codeIndicator":
+                config.Remove("style");
+                config["codeIndicator"] = new JsonObject
+                {
+                    ["glyphSize"] = "16|16",
+                    ["gapToken"] = "theme.spacing.m",
+                    ["states"] = new JsonObject
+                    {
+                        ["initial"] = CodeIndicatorStateSlots("theme.colors.surface", "theme.colors.textPrimary"),
+                        ["correct"] = CodeIndicatorStateSlots("theme.colors.surface", "theme.colors.accent"),
+                        ["incorrect"] = CodeIndicatorStateSlots("theme.colors.surface", "theme.colors.textSecondary"),
+                    },
+                };
+                break;
+            case "password":
+                config.Remove("style");
+                config["password"] = new JsonObject
+                {
+                    ["initialText"] = "Enter password",
+                    ["correctText"] = "Password correct",
+                    ["incorrectText"] = "Password incorrect",
+                    ["upperAnchor"] = "container",
+                    ["lowerAnchor"] = "container",
+                    ["labelIndicatorGapToken"] = "theme.spacing.l",
+                    ["startGapToken"] = "theme.spacing.xl",
+                    ["upperGapToken"] = "theme.spacing.xl",
+                    ["lowerGapToken"] = "theme.spacing.l",
+                    ["endGapToken"] = "theme.spacing.l",
+                    ["iconBarHeight"] = 52,
+                    ["initialLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["correctLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["incorrectLabelSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["indicatorSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["keypadSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
+                    ["iconBarSlot"] = ComponentSurfaceSlot(DefaultComponentPresetId),
                 };
                 break;
             case "button":
@@ -765,6 +834,40 @@ internal sealed partial class SpikeDatabase
             preview["pushedKey"] = "";
             preview["enabled"] = true;
         }
+        if (componentType == "codeIndicator")
+        {
+            preview["count"] = 4;
+            preview["filledCount"] = 2;
+            preview["state"] = "initial";
+        }
+        if (componentType == "password")
+        {
+            preview["expectedPassword"] = "2345";
+            preview["attemptPassword"] = "2345";
+            preview["enabled"] = true;
+            preview["entryTiming"] = new JsonObject
+            {
+                ["mode"] = "fixed",
+                ["fixedFrames"] = 16,
+                ["paceToken"] = "theme.motion.naturalPace.normal",
+            };
+            preview["entryTrigger"] = false;
+            preview["entryFrame"] = 0;
+            preview["actions"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "enterPassword",
+                    ["label"] = "Enter password",
+                    ["playInputId"] = "entryTrigger",
+                    ["durationBehaviorTimingInputId"] = "entryTiming",
+                    ["timeJsonKey"] = "entryFrame",
+                    ["timeUnit"] = "frames",
+                    ["prewarmFrames"] = false,
+                    ["completionBehavior"] = "holdFinal",
+                },
+            };
+        }
         if (componentType == "media")
         {
             preview["mediaSource"] = "";
@@ -807,6 +910,7 @@ internal sealed partial class SpikeDatabase
             };
         }
 
+        NormalizePreviewActionCompletion(preview);
         return preview.ToJsonString();
     }
 
@@ -1082,6 +1186,18 @@ internal sealed partial class SpikeDatabase
                 ComponentInput("pushedKey", "Pushed key", "pushedKey", "text", ""),
                 ComponentInput("enabled", "Enabled", "enabled", "boolean", "true"),
             ],
+            "codeIndicator" =>
+            [
+                ComponentInput("count", "Count", "count", ValueKind.Integer, "4", minimum: 1, maximum: 64, increment: 1),
+                ComponentInput("filledCount", "Filled", "filledCount", ValueKind.Integer, "2", minimum: 0, maximum: 64, increment: 1),
+                ComponentInput("state", "State", "state", "option", "initial", options:
+                [
+                    new FieldOption("initial", "Initial"),
+                    new FieldOption("correct", "Correct"),
+                    new FieldOption("incorrect", "Incorrect"),
+                ]),
+            ],
+            "password" => PasswordRuntimeInputs(),
             "audio" =>
             [
                 ComponentInput("availableWidth", "Available width", "availableWidth", "number", "240", minimum: 1, maximum: 10000, increment: 1),
@@ -1366,6 +1482,42 @@ internal sealed partial class SpikeDatabase
         ["targetValuePattern"] = @"^\d+:[0-5]\d$",
         ["forwardedTargetOnly"] = true,
     };
+
+    private static JsonArray PasswordRuntimeInputs()
+    {
+        var timing = ComponentInput(
+            "entryTiming",
+            "Entry timing",
+            "entryTiming",
+            "behaviorTiming",
+            "{\"mode\":\"fixed\",\"fixedFrames\":16,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+            source: "runtime",
+            valueKind: ValueKind.BehaviorTiming.ToString());
+        timing["options"] = new JsonArray
+        {
+            new JsonObject { ["value"] = "theme.motion.naturalPace.verySlow", ["label"] = "Very slow" },
+            new JsonObject { ["value"] = "theme.motion.naturalPace.slow", ["label"] = "Slow" },
+            new JsonObject { ["value"] = "theme.motion.naturalPace.normal", ["label"] = "Normal" },
+            new JsonObject { ["value"] = "theme.motion.naturalPace.fast", ["label"] = "Fast" },
+            new JsonObject { ["value"] = "theme.motion.naturalPace.veryFast", ["label"] = "Very fast" },
+        };
+        timing["naturalTiming"] = new JsonObject
+        {
+            ["sourceFieldId"] = "attemptPassword",
+            ["unit"] = "grapheme",
+            ["baseFramesPerUnit"] = 4,
+        };
+
+        return
+        [
+            ComponentInput("expectedPassword", "Password", "expectedPassword", "text", "2345"),
+            ComponentInput("attemptPassword", "Attempt", "attemptPassword", "text", "2345"),
+            ComponentInput("enabled", "Enabled", "enabled", "boolean", "true"),
+            timing,
+            ComponentInput("entryTrigger", "Enter password", "entryTrigger", "boolean", "false", source: "calculated"),
+            ComponentInput("entryFrame", "Entry frame", "entryFrame", ValueKind.Integer, "0", minimum: 0, maximum: 100000, increment: 1, source: "calculated", unit: "frames"),
+        ];
+    }
 
     private static JsonObject ComponentInput(
         string id,
@@ -1662,6 +1814,8 @@ internal sealed partial class SpikeDatabase
         NewComponentSeed("textInputBar", "component.textInputBar", "Default Text Input Bar"),
         NewComponentSeed("keyboard", "component.keyboard", "Default Keyboard"),
         NewComponentSeed("keypad", "component.keypad", "Default Keypad"),
+        NewComponentSeed("codeIndicator", "component.codeIndicator", "Default Code Indicator"),
+        NewComponentSeed("password", "component.password", "Default Password"),
         NewComponentSeed("button", "component.button", "Default Button"),
         NewComponentSeed("label", "component.label", "Default Label"),
         NewComponentSeed("audio", "component.audio", "Default Audio"),

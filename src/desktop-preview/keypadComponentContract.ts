@@ -21,7 +21,7 @@ export interface KeypadKeyContract {
 }
 
 export interface KeypadDesignContract {
-  id: "component.keypad";
+  id: "component.keypad" | string;
   sizingMode: KeypadSizingMode;
   availableWidth: number;
   columns: number;

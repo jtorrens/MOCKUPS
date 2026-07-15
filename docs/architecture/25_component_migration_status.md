@@ -15,7 +15,7 @@ for every active module/component is maintained in
 
 Current summary:
 
-- Conversation, Bubble, Text Input Bar, Keyboard, Keypad, Media and Audio are active
+- Conversation, Bubble, Text Input Bar, Keyboard, Keypad, Password, Media and Audio are active
   on the component resolver -> renderable -> generic renderer route.
 - Lock Screen is active on its module resolver -> renderable route. It owns the
   composition of its runtime Component Stack and optional status/navigation
@@ -29,6 +29,13 @@ Current summary:
   state. One shared Label owns key geometry and style; states override only
   background/text color and background/border alpha. Parent stacks own all
   surrounding display and action chrome.
+- Password is a System component that composes concrete Label, Code Indicator,
+  Keypad and Icon Bar Variants. It resolves fixed or Natural entry timing frame
+  by frame, using a Password-owned reference rate of 4 frames per digit. Code
+  Indicator is its reusable atom for initial/correct/incorrect empty and filled
+  glyph surfaces. Keypad remains centered in the parent frame; the upper and
+  lower blocks anchor independently to the container or Keypad with spacing
+  tokens. Its preview action explicitly holds the resolved final frame.
 - The behavior reference records the remaining Conversation shared-time,
   message-schema, generic text/emoji and video-preview limitations.
 

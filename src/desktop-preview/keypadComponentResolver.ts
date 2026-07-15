@@ -27,9 +27,20 @@ import {
 } from "./labelComponentResolver.js";
 
 export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDesignContract {
-  const config = parseObject(payload.configJson);
-  const preview = parseObject(payload.designPreviewJson);
-  const bases = parseObject(payload.componentBaseConfigsJson);
+  return resolveKeypadComponentFromRecords(
+    parseObject(payload.configJson),
+    parseObject(payload.designPreviewJson),
+    parseObject(payload.componentBaseConfigsJson),
+    "component.keypad",
+  );
+}
+
+export function resolveKeypadComponentFromRecords(
+  config: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  bases: Record<string, unknown>,
+  id: string,
+): KeypadDesignContract {
   const keypad = asRecord(config.keypad);
   const sizingMode = requiredString(keypad, "sizingMode", "component.keypad.sizingMode");
   if (sizingMode !== "content" && sizingMode !== "fill") {
@@ -102,7 +113,7 @@ export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDes
   });
 
   return {
-    id: "component.keypad",
+    id,
     sizingMode: sizingMode as KeypadSizingMode,
     availableWidth: requiredNumber(preview, "availableWidth", "component.keypad.runtime.availableWidth"),
     columns,

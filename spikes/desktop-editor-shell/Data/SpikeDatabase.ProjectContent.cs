@@ -686,7 +686,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject DefaultConversationDesignPreviewJson()
     {
-        return new JsonObject
+        var preview = new JsonObject
         {
             ["conversationType"] = "individual",
             ["headerSubtitle"] = "online",
@@ -813,6 +813,8 @@ internal sealed partial class SpikeDatabase
                 },
             },
         };
+        NormalizePreviewActionCompletion(preview);
+        return preview;
     }
 
     private static JsonObject HeaderButtonCollection(string jsonKey, string label) => new()

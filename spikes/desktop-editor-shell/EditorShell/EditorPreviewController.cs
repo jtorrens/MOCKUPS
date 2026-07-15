@@ -1830,9 +1830,11 @@ internal sealed class EditorPreviewController
 
         var timeJsonKey = action.TimeJsonKey;
         var durationInputId = action.DurationInputId;
+        var durationBehaviorTimingInputId = action.DurationBehaviorTimingInputId;
         var animationDurationSeconds = action.DurationSeconds;
         if (string.IsNullOrWhiteSpace(timeJsonKey)
             || (string.IsNullOrWhiteSpace(durationInputId)
+                && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
                 && string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey)
                 && !action.DurationOwnerTimeline
                 && animationDurationSeconds <= 0))
@@ -1920,6 +1922,19 @@ internal sealed class EditorPreviewController
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
             return CollectionDurationFrames(preview, action);
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
+        {
+            var fields = preview["inputs"] is JsonArray inputs
+                ? inputs.OfType<JsonObject>().ToList()
+                : [];
+            var definition = fields.FirstOrDefault((field) =>
+                JsonString(field, "id") == action.DurationBehaviorTimingInputId)
+                ?? throw new InvalidOperationException(
+                    $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
+            var themeTokens = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
+                ?? new JsonObject();
+            return BehaviorTimingResolver.ResolveFrames(preview, definition, fields, themeTokens);
         }
 
         if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)

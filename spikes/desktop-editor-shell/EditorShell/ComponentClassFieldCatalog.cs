@@ -92,6 +92,12 @@ internal static class ComponentClassFieldCatalog
         new("theme.iconSizes.xl", "iconSizes.xl"),
     ];
 
+    private static readonly FieldOption[] PasswordAnchorOptions =
+    [
+        new("container", "Container"),
+        new("keypad", "Keypad"),
+    ];
+
     private static readonly FieldOption[] ButtonPushedDurationTokenOptions =
     [
         new("theme.motion.buttonPushedDurationMs", "motion.buttonPushedDurationMs"),
@@ -630,6 +636,33 @@ internal static class ComponentClassFieldCatalog
         ["component.keypad.states.disabled.textColorToken"] = new("component.keypad.states.disabled.textColorToken", "Text / icon", ValueKind.ThemeToken, ["keypad", "states", "disabled", "textColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.keypad.states.disabled.backgroundAlpha"] = new("component.keypad.states.disabled.backgroundAlpha", "Background alpha", ValueKind.Alpha, ["keypad", "states", "disabled", "backgroundAlpha"], "1"),
         ["component.keypad.states.disabled.borderAlpha"] = new("component.keypad.states.disabled.borderAlpha", "Border alpha", ValueKind.Alpha, ["keypad", "states", "disabled", "borderAlpha"], "1"),
+
+        ["component.codeIndicator.glyphSize"] = new("component.codeIndicator.glyphSize", "Glyph size", ValueKind.IntegerPair, ["codeIndicator", "glyphSize"], "16|16", PairLabels: new("W", "H")),
+        ["component.codeIndicator.gapToken"] = new("component.codeIndicator.gapToken", "Gap", ValueKind.ThemeToken, ["codeIndicator", "gapToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.codeIndicator.states.initial.empty.editor"] = new("component.codeIndicator.states.initial.empty.editor", "Empty", ValueKind.ComponentPreset, ["codeIndicator", "states", "initial", "emptySurfaceSlot", "presetId"], "default"),
+        ["component.codeIndicator.states.initial.filled.editor"] = new("component.codeIndicator.states.initial.filled.editor", "Filled", ValueKind.ComponentPreset, ["codeIndicator", "states", "initial", "filledSurfaceSlot", "presetId"], "default"),
+        ["component.codeIndicator.states.correct.empty.editor"] = new("component.codeIndicator.states.correct.empty.editor", "Empty", ValueKind.ComponentPreset, ["codeIndicator", "states", "correct", "emptySurfaceSlot", "presetId"], "default"),
+        ["component.codeIndicator.states.correct.filled.editor"] = new("component.codeIndicator.states.correct.filled.editor", "Filled", ValueKind.ComponentPreset, ["codeIndicator", "states", "correct", "filledSurfaceSlot", "presetId"], "default"),
+        ["component.codeIndicator.states.incorrect.empty.editor"] = new("component.codeIndicator.states.incorrect.empty.editor", "Empty", ValueKind.ComponentPreset, ["codeIndicator", "states", "incorrect", "emptySurfaceSlot", "presetId"], "default"),
+        ["component.codeIndicator.states.incorrect.filled.editor"] = new("component.codeIndicator.states.incorrect.filled.editor", "Filled", ValueKind.ComponentPreset, ["codeIndicator", "states", "incorrect", "filledSurfaceSlot", "presetId"], "default"),
+
+        ["component.password.initialText"] = new("component.password.initialText", "Initial text", ValueKind.StringSingleLine, ["password", "initialText"], "Enter password"),
+        ["component.password.correctText"] = new("component.password.correctText", "Correct text", ValueKind.StringSingleLine, ["password", "correctText"], "Password correct"),
+        ["component.password.incorrectText"] = new("component.password.incorrectText", "Incorrect text", ValueKind.StringSingleLine, ["password", "incorrectText"], "Password incorrect"),
+        ["component.password.upperAnchor"] = new("component.password.upperAnchor", "Upper block anchor", ValueKind.OptionToken, ["password", "upperAnchor"], "container", Options: PasswordAnchorOptions),
+        ["component.password.lowerAnchor"] = new("component.password.lowerAnchor", "Lower block anchor", ValueKind.OptionToken, ["password", "lowerAnchor"], "container", Options: PasswordAnchorOptions),
+        ["component.password.labelIndicatorGapToken"] = new("component.password.labelIndicatorGapToken", "Label / indicator gap", ValueKind.ThemeToken, ["password", "labelIndicatorGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.password.startGapToken"] = new("component.password.startGapToken", "Start gap", ValueKind.ThemeToken, ["password", "startGapToken"], "theme.spacing.xl", Options: SpacingTokenOptions),
+        ["component.password.upperGapToken"] = new("component.password.upperGapToken", "Upper gap", ValueKind.ThemeToken, ["password", "upperGapToken"], "theme.spacing.xl", Options: SpacingTokenOptions),
+        ["component.password.lowerGapToken"] = new("component.password.lowerGapToken", "Lower gap", ValueKind.ThemeToken, ["password", "lowerGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.password.endGapToken"] = new("component.password.endGapToken", "End gap", ValueKind.ThemeToken, ["password", "endGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
+        ["component.password.iconBarHeight"] = new("component.password.iconBarHeight", "Icon bar height", ValueKind.Integer, ["password", "iconBarHeight"], "52", Number: new NumberDefinition(1, 1000, 1, 0)),
+        ["component.password.initialLabel.editor"] = new("component.password.initialLabel.editor", "Initial label", ValueKind.ComponentPreset, ["password", "initialLabelSlot", "presetId"], "default"),
+        ["component.password.correctLabel.editor"] = new("component.password.correctLabel.editor", "Correct label", ValueKind.ComponentPreset, ["password", "correctLabelSlot", "presetId"], "default"),
+        ["component.password.incorrectLabel.editor"] = new("component.password.incorrectLabel.editor", "Incorrect label", ValueKind.ComponentPreset, ["password", "incorrectLabelSlot", "presetId"], "default"),
+        ["component.password.indicator.editor"] = new("component.password.indicator.editor", "Code indicator", ValueKind.ComponentPreset, ["password", "indicatorSlot", "presetId"], "default"),
+        ["component.password.keypad.editor"] = new("component.password.keypad.editor", "Keypad", ValueKind.ComponentPreset, ["password", "keypadSlot", "presetId"], "default"),
+        ["component.password.iconBar.editor"] = new("component.password.iconBar.editor", "Icon bar", ValueKind.ComponentPreset, ["password", "iconBarSlot", "presetId"], "default"),
 
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),

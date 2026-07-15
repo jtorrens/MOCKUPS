@@ -42,6 +42,7 @@ var tests = new (string Name, Action Run)[]
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
+    ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
 };
@@ -845,6 +846,101 @@ static void KeypadSeedOpensAndRenders()
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void PasswordSeedOpensAndRenders()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-password-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var indicator = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "codeIndicator");
+        Equal("Atoms", indicator.Parent?.Name ?? "");
+        var password = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "password");
+        Equal("System", password.Parent?.Name ?? "");
+        var defaultVariant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+        var settings = database.GetComponentClassSettings(password.Id);
+        var layout = database.LoadEditorLayout("component.password");
+        SequenceEqual(["general", "layout", "labels", "indicator", "keypad", "iconBar"],
+            layout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
+        Equal("verticalCards", layout.Cards.Single((card) => card.Id == "labels").GroupLayout);
+
+        var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Password config.");
+        var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Password preview.");
+        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        SequenceEqual(
+            ["expectedPassword", "attemptPassword", "enabled", "entryTiming"],
+            runtimeInputs.Select((input) => input.Id).ToList());
+        var timing = runtimeInputs.Single((input) => input.Id == "entryTiming");
+        Equal(ValueKind.BehaviorTiming, timing.ValueKind);
+        Equal(4d, preview["inputs"]?.AsArray()
+            .OfType<JsonObject>()
+            .Single((input) => input["id"]?.GetValue<string>() == "entryTiming")
+            ["naturalTiming"]?["baseFramesPerUnit"]?.GetValue<double>() ?? -1);
+        var action = ComponentPreviewActions.Read(preview).Single();
+        Equal("entryTiming", action.DurationBehaviorTimingInputId);
+        Equal(ComponentPreviewActionTimeUnit.Frames, action.TimeUnit);
+        Equal(ComponentPreviewActionCompletionBehavior.HoldFinal, action.CompletionBehavior);
+        var passwordConfig = config["password"]?.AsObject()
+            ?? throw new InvalidOperationException("Missing Password config block.");
+        Equal("container", passwordConfig["upperAnchor"]?.GetValue<string>() ?? "");
+        Equal("container", passwordConfig["lowerAnchor"]?.GetValue<string>() ?? "");
+        True(passwordConfig["labelGapToken"] is null);
+        True(passwordConfig["indicatorGapToken"] is null);
+        True(passwordConfig["keypadGapToken"] is null);
+
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
+            "DurationFrames",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing shared preview action duration resolver.");
+        Equal(16, (int)(durationMethod.Invoke(inputSession, [action]) ?? -1));
+        var advanceMethod = typeof(ComponentPreviewInputSession).GetMethod(
+            "AdvancePlaybackFrame",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing shared preview frame advance.");
+        inputSession.PresentEveryPlaybackFrame = true;
+        True(inputSession.TriggerAction(action.Id));
+        inputSession.NotifyPlaybackFramePresented();
+        for (var frame = 1; frame <= 16; frame++)
+        {
+            advanceMethod.Invoke(inputSession, null);
+            inputSession.NotifyPlaybackFramePresented();
+        }
+        True(!inputSession.IsPlaybackActive);
+        Equal(16, inputSession.CurrentPreviewFrame);
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var finalPreview = JsonNode.Parse(resolvedPayload.DesignPreviewJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing resolved Password preview.");
+        Equal(true, finalPreview["entryTrigger"]?.GetValue<bool>() ?? false);
+        Equal(16, finalPreview["entryFrame"]?.GetValue<int>() ?? -1);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            resolvedPayload).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
+        True(inputSession.TriggerAction(action.Id));
+        Equal(0, inputSession.CurrentPreviewFrame);
+        True(inputSession.IsPlaybackActive);
+        True(inputSession.ResetCurrentTestValues());
     }
     finally
     {

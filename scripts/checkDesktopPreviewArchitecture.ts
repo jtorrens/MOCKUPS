@@ -534,6 +534,7 @@ function assertDesktopPreviewActionsAreDeclarative() {
         const label = typeof action.label === "string" ? action.label : "";
         const timeJsonKey = typeof action.timeJsonKey === "string" ? action.timeJsonKey : "";
         const hasDuration = typeof action.durationInputId === "string"
+          || typeof action.durationBehaviorTimingInputId === "string"
           || typeof action.durationCollectionJsonKey === "string"
           || typeof action.durationSeconds === "number"
           || typeof action.durationThemeToken === "string"
@@ -562,6 +563,26 @@ function assertDesktopPreviewActionsAreDeclarative() {
           addViolation(
             "data/desktop-editor-spike.sqlite",
             `${row.id}.design_preview_json.${path}.durationThemeToken must be a theme.* token`,
+          );
+        }
+        if ("durationBehaviorTimingInputId" in action) {
+          const inputId = typeof action.durationBehaviorTimingInputId === "string"
+            ? action.durationBehaviorTimingInputId
+            : "";
+          const inputs = Array.isArray(preview.inputs) ? preview.inputs.map(jsonRecord) : [];
+          const input = inputs.find((candidate) => candidate.id === inputId);
+          if (!inputId || input?.valueKind !== "BehaviorTiming") {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.${path}.durationBehaviorTimingInputId must reference a BehaviorTiming input`,
+            );
+          }
+        }
+        if (action.completionBehavior !== "reset"
+          && action.completionBehavior !== "holdFinal") {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.id}.design_preview_json.${path}.completionBehavior must be reset or holdFinal`,
           );
         }
         if (("durationCollectionJsonKey" in action || "durationItemNumberKeys" in action) && !timeJsonKey) {

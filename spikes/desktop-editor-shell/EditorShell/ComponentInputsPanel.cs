@@ -43,6 +43,7 @@ internal sealed class ComponentPreviewInputSession
     private bool _presentEveryPlaybackFrame;
     private bool _awaitingPlaybackPresentation;
     private bool _stopAfterPlaybackPresentation;
+    private string _heldFinalActionId = "";
 
     public bool PresentEveryPlaybackFrame
     {
@@ -65,9 +66,7 @@ internal sealed class ComponentPreviewInputSession
             var activeAction = ActiveAction();
             if (activeAction is not null)
             {
-                StopPlayback();
-                _values[ActionStateKey(activeAction)] = "false";
-                SyncBooleanInput(ActionStateKey(activeAction));
+                CompletePlayback(activeAction);
             }
             UpdateActionButtons();
             _refreshPreview();
@@ -103,6 +102,7 @@ internal sealed class ComponentPreviewInputSession
             _testValuesSignature = "";
             _actions = [];
             _activeActionId = "";
+            _heldFinalActionId = "";
             _config = [];
             _themeTokens = [];
             _runtimePreview = [];
@@ -129,6 +129,7 @@ internal sealed class ComponentPreviewInputSession
             _inputSignature = "";
             _actions = [];
             _activeActionId = "";
+            _heldFinalActionId = "";
             _config = [];
             _runtimePreview = [];
             StopPlayback();
@@ -173,7 +174,8 @@ internal sealed class ComponentPreviewInputSession
 
     public bool IsPlaybackActive => SupportsPlayback()
         && ActiveAction() is { } activeAction
-        && IsPlaying(activeAction);
+        && IsPlaying(activeAction)
+        && _heldFinalActionId != activeAction.Id;
 
     public int PlaybackFrameRate => _playbackFrameRate;
 
@@ -297,6 +299,7 @@ internal sealed class ComponentPreviewInputSession
         }
         removed |= _transientCollectionTestValuesByScope.Remove(scopeKey);
         _activeActionId = "";
+        _heldFinalActionId = "";
         _playbackSecondsByActionId.Clear();
         UpdateActionButtons();
         if (removed) _refreshPreview();
@@ -347,27 +350,12 @@ internal sealed class ComponentPreviewInputSession
         foreach (var input in inputs)
         {
             var value = Value(input);
-            switch (input.Kind)
+            if (input.Kind == ComponentInputKind.RecordReference)
             {
-                case ComponentInputKind.Number:
-                    if (double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
-                    {
-                        preview[input.JsonKey] = number;
-                    }
-                    break;
-                case ComponentInputKind.Boolean:
-                    preview[input.JsonKey] = StringToBool(value);
-                    break;
-                case ComponentInputKind.IconList:
-                    preview[input.JsonKey] = JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray();
-                    break;
-                case ComponentInputKind.RecordReference:
-                    ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
-                    break;
-                default:
-                    preview[input.JsonKey] = value;
-                    break;
+                ApplyRecordReferenceInput(preview, input, value, themeMode, payload.PaletteColors);
+                continue;
             }
+            preview[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, value);
         }
         foreach (var action in _actions.Where((action) => ComponentPreviewActions.IsApplicable(preview, action)))
         {
@@ -488,6 +476,7 @@ internal sealed class ComponentPreviewInputSession
             JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
             JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
             JsonArray jsonArray => jsonArray.ToJsonString(),
+            JsonObject jsonObject => jsonObject.ToJsonString(),
             _ => input.DefaultValue,
         };
     }
@@ -682,6 +671,12 @@ internal sealed class ComponentPreviewInputSession
         var activeAction = ActiveAction();
         if (activeAction is not null && IsPlaying(activeAction))
         {
+            if (_heldFinalActionId == activeAction.Id)
+            {
+                if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
+                UpdateActionButtons();
+                return;
+            }
             if (_awaitingPlaybackPresentation)
             {
                 if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
@@ -739,7 +734,7 @@ internal sealed class ComponentPreviewInputSession
     private void TogglePlayback(ComponentPreviewActionDefinition action)
     {
         var stateKey = ActionStateKey(action);
-        var startsPlayback = !IsPlaying(action);
+        var startsPlayback = !IsPlaying(action) || _heldFinalActionId == action.Id;
         PreviewDebugLog.Write(
             "preview.playback.toggle",
             ("scope", _scopeKey),
@@ -828,6 +823,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         SetPlaybackState(action, true);
+        _heldFinalActionId = "";
         SyncBooleanInput(ActionStateKey(action));
         SyncActivatedPlaybackInputs(action);
         SyncDeactivatedPlaybackInputs(action);
@@ -942,12 +938,25 @@ internal sealed class ComponentPreviewInputSession
             {
                 return;
             }
-            _values[ActionStateKey(activeAction)] = "false";
-            SyncBooleanInput(ActionStateKey(activeAction));
-            StopPlayback();
+            CompletePlayback(activeAction);
             UpdateActionButtons();
             _refreshPreview();
         }
+    }
+
+    private void CompletePlayback(ComponentPreviewActionDefinition action)
+    {
+        if (action.CompletionBehavior == ComponentPreviewActionCompletionBehavior.HoldFinal)
+        {
+            _heldFinalActionId = action.Id;
+            StopPlayback();
+            return;
+        }
+
+        _heldFinalActionId = "";
+        _values[ActionStateKey(action)] = "false";
+        SyncBooleanInput(ActionStateKey(action));
+        StopPlayback();
     }
 
     private double CurrentPlaybackSeconds(ComponentPreviewActionDefinition action)
@@ -1026,6 +1035,18 @@ internal sealed class ComponentPreviewInputSession
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
             return Math.Max(1, (int)Math.Round(ThemeTokenNumber(action.DurationThemeToken, 1), MidpointRounding.AwayFromZero));
+        }
+
+        if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
+        {
+            var fields = _runtimePreview["inputs"] is JsonArray inputs
+                ? inputs.OfType<JsonObject>().ToList()
+                : [];
+            var definition = fields.FirstOrDefault((field) =>
+                field["id"]?.GetValue<string>() == action.DurationBehaviorTimingInputId)
+                ?? throw new InvalidOperationException(
+                    $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
+            return BehaviorTimingResolver.ResolveFrames(_runtimePreview, definition, fields, _themeTokens);
         }
 
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
@@ -1118,6 +1139,7 @@ internal sealed class ComponentPreviewInputSession
         var stateKey = ActionStateKey(action);
         if (isPlaying)
         {
+            _heldFinalActionId = "";
             StopPlayback();
             foreach (var otherAction in _actions)
             {
@@ -1142,6 +1164,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var seconds = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
+        if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
         _playbackSecondsByActionId.Remove(action.Id);
         _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, seconds);
         _values[stateKey] = "false";
@@ -1584,6 +1607,7 @@ internal sealed class ComponentPreviewInputSession
             action.Label,
             action.PlayInputId,
             action.DurationInputId,
+            action.DurationBehaviorTimingInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.DurationCollectionJsonKey,
             action.DurationThemeToken,
@@ -1592,6 +1616,7 @@ internal sealed class ComponentPreviewInputSession
             action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
             action.TimeUnit,
+            action.CompletionBehavior,
             action.PrewarmFrames.ToString(CultureInfo.InvariantCulture),
             action.PrewarmWhenJsonKey,
             action.PrewarmWhenConfigPath,

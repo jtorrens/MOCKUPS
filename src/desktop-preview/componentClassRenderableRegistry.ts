@@ -11,6 +11,8 @@ import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
 import { resolveCursorComponent } from "./cursorComponentResolver.js";
 import { componentStackComponentToRenderable } from "./componentStackComponentRenderable.js";
 import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
+import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
+import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import {
   isDesktopPreviewComponentClass,
   type DesktopPreviewComponentClass,
@@ -22,6 +24,8 @@ import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js"
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
 import { keypadComponentToRenderable } from "./keypadComponentRenderable.js";
 import { resolveKeypadComponent } from "./keypadComponentResolver.js";
+import { passwordComponentToRenderable } from "./passwordComponentRenderable.js";
+import { resolvePasswordComponent } from "./passwordComponentResolver.js";
 import { iconBarComponentToRenderable } from "./iconBarComponentRenderable.js";
 import { resolveIconBarComponent } from "./iconBarComponentResolver.js";
 import { iconRowComponentToRenderable } from "./iconRowComponentRenderable.js";
@@ -56,6 +60,8 @@ export const componentRenderableFactories = {
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
   componentStack: (payload) =>
     componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
+  codeIndicator: (payload) =>
+    codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
   audio: (payload) => audioComponentToRenderable(payload, resolveAudioComponent(payload)),
   button: (payload) => buttonComponentToRenderable(payload, resolveButtonComponent(payload)),
@@ -65,6 +71,8 @@ export const componentRenderableFactories = {
     keyboardComponentToRenderable(payload, resolveKeyboardComponent(payload)),
   keypad: (payload) =>
     keypadComponentToRenderable(payload, resolveKeypadComponent(payload)),
+  password: (payload) =>
+    passwordComponentToRenderable(payload, resolvePasswordComponent(payload)),
   media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
   bubble: (payload) => bubbleComponentToRenderable(payload, resolveBubbleComponent(payload)),
   status_bar: (payload) =>

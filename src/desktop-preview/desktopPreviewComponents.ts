@@ -65,7 +65,15 @@ export const desktopPreviewComponents = {
     contract: "./componentStackComponentContract",
     resolver: "./componentStackComponentResolver",
     renderable: "./componentStackComponentRenderable",
-    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "media", "bubble", "status_bar", "navigation_bar"],
+    embeds: ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "codeIndicator", "avatar", "button", "audio", "textInputBar", "keyboard", "keypad", "password", "media", "bubble", "status_bar", "navigation_bar"],
+  },
+  codeIndicator: {
+    category: "atom",
+    migrationStatus: "functional",
+    contract: "./codeIndicatorComponentContract",
+    resolver: "./codeIndicatorComponentResolver",
+    renderable: "./codeIndicatorComponentRenderable",
+    embeds: ["surface"],
   },
   avatar: {
     category: "component",
@@ -114,6 +122,14 @@ export const desktopPreviewComponents = {
     resolver: "./keypadComponentResolver",
     renderable: "./keypadComponentRenderable",
     embeds: ["label"],
+  },
+  password: {
+    category: "system",
+    migrationStatus: "functional",
+    contract: "./passwordComponentContract",
+    resolver: "./passwordComponentResolver",
+    renderable: "./passwordComponentRenderable",
+    embeds: ["label", "codeIndicator", "keypad", "iconBar"],
   },
   media: {
     category: "component",

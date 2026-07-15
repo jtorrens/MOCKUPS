@@ -194,7 +194,21 @@ The declaring module owns `semanticUnitCount`, `baseFramesPerUnit`, and the dete
 
 The dictionary keeps `Duration (frames)` visible in both modes. It is editable in Fixed mode and read-only in Natural mode, where it displays the live derived value from the same shared resolver used by the owner timeline. The calculated number is not persisted and changes when its semantic source, module rate, selected pace token, or effective Theme changes.
 
-Conversation Write On is the first consumer. Its semantic unit is a grapheme, its base rate is 7 frames per grapheme, and its module resolver produces a deterministic, monotonic typing plan with small contextual variations and no corrections. It always reaches the complete text at the resolved final frame. A future module may own a different rate and plan—for example, a known numeric PIN at 4 frames per digit—without adding a special case to the dictionary, owner timeline, bridge, or renderer.
+Conversation Write On is the first consumer. Its semantic unit is a grapheme, its base rate is 7 frames per grapheme, and its module resolver produces a deterministic, monotonic typing plan with small contextual variations and no corrections. It always reaches the complete text at the resolved final frame. Password uses the same generic value kind with a component-owned rate of 4 frames per digit and a deterministic keypad sequence, without adding a special case to the dictionary, bridge or renderer.
+
+Generic Design Preview actions may name a `BehaviorTiming` runtime input as
+their finite duration source. The action host calls the same shared resolver
+used by owner timelines; it does not inspect the owning component or reproduce
+its unit/rate formula. The component still owns all state distribution inside
+the resulting duration.
+
+Finite Design Preview actions also declare a generic completion behavior.
+`reset` switches the action off after its final frame and is declared explicitly
+for momentary interactions. `holdFinal` retains the action input and its final
+time value after presentation; replay starts again at frame zero and Reset Test
+Values restores defaults. Password uses `holdFinal` so its correct or incorrect
+result remains visible. This policy belongs to the action host and contains no
+component-specific branch.
 
 ## 8. Context, resolver, and presentation boundaries
 
