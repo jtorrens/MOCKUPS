@@ -43,7 +43,76 @@ export function notificationComponentToRenderable(
     width: Math.max(0, box.width - paddingX * 2),
     height: Math.max(0, box.height - paddingY * 2),
   };
-  let avatarBox = placeChild(innerBox, { width: avatarSize, height: avatarSize }, scalePlacement(notification.avatarPlacement, scale));
+  const targetLayout = placeNotificationContent(
+    innerBox,
+    avatarSize,
+    labelSize,
+    notification,
+    scale,
+    gap,
+  );
+  const fromLayout = notification.reflow
+    ? placeNotificationContent(innerBox, avatarSize, fromLabelSize, notification, scale, gap)
+    : targetLayout;
+  const avatarBox = lerpBox(fromLayout.avatarBox, targetLayout.avatarBox, progress);
+  const labelBox = targetLayout.labelBox;
+  const avatar = avatarComponentToRenderableAt(payload, notification.avatar, avatarBox);
+  const label = labelComponentToRenderableAt(payload, notification.label, labelBox, labelLayout);
+  const surface = surfaceComponentToRenderableAt(payload, notification.surface, box);
+  const labels = notification.reflow
+    ? [
+        {
+          ...labelComponentToRenderableAt(
+            payload,
+            notification.reflow.fromLabel,
+            fromLayout.labelBox,
+            labelLayout,
+          ),
+          transform: { opacity: 1 - progress },
+        },
+        { ...label, transform: { opacity: progress } },
+      ]
+    : [label];
+  return {
+    id: notification.id,
+    type: "group",
+    frame: 0,
+    box,
+    style: { overflow: "visible" },
+    children: [surface, avatar, ...labels],
+  };
+}
+
+function lerp(start: number, end: number, amount: number) {
+  return start + (end - start) * Math.max(0, Math.min(1, amount));
+}
+
+function lerpBox(
+  start: { x: number; y: number; width: number; height: number },
+  end: { x: number; y: number; width: number; height: number },
+  amount: number,
+) {
+  return {
+    x: lerp(start.x, end.x, amount),
+    y: lerp(start.y, end.y, amount),
+    width: lerp(start.width, end.width, amount),
+    height: lerp(start.height, end.height, amount),
+  };
+}
+
+function placeNotificationContent(
+  innerBox: { x: number; y: number; width: number; height: number },
+  avatarSize: number,
+  labelSize: { width: number; height: number },
+  notification: NotificationDesignContract,
+  scale: number,
+  gap: number,
+) {
+  let avatarBox = placeChild(
+    innerBox,
+    { width: avatarSize, height: avatarSize },
+    scalePlacement(notification.avatarPlacement, scale),
+  );
   let labelBox = placeChild(innerBox, labelSize, scalePlacement(notification.labelPlacement, scale));
   const avatarIsFirst = avatarBox.x + avatarBox.width / 2 <= labelBox.x + labelBox.width / 2;
   const separated = avatarIsFirst
@@ -68,35 +137,7 @@ export function notificationComponentToRenderable(
   } else {
     [labelBox, avatarBox] = separated;
   }
-  const avatar = avatarComponentToRenderableAt(payload, notification.avatar, avatarBox);
-  const label = labelComponentToRenderableAt(payload, notification.label, labelBox, labelLayout);
-  const surface = surfaceComponentToRenderableAt(payload, notification.surface, box);
-  const labels = notification.reflow
-    ? [
-        {
-          ...labelComponentToRenderableAt(
-            payload,
-            notification.reflow.fromLabel,
-            placeChild(innerBox, fromLabelSize, scalePlacement(notification.labelPlacement, scale)),
-            labelLayout,
-          ),
-          transform: { opacity: 1 - progress },
-        },
-        { ...label, transform: { opacity: progress } },
-      ]
-    : [label];
-  return {
-    id: notification.id,
-    type: "group",
-    frame: 0,
-    box,
-    style: { overflow: "visible" },
-    children: [surface, avatar, ...labels],
-  };
-}
-
-function lerp(start: number, end: number, amount: number) {
-  return start + (end - start) * Math.max(0, Math.min(1, amount));
+  return { avatarBox, labelBox };
 }
 
 function enforceHorizontalGap(

@@ -58,8 +58,9 @@ internal sealed class RuntimeTestActionControl : Border
                 SelectedItem = options.FirstOrDefault((option) => option.Value != currentTargetValue)
                     ?? options.First(),
                 DisabledValues = string.IsNullOrWhiteSpace(currentTargetValue) ? [] : [currentTargetValue],
-                MinWidth = 220,
+                MinWidth = 0,
                 MaxWidth = 360,
+                HorizontalAlignment = HorizontalAlignment.Left,
             };
             layout.Children.Add(_targetCombo);
         }
