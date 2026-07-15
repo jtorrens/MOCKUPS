@@ -18,6 +18,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
     private readonly Action<string> _triggerAction;
+    private readonly Action<string> _restoreAction;
+    private readonly Func<string, bool> _canRestoreAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
@@ -39,6 +41,8 @@ internal sealed class RuntimeInputsCollectionEditor
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         Action<string> triggerAction,
+        Action<string> restoreAction,
+        Func<string, bool> canRestoreAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
@@ -58,6 +62,8 @@ internal sealed class RuntimeInputsCollectionEditor
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
+        _restoreAction = restoreAction;
+        _canRestoreAction = canRestoreAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -228,21 +234,6 @@ internal sealed class RuntimeInputsCollectionEditor
             buttons.Children.Add(saveDefaults);
             RefreshSaveState();
         }
-        foreach (var action in actions.Where((candidate) => !candidate.IsCollectionItemAction))
-        {
-            var button = new Button
-            {
-                MinWidth = 92,
-                Content = CreateActionContent(action),
-            };
-            ToolTip.SetTip(button, action.Label);
-            button.Click += (_, args) =>
-            {
-                args.Handled = true;
-                _triggerAction(action.Id);
-            };
-            buttons.Children.Add(button);
-        }
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
         panel.Children.Add(header);
@@ -255,6 +246,16 @@ internal sealed class RuntimeInputsCollectionEditor
                 Opacity = 0.7,
                 TextWrapping = TextWrapping.Wrap,
             });
+        }
+        var rootActions = actions.Where((candidate) => !candidate.IsCollectionItemAction).ToList();
+        if (rootActions.Count > 0)
+        {
+            var actionPanel = new StackPanel { Spacing = 6 };
+            foreach (var action in rootActions)
+            {
+                actionPanel.Children.Add(CreateActionControl(action));
+            }
+            panel.Children.Add(actionPanel);
         }
         if (inputs.Count == 0 && collections.Count == 0)
         {
@@ -599,47 +600,31 @@ internal sealed class RuntimeInputsCollectionEditor
                 && action.CollectionItemId == itemId)
             .ToList();
         StackPanel? actionRow = null;
-        var actionButtons = new List<(ComponentPreviewActionDefinition Action, Button Button)>();
+        var actionControls = new List<(ComponentPreviewActionDefinition Action, RuntimeTestActionControl Control)>();
         void RefreshActionVisibility()
         {
             var currentItem = DesignPreviewTestValues.CollectionItems(preview, collection)
                 .ElementAtOrDefault(itemIndex) ?? item;
-            foreach (var (action, button) in actionButtons)
+            foreach (var (action, control) in actionControls)
             {
-                button.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
+                control.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
             }
             if (actionRow is not null)
             {
-                actionRow.IsVisible = actionButtons.Any((entry) => entry.Button.IsVisible);
+                actionRow.IsVisible = actionControls.Any((entry) => entry.Control.IsVisible);
             }
         }
         if (itemActions.Count > 0)
         {
             actionRow = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
                 Spacing = 6,
             };
             foreach (var action in itemActions)
             {
-                var button = new Button
-                {
-                    MinWidth = 128,
-                    Height = 34,
-                    FontWeight = FontWeight.SemiBold,
-                    Background = EditorSukiWindowTheme.AccentBrush(0x24),
-                    BorderBrush = EditorSukiWindowTheme.AccentBrush(0x80),
-                    BorderThickness = new Thickness(1),
-                    Content = CreateActionContent(action),
-                };
-                ToolTip.SetTip(button, action.Label);
-                button.Click += (_, args) =>
-                {
-                    args.Handled = true;
-                    _triggerAction(action.Id);
-                };
-                actionButtons.Add((action, button));
-                actionRow.Children.Add(button);
+                var control = CreateActionControl(action);
+                actionControls.Add((action, control));
+                actionRow.Children.Add(control);
             }
             RefreshActionVisibility();
             content.Children.Add(actionRow);
@@ -1176,24 +1161,14 @@ internal sealed class RuntimeInputsCollectionEditor
             (next) => _sessionUiState.SetNavigationWidth(stateKey, next));
     }
 
-    private static Control CreateActionContent(ComponentPreviewActionDefinition action)
+    private RuntimeTestActionControl CreateActionControl(ComponentPreviewActionDefinition action)
     {
-        var content = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            ColumnSpacing = 5,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        content.Children.Add(EditorIcons.CreateSemantic(action.Label, EditorIcons.Play, 12));
-        var label = new TextBlock
-        {
-            Text = action.Label,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetColumn(label, 1);
-        content.Children.Add(label);
-        return content;
+        return new RuntimeTestActionControl(
+            action.Label,
+            () => _triggerAction(action.Id),
+            () => _restoreAction(action.Id),
+            () => _canRestoreAction(action.Id),
+            _playbackState);
     }
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)

@@ -1268,6 +1268,18 @@ internal sealed class EditorPreviewController
         _designInputsPanel.TriggerAction(actionId);
     }
 
+    public bool CanRestoreDesignPreviewAction(string actionId)
+    {
+        return _designInputsPanel.CanRestoreAction(actionId);
+    }
+
+    public void RestoreDesignPreviewAction(string actionId)
+    {
+        if (_designInputsPanel.RestoreAction(actionId)) return;
+        Refresh();
+        _designInputsPanel.RestoreAction(actionId);
+    }
+
     public void SetDesignPreviewTestValue(string jsonKey, string value)
     {
         _designInputsPanel.SetExternalInputValue(jsonKey, value);

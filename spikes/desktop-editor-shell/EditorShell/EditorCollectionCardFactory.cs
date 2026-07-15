@@ -18,6 +18,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action<string> _triggerPreviewAction;
+    private readonly Action<string> _restorePreviewAction;
+    private readonly Func<string, bool> _canRestorePreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
     private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
@@ -41,6 +43,8 @@ internal sealed class EditorCollectionCardFactory
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
         Action<string> triggerPreviewAction,
+        Action<string> restorePreviewAction,
+        Func<string, bool> canRestorePreviewAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
         Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
@@ -62,6 +66,8 @@ internal sealed class EditorCollectionCardFactory
         _onChanged = onChanged;
         _dictionaryServices = dictionaryServices;
         _triggerPreviewAction = triggerPreviewAction;
+        _restorePreviewAction = restorePreviewAction;
+        _canRestorePreviewAction = canRestorePreviewAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -160,6 +166,8 @@ internal sealed class EditorCollectionCardFactory
             _dictionaryServices,
             _onChanged,
             _triggerPreviewAction,
+            _restorePreviewAction,
+            _canRestorePreviewAction,
             _setPreviewTestValue,
             _setPreviewCollectionTestValue,
             _setPreviewCollectionTestItems,

@@ -193,6 +193,8 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewDevice,
             _dictionaryFieldServices,
             _previewController.TriggerDesignPreviewAction,
+            _previewController.RestoreDesignPreviewAction,
+            _previewController.CanRestoreDesignPreviewAction,
             _previewController.SetDesignPreviewTestValue,
             _previewController.SetDesignPreviewCollectionTestValue,
             _previewController.SetDesignPreviewCollectionTestItems,

@@ -39,6 +39,7 @@ internal sealed class ComponentPreviewInputSession
     private double _playbackStartedAtSeconds;
     private int _lastPlaybackRefreshFrame = -1;
     private readonly Dictionary<string, double> _playbackSecondsByActionId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Dictionary<string, ActionValueSnapshot>> _actionSnapshots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, JsonObject> _transientCollectionTestValuesByScope = new(StringComparer.Ordinal);
     private bool _presentEveryPlaybackFrame;
     private bool _awaitingPlaybackPresentation;
@@ -170,6 +171,10 @@ internal sealed class ComponentPreviewInputSession
             _inputDefaults.Remove(key);
         }
         _transientCollectionTestValuesByScope.Remove(scopeKey);
+        foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            _actionSnapshots.Remove(key);
+        }
     }
 
     public bool IsPlaybackActive => SupportsPlayback()
@@ -188,6 +193,7 @@ internal sealed class ComponentPreviewInputSession
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
+            CaptureActionSnapshot(action);
             TogglePlayback(action);
             return true;
         }
@@ -198,6 +204,42 @@ internal sealed class ComponentPreviewInputSession
             ("action", actionId),
             ("availableActions", string.Join(",", _actions.Select((candidate) => candidate.Id))));
         return false;
+    }
+
+    public bool CanRestoreAction(string actionId)
+    {
+        return _actions.Any((candidate) => candidate.Id == actionId)
+            && _actionSnapshots.ContainsKey(ActionSnapshotKey(actionId));
+    }
+
+    public bool RestoreAction(string actionId)
+    {
+        var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
+        if (action is null
+            || !_actionSnapshots.Remove(ActionSnapshotKey(actionId), out var snapshot))
+        {
+            return false;
+        }
+
+        StopPlayback();
+        foreach (var (key, value) in snapshot)
+        {
+            if (value.Exists)
+            {
+                _values[key] = value.Value;
+            }
+            else
+            {
+                _values.Remove(key);
+            }
+            SyncBooleanInput(key);
+        }
+        _playbackSecondsByActionId.Remove(action.Id);
+        if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
+        if (_activeActionId == action.Id) _activeActionId = "";
+        UpdateActionButtons();
+        _refreshPreview();
+        return true;
     }
 
     public void SetExternalInputValue(string jsonKey, string value)
@@ -301,6 +343,11 @@ internal sealed class ComponentPreviewInputSession
         _activeActionId = "";
         _heldFinalActionId = "";
         _playbackSecondsByActionId.Clear();
+        foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
+        {
+            _actionSnapshots.Remove(key);
+            removed = true;
+        }
         UpdateActionButtons();
         if (removed) _refreshPreview();
         return removed;
@@ -1219,6 +1266,32 @@ internal sealed class ComponentPreviewInputSession
             .Select((id) => $"{_scopeKey}:{id}");
     }
 
+    private IEnumerable<string> DeactivatedPlaybackInputKeys(ComponentPreviewActionDefinition action)
+    {
+        return action.DeactivateInputIds
+            .Where((id) => !string.IsNullOrWhiteSpace(id))
+            .Select((id) => $"{_scopeKey}:{id}");
+    }
+
+    private void CaptureActionSnapshot(ComponentPreviewActionDefinition action)
+    {
+        var snapshotKey = ActionSnapshotKey(action.Id);
+        if (_actionSnapshots.ContainsKey(snapshotKey)) return;
+
+        var keys = new[] { ActionStateKey(action), ActionTimeKey(action) }
+            .Concat(ActivatedPlaybackInputKeys(action))
+            .Concat(DeactivatedPlaybackInputKeys(action))
+            .Distinct(StringComparer.Ordinal);
+        _actionSnapshots[snapshotKey] = keys.ToDictionary(
+            (key) => key,
+            (key) => _values.TryGetValue(key, out var value)
+                ? new ActionValueSnapshot(true, value)
+                : new ActionValueSnapshot(false, ""),
+            StringComparer.Ordinal);
+    }
+
+    private string ActionSnapshotKey(string actionId) => $"{_scopeKey}:action-snapshot:{actionId}";
+
     private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
         foreach (var key in ActivatedPlaybackInputKeys(action))
@@ -1229,9 +1302,8 @@ internal sealed class ComponentPreviewInputSession
 
     private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
-        foreach (var inputId in action.DeactivateInputIds.Where((id) => !string.IsNullOrWhiteSpace(id)))
+        foreach (var key in DeactivatedPlaybackInputKeys(action))
         {
-            var key = $"{_scopeKey}:{inputId}";
             _values[key] = "false";
             SyncBooleanInput(key);
         }
@@ -1250,6 +1322,8 @@ internal sealed class ComponentPreviewInputSession
     }
 
     private static void SyncBooleanInput(string key) { }
+
+    private readonly record struct ActionValueSnapshot(bool Exists, string Value);
 
     private static double ParseDouble(string? value)
     {
