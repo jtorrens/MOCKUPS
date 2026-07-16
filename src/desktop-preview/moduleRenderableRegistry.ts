@@ -5,6 +5,10 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
 
 export function moduleToRenderable(payload: DesignPreviewPayload): RenderableNode {
+  payload = {
+    ...payload,
+    runtimeContractJson: payload.runtimeContractJson ?? payload.designPreviewJson,
+  };
   payload = applyRuntimeInputForwarding(payload);
   if (payload.componentType === "module.core.chat") {
     return conversationModuleToRenderable(payload);

@@ -1970,18 +1970,10 @@ static void LockScreenComposesRuntimeStack()
             24,
             JsonValue.Create(passwordStateId)!,
             "hold");
-        if (!instanceAnimation.HasTrack(passwordEntryTrigger.Id, passwordStateId))
-        {
-            instanceAnimation.AddTrack(
-                passwordEntryTrigger.Id,
-                passwordStateId,
-                JsonValue.Create(false)!,
-                "hold");
-        }
-        instanceAnimation.UpsertKeyframe(
+        instanceAnimation.RemoveTrack(passwordEntryTrigger.Id, passwordStateId);
+        instanceAnimation.AddTrack(
             passwordEntryTrigger.Id,
             passwordStateId,
-            4,
             JsonValue.Create(true)!,
             "hold");
         database.UpdateModuleInstanceAnimationJson(lockScreenInstance.Id, instanceAnimation.ToJson());
@@ -1997,11 +1989,18 @@ static void LockScreenComposesRuntimeStack()
             passwordFramePayload).GetAwaiter().GetResult();
         if (passwordFrameHtml.Contains("preview-error", StringComparison.Ordinal))
             throw new InvalidOperationException("Password transition frame contains a preview error.");
+        if (!passwordFrameHtml.Contains("Enter password", StringComparison.Ordinal))
+            throw new InvalidOperationException("Password action reached its final state before its declared duration.");
+        Equal(
+            1,
+            passwordFrameHtml.Split(
+                "data-renderable-id=\"component.password.indicator.initial.filled\"",
+                StringSplitOptions.None).Length - 1);
         var completedPasswordPayload = Required(DesignPreviewPayloadFactory.Create(
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 50));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 40));
         var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",

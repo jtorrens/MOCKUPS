@@ -109,6 +109,10 @@ export const componentRenderableFactories = {
 } satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
 export function componentClassToRenderable(payload: DesignPreviewPayload, assignedBox?: RenderableBox): RenderableNode {
+  payload = {
+    ...payload,
+    runtimeContractJson: payload.runtimeContractJson ?? payload.designPreviewJson,
+  };
   payload = applyRuntimeInputForwarding(payload);
   const componentType = payload.componentType ?? "";
   const factory = isRoutedComponentClass(componentType)

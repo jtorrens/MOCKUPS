@@ -273,6 +273,12 @@ declared finite duration and completion behavior, and only then invokes the
 child resolver. Field labels and JSON storage keys are never animation
 identities, and the renderer never advances the action clock.
 
+Recursive component composition preserves the root effective runtime contract
+separately from each child's local runtime values. Replacing the child payload
+must therefore never replace the owner timeline contract: a KF0 inside a State
+still resolves at that State's first appearance, not at Screen frame zero. This
+rule applies uniformly to every embedded component and collection depth.
+
 Finite Design Preview actions also declare a generic completion behavior.
 `reset` switches the action off after its final frame and is declared explicitly
 for momentary interactions. `holdFinal` retains the action input and its final

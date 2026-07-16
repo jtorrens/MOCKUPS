@@ -42,8 +42,9 @@ export function resolveComponentCollectionItem(
     const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
     const animation = asRecord(instance.animation);
     const preview = parseObject(payload.designPreviewJson);
+    const runtimeContract = parseObject(payload.runtimeContractJson ?? payload.designPreviewJson);
     const themeTokens = parseObject(payload.themeTokensJson);
-    const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
+    const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);
     const presence = ownsPresence
       ? resolveParameterAnimation(animation, "present", rawId, frame, item.present === true)
       : { value: true, animated: false, sourceKeyframeFrame: undefined };

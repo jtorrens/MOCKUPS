@@ -391,6 +391,13 @@ id)`, while the resolved child component receives its ordinary local runtime
 shape. This mapping is declarative and generic; Stack, Lock Screen, Password,
 the bridge and the renderer contain no special translation rule.
 
+The root effective runtime contract travels unchanged through recursive child
+payloads. Child composition may replace local config and runtime values, but it
+cannot replace the contract used by the common owner timeline. Consequently a
+State-owned action at local KF0 starts when that stable State first appears and
+advances through its declared duration instead of inheriting the current Screen
+frame.
+
 ## 9. Requested-frame transition resolution
 
 All Stack and child animation is resolved before preview. For a transition at

@@ -27,6 +27,7 @@ export interface DesignPreviewPayload {
   localFrame: number;
   configJson: string;
   designPreviewJson?: string;
+  runtimeContractJson?: string;
   previewFrame: PreviewFramePayload;
   rootPreviewFrame?: PreviewFramePayload;
   iconAssetRoot?: string;
