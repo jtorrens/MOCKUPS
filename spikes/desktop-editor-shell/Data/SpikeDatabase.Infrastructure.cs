@@ -16,6 +16,13 @@ internal sealed partial class SpikeDatabase
         return connection;
     }
 
+    private SqliteConnection OpenValidationConnection()
+    {
+        var connection = new SqliteConnection(_validationConnectionString);
+        connection.Open();
+        return connection;
+    }
+
 
     private static int NextSortOrder(SqliteConnection connection, string table, string parentColumn, string parentId)
     {

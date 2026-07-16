@@ -4,11 +4,14 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Reflection;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
+    ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
+    ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -35,8 +38,8 @@ var tests = new (string Name, Action Run)[]
     ("strict validation rejects duplicate targets", StrictValidationRejectsDuplicateTargets),
     ("strict validation rejects duplicate and negative frames", StrictValidationRejectsInvalidFrames),
     ("strict validation rejects invalid target durations", StrictValidationRejectsInvalidTargetDurations),
-    ("normalization creates missing initial keyframes", NormalizationCreatesInitialKeyframe),
-    ("legacy events require explicit migration", LegacyEventsAreRejected),
+    ("strict validation rejects tracks without an origin keyframe", StrictValidationRejectsMissingOrigin),
+    ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
@@ -54,13 +57,58 @@ var tests = new (string Name, Action Run)[]
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
-    ("Label subtext placement migrates to explicit relative alignment", LabelSubtextPlacementMigrates),
+    ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ExistingDatabaseOpenIsReadOnly()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-read-only-open-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        _ = new SpikeDatabase(temporary);
+        _ = new SpikeDatabase(temporary);
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RejectedDatabaseOpenIsReadOnly()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-rejected-open-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA user_version = 0";
+            command.ExecuteNonQuery();
+        }
+
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => _ = new SpikeDatabase(temporary));
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
 
 static void ModuleVariantsAreExplicit()
 {
@@ -118,65 +166,23 @@ static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nod
     }
 }
 
-static void LabelSubtextPlacementMigrates()
+static void LabelSubtextPlacementUsesCurrentContract()
 {
     var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
-    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-label-layout-{Guid.NewGuid():N}.sqlite");
-    File.Copy(source, temporary, overwrite: true);
-    try
-    {
-        using (var connection = new SqliteConnection($"Data Source={temporary}"))
-        {
-            connection.Open();
-            using var select = connection.CreateCommand();
-            select.CommandText = "SELECT config_json, metadata_json FROM component_classes WHERE component_type = 'label' LIMIT 1";
-            using var reader = select.ExecuteReader();
-            True(reader.Read());
-            var config = JsonNode.Parse(reader.GetString(0))?.AsObject()
-                ?? throw new InvalidOperationException("Missing Label config.");
-            var metadata = JsonNode.Parse(reader.GetString(1))?.AsObject()
-                ?? throw new InvalidOperationException("Missing Label metadata.");
-            static void RestoreLegacyPlacement(JsonObject owner)
-            {
-                var label = owner["label"]?.AsObject()
-                    ?? throw new InvalidOperationException("Missing Label values.");
-                label.Remove("subtextVerticalPosition");
-                label.Remove("subtextHorizontalAlign");
-                label["subtextPlacement"] = JsonNode.Parse(
-                    """{"mode":"outsideEdge","alignX":0.9,"alignY":0.25,"offsetX":19,"offsetY":-7}""");
-            }
-            RestoreLegacyPlacement(config);
-            foreach (var preset in metadata["presets"]?.AsArray().OfType<JsonObject>() ?? [])
-            {
-                if (preset["config"] is JsonObject presetConfig) RestoreLegacyPlacement(presetConfig);
-            }
-            reader.Close();
-            using var update = connection.CreateCommand();
-            update.CommandText = "UPDATE component_classes SET config_json = $config, metadata_json = $metadata WHERE component_type = 'label'";
-            update.Parameters.AddWithValue("$config", config.ToJsonString());
-            update.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
-            update.ExecuteNonQuery();
-        }
-
-        var database = new SpikeDatabase(temporary);
-        var settings = database.GetComponentClassSettings("component_project_foqn_s2_label");
-        var migrated = JsonNode.Parse(settings.ConfigJson)?["label"]?.AsObject()
-            ?? throw new InvalidOperationException("Missing migrated Label values.");
-        True(migrated["subtextPlacement"] is null);
-        Equal("top", migrated["subtextVerticalPosition"]?.GetValue<string>() ?? "");
-        Equal("center", migrated["subtextHorizontalAlign"]?.GetValue<string>() ?? "");
-        var subtextFields = database.LoadEditorLayout("component.label").Cards
-            .SelectMany((card) => card.VisibleGroups)
-            .Single((group) => group.Id == "labelSubtext")
-            .VisibleFields.OrderBy((field) => field.Order).Select((field) => field.Id).ToList();
-        SequenceEqual(
-            ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography"],
-            subtextFields);
-    }
-    finally
-    {
-        File.Delete(temporary);
-    }
+    var database = new SpikeDatabase(source);
+    var settings = database.GetComponentClassSettings("component_project_foqn_s2_label");
+    var label = JsonNode.Parse(settings.ConfigJson)?["label"]?.AsObject()
+        ?? throw new InvalidOperationException("Missing current Label values.");
+    True(label["subtextPlacement"] is null);
+    True(label["subtextVerticalPosition"] is JsonValue);
+    True(label["subtextHorizontalAlign"] is JsonValue);
+    var subtextFields = database.LoadEditorLayout("component.label").Cards
+        .SelectMany((card) => card.VisibleGroups)
+        .Single((group) => group.Id == "labelSubtext")
+        .VisibleFields.OrderBy((field) => field.Order).Select((field) => field.Id).ToList();
+    SequenceEqual(
+        ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography"],
+        subtextFields);
 }
 
 static void DictionaryFieldsRespondToCompactWidths()
@@ -919,41 +925,36 @@ static void StrictValidationRejectsInvalidTargetDurations()
     Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", animation, "instance"));
 }
 
-static void NormalizationCreatesInitialKeyframe()
+static void StrictValidationRejectsMissingOrigin()
 {
     var animation = Object("""{"schemaVersion":2,"tracks":[{"id":"track","fieldId":"text","targetId":"m1","keyframes":[]}]}""");
-    var runtime = Object("""{"messages":[{"id":"m1","text":"hello"}]}""");
-    var contract = Object("""
-        {"collections":[{"jsonKey":"messages","fields":[{
-          "id":"text","jsonKey":"text","kind":"text","animatable":true,"animationInterpolations":["writeOn","hold"]
-        }]}]}
-        """);
-    var changed = (bool)RequiredObject(InvokeDatabaseStatic("EnsureInitialAnimationKeyframes", animation, runtime, contract));
-    True(changed);
-    var keyframe = animation["tracks"]![0]!["keyframes"]![0]!.AsObject();
-    Equal(0, keyframe["frame"]!.GetValue<int>());
-    Equal("hello", keyframe["value"]!.GetValue<string>());
-    Equal("writeOn", keyframe["interpolation"]!.GetValue<string>());
+    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", animation, "instance"));
 }
 
-static void LegacyEventsAreRejected()
+static void LegacyAnimationRequiresExplicitMigration()
 {
-    using var connection = new SqliteConnection("Data Source=:memory:");
-    connection.Open();
-    using (var command = connection.CreateCommand())
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-legacy-animation-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
     {
-        command.CommandText = """
-            CREATE TABLE modules (id TEXT PRIMARY KEY, design_preview_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
-            CREATE TABLE module_instances (id TEXT PRIMARY KEY, module_id TEXT NOT NULL, animation_json TEXT NOT NULL, content_json TEXT NOT NULL, metadata_json TEXT NOT NULL);
-            INSERT INTO modules VALUES ('module', '{}', '{"variants":[{"id":"default","name":"Default","protected":true,"locked":false,"config":{}}]}');
-            INSERT INTO module_instances VALUES (
-              'instance', 'module',
-              '{"schemaVersion":1,"tracks":[{"parameterId":"text","events":[{"frame":0}]}]}',
-              '{}', '{"moduleVariantReference":"module::variant::default"}');
-            """;
-        command.ExecuteNonQuery();
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE module_instances SET animation_json = '{\"schemaVersion\":1,\"tracks\":[]}' WHERE id = (SELECT id FROM module_instances ORDER BY id LIMIT 1)";
+            command.ExecuteNonQuery();
+        }
+
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => _ = new SpikeDatabase(temporary));
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
     }
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("NormalizeAnimationJson", connection));
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void AnimatableFieldVocabularyIsConstrained()

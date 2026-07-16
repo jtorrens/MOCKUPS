@@ -21,6 +21,7 @@ internal sealed class EditorSimplifiedLayout
     [JsonPropertyName("capturedSlots")]
     public List<EditorSimplifiedCapture> CapturedSlots { get; init; } = [];
 
+    [JsonIgnore]
     public IEnumerable<EditorSimplifiedEntry> Entries =>
         Groups.SelectMany((group) => group.AllEntries());
 }
@@ -120,6 +121,7 @@ internal sealed class EditorLayoutCard
     [JsonPropertyName("groups")]
     public List<EditorLayoutGroup> Groups { get; init; } = [];
 
+    [JsonIgnore]
     public IEnumerable<EditorLayoutGroup> VisibleGroups =>
         Groups.Where((group) => group.Visible).OrderBy((group) => group.Order).ThenBy((group) => group.Label);
 }
@@ -159,6 +161,7 @@ internal sealed class EditorLayoutGroup
     [JsonPropertyName("defaultOpen")]
     public bool DefaultOpen { get; init; }
 
+    [JsonIgnore]
     public IEnumerable<EditorLayoutField> VisibleFields =>
         Fields.Where((layoutField) => layoutField.Visible)
             .OrderBy((layoutField) => layoutField.Order)

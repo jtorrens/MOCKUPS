@@ -1,0 +1,321 @@
+using Microsoft.Data.Sqlite;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+
+namespace Mockups.DesktopEditorShell.Data;
+
+internal sealed partial class SpikeDatabase
+{
+    private static readonly HashSet<string> CurrentComponentPresetReferenceKeys = new(StringComparer.Ordinal)
+    {
+        "presetId",
+        "buttonPresetId",
+        "bubbleVariant",
+        "headerAvatarVariant",
+        "keyboardVariant",
+        "textInputBarVariant",
+    };
+
+    private static readonly (string Table, string Column, string RootKind)[] CurrentJsonColumns =
+    [
+        ("projects", "metadata_json", "object"),
+        ("episodes", "metadata_json", "object"),
+        ("shots", "canvas_json", "object"),
+        ("shots", "metadata_json", "object"),
+        ("apps", "config_json", "object"),
+        ("apps", "metadata_json", "object"),
+        ("modules", "config_json", "object"),
+        ("modules", "design_preview_json", "object"),
+        ("modules", "metadata_json", "object"),
+        ("module_instances", "transition_json", "object"),
+        ("module_instances", "content_json", "object"),
+        ("module_instances", "behavior_json", "object"),
+        ("module_instances", "animation_json", "object"),
+        ("module_instances", "metadata_json", "object"),
+        ("palette_colors", "metadata_json", "object"),
+        ("devices", "metrics_json", "object"),
+        ("actors", "metadata_json", "object"),
+        ("production_fonts", "files_json", "array"),
+        ("production_fonts", "metadata_json", "object"),
+        ("icon_themes", "mapping_json", "object"),
+        ("icon_themes", "metadata_json", "object"),
+        ("render_presets", "codec_json", "object"),
+        ("render_presets", "color_json", "object"),
+        ("render_presets", "quality_json", "object"),
+        ("render_presets", "export_json", "object"),
+        ("render_presets", "metadata_json", "object"),
+        ("component_classes", "config_json", "object"),
+        ("component_classes", "design_preview_json", "object"),
+        ("component_classes", "metadata_json", "object"),
+        ("themes", "tokens_json", "object"),
+        ("themes", "metadata_json", "object"),
+        ("editor_layouts", "layout_json", "object"),
+    ];
+
+    private void ValidateSchemaV1(SqliteConnection connection)
+    {
+        ValidatePhysicalSchema(connection);
+        ValidateCurrentJsonColumns(connection);
+        ValidateCurrentReferences(connection);
+        ValidateCurrentComponentPresets(connection);
+        ValidateCurrentModuleVariantsAndAnimations(connection);
+        ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidatePhysicalSchema(SqliteConnection connection)
+    {
+        using var expected = new SqliteConnection("Data Source=:memory:");
+        expected.Open();
+        ExecuteScript(expected, SchemaSql);
+
+        if (ScalarLong(connection, "PRAGMA user_version") != ScalarLong(expected, "PRAGMA user_version"))
+        {
+            throw InvalidCurrentDatabase("user_version does not match the canonical schema");
+        }
+
+        var expectedEntries = ReadSchemaEntries(expected);
+        var actualEntries = ReadSchemaEntries(connection);
+        var expectedKeys = expectedEntries.Keys.ToHashSet(StringComparer.Ordinal);
+        var actualKeys = actualEntries.Keys.ToHashSet(StringComparer.Ordinal);
+        if (!expectedKeys.SetEquals(actualKeys))
+        {
+            var missing = expectedKeys.Except(actualKeys, StringComparer.Ordinal);
+            var unexpected = actualKeys.Except(expectedKeys, StringComparer.Ordinal);
+            throw InvalidCurrentDatabase(
+                $"physical objects differ; missing [{string.Join(", ", missing)}], unexpected [{string.Join(", ", unexpected)}]");
+        }
+
+        foreach (var key in expectedKeys.OrderBy((value) => value, StringComparer.Ordinal))
+        {
+            if (!string.Equals(expectedEntries[key], actualEntries[key], StringComparison.Ordinal))
+            {
+                throw InvalidCurrentDatabase($"physical definition for '{key}' differs from the canonical schema");
+            }
+        }
+    }
+
+    private static Dictionary<string, string> ReadSchemaEntries(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT type, name, sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY type, name";
+        using var reader = command.ExecuteReader();
+        var entries = new Dictionary<string, string>(StringComparer.Ordinal);
+        while (reader.Read())
+        {
+            entries.Add(
+                $"{reader.GetString(0)}:{reader.GetString(1)}",
+                Regex.Replace(reader.GetString(2).Trim(), @"\s+", " "));
+        }
+
+        return entries;
+    }
+
+    private void ValidateCurrentJsonColumns(SqliteConnection connection)
+    {
+        foreach (var (table, column, rootKind) in CurrentJsonColumns)
+        {
+            var invalid = ScalarLong(
+                connection,
+                $"SELECT COUNT(*) FROM {table} WHERE json_valid({column}) = 0 OR CASE WHEN json_valid({column}) THEN json_type({column}) ELSE '' END <> $rootKind",
+                ("$rootKind", rootKind));
+            if (invalid > 0)
+            {
+                throw InvalidCurrentDatabase($"{table}.{column} has {invalid} invalid {rootKind} JSON value(s)");
+            }
+        }
+    }
+
+    private void ValidateCurrentReferences(SqliteConnection connection)
+    {
+        RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN episodes e ON e.id = s.episode_id WHERE e.id IS NULL", "shot without episode");
+        RequireNoRows(connection, "SELECT 1 FROM apps a LEFT JOIN projects p ON p.id = a.project_id WHERE p.id IS NULL", "app without project");
+        RequireNoRows(connection, "SELECT 1 FROM modules m LEFT JOIN apps a ON a.id = m.app_id WHERE a.id IS NULL", "module without app");
+        RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN shots s ON s.id = mi.shot_id WHERE s.id IS NULL", "module instance without shot");
+        RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN modules m ON m.id = mi.module_id WHERE m.id IS NULL", "module instance without module");
+        RequireNoRows(connection, "SELECT 1 FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.app_id <> m.app_id", "module instance app/module mismatch");
+        RequireNoRows(connection, "SELECT 1 FROM actors a LEFT JOIN devices d ON d.id = a.default_device_id WHERE a.default_device_id <> '' AND d.id IS NULL", "actor default device missing");
+        RequireNoRows(connection, "SELECT 1 FROM actors a LEFT JOIN themes t ON t.id = a.default_theme_id WHERE a.default_theme_id <> '' AND t.id IS NULL", "actor default theme missing");
+        RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN actors a ON a.id = s.owner_actor_id WHERE s.owner_actor_id <> '' AND a.id IS NULL", "shot owner actor missing");
+        RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN render_presets r ON r.id = s.render_preset_id WHERE s.render_preset_id <> '' AND r.id IS NULL", "shot render preset missing");
+        RequireNoRows(connection, "SELECT 1 FROM themes t LEFT JOIN icon_themes i ON i.id = t.icon_theme_id WHERE t.icon_theme_id <> '' AND i.id IS NULL", "Theme icon theme missing");
+    }
+
+    private void ValidateCurrentComponentPresets(SqliteConnection connection)
+    {
+        var validReferences = new HashSet<string>(StringComparer.Ordinal);
+        var documents = new List<(string Context, JsonNode Node)>();
+        foreach (var row in QueryComponentClassRows(connection))
+        {
+            var presets = RequiredComponentClassPresets(row);
+            foreach (var preset in presets)
+            {
+                validReferences.Add(ComponentPresetNodeId(row.Id, preset.Id));
+                var presetConfig = ParseRequiredObject(preset.ConfigJson, $"component preset '{row.Id}::{preset.Id}'");
+                ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, presetConfig);
+                documents.Add(($"component preset '{row.Id}::{preset.Id}'", presetConfig));
+            }
+
+            var classConfig = ParseRequiredObject(row.ConfigJson, $"component class '{row.Id}' config_json");
+            ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, classConfig);
+            documents.Add(($"component class '{row.Id}' config_json", classConfig));
+            documents.Add(($"component class '{row.Id}' design_preview_json", ParseRequiredObject(row.DesignPreviewJson, $"component class '{row.Id}' design_preview_json")));
+            documents.Add(($"component class '{row.Id}' metadata_json", ParseRequiredObject(row.MetadataJson, $"component class '{row.Id}' metadata_json")));
+        }
+
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "SELECT id, config_json, design_preview_json, metadata_json FROM modules";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var id = reader.GetString(0);
+                documents.Add(($"module '{id}' config_json", ParseRequiredObject(reader.GetString(1), $"module '{id}' config_json")));
+                documents.Add(($"module '{id}' design_preview_json", ParseRequiredObject(reader.GetString(2), $"module '{id}' design_preview_json")));
+                documents.Add(($"module '{id}' metadata_json", ParseRequiredObject(reader.GetString(3), $"module '{id}' metadata_json")));
+            }
+        }
+
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "SELECT id, content_json, behavior_json, metadata_json FROM module_instances";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var id = reader.GetString(0);
+                documents.Add(($"module instance '{id}' content_json", ParseRequiredObject(reader.GetString(1), $"module instance '{id}' content_json")));
+                documents.Add(($"module instance '{id}' behavior_json", ParseRequiredObject(reader.GetString(2), $"module instance '{id}' behavior_json")));
+                documents.Add(($"module instance '{id}' metadata_json", ParseRequiredObject(reader.GetString(3), $"module instance '{id}' metadata_json")));
+            }
+        }
+
+        foreach (var (context, document) in documents)
+        {
+            ValidateFullPresetReferences(document, context, validReferences);
+        }
+    }
+
+    private void ValidateCurrentModuleVariantsAndAnimations(SqliteConnection connection)
+    {
+        var variantsByModule = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "SELECT id, metadata_json FROM modules";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var moduleId = reader.GetString(0);
+                var variants = ModuleVariants(reader.GetString(1));
+                var ids = variants.Select((variant) => variant.Id).ToHashSet(StringComparer.Ordinal);
+                if (ids.Count != variants.Count || !ids.Contains(DefaultModuleVariantId))
+                {
+                    throw InvalidCurrentDatabase($"module '{moduleId}' must have unique explicit Variants including Default");
+                }
+
+                variantsByModule.Add(moduleId, ids);
+            }
+        }
+
+        using var instances = connection.CreateCommand();
+        instances.CommandText = "SELECT id, module_id, metadata_json, animation_json FROM module_instances";
+        using var instanceReader = instances.ExecuteReader();
+        while (instanceReader.Read())
+        {
+            var instanceId = instanceReader.GetString(0);
+            var moduleId = instanceReader.GetString(1);
+            var metadata = ParseRequiredObject(instanceReader.GetString(2), $"module instance '{instanceId}' metadata_json");
+            var reference = metadata["moduleVariantReference"]?.GetValue<string>() ?? "";
+            if (!TryParseModuleVariantNodeId(reference, out var referencedModuleId, out var variantId)
+                || !referencedModuleId.Equals(moduleId, StringComparison.Ordinal)
+                || !variantsByModule.TryGetValue(moduleId, out var variants)
+                || !variants.Contains(variantId))
+            {
+                throw InvalidCurrentDatabase($"module instance '{instanceId}' has invalid explicit Variant reference '{reference}'");
+            }
+
+            var animation = ParseRequiredObject(instanceReader.GetString(3), $"module instance '{instanceId}' animation_json");
+            ValidateAnimationJson(animation, instanceId);
+        }
+    }
+
+    private void ValidateForeignKeyIntegrity(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA foreign_key_check";
+        using var reader = command.ExecuteReader();
+        if (reader.Read())
+        {
+            throw InvalidCurrentDatabase($"foreign key failure in '{reader.GetString(0)}' row {reader.GetInt64(1)}");
+        }
+    }
+
+    private void RequireNoRows(SqliteConnection connection, string sql, string description)
+    {
+        if (ScalarLong(connection, $"SELECT COUNT(*) FROM ({sql})") > 0)
+        {
+            throw InvalidCurrentDatabase(description);
+        }
+    }
+
+    private static JsonObject ParseRequiredObject(string json, string context)
+    {
+        try
+        {
+            return JsonNode.Parse(json) as JsonObject
+                ?? throw new InvalidOperationException($"{context} must be a JSON object.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException($"{context} contains invalid JSON.", exception);
+        }
+    }
+
+    private void ValidateFullPresetReferences(JsonNode? node, string context, IReadOnlySet<string> validReferences)
+    {
+        switch (node)
+        {
+            case JsonValue value when value.TryGetValue<string>(out var text)
+                && IsCompleteComponentPresetReference(text):
+                if (!validReferences.Contains(text))
+                {
+                    throw InvalidCurrentDatabase($"{context} references missing component Variant '{text}'");
+                }
+                break;
+            case JsonObject obj:
+                foreach (var entry in obj)
+                {
+                    if (CurrentComponentPresetReferenceKeys.Contains(entry.Key)
+                        && entry.Value is JsonValue referenceValue
+                        && referenceValue.TryGetValue<string>(out var reference)
+                        && !string.IsNullOrWhiteSpace(reference)
+                        && (!IsCompleteComponentPresetReference(reference) || !validReferences.Contains(reference)))
+                    {
+                        throw InvalidCurrentDatabase($"{context} has invalid full component Variant reference '{reference}' in '{entry.Key}'");
+                    }
+
+                    ValidateFullPresetReferences(entry.Value, context, validReferences);
+                }
+                break;
+            case JsonArray array:
+                foreach (var item in array) ValidateFullPresetReferences(item, context, validReferences);
+                break;
+        }
+    }
+
+    private static bool IsCompleteComponentPresetReference(string value)
+    {
+        if (!TryParseComponentPresetNodeId(value, out var componentClassId, out var presetId)) return false;
+        return ComponentPresetNodeId(componentClassId, presetId).Equals(value, StringComparison.Ordinal)
+            && componentClassId.All(IsStableReferenceCharacter)
+            && presetId.All(IsStableReferenceCharacter);
+    }
+
+    private static bool IsStableReferenceCharacter(char value) =>
+        char.IsLetterOrDigit(value) || value is '_' or '-' or '.';
+
+    private InvalidOperationException InvalidCurrentDatabase(string detail) =>
+        new($"Desktop database '{_databasePath}' does not satisfy the current persistence contract: {detail}. Run an explicit migration on a copy; startup will not repair it.");
+}

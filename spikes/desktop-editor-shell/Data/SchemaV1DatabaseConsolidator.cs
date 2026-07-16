@@ -69,19 +69,25 @@ internal static class SchemaV1DatabaseConsolidator
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         try
         {
-            using var connection = Open(temporaryPath);
-            Execute(connection, "ATTACH DATABASE $sourcePath AS source", ("$sourcePath", sourcePath));
-            ValidateSourceTables(connection);
-            ExecuteScript(connection, SchemaV1Sql());
-            CopyCanonicalData(connection, sourcePath);
-            var report = ValidateTarget(connection, sourcePath, outputPath);
-            Execute(connection, "DETACH DATABASE source");
+            string report;
+            using (var connection = Open(temporaryPath))
+            {
+                Execute(connection, "ATTACH DATABASE $sourcePath AS source", ("$sourcePath", sourcePath));
+                ValidateSourceTables(connection);
+                ExecuteScript(connection, SchemaV1Sql());
+                CopyCanonicalData(connection, sourcePath);
+                report = ValidateTarget(connection, sourcePath, outputPath);
+                Execute(connection, "DETACH DATABASE source");
+            }
+
             File.Move(temporaryPath, outputPath);
+            _ = new SpikeDatabase(outputPath);
             return report;
         }
         catch
         {
             if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            if (File.Exists(outputPath)) File.Delete(outputPath);
             throw;
         }
     }
@@ -149,7 +155,6 @@ internal static class SchemaV1DatabaseConsolidator
             Copy(connection, "component_classes", "id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json");
             Copy(connection, "themes", "id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json");
             Copy(connection, "editor_layouts", "record_class_id, layout_json");
-            SpikeDatabase.SeedEditorLayouts(connection);
             Execute(connection, "COMMIT");
         }
         catch
