@@ -1642,7 +1642,10 @@ internal sealed class ComponentPreviewInputSession
                     JsonString(collection, "sourceCollectionJsonKey"),
                     ReadItemPresentation(collection),
                     ReadComponentItems(collection),
-                    JsonString(collection, "storageCollectionJsonKey")));
+                    JsonString(collection, "storageCollectionJsonKey"),
+                    JsonString(collection, "itemRuntimeContractJsonKey"),
+                    JsonString(collection, "uiParentCollectionJsonKey"),
+                    JsonString(collection, "uiParentItemIdJsonKey")));
             }
         }
 
@@ -2044,7 +2047,10 @@ internal sealed record RuntimeInputCollectionDefinition(
     string SourceCollectionJsonKey = "",
     RuntimeInputCollectionItemPresentation? ItemPresentation = null,
     RuntimeComponentCollectionItemDefinition? ComponentItems = null,
-    string StorageCollectionJsonKey = "");
+    string StorageCollectionJsonKey = "",
+    string ItemRuntimeContractJsonKey = "",
+    string UiParentCollectionJsonKey = "",
+    string UiParentItemIdJsonKey = "");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string PresetJsonKey,

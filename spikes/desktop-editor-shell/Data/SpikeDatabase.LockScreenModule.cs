@@ -344,6 +344,40 @@ internal sealed partial class SpikeDatabase
                 ["transitionJsonKey"] = "runtimeStateTransition",
                 ["elapsedJsonKey"] = "runtimeStateElapsedMs",
                 ["fromJsonKey"] = "runtimeStateFromId",
+                ["childCollection"] = new JsonObject
+                {
+                    ["id"] = "stackStateInputs",
+                    ["label"] = "States",
+                    ["jsonKey"] = "forwarded_module_lockScreen_stackStateInputs",
+                    ["itemLabel"] = "State",
+                    ["sourceCollectionJsonKey"] = "alternatives",
+                    ["parentItemIdJsonKey"] = "slotId",
+                    ["presetJsonKey"] = "presetId",
+                    ["runtimeContractJsonKey"] = "inputs",
+                    ["sourceRuntimeContractJsonKey"] = "inputs",
+                    ["fields"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["id"] = "slotId", ["label"] = "Slot", ["jsonKey"] = "slotId",
+                            ["kind"] = "text", ["valueKind"] = "StringSingleLine",
+                            ["defaultValue"] = "", ["actionOnly"] = true,
+                        },
+                        new JsonObject
+                        {
+                            ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
+                            ["kind"] = "text", ["valueKind"] = "StringSingleLine",
+                            ["defaultValue"] = "", ["actionOnly"] = true,
+                        },
+                    },
+                    ["itemPresentation"] = new JsonObject
+                    {
+                        ["subtitleFieldIds"] = new JsonArray("presetId"),
+                        ["subtitleMaxCharacters"] = 72,
+                        ["fallbackIcon"] = "component",
+                    },
+                    ["animationTimeline"] = new JsonObject { ["sequenceItems"] = false },
+                },
             },
         },
     };

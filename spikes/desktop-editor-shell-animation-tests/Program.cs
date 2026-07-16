@@ -331,19 +331,33 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
         var forwardedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(effective, config);
-        var passwordTrigger = forwardedInputs.Single((input) => input.Label == "Enter password" && input.ActionOnly);
-        var passwordFrame = forwardedInputs.Single((input) => input.Label == "Entry frame" && input.ActionOnly);
-        var passwordTiming = forwardedInputs.Single((input) => input.Label == "Entry timing");
-        var passwordAttempt = forwardedInputs.Single((input) => input.Label == "Attempt");
-        True(passwordTrigger.Animation is not null);
+        Equal(0, forwardedInputs.Count((input) => input.Label is "Hora" or "Subtext" or "Password" or "Attempt"));
+        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
+        var slots = collections.Single((collection) => collection.Id == "stackStates");
+        var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
+        Equal(slots.JsonKey, stateInputs.UiParentCollectionJsonKey);
+        Equal("slotId", stateInputs.UiParentItemIdJsonKey);
+        Equal("inputs", stateInputs.ItemRuntimeContractJsonKey);
+        var stateItems = DesignPreviewTestValues.CollectionItems(effective, stateInputs);
+        var passwordState = stateItems.Single((item) =>
+            item["presetId"]?.GetValue<string>()?.Contains("_password::preset::", StringComparison.Ordinal) == true);
+        var passwordContract = passwordState["inputs"] as JsonObject
+            ?? throw new InvalidOperationException("Missing projected Password State runtime contract.");
+        var passwordInputs = ComponentPreviewInputSession.ReadRuntimeInputs(passwordContract, new JsonObject());
+        var passwordTrigger = passwordInputs.Single((input) => input.Label == "Enter password" && input.ActionOnly);
+        var passwordFrame = passwordInputs.Single((input) => input.Label == "Entry frame" && input.ActionOnly);
+        var passwordTiming = passwordInputs.Single((input) => input.Label == "Entry timing");
+        var passwordAttempt = passwordInputs.Single((input) => input.Label == "Attempt");
+        Equal(true, passwordTrigger.Animation is not null);
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
-        var forwardedPasswordAction = ComponentPreviewActions.Read(effective)
+        var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(database, effective)
             .Single((action) => action.Label == "Enter password");
         Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
         Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
         Equal(passwordTiming.Id, forwardedPasswordAction.DurationBehaviorTimingInputId);
-        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
-        var slots = collections.Single((collection) => collection.Id == "stackStates");
+        Equal(passwordState["id"]?.GetValue<string>(), forwardedPasswordAction.CollectionItemId);
+        Equal(stateInputs.JsonKey, forwardedPasswordAction.CollectionJsonKey);
+        Equal("inputs", forwardedPasswordAction.TargetJsonPath);
         var items = DesignPreviewTestValues.CollectionItems(effective, slots);
         Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
         var actions = ComponentPreviewActions.Read(effective);
@@ -1779,11 +1793,20 @@ static void LockScreenComposesRuntimeStack()
         var populatedPayload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(database, () => { });
         populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
-        var populatedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(
-            JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject(),
-            JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject());
+        var populatedPreview = JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject();
+        var populatedConfig = JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject();
+        var populatedCollections = ComponentPreviewInputSession.ReadRuntimeCollections(populatedPreview, populatedConfig);
+        var populatedStateInputs = populatedCollections.Single((collection) => collection.Id == "stackStateInputs");
+        var populatedStateItems = DesignPreviewTestValues.CollectionItems(populatedPreview, populatedStateInputs)
+            .Select((item) => item.DeepClone() as JsonObject ?? new JsonObject())
+            .ToList();
+        var populatedState = populatedStateItems.Single((item) => item["id"]?.GetValue<string>() == "lock_screen_label_default");
+        var populatedStateContract = populatedState["inputs"] as JsonObject
+            ?? throw new InvalidOperationException("Missing populated State runtime contract.");
+        var populatedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(populatedStateContract, new JsonObject());
         var forwardedSubtitle = populatedInputs.Single((input) => input.Label == "Lock subtitle");
-        populatedSession.SetExternalInputValue(forwardedSubtitle.JsonKey, "Forwarded subtitle");
+        populatedStateContract[forwardedSubtitle.JsonKey] = "Forwarded subtitle";
+        populatedSession.SetExternalCollectionItems(populatedStateInputs.JsonKey, populatedStateItems);
         populatedSession.SetExternalInputValue("showStatusBar", "false");
         populatedSession.SetExternalInputValue("showNavigationBar", "false");
         var populated = populatedSession.ApplyInputs(populatedPayload, "light", settings.ProjectId);

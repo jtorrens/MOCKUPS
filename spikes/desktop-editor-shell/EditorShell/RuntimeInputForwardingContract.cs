@@ -22,8 +22,10 @@ internal static class RuntimeInputForwardingContract
             .Select((input) => Text(input["id"]))
             .Where((id) => id.Length > 0)
             .ToHashSet(StringComparer.Ordinal);
+        var nestedRuntimeOwners = new HashSet<JsonObject>(ReferenceEqualityComparer.Instance);
         Visit(config, (container, targetKey, definition) =>
         {
+            if (nestedRuntimeOwners.Contains(container)) return;
             var id = Text(definition["id"]);
             var jsonKey = Text(definition["jsonKey"]);
             if (id.Length == 0 || jsonKey.Length == 0)
@@ -38,6 +40,8 @@ internal static class RuntimeInputForwardingContract
             if (next["collection"] is JsonObject collection)
             {
                 var sourceKey = $"{jsonKey}__variantSource";
+                if ((next["projection"] as JsonObject)?["childCollection"] is JsonObject)
+                    CollectForwardedOwners(container[targetKey], nestedRuntimeOwners);
                 var source = container[targetKey]?.DeepClone() as JsonArray
                     ?? throw new InvalidOperationException("Forwarded runtime collection has no Variant collection value.");
                 var projected = ProjectCollectionRuntimeValue(source, next["projection"] as JsonObject);
@@ -49,6 +53,13 @@ internal static class RuntimeInputForwardingContract
                 runtimeCollection["storageCollectionJsonKey"] = jsonKey;
                 if (!collections.OfType<JsonObject>().Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
                     collections.Add(runtimeCollection);
+                ProjectChildRuntimeCollection(
+                    effective,
+                    collections,
+                    source,
+                    jsonKey,
+                    next["projection"] as JsonObject,
+                    nestedRuntimeOwners);
                 return;
             }
             if (existingIds.Add(id)) inputs.Add(next);
@@ -69,6 +80,7 @@ internal static class RuntimeInputForwardingContract
         });
         VisitForwardedActionOwners(config, (container, forwards) =>
         {
+            if (nestedRuntimeOwners.Contains(container)) return;
             if (container["actions"] is not JsonArray childActions) return;
             foreach (var childAction in childActions.OfType<JsonObject>())
             {
@@ -82,6 +94,89 @@ internal static class RuntimeInputForwardingContract
             }
         });
         return effective;
+    }
+
+    private static void ProjectChildRuntimeCollection(
+        JsonObject effective,
+        JsonArray collections,
+        JsonArray parentSource,
+        string parentCollectionJsonKey,
+        JsonObject? projection,
+        HashSet<JsonObject> nestedRuntimeOwners)
+    {
+        if (projection?["childCollection"] is not JsonObject child) return;
+        var childJsonKey = Text(child["jsonKey"]);
+        var sourceCollectionJsonKey = Text(child["sourceCollectionJsonKey"]);
+        var parentItemIdJsonKey = Text(child["parentItemIdJsonKey"]);
+        var presetJsonKey = Text(child["presetJsonKey"]);
+        var runtimeContractJsonKey = Text(child["runtimeContractJsonKey"]);
+        var sourceRuntimeContractJsonKey = Text(child["sourceRuntimeContractJsonKey"]);
+        if (childJsonKey.Length == 0
+            || sourceCollectionJsonKey.Length == 0
+            || parentItemIdJsonKey.Length == 0
+            || runtimeContractJsonKey.Length == 0
+            || sourceRuntimeContractJsonKey.Length == 0)
+        {
+            throw new InvalidOperationException("Projected child runtime collections require explicit keys.");
+        }
+
+        var values = new JsonArray();
+        foreach (var parent in parentSource.OfType<JsonObject>())
+        {
+            var parentId = Text(parent["id"]);
+            if (parentId.Length == 0)
+                throw new InvalidOperationException("Projected child runtime collection parent has no stable id.");
+            var children = parent[sourceCollectionJsonKey] as JsonArray
+                ?? throw new InvalidOperationException($"Projected child runtime collection parent is missing '{sourceCollectionJsonKey}'.");
+            foreach (var state in children.OfType<JsonObject>())
+            {
+                CollectForwardedOwners(state, nestedRuntimeOwners);
+                var stateId = Text(state["id"]);
+                if (stateId.Length == 0)
+                    throw new InvalidOperationException("Projected child runtime collection item has no stable id.");
+                var sourceContract = state[sourceRuntimeContractJsonKey] as JsonObject ?? new JsonObject();
+                values.Add(new JsonObject
+                {
+                    ["id"] = stateId,
+                    [parentItemIdJsonKey] = parentId,
+                    [presetJsonKey] = state[presetJsonKey]?.DeepClone(),
+                    [runtimeContractJsonKey] = EffectivePreview(new JsonObject(), sourceContract),
+                });
+            }
+        }
+
+        effective[childJsonKey] ??= values;
+        var runtimeCollection = child.DeepClone() as JsonObject ?? new JsonObject();
+        foreach (var projectionOnlyKey in new[]
+                 {
+                     "sourceCollectionJsonKey", "parentItemIdJsonKey", "presetJsonKey",
+                     "runtimeContractJsonKey", "sourceRuntimeContractJsonKey",
+                 })
+        {
+            runtimeCollection.Remove(projectionOnlyKey);
+        }
+        runtimeCollection["jsonKey"] = childJsonKey;
+        runtimeCollection["storageCollectionJsonKey"] = childJsonKey;
+        runtimeCollection["itemRuntimeContractJsonKey"] = runtimeContractJsonKey;
+        runtimeCollection["uiParentCollectionJsonKey"] = parentCollectionJsonKey;
+        runtimeCollection["uiParentItemIdJsonKey"] = parentItemIdJsonKey;
+        if (!collections.OfType<JsonObject>().Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
+            collections.Add(runtimeCollection);
+    }
+
+    private static void CollectForwardedOwners(JsonNode? node, HashSet<JsonObject> owners)
+    {
+        switch (node)
+        {
+            case JsonArray array:
+                foreach (var child in array) CollectForwardedOwners(child, owners);
+                break;
+            case JsonObject obj:
+                if (obj[StorageKey] is JsonObject) owners.Add(obj);
+                foreach (var (key, child) in obj)
+                    if (!key.Equals(StorageKey, StringComparison.Ordinal)) CollectForwardedOwners(child, owners);
+                break;
+        }
     }
 
     private static JsonObject? LiftAction(JsonObject action, JsonObject forwards)

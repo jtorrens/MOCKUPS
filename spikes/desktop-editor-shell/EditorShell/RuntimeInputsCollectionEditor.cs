@@ -300,15 +300,21 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             sections.Add(CreateTestValueGroupSubcard(owner, preview, groupId, groups));
         }
-        foreach (var collection in collections)
+        foreach (var collection in collections.Where((collection) => string.IsNullOrWhiteSpace(collection.UiParentCollectionJsonKey)))
         {
             var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+            var childCollections = collections
+                .Where((candidate) => candidate.UiParentCollectionJsonKey.Equals(collection.JsonKey, StringComparison.Ordinal))
+                .ToList();
+            var collectionContent = childCollections.Count == 0
+                ? CreateTestValueCollectionContent(owner, preview, collection, actions, items)
+                : CreateTestValueCollectionContent(owner, preview, collection, actions, items, childCollections);
             sections.Add(new EditorInternalNavigationSection(
                 collection.Id,
                 collection.Label,
                 $"{items.Count} active {EditorUiText.Noun(items.Count, "instance")}",
                 EditorIcons.Component,
-                CreateTestValueCollectionContent(owner, preview, collection, actions, items)));
+                collectionContent));
         }
         panel.Children.Add(EditorGroupBlock.CreateSeparator());
         panel.Children.Add(CreateSessionSubcardLayout(
@@ -462,7 +468,8 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
-        IReadOnlyList<JsonObject> items)
+        IReadOnlyList<JsonObject> items,
+        IReadOnlyList<RuntimeInputCollectionDefinition>? childCollections = null)
     {
         StructuredCollectionEditor? editor = null;
         void Changed()
@@ -577,12 +584,65 @@ internal sealed class RuntimeInputsCollectionEditor
                     item,
                     OpenComponentOverrides,
                     out var itemSubcards);
+                if (childCollections is { Count: > 0 })
+                {
+                    itemSubcards = itemSubcards
+                        .Concat(CreateChildRuntimeCollectionSubcards(
+                            owner, preview, item, actions, childCollections))
+                        .ToList();
+                }
                 return new StructuredCollectionItemContent(content, itemSubcards);
             },
             collectionActions,
             _sessionUiState,
             canEditStructure: string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
         return editor.Create();
+    }
+
+    private IReadOnlyList<EditorInternalNavigationSection> CreateChildRuntimeCollectionSubcards(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        JsonObject parentItem,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
+        IReadOnlyList<RuntimeInputCollectionDefinition> childCollections)
+    {
+        var result = new List<EditorInternalNavigationSection>();
+        var parentId = ItemId(parentItem, 0);
+        foreach (var childCollection in childCollections)
+        {
+            var childItems = DesignPreviewTestValues.CollectionItems(preview, childCollection)
+                .Where((candidate) => candidate[childCollection.UiParentItemIdJsonKey]?.GetValue<string>() == parentId)
+                .ToList();
+            for (var index = 0; index < childItems.Count; index++)
+            {
+                var childItem = childItems[index];
+                var childItemId = ItemId(childItem, index);
+                var childContent = CreateTestValueCollectionItemContent(
+                    owner,
+                    preview,
+                    childCollection,
+                    actions,
+                    DesignPreviewTestValues.CollectionItems(preview, childCollection).ToList().FindIndex(
+                        (candidate) => ItemId(candidate, 0) == childItemId),
+                    childItem,
+                    () => { },
+                    out var childSubcards);
+                var presentation = RuntimeCollectionItemPresentation.Resolve(
+                    childCollection,
+                    childItem,
+                    $"{childCollection.ItemLabel} {index + 1}",
+                    EditorIcons.Component);
+                result.Add(new EditorInternalNavigationSection(
+                    childItemId,
+                    $"{childCollection.ItemLabel} {index + 1}",
+                    presentation.Subtitle,
+                    presentation.Icon,
+                    childContent,
+                    Subcards: childSubcards,
+                    SubcardLayout: EditorSubcardLayout.FlatStack));
+            }
+        }
+        return result;
     }
 
     private Control CreateTestValueCollectionItemContent(
@@ -660,41 +720,50 @@ internal sealed class RuntimeInputsCollectionEditor
         var componentPresetReference = componentPresetField is null
             ? ""
             : DesignPreviewTestValues.CollectionValue(item, componentPresetField);
-        if (!string.IsNullOrWhiteSpace(componentPresetReference)
-            && componentItemDefinition is not null
-            && item[componentItemDefinition.InputsJsonKey] is JsonObject componentInputs)
+        var itemRuntimeContractJsonKey = !string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+            ? collection.ItemRuntimeContractJsonKey
+            : componentItemDefinition?.InputsJsonKey ?? "";
+        var itemRuntimeContract = itemRuntimeContractJsonKey.Length > 0
+            ? item[itemRuntimeContractJsonKey] as JsonObject
+            : null;
+        var nestedInputs = new List<ComponentInputDefinition>();
+        if (itemRuntimeContract is not null
+            && (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+                || !string.IsNullOrWhiteSpace(componentPresetReference)))
         {
-            var componentConfig = _database.GetComponentPresetConfig(componentPresetReference);
-            var nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(componentInputs, componentConfig);
+            var componentConfig = string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+                ? _database.GetComponentPresetConfig(componentPresetReference)
+                : new JsonObject();
+            nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(itemRuntimeContract, componentConfig).ToList();
             var nestedActions = actions.Where((action) =>
                     action.IsCollectionItemAction
                     && action.CollectionJsonKey == collection.JsonKey
                     && action.CollectionItemId == itemId
-                    && action.TargetJsonPath == componentItemDefinition.InputsJsonKey)
+                    && action.TargetJsonPath == itemRuntimeContractJsonKey)
                 .ToList();
             if (nestedInputs.Count > 0 || nestedActions.Count > 0)
             {
                 var nestedPanel = new StackPanel { Spacing = 6 };
                 var applicableNestedActions = nestedActions.Where((action) =>
-                        ComponentPreviewActions.AppliesToItem(action, componentInputs))
+                        ComponentPreviewActions.AppliesToItem(action, itemRuntimeContract))
                     .ToList();
                 if (applicableNestedActions.Count > 0)
                 {
                     var nestedActionPanel = CreateActionPanel();
                     foreach (var nestedAction in applicableNestedActions)
                     {
-                        AddActionControl(nestedActionPanel, CreateActionControl(nestedAction, nestedInputs, componentInputs));
+                        AddActionControl(nestedActionPanel, CreateActionControl(nestedAction, nestedInputs, itemRuntimeContract));
                     }
                     nestedPanel.Children.Add(nestedActionPanel);
                 }
                 foreach (var nestedInput in nestedInputs)
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
-                        owner, preview, collection, itemIndex, item, componentInputs, nestedInput));
+                        owner, preview, collection, itemIndex, item, itemRuntimeContract, nestedInput));
                 }
                 groupSubcards.Add(new EditorInternalNavigationSection(
                     "componentInputs",
-                    "Component inputs",
+                    string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey) ? "Component inputs" : "Runtime inputs",
                     $"{EditorUiText.Count(nestedInputs.Count, "runtime input")} · {EditorUiText.Count(nestedActions.Count, "action")}",
                     EditorIcons.Component,
                     nestedPanel));
@@ -702,7 +771,8 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         if (owner.IsInstance
             && _animationEditor is not null
-            && collection.Fields.Any((input) => input.Animation is not null))
+            && (collection.Fields.Any((input) => input.Animation is not null)
+                || nestedInputs.Any((input) => input.Animation is not null)))
         {
             var animation = _animationEditor.CreateTargetContent(owner.Node, itemId);
             groupSubcards.Add(new EditorInternalNavigationSection(
@@ -986,8 +1056,7 @@ internal sealed class RuntimeInputsCollectionEditor
         void ApplyTransientValue(string next)
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            var inputsJsonKey = collection.ComponentItems?.InputsJsonKey
-                ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
+            var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();
             var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
             if (itemIndex >= 0 && itemIndex < current.Count)
@@ -1001,8 +1070,7 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueCommitted += (_, next) =>
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            var inputsJsonKey = collection.ComponentItems?.InputsJsonKey
-                ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
+            var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();
             var itemId = ItemId(item, itemIndex);
             if (owner.IsInstance)
@@ -1016,7 +1084,15 @@ internal sealed class RuntimeInputsCollectionEditor
                 _onChanged();
             }
         };
-        return control;
+        return DecorateAnimationToggle(owner, input, ItemId(item, itemIndex), control);
+    }
+
+    private static string RuntimeContractJsonKey(RuntimeInputCollectionDefinition collection)
+    {
+        if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
+            return collection.ItemRuntimeContractJsonKey;
+        return collection.ComponentItems?.InputsJsonKey
+            ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no item runtime contract.");
     }
 
     private static int ComponentOverrideCount(JsonObject overrides)

@@ -134,15 +134,16 @@ internal static class RuntimeAnimationFrameOrigin
             {
                 var key = CollectionKey(collection);
                 if (runtime[key] is not JsonArray values) continue;
+                var sequenceItems = Timeline(collection)["sequenceItems"]?.GetValue<bool>() != false;
                 var cursor = 0d;
                 foreach (var item in values.OfType<JsonObject>())
                 {
                     var targetId = item["id"]?.GetValue<string>() ?? "";
                     if (string.IsNullOrWhiteSpace(targetId)) continue;
-                    var fields = Fields(collection);
+                    var fields = Fields(collection, item);
                     var pre = StringArray(Timeline(collection)["preDurationFieldIds"])
                         .Sum((fieldId) => FieldValue(item, fields, fieldId));
-                    var start = cursor + pre;
+                    var start = (sequenceItems ? cursor : 0) + pre;
                     var durations = CalculateItemDurations(collection, item, targetId);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
@@ -154,10 +155,10 @@ internal static class RuntimeAnimationFrameOrigin
                         effectiveSpan,
                         durations.Sequence,
                         effectiveSequence);
-                    cursor = start + effectiveSequence;
+                    if (sequenceItems) cursor = start + effectiveSequence;
                     naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
                 }
-                naturalEnd = Math.Max(naturalEnd, cursor);
+                if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
             }
 
             foreach (var definition in Inputs(contract))
@@ -213,11 +214,11 @@ internal static class RuntimeAnimationFrameOrigin
                 return definition is null ? 0 : ReferenceDuration(definition, _runtime, fields, _contract["actions"] as JsonArray);
             }
             if (!_items.TryGetValue(targetId, out var item)) return 0;
-            var itemFields = Fields(item.Collection);
+            var itemFields = Fields(item.Collection, item.Item);
             var itemDefinition = itemFields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
             return itemDefinition is null
                 ? 0
-                : ReferenceDuration(itemDefinition, item.Item, itemFields, item.Collection["itemActions"] as JsonArray);
+                : ReferenceDuration(itemDefinition, item.Item, itemFields, ItemActions(item.Collection, item.Item));
         }
 
         public int ScreenFrame(string fieldId, string targetId, int localFrame)
@@ -263,7 +264,7 @@ internal static class RuntimeAnimationFrameOrigin
         private FieldTiming ItemField(ItemTiming item, string fieldId)
         {
             if (item.Fields.TryGetValue(fieldId, out var timing)) return timing;
-            var fields = Fields(item.Collection);
+            var fields = Fields(item.Collection, item.Item);
             var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
             if (definition is null) return new FieldTiming(0, 0, 0);
             timing = ResolveFieldTiming(definition, item.Item, Text(item.Item["id"]), fields, new HashSet<string>(StringComparer.Ordinal));
@@ -273,7 +274,7 @@ internal static class RuntimeAnimationFrameOrigin
 
         private ItemDurations CalculateItemDurations(JsonObject collection, JsonObject item, string targetId)
         {
-            var fields = Fields(collection);
+            var fields = Fields(collection, item);
             var sequenceBodyEnd = 0d;
             var spanEnd = 0d;
             foreach (var definition in fields)
@@ -384,8 +385,8 @@ internal static class RuntimeAnimationFrameOrigin
             IReadOnlyList<JsonObject> fields)
         {
             var lastEnd = 0d;
-            foreach (var action in (collection["itemActions"] as JsonArray)?.OfType<JsonObject>()
-                .Where((candidate) => candidate["extendsModuleDuration"]?.GetValue<bool>() == true) ?? [])
+            foreach (var action in ItemActions(collection, item).OfType<JsonObject>()
+                .Where((candidate) => candidate["extendsModuleDuration"]?.GetValue<bool>() == true))
             {
                 var playFieldId = Text(action["playInputId"]);
                 var definition = fields.FirstOrDefault((field) => Text(field["id"]) == playFieldId);
@@ -464,8 +465,33 @@ internal static class RuntimeAnimationFrameOrigin
     private static IReadOnlyList<JsonObject> Inputs(JsonObject contract) =>
         (contract["inputs"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
 
-    private static IReadOnlyList<JsonObject> Fields(JsonObject collection) =>
-        (collection["fields"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+    private static IReadOnlyList<JsonObject> Fields(JsonObject collection, JsonObject item)
+    {
+        var fields = (collection["fields"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        var runtimeContractKey = Text(collection["itemRuntimeContractJsonKey"]);
+        if (runtimeContractKey.Length > 0
+            && item[runtimeContractKey] is JsonObject runtimeContract
+            && runtimeContract["inputs"] is JsonArray runtimeInputs)
+        {
+            fields.AddRange(runtimeInputs.OfType<JsonObject>());
+        }
+        return fields;
+    }
+
+    private static JsonArray ItemActions(JsonObject collection, JsonObject item)
+    {
+        var actions = new JsonArray();
+        foreach (var action in (collection["itemActions"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            actions.Add(action.DeepClone());
+        var runtimeContractKey = Text(collection["itemRuntimeContractJsonKey"]);
+        if (runtimeContractKey.Length > 0
+            && item[runtimeContractKey] is JsonObject runtimeContract)
+        {
+            foreach (var action in (runtimeContract["actions"] as JsonArray)?.OfType<JsonObject>() ?? [])
+                actions.Add(action.DeepClone());
+        }
+        return actions;
+    }
 
     private static JsonObject Timeline(JsonObject owner) => owner["animationTimeline"] as JsonObject ?? new JsonObject();
 

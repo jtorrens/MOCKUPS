@@ -251,13 +251,22 @@ Variant. Consequently an iPhone Lock Screen and Android Lock Screen may have
 different slot structures while their instances expose only the runtime values
 appropriate to that explicit Variant.
 
-For a projected Component Stack collection, `content_json` contains one minimal
-entry per selected Variant slot. Each entry keeps the stable slot id plus only
-its runtime State/action values. The complete `alternatives` collection,
-component Variant references, Overrides, Placement and Motions remain in the
-Module Variant. They are joined to the minimal payload only while preparing the
-requested frame. Unknown or retired slot ids are migration errors; they are not
-resolved through positional matching or fallback defaults.
+For a projected Component Stack contract, `content_json` contains two related
+minimal runtime collections:
+
+- one entry per Variant slot with the stable slot id and State-selection action
+  transport (`runtimeStateId`, source State, transition flag and elapsed time);
+- one entry per stable State id with its parent slot id and only that State's
+  explicitly forwarded child runtime contract/values and actions.
+
+The second collection is not a copy of the State design. The complete
+`alternatives` collection, component Variant references as editable choices,
+Overrides, Placement and Motions remain exclusively in the Module Variant.
+Generic parent metadata makes the editor render both arrays as
+`Slots -> Slot -> State`, and the resolver joins them by stable ids only while
+preparing the requested frame. State runtime values never appear in General.
+Unknown or retired slot/State ids are migration errors; they are not resolved
+through positional matching or fallback defaults.
 
 Changing the selected Module Variant is a contract change. The instance retains
 only Runtime values still declared by the new effective contract and removes
@@ -294,6 +303,13 @@ The shared action control shows:
 
 An action inside a collection item remains inside that item. It is never lifted
 to the top Runtime Inputs card merely because it is animatable.
+
+The same ownership rule applies to forwarded child fields: Clock text belongs
+to its Label State; Password text, attempt, timing and Enter Password action
+belong to its Password State. General contains only runtime declarations owned
+by the module root, such as the Lock Screen Actor and system-bar visibility.
+The same nested layout is used for module Test Values and the persistent Screen
+instance payload.
 
 Design Test Values use transient `runtimeStateId`, source id, transition flag
 and elapsed action time in prepared payloads. These are preview transport

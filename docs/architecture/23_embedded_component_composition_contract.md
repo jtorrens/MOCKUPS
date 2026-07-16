@@ -333,6 +333,16 @@ frame, the common contract layer joins that minimal runtime array to the Variant
 source array. The merged structure is transient and is never written back to
 the instance payload.
 
+When a projected structural item owns nested States, the projection may also
+declare a second, related runtime collection. That collection contains one
+entry per stable State id and only the forwarded runtime contract/value object
+for that State. Parent metadata relates every State entry to its slot id, so the
+shared editor presents `Slots -> Slot -> State` without copying the Variant's
+component reference, Overrides, Placement or Motion into editable instance
+structure. The two projected arrays remain flat in storage for stable lookup
+and timeline ownership; their parent relation is contract metadata, not an
+editor-specific hierarchy rule.
+
 A Component Stack adds one more stable nested identity level: the outer item is
 the slot and its nested item is a State. State actions and animation tracks use
 the State id, while flow and gap ownership use the slot id/order. Collection
@@ -350,10 +360,14 @@ Before a component resolver runs, the generic forwarding pass writes resolved
 parent runtime values into their declared child input locations. Component
 resolvers continue to own composition; bridge and renderer never see forwarding
 metadata or implement component-specific routing. The pass traverses nested
-objects and collections, applies every forwarding definition, then removes the
-`$forwardedInputs` marker from the transient resolved config. Therefore a child
-resolver receives only its final values even when the forwarding source is
-several component/collection levels above it.
+objects and collections and applies every forwarding definition owned by the
+current runtime boundary. A complete forwarding block is consumed only when
+that boundary supplies all of its declared keys; a block owned by a deeper
+embedded component remains intact for that component's resolver pass. Partial
+ownership is an error. State-owned values are found by stable State id, never by
+array position. The consumed `$forwardedInputs` marker is removed from the
+transient resolved config, so each child resolver receives only its final values
+without the module pass stealing contracts that belong to a deeper component.
 
 Stopping forwarding retains the current Variant value. If downstream bindings
 use the effective input id, the operation is blocked and the usage modal must

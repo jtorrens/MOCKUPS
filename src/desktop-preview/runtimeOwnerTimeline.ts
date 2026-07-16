@@ -30,6 +30,7 @@ export class RuntimeOwnerTimeline {
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
     for (const collection of records(contract.collections)) {
       const values = records(runtime[collectionKey(collection)]);
+      const sequenceItems = asRecord(collection.animationTimeline).sequenceItems !== false;
       let cursor = 0;
       for (const item of values) {
         const fields = itemFields(collection, item);
@@ -38,7 +39,7 @@ export class RuntimeOwnerTimeline {
         const timeline = asRecord(collection.animationTimeline);
         const pre = strings(timeline.preDurationFieldIds)
           .reduce((sum, fieldId) => sum + fieldValue(item, fields, fieldId), 0);
-        const start = cursor + pre;
+        const start = (sequenceItems ? cursor : 0) + pre;
         const durations = this.itemDurations(collection, item, targetId);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -52,10 +53,10 @@ export class RuntimeOwnerTimeline {
           effectiveSequence,
           fields: new Map(),
         });
-        cursor = start + effectiveSequence;
+        if (sequenceItems) cursor = start + effectiveSequence;
         naturalEnd = Math.max(naturalEnd, start + effectiveSpan);
       }
-      naturalEnd = Math.max(naturalEnd, cursor);
+      if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }
     for (const definition of records(contract.inputs)) {
       const fieldId = optionalString(definition, "id");
@@ -240,7 +241,7 @@ export class RuntimeOwnerTimeline {
     fields: JsonRecord[],
   ) {
     let lastEnd = 0;
-    for (const action of records(collection.itemActions)
+    for (const action of itemActions(collection, item)
       .filter((candidate) => candidate.extendsModuleDuration === true)) {
       const playFieldId = optionalString(action, "playFieldId") || optionalString(action, "playInputId");
       const definition = fields.find((field) => optionalString(field, "id") === playFieldId);
@@ -306,7 +307,15 @@ function itemFields(collection: JsonRecord, item: JsonRecord) {
   const direct = records(collection.fields);
   const inputsKey = optionalString(asRecord(collection.componentItems), "inputsJsonKey");
   const embedded = inputsKey ? records(asRecord(item[inputsKey]).inputs) : [];
-  return [...direct, ...embedded];
+  const runtimeContractKey = optionalString(collection, "itemRuntimeContractJsonKey");
+  const runtime = runtimeContractKey ? records(asRecord(item[runtimeContractKey]).inputs) : [];
+  return [...direct, ...embedded, ...runtime];
+}
+
+function itemActions(collection: JsonRecord, item: JsonRecord) {
+  const runtimeContractKey = optionalString(collection, "itemRuntimeContractJsonKey");
+  const runtime = runtimeContractKey ? records(asRecord(item[runtimeContractKey]).actions) : [];
+  return [...records(collection.itemActions), ...runtime];
 }
 
 function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {

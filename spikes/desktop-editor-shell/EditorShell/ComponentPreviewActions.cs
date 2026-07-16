@@ -19,6 +19,27 @@ internal static class ComponentPreviewActions
         foreach (var collection in collections.OfType<JsonObject>())
         {
             var collectionJsonKey = JsonString(collection, "jsonKey");
+            var itemRuntimeContractJsonKey = JsonString(collection, "itemRuntimeContractJsonKey");
+            if (!string.IsNullOrWhiteSpace(collectionJsonKey)
+                && !string.IsNullOrWhiteSpace(itemRuntimeContractJsonKey)
+                && preview[collectionJsonKey] is JsonArray runtimeItems)
+            {
+                foreach (var item in runtimeItems.OfType<JsonObject>())
+                {
+                    var itemId = JsonString(item, "id");
+                    if (string.IsNullOrWhiteSpace(itemId)
+                        || item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue;
+                    definitions.AddRange(Read(itemContract)
+                        .Where((action) => !action.IsCollectionItemAction)
+                        .Select((action) => action with
+                        {
+                            Id = $"embedded:{collectionJsonKey}:{itemId}:{itemRuntimeContractJsonKey}:{action.Id}",
+                            CollectionJsonKey = collectionJsonKey,
+                            CollectionItemId = itemId,
+                            TargetJsonPath = itemRuntimeContractJsonKey,
+                        }));
+                }
+            }
             var componentItems = collection["componentItems"] as JsonObject;
             if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
             var presetJsonKey = JsonString(componentItems, "presetJsonKey");

@@ -39,6 +39,14 @@ or Password-specific layout rule crosses the component boundary.
 
 ## Runtime inputs
 
+When Password is embedded in a Component Stack State, only fields explicitly
+forwarded by the module Variant cross into the module runtime. They remain
+owned by that stable State id in Test Values and in a Shot Screen instance;
+they are not flattened into the module's General inputs. `Enter password`, its
+BehaviorTiming value and its resolved frame clock travel together in the
+State-owned runtime contract, so the animation target is the State and the
+component still receives a fully resolved requested frame.
+
 - `initialText`, `correctText` and `incorrectText`;
 - `expectedPassword`, containing digits only;
 - `attemptPassword`, containing digits only and exactly the same length;

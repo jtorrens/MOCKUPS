@@ -9,46 +9,84 @@ export function applyRuntimeInputForwarding(
 ): DesignPreviewPayload {
   const config = parseRecord(payload.configJson, "component config");
   const runtime = parseRecord(payload.designPreviewJson ?? "{}", "component runtime payload");
-  apply(config, runtime);
+  apply(config, runtime, "");
   return {
     ...payload,
     configJson: JSON.stringify(config),
   };
 }
 
-function apply(node: unknown, runtime: JsonRecord) {
+function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
   if (Array.isArray(node)) {
-    node.forEach((child) => apply(child, runtime));
+    node.forEach((child) => apply(child, runtime, inheritedOwnerId));
     return;
   }
   if (!isRecord(node)) return;
 
+  const ownerId = typeof node.id === "string" && node.id ? node.id : inheritedOwnerId;
+
   const forwarding = node[storageKey];
   if (isRecord(forwarding)) {
-    for (const [targetKey, rawDefinition] of Object.entries(forwarding)) {
+    const entries = Object.entries(forwarding).map(([targetKey, rawDefinition]) => {
       if (!isRecord(rawDefinition) || typeof rawDefinition.jsonKey !== "string") {
         throw new Error(`Invalid forwarded runtime input definition ${targetKey}`);
       }
-      if (!Object.hasOwn(runtime, rawDefinition.jsonKey)) {
+      const runtimeOwner = ownerId
+        ? findRuntimeOwner(runtime, ownerId, rawDefinition.jsonKey)
+          ?? (Object.hasOwn(runtime, rawDefinition.jsonKey) ? runtime : undefined)
+        : runtime;
+      return { targetKey, rawDefinition, runtimeOwner };
+    });
+    const ownedEntries = entries.filter(({ rawDefinition, runtimeOwner }) =>
+      !!runtimeOwner && Object.hasOwn(runtimeOwner, rawDefinition.jsonKey as string));
+    if (ownedEntries.length > 0 && ownedEntries.length !== entries.length) {
+      const missing = entries.find(({ rawDefinition, runtimeOwner }) =>
+        !runtimeOwner || !Object.hasOwn(runtimeOwner, rawDefinition.jsonKey as string))!;
+      throw new Error(`Missing forwarded runtime value ${missing.rawDefinition.jsonKey}`);
+    }
+    for (const { targetKey, rawDefinition, runtimeOwner } of ownedEntries) {
+      if (!runtimeOwner) {
         throw new Error(`Missing forwarded runtime value ${rawDefinition.jsonKey}`);
       }
-      node[targetKey] = runtime[rawDefinition.jsonKey];
+      node[targetKey] = runtimeOwner[rawDefinition.jsonKey as string];
       if (
         typeof rawDefinition.resolvedJsonKey === "string" &&
         rawDefinition.resolvedJsonKey &&
         typeof rawDefinition.targetResolvedJsonKey === "string" &&
         rawDefinition.targetResolvedJsonKey &&
-        Object.hasOwn(runtime, rawDefinition.resolvedJsonKey)
+        Object.hasOwn(runtimeOwner, rawDefinition.resolvedJsonKey)
       ) {
-        node[rawDefinition.targetResolvedJsonKey] = runtime[rawDefinition.resolvedJsonKey];
+        node[rawDefinition.targetResolvedJsonKey] = runtimeOwner[rawDefinition.resolvedJsonKey];
       }
     }
-    delete node[storageKey];
+    if (ownedEntries.length > 0) delete node[storageKey];
   }
 
   for (const [key, child] of Object.entries(node)) {
-    if (key !== storageKey) apply(child, runtime);
+    if (key !== storageKey) apply(child, runtime, ownerId);
   }
+}
+
+function findRuntimeOwner(node: unknown, id: string, jsonKey: string): JsonRecord | undefined {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findRuntimeOwner(child, id, jsonKey);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (!isRecord(node)) return undefined;
+  if (node.id === id) {
+    if (Object.hasOwn(node, jsonKey)) return node;
+    for (const child of Object.values(node)) {
+      if (isRecord(child) && Object.hasOwn(child, jsonKey)) return child;
+    }
+  }
+  for (const child of Object.values(node)) {
+    const found = findRuntimeOwner(child, id, jsonKey);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 function parseRecord(json: string, label: string): JsonRecord {
