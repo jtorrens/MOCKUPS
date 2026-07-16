@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +26,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<string, Task> _openComponentPresetReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action<EditorEmbeddedContext> _openRuntimeComponentOverrides;
-    private readonly Action<ProjectTreeNode> _reloadAndSelect;
+    private readonly Action<ProjectTreeNode> _scheduleActiveEditorReload;
     private readonly Action _refreshPreview;
     private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, double> _groupNavigationWidths = new(StringComparer.Ordinal);
@@ -47,7 +46,7 @@ internal sealed class EditorLayoutCardFactory
         Func<string, Task> openComponentPresetReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Action<EditorEmbeddedContext> openRuntimeComponentOverrides,
-        Action<ProjectTreeNode> reloadAndSelect,
+        Action<ProjectTreeNode> scheduleActiveEditorReload,
         Action refreshPreview)
     {
         _fieldValues = fieldValues;
@@ -64,7 +63,7 @@ internal sealed class EditorLayoutCardFactory
         _openComponentPresetReference = openComponentPresetReference;
         _toggleVariantLock = toggleVariantLock;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
-        _reloadAndSelect = reloadAndSelect;
+        _scheduleActiveEditorReload = scheduleActiveEditorReload;
         _refreshPreview = refreshPreview;
     }
 
@@ -446,7 +445,7 @@ internal sealed class EditorLayoutCardFactory
                 if (collection.Fields.Any((candidate) =>
                         candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
                 {
-                    Dispatcher.UIThread.Post(() => _reloadAndSelect(node), DispatcherPriority.Background);
+                    _scheduleActiveEditorReload(node);
                 }
             }
             catch (Exception exception)
@@ -511,9 +510,7 @@ internal sealed class EditorLayoutCardFactory
                 _messages.Error($"Editor field {field.Definition.Id}", exception);
             }
         };
-        control.RuntimeContractChanged += (_, _) => Dispatcher.UIThread.Post(
-            () => _reloadAndSelect(node),
-            DispatcherPriority.Background);
+        control.RuntimeContractChanged += (_, _) => _scheduleActiveEditorReload(node);
         return control;
     }
 

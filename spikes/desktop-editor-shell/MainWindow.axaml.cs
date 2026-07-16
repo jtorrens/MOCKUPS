@@ -4,6 +4,7 @@ using Mockups.DesktopEditorShell.Common;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
@@ -45,6 +46,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private List<ProjectTreeNode> _treeRoots = [];
     private ProjectTreeNode? _selectedNode;
+    private EditorEmbeddedContext? _activeEmbeddedContext;
+    private long _editorContextRevision;
     private EditorWorkspace _workspace = EditorWorkspace.Design;
     private readonly Dictionary<EditorWorkspace, string> _workspaceSelections = [];
     private string _selectedProductionId = "";
@@ -157,7 +160,7 @@ public partial class MainWindow : SukiWindow
             OpenComponentPresetReference,
             _nodeCommands.ToggleComponentPresetLock,
             ShowEmbeddedContext,
-            ReloadAndSelect,
+            ScheduleActiveEditorReload,
             RefreshPreviewDevice);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,
@@ -406,6 +409,8 @@ public partial class MainWindow : SukiWindow
     private void ShowNode(ProjectTreeNode node, bool rebuildTree, string source)
     {
         node = _nodeSelection.ResolveSelectionNode(node);
+        _activeEmbeddedContext = null;
+        _editorContextRevision++;
         using var transaction = BeginContextTransaction(source, node.Id);
         var previousNode = _selectedNode;
         var previousViewState = _editorViewState.CaptureState(_editorContent.Cards);
@@ -448,6 +453,8 @@ public partial class MainWindow : SukiWindow
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
+        _activeEmbeddedContext = context;
+        _editorContextRevision++;
         if (context.IsNavigationRoot
             && _editorViewState.CaptureState(_editorContent.Cards) is { } parentState)
         {
@@ -456,6 +463,66 @@ public partial class MainWindow : SukiWindow
         _editorContent.BuildEmbedded(context);
         SetEditorEmbeddedTitle(context);
         RefreshPreviewDevice();
+        ApplyUiTextScale();
+    }
+
+    private void ScheduleActiveEditorReload(ProjectTreeNode ownerNode)
+    {
+        var scheduledRevision = _editorContextRevision;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (scheduledRevision != _editorContextRevision
+                || !string.Equals(_selectedNode?.Id, ownerNode.Id, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ReloadActiveEditor(ownerNode.Id);
+        }, DispatcherPriority.Background);
+    }
+
+    private void ReloadActiveEditor(string ownerNodeId)
+    {
+        var viewState = _editorViewState.CaptureState(_editorContent.Cards);
+        var embeddedContext = _activeEmbeddedContext;
+
+        _treeRoots = _database.LoadProjectTree();
+        EnsureSelectedProductionExists();
+        _treeExpansion.EnsureInitial(_treeRoots);
+
+        var refreshedOwner = EditorNodeSelectionState.FindNodeById(_treeRoots, ownerNodeId);
+        if (refreshedOwner is null
+            || !EditorNodeSelectionState.CanSelectTreeNode(refreshedOwner)
+            || !EditorWorkspaceNavigation.Contains(_workspace, refreshedOwner))
+        {
+            LoadProjectTree();
+            RefreshPreviewOptions();
+            return;
+        }
+
+        refreshedOwner = _nodeSelection.ResolveSelectionNode(refreshedOwner);
+        _selectedNode = refreshedOwner;
+        _workspaceSelections[_workspace] = refreshedOwner.Id;
+        _treeExpansion.ExpandAncestors(refreshedOwner);
+        RebuildNavigationCards();
+
+        if (embeddedContext is not null)
+        {
+            var refreshedContext = embeddedContext with { OwnerNode = refreshedOwner };
+            _activeEmbeddedContext = refreshedContext;
+            _editorContextRevision++;
+            _editorContent.BuildEmbedded(refreshedContext);
+            SetEditorEmbeddedTitle(refreshedContext);
+            RefreshPreviewDevice();
+            _editorViewState.RestoreState(viewState, _editorContent.Cards);
+        }
+        else
+        {
+            ShowNode(refreshedOwner, rebuildTree: false, "field-refresh");
+            _editorViewState.RestoreState(viewState, _editorContent.Cards);
+        }
+
+        RefreshPreviewOptions();
         ApplyUiTextScale();
     }
 
