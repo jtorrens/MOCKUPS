@@ -1215,8 +1215,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
                 input.Animation.Interpolations.First());
             _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
-            _onChanged();
-            _reloadAndSelect?.Invoke(owner.Node);
+            if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
+            else _onChanged();
         };
         var row = new Grid
         {
