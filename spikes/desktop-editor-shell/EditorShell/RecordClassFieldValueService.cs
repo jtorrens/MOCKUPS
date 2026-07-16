@@ -102,12 +102,17 @@ internal sealed class RecordClassFieldValueService
                 IsInherited: settings.FpsOverride is null);
         }
 
+        var isEditable = field.IsEditable
+            || (node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && field.Id == "moduleInstance.durationFrames"
+                && RuntimeDurationContract.Policy(_database.GetModuleInstanceEffectiveContractJson(node.Id))
+                    == RuntimeDurationPolicy.Explicit);
         var result = new FieldValue(
             new FieldDefinition(
                 field.Id,
                 field.Label,
                 field.ValueKind,
-                IsEditable: field.IsEditable,
+                IsEditable: isEditable,
                 DefaultValue: DefaultValue(node.Kind, field, value),
                 CommitAsDefault: CommitAsDefault(node.Kind, field),
                 Options: options,

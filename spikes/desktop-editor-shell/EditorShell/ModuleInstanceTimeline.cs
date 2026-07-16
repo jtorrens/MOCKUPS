@@ -11,8 +11,11 @@ internal static class ModuleInstanceTimeline
     public static int DurationFrames(SpikeDatabase database, string moduleInstanceId)
     {
         var instance = database.GetModuleInstanceSettings(moduleInstanceId);
+        var contract = database.GetModuleInstanceEffectiveContractJson(moduleInstanceId);
+        if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit)
+            return System.Math.Max(1, instance.DurationFrames);
         return RuntimeTimeline.DurationFrames(
-            database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),
+            contract,
             instance.ContentJson,
             instance.AnimationJson,
             instance.DurationFrames,

@@ -180,14 +180,27 @@ internal sealed class ModuleInstanceAnimationEditor
     {
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
         var actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, node.Id));
-        var timelineDuration = Math.Max(
-            actualScreenDuration,
+        var durationPolicy = RuntimeDurationContract.Policy(
+            _database.GetModuleInstanceEffectiveContractJson(node.Id));
+        var maximumAuthoredScreenFrame = targets
+            .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
+                .Where((keyframe) => keyframe.Enabled)
+                .Select((keyframe) => candidate.Target?.ScreenFrameForOwnerFrame(
+                    (candidate.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame))
+            .DefaultIfEmpty(-1)
+            .Max();
+        var calculatedAuthoringDuration = Math.Max(
+            Math.Max(actualScreenDuration, maximumAuthoredScreenFrame + 1),
             targets
                 .Where((candidate) => candidate.Target is { ReferenceDurationFrames: > 0 })
                 .Select((candidate) => candidate.Target!.ScreenFrameForOwnerFrame(
                     candidate.Target.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
                 .DefaultIfEmpty(actualScreenDuration)
                 .Max());
+        var timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
+            ? actualScreenDuration
+            : calculatedAuthoringDuration;
+        var hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
         var ownerNaturalDuration = durationTargetId is null
             ? 1
             : RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
@@ -288,9 +301,12 @@ internal sealed class ModuleInstanceAnimationEditor
         void RefreshVisuals()
         {
             frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
-            authoringLimitText.Text = timelineDuration > actualScreenDuration
-                ? $"({timelineDuration - 1})"
-                : "";
+            authoringLimitText.Text = hasOutOfRangeKeyframes
+                ? $"({maximumAuthoredScreenFrame} · keyframe outside Screen)"
+                : timelineDuration > actualScreenDuration ? $"({timelineDuration - 1})" : "";
+            authoringLimitText.Foreground = hasOutOfRangeKeyframes
+                ? EditorAnimationVisuals.ActiveTrackBrush
+                : null;
             var selectedLocalFrame = (int)Math.Round(OwnerFrame(), MidpointRounding.AwayFromZero) - (int)Math.Round(
                 selected.Target?.OwnerFrameOrigin ?? 0,
                 MidpointRounding.AwayFromZero);

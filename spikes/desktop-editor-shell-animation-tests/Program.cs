@@ -16,6 +16,7 @@ var tests = new (string Name, Action Run)[]
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
+    ("Screen duration policy distinguishes calculated and explicit ownership", ScreenDurationPolicyIsContractOwned),
     ("target-owned fields use target-relative origins", TargetFieldsUseRelativeOrigins),
     ("parallel collection targets share the Screen origin", ParallelCollectionTargetsShareScreenOrigin),
     ("entity fields keep their first-appearance origin across re-entry", EntityFieldsKeepFirstAppearanceOrigin),
@@ -523,6 +524,20 @@ static void KeyframesAndTracksCanBeRemoved()
 static void ScreenFieldsStartAtZero()
 {
     Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(new JsonObject(), new JsonObject(), "subtitle", ""));
+}
+
+static void ScreenDurationPolicyIsContractOwned()
+{
+    Equal(RuntimeDurationPolicy.Calculated, RuntimeDurationContract.Policy("{}"));
+    var explicitContract = Object("""
+        {"animationTimeline":{"durationPolicy":"explicit","defaultDurationFrames":240}}
+        """);
+    Equal(RuntimeDurationPolicy.Explicit, RuntimeDurationContract.Policy(explicitContract));
+    Equal(240, RuntimeDurationContract.InitialDurationFrames(explicitContract.ToJsonString()));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
+        "{\"animationTimeline\":{\"durationPolicy\":\"explicit\"}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
+        "{\"animationTimeline\":{\"durationPolicy\":\"legacy\"}}"));
 }
 
 static void TargetFieldsUseRelativeOrigins()
@@ -1847,6 +1862,8 @@ static void LockScreenComposesRuntimeStack()
 
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen Runtime Inputs.");
+        Equal("explicit", preview["animationTimeline"]?["durationPolicy"]?.GetValue<string>() ?? "");
+        Equal(240, preview["animationTimeline"]?["defaultDurationFrames"]?.GetValue<int>() ?? 0);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         SequenceEqual(
             ["actor", "showStatusBar", "showNavigationBar"],
@@ -1882,6 +1899,22 @@ static void LockScreenComposesRuntimeStack()
             .ToHashSet(StringComparer.Ordinal);
         True(lockScreenFields.Contains("module.lockScreen.stackInputs"));
         True(lockScreenFields.Contains("module.lockScreen.stackItems"));
+
+        var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
+        var values = new RecordClassFieldValueService(database);
+        True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);
+        Equal(240, ModuleInstanceTimeline.DurationFrames(database, lockScreenInstance.Id));
+        database.UpdateModuleInstanceField(lockScreenInstance.Id, "moduleInstance.durationFrames", "180");
+        Equal(180, ModuleInstanceTimeline.DurationFrames(database, lockScreenInstance.Id));
+
+        var conversationInstance = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId == "module.core.chat");
+        True(!values.CreateFieldValue(conversationInstance, "moduleInstance.durationFrames").Definition.IsEditable);
+        Throws<InvalidOperationException>(() => database.UpdateModuleInstanceField(
+            conversationInstance.Id,
+            "moduleInstance.durationFrames",
+            "180"));
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);

@@ -2703,6 +2703,26 @@ assertContains(
   "ModuleInstanceTimeline.DurationFrames(_database, node.Id)",
   "animation authoring panels must use their containing Screen scale",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimeline.cs",
+  "RuntimeDurationPolicy.Explicit",
+  "explicit Screen duration must be resolved by the shared module-instance timeline",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit",
+  "timeline synchronization must preserve explicitly authored Screen durations",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.LockScreenModule.cs",
+  '["durationPolicy"] = "explicit"',
+  "Lock Screen must declare its explicit duration policy in its own module contract",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  "lockScreen",
+  "the generic duration contract must not know concrete modules",
+);
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame",

@@ -153,6 +153,13 @@ not restart the entity's internal timeline. Stable ids, never indices, bind
 owners and tracks. A selected Screen presents its own local authoring scale even
 when Preview keeps one absolute Shot playhead internally.
 
+Screen duration is also contract-owned. A module declares `calculated` when its
+finite actions/collections determine the Screen extent, or `explicit` when the
+Module Instance's persisted frame count is authoritative. Explicit duration
+requires a declared positive default and is edited only on the instance;
+keyframes and child composition must not extend it silently. The authoring `+`
+horizon remains session-only in both policies.
+
 Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
 
 Component composition must reference concrete component presets, not parent component classes. Parent classes own schema, resolver identity and preset lists; reusable visual instances store full preset references in the form `componentClassId::preset::presetId`. Short preset ids are legacy migration input only. Saving a new preset must clone the active selected preset config, never ambiguous "current class values".

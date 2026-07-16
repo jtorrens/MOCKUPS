@@ -368,6 +368,7 @@ internal sealed partial class SpikeDatabase
         var requestedName = draft.Name.Trim();
         if (requestedName.Length == 0)
             throw new InvalidOperationException("A Module Instance name is required.");
+        var initialDuration = RuntimeDurationContract.InitialDurationFrames(GetModuleSettings(module.Id).DesignPreviewJson);
         using var connection = OpenConnection();
         var index = NextSortOrder(connection, "module_instances", "shot_id", shot.Id);
         var id = $"module_instance_{Guid.NewGuid():N}";
@@ -379,7 +380,7 @@ internal sealed partial class SpikeDatabase
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
               transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
-              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 1,
+              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $durationFrames,
               '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", id),
@@ -389,6 +390,7 @@ internal sealed partial class SpikeDatabase
             ("$name", name),
             ("$notes", $"{module.Name} module instance."),
             ("$sortOrder", index),
+            ("$durationFrames", initialDuration),
             ("$contentJson", "{}"),
             ("$behaviorJson", "{}"),
             ("$animationJson", DefaultModuleAnimationJson()),
@@ -471,18 +473,24 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)
     {
-        using var connection = OpenConnection();
         switch (fieldId)
         {
             case "moduleInstance.variant":
                 UpdateModuleInstanceVariant(moduleInstanceId, value);
                 return;
             case "moduleInstance.durationFrames":
-                Execute(
-                    connection,
-                    "UPDATE module_instances SET duration_frames = $value WHERE id = $id",
-                    ("$value", Math.Max(1, NumericText.Int32(value, 1))),
-                    ("$id", moduleInstanceId));
+                if (RuntimeDurationContract.Policy(GetModuleInstanceEffectiveContractJson(moduleInstanceId))
+                    != RuntimeDurationPolicy.Explicit)
+                    throw new InvalidOperationException("Calculated Screen duration cannot be edited.");
+                using (var connection = OpenConnection())
+                {
+                    Execute(
+                        connection,
+                        "UPDATE module_instances SET duration_frames = $value WHERE id = $id",
+                        ("$value", Math.Max(1, NumericText.Int32(value, 1))),
+                        ("$id", moduleInstanceId));
+                    SynchronizeTimelineDurations(connection);
+                }
                 return;
             default:
                 throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");

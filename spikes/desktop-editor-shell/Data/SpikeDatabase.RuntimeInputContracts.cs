@@ -124,6 +124,7 @@ internal sealed partial class SpikeDatabase
             var stored = reader.GetInt32(1);
             var contract = EffectiveModuleInstanceContract(
                 reader.GetString(6), ReadString(reader, 7), ReadString(reader, 8), ReadString(reader, 4));
+            if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit) continue;
             var duration = RuntimeTimeline.DurationFrames(contract.ToJsonString(), ReadString(reader, 2), ReadString(reader, 3), stored, ReadString(reader, 5));
             if (duration != stored) updates.Add((reader.GetString(0), duration));
         }

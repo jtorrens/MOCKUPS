@@ -405,6 +405,11 @@ internal sealed partial class SpikeDatabase
     private static string DefaultLockScreenDesignPreviewJson()
     {
         var preview = new JsonObject();
+        preview["animationTimeline"] = new JsonObject
+        {
+            ["durationPolicy"] = "explicit",
+            ["defaultDurationFrames"] = 240,
+        };
         var inputs = new JsonArray();
         preview["inputs"] = inputs;
         inputs.Insert(0, new JsonObject

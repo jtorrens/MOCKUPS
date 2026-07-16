@@ -27,7 +27,9 @@ Current summary:
   slots, and consumes the Actor wallpaper contract without adding bridge or
   renderer rules. The Stack receives only the available box between visible
   bars. Lock Screen binds the Stack runtime contract as Variant data and
-  forwards only explicitly promoted fields to its own runtime contract.
+  forwards only explicitly promoted fields to its own runtime contract. Its
+  root timeline declares explicit Module Instance duration (240-frame initial
+  value); Stack contents and keyframes do not recalculate that Screen extent.
 - Module Variants are implemented generically. Module classes own resolver and
   schema while protected `Default` and user Variants own concrete config
   snapshots. The tree selects concrete Variants, and Screen instances persist

@@ -358,6 +358,13 @@ local zero maps to the first Screen-local frame at which the slot selector chose
 that stable State id. Reordering States or changing the Screen's Shot position
 does not rewrite those local keyframes.
 
+Structural Screens do not need their duration to emerge from current Stack
+contents. Lock Screen declares the generic explicit duration policy, so its
+Module Instance owns an editable frame count and its local slider is exactly
+`0..durationFrames-1`. Adding, removing or changing a State never mutates that
+duration. Conversation keeps calculated duration because its serial Message
+timeline is itself the authored Screen extent.
+
 Root and embedded component actions follow the same rule. Test Values renders
 the generic Play/Restore control from the action contract. A Module Instance
 does not store a simulated button press: it exposes the promoted play field as

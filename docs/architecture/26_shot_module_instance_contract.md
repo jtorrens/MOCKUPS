@@ -60,12 +60,13 @@ duration. The shot editor exposes add, delete, reorder and navigation for these
 slots. Each Module Instance selects one registered module and one explicit
 Variant of that same module.
 
-A module declares the finite action that owns its duration with
-`definesModuleDuration`. The shared evaluator reads that action's declared
-collection and frame fields, compares its endpoint with authored animation
-events, persists the module-instance duration, and synchronizes the Shot sum.
-The Preview controls expose a Shot frame navigator and resolve the selected
-frame through the same local-frame contract.
+A module declares one duration policy in its root `animationTimeline` contract.
+`calculated` derives and synchronizes `duration_frames` from declared finite
+actions, collections and animation endpoints; Conversation uses this policy.
+`explicit` requires a positive `defaultDurationFrames`, makes the concrete
+Module Instance Duration editable, and treats that stored value as authoritative;
+Lock Screen uses this policy. Keyframes never extend an explicit Screen silently.
+Both policies feed the same Shot sum and local-frame resolver.
 
 ## Production creation and lifecycle
 
@@ -85,7 +86,9 @@ Cancel closes the workflow without writes. Confirm persists the full
 `moduleId::variant::variantId` reference and initializes `content_json` only
 from the effective Runtime Input contract of that Variant. It does not copy the
 complete Module design payload and does not retain compatibility defaults for
-another Variant.
+another Variant. Its initial `duration_frames` is `1` before calculation for a
+calculated contract, or the module-declared `defaultDurationFrames` for an
+explicit contract.
 
 The resulting Production tree child is a concrete Screen/Module Instance. Its
 tree operations have instance scope:
