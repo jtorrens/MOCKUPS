@@ -688,9 +688,6 @@ internal sealed partial class SpikeDatabase
                     },
                     ["badgeSlot"] = new JsonObject
                     {
-                        ["showBadge"] = false,
-                        ["size"] = 16,
-                        ["iconToken"] = "media_mic",
                         ["presetId"] = DefaultComponentPresetId,
                         ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
                         ["overrides"] = new JsonObject(),
@@ -861,6 +858,16 @@ internal sealed partial class SpikeDatabase
             preview["badgeIconToken"] = "system_check";
             preview["badgeText"] = "1";
             preview["badgeSize"] = 20;
+            preview["badgeBackgroundPaletteColor"] = "blue";
+            preview["badgeContentPaletteColor"] = "gray_100";
+        }
+        if (componentType == "audio")
+        {
+            preview["showBadge"] = false;
+            preview["badgeContentMode"] = "icon";
+            preview["badgeIconToken"] = "media_mic";
+            preview["badgeText"] = "1";
+            preview["badgeSize"] = 16;
             preview["badgeBackgroundPaletteColor"] = "blue";
             preview["badgeContentPaletteColor"] = "gray_100";
         }
@@ -1775,6 +1782,13 @@ internal sealed partial class SpikeDatabase
                     "",
                     tableId: "actors",
                     resolvedJsonKey: "actor"),
+                ComponentInput("showBadge", "Show badge", "showBadge", "boolean", "false"),
+                ComponentInput("badgeContentMode", "Badge content", "badgeContentMode", "option", "icon", options: [new("icon", "Icon"), new("text", "Text")]),
+                ComponentInput("badgeIconToken", "Badge icon", "badgeIconToken", "icon", "media_mic"),
+                ComponentInput("badgeText", "Badge text", "badgeText", "text", "1"),
+                ComponentInput("badgeSize", "Badge size", "badgeSize", ValueKind.Integer, "16", minimum: 1, maximum: 512, increment: 1),
+                ComponentInput("badgeBackgroundPaletteColor", "Badge background", "badgeBackgroundPaletteColor", ValueKind.PaletteColorToken, "blue"),
+                ComponentInput("badgeContentPaletteColor", "Badge icon / text color", "badgeContentPaletteColor", ValueKind.PaletteColorToken, "gray_100"),
             ],
             "media" =>
             [
@@ -2104,6 +2118,7 @@ internal sealed partial class SpikeDatabase
                 SetComponentInputGroup(inputs, ["availableWidth"], "layout", "Layout", 10);
                 SetComponentInputGroup(inputs, ["isPlaying", "currentTimeSeconds", "durationSeconds"], "playback", "Playback", 20);
                 SetComponentInputGroup(inputs, ["actorId"], "identity", "Actor", 30);
+                SetComponentInputGroup(inputs, ["showBadge", "badgeContentMode", "badgeIconToken", "badgeText", "badgeSize", "badgeBackgroundPaletteColor", "badgeContentPaletteColor"], "badge", "Badge", 40);
                 break;
             case "media":
                 SetComponentInputGroup(inputs, ["mediaSource", "mediaType"], "source", "Source", 10);

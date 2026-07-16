@@ -166,9 +166,9 @@ internal static class EmbeddedComponentSlotCatalog
             ["audio", "avatarSlot"]),
         new(
             "component.audio.badge.editor",
-            "button",
+            "badge",
             "Badge",
-            "component.button",
+            "component.badge",
             ["audio", "badgeSlot"]),
         new(
             "component.media.surface.editor",

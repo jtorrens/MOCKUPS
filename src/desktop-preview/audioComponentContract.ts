@@ -1,5 +1,5 @@
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
-import type { ButtonDesignContract } from "./buttonComponentContract.js";
+import type { BadgeDesignContract } from "./badgeComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
 import type {
   AlignmentPlacementContract,
@@ -35,10 +35,6 @@ export interface AudioDesignContract {
     avatar?: AvatarDesignContract;
   };
   badgeSlot: {
-    showBadge: boolean;
-    iconToken: string;
-    placement: AlignmentPlacementContract;
-    size: number;
-    badge?: ButtonDesignContract;
+    badge?: BadgeDesignContract;
   };
 }

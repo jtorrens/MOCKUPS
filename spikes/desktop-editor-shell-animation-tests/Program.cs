@@ -890,6 +890,8 @@ static void ComponentStackSeedOpensAndRenders()
         var inputSession = new ComponentPreviewInputSession(database, () => refreshCount++);
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var resolvedPreview = DesignPreviewTestValues.Parse(resolvedPayload.DesignPreviewJson);
+        True(resolvedPreview["items"]?[1]?["alternatives"]?[0]?["inputs"]?["showBadge"]?.GetValue<bool>() == true);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",
@@ -899,6 +901,9 @@ static void ComponentStackSeedOpensAndRenders()
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
         var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "audio").First().Value;
+        var audioInputs = database.GetComponentPresetRuntimeInputs(childVariant);
+        True(audioInputs["showBadge"] is JsonValue);
+        Equal("icon", audioInputs["badgeContentMode"]?.GetValue<string>() ?? "");
         True(RuntimeInputFieldDefinitionFactory.Create(
             database,
             defaultVariant,
@@ -913,7 +918,7 @@ static void ComponentStackSeedOpensAndRenders()
                     ["id"] = "test_button_default",
                     ["presetId"] = childVariant,
                     ["overrides"] = new JsonObject(),
-                    ["inputs"] = database.GetComponentPresetRuntimeInputs(childVariant),
+                    ["inputs"] = audioInputs,
                     ["active"] = false,
                     ["behavior"] = "replace",
                     ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
@@ -970,6 +975,9 @@ static void ComponentStackSeedOpensAndRenders()
         runtimeContext.CommitFieldValue(database, "component.audio.padding", "inherited");
         Equal(2, runtimeOverrideChanges);
         var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
+        var badgeSlot = EmbeddedComponentSlotCatalog.Get("component.audio.badge.editor");
+        Equal("badge", badgeSlot.EmbeddedComponentType);
+        Equal("component.badge", badgeSlot.RecordClassId);
         var nestedRuntimeContext = runtimeContext.Nested(surfaceSlot);
         Equal(surfaceSlot.RecordClassId, nestedRuntimeContext.RecordClassId);
         Equal(surfaceSlot.EmbeddedComponentType, nestedRuntimeContext.ComponentType);
@@ -1047,6 +1055,8 @@ static void ComponentStackSeedOpensAndRenders()
         var populatedInputSession = new ComponentPreviewInputSession(database, () => { });
         populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
         var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", settings.ProjectId);
+        var populatedPreview = DesignPreviewTestValues.Parse(populatedPayload.DesignPreviewJson);
+        True(populatedPreview["items"]?[0]?["alternatives"]?[0]?["inputs"]?["showBadge"] is JsonValue);
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",

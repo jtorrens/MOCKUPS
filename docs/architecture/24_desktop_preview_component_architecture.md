@@ -214,7 +214,7 @@ Allowed responsibilities:
 
 Examples:
 
-- Audio resolver may know waveform, progress, avatar slot and button icon slot.
+- Audio resolver may know waveform, progress, avatar slot and Badge slot.
 - Avatar resolver may know label slot.
 - Status Bar resolver may know status icons and clock semantics.
 - Keyboard resolver may know key rows and key labels.
@@ -456,7 +456,8 @@ audio
 This means:
 
 - Audio owns an Avatar slot.
-- Audio owns a Button slot configured at runtime as icon-only.
+- Audio owns a Badge slot. Audio supplies its visibility and Icon/Text content through
+  runtime inputs while the selected Badge Variant owns its visual contract.
 - Avatar owns a Label slot.
 - Label keeps its own component identity.
 
@@ -480,6 +481,7 @@ Allowed:
 
 ```text
 Audio -> Avatar
+Audio -> Badge
 Avatar -> Label
 ```
 

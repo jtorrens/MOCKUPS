@@ -1,15 +1,13 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
-import { buttonComponentToRenderableAt } from "./buttonComponentRenderable.js";
+import { badgeComponentToRenderableAt } from "./badgeComponentRenderable.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   boundedCenterBox,
   numberToken,
-  placeChild,
   renderScale,
-  scalePlacement,
   selectedColor,
   translateRenderableNode,
   translateBox,
@@ -93,21 +91,11 @@ export function audioComponentToRenderable(
         height: avatarSize,
       }
     : undefined;
-  const badgeSurfaceSize = audio.badgeSlot.badge
-    ? audio.badgeSlot.size * scale
-    : 0;
-  const badgeBoxLocal = audio.badgeSlot.badge && avatarBoxLocal
-    ? placeChild(
-        avatarBoxLocal,
-        { width: badgeSurfaceSize, height: badgeSurfaceSize },
-        scalePlacement(audio.badgeSlot.placement, scale),
-      )
-    : undefined;
   const avatarNodeLocal = audio.avatarSlot.avatar && avatarBoxLocal
     ? avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBoxLocal)
     : undefined;
-  const badgeNodeLocal = audio.badgeSlot.badge && badgeBoxLocal
-    ? buttonComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBoxLocal)
+  const badgeNodeLocal = audio.badgeSlot.badge && avatarBoxLocal
+    ? badgeComponentToRenderableAt(payload, audio.badgeSlot.badge, avatarBoxLocal)
     : undefined;
   const childBoxes: RenderableBox[] = [
     playBoxLocal,
@@ -134,7 +122,6 @@ export function audioComponentToRenderable(
   const waveformBox = translateBox(waveformBoxLocal, origin);
   const textBox = translateBox(textBoxLocal, origin);
   const avatarBox = avatarBoxLocal ? translateBox(avatarBoxLocal, origin) : undefined;
-  const badgeBox = badgeBoxLocal ? translateBox(badgeBoxLocal, origin) : undefined;
   const progress = audio.playback.progress;
   const actualWaveformEnd =
     waveformBox.x + (barCount - 1) * (barWidth + waveformGap) + barWidth;
@@ -173,8 +160,8 @@ export function audioComponentToRenderable(
       },
     } satisfies RenderableNode;
   });
-  const badgeNode = audio.badgeSlot.badge && badgeBox
-    ? buttonComponentToRenderableAt(payload, audio.badgeSlot.badge, badgeBox)
+  const badgeNode = badgeNodeLocal
+    ? translateRenderableNode(badgeNodeLocal, origin)
     : undefined;
 
   return {
@@ -224,7 +211,7 @@ export function audioComponentToRenderable(
       ...(audio.avatarSlot.avatar && avatarBox
         ? [avatarComponentToRenderableAt(payload, audio.avatarSlot.avatar, avatarBox)]
         : []),
-      ...(audio.badgeSlot.badge && badgeBox
+      ...(badgeNode
         ? [
             {
               ...badgeNode!,

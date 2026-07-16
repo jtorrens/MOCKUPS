@@ -463,11 +463,8 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.audio.avatar.editor", "order": 30, "visible": true }
                 ] },
                 { "id": "audioBadge", "label": "Badge", "icon": "{{EditorIcons.SemanticAsset("Badge")}}", "order": 50, "visible": true, "fields": [
-                  { "id": "component.audio.badge.showBadge", "order": 10, "visible": true },
-                  { "id": "component.audio.badge.size", "order": 20, "visible": true },
-                  { "id": "component.audio.badge.iconToken", "order": 30, "visible": true },
-                  { "id": "component.audio.badge.placement", "order": 50, "visible": true },
-                  { "id": "component.audio.badge.editor", "order": 60, "visible": true }
+                  { "id": "component.audio.badge.editor", "order": 10, "visible": true },
+                  { "id": "component.audio.badge.placement", "order": 20, "visible": true }
                 ] }
               ]
             }

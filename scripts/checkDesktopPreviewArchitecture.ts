@@ -1990,8 +1990,8 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/audioComponentResolver.ts",
-  "componentPresetConfig(componentBaseConfigs, \"button\", badgeSlot.presetId)",
-  "audio badge preview must resolve the selected Button preset",
+  "componentPresetConfig(componentBaseConfigs, \"badge\", badgeSlot.presetId)",
+  "audio badge preview must resolve the selected Badge preset",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
@@ -2021,7 +2021,6 @@ assertContains(
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
   "component.audio.avatar.presetId",
-  "component.audio.badge.presetId",
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",

@@ -5,7 +5,7 @@ import {
 } from "./componentPreviewDefaults.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
+import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import {
   asRecord,
@@ -51,16 +51,16 @@ export function resolveAudioComponentFromRecords(
     "component.audio.avatar.showAvatar",
   );
   const showBadge = requiredBoolean(
-    badgeSlot,
+    inputs,
     "showBadge",
-    "component.audio.badge.showBadge",
+    "component.audio.input.showBadge",
   );
   const avatarConfig = mergeComponentDefaults(
     componentPresetConfig(componentBaseConfigs, "avatar", avatarSlot.presetId),
     asRecord(avatarSlot.overrides),
   );
   const badgeConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "button", badgeSlot.presetId),
+    componentPresetConfig(componentBaseConfigs, "badge", badgeSlot.presetId),
     asRecord(badgeSlot.overrides),
   );
   const surfaceConfig = mergeComponentDefaults(
@@ -184,37 +184,26 @@ export function resolveAudioComponentFromRecords(
         : undefined,
     },
     badgeSlot: {
-      showBadge,
-      iconToken: requiredString(
-        badgeSlot,
-        "iconToken",
-        "component.audio.badge.iconToken",
-      ),
-      placement: requiredPlacement(
-        badgeSlot,
-        "placement",
-        "component.audio.badge.placement",
-      ),
-      size: requiredNumber(badgeSlot, "size", "component.audio.badge.size"),
       badge: showBadge
-        ? resolveButtonComponentFromRecords(
+        ? {
+            ...resolveBadgeComponentFromRecords(
               badgeConfig,
               {
-                contentMode: "icon",
-                state: "normal",
-                iconToken: requiredString(badgeSlot, "iconToken", "component.audio.badge.iconToken"),
-                iconSizeToken: "theme.iconSizes.s",
-                textSizeToken: "theme.typography.sizes.s",
-                sampleText: "",
-                pushTrigger: false,
-                pushElapsedMs: 0,
-                showBadge: false,
-                badgeIconToken: "system_check",
-                badgeText: "1",
+                contentMode: requiredString(inputs, "badgeContentMode", "component.audio.input.badgeContentMode"),
+                iconToken: requiredString(inputs, "badgeIconToken", "component.audio.input.badgeIconToken"),
+                text: requiredString(inputs, "badgeText", "component.audio.input.badgeText"),
+                size: requiredNumber(inputs, "badgeSize", "component.audio.input.badgeSize"),
+                backgroundPaletteColor: requiredString(inputs, "badgeBackgroundPaletteColor", "component.audio.input.badgeBackgroundPaletteColor"),
+                contentPaletteColor: requiredString(inputs, "badgeContentPaletteColor", "component.audio.input.badgeContentPaletteColor"),
               },
-              componentBaseConfigs,
               "component.audio.badge",
-            )
+            ),
+            placement: requiredPlacement(
+              badgeSlot,
+              "placement",
+              "component.audio.badge.placement",
+            ),
+          }
         : undefined,
     },
   };

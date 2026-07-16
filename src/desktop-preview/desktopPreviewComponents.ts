@@ -129,7 +129,7 @@ export const desktopPreviewComponents = {
     contract: "./audioComponentContract",
     resolver: "./audioComponentResolver",
     renderable: "./audioComponentRenderable",
-    embeds: ["surface", "avatar", "button", "label"],
+    embeds: ["surface", "avatar", "badge", "label"],
   },
   textInputBar: {
     category: "system",
