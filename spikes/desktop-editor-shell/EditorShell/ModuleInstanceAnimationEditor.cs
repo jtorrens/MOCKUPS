@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
@@ -305,6 +306,16 @@ internal sealed class ModuleInstanceAnimationEditor
             RefreshVisuals();
         }
 
+        void PreviewDraggedFrame(int screenFrame)
+        {
+            currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
+            changingFrame = true;
+            slider.Value = TimelineFrame();
+            changingFrame = false;
+            frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
+            if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+        }
+
         void SaveAndRefresh()
         {
             var selectedKey = TargetKey(selected);
@@ -376,7 +387,18 @@ internal sealed class ModuleInstanceAnimationEditor
                 selected,
                 TimelineFrame(),
                 timelineDuration,
-                SetFrame);
+                SetFrame,
+                PreviewDraggedFrame,
+                (target, keyframe, destinationFrame) =>
+                {
+                    if (!document.TryMoveKeyframe(
+                        target.Track!.FieldId,
+                        target.Track.TargetId,
+                        keyframe.Frame,
+                        destinationFrame)) return false;
+                    SaveAndRefresh();
+                    return true;
+                });
             trackList.Children.Clear();
             foreach (var target in targets)
             {
@@ -711,7 +733,9 @@ internal sealed class ModuleInstanceAnimationEditor
         ResolvedAnimationTarget active,
         int currentOwnerFrame,
         int timelineDuration,
-        Action<int> setFrame)
+        Action<int> setFrame,
+        Action<int> previewFrame,
+        Func<ResolvedAnimationTarget, AnimationKeyframeView, int, bool> moveKeyframe)
     {
         var canvas = new Canvas
         {
@@ -766,27 +790,155 @@ internal sealed class ModuleInstanceAnimationEditor
                         (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame;
                     var isActive = ReferenceEquals(target, active);
                     var isCurrent = isActive && ownerKeyframe == currentOwnerFrame;
-                    var marker = new Button
+                    var glyph = new TextBlock
                     {
-                        Content = "◆",
+                        Text = "◆",
                         FontSize = 13,
-                        Width = 24,
-                        Height = 24,
-                        Padding = new Thickness(0),
-                        Background = Brushes.Transparent,
-                        BorderBrush = Brushes.Transparent,
                         Foreground = isCurrent
                             ? EditorAnimationVisuals.CurrentKeyframeBrush
                             : isActive
                                 ? EditorAnimationVisuals.ActiveTrackBrush
                                 : EditorAnimationVisuals.OtherKeyframeBrush,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
                     };
-                    marker.Click += (_, _) => setFrame(ownerKeyframe);
-                    Canvas.SetLeft(marker, Math.Max(0, Math.Min(
+                    var canDrag = keyframe.Frame > 0 && target.Target is not null;
+                    var marker = new Border
+                    {
+                        Width = 24,
+                        Height = 24,
+                        Background = Brushes.Transparent,
+                        Child = glyph,
+                        Focusable = canDrag,
+                        Cursor = new Cursor(canDrag
+                            ? StandardCursorType.SizeWestEast
+                            : StandardCursorType.Arrow),
+                    };
+                    var originalLeft = Math.Max(0, Math.Min(
                         width - 24,
-                        ownerKeyframe / (double)markerScale * (width - 24))));
+                        ownerKeyframe / (double)markerScale * (width - 24)));
+                    Canvas.SetLeft(marker, originalLeft);
                     Canvas.SetTop(marker, 3);
                     canvas.Children.Add(marker);
+                    var dragging = false;
+                    var moved = false;
+                    var released = false;
+                    var validDestination = false;
+                    var candidateLocalFrame = keyframe.Frame;
+                    var candidateScreenFrame = ownerKeyframe;
+                    var pressPosition = default(Point);
+                    IPointer? capturedPointer = null;
+
+                    void Restore()
+                    {
+                        dragging = false;
+                        Canvas.SetLeft(marker, originalLeft);
+                        glyph.Foreground = isCurrent
+                            ? EditorAnimationVisuals.CurrentKeyframeBrush
+                            : isActive
+                                ? EditorAnimationVisuals.ActiveTrackBrush
+                                : EditorAnimationVisuals.OtherKeyframeBrush;
+                        previewFrame(ownerKeyframe);
+                    }
+
+                    marker.PointerPressed += (_, args) =>
+                    {
+                        if (!args.GetCurrentPoint(marker).Properties.IsLeftButtonPressed) return;
+                        if (!canDrag)
+                        {
+                            setFrame(ownerKeyframe);
+                            args.Handled = true;
+                            return;
+                        }
+                        released = false;
+                        dragging = true;
+                        moved = false;
+                        validDestination = false;
+                        capturedPointer = args.Pointer;
+                        pressPosition = args.GetPosition(canvas);
+                        marker.Focus();
+                        args.Pointer.Capture(marker);
+                        args.Handled = true;
+                    };
+                    marker.PointerMoved += (_, args) =>
+                    {
+                        if (!dragging) return;
+                        var position = args.GetPosition(canvas);
+                        if (!moved && Math.Abs(position.X - pressPosition.X) < 2) return;
+                        moved = true;
+                        var rawLeft = originalLeft + position.X - pressPosition.X;
+                        var laneWidth = Math.Max(1, width - marker.Width);
+                        var rawScreenFrame = Math.Clamp(rawLeft / laneWidth * markerScale, 0, markerScale);
+                        var otherScreenFrames = targets
+                            .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
+                                .Where((candidateKeyframe) => candidateKeyframe.Enabled
+                                    && candidateKeyframe.Id != keyframe.Id)
+                                .Select((candidateKeyframe) => candidate.Target?.ScreenFrameForOwnerFrame(
+                                    (candidate.Target?.OwnerFrameOrigin ?? 0) + candidateKeyframe.Frame)
+                                    ?? candidateKeyframe.Frame))
+                            .ToList();
+                        var snappedScreenFrame = TimelineKeyframeDrag.ResolveScreenFrame(
+                            rawScreenFrame,
+                            args.KeyModifiers.HasFlag(KeyModifiers.Alt),
+                            markerScale,
+                            laneWidth,
+                            otherScreenFrames);
+                        var ownerFrame = target.Target?.OwnerFrameForScreenFrame(snappedScreenFrame)
+                            ?? snappedScreenFrame;
+                        candidateLocalFrame = (int)Math.Round(
+                            ownerFrame - (target.Target?.OwnerFrameOrigin ?? 0),
+                            MidpointRounding.AwayFromZero);
+                        var isOriginalDestination = candidateLocalFrame == keyframe.Frame;
+                        var isOccupied = target.Track!.Keyframes.Any((candidate) =>
+                            candidate.Id != keyframe.Id && candidate.Frame == candidateLocalFrame);
+                        validDestination = candidateLocalFrame > 0
+                            && !isOriginalDestination
+                            && !isOccupied;
+                        candidateScreenFrame = target.Target?.ScreenFrameForOwnerFrame(
+                            (target.Target?.OwnerFrameOrigin ?? 0) + Math.Max(0, candidateLocalFrame))
+                            ?? snappedScreenFrame;
+                        Canvas.SetLeft(marker, Math.Clamp(
+                            candidateScreenFrame / (double)markerScale * laneWidth,
+                            0,
+                            laneWidth));
+                        glyph.Foreground = validDestination
+                            ? EditorAnimationVisuals.CurrentKeyframeBrush
+                            : isOriginalDestination
+                                ? EditorAnimationVisuals.ActiveTrackBrush
+                                : Brushes.IndianRed;
+                        previewFrame(candidateScreenFrame);
+                        args.Handled = true;
+                    };
+                    marker.PointerReleased += (_, args) =>
+                    {
+                        if (!dragging) return;
+                        released = true;
+                        dragging = false;
+                        args.Pointer.Capture(null);
+                        capturedPointer = null;
+                        args.Handled = true;
+                        if (!moved)
+                        {
+                            setFrame(ownerKeyframe);
+                            return;
+                        }
+                        if (validDestination && moveKeyframe(target, keyframe, candidateLocalFrame)) return;
+                        Restore();
+                    };
+                    marker.PointerCaptureLost += (_, _) =>
+                    {
+                        if (!released && dragging) Restore();
+                        released = false;
+                    };
+                    marker.KeyDown += (_, args) =>
+                    {
+                        if (args.Key != Key.Escape || !dragging) return;
+                        released = true;
+                        capturedPointer?.Capture(null);
+                        capturedPointer = null;
+                        Restore();
+                        args.Handled = true;
+                    };
                 }
             }
         }
@@ -819,7 +971,9 @@ internal sealed class ModuleInstanceAnimationEditor
                 RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, "", themeTokens),
                 RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, "", themeTokens),
                 (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                    preview, preview, animation, "", ownerFrame, themeTokens)));
+                    preview, preview, animation, "", ownerFrame, themeTokens),
+                (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                    preview, preview, animation, "", screenFrame, themeTokens)));
         foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(preview, config))
         {
             var items = DesignPreviewTestValues.CollectionItems(preview, collection);
@@ -841,7 +995,9 @@ internal sealed class ModuleInstanceAnimationEditor
                         RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens),
                         RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens),
                         (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                            preview, preview, animation, targetId, ownerFrame, themeTokens)));
+                            preview, preview, animation, targetId, ownerFrame, themeTokens),
+                        (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                            preview, preview, animation, targetId, screenFrame, themeTokens)));
                 }
                 if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
                     && item[collection.ItemRuntimeContractJsonKey] is JsonObject runtimeContract)
@@ -859,7 +1015,9 @@ internal sealed class ModuleInstanceAnimationEditor
                             RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens),
                             RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens),
                             (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                                preview, preview, animation, targetId, ownerFrame, themeTokens)));
+                                preview, preview, animation, targetId, ownerFrame, themeTokens),
+                            (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                                preview, preview, animation, targetId, screenFrame, themeTokens)));
                     }
                 }
             }
@@ -914,7 +1072,8 @@ internal sealed class ModuleInstanceAnimationEditor
         string BaseValue,
         double OwnerFrameOrigin,
         int ReferenceDurationFrames,
-        Func<double, int> ScreenFrameForOwnerFrame);
+        Func<double, int> ScreenFrameForOwnerFrame,
+        Func<int, double> OwnerFrameForScreenFrame);
 
     private sealed record ResolvedAnimationTarget(
         AnimationTarget? Target,

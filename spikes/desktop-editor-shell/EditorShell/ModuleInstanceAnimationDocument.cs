@@ -170,6 +170,27 @@ internal sealed class ModuleInstanceAnimationDocument
         if (keyframe is not null) keyframes!.Remove(keyframe);
     }
 
+    public bool TryMoveKeyframe(string fieldId, string targetId, int sourceFrame, int destinationFrame)
+    {
+        if (sourceFrame == 0 || destinationFrame < 0 || sourceFrame == destinationFrame) return false;
+        var track = TrackObject(fieldId, targetId);
+        var keyframes = track?["keyframes"] as JsonArray;
+        if (keyframes is null) return false;
+        var source = keyframes.OfType<JsonObject>()
+            .FirstOrDefault((candidate) => candidate["frame"]?.GetValue<int>() == sourceFrame);
+        if (source is null || keyframes.OfType<JsonObject>().Any(
+            (candidate) => candidate["frame"]?.GetValue<int>() == destinationFrame)) return false;
+
+        source["frame"] = destinationFrame;
+        var ordered = keyframes.OfType<JsonObject>()
+            .OrderBy((keyframe) => keyframe["frame"]?.GetValue<int>() ?? 0)
+            .ThenBy((keyframe) => keyframe["id"]?.GetValue<string>() ?? "", StringComparer.Ordinal)
+            .ToList();
+        keyframes.Clear();
+        foreach (var keyframe in ordered) keyframes.Add(keyframe);
+        return true;
+    }
+
     public string ToJson() => _root.ToJsonString();
 
     private JsonObject? TrackObject(string fieldId, string targetId) =>

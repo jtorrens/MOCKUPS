@@ -14,6 +14,8 @@ var tests = new (string Name, Action Run)[]
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
+    ("keyframe moves preserve payload and protect frame zero", KeyframeMovesPreservePayloadAndProtectFrameZero),
+    ("keyframe drag snaps to the Screen authoring grid", KeyframeDragSnapsToScreenGrid),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
     ("Screen duration policy distinguishes calculated and explicit ownership", ScreenDurationPolicyIsContractOwned),
@@ -512,6 +514,35 @@ static void KeyframeUpsertUpdatesAndOrders()
     SequenceEqual(new[] { 0, 4, 10 }, frames.Select(keyframe => keyframe.Frame));
     Equal(5, frames.Single(keyframe => keyframe.Frame == 4).Value!.GetValue<int>());
     Equal("linear", frames.Single(keyframe => keyframe.Frame == 4).Interpolation);
+}
+
+static void KeyframeMovesPreservePayloadAndProtectFrameZero()
+{
+    var document = EmptyDocument();
+    document.AddTrack("value", "slot", JsonValue.Create("initial")!, "hold");
+    document.UpsertKeyframe("value", "slot", 10, JsonValue.Create("moved")!, "easeInOut");
+    var before = Required(document.Track("value", "slot")).Keyframes.Single((keyframe) => keyframe.Frame == 10);
+
+    True(document.TryMoveKeyframe("value", "slot", 10, 15));
+    var after = Required(document.Track("value", "slot")).Keyframes.Single((keyframe) => keyframe.Frame == 15);
+    Equal(before.Id, after.Id);
+    Equal("moved", after.Value!.GetValue<string>());
+    Equal("easeInOut", after.Interpolation);
+    True(after.Enabled);
+    SequenceEqual([0, 15], Required(document.Track("value", "slot")).Keyframes.Select((keyframe) => keyframe.Frame));
+    document.UpsertKeyframe("value", "slot", 20, JsonValue.Create("occupied")!, "hold");
+    True(!document.TryMoveKeyframe("value", "slot", 0, 5));
+    True(!document.TryMoveKeyframe("value", "slot", 15, 0));
+    True(!document.TryMoveKeyframe("value", "slot", 15, 20));
+    True(!document.TryMoveKeyframe("value", "slot", 15, 15));
+}
+
+static void KeyframeDragSnapsToScreenGrid()
+{
+    Equal(10, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, 100, 500, []));
+    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: true, 100, 500, []));
+    Equal(13, TimelineKeyframeDrag.ResolveScreenFrame(12.8, precise: false, 100, 500, [13]));
+    Equal(100, TimelineKeyframeDrag.ResolveScreenFrame(99.9, precise: false, 100, 500, []));
 }
 
 static void KeyframesAndTracksCanBeRemoved()
