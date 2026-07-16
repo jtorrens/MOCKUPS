@@ -1163,7 +1163,7 @@ internal sealed partial class SpikeDatabase
               "label": "Content Stack",
               "subtitle": "Runtime-owned Lock Screen content",
               "icon": "{{EditorIcons.Layout}}",
-              "order": 20,
+              "order": 30,
               "visible": true,
               "defaultOpen": false,
               "groups": [
@@ -1179,7 +1179,7 @@ internal sealed partial class SpikeDatabase
               "label": "Status Bar",
               "subtitle": "Lock Screen system variant",
               "icon": "{{EditorIcons.Status}}",
-              "order": 30,
+              "order": 20,
               "visible": true,
               "defaultOpen": false,
               "groups": [

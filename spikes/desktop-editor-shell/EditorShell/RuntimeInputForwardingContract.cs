@@ -36,7 +36,7 @@ internal static class RuntimeInputForwardingContract
             if (next["collection"] is JsonObject collection)
             {
                 var projected = ProjectCollectionValue(container[targetKey], next["projection"] as JsonObject);
-                effective[jsonKey] = projected;
+                effective[jsonKey] ??= projected;
                 var runtimeCollection = collection.DeepClone() as JsonObject ?? new JsonObject();
                 runtimeCollection["jsonKey"] = jsonKey;
                 runtimeCollection["sourceCollectionJsonKey"] = jsonKey;

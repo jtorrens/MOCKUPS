@@ -84,8 +84,10 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var owner = ResolveOwner(node);
         var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-        var preview = _applyTransientTestValues(owner.Node, persistedPreview);
         var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
+        var preview = RuntimeInputForwardingContract.EffectivePreview(
+            _applyTransientTestValues(owner.Node, persistedPreview),
+            config);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
         var actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
