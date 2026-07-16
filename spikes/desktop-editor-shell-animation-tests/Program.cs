@@ -307,6 +307,22 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
                 && node.Name == "Default");
         var settings = database.GetModuleVariantSettings(moduleVariant);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+        var authoredItems = config["lockScreen"]?["stackInputs"]?["items"] as JsonArray
+            ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
+        var authoredStates = authoredItems[0]?["alternatives"] as JsonArray
+            ?? throw new InvalidOperationException("Missing Lock Screen Stack states.");
+        if (authoredStates.Count < 2)
+        {
+            var added = authoredStates[0]?.DeepClone() as JsonObject
+                ?? throw new InvalidOperationException("Missing Lock Screen default State.");
+            added["id"] = $"{authoredItems[0]?["id"]?.GetValue<string>()}_test_state";
+            added["active"] = false;
+            added["behavior"] = "replace";
+            authoredStates.Add(added);
+            database.UpdateModuleVariantField(moduleVariant, "module.lockScreen.stackItems", authoredItems.ToJsonString());
+            settings = database.GetModuleVariantSettings(moduleVariant);
+            config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+        }
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
@@ -315,8 +331,32 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var items = DesignPreviewTestValues.CollectionItems(effective, slots);
         Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
         var actions = ComponentPreviewActions.Read(effective);
-        True(actions.Any((action) => action.CollectionJsonKey == slots.JsonKey
-            && action.TargetInputId == "runtimeStateId"));
+        var stateAction = actions.Single((action) => action.CollectionJsonKey == slots.JsonKey
+            && action.TargetInputId == "runtimeStateId"
+            && action.CollectionItemId == items[0]?["id"]?.GetValue<string>());
+
+        var theme = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+            .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var payload = Required(DesignPreviewPayloadFactory.Create(database, moduleVariant, theme.Id));
+        var session = new ComponentPreviewInputSession(database, () => { });
+        session.UpdateForPayload(payload, settings.ProjectId);
+        var deletedStateId = items[0]?["alternatives"]?[1]?["id"]?.GetValue<string>() ?? "";
+        True(session.TriggerAction(stateAction.Id, deletedStateId));
+        var selected = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var selectedPreview = DesignPreviewTestValues.Parse(selected.DesignPreviewJson);
+        Equal(deletedStateId, selectedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
+
+        var stackItems = config["lockScreen"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
+            ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
+        (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
+        database.UpdateModuleVariantField(moduleVariant, "module.lockScreen.stackItems", stackItems.ToJsonString());
+        var updatedPayload = Required(DesignPreviewPayloadFactory.Create(database, moduleVariant, theme.Id));
+        session.UpdateForPayload(updatedPayload, settings.ProjectId);
+        var normalized = session.ApplyInputs(updatedPayload, "light", settings.ProjectId);
+        var normalizedPreview = DesignPreviewTestValues.Parse(normalized.DesignPreviewJson);
+        var firstRemainingStateId = normalizedPreview[slots.JsonKey]?[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "";
+        Equal(firstRemainingStateId, normalizedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
+        True(firstRemainingStateId != deletedStateId);
     }
     finally
     {

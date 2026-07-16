@@ -58,7 +58,10 @@ explicit empty default state rather than an invalid empty state collection.
 Changing or deleting a component uses the shared forwarded-input confirmation.
 Nested animatable fields use their own stable item id as v2 `targetId`. Test
 Values never show animation/Forward affordances that only make sense at an
-authoring boundary.
+authoring boundary. When a State is removed, the generic Test Values session
+invalidates any option action that targeted its retired id and selects the first
+remaining State before producing the next payload; the resolver keeps rejecting
+unknown state ids.
 
 ## Layout
 

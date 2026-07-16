@@ -579,6 +579,47 @@ internal sealed class ComponentPreviewInputSession
                 };
             }
         }
+        NormalizeCollectionOptionActionTargets(preview);
+    }
+
+    private void NormalizeCollectionOptionActionTargets(JsonObject preview)
+    {
+        var collections = ReadRuntimeCollections(preview, _config)
+            .ToDictionary((collection) => collection.JsonKey, StringComparer.Ordinal);
+        foreach (var action in _actions.Where((candidate) =>
+                     candidate.IsCollectionItemAction
+                     && candidate.TargetMode == ComponentPreviewActionTargetMode.Option
+                     && !string.IsNullOrWhiteSpace(candidate.TargetInputId)))
+        {
+            if (!collections.TryGetValue(action.CollectionJsonKey, out var collection)) continue;
+            var input = collection.Fields.FirstOrDefault((field) =>
+                field.JsonKey.Equals(action.TargetInputId, StringComparison.Ordinal));
+            if (input is null || string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)) continue;
+            var item = (preview[collection.JsonKey] as JsonArray)?.OfType<JsonObject>()
+                .FirstOrDefault((candidate) =>
+                    candidate["id"] is JsonValue value
+                    && value.TryGetValue<string>(out var id)
+                    && id.Equals(action.CollectionItemId, StringComparison.Ordinal));
+            var validValues = (item?[input.OptionsSourceCollectionJsonKey] as JsonArray)?.OfType<JsonObject>()
+                .Select((candidate) => candidate[input.OptionsSourceValueJsonKey]?.GetValue<string>() ?? "")
+                .Where((value) => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .ToList() ?? [];
+            var targetKey = ActionTargetStorageKey(action);
+            var current = _values.GetValueOrDefault(targetKey, "");
+            if (validValues.Contains(current)) continue;
+
+            StopPlayback();
+            var replacement = validValues.FirstOrDefault() ?? "";
+            _values[targetKey] = replacement;
+            _values[ActionTargetFromKey(action)] = replacement;
+            _values[ActionStateKey(action)] = "false";
+            _values[ActionTimeKey(action)] = "0";
+            _actionSnapshots.Remove(ActionSnapshotKey(action.Id));
+            _playbackSecondsByActionId.Remove(action.Id);
+            if (_activeActionId == action.Id) _activeActionId = "";
+            if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
+        }
     }
 
     private void EnsureRecordReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
