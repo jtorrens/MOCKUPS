@@ -1938,6 +1938,19 @@ static void LockScreenComposesRuntimeStack()
                 .Contains("_password::preset::", StringComparison.Ordinal));
         var passwordSlotId = passwordState.Slot["id"]?.GetValue<string>() ?? "";
         var passwordStateId = passwordState.State["id"]?.GetValue<string>() ?? "";
+        var instancePreview = DesignPreviewTestValues.Parse(
+            database.GetModuleInstanceRuntimePreviewJson(lockScreenInstance.Id));
+        var stateInputsCollection = ComponentPreviewInputSession
+            .ReadRuntimeCollections(instancePreview, instanceVariantConfig)
+            .Single((collection) => collection.Id == "stackStateInputs");
+        var projectedPasswordState = DesignPreviewTestValues
+            .CollectionItems(instancePreview, stateInputsCollection)
+            .Single((state) => state["id"]?.GetValue<string>() == passwordStateId);
+        var projectedPasswordInputs = projectedPasswordState["inputs"] as JsonObject
+            ?? throw new InvalidOperationException("Missing projected Password runtime inputs.");
+        var passwordEntryTrigger = ComponentPreviewInputSession
+            .ReadRuntimeInputs(projectedPasswordInputs, new JsonObject())
+            .Single((input) => input.Label == "Enter password" && input.ActionOnly);
         var instanceAnimation = new ModuleInstanceAnimationDocument(
             database.GetModuleInstanceSettings(lockScreenInstance.Id).AnimationJson);
         if (!instanceAnimation.HasTrack("runtimeStateId", passwordSlotId))
@@ -1957,19 +1970,50 @@ static void LockScreenComposesRuntimeStack()
             24,
             JsonValue.Create(passwordStateId)!,
             "hold");
+        if (!instanceAnimation.HasTrack(passwordEntryTrigger.Id, passwordStateId))
+        {
+            instanceAnimation.AddTrack(
+                passwordEntryTrigger.Id,
+                passwordStateId,
+                JsonValue.Create(false)!,
+                "hold");
+        }
+        instanceAnimation.UpsertKeyframe(
+            passwordEntryTrigger.Id,
+            passwordStateId,
+            4,
+            JsonValue.Create(true)!,
+            "hold");
         database.UpdateModuleInstanceAnimationJson(lockScreenInstance.Id, instanceAnimation.ToJson());
         var passwordFramePayload = Required(DesignPreviewPayloadFactory.Create(
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 40));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 30));
         var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",
             false,
             passwordFramePayload).GetAwaiter().GetResult();
-        True(!passwordFrameHtml.Contains("preview-error", StringComparison.Ordinal));
-        True(passwordFrameHtml.Contains("Enter password", StringComparison.Ordinal));
+        if (passwordFrameHtml.Contains("preview-error", StringComparison.Ordinal))
+            throw new InvalidOperationException("Password transition frame contains a preview error.");
+        var completedPasswordPayload = Required(DesignPreviewPayloadFactory.Create(
+            database,
+            lockScreenInstance,
+            theme.Id,
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 50));
+        var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            completedPasswordPayload).GetAwaiter().GetResult();
+        if (completedPasswordHtml.Contains("preview-error", StringComparison.Ordinal))
+            throw new InvalidOperationException("Completed Password frame contains a preview error.");
+        if (!completedPasswordHtml.Contains("Password correct", StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                $"Completed Password frame does not contain the correct-password state " +
+                $"(initial={completedPasswordHtml.Contains("Enter password", StringComparison.Ordinal)}, " +
+                $"incorrect={completedPasswordHtml.Contains("Password incorrect", StringComparison.Ordinal)}).");
 
         var payload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
         var session = new ComponentPreviewInputSession(database, () => { });

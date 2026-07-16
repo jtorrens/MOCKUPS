@@ -384,7 +384,12 @@ does not store a simulated button press: it exposes the promoted play field as
 an animatable property at its declared nested owner. The animation editor
 authors a v2 track for that field, and the common owner timeline derives the
 action's frame clock before the component resolver runs. The clock field itself
-is hidden.
+is hidden. Recursive Forward metadata preserves the promoted stable `fieldId`
+and its concrete child JSON key through this resolution boundary. Thus an
+action nested in a State remains addressed by `(forwarded fieldId, stable State
+id)`, while the resolved child component receives its ordinary local runtime
+shape. This mapping is declarative and generic; Stack, Lock Screen, Password,
+the bridge and the renderer contain no special translation rule.
 
 ## 9. Requested-frame transition resolution
 

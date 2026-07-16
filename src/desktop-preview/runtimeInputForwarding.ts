@@ -1,6 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 
 const storageKey = "$forwardedInputs";
+const runtimeFieldIdsKey = "__runtimeFieldIds";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -48,6 +49,14 @@ function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
       if (!runtimeOwner) {
         throw new Error(`Missing forwarded runtime value ${rawDefinition.jsonKey}`);
       }
+      if (typeof rawDefinition.id !== "string" || !rawDefinition.id) {
+        throw new Error(`Forwarded runtime input '${targetKey}' has no stable field id`);
+      }
+      const runtimeFieldIds = isRecord(node[runtimeFieldIdsKey])
+        ? node[runtimeFieldIdsKey] as JsonRecord
+        : {};
+      runtimeFieldIds[targetKey] = rawDefinition.id;
+      node[runtimeFieldIdsKey] = runtimeFieldIds;
       node[targetKey] = runtimeOwner[rawDefinition.jsonKey as string];
       if (
         typeof rawDefinition.resolvedJsonKey === "string" &&

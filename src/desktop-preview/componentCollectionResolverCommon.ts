@@ -1,9 +1,10 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, optionalBoolean, optionalNumber, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
+import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -66,7 +67,7 @@ export function resolveComponentCollectionItem(
       ? presence.sourceKeyframeFrame + exitDurationFrames
       : undefined;
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
-    const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame);
+    const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame, themeTokens, payload.frameRate);
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
     const presetReference = requiredString(item, "presetId", `${itemPath}.presetId`);
     const componentType = presetTypes[presetReference];
@@ -111,55 +112,99 @@ function resolveAnimatedInputs(
   inputs: Record<string, unknown>,
   targetId: string,
   screenFrame: number,
+  themeTokens: Record<string, unknown>,
+  frameRate: number,
 ) {
+  const definitions = Array.isArray(inputs.inputs) ? inputs.inputs.map(asRecord) : [];
+  const runtimeFieldIds = asRecord(inputs.__runtimeFieldIds);
+  const declaredFields = definitions.flatMap((definition) => {
+    const jsonKey = optionalString(definition, "jsonKey");
+    if (!jsonKey || !Object.hasOwn(inputs, jsonKey)) return [];
+    return [{
+      definition,
+      jsonKey,
+      fieldId: optionalString(runtimeFieldIds, jsonKey) || optionalString(definition, "id") || jsonKey,
+    }];
+  });
+  const declaredKeys = new Set(declaredFields.map((field) => field.jsonKey));
+  const fields = [
+    ...declaredFields,
+    ...Object.keys(inputs)
+      .filter((jsonKey) => !declaredKeys.has(jsonKey)
+        && jsonKey !== "inputs"
+        && jsonKey !== "actions"
+        && jsonKey !== "__runtimeFieldIds")
+      .map((jsonKey) => ({
+        definition: {},
+        jsonKey,
+        fieldId: optionalString(runtimeFieldIds, jsonKey) || jsonKey,
+      })),
+  ];
   const localFrame = (fieldId: string, frame = screenFrame) => timeline.ownsTarget(targetId)
     ? Math.floor(timeline.localFrame(fieldId, targetId, frame))
     : frame;
-  const resolved = Object.fromEntries(Object.entries(inputs).map(([fieldId, value]) => [
-    fieldId,
-    resolveParameterAnimation(animation, fieldId, targetId, localFrame(fieldId), value).value,
-  ]));
-  const sourceFrames = Object.keys(inputs).flatMap((fieldId) => {
+  const resolved: Record<string, unknown> = { ...inputs };
+  for (const field of fields) {
+    resolved[field.jsonKey] = resolveParameterAnimation(
+      animation,
+      field.fieldId,
+      targetId,
+      localFrame(field.fieldId),
+      inputs[field.jsonKey],
+    ).value;
+  }
+  resolveAnimatedActions(
+    resolved,
+    definitions,
+    runtimeFieldIds,
+    timeline,
+    animation,
+    targetId,
+    screenFrame,
+    themeTokens,
+    frameRate,
+  );
+  const sourceFrames = fields.flatMap((field) => {
     const source = resolveParameterAnimation(
       animation,
-      fieldId,
+      field.fieldId,
       targetId,
-      localFrame(fieldId),
-      inputs[fieldId],
+      localFrame(field.fieldId),
+      inputs[field.jsonKey],
     ).sourceKeyframeFrame;
-    return source === undefined || source <= 0 ? [] : [timeline.screenFrame(fieldId, targetId, source)];
+    return source === undefined || source <= 0 ? [] : [timeline.screenFrame(field.fieldId, targetId, source)];
   });
   const changeFrame = sourceFrames.length ? Math.max(...sourceFrames) : undefined;
   if (changeFrame === undefined) return { values: resolved, changeFrame, previousValues: undefined };
-  const previousValues = Object.fromEntries(Object.entries(inputs).map(([fieldId, value]) => [
-    fieldId,
-    resolveParameterAnimation(
+  const previousValues: Record<string, unknown> = { ...inputs };
+  for (const field of fields) {
+    previousValues[field.jsonKey] = resolveParameterAnimation(
       animation,
-      fieldId,
+      field.fieldId,
       targetId,
-      localFrame(fieldId, Math.max(0, changeFrame - 1)),
-      value,
-    ).value,
-  ]));
-  const transitionValues = Object.fromEntries(Object.keys(inputs).flatMap((fieldId) => {
+      localFrame(field.fieldId, Math.max(0, changeFrame - 1)),
+      inputs[field.jsonKey],
+    ).value;
+  }
+  const transitionValues = Object.fromEntries(fields.flatMap((field) => {
     const sourceLocalFrame = resolveParameterAnimation(
       animation,
-      fieldId,
+      field.fieldId,
       targetId,
-      localFrame(fieldId),
-      inputs[fieldId],
+      localFrame(field.fieldId),
+      inputs[field.jsonKey],
     ).sourceKeyframeFrame;
     const sourceFrame = sourceLocalFrame === undefined
       ? undefined
-      : timeline.screenFrame(fieldId, targetId, sourceLocalFrame);
+      : timeline.screenFrame(field.fieldId, targetId, sourceLocalFrame);
     return sourceFrame === undefined || sourceFrame <= 0
       ? []
-      : [[fieldId, { sourceFrame, previousValue: resolveParameterAnimation(
+      : [[field.jsonKey, { sourceFrame, previousValue: resolveParameterAnimation(
           animation,
-          fieldId,
+          field.fieldId,
           targetId,
-          localFrame(fieldId, Math.max(0, sourceFrame - 1)),
-          inputs[fieldId],
+          localFrame(field.fieldId, Math.max(0, sourceFrame - 1)),
+          inputs[field.jsonKey],
         ).value }]];
   }));
   return {
@@ -167,4 +212,98 @@ function resolveAnimatedInputs(
     changeFrame,
     previousValues,
   };
+}
+
+function resolveAnimatedActions(
+  values: Record<string, unknown>,
+  definitions: Record<string, unknown>[],
+  runtimeFieldIds: Record<string, unknown>,
+  timeline: RuntimeOwnerTimeline,
+  animation: Record<string, unknown>,
+  targetId: string,
+  screenFrame: number,
+  themeTokens: Record<string, unknown>,
+  frameRate: number,
+) {
+  const actions = Array.isArray(values.actions) ? values.actions.map(asRecord) : [];
+  for (const action of actions) {
+    const playJsonKey = optionalString(action, "playInputId");
+    const timeJsonKey = optionalString(action, "timeJsonKey");
+    if (!playJsonKey || !timeJsonKey) continue;
+    const playDefinition = definitions.find((definition) => optionalString(definition, "jsonKey") === playJsonKey);
+    const playFieldId = optionalString(runtimeFieldIds, playJsonKey)
+      || optionalString(action, "playFieldId")
+      || optionalString(playDefinition ?? {}, "id")
+      || playJsonKey;
+    const ownerFrame = timeline.ownsTarget(targetId)
+      ? Math.floor(timeline.localFrame(playFieldId, targetId, screenFrame))
+      : screenFrame;
+    const resolvedPlay = resolveParameterAnimation(
+      animation,
+      playFieldId,
+      targetId,
+      ownerFrame,
+      values[playJsonKey],
+    );
+    if (!resolvedPlay.animated) continue;
+    if (resolvedPlay.value !== true || resolvedPlay.sourceKeyframeFrame === undefined) {
+      values[playJsonKey] = false;
+      values[timeJsonKey] = 0;
+      continue;
+    }
+    const durationFrames = actionDurationFrames(action, values, definitions, themeTokens, frameRate);
+    const elapsedFrames = Math.max(0, ownerFrame - resolvedPlay.sourceKeyframeFrame);
+    const completion = optionalString(action, "completionBehavior");
+    if (completion !== "reset" && completion !== "holdFinal") {
+      throw new Error(`Missing or unknown runtime action completionBehavior '${completion}'`);
+    }
+    if (completion === "reset" && elapsedFrames >= durationFrames) {
+      values[playJsonKey] = false;
+      values[timeJsonKey] = 0;
+      continue;
+    }
+    values[playJsonKey] = true;
+    values[timeJsonKey] = actionTimeValue(
+      Math.min(elapsedFrames, durationFrames),
+      optionalString(action, "timeUnit"),
+      frameRate,
+    );
+  }
+}
+
+function actionDurationFrames(
+  action: Record<string, unknown>,
+  values: Record<string, unknown>,
+  definitions: Record<string, unknown>[],
+  themeTokens: Record<string, unknown>,
+  frameRate: number,
+) {
+  const timingId = optionalString(action, "durationBehaviorTimingInputId");
+  if (timingId) {
+    const timing = definitions.find((definition) => optionalString(definition, "id") === timingId);
+    if (!timing) throw new Error(`Runtime action references missing BehaviorTiming '${timingId}'`);
+    return Math.max(1, resolveBehaviorTimingFrames(values, timing, definitions, themeTokens));
+  }
+  const durationInputId = optionalString(action, "durationInputId");
+  if (durationInputId) {
+    const definition = definitions.find((candidate) => optionalString(candidate, "id") === durationInputId);
+    if (!definition) throw new Error(`Runtime action references missing duration input '${durationInputId}'`);
+    const duration = Math.max(0, Number(values[optionalString(definition, "jsonKey")]) || 0);
+    return Math.max(1, actionFrames(duration, optionalString(action, "timeUnit"), frameRate));
+  }
+  const durationSeconds = Math.max(0, optionalNumber(action, "durationSeconds", 0));
+  if (durationSeconds > 0) return Math.max(1, Math.round(durationSeconds * Math.max(1, frameRate)));
+  throw new Error(`Runtime action '${optionalString(action, "id")}' has no finite duration contract`);
+}
+
+function actionFrames(value: number, timeUnit: string, frameRate: number) {
+  if (timeUnit === "frames") return Math.round(value);
+  if (timeUnit === "milliseconds") return Math.round(value / 1000 * Math.max(1, frameRate));
+  return Math.round(value * Math.max(1, frameRate));
+}
+
+function actionTimeValue(frames: number, timeUnit: string, frameRate: number) {
+  if (timeUnit === "frames") return frames;
+  if (timeUnit === "milliseconds") return frames / Math.max(1, frameRate) * 1000;
+  return frames / Math.max(1, frameRate);
 }

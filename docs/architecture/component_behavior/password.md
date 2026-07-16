@@ -60,7 +60,11 @@ Forward them with the other action dependencies. In a Shot instance only the
 animatable `entryTrigger` is presented, under its owning State, with the normal
 animation control. `entryFrame` is the derived owner-local action clock: it is
 never editable or visible in an instance. The owner timeline resolves it for
-every requested frame before Password resolves the PIN sequence.
+every requested frame before Password resolves the PIN sequence. The promoted
+`entryTrigger` track is addressed by its stable forwarded field id even though
+Password still consumes its local `entryTrigger` JSON key. The generic
+forwarding contract carries that exact mapping; neither Password nor Lock
+Screen searches by label or reconstructs an id.
 
 At every parent boundary all these fields become Variant values by default.
 The parent designer chooses which ones to promote through the same generic

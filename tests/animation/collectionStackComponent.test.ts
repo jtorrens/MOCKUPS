@@ -235,6 +235,56 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
   assert.equal(resolved.reflow?.fromItems[0]?.inputs.displayMode, "summary");
 });
 
+test("a forwarded embedded action derives its requested-frame clock from the stable field track", () => {
+  const resolveAt = (frame: number) => resolveCollectionStackComponent({
+    ...payload,
+    localFrame: frame,
+    frameRate: 30,
+    componentBaseConfigsJson: JSON.stringify({
+      presetTypes: { "stub::preset::notice": "stub" },
+      presets: { "stub::preset::notice": {} },
+    }),
+    instanceJson: JSON.stringify({
+      context: { localFrame: frame },
+      animation: { tracks: [{
+        fieldId: "forwarded.notice.play",
+        targetId: "notice",
+        keyframes: [{ frame: 0, value: false }, { frame: 5, value: true }],
+      }] },
+    }),
+    designPreviewJson: JSON.stringify({
+      distributionMode: "flow", sizingMode: "content",
+      startGapToken: "theme.spacing.none", endGapToken: "theme.spacing.none",
+      stackDirection: "down", stackOffsetToken: "theme.spacing.m",
+      itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
+      items: [{
+        id: "notice", presetId: "stub::preset::notice", overrides: {},
+        inputs: {
+          inputs: [
+            { id: "play", jsonKey: "play", valueKind: "Boolean" },
+            { id: "duration", jsonKey: "duration", valueKind: "Number" },
+          ],
+          actions: [{
+            id: "playOnce", playInputId: "play", timeJsonKey: "actionFrame",
+            durationInputId: "duration", timeUnit: "frames", completionBehavior: "holdFinal",
+          }],
+          __runtimeFieldIds: { play: "forwarded.notice.play" },
+          play: false, actionFrame: 0, duration: 4,
+        },
+        present: true,
+        presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
+        alignment: "center", gapBeforeMode: "fixed",
+        gapBeforeToken: "theme.spacing.none", gapBeforeWeight: 1,
+      }],
+    }),
+  }).items[0]?.inputs;
+
+  assert.equal(resolveAt(7)?.play, true);
+  assert.equal(resolveAt(7)?.actionFrame, 2);
+  assert.equal(resolveAt(12)?.play, true);
+  assert.equal(resolveAt(12)?.actionFrame, 4);
+});
+
 test("Reflow interpolates the complete stable child geometry instead of scaling its frame", () => {
   const [item] = items;
   const from: RenderableNode = {

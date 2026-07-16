@@ -263,6 +263,16 @@ the resulting duration. Password applies that resolved duration to PIN,
 fingerprint, face-recognition and draw-pattern sequences; every child receives
 only its final state/progress for the requested frame.
 
+The same action contract is resolved in Production without a second playback
+mechanism. A keyframe track addresses the promoted play field by its stable
+forwarded `fieldId`; forwarding retains an explicit stable-id-to-child-json-key
+map until the embedded runtime values have been resolved. The common owner
+timeline evaluates that track in the concrete collection item's local time,
+derives elapsed action time from the activating source keyframe, applies the
+declared finite duration and completion behavior, and only then invokes the
+child resolver. Field labels and JSON storage keys are never animation
+identities, and the renderer never advances the action clock.
+
 Finite Design Preview actions also declare a generic completion behavior.
 `reset` switches the action off after its final frame and is declared explicitly
 for momentary interactions. `holdFinal` retains the action input and its final
