@@ -258,6 +258,19 @@ Variant removes runtime values and tracks whose fields or stable targets no
 longer exist. The timeline never falls back to class config or infers a Variant
 from Actor, Device or Theme.
 
+Component Stack State changes use the same v2 contract. `active` is the
+`fieldId`; the State's stable id is `targetId`. Slots are independent owners of
+their visible sets, so a track for one State never selects an index in another
+slot. At a change frame, outgoing Exit Motion, incoming Enter Motion and any
+container Reflow share one action origin; total transition time is their maximum
+finite duration, not a serial sum. Entering child-local time starts at zero,
+outgoing child content holds its final internal state, and the resolver emits
+only the complete requested-frame result. Design Test Values option actions are
+transient fixtures for this same resolution contract, not persisted animation.
+
+The structural ownership and Module Instance mapping are specified in
+[Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
+
 The sequence provider accepts either Design action frames or Production frames, then shares preparation and presentation. Starting either source cancels the other; navigation, context, route, active Screen, FPS, asset/font, runtime or animation changes cancel stale preparation. Cache identity includes source, Shot id, Screen id, global and local frame, effective FPS, device/theme/mode, runtime and animation signatures, asset/font signatures, route, and geometry.
 
 ## 9. Migration

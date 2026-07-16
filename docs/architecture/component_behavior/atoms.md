@@ -37,18 +37,21 @@ The parent supplies frame state; Cursor does not own a clock.
 ## Label
 
 **Purpose/ownership.** One or two text lines with optional Surface and
-placement when embedded. **Runtime inputs.** Primary/subtext and, where used,
-actor-derived label data. **Variant/config.** Typography chains, colors,
-alignment, tokenized vertical gap, subtext Top/Bottom position and relative
-Left/Center/Right alignment, Surface and style settings.
+placement when embedded. **Runtime inputs.** Primary/subtext, literal/count-up/
+count-down source and independent decimal size multipliers. **Variant/config.**
+Typography chains, colors, alignment, tokenized vertical gap, subtext Top/Bottom
+position and relative Left/Center/Right alignment, Surface and the global Text
+shadow switch shared by Text/Subtext.
 
 **Layout.** Empty subtext takes no layout space. Subtext is placed above or
 below the primary text and aligned to its measured left edge, center or right
 edge. The spacing token is the vertical distance between both texts. Text alignment is local to Label; parent placement
 is separate. Parent can use Label's visual bounds for its own intrusion rules.
 
-**Motion.** No independent clock. **Limitations.** Font/emoji measurement is
-shared with Text Box and has known preview fidelity work remaining.
+**Motion.** No independent clock. Calculated text resolves from the supplied
+owner-local frame and FPS before rendering. **Limitations.** Font/emoji
+measurement is shared with Text Box and has known preview fidelity work
+remaining.
 
 ## Avatar
 
@@ -127,23 +130,28 @@ component-specific renderer logic.
 
 ## Component Stack
 
-**Purpose/ownership.** Generic vertical container for an ordered runtime
-collection of concrete component Variants. Sizing, Start/End gaps, child
-Variants, local overrides, child runtime inputs, per-state placement and inter-item gap
-behavior are all Runtime Inputs. Its protected `Default` Variant contains no
-composition.
+**Purpose/ownership.** Generic vertical container for ordered stable slots.
+Every slot owns an ordered State collection; every State owns a concrete
+component Variant or explicit None, local Overrides, child Runtime Inputs,
+Placement and Enter/Exit Motion. State 1 is the default Replace State; later
+States add animatable Active and Replace/Overlay behavior. Sizing, Start/End
+gaps, slots and their States are all Runtime Inputs. Its protected `Default`
+Variant contains no composition.
 
 **Layout.** `fill` consumes the parent box and distributes weighted reflow
-space. `content` hugs its children. Every item from the second onward owns its
+space. `content` hugs its children. Every slot from the second onward owns its
 gap before itself; the first and final boundaries are owned by the container.
+State selection is independent per slot and State Placement resolves inside the
+frame assigned to that slot.
 See the full canonical contract in [component_stack.md](component_stack.md).
 
 ## Collection Stack
 
 **Purpose/ownership.** Generic runtime collection for variable component
-groups. It shares Component Stack's concrete Variant, local override, embedded
-Runtime Inputs and alignment contract, but adds runtime `Flow` and `Stacked`
-distribution modes. Its protected `Default` Variant contains no composition.
+groups. Each item owns one concrete Variant, local Overrides, embedded Runtime
+Inputs, alignment, Present and Presence Motion. It has no nested Component Stack
+State model. Runtime distribution is `Flow` or `Stacked`; its protected
+`Default` Variant contains no composition.
 
 **Layout.** `Flow` uses the ordinary vertical gap/reflow model. `Stacked` places
 all children in one region; item zero is foreground and a tokenized offset is

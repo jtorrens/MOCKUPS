@@ -2,6 +2,10 @@
 
 Status: structural components built on the generic component composition route.
 
+Their relationship with Collection Stack, Component Stack States and Module
+Instances is summarized in
+[Structural Stacks, Slots, States and Module Instances](../31_structural_stacks_slots_and_module_instances.md).
+
 ## Notification
 
 Notification is one reusable item. Its Variant owns only composition:

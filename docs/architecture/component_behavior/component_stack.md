@@ -6,6 +6,10 @@ Source of truth: `src/desktop-preview/componentStackComponentContract.ts`,
 `componentStackComponentResolver.ts`, `componentStackComponentRenderable.ts`
 and the recursive generic Structured Collection dictionary control.
 
+The complete relationship between Stack slots, States, Module Variants,
+Module Instances and v2 animation targets is defined in
+[Structural Stacks, Slots, States and Module Instances](../31_structural_stacks_slots_and_module_instances.md).
+
 ## Purpose and ownership
 
 Component Stack places ordered slots in one vertical flow. Every slot owns an
@@ -17,6 +21,10 @@ State identity and selection are local to their slot. There is no global State
 index and no implicit substitution when another slot does not contain the same
 number of States. Changing one slot leaves every other slot's selected State
 unchanged; those unchanged slots remain measured participants in the same flow.
+
+Do not confuse these slots with embedded component slots or Shot module slots.
+A Component Stack slot is one stable flow position; each of its States may in
+turn contain a component Variant with ordinary embedded child slots.
 
 The Stack owns slot order, the gap before each slot,
 leading/trailing container gaps, fill/content sizing and state selection inside
@@ -115,6 +123,12 @@ the maximum of the selected outgoing Exit Motion, incoming Enter Motion and
 The shared Transition helper resolves State Motion bounds after placement:
 `Screen` uses the immutable device screen even though Lock Screen supplies a
 smaller content frame, while `Parent` uses the State's assigned slot frame.
+
+Inside a Module Instance the same change is authored as the standard `active`
+v2 track targeted by the State's stable id. The Module Variant determines which
+slot actions and nested child Runtime Inputs reach that instance contract.
+Changing Module Variant removes tracks whose stable State targets no longer
+exist; neither the timeline nor resolver guesses a replacement.
 
 ## Preview boundary
 

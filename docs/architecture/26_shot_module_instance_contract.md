@@ -16,13 +16,22 @@ There is no separate Screen Instance layer. A shot is the phone action being
 recorded; its ordered module slots are the visual states that occur during that
 action.
 
+Shot module slots are timeline entries. They are not Component Stack slots. A
+Module Instance may internally resolve a Component Stack, but that structure is
+owned by its selected Module Variant and effective runtime contract.
+
+The detailed relationship is defined in
+[Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
+
 ## Context inheritance
 
 `ModuleInstance` owns only its module reference, persisted runtime content,
 behavior, animation data, duration and transition declaration.
 
 `content_json` follows the public runtime-input contract declared by its
-selected module. The Module Design Test Values editor and the concrete
+selected full Module Variant reference (`moduleId::variant::variantId`). The
+module class contributes shared runtime declarations; the Variant contributes
+concrete config and Forward declarations. The Module Design Test Values editor and the concrete
 ModuleInstance editor therefore expose the same fields, collections, hierarchy
 and actions. Calculated/parent-owned inputs are excluded from persistence.
 `behavior_json` is reserved for module-internal instance state that is not a
@@ -33,6 +42,11 @@ It does not own actor, device, theme, mode or device state. Those are resolved
 from the shot and its owner actor. FPS is inherited from the project, with a
 future nullable override at shot level.
 
+Changing Module Variant explicitly rebuilds the effective instance contract.
+Runtime values not declared by the new contract and v2 animation tracks whose
+field/target ids no longer exist are removed. There is no class-config fallback,
+State-name matching or Actor/Device inference.
+
 ## Slot timeline
 
 Slots are ordered by `sort_order`. The initial transition contract is:
@@ -42,8 +56,9 @@ Slots are ordered by `sort_order`. The initial transition contract is:
 ```
 
 For cuts, slot durations are sequential and the shot timeline is their summed
-duration. The shot editor will expose add, delete, reorder and navigation for
-these slots. The first editor phase allows only Conversation module instances.
+duration. The shot editor exposes add, delete, reorder and navigation for these
+slots. Each Module Instance selects one registered module and one explicit
+Variant of that same module.
 
 A module declares the finite action that owns its duration with
 `definesModuleDuration`. The shared evaluator reads that action's declared

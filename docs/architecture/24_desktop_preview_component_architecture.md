@@ -29,7 +29,7 @@ Generic preview helpers own token, palette, tint, alpha, asset, scaling and mode
 The final paint tree contains resolved mode-variant values, not unresolved token names.
 ```
 
-### Module Variants and Screen Instances
+### Module Variants and Module Instances
 
 Modules use the same explicit class/Variant boundary as components without
 turning modules into components. The module row owns the record class, resolver
@@ -43,7 +43,7 @@ the isolated design preview read that Variant config. Saving or duplicating a
 Variant clones the selected Variant, never an ambiguous class value. User
 Variants can be renamed, locked and deleted only while unused.
 
-A Screen/module instance persists one explicit `moduleVariantReference` in its
+A Module Instance persists one explicit `moduleVariantReference` in its
 metadata. It never infers composition from Actor, Device or Theme. The selected
 Variant config is combined with the module's shared runtime declarations through
 the generic forwarding contract. Instance content retains only runtime fields
@@ -627,6 +627,8 @@ Rules:
 
 The canonical recursive forwarding/storage/editor contract is defined in
 `23_embedded_component_composition_contract.md#runtime-input-forwarding`.
+Structural Stack slots/States and their Module Instance relationship are
+defined in `31_structural_stacks_slots_and_module_instances.md`.
 
 ### Preview Actions
 
@@ -665,6 +667,11 @@ Rules:
   for long runtime playback such as audio/video progress;
 - the resolver interprets the resulting input values for each frame;
 - the web renderer still receives only final resolved paint primitives.
+
+The shared Test Values presentation is defined in
+`28_static_preview_update_experience.md`: label or option selector, compact Play
+and Restore, owner-local placement, replay from frame zero and final-frame hold.
+An action inside a collection item remains at that nested ownership level.
 
 ## Component Manifest
 

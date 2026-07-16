@@ -16,20 +16,20 @@ or a playback timer.
 
 ### Public runtime inputs
 
-- Available width.
-- Duration and current time.
-- Actor data inherited by optional Avatar/Label contracts.
+- Available width, duration, current time and playback mode.
+- Actor data passed explicitly to the optional Avatar.
+- Badge visibility, Icon/Text content mode, icon/text value, diameter and
+  palette background/content colors.
 
 ### Variant/configuration
 
 - Surface variant, padding spacing pair, play-circle geometry/colors, waveform
   count/gap/min/max heights, progress-knob size and duration-text styling.
-- Optional Avatar and Button Icon Badge concrete variant slots plus placements.
-- Badge icon and palette color overrides.
+- Optional Avatar and generic Badge concrete Variant slots plus placements.
 
 ## Composition and dependencies
 
-Audio depends on Surface, Avatar and Button Icon. The Avatar is placed relative
+Audio depends on Surface, Avatar, Label and Badge. The Avatar is placed relative
 to the audio player; Badge is placed relative to Avatar and has higher local
 z-order. Waveform bars, knob, play circle and duration text are Audio-owned
 atoms rather than separate reusable components.
@@ -61,8 +61,10 @@ counts down autonomously.
 
 ## Parent data vs local resolution
 
-The parent provides width, time and actor runtime data. Audio resolves player
-geometry, waveform sample shape, progress visuals and optional child placement.
+The parent provides width, time, actor and Badge runtime data. Audio resolves
+player geometry, waveform sample shape, progress visuals and optional child
+placement. No Actor value propagates from an outer parent by matching its name;
+it must be bound or forwarded explicitly.
 
 ## Defaults and limitations
 

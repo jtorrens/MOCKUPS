@@ -7,11 +7,21 @@ Source of truth: `src/desktop-preview/collectionStackComponentContract.ts`,
 `collectionStackComponentResolver.ts`, `collectionStackComponentRenderable.ts`
 and the shared component-collection helpers used by Component Stack.
 
+See
+[Structural Stacks, Slots, States and Module Instances](../31_structural_stacks_slots_and_module_instances.md)
+for the normative distinction between Collection items, Component Stack slots
+and Module Instance slots.
+
 ## Purpose and boundary
 
 Collection Stack is intended for variable groups such as notifications, cards
 or overlays. It owns collection layout only. It does not know Notification,
 Lock Screen, message semantics or the internal state of any child.
+
+Unlike Component Stack, a Collection Stack item has no ordered State collection.
+It is one independent child instance with `Present` and its own declared Runtime
+Inputs. A Summary/Detail action, for example, belongs to Notification inside the
+item; it is not a Collection Stack State.
 
 The class has one protected `Default` Variant. Its Variant config contains only
 an empty `collectionStack` root. Distribution, sizing and every child are

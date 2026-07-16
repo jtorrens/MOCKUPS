@@ -36,6 +36,11 @@ resolver and renderable that own the implementation.
    when their visual meaning requires it; a child cannot escape an ancestor
    clipping boundary through z-order alone.
 
+The cross-component ownership and runtime relationship for Component Stack,
+Collection Stack, slots, States, Module Variants and Module Instances is
+normatively defined in
+[Structural Stacks, Slots, States and Module Instances](../31_structural_stacks_slots_and_module_instances.md).
+
 ## Coverage
 
 | Area | Behavior sheet | Active status |
@@ -52,6 +57,8 @@ resolver and renderable that own the implementation.
 | Media | [media.md](media.md) | Functional, video buffering remains a limitation |
 | Audio | [audio.md](audio.md) | Functional |
 | Component Stack | [component_stack.md](component_stack.md) | Structural/functional |
+| Collection Stack | [collection_stack.md](collection_stack.md) | Structural/functional |
+| Notification / Notifications | [notifications.md](notifications.md) | Functional |
 | Label | [label.md](label.md) | Functional |
 | Atoms | [atoms.md](atoms.md) | Functional/structural as stated per atom |
 | System bars | [system_bars.md](system_bars.md) | Functional |
@@ -62,6 +69,6 @@ Cross-component discrepancies and pending rules are collected in
 ## Verification scope
 
 The sheets were checked against the active desktop-preview contracts,
-resolvers, renderables and registry on 2026-07-15. Each sheet records any
+resolvers, renderables and registry on 2026-07-16. Each sheet records any
 known mismatch between the canonical rule and the current implementation. A
 mismatch is a backlog item, not an alternative contract.

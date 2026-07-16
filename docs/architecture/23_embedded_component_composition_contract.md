@@ -9,6 +9,10 @@ The goal is a design system made from reusable component classes. Parent
 components may embed child components without copying the child's fields, UI or
 render logic.
 
+For the related but distinct contracts of Component Stack slots/States,
+Collection Stack items, Module Variants and Shot Module Instances, see
+[Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
+
 ## Core Model
 
 An embedded component is a slot, not a duplicated class.
@@ -310,6 +314,12 @@ forwarding controls. Variant authoring reuses the normal child input binding
 control, so runtime inputs of a component selected inside an item receive the
 same forwarding triangle. Forward ids include the stable item id, never the
 item index.
+
+A Component Stack adds one more stable nested identity level: the outer item is
+the slot and its nested item is a State. State actions and animation tracks use
+the State id, while flow and gap ownership use the slot id/order. Collection
+Stack has only item identity and must not be interpreted as this two-level State
+model.
 
 JSON-valued inputs retain their declared shape while forwarded. For example,
 `IconSlots` is exposed through the generic `iconList` runtime kind and remains
