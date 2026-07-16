@@ -1645,7 +1645,8 @@ internal sealed class ComponentPreviewInputSession
                     JsonString(collection, "storageCollectionJsonKey"),
                     JsonString(collection, "itemRuntimeContractJsonKey"),
                     JsonString(collection, "uiParentCollectionJsonKey"),
-                    JsonString(collection, "uiParentItemIdJsonKey")));
+                    JsonString(collection, "uiParentItemIdJsonKey"),
+                    JsonString(collection, "animationPresentation", "item")));
             }
         }
 
@@ -1796,6 +1797,7 @@ internal sealed class ComponentPreviewInputSession
     private static string CollectionSignature(RuntimeInputCollectionDefinition collection) =>
         string.Join(":", "collection", collection.Id, collection.JsonKey, collection.ItemLabel,
             string.Join("|", collection.Fields.Select(InputSignature)),
+            collection.AnimationPresentation,
             collection.ComponentItems is null
                 ? ""
                 : string.Join("/", collection.ComponentItems.PresetJsonKey,
@@ -2050,7 +2052,8 @@ internal sealed record RuntimeInputCollectionDefinition(
     string StorageCollectionJsonKey = "",
     string ItemRuntimeContractJsonKey = "",
     string UiParentCollectionJsonKey = "",
-    string UiParentItemIdJsonKey = "");
+    string UiParentItemIdJsonKey = "",
+    string AnimationPresentation = "item");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string PresetJsonKey,

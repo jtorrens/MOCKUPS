@@ -51,6 +51,15 @@ published by the newly selected Variant, and animation tracks whose owner or
 target survives that selection. Preview, duration and animation authoring all
 consume that same effective contract.
 
+Animation authoring follows the same ownership tree. Root Runtime Values place
+their `Animation` card below the fields in `General`. A structured runtime
+collection may explicitly declare `animationPresentation: collectionFooter`;
+the generic editor then places one `Animation` card after the complete item
+list and aggregates only the collection's direct item tracks there. Nested
+runtime contracts keep their own Animation cards at their nested owner. This is
+presentation metadata only: persisted tracks still use their real `fieldId`
+and stable `targetId`, and no module name is known by the shell.
+
 ```text
 After the component renderable/helper boundary, preview data must not contain
 component field names, component slot names, unresolved token names, inheritance

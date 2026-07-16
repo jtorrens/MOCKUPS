@@ -258,10 +258,11 @@ Variant removes runtime values and tracks whose fields or stable targets no
 longer exist. The timeline never falls back to class config or infers a Variant
 from Actor, Device or Theme.
 
-Component Stack State changes use the same v2 contract. `active` is the
-`fieldId`; the State's stable id is `targetId`. Slots are independent owners of
-their visible sets, so a track for one State never selects an index in another
-slot. At a change frame, outgoing Exit Motion, incoming Enter Motion and any
+Component Stack State changes use the same v2 contract. `runtimeStateId` is the
+`fieldId`; the slot's stable id is `targetId`, and keyframe values are stable
+State ids. Slots are independent owners of their visible sets, so a track for
+one slot never selects an index in another slot. At a change frame, outgoing
+Exit Motion, incoming Enter Motion and any
 container Reflow share one action origin; total transition time is their maximum
 finite duration, not a serial sum. Entering child-local time starts at zero,
 outgoing child content holds its final internal state, and the resolver emits
@@ -281,7 +282,7 @@ The audited committed data is empty, so step 2 presently has no event or keyfram
 
 ## 10. Editor scope after approval
 
-The Production Animation surface is bound to the existing authoritative Shot playhead. Screen-owned tracks live in an `Animation` subcard inside Runtime Inputs `General`; collection tracks live inside their owning item. Each panel presents the complete Shot frame scale and translates at its boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
+The Production Animation surface is bound to the existing authoritative Shot playhead. Screen-owned tracks live in an `Animation` subcard below the fields in Runtime Values `General`. Collection tracks normally live inside their owning item. A collection may instead declare the generic `collectionFooter` animation presentation; its direct item tracks are then aggregated in one `Animation` card below the complete collection, while nested runtime contracts retain their own local cards. Each panel presents the complete Shot frame scale and translates every selected stable target at its own owner boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
 
 Retime is an explicit persisted switch represented by the presence of `targetDurationFrames`. Off means no retime override and hides the target-duration input. Turning it on initializes the target from the generic natural/reference duration and reveals the editable frame target; turning it off removes the override. The editor never presents an effective keyframe-shortened span as the natural duration of a contract-declared behavior.
 

@@ -293,6 +293,7 @@ internal sealed partial class SpikeDatabase
                 ["label"] = "Slots",
                 ["jsonKey"] = "forwarded_module_lockScreen_stackStates",
                 ["itemLabel"] = "Slot",
+                ["animationPresentation"] = "collectionFooter",
                 ["fields"] = new JsonArray
                 {
                     new JsonObject

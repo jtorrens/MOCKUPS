@@ -311,6 +311,15 @@ collection. Action-only fields with animation metadata are visible as timeline
 properties; action-only clocks without animation metadata are internal and are
 never rendered as editable instance values.
 
+The activation control stays beside each slot's State selector, but the
+projected Slots collection declares the generic `collectionFooter` animation
+presentation. The editor therefore aggregates all active direct slot tracks in
+one `Animation` card after the complete slot list, labelled `Slot N · State`.
+This changes presentation only: every track remains owned by its stable slot
+target. Runtime inputs and actions owned by a concrete State retain their
+Animation card inside that State. General likewise places its own Animation
+card after the root fields. Tracks are never duplicated between these scopes.
+
 The same ownership rule applies to forwarded child fields: Clock text belongs
 to its Label State; Password text, attempt, timing and Enter Password action
 belong to its Password State. General contains only runtime declarations owned

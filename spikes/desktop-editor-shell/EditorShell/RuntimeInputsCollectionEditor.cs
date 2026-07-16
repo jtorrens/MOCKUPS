@@ -598,7 +598,33 @@ internal sealed class RuntimeInputsCollectionEditor
             collectionActions,
             _sessionUiState,
             canEditStructure: string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
-        return editor.Create();
+        var collectionEditor = editor.Create();
+        if (!owner.IsInstance
+            || _animationEditor is null
+            || !collection.AnimationPresentation.Equals("collectionFooter", StringComparison.Ordinal)
+            || !collection.Fields.Any((input) => input.Animation is not null))
+        {
+            return collectionEditor;
+        }
+
+        var animation = _animationEditor.CreateCollectionContent(owner.Node, collection);
+        return new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(8),
+            Children =
+            {
+                collectionEditor,
+                CreateSessionSubcardLayout(
+                    $"{owner.Node.Id}:{collection.Id}:collection-footer",
+                    [new EditorInternalNavigationSection(
+                        "animation",
+                        "Animation",
+                        EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
+                        EditorIcons.Animation,
+                        animation.Content)],
+                    EditorSubcardLayout.FlatStack),
+            },
+        };
     }
 
     private IReadOnlyList<EditorInternalNavigationSection> CreateChildRuntimeCollectionSubcards(
@@ -776,7 +802,8 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         if (owner.IsInstance
             && _animationEditor is not null
-            && (collection.Fields.Any((input) => input.Animation is not null)
+            && ((!collection.AnimationPresentation.Equals("collectionFooter", StringComparison.Ordinal)
+                    && collection.Fields.Any((input) => input.Animation is not null))
                 || nestedInputs.Any((input) => input.Animation is not null)))
         {
             var animation = _animationEditor.CreateTargetContent(owner.Node, itemId);

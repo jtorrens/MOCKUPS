@@ -2650,8 +2650,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  'var selectionKey = $"{node.Id}:animation-properties:{targetId}"',
-  "animation property selection must remain isolated per target in session state",
+  'var selectionKey = $"{node.Id}:animation-properties:{scopeKey}"',
+  "animation property selection must remain isolated per declared animation scope in session state",
 );
 assertMatches(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",

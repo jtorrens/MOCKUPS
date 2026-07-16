@@ -48,6 +48,46 @@ internal sealed class ModuleInstanceAnimationEditor
 
     public AnimationTargetEditorContent CreateTargetContent(ProjectTreeNode node, string targetId)
     {
+        return CreateContent(
+            node,
+            $"target:{targetId}",
+            (target) => target.TargetId == targetId,
+            targetId);
+    }
+
+    public AnimationTargetEditorContent CreateCollectionContent(
+        ProjectTreeNode node,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        var items = DesignPreviewTestValues.CollectionItems(preview, collection).ToList();
+        var itemLabels = items
+            .Select((item, index) => new
+            {
+                Id = item["id"]?.GetValue<string>() ?? "",
+                Label = $"{collection.ItemLabel} {index + 1}",
+            })
+            .Where((item) => !string.IsNullOrWhiteSpace(item.Id))
+            .ToDictionary((item) => item.Id, (item) => item.Label, StringComparer.Ordinal);
+        var fieldIds = collection.Fields
+            .Where((input) => input.Animation is not null)
+            .Select((input) => input.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        return CreateContent(
+            node,
+            $"collection:{collection.Id}",
+            (target) => itemLabels.ContainsKey(target.TargetId) && fieldIds.Contains(target.FieldId),
+            durationTargetId: null,
+            (target) => target with { Label = $"{itemLabels[target.TargetId]} · {target.Label}" });
+    }
+
+    private AnimationTargetEditorContent CreateContent(
+        ProjectTreeNode node,
+        string scopeKey,
+        Func<AnimationTarget, bool> includesTarget,
+        string? durationTargetId,
+        Func<AnimationTarget, AnimationTarget>? decorateTarget = null)
+    {
         var instance = _database.GetModuleInstanceSettings(node.Id);
         var module = _database.GetModuleInstanceVariantSettings(node.Id);
         var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
@@ -56,11 +96,15 @@ internal sealed class ModuleInstanceAnimationEditor
         var themeTokens = DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
         var targets = ReadTargets(node, preview, config, animation, themeTokens, screenStartFrame)
-            .Where((target) => target.TargetId == targetId)
+            .Where(includesTarget)
+            .Select((target) => decorateTarget?.Invoke(target) ?? target)
             .ToList();
+        var targetKeys = targets
+            .Select((target) => (target.FieldId, target.TargetId))
+            .ToHashSet();
         var document = new ModuleInstanceAnimationDocument(instance.AnimationJson);
         var resolvedTargets = document.Tracks
-            .Where((track) => track.TargetId == targetId)
+            .Where((track) => targetKeys.Contains((track.FieldId, track.TargetId)))
             .Select((track) => new ResolvedAnimationTarget(
                 targets.FirstOrDefault((target) => target.FieldId == track.FieldId && target.TargetId == track.TargetId),
                 track))
@@ -78,7 +122,15 @@ internal sealed class ModuleInstanceAnimationEditor
         }
         else
         {
-            content.Children.Add(CreateTimelineEditor(node, document, resolvedTargets, targetId, preview, animation, themeTokens));
+            content.Children.Add(CreateTimelineEditor(
+                node,
+                document,
+                resolvedTargets,
+                scopeKey,
+                durationTargetId,
+                preview,
+                animation,
+                themeTokens));
         }
         return new AnimationTargetEditorContent(content, activeTrackCount);
     }
@@ -87,7 +139,8 @@ internal sealed class ModuleInstanceAnimationEditor
         ProjectTreeNode node,
         ModuleInstanceAnimationDocument document,
         IReadOnlyList<ResolvedAnimationTarget> targets,
-        string targetId,
+        string scopeKey,
+        string? durationTargetId,
         JsonObject preview,
         JsonObject animation,
         JsonObject themeTokens)
@@ -103,12 +156,14 @@ internal sealed class ModuleInstanceAnimationEditor
                     candidate.Target.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
                 .DefaultIfEmpty(actualShotDuration)
                 .Max());
-        var ownerNaturalDuration = RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
-            preview,
-            preview,
-            animation,
-            targetId,
-            themeTokens);
+        var ownerNaturalDuration = durationTargetId is null
+            ? 1
+            : RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
+                preview,
+                preview,
+                animation,
+                durationTargetId,
+                themeTokens);
         var referenceNaturalDuration = Math.Max(
             ownerNaturalDuration,
             targets
@@ -119,18 +174,18 @@ internal sealed class ModuleInstanceAnimationEditor
                 .Max());
         var currentFrame = Math.Clamp(_shotFrame(), 0, timelineDuration - 1);
         int TimelineFrame() => Math.Clamp(currentFrame, 0, timelineDuration - 1);
-        double OwnerFrame() => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-            preview,
-            preview,
-            animation,
-            targetId,
-            TimelineFrame() - screenStartFrame,
-            themeTokens);
-        var selectionKey = $"{node.Id}:animation-properties:{targetId}";
+        var selectionKey = $"{node.Id}:animation-properties:{scopeKey}";
         var selectedId = _sessionUiState.Selection(selectionKey);
         var selected = targets.FirstOrDefault((target) => TargetKey(target) == selectedId)
             ?? targets.FirstOrDefault((target) => target.Track is not null)
             ?? targets.First();
+        double OwnerFrame() => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+            preview,
+            preview,
+            animation,
+            selected.Target?.TargetId ?? durationTargetId ?? "",
+            TimelineFrame() - screenStartFrame,
+            themeTokens);
         selectedId = TargetKey(selected);
         _sessionUiState.Select(selectionKey, selectedId);
         var root = new StackPanel { Spacing = EditorUiDensity.Card(12) };
@@ -333,12 +388,15 @@ internal sealed class ModuleInstanceAnimationEditor
         sliderRow.Children.Add(extendHorizonButton);
         root.Children.Add(sliderRow);
         root.Children.Add(timelineHost);
-        root.Children.Add(CreateTargetDurationEditor(
-            node,
-            document,
-            targetId,
-            referenceNaturalDuration,
-            SaveAndReload));
+        if (durationTargetId is not null)
+        {
+            root.Children.Add(CreateTargetDurationEditor(
+                node,
+                document,
+                durationTargetId,
+                referenceNaturalDuration,
+                SaveAndReload));
+        }
         root.Children.Add(EditorGroupBlock.CreateSeparator());
         root.Children.Add(trackList);
         root.Children.Add(detailHost);

@@ -340,6 +340,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(true, stateSelection.Animation is not null);
         SequenceEqual(["hold"], stateSelection.Animation?.Interpolations.ToList() ?? []);
         Equal(false, stateSelection.Animation?.ExtendsOwnerDuration ?? true);
+        Equal("collectionFooter", slots.AnimationPresentation);
         Equal(slots.JsonKey, stateInputs.UiParentCollectionJsonKey);
         Equal("slotId", stateInputs.UiParentItemIdJsonKey);
         Equal("inputs", stateInputs.ItemRuntimeContractJsonKey);
