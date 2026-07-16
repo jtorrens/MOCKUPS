@@ -22,6 +22,9 @@ owned by its selected Module Variant and effective runtime contract.
 
 The detailed relationship is defined in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
+The complete application flow and the brief for the next UX simplification
+audit are in
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
 
 ## Context inheritance
 

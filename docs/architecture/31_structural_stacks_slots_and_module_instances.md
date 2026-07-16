@@ -5,6 +5,8 @@ Status: normative cross-component contract for reusable structural composition.
 This document connects the component composition, module Variant, runtime-input
 and animation contracts. The detailed visual behavior remains in the Component
 Stack, Collection Stack, Notifications and Lock Screen behavior sheets.
+For the complete application and UX context around these contracts, see
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
 
 ## 1. Vocabulary and identity boundaries
 

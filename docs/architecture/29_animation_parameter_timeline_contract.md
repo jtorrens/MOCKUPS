@@ -5,6 +5,9 @@ Status: **approved contract; implementation in progress**
 Base: `main` at `a124622401363117139e4fa23ff77ed360794d5f` (after the UI baseline named by the handoff). `git pull` reported the branch up to date.
 
 This document records the canonical model and the generic owner-timeline refinements approved during implementation.
+For the end-to-end application flow and the planned architecture/functionality/
+UX audit, see
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
 
 ## 1. Baseline and audit inventory
 

@@ -12,6 +12,10 @@ It consolidates the review in:
 The goal is to keep component rendering recursive and reusable without
 recreating a central component-aware bridge.
 
+The complete data/authoring/Production/UX context for this preview boundary is
+mapped in
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
+
 ## Core Invariants
 
 ```text

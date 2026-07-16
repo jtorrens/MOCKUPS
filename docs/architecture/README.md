@@ -20,6 +20,9 @@ this index wins.
 - `31_structural_stacks_slots_and_module_instances.md`: Component Stack and
   Collection Stack types, slot/State semantics, Module Variant ownership and
   their effective runtime/animation contract inside Module Instances.
+- `32_application_architecture_functional_ux_handoff.md`: end-to-end map of the
+  current application, tables, resources, authoring/Production flows, preview
+  boundaries and the brief for the next architecture/functionality/UX audit.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

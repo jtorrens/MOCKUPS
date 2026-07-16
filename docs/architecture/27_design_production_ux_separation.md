@@ -9,6 +9,10 @@ document focuses on how the existing component and module design surface should
 be organized so it does not become polluted by production concerns, and so
 production later does not need to expose low-level component design controls.
 
+For the implemented cross-system snapshot and the next architecture,
+functionality and UX/UI audit brief, see
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
+
 ## Problem
 
 The current editor already has a strong component design foundation: component

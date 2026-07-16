@@ -4,6 +4,10 @@ Date: 2026-07-15
 Status: first generic slice implementation-complete; Keypad is the first
 configured component and broader use testing remains pending
 
+This remains an incomplete product experiment. Its place in the whole
+application and the questions for the next UX audit are summarized in
+[Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
+
 ## Purpose
 
 Keep the full, metadata-driven editor as the single authoring model while

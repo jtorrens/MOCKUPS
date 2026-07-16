@@ -1,5 +1,9 @@
 # Component Migration Status
 
+The cross-system context for this inventory, including tables, Theme/Actor
+resolution, structural authoring, Production and UX audit scope, is documented
+in [Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
+
 This document tracks desktop design-preview component migration state.
 
 It is intentionally operational: it records what is already on the new route,
