@@ -23,6 +23,9 @@ this index wins.
 - `32_application_architecture_functional_ux_handoff.md`: end-to-end map of the
   current application, tables, resources, authoring/Production flows, preview
   boundaries and the brief for the next architecture/functionality/UX audit.
+- `33_persistence_and_migration_contract.md`: ownership and mandatory workflows
+  for SQLite creation, read-only startup validation, explicit one-shot
+  migrations, canonical seeds and committed database parity.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

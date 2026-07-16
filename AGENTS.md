@@ -6,6 +6,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/editor_modernization_roadmap.md`
 - `docs/architecture/24_desktop_preview_component_architecture.md`
 - `docs/architecture/25_component_migration_status.md`
+- `docs/architecture/33_persistence_and_migration_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -48,6 +49,20 @@ When a change affects desktop editor behavior, preview output, icons, fonts, med
 - changed files under `assets/system/system_icons`.
 
 Do not leave the desktop DB or required assets as local-only changes when the user asks for a working branch/push.
+
+## Hard rule: persistence startup is read-only
+
+Opening an existing desktop database, constructing its repository and validating
+its current contract must not modify the database file, its schema or its data.
+All persistence work must follow
+`docs/architecture/33_persistence_and_migration_contract.md`.
+
+Normal application startup must never run `Ensure*`, `Normalize*`, `Retire*`,
+schema repair, seed repair or duration synchronization routines. Database
+creation and data migration are explicit maintenance workflows, never side
+effects of opening the application. A migration must update the canonical
+schema/seeds and committed parity database, validate the result, and remove its
+temporary migration code in the same delivery.
 
 ## Hard rule: editable fields go through the dictionary
 
