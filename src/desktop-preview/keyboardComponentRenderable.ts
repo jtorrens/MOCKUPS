@@ -3,7 +3,6 @@ import {
   colorForMode,
   iconTokenStyle,
   numberToken,
-  previewScreenBox,
   renderScale,
   selectedColor,
   shadow,
@@ -128,16 +127,13 @@ export function keyboardComponentToRenderable(
       ),
     ],
   };
-  const motionBounds = keyboard.motion.bounds === "screen"
-    ? previewScreenBox(payload)
-    : outerBox;
   return wrapMotionFrame(
     payload,
     node,
     keyboard.motion,
     keyboard.motionFrame,
     outerBox,
-    motionBounds,
+    outerBox,
   );
 }
 

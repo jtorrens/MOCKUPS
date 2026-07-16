@@ -23,6 +23,7 @@ export {
   interpolateRenderableGeometry,
   placeChild,
   previewScreenBox,
+  rootPreviewScreenBox,
   renderableVisualBounds,
   renderScale,
   screenPercentToDesignWidth,

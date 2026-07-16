@@ -102,7 +102,9 @@ function renderMeasuredFlow(
       y: cursorY - current.box.y,
     });
     cursorY += assignedHeight;
-    return translated;
+    return isPresenceItem(current.item)
+      ? applyPresenceMotion(payload, current.item, translated, parentBox)
+      : translated;
   });
   return collectionGroup(options.id, parentBox, children);
 }
@@ -136,7 +138,7 @@ export function renderComponentCollectionStacked(
     });
     const depthScale = Math.pow(options.scaleRatio, index);
     const depthOpacity = Math.pow(options.opacityRatio, index);
-    return {
+    const decorated = {
       ...translated,
       transform: {
         ...translated.transform,
@@ -144,6 +146,9 @@ export function renderComponentCollectionStacked(
         opacity: Math.max(0, Math.min(1, (translated.transform?.opacity ?? 1) * depthOpacity)),
       },
     };
+    return isPresenceItem(current.item)
+      ? applyPresenceMotion(payload, current.item, decorated, parentBox)
+      : decorated;
   }).reverse();
   return collectionGroup(options.id, parentBox, children);
 }
@@ -178,8 +183,7 @@ function measureItems(
 ): MeasuredItem[] {
   const scale = renderScale(payload);
   const intrinsic = items.map((item) => {
-    const resolved = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
-    const node = applyPresenceMotion(payload, item, resolved);
+    const node = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
     if (!node.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
     return {
       item,
@@ -199,14 +203,13 @@ function measureItems(
       embeddedComponentPayload(payload, item.componentType, item.config, item.inputs),
       assignedBox,
     );
-    const resolved = applyPresenceMotion(payload, item, child);
-    if (!resolved.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
-    const node = Math.abs(resolved.box.width - width) <= 0.001
-        && Math.abs(resolved.box.height - height) <= 0.001
-      ? resolved
-      : translateRenderableNode(resolved, {
-          x: assignedBox.x + (assignedBox.width - resolved.box.width) / 2 - resolved.box.x,
-          y: assignedBox.y + (assignedBox.height - resolved.box.height) / 2 - resolved.box.y,
+    if (!child.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
+    const node = Math.abs(child.box.width - width) <= 0.001
+        && Math.abs(child.box.height - height) <= 0.001
+      ? child
+      : translateRenderableNode(child, {
+          x: assignedBox.x + (assignedBox.width - child.box.width) / 2 - child.box.x,
+          y: assignedBox.y + (assignedBox.height - child.box.height) / 2 - child.box.y,
         }, assignedBox);
     return {
       item,
@@ -223,19 +226,18 @@ function applyPresenceMotion(
   payload: DesignPreviewPayload,
   item: ComponentCollectionItemContract,
   node: RenderableNode,
+  parentBox: RenderableBox,
 ) {
   if (!node.box) return node;
-  const parentBox = previewScreenBox(payload);
   if (item.presenceTransition) {
     const frame = { trigger: true, elapsedMs: item.presenceElapsedMs ?? 0 };
-    const wrapped = item.present
+    return item.present
       ? wrapMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox)
       : wrapExitMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox);
-    return { ...wrapped, box: node.box };
   }
   if (item.exitFrame !== undefined) {
     const elapsedFrames = Math.max(0, payload.localFrame - item.exitFrame);
-    const wrapped = wrapExitMotionFrame(
+    return wrapExitMotionFrame(
       payload,
       node,
       item.presenceMotion,
@@ -243,11 +245,10 @@ function applyPresenceMotion(
       node.box,
       parentBox,
     );
-    return { ...wrapped, box: node.box };
   }
   if (item.activationFrame === undefined || item.activationFrame <= 0) return node;
   const elapsedFrames = Math.max(0, payload.localFrame - item.activationFrame);
-  const wrapped = wrapMotionFrame(
+  return wrapMotionFrame(
     payload,
     node,
     item.presenceMotion,
@@ -255,7 +256,10 @@ function applyPresenceMotion(
     node.box,
     parentBox,
   );
-  return { ...wrapped, box: node.box };
+}
+
+function isPresenceItem(item: ComponentCollectionLayoutItem): item is ComponentCollectionItemContract {
+  return "presenceMotion" in item;
 }
 
 function measureResolvedItems(

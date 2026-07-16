@@ -28,6 +28,7 @@ export interface DesignPreviewPayload {
   configJson: string;
   designPreviewJson?: string;
   previewFrame: PreviewFramePayload;
+  rootPreviewFrame?: PreviewFramePayload;
   iconAssetRoot?: string;
   iconMappingJson?: string;
   fontFaces?: DesignPreviewFontFacePayload[];

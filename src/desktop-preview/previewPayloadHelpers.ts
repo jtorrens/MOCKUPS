@@ -21,6 +21,7 @@ export function previewPayloadInBox(
 ): DesignPreviewPayload {
   return {
     ...payload,
+    rootPreviewFrame: payload.rootPreviewFrame ?? payload.previewFrame,
     previewFrame: {
       ...payload.previewFrame,
       screenX: box.x,

@@ -40,6 +40,12 @@ The current schema/default writer emits that same v1 empty object. There is no a
 
 - `previewTextRevealHelpers.ts` already has an `Intl.Segmenter` grapheme route (with a conservative fallback) for ordinary Conversation write-on.
 - `previewMotionHelpers.ts` resolves Theme motion from elapsed milliseconds; it is a generic helper and must remain free of module names.
+- The generic Transition bounds contract keeps the immutable root device Screen
+  separate from the current parent frame. `Screen` always translates from the
+  physical screen edge; `Parent` translates from the immediate assigned
+  container. Nested component payloads may replace their local frame but must
+  preserve the root Screen. Parents measure and place children before applying
+  Transition, so visual motion bounds never become layout bounds.
 - Text Box currently consumes `textAnimationElapsedMs` for its own visual effect. Conversation derives its keyboard/text-input state from frame data. Neither renderer may acquire a timer for parameter animation.
 - Media and Audio contracts already express physical position/duration in seconds. They do not presently define a canonical finite parameter-playback value. That is supplied below as a contract-owned field type, not a renderer event.
 

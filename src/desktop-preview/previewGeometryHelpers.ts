@@ -64,6 +64,16 @@ export function previewScreenBox(payload: DesignPreviewPayload): RenderableBox {
   };
 }
 
+export function rootPreviewScreenBox(payload: DesignPreviewPayload): RenderableBox {
+  const frame = payload.rootPreviewFrame ?? payload.previewFrame;
+  return {
+    x: frame.screenX,
+    y: frame.screenY,
+    width: frame.screenWidth,
+    height: frame.screenHeight,
+  };
+}
+
 export function scalePlacement(
   placement: AlignmentPlacementContract,
   scale: number,

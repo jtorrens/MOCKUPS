@@ -46,7 +46,7 @@ function renderSlot(
 ): RenderableNode {
   const visibleAlternatives = slot.alternatives.filter((alternative) => alternative.component !== undefined);
   const intrinsicNodes = visibleAlternatives
-    .map((alternative) => renderAlternative(payload, alternative, renderChild));
+    .map((alternative) => renderAlternativeBase(payload, alternative, renderChild));
   if (intrinsicNodes.length === 0) {
     const screen = previewScreenBox(payload);
     const emptyBox = assignedBox
@@ -57,20 +57,24 @@ function renderSlot(
   if (boxes.length !== intrinsicNodes.length) throw new Error(`Component Stack slot ${slot.id} contains an unresolved box`);
   if (!assignedBox) return group(slot.id, unionBoxes(boxes), intrinsicNodes);
   const nodes = visibleAlternatives.map((alternative) => {
-    const node = renderAlternative(payload, alternative, renderChild, assignedBox);
+    const node = renderAlternativeBase(payload, alternative, renderChild, assignedBox);
     const box = node.box!;
-    if (sameBox(box, assignedBox)) return node;
-    const placed = placeChild(
-      assignedBox,
-      { width: box.width, height: box.height },
-      scalePlacement(alternative.placement, renderScale(payload)),
-    );
-    return translateRenderableNode(node, { x: placed.x - box.x, y: placed.y - box.y });
+    const placedNode = sameBox(box, assignedBox)
+      ? node
+      : (() => {
+          const placed = placeChild(
+            assignedBox,
+            { width: box.width, height: box.height },
+            scalePlacement(alternative.placement, renderScale(payload)),
+          );
+          return translateRenderableNode(node, { x: placed.x - box.x, y: placed.y - box.y });
+        })();
+    return applyAlternativeMotion(payload, alternative, placedNode, assignedBox);
   });
   return group(slot.id, assignedBox, nodes);
 }
 
-function renderAlternative(
+function renderAlternativeBase(
   payload: DesignPreviewPayload,
   alternative: ComponentStackAlternativeContract,
   renderChild: ComponentStackChildRenderer,
@@ -89,31 +93,40 @@ function renderAlternative(
   );
   const node = renderChild(childPayload, assignedBox);
   if (!node.box) throw new Error(`Component Stack state ${alternative.id} has no resolved box`);
+  return node;
+}
+
+function applyAlternativeMotion(
+  payload: DesignPreviewPayload,
+  alternative: ComponentStackAlternativeContract,
+  node: RenderableNode,
+  parentBox: RenderableBox,
+) {
+  if (!node.box) throw new Error(`Component Stack state ${alternative.id} has no placed box`);
   if (alternative.exitFrame !== undefined) {
     const exitElapsedMs = alternative.exitElapsedMs
       ?? Math.max(0, payload.localFrame - alternative.exitFrame) / Math.max(1, payload.frameRate) * 1000;
-    const wrapped = wrapExitMotionFrame(
+    return wrapExitMotionFrame(
       payload,
       node,
       alternative.exitMotion,
       { trigger: true, elapsedMs: exitElapsedMs },
       node.box,
-      previewScreenBox(payload),
+      parentBox,
     );
-    return { ...wrapped, box: node.box };
   }
   if (alternative.activationFrame === undefined && alternative.enterElapsedMs === undefined) return node;
   const enterElapsedMs = alternative.enterElapsedMs
-    ?? localFrame / Math.max(1, payload.frameRate) * 1000;
-  const wrapped = wrapMotionFrame(
+    ?? Math.max(0, payload.localFrame - (alternative.activationFrame ?? 0))
+      / Math.max(1, payload.frameRate) * 1000;
+  return wrapMotionFrame(
     payload,
     node,
     alternative.enterMotion,
     { trigger: true, elapsedMs: enterElapsedMs },
     node.box,
-    previewScreenBox(payload),
+    parentBox,
   );
-  return { ...wrapped, box: node.box };
 }
 
 function sameBox(first: RenderableBox, second: RenderableBox) {

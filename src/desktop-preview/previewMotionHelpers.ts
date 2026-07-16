@@ -4,6 +4,7 @@ import type {
   ComponentMotionFrameContract,
 } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { rootPreviewScreenBox } from "./previewGeometryHelpers.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import { requiredNumberValue, stringValue } from "./previewValueHelpers.js";
 
@@ -34,8 +35,9 @@ export function wrapMotionFrame(
   const elapsedMs = frame.elapsedMs;
   const linearProgress = linearMotionProgress(elapsedMs, timing);
   const progress = easingProgress(timing.easing, linearProgress, timing.intensity);
+  const boundsBox = motion.bounds === "screen" ? rootPreviewScreenBox(payload) : parentBox;
   const startBox = motion.translate
-    ? entranceStartBox(finalBox, parentBox, motion.direction)
+    ? entranceStartBox(finalBox, boundsBox, motion.direction)
     : finalBox;
   const currentBox = {
     x: lerp(startBox.x, finalBox.x, progress),
@@ -54,7 +56,7 @@ export function wrapMotionFrame(
     id: `${node.id}.motion`,
     type: "group",
     frame: node.frame ?? 0,
-    box: parentBox,
+    box: boundsBox,
     style: {
       overflow: "hidden",
     },
@@ -90,12 +92,13 @@ export function wrapExitMotionFrame(
     linearMotionProgress(frame.elapsedMs, timing),
     timing.intensity,
   );
-  const endBox = motion.translate ? entranceStartBox(finalBox, parentBox, motion.direction) : finalBox;
+  const boundsBox = motion.bounds === "screen" ? rootPreviewScreenBox(payload) : parentBox;
+  const endBox = motion.translate ? entranceStartBox(finalBox, boundsBox, motion.direction) : finalBox;
   return {
     id: `${node.id}.exit-motion`,
     type: "group",
     frame: node.frame ?? 0,
-    box: parentBox,
+    box: boundsBox,
     style: { overflow: "hidden" },
     children: [{
       ...node,

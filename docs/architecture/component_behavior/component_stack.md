@@ -112,6 +112,9 @@ explicit elapsed action time into the incoming and outgoing State contracts.
 Exit, entry and container Reflow start together. The shared action duration is
 the maximum of the selected outgoing Exit Motion, incoming Enter Motion and
 `theme.motion.reflowDurationMs`; their durations are never added serially.
+The shared Transition helper resolves State Motion bounds after placement:
+`Screen` uses the immutable device screen even though Lock Screen supplies a
+smaller content frame, while `Parent` uses the State's assigned slot frame.
 
 ## Preview boundary
 
