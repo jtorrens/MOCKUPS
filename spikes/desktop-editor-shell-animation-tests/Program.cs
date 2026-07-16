@@ -36,6 +36,7 @@ var tests = new (string Name, Action Run)[]
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
     ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
+    ("module parents open Default then remember the session Variant", ModuleParentsFollowComponentVariantSelection),
     ("only Default system bar variants are protected", OnlyDefaultSystemBarVariantsAreProtected),
     ("collection item presentation summarizes configured fields", CollectionItemPresentationSummarizesConfiguredFields),
     ("Screen tree nodes keep actions in their editor", ScreenTreeNodesKeepActionsInEditor),
@@ -293,22 +294,34 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
 
 static void ForwardedRuntimeCollectionsExposeSlotStateActions()
 {
-    var database = new SpikeDatabase(Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite"));
-    var module = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
-        .Single((node) => node.RecordClassId == "module.core.lockScreen" && node.Kind == ProjectTreeNodeKind.Module);
-    var settings = database.GetModuleSettings(module.Id);
-    var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
-    var effective = RuntimeInputForwardingContract.EffectivePreview(
-        DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-        config);
-    var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
-    var slots = collections.Single((collection) => collection.Id == "stackStates");
-    var items = DesignPreviewTestValues.CollectionItems(effective, slots);
-    Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
-    var actions = ComponentPreviewActions.Read(effective);
-    True(actions.Any((action) => action.CollectionJsonKey == slots.JsonKey
-        && action.TargetInputId == "runtimeStateId"));
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-forwarded-slots-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var moduleVariant = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
+                && node.Parent?.RecordClassId == "module.core.lockScreen"
+                && node.Name == "Default");
+        var settings = database.GetModuleVariantSettings(moduleVariant);
+        var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+        var effective = RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+            config);
+        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
+        var slots = collections.Single((collection) => collection.Id == "stackStates");
+        var items = DesignPreviewTestValues.CollectionItems(effective, slots);
+        Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
+        var actions = ComponentPreviewActions.Read(effective);
+        True(actions.Any((action) => action.CollectionJsonKey == slots.JsonKey
+            && action.TargetInputId == "runtimeStateId"));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void RejectsMalformedDocuments()
@@ -773,6 +786,28 @@ static void ActiveVariantExposesParentClassActions()
     True(EditorNavigationRenderer.ShowsActions(variant, variant));
     True(!EditorNavigationRenderer.ShowsActions(otherComponentClass, variant));
     True(!EditorNavigationRenderer.ShowsActions(componentClass, null));
+}
+
+static void ModuleParentsFollowComponentVariantSelection()
+{
+    var app = new ProjectTreeNode(ProjectTreeNodeKind.App, "app", "System", "", "app.system");
+    var module = new ProjectTreeNode(
+        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.core.lockScreen", app);
+    app.AddChild(module);
+    var defaultVariant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleVariant, "module::variant::default", "Default", "", "module.variant", module,
+        isProtected: true);
+    var androidVariant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleVariant, "module::variant::android", "Android", "", "module.variant", module);
+    module.AddChild(defaultVariant);
+    module.AddChild(androidVariant);
+
+    var selection = new EditorNodeSelectionState();
+    Equal(defaultVariant.Id, selection.ResolveSelectionNode(module).Id);
+    selection.RememberComponentPresetSelection(androidVariant);
+    Equal(androidVariant.Id, selection.ResolveSelectionNode(module).Id);
+    True(module.CanRenameDirectly);
+    True(EditorNavigationRenderer.ShowsActions(module, androidVariant));
 }
 
 static void OnlyDefaultSystemBarVariantsAreProtected()
