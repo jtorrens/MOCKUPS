@@ -142,6 +142,11 @@ export function resolveLabelComponentFromRecords(
     dimensionMode,
     size: { width: size.first, height: size.second },
     padding: { xToken: padding.first, yToken: padding.second },
+    textShadowEnabled: requiredBoolean(
+      label,
+      "textShadowEnabled",
+      "component.label.textShadowEnabled",
+    ),
     textColorToken: requiredString(
       label,
       "textColorToken",

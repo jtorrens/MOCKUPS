@@ -6,6 +6,7 @@ import {
   colorForMode,
   numberToken,
   renderScale,
+  shadow,
   selectedColor,
   translateBox,
   unionBoxes,
@@ -228,6 +229,7 @@ export function labelComponentToRenderableAt(
     : surfaceComponentToRenderableAt(payload, label.surface, box);
   const textColor = options.textColor ?? selectedColor(payload, label.textColorToken);
   const subtextColor = options.subtextColor ?? selectedColor(payload, label.subtextColorToken);
+  const textShadow = label.textShadowEnabled ? shadow(payload) : undefined;
 
   return {
     id: label.id,
@@ -247,6 +249,7 @@ export function labelComponentToRenderableAt(
         style: {
           overflow: "visible",
           whiteSpace: "nowrap",
+          textShadow,
           colorModes: Object.fromEntries(
             variants(payload).map((mode) => [
               mode,

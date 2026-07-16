@@ -165,6 +165,7 @@ function nodeStyle(
 ): CSSProperties {
   const style = node.style ?? {};
   const shadow = shadowValue(style.shadow);
+  const textShadow = shadowValue(style.textShadow);
   const relief = surfaceReliefValue(style.surfaceRelief);
   const background = optionalStringValue(style.background ?? style.backgroundColor);
   const color = optionalStringValue(style.textColor ?? style.color ?? style.foreground);
@@ -225,6 +226,7 @@ function nodeStyle(
     paddingRight: paddingX,
     paddingTop: paddingY,
     textAlign: optionalStringValue(style.textAlign) as CSSProperties["textAlign"],
+    textShadow,
     overflowWrap: optionalStringValue(style.overflowWrap) as CSSProperties["overflowWrap"],
     transform: nodeTransform(node),
     transformOrigin: nodeTransform(node) ? "center center" : undefined,

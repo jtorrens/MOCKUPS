@@ -409,6 +409,7 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.label.size", "order": 20, "visible": true },
                   { "id": "component.label.padding", "order": 30, "visible": true },
                   { "id": "component.label.surface.editor", "order": 40, "visible": true },
+                  { "id": "component.label.textShadowEnabled", "order": 80, "visible": true },
                   { "id": "component.label.textColorToken", "order": 90, "visible": true },
                   { "id": "component.label.textTypography", "order": 100, "visible": true },
                   { "id": "component.label.textAlign", "order": 120, "visible": true }

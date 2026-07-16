@@ -10,6 +10,7 @@ export interface LabelDesignContract {
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
   padding: SpacingPairContract;
+  textShadowEnabled: boolean;
   textColorToken: string;
   textTypography: TypographyStyleContract;
   textAlign: "left" | "center" | "right";

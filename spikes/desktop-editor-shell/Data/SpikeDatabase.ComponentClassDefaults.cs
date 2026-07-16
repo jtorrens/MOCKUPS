@@ -645,6 +645,7 @@ internal sealed partial class SpikeDatabase
                     ["size"] = "120|32",
                     ["padding"] = "theme.spacing.m|theme.spacing.s",
                     ["surfaceSlot"] = ComponentSurfaceSlot("Label"),
+                    ["textShadowEnabled"] = false,
                     ["textColorToken"] = "theme.colors.textPrimary",
                     ["textTypography"] = JsonNode.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
                     ["textAlign"] = "center",

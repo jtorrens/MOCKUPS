@@ -55,7 +55,11 @@ kinds can be added without changing the literal fields or preview boundary.
 The concrete Label Variant owns content/fixed sizing, tokenized padding, text
 and subtext colors, typography, alignment, text gap, subtext vertical position
 (`Top`/`Bottom`), subtext horizontal alignment (`Left`/`Center`/`Right`) and the
-embedded Surface Variant. Horizontal alignment uses the measured bounds of the
+embedded Surface Variant. It also owns one `Text shadow` switch. When enabled,
+the Theme default shadow is resolved once and applied to both Text and Subtext
+glyphs; it never affects the Surface or layout measurement. The field follows
+the normal embedded Variant/Override route and is not Runtime by default.
+Horizontal alignment uses the measured bounds of the
 primary text, not the complete Label frame. The tokenized text gap is the exact
 vertical separation. Runtime multipliers do not extend the Theme
 typography token vocabulary.
