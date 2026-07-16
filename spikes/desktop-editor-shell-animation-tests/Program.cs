@@ -869,7 +869,9 @@ static void ComponentStackSeedOpensAndRenders()
         var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
             ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
         True(runtimeCollection.Fields.All((field) => field.Id != "alignment"));
-        Equal(ValueKind.AlignmentPlacement, alternatives.Fields.Single((field) => field.Id == "placement").ValueKind);
+        var placementField = alternatives.Fields.Single((field) => field.Id == "placement");
+        Equal(ValueKind.AlignmentPlacement, placementField.ValueKind);
+        True(DesignPreviewTestValues.ValueNode(placementField, placementField.DefaultValue) is JsonObject);
         var defaultStates = JsonNode.Parse(runtimeCollection.Fields.Single((field) => field.Id == "alternatives").DefaultValue) as JsonArray;
         Equal(1, defaultStates?.Count ?? -1);
         var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");

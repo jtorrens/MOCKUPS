@@ -325,6 +325,11 @@ internal static class DesignPreviewTestValues
                 ? input.ValueKind == ValueKind.StructuredCollection ? "[]" : "{}"
                 : value);
         }
+        if (input.ValueKind == ValueKind.AlignmentPlacement)
+        {
+            return JsonNode.Parse(value)
+                ?? throw new InvalidOperationException("Alignment placement value must be valid JSON.");
+        }
         return input.Kind switch
         {
             ComponentInputKind.Number when double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
