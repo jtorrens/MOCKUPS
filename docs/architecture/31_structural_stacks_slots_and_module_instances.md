@@ -249,6 +249,20 @@ only Runtime values still declared by the new effective contract and removes
 animation tracks whose field ids or stable target ids no longer exist. It never
 falls back to module class config or guesses an equivalent State.
 
+### 7.1 Production tree lifecycle
+
+Adding a child to a Shot is an explicit three-part decision: Module, one of that
+Module's Variants, and the instance name shown in the tree. The proposed name is
+`Module · Variant` but remains editable before creation. The tree and the Shot
+collection card delegate to one shared modal and one database operation, so
+neither surface may invent a Default Variant or module-specific payload.
+
+Rename, duplicate and delete operate on the Module Instance boundary. Duplicate
+preserves the selected Variant, runtime values, actions/tracks, behaviour and
+transition while assigning the next Shot order and a unique name. Delete is
+confirmed and removes only that ordered instance. Both operations keep the Shot
+duration synchronized with the remaining instance durations.
+
 ## 8. Stack State actions in Test Values and instances
 
 Every Component Stack slot whose State collection reaches the effective parent

@@ -13,18 +13,21 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<string, Task<SpikeDatabase.ShotModuleChoice?>> _selectModule;
+    private readonly Func<string, Task<SpikeDatabase.ShotModuleInstanceDraft?>> _defineModuleInstance;
+    private readonly Func<ProjectTreeNode, Task<bool>> _confirmDelete;
 
     public ShotModuleInstancesCollectionEditor(
         SpikeDatabase database,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<string, Task<SpikeDatabase.ShotModuleChoice?>> selectModule)
+        Func<string, Task<SpikeDatabase.ShotModuleInstanceDraft?>> defineModuleInstance,
+        Func<ProjectTreeNode, Task<bool>> confirmDelete)
     {
         _database = database;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
-        _selectModule = selectModule;
+        _defineModuleInstance = defineModuleInstance;
+        _confirmDelete = confirmDelete;
     }
 
     public InstantEditorCard Create(ProjectTreeNode shot)
@@ -39,9 +42,9 @@ internal sealed class ShotModuleInstancesCollectionEditor
         var add = EditorCollectionItemControls.CreateAddButton("Add module to Shot");
         add.Click += async (_, _) =>
         {
-            var module = await _selectModule(shot.Id);
-            if (module is null) return;
-            var added = _database.AddModuleInstance(shot, module);
+            var draft = await _defineModuleInstance(shot.Id);
+            if (draft is null) return;
+            var added = _database.AddModuleInstance(shot, draft);
             _onChanged();
             _reloadAndSelect(added);
         };
@@ -94,15 +97,17 @@ internal sealed class ShotModuleInstancesCollectionEditor
         Grid.SetColumn(row.Children[^1], 2);
 
         var delete = EditorCollectionItemControls.CreateDeleteButton();
-        delete.Click += (_, _) =>
+        delete.Click += async (_, _) =>
         {
-            _database.Delete(new ProjectTreeNode(
+            var instance = new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleInstance,
                 slot.Id,
                 slot.Name,
                 "",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
-                shot));
+                shot);
+            if (!await _confirmDelete(instance)) return;
+            _database.Delete(instance);
             _onChanged();
             _reloadAndSelect(shot);
         };

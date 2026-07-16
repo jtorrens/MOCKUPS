@@ -53,6 +53,12 @@ internal sealed class EditorAddChildWorkflow
             return await ImportDevice(parent);
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.Shot)
+        {
+            var draft = await new ShotModulePickerDialog(_owner, _database).Show(parent.Id);
+            return draft is null ? null : _database.AddModuleInstance(parent, draft);
+        }
+
         return _database.AddChild(parent);
     }
 

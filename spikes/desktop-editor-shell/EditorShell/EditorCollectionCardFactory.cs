@@ -119,7 +119,8 @@ internal sealed class EditorCollectionCardFactory
                     _database,
                     _onChanged,
                     _reloadAndSelect,
-                    _domainDialogs.SelectModuleForShot).Create(node)],
+                    _domainDialogs.DefineModuleInstanceForShot,
+                    _domainDialogs.ConfirmModuleInstanceDelete).Create(node)],
             _ => [],
         };
 

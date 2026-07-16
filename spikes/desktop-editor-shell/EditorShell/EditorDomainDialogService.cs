@@ -84,9 +84,14 @@ internal sealed class EditorDomainDialogService
             height: 250);
     }
 
-    public Task<SpikeDatabase.ShotModuleChoice?> SelectModuleForShot(string shotId)
+    public Task<SpikeDatabase.ShotModuleInstanceDraft?> DefineModuleInstanceForShot(string shotId)
     {
-        return new ShotModulePickerDialog(_owner).Show(_database.GetAvailableShotModules(shotId));
+        return new ShotModulePickerDialog(_owner, _database).Show(shotId);
+    }
+
+    public Task<bool> ConfirmModuleInstanceDelete(ProjectTreeNode node)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmDelete(node);
     }
 
     public Task ShowIconThemeSearch(ProjectTreeNode node)

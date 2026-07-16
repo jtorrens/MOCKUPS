@@ -733,34 +733,6 @@ internal sealed partial class SpikeDatabase
                 parent);
         }
 
-        if (parent.Kind == ProjectTreeNodeKind.Shot)
-        {
-            var project = ProjectAncestor(parent);
-            var appId = ScalarString(connection, "SELECT id FROM apps WHERE project_id = $projectId ORDER BY sort_order, name LIMIT 1", ("$projectId", project.Id))
-                ?? throw new InvalidOperationException($"Project '{project.Id}' has no app for a module instance.");
-            var moduleId = ScalarString(connection, "SELECT id FROM modules WHERE app_id = $appId AND record_class_id = 'module.core.chat' ORDER BY sort_order, name LIMIT 1", ("$appId", appId))
-                ?? throw new InvalidOperationException($"App '{appId}' has no Conversation module.");
-            var index = NextSortOrder(connection, "module_instances", "shot_id", parent.Id);
-            var id = $"module_instance_{Guid.NewGuid():N}";
-            var name = $"Conversation {index + 1}";
-            Execute(
-                connection,
-                """
-                INSERT INTO module_instances (id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
-                VALUES ($id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, 240, '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
-                """,
-                ("$id", id), ("$shotId", parent.Id), ("$appId", appId), ("$moduleId", moduleId),
-                ("$name", name), ("$notes", "Conversation module instance."), ("$sortOrder", index),
-                ("$contentJson", DefaultConversationModuleContentJson()),
-                ("$behaviorJson", DefaultConversationModuleBehaviorJson()),
-                ("$animationJson", DefaultModuleAnimationJson()),
-                ("$metadataJson", new JsonObject { ["moduleVariantReference"] = ModuleVariantNodeId(moduleId, DefaultModuleVariantId) }.ToJsonString()));
-            NormalizeModuleInstanceRuntimePayloads(connection);
-            SynchronizeTimelineDurations(connection);
-            var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
-            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, id, name, $"Conversation · {duration} frames · Cut", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance), parent);
-        }
-
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
     }
 
@@ -903,6 +875,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetModuleInstanceSettings(node.Id);
             var id = $"module_instance_{Guid.NewGuid():N}";
             var sortOrder = NextSortOrder(connection, "module_instances", "shot_id", settings.ShotId);
+            var copyName = UniqueModuleInstanceName(connection, settings.ShotId, $"{node.Name} copy");
             Execute(
                 connection,
                 """
@@ -915,7 +888,7 @@ internal sealed partial class SpikeDatabase
                 WHERE id = $sourceId
                 """,
                 ("$id", id),
-                ("$name", $"{node.Name} copy"),
+                ("$name", copyName),
                 ("$sortOrder", sortOrder),
                 ("$sourceId", node.Id));
             SynchronizeTimelineDurations(connection);
@@ -923,7 +896,7 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleInstance,
                 id,
-                $"{node.Name} copy",
+                copyName,
                 node.Notes,
                 node.RecordClassId,
                 node.Parent);
@@ -1302,6 +1275,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
             ProjectTreeNodeKind.Module => RenameModuleClass(node, name),
             ProjectTreeNodeKind.ModuleVariant => RenameModuleVariant(node, name),
+            ProjectTreeNodeKind.ModuleInstance => RenameModuleInstance(node, name),
             _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
         };
     }

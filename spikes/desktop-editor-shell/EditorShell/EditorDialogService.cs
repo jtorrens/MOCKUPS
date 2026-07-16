@@ -111,6 +111,8 @@ internal sealed class EditorDialogService
             ? "This will also remove the shots inside this episode in the current in-memory spike."
             : node.Kind == ProjectTreeNodeKind.App
                 ? "This will also remove the modules inside this app in the current spike database."
+                : node.Kind == ProjectTreeNodeKind.ModuleInstance
+                    ? "This removes only this Screen from the Shot. Its Module and Variant remain available."
                 : "This removes this item from the current spike database.";
 
         return Confirm(

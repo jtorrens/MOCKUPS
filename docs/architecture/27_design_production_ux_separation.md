@@ -69,15 +69,17 @@ visually obvious in the app header.
 
 ## Terminology
 
-The term `variant` should remain scoped to components unless a future model
-explicitly extends it.
+The term `Variant` applies to reusable Component and Module design alternatives.
+Production does not create another kind of Variant: it selects one explicit
+Module Variant when creating a Module Instance.
 
 Recommended vocabulary:
 
 ```text
 Component -> variants
 App -> app configuration
-Module -> module definition / module instance
+Module -> module definition / module variants
+Module Instance -> one named Screen inside a Shot
 Actor -> personalization
 Shot -> production context
 ```
@@ -290,6 +292,9 @@ Production may:
 - select an app configuration;
 - select modules;
 - create module instances;
+- select the Module and its concrete Variant and assign the instance tree name;
+- rename, duplicate or delete the concrete instance without mutating reusable
+  Module or Variant definitions;
 - feed real runtime inputs;
 - resolve actor/app personalization;
 - preview by frame;

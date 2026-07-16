@@ -90,6 +90,7 @@ internal sealed class ProjectTreeNode
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.ModuleVariant
+        or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
@@ -99,10 +100,11 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
-    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module
+    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleInstance
         || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected);
     public bool CanDelete => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.Module
+        or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor

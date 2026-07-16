@@ -356,14 +356,22 @@ internal sealed partial class SpikeDatabase
         return choices;
     }
 
-    public ProjectTreeNode AddModuleInstance(ProjectTreeNode shot, ShotModuleChoice module)
+    public ProjectTreeNode AddModuleInstance(ProjectTreeNode shot, ShotModuleInstanceDraft draft)
     {
         if (shot.Kind != ProjectTreeNodeKind.Shot)
             throw new InvalidOperationException("A module instance can only be added to a Shot.");
+        var module = draft.Module;
+        if (!TryParseModuleVariantNodeId(draft.VariantReference, out var variantModuleId, out _)
+            || !variantModuleId.Equals(module.Id, StringComparison.Ordinal)
+            || GetModuleVariantOptions(module.Id).All((option) => option.Value != draft.VariantReference))
+            throw new InvalidOperationException("The selected Variant does not belong to the selected Module.");
+        var requestedName = draft.Name.Trim();
+        if (requestedName.Length == 0)
+            throw new InvalidOperationException("A Module Instance name is required.");
         using var connection = OpenConnection();
         var index = NextSortOrder(connection, "module_instances", "shot_id", shot.Id);
         var id = $"module_instance_{Guid.NewGuid():N}";
-        var name = $"{module.Name} {index + 1}";
+        var name = UniqueModuleInstanceName(connection, shot.Id, requestedName);
         Execute(
             connection,
             """
@@ -386,7 +394,7 @@ internal sealed partial class SpikeDatabase
             ("$animationJson", DefaultModuleAnimationJson()),
             ("$metadataJson", new JsonObject
             {
-                ["moduleVariantReference"] = ModuleVariantNodeId(module.Id, DefaultModuleVariantId),
+                ["moduleVariantReference"] = draft.VariantReference,
             }.ToJsonString()));
         NormalizeModuleInstanceRuntimePayloads(connection);
         SynchronizeTimelineDurations(connection);
@@ -398,6 +406,40 @@ internal sealed partial class SpikeDatabase
             $"{module.Name} · {duration} frames · Cut",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
             shot);
+    }
+
+    public ProjectTreeNode RenameModuleInstance(ProjectTreeNode node, string name)
+    {
+        if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
+            throw new InvalidOperationException("Only a Module Instance can be renamed here.");
+        var requestedName = name.Trim();
+        if (requestedName.Length == 0)
+            throw new InvalidOperationException("A Module Instance name is required.");
+        using var connection = OpenConnection();
+        Execute(connection, "UPDATE module_instances SET name = $name WHERE id = $id",
+            ("$name", requestedName), ("$id", node.Id));
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.ModuleInstance,
+            node.Id,
+            requestedName,
+            node.Notes,
+            node.RecordClassId,
+            node.Parent);
+    }
+
+    private static string UniqueModuleInstanceName(SqliteConnection connection, string shotId, string requestedName)
+    {
+        var candidate = requestedName.Trim();
+        var suffix = 2;
+        while (ScalarLong(
+            connection,
+            "SELECT COUNT(*) FROM module_instances WHERE shot_id = $shotId AND name = $name",
+            ("$shotId", shotId),
+            ("$name", candidate)) > 0)
+        {
+            candidate = $"{requestedName.Trim()} {suffix++}";
+        }
+        return candidate;
     }
 
     public void MoveModuleInstance(string moduleInstanceId, int offset)

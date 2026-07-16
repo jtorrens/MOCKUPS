@@ -38,6 +38,11 @@ internal sealed partial class SpikeDatabase
         string AppName,
         string AppId,
         string RecordClassId);
+    public sealed record ShotModuleInstanceDraft(
+        ShotModuleChoice Module,
+        string VariantReference,
+        string VariantName,
+        string Name);
     public sealed record ModuleInstanceSettings(
         string ShotId,
         string AppId,

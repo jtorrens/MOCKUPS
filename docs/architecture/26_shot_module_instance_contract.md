@@ -67,6 +67,36 @@ events, persists the module-instance duration, and synchronizes the Shot sum.
 The Preview controls expose a Shot frame navigator and resolve the selected
 frame through the same local-frame contract.
 
+## Production creation and lifecycle
+
+A Shot never creates a Module Instance from an implicit Module, class or
+Default Variant. Both the Production tree action and the Shot `Modules` card
+use the same creation workflow. Before writing any data the modal requires:
+
+- one Module available to the Shot's Project;
+- one concrete Variant belonging to that Module;
+- one editable tree name, initially `Module · Variant`.
+
+Cancel closes the workflow without writes. Confirm persists the full
+`moduleId::variant::variantId` reference and initializes `content_json` only
+from the effective Runtime Input contract of that Variant. It does not copy the
+complete Module design payload and does not retain compatibility defaults for
+another Variant.
+
+The resulting Production tree child is a concrete Screen/Module Instance. Its
+tree operations have instance scope:
+
+- rename changes only the instance display name;
+- duplicate creates a new ordered entry in the same Shot and copies its Module,
+  Variant, runtime content, behaviour, transition and animation payloads;
+- delete requires confirmation and removes only the instance, never its Module
+  or Variant.
+
+Creation, duplication and deletion resynchronize the ordered Shot timeline and
+its stored duration. Duplicate names are made unique inside the Shot. These
+operations are generic Module Instance operations; the shell has no
+Conversation, Lock Screen or other module-specific creation branch.
+
 ## Future transitions
 
 The React implementation in `src/render/timeline/screenTimeline.ts` derives
