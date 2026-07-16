@@ -13,7 +13,7 @@ ordered collection of allowed states, so one stable position may show a default
 clock, replace it with Password, overlay another component, or resolve to an
 explicit empty state without changing the Stack schema.
 
-The Stack owns slot order, horizontal alignment, the gap before each slot,
+The Stack owns slot order, the gap before each slot,
 leading/trailing container gaps, fill/content sizing and state selection inside
 each slot. It does not copy child schemas. The class therefore has only its
 protected `Default` Variant; complete composition is supplied through Runtime
@@ -25,7 +25,6 @@ Scalar inputs are `sizingMode`, `startGapToken` and `endGapToken`. The `items`
 Runtime collection contains stable slots. Each slot contains:
 
 - `alternatives`: ordered nested state collection;
-- `alignment`: Left, Center or Right (`start`, `center`, `end` in storage);
 - `gapBeforeMode`: Fixed or Reflow;
 - `gapBeforeToken`: fixed `theme.spacing.*` token;
 - `gapBeforeWeight`: positive proportional Reflow weight.
@@ -36,6 +35,7 @@ Each state has a stable id and contains:
 - local Overrides and the selected child Variant's Runtime Inputs;
 - `active`: animatable boolean for states after the first;
 - `behavior`: Replace or Overlay for states after the first;
+- generic `placement` relative to the frame assigned to that slot;
 - generic `enterMotion` and `exitMotion` values.
 
 State 1 is always the default. It has no editable Active or Behavior fields and
@@ -51,7 +51,9 @@ dictionary control. Nested collection support is part of the generic field
 contract, not a Component Stack editor. It preserves standard Component then
 Variant selection, View Variant, Overrides, child Inputs,
 add/duplicate/delete/reorder, session expansion and reveal behavior at every
-depth.
+depth. The shared collection footer always exposes Add, including when items
+already exist, and reveals the newly created item. A new slot starts with one
+explicit empty default state rather than an invalid empty state collection.
 
 Changing or deleting a component uses the shared forwarded-input confirmation.
 Nested animatable fields use their own stable item id as v2 `targetId`. Test
@@ -67,8 +69,10 @@ remaining height in Fill mode and collapse in Content mode.
 
 Fill uses the complete parent box. Content computes the widest visible slot and
 the sum of visible slot heights plus boundaries/fixed gaps, leaving final
-placement to the parent. Visible Overlay states share the same slot region and
-collection order is paint order.
+placement to the parent. Every visible state is placed independently inside the
+frame assigned to its slot using the generic Center/Inside edge/Outside edge
+contract. Visible Overlay states share that slot region and collection order is
+paint order.
 
 ## Frame and transition contract
 
@@ -99,4 +103,6 @@ migrated once into Runtime Inputs; old gap N became gap-before N+1. The later
 flat runtime item shape is also migrated once: every old item becomes a slot and
 its former Component/Variant/Overrides/Inputs become state 1. Lock Screen stack
 bindings and the committed desktop database are migrated in the same change.
+The retired slot-level Left/Center/Right alignment is migrated explicitly to an
+equivalent placement on every state and then removed from the active contract.
 No aliases, coercions or compatibility fallbacks remain.

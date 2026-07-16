@@ -68,6 +68,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             {
                 item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, DefaultValue(field));
             }
+            StructuredCollectionItemIdentity.RebaseNestedItems(item, collection);
             InitializeComponentItem(collection, item);
             return item;
         }

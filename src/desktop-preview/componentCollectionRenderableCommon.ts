@@ -54,17 +54,18 @@ export function renderComponentCollectionFlow(
 export function renderComponentCollectionFlowResolved(
   payload: DesignPreviewPayload,
   items: ComponentCollectionLayoutItem[],
-  resolveNode: (item: ComponentCollectionLayoutItem) => RenderableNode,
+  resolveNode: (item: ComponentCollectionLayoutItem, assignedBox?: RenderableBox) => RenderableNode,
   options: FlowOptions,
 ): RenderableNode {
   const measured = measureResolvedItems(payload, items, resolveNode);
-  return renderMeasuredFlow(payload, measured, options);
+  return renderMeasuredFlow(payload, measured, options, resolveNode);
 }
 
 function renderMeasuredFlow(
   payload: DesignPreviewPayload,
   measured: MeasuredItem[],
   options: FlowOptions,
+  resolveAssignedNode?: (item: ComponentCollectionLayoutItem, assignedBox: RenderableBox) => RenderableNode,
 ): RenderableNode {
   const scale = renderScale(payload);
   const startGap = Math.max(0, numberToken(payload, options.startGapToken) * scale);
@@ -85,9 +86,15 @@ function renderMeasuredFlow(
         ? current.fixedGapBefore
         : totalWeight > 0 ? reflowSpace * current.item.gapBeforeWeight / totalWeight : 0;
     }
-    const x = alignedX(parentBox, current.box, current.item.alignment);
-    const translated = translateRenderableNode(current.node, {
-      x: x - current.box.x,
+    const slotBox: RenderableBox = {
+      x: parentBox.x,
+      y: cursorY,
+      width: parentBox.width,
+      height: current.box.height,
+    };
+    const assigned = resolveAssignedNode?.(current.item, slotBox);
+    const translated = assigned ?? translateRenderableNode(current.node, {
+      x: alignedX(parentBox, current.box, current.item.alignment) - current.box.x,
       y: cursorY - current.box.y,
     });
     cursorY += current.box.height;

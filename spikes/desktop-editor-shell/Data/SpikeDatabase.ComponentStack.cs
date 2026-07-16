@@ -40,13 +40,7 @@ internal sealed partial class SpikeDatabase
             var classConfig = ParseJsonObject(row.ConfigJson);
             var previousPreview = ParseJsonObject(row.DesignPreviewJson);
             var runtimeValues = ComponentStackRuntimeValues(classConfig, previousPreview);
-            var migratedItems = ComponentStackItemsFromRetiredConfig(classConfig);
-            if (migratedItems.Count == 0)
-            {
-                migratedItems = ComponentStackItemsFromRuntimePreview(previousPreview);
-            }
-            migratedItems = MigrateComponentStackGapBefore(migratedItems);
-            migratedItems = MigrateComponentStackSlots(migratedItems);
+            var currentItems = ComponentStackItemsFromRuntimePreview(previousPreview);
             NormalizeComponentStackConfig(classConfig);
 
             var metadata = ParseJsonObject(row.MetadataJson);
@@ -55,16 +49,12 @@ internal sealed partial class SpikeDatabase
                 foreach (var preset in presets.OfType<JsonObject>())
                 {
                     if (preset["config"] is not JsonObject presetConfig) continue;
-                    if (migratedItems.Count == 0)
-                    {
-                        migratedItems = ComponentStackItemsFromRetiredConfig(presetConfig);
-                    }
                     NormalizeComponentStackConfig(presetConfig);
                 }
             }
 
             var preview = ComponentStackDesignPreview(
-                migratedItems,
+                currentItems,
                 runtimeValues.SizingMode,
                 runtimeValues.StartGapToken,
                 runtimeValues.EndGapToken);
@@ -110,37 +100,6 @@ internal sealed partial class SpikeDatabase
                 ?? "theme.spacing.none");
     }
 
-    private static JsonArray ComponentStackItemsFromRetiredConfig(JsonObject config)
-    {
-        var result = new JsonArray();
-        if (config["componentStack"] is not JsonObject stack
-            || stack["order"] is not JsonArray order
-            || stack["slots"] is not JsonObject slots)
-        {
-            return result;
-        }
-
-        foreach (var idNode in order)
-        {
-            var id = idNode?.GetValue<string>() ?? "";
-            if (string.IsNullOrWhiteSpace(id) || slots[id] is not JsonObject slot) continue;
-            var gap = slot["gapAfter"] as JsonObject
-                ?? throw new InvalidOperationException($"Component Stack item '{id}' is missing its gap contract.");
-            result.Add(new JsonObject
-            {
-                ["id"] = id,
-                ["presetId"] = slot["presetId"]?.DeepClone(),
-                ["overrides"] = slot["overrides"]?.DeepClone() ?? new JsonObject(),
-                ["inputs"] = slot["inputs"]?.DeepClone() ?? new JsonObject(),
-                ["alignment"] = slot["alignment"]?.DeepClone(),
-                ["gapMode"] = gap["mode"]?.DeepClone(),
-                ["gapToken"] = gap["token"]?.DeepClone(),
-                ["reflowWeight"] = gap["weight"]?.DeepClone(),
-            });
-        }
-        return result;
-    }
-
     private static JsonArray ComponentStackItemsFromRuntimePreview(JsonObject preview)
     {
         return preview["items"] is JsonArray items
@@ -148,65 +107,4 @@ internal sealed partial class SpikeDatabase
             : new JsonArray();
     }
 
-    private static JsonArray MigrateComponentStackGapBefore(JsonArray items)
-    {
-        if (!items.OfType<JsonObject>().Any((item) => item.ContainsKey("gapMode")))
-        {
-            return items;
-        }
-
-        var retiredItems = items.OfType<JsonObject>().ToList();
-        var migrated = new JsonArray();
-        for (var index = 0; index < retiredItems.Count; index++)
-        {
-            var item = retiredItems[index].DeepClone() as JsonObject ?? new JsonObject();
-            var precedingGapOwner = index > 0 ? retiredItems[index - 1] : null;
-            item.Remove("gapMode");
-            item.Remove("gapToken");
-            item.Remove("reflowWeight");
-            item["gapBeforeMode"] = precedingGapOwner?["gapMode"]?.DeepClone() ?? "fixed";
-            item["gapBeforeToken"] = precedingGapOwner?["gapToken"]?.DeepClone() ?? "theme.spacing.none";
-            item["gapBeforeWeight"] = precedingGapOwner?["reflowWeight"]?.DeepClone() ?? 1;
-            migrated.Add(item);
-        }
-        return migrated;
-    }
-
-    internal static JsonArray MigrateComponentStackSlots(JsonArray items)
-    {
-        if (items.OfType<JsonObject>().All((item) => item["alternatives"] is JsonArray))
-        {
-            return items;
-        }
-
-        var migrated = new JsonArray();
-        foreach (var source in items.OfType<JsonObject>())
-        {
-            var slot = source.DeepClone() as JsonObject ?? new JsonObject();
-            var slotId = slot["id"]?.GetValue<string>()
-                ?? throw new InvalidOperationException("Component Stack slot is missing its stable id.");
-            var presetId = slot["presetId"]?.DeepClone();
-            var overrides = slot["overrides"]?.DeepClone() ?? new JsonObject();
-            var inputs = slot["inputs"]?.DeepClone() ?? new JsonObject();
-            slot.Remove("presetId");
-            slot.Remove("overrides");
-            slot.Remove("inputs");
-            slot["alternatives"] = new JsonArray
-            {
-                new JsonObject
-                {
-                    ["id"] = $"{slotId}_default",
-                    ["presetId"] = presetId,
-                    ["overrides"] = overrides,
-                    ["inputs"] = inputs,
-                    ["active"] = false,
-                    ["behavior"] = "replace",
-                    ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
-                    ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
-                },
-            };
-            migrated.Add(slot);
-        }
-        return migrated;
-    }
 }

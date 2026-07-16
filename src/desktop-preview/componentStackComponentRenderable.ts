@@ -2,7 +2,11 @@ import type { RenderableBox, RenderableNode } from "../visual/renderable/types.j
 import type { ComponentCollectionLayoutItem } from "./componentCollectionContract.js";
 import {
   embeddedComponentPayload,
+  placeChild,
   previewScreenBox,
+  renderScale,
+  scalePlacement,
+  translateRenderableNode,
   unionBoxes,
 } from "./componentRenderableCommon.js";
 import type {
@@ -22,10 +26,10 @@ export function componentStackComponentToRenderable(
 ): RenderableNode {
   const slots = stack.slots.map(slotLayoutItem);
   const byId = new Map(stack.slots.map((slot) => [slot.id, slot]));
-  return renderComponentCollectionFlowResolved(payload, slots, (item) => {
+  return renderComponentCollectionFlowResolved(payload, slots, (item, assignedBox) => {
     const slot = byId.get(item.id);
     if (!slot) throw new Error(`Missing resolved Component Stack slot ${item.id}`);
-    return renderSlot(payload, slot, renderChild);
+    return renderSlot(payload, slot, renderChild, assignedBox);
   }, {
     id: stack.id,
     sizingMode: stack.sizingMode,
@@ -38,17 +42,31 @@ function renderSlot(
   payload: DesignPreviewPayload,
   slot: ComponentStackSlotContract,
   renderChild: ComponentStackChildRenderer,
+  assignedBox?: RenderableBox,
 ): RenderableNode {
-  const nodes = slot.alternatives
+  const intrinsicNodes = slot.alternatives
     .filter((alternative) => alternative.component !== undefined)
     .map((alternative) => renderAlternative(payload, alternative, renderChild));
-  if (nodes.length === 0) {
+  if (intrinsicNodes.length === 0) {
     const screen = previewScreenBox(payload);
-    return group(slot.id, { x: screen.x + screen.width / 2, y: screen.y + screen.height / 2, width: 0, height: 0 }, []);
+    const emptyBox = assignedBox
+      ?? { x: screen.x + screen.width / 2, y: screen.y + screen.height / 2, width: 0, height: 0 };
+    return group(slot.id, emptyBox, []);
   }
-  const boxes = nodes.flatMap((node) => node.box ? [node.box] : []);
-  if (boxes.length !== nodes.length) throw new Error(`Component Stack slot ${slot.id} contains an unresolved box`);
-  return group(slot.id, unionBoxes(boxes), nodes);
+  const boxes = intrinsicNodes.flatMap((node) => node.box ? [node.box] : []);
+  if (boxes.length !== intrinsicNodes.length) throw new Error(`Component Stack slot ${slot.id} contains an unresolved box`);
+  if (!assignedBox) return group(slot.id, unionBoxes(boxes), intrinsicNodes);
+  const visibleAlternatives = slot.alternatives.filter((alternative) => alternative.component !== undefined);
+  const nodes = intrinsicNodes.map((node, index) => {
+    const box = node.box!;
+    const placed = placeChild(
+      assignedBox,
+      { width: box.width, height: box.height },
+      scalePlacement(visibleAlternatives[index]!.placement, renderScale(payload)),
+    );
+    return translateRenderableNode(node, { x: placed.x - box.x, y: placed.y - box.y });
+  });
+  return group(slot.id, assignedBox, nodes);
 }
 
 function renderAlternative(
@@ -96,7 +114,7 @@ function renderAlternative(
 function slotLayoutItem(slot: ComponentStackSlotContract): ComponentCollectionLayoutItem {
   return {
     id: slot.id,
-    alignment: slot.alignment,
+    alignment: "center",
     gapBeforeMode: slot.gapBeforeMode,
     gapBeforeToken: slot.gapBeforeToken,
     gapBeforeWeight: slot.gapBeforeWeight,

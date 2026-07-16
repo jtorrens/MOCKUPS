@@ -69,15 +69,16 @@ internal sealed class StructuredCollectionEditor
         if (_items.Count == 0)
         {
             footer.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
-            var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()}");
-            add.HorizontalAlignment = HorizontalAlignment.Left;
-            add.Click += (_, args) =>
-            {
-                args.Handled = true;
-                _actions.AddFirst();
-            };
-            footer.Children.Add(add);
         }
+        var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()}");
+        add.HorizontalAlignment = HorizontalAlignment.Left;
+        add.Click += (_, args) =>
+        {
+            args.Handled = true;
+            if (_items.Count == 0) _actions.AddFirst();
+            else _actions.AddAfter(_items.Count - 1);
+        };
+        footer.Children.Add(add);
 
         var subcards = new List<EditorInternalNavigationSection>();
         for (var index = 0; index < _items.Count; index++)

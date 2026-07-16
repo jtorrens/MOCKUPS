@@ -868,6 +868,10 @@ static void ComponentStackSeedOpensAndRenders()
         var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
         var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
             ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
+        True(runtimeCollection.Fields.All((field) => field.Id != "alignment"));
+        Equal(ValueKind.AlignmentPlacement, alternatives.Fields.Single((field) => field.Id == "placement").ValueKind);
+        var defaultStates = JsonNode.Parse(runtimeCollection.Fields.Single((field) => field.Id == "alternatives").DefaultValue) as JsonArray;
+        Equal(1, defaultStates?.Count ?? -1);
         var fixedGapField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeToken");
         var reflowWeightField = runtimeCollection.Fields.Single((field) => field.Id == "gapBeforeWeight");
         var fixedGapItem = new JsonObject { ["gapBeforeMode"] = "fixed" };
@@ -921,11 +925,11 @@ static void ComponentStackSeedOpensAndRenders()
                     ["inputs"] = audioInputs,
                     ["active"] = false,
                     ["behavior"] = "replace",
+                    ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
                     ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                     ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                 },
             },
-            ["alignment"] = "center",
             ["gapBeforeMode"] = "fixed",
             ["gapBeforeToken"] = "theme.spacing.m",
             ["gapBeforeWeight"] = 1,
@@ -1681,11 +1685,11 @@ static void LockScreenComposesRuntimeStack()
                         ["inputs"] = childInputs,
                         ["active"] = false,
                         ["behavior"] = "replace",
+                        ["placement"] = JsonNode.Parse("""{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
                         ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                         ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
                     },
                 },
-                ["alignment"] = "center",
                 ["gapBeforeMode"] = "fixed",
                 ["gapBeforeToken"] = "theme.spacing.none",
                 ["gapBeforeWeight"] = 1,

@@ -5,13 +5,13 @@ import {
   optionalString,
   parseObject,
   requiredNumber,
+  requiredPlacement,
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import type {
   ComponentStackAlternativeContract,
-  ComponentStackAlignment,
   ComponentStackDesignContract,
   ComponentStackGapMode,
   ComponentStackSizingMode,
@@ -40,10 +40,6 @@ function resolveSlot(
   index: number,
 ): ComponentStackSlotContract {
   const path = `componentStack.items[${index}]`;
-  const alignment = requiredString(slot, "alignment", `${path}.alignment`);
-  if (alignment !== "start" && alignment !== "center" && alignment !== "end") {
-    throw new Error(`Unsupported componentStack alignment ${alignment}`);
-  }
   const gapBeforeMode = requiredString(slot, "gapBeforeMode", `${path}.gapBeforeMode`);
   if (gapBeforeMode !== "fixed" && gapBeforeMode !== "reflow") {
     throw new Error(`Unsupported componentStack gap-before mode ${gapBeforeMode}`);
@@ -55,7 +51,6 @@ function resolveSlot(
     asRecord(rawAlternative),
     alternativeIndex,
     path,
-    alignment as ComponentStackAlignment,
     gapBeforeMode as ComponentStackGapMode,
     requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
@@ -63,7 +58,6 @@ function resolveSlot(
   const runtimeStateId = optionalString(slot, "runtimeStateId");
   return {
     id: requiredString(slot, "id", `${path}.id`),
-    alignment: alignment as ComponentStackAlignment,
     gapBeforeMode: gapBeforeMode as ComponentStackGapMode,
     gapBeforeToken: requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     gapBeforeWeight: Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
@@ -102,7 +96,6 @@ function resolveAlternative(
   alternative: Record<string, unknown>,
   index: number,
   slotPath: string,
-  alignment: ComponentStackAlignment,
   gapBeforeMode: ComponentStackGapMode,
   gapBeforeToken: string,
   gapBeforeWeight: number,
@@ -124,7 +117,7 @@ function resolveAlternative(
   const component = presetReference
     ? resolveComponentCollectionItem(payload, {
         ...alternative,
-        alignment,
+        alignment: "center",
         gapBeforeMode,
         gapBeforeToken,
         gapBeforeWeight,
@@ -133,6 +126,7 @@ function resolveAlternative(
   return {
     id,
     component,
+    placement: requiredPlacement(alternative, "placement", `${path}.placement`),
     behavior,
     active: resolvedActive.value === true,
     isDefault: index === 0,

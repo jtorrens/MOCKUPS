@@ -272,8 +272,7 @@ internal sealed partial class SpikeDatabase
             };
             lockScreen["stackInputs"] = stackInputs;
         }
-        stackInputs["items"] = MigrateComponentStackSlots(
-            stackInputs["items"] as JsonArray ?? new JsonArray());
+        stackInputs["items"] ??= new JsonArray();
         var next = config.ToJsonString();
         if (next == originalConfig) return;
         Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",

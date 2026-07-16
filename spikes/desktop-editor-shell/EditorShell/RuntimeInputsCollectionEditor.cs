@@ -740,6 +740,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);
         }
+        StructuredCollectionItemIdentity.RebaseNestedItems(item, collection);
         var componentItems = collection.ComponentItems;
         var preset = componentItems is null
             ? null

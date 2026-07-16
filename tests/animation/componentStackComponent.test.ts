@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { resolveComponentStackComponent } from "../../src/desktop-preview/componentStackComponentResolver.js";
+import { componentStackComponentToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 
 const motion = {
@@ -21,6 +22,7 @@ function alternative(id: string, presetId: string, active: boolean, behavior = "
     inputs: { id },
     active,
     behavior,
+    placement: { mode: "center", alignX: 0.5, alignY: 0.5, offsetX: 0, offsetY: 0 },
     enterMotion: motion,
     exitMotion: motion,
   };
@@ -47,7 +49,6 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
       endGapToken: "theme.spacing.none",
       items: [{
         id: "central",
-        alignment: "center",
         gapBeforeMode: "fixed",
         gapBeforeToken: "theme.spacing.none",
         gapBeforeWeight: 1,
@@ -65,6 +66,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
     },
     themeMode: "light",
     themeTokensJson: JSON.stringify({
+      spacing: { none: 0 },
       motion: {
         transitions: {
           slide: { durationMs: 240, delayMs: 0, easing: "linear", intensity: 1 },
@@ -131,4 +133,28 @@ test("Component Stack runtime state actions resolve the selected state and trans
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
   assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
+});
+
+test("each Component Stack state resolves its own placement inside the assigned slot", () => {
+  const states = [
+    alternative("clock", "stub::preset::clock", false),
+    {
+      ...alternative("widget", "stub::preset::widget", true, "overlay"),
+      placement: { mode: "insideEdge", alignX: 1, alignY: 0.5, offsetX: 0, offsetY: 0 },
+    },
+  ];
+  const source = payload(states);
+  const resolved = resolveComponentStackComponent(source);
+  const renderable = componentStackComponentToRenderable(source, resolved, (child) => ({
+    id: child.componentType ?? "stub",
+    type: "group",
+    frame: 0,
+    box: { x: 100, y: 100, width: 20, height: 10 },
+    children: [],
+  }));
+  const slot = renderable.children?.[0];
+  assert.equal(slot?.children?.[0]?.box?.x, 170);
+  assert.equal(slot?.children?.[1]?.box?.x, 340);
+  assert.equal(slot?.children?.[0]?.box?.y, 0);
+  assert.equal(slot?.children?.[1]?.box?.y, 0);
 });

@@ -1,19 +1,18 @@
 import type {
-  ComponentCollectionAlignment,
   ComponentCollectionChildRenderer,
   ComponentCollectionGapMode,
   ComponentCollectionItemContract,
   ComponentCollectionSizingMode,
 } from "./componentCollectionContract.js";
-import type { ComponentMotionContract } from "./previewComponentContracts.js";
+import type { AlignmentPlacementContract, ComponentMotionContract } from "./previewComponentContracts.js";
 
 export type ComponentStackSizingMode = ComponentCollectionSizingMode;
-export type ComponentStackAlignment = ComponentCollectionAlignment;
 export type ComponentStackGapMode = ComponentCollectionGapMode;
 
 export interface ComponentStackAlternativeContract {
   id: string;
   component?: ComponentCollectionItemContract;
+  placement: AlignmentPlacementContract;
   behavior: "replace" | "overlay";
   active: boolean;
   isDefault: boolean;
@@ -25,7 +24,6 @@ export interface ComponentStackAlternativeContract {
 
 export interface ComponentStackSlotContract {
   id: string;
-  alignment: ComponentStackAlignment;
   gapBeforeMode: ComponentStackGapMode;
   gapBeforeToken: string;
   gapBeforeWeight: number;

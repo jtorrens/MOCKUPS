@@ -1404,19 +1404,9 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "alternatives", ["label"] = "States", ["jsonKey"] = "alternatives",
-                ["kind"] = "text", ["valueKind"] = "StructuredCollection", ["defaultValue"] = "[]",
+                ["kind"] = "text", ["valueKind"] = "StructuredCollection",
+                ["defaultValue"] = ComponentStackDefaultAlternativeValue(),
                 ["structuredCollection"] = ComponentStackAlternativeCollectionDefinition(),
-            },
-            new JsonObject
-            {
-                ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
-                ["kind"] = "option", ["defaultValue"] = "center",
-                ["options"] = new JsonArray
-                {
-                    new JsonObject { ["value"] = "start", ["label"] = "Left" },
-                    new JsonObject { ["value"] = "center", ["label"] = "Center" },
-                    new JsonObject { ["value"] = "end", ["label"] = "Right" },
-                },
             },
             new JsonObject
             {
@@ -1448,11 +1438,27 @@ internal sealed partial class SpikeDatabase
         },
         ["itemPresentation"] = new JsonObject
         {
-            ["subtitleFieldIds"] = new JsonArray("alignment"),
+            ["subtitleFieldIds"] = new JsonArray("alternatives"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",
         },
     };
+
+    private static string ComponentStackDefaultAlternativeValue() => new JsonArray
+    {
+        new JsonObject
+        {
+            ["id"] = "default",
+            ["presetId"] = "",
+            ["overrides"] = new JsonObject(),
+            ["inputs"] = new JsonObject(),
+            ["active"] = false,
+            ["behavior"] = "replace",
+            ["placement"] = JsonNode.Parse(CenterPlacementValue().ToJsonString()),
+            ["enterMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+            ["exitMotion"] = JsonNode.Parse(MotionVariantValue.Default.ToJsonString()),
+        },
+    }.ToJsonString();
 
     private static JsonObject ComponentStackAlternativeCollectionDefinition() => new()
     {
@@ -1492,6 +1498,12 @@ internal sealed partial class SpikeDatabase
             },
             new JsonObject
             {
+                ["id"] = "placement", ["label"] = "Placement", ["jsonKey"] = "placement",
+                ["kind"] = "text", ["valueKind"] = "AlignmentPlacement",
+                ["defaultValue"] = CenterPlacementValue().ToJsonString(),
+            },
+            new JsonObject
+            {
                 ["id"] = "enterMotion", ["label"] = "Enter transition", ["jsonKey"] = "enterMotion",
                 ["kind"] = "text", ["valueKind"] = "Motion",
                 ["defaultValue"] = MotionVariantValue.Default.ToJsonString(),
@@ -1505,11 +1517,18 @@ internal sealed partial class SpikeDatabase
         },
         ["itemPresentation"] = new JsonObject
         {
-            ["subtitleFieldIds"] = new JsonArray("presetId", "behavior"),
+            ["subtitleFieldIds"] = new JsonArray("presetId", "behavior", "placement"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",
         },
     };
+
+    private static AlignmentPlacementValue CenterPlacementValue() => new(
+        AlignmentPlacementValue.CenterMode,
+        0.5,
+        0.5,
+        0,
+        0);
 
     private static JsonArray ComponentInputsForComponent(string componentType)
     {

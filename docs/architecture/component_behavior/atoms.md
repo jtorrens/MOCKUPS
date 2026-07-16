@@ -129,7 +129,7 @@ component-specific renderer logic.
 
 **Purpose/ownership.** Generic vertical container for an ordered runtime
 collection of concrete component Variants. Sizing, Start/End gaps, child
-Variants, local overrides, child runtime inputs, alignment and inter-item gap
+Variants, local overrides, child runtime inputs, per-state placement and inter-item gap
 behavior are all Runtime Inputs. Its protected `Default` Variant contains no
 composition.
 
