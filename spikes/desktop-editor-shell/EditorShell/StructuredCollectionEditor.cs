@@ -98,7 +98,7 @@ internal sealed class StructuredCollectionEditor
             var presentation = _presentation(item, itemIndex);
             subcards.Add(new EditorInternalNavigationSection(
                 itemId,
-                $"{_itemLabel} {itemIndex + 1}",
+                presentation.Title,
                 presentation.Subtitle,
                 presentation.Icon,
                 itemContent.Content,

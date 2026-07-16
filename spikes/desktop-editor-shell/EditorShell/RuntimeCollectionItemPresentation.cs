@@ -4,20 +4,34 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record RuntimeCollectionItemPresentationResult(string Subtitle, string Icon);
+internal sealed record RuntimeCollectionItemPresentationResult(string Title, string Subtitle, string Icon);
 
 internal static class RuntimeCollectionItemPresentation
 {
     public static RuntimeCollectionItemPresentationResult Resolve(
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
+        int itemIndex,
+        string defaultTitle,
         string defaultSubtitle,
         string defaultIcon)
     {
         var presentation = collection.ItemPresentation;
         if (presentation is null)
         {
-            return new RuntimeCollectionItemPresentationResult(defaultSubtitle, defaultIcon);
+            return new RuntimeCollectionItemPresentationResult(defaultTitle, defaultSubtitle, defaultIcon);
+        }
+
+        var title = defaultTitle;
+        var titleField = collection.Fields.FirstOrDefault((field) => field.Id == presentation.TitleFieldId);
+        if (titleField is not null)
+        {
+            var value = DisplayValue(titleField, item);
+            if (!string.IsNullOrWhiteSpace(value)) title = value;
+        }
+        if (itemIndex == 0 && !string.IsNullOrWhiteSpace(presentation.FirstItemBadge))
+        {
+            title = $"{title} · {presentation.FirstItemBadge}";
         }
 
         var subtitle = string.Join(
@@ -43,7 +57,7 @@ internal static class RuntimeCollectionItemPresentation
         }
         if (string.IsNullOrWhiteSpace(icon)) icon = defaultIcon;
 
-        return new RuntimeCollectionItemPresentationResult(subtitle, icon);
+        return new RuntimeCollectionItemPresentationResult(title, subtitle, icon);
     }
 
     private static string DisplayValue(ComponentInputDefinition field, JsonObject item)

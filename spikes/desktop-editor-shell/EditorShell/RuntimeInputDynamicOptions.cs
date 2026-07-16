@@ -29,7 +29,15 @@ internal static class RuntimeInputDynamicOptions
                 try { label = database.GetRuntimeComponentPresetName(rawLabel, new JsonObject(), []); }
                 catch { label = rawLabel; }
             }
+            if (input.OptionsSourceLabelJsonKey.Equals("name", StringComparison.Ordinal)
+                && string.IsNullOrWhiteSpace(label))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime option '{value}' is missing its required name in '{input.OptionsSourceCollectionJsonKey}'.");
+            }
             if (string.IsNullOrWhiteSpace(label)) label = $"State {index + 1}";
+            if (index == 0 && !string.IsNullOrWhiteSpace(input.OptionsSourceFirstItemBadge))
+                label = $"{label} · {input.OptionsSourceFirstItemBadge}";
             return new FieldOption(value, label);
         }).Where((option) => !string.IsNullOrWhiteSpace(option.Value)).ToList();
     }

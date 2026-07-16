@@ -46,7 +46,10 @@ internal static class RuntimeInputForwardingContract
                     ?? throw new InvalidOperationException("Forwarded runtime collection has no Variant collection value.");
                 var projected = ProjectCollectionRuntimeValue(source, next["projection"] as JsonObject);
                 effective[sourceKey] = source;
-                effective[jsonKey] ??= projected;
+                if (effective[jsonKey] is JsonArray stored)
+                    ApplyProjectedMetadata(stored, projected, MetadataKeys(next["projection"] as JsonObject));
+                else
+                    effective[jsonKey] = projected;
                 var runtimeCollection = collection.DeepClone() as JsonObject ?? new JsonObject();
                 runtimeCollection["jsonKey"] = jsonKey;
                 runtimeCollection["sourceCollectionJsonKey"] = sourceKey;
@@ -111,6 +114,7 @@ internal static class RuntimeInputForwardingContract
         var presetJsonKey = Text(child["presetJsonKey"]);
         var runtimeContractJsonKey = Text(child["runtimeContractJsonKey"]);
         var sourceRuntimeContractJsonKey = Text(child["sourceRuntimeContractJsonKey"]);
+        var metadataKeys = MetadataKeys(child);
         if (childJsonKey.Length == 0
             || sourceCollectionJsonKey.Length == 0
             || parentItemIdJsonKey.Length == 0
@@ -135,22 +139,29 @@ internal static class RuntimeInputForwardingContract
                 if (stateId.Length == 0)
                     throw new InvalidOperationException("Projected child runtime collection item has no stable id.");
                 var sourceContract = state[sourceRuntimeContractJsonKey] as JsonObject ?? new JsonObject();
-                values.Add(new JsonObject
+                var value = new JsonObject
                 {
                     ["id"] = stateId,
                     [parentItemIdJsonKey] = parentId,
                     [presetJsonKey] = state[presetJsonKey]?.DeepClone(),
                     [runtimeContractJsonKey] = EffectivePreview(new JsonObject(), sourceContract),
-                });
+                };
+                foreach (var metadataKey in metadataKeys)
+                    value[metadataKey] = state[metadataKey]?.DeepClone()
+                        ?? throw new InvalidOperationException($"Projected child runtime collection item is missing '{metadataKey}'.");
+                values.Add(value);
             }
         }
 
-        effective[childJsonKey] ??= values;
+        if (effective[childJsonKey] is JsonArray stored)
+            ApplyProjectedMetadata(stored, values, metadataKeys);
+        else
+            effective[childJsonKey] = values;
         var runtimeCollection = child.DeepClone() as JsonObject ?? new JsonObject();
         foreach (var projectionOnlyKey in new[]
                  {
                      "sourceCollectionJsonKey", "parentItemIdJsonKey", "presetJsonKey",
-                     "runtimeContractJsonKey", "sourceRuntimeContractJsonKey",
+                     "runtimeContractJsonKey", "sourceRuntimeContractJsonKey", "itemMetadataJsonKeys",
                  })
         {
             runtimeCollection.Remove(projectionOnlyKey);
@@ -232,6 +243,7 @@ internal static class RuntimeInputForwardingContract
         var transitionKey = Text(projection["transitionJsonKey"]);
         var elapsedKey = Text(projection["elapsedJsonKey"]);
         var fromKey = Text(projection["fromJsonKey"]);
+        var metadataKeys = MetadataKeys(projection);
         foreach (var item in source.OfType<JsonObject>())
         {
             var alternatives = item[alternativesKey] as JsonArray
@@ -239,16 +251,61 @@ internal static class RuntimeInputForwardingContract
             var firstId = alternatives.OfType<JsonObject>().FirstOrDefault()?["id"]?.GetValue<string>() ?? "";
             var id = Text(item["id"]);
             if (id.Length == 0) throw new InvalidOperationException("Forwarded runtime collection item has no stable id.");
-            result.Add(new JsonObject
+            var value = new JsonObject
             {
                 ["id"] = id,
                 [stateKey] = firstId,
                 [transitionKey] = false,
                 [elapsedKey] = 0,
                 [fromKey] = firstId,
-            });
+            };
+            foreach (var metadataKey in metadataKeys)
+                value[metadataKey] = item[metadataKey]?.DeepClone()
+                    ?? throw new InvalidOperationException($"Forwarded runtime collection item is missing '{metadataKey}'.");
+            result.Add(value);
         }
         return result;
+    }
+
+    private static IReadOnlyList<string> MetadataKeys(JsonObject? projection) =>
+        projection?["itemMetadataJsonKeys"] is JsonArray keys
+            ? keys.OfType<JsonValue>()
+                .Select((value) => value.TryGetValue<string>(out var key) ? key : "")
+                .Where((key) => key.Length > 0)
+                .ToList()
+            : [];
+
+    private static void ApplyProjectedMetadata(
+        JsonArray stored,
+        JsonArray projected,
+        IReadOnlyList<string> metadataKeys)
+    {
+        if (metadataKeys.Count == 0) return;
+        var projectedById = projected.OfType<JsonObject>()
+            .ToDictionary((item) => Text(item["id"]), StringComparer.Ordinal);
+        for (var index = stored.Count - 1; index >= 0; index--)
+        {
+            if (stored[index] is not JsonObject item
+                || !projectedById.ContainsKey(Text(item["id"])))
+            {
+                stored.RemoveAt(index);
+            }
+        }
+        var storedIds = stored.OfType<JsonObject>()
+            .Select((item) => Text(item["id"]))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var source in projected.OfType<JsonObject>())
+        {
+            if (storedIds.Add(Text(source["id"]))) stored.Add(source.DeepClone());
+        }
+        foreach (var item in stored.OfType<JsonObject>())
+        {
+            var id = Text(item["id"]);
+            var source = projectedById[id];
+            foreach (var metadataKey in metadataKeys)
+                item[metadataKey] = source[metadataKey]?.DeepClone()
+                    ?? throw new InvalidOperationException($"Projected runtime collection item is missing '{metadataKey}'.");
+        }
     }
 
     private static void RebaseTransitionForParent(JsonObject definition, JsonObject container)

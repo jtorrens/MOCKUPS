@@ -81,6 +81,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             (item, index) => RuntimeCollectionItemPresentation.Resolve(
                 collection,
                 item,
+                index,
+                $"{collection.ItemLabel} {index + 1}",
                 $"Variant item {index + 1}",
                 EditorIcons.Component),
             (item, index) => ItemContent(collection, item, index),
@@ -126,14 +128,21 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 },
                 Delete: async (index) =>
                 {
+                    var title = RuntimeCollectionItemPresentation.Resolve(
+                        collection,
+                        items[index],
+                        index,
+                        $"{collection.ItemLabel} {index + 1}",
+                        $"Variant item {index + 1}",
+                        EditorIcons.Component).Title;
                     var forwardedLabels = RuntimeInputForwardingContract.Labels(items[index]);
                     var confirmed = forwardedLabels.Count > 0
                         ? _services.ConfirmDiscardForwardedRuntimeInputs is null
                           || await _services.ConfirmDiscardForwardedRuntimeInputs(
-                              $"Delete {collection.ItemLabel} {index + 1}",
+                              $"Delete {title}",
                               forwardedLabels)
                         : _services.ConfirmStructuredCollectionItemDelete is null
-                          || await _services.ConfirmStructuredCollectionItemDelete($"{collection.ItemLabel} {index + 1}");
+                          || await _services.ConfirmStructuredCollectionItemDelete(title);
                     if (!confirmed) return;
                     _services.RemoveStructuredCollectionAnimationTargets?.Invoke(
                         StructuredCollectionItemIdentity.TargetIds(items[index]));
@@ -299,7 +308,13 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         EditorIcons.Component),
                     new EditorSimplifiedGroupIdentity(
                         ItemId(item, itemIndex),
-                        $"{collection.ItemLabel} {itemIndex + 1}",
+                        RuntimeCollectionItemPresentation.Resolve(
+                            collection,
+                            item,
+                            itemIndex,
+                            $"{collection.ItemLabel} {itemIndex + 1}",
+                            $"Variant item {itemIndex + 1}",
+                            EditorIcons.Component).Title,
                         EditorIcons.Component),
                 ],
                 _services.SimplifiedSlotFieldIds));

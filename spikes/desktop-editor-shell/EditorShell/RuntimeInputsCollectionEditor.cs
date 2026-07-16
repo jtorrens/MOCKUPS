@@ -548,7 +548,13 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var item = items[itemIndex];
                 var itemId = ItemId(item, itemIndex);
-                var label = $"{collection.ItemLabel} {itemIndex + 1}";
+                var label = RuntimeCollectionItemPresentation.Resolve(
+                    collection,
+                    item,
+                    itemIndex,
+                    $"{collection.ItemLabel} {itemIndex + 1}",
+                    $"Payload item {itemIndex + 1}",
+                    EditorIcons.Component).Title;
                 if (!await _confirmCollectionItemDelete(label)) return;
                 if (owner.IsInstance)
                     _database.DeleteModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
@@ -571,6 +577,8 @@ internal sealed class RuntimeInputsCollectionEditor
             (item, itemIndex) => RuntimeCollectionItemPresentation.Resolve(
                 collection,
                 item,
+                itemIndex,
+                $"{collection.ItemLabel} {itemIndex + 1}",
                 $"Payload item {itemIndex + 1}",
                 EditorIcons.Component),
             (item, itemIndex) =>
@@ -658,11 +666,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 var presentation = RuntimeCollectionItemPresentation.Resolve(
                     childCollection,
                     childItem,
+                    index,
+                    $"{childCollection.ItemLabel} {index + 1}",
                     $"{childCollection.ItemLabel} {index + 1}",
                     EditorIcons.Component);
                 result.Add(new EditorInternalNavigationSection(
                     childItemId,
-                    $"{childCollection.ItemLabel} {index + 1}",
+                    presentation.Title,
                     presentation.Subtitle,
                     presentation.Icon,
                     childContent,

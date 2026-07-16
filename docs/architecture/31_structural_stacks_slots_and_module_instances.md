@@ -76,6 +76,7 @@ composition.
 
 Every slot has a stable id and owns:
 
+- an editable presentation name, independent from its stable id;
 - its ordered `alternatives` State collection;
 - the Fixed/Reflow gap before this slot;
 - a `theme.spacing.*` token for Fixed gap;
@@ -89,6 +90,7 @@ order and can be changed with the shared collection controls.
 
 Every State has a stable id and owns:
 
+- an editable presentation name, independent from its stable id;
 - a full `componentClassId::preset::presetId` reference or explicit None;
 - local child Overrides;
 - bound Runtime Inputs for that selected child Variant;
@@ -97,8 +99,15 @@ Every State has a stable id and owns:
 - for States after State 1, `active` and Replace/Overlay behavior.
 
 State 1 is structurally special only because collection order declares it the
-default. It is always active and Replace; it has no editable Active or Behavior
-field. Reordering the State collection changes which State is the default.
+initial State. It is always active and Replace; it has no editable Active or
+Behavior field. Reordering the State collection changes which State is initial.
+The UI annotates that first item as `Initial`; `Default` is not a State name.
+
+Slot and State names are presentation metadata. Design cards, Runtime Values,
+dynamic State options, actions and animation track labels resolve them from the
+selected Component/Module Variant. References, runtime collection ownership and
+v2 keyframes continue to store only stable slot/State ids. Renaming therefore
+never rewrites instance payload values, action targets or animation tracks.
 
 State Placement belongs to the State, not the slot. Clock and Password may
 therefore use different placements while occupying the same semantic slot.
@@ -262,6 +271,9 @@ minimal runtime collections:
 The second collection is not a copy of the State design. The complete
 `alternatives` collection, component Variant references as editable choices,
 Overrides, Placement and Motions remain exclusively in the Module Variant.
+Slot and State names also remain Variant-owned metadata: the generic projection
+joins and displays them for the current contract without persisting a second
+editable copy in `content_json`.
 Generic parent metadata makes the editor render both arrays as
 `Slots -> Slot -> State`, and the resolver joins them by stable ids only while
 preparing the requested frame. State runtime values never appear in General.
@@ -292,7 +304,7 @@ duration synchronized with the remaining instance durations.
 Every Component Stack slot whose State collection reaches the effective parent
 runtime contract exposes its own option action at that exact nested level. The
 options are derived generically from the State collection's stable ids and
-component Variant names. There is no Lock Screen-specific state control.
+editable State names. There is no Lock Screen-specific state control.
 
 In module Test Values the shared action control shows:
 
@@ -314,7 +326,8 @@ never rendered as editable instance values.
 The activation control stays beside each slot's State selector, but the
 projected Slots collection declares the generic `collectionFooter` animation
 presentation. The editor therefore aggregates all active direct slot tracks in
-one `Animation` card after the complete slot list, labelled `Slot N · State`.
+one `Animation` card after the complete slot list, labelled with the owning slot
+name, for example `Authentication · State`.
 This changes presentation only: every track remains owned by its stable slot
 target. Runtime inputs and actions owned by a concrete State retain their
 Animation card inside that State. General likewise places its own Animation

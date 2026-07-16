@@ -340,6 +340,9 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var slots = collections.Single((collection) => collection.Id == "stackStates");
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
         var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
+        Equal("name", slots.ItemPresentation?.TitleFieldId ?? "");
+        Equal("name", stateInputs.ItemPresentation?.TitleFieldId ?? "");
+        Equal("Initial", stateInputs.ItemPresentation?.FirstItemBadge ?? "");
         Equal(true, stateSelection.ActionOnly);
         Equal(true, stateSelection.Animation is not null);
         SequenceEqual(["hold"], stateSelection.Animation?.Interpolations.ToList() ?? []);
@@ -349,6 +352,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal("slotId", stateInputs.UiParentItemIdJsonKey);
         Equal("inputs", stateInputs.ItemRuntimeContractJsonKey);
         var stateItems = DesignPreviewTestValues.CollectionItems(effective, stateInputs);
+        True(stateItems.All((item) => !string.IsNullOrWhiteSpace(item["name"]?.GetValue<string>())));
         var passwordState = stateItems.Single((item) =>
             item["presetId"]?.GetValue<string>()?.Contains("_password::preset::", StringComparison.Ordinal) == true);
         var passwordContract = passwordState["inputs"] as JsonObject
@@ -370,6 +374,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(stateInputs.JsonKey, forwardedPasswordAction.CollectionJsonKey);
         Equal("inputs", forwardedPasswordAction.TargetJsonPath);
         var items = DesignPreviewTestValues.CollectionItems(effective, slots);
+        Equal("Clock", items[0]?["name"]?.GetValue<string>() ?? "");
+        Equal("Clock", items[0]?["alternatives"]?[0]?["name"]?.GetValue<string>() ?? "");
         Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
         var actions = ComponentPreviewActions.Read(effective);
         var stateAction = actions.Single((action) => action.CollectionJsonKey == slots.JsonKey
@@ -2003,11 +2009,13 @@ static void LockScreenComposesRuntimeStack()
             new JsonObject
             {
                 ["id"] = "lock_screen_label",
+                ["name"] = "Clock",
                 ["alternatives"] = new JsonArray
                 {
                     new JsonObject
                     {
                         ["id"] = "lock_screen_label_default",
+                        ["name"] = "Clock",
                         ["presetId"] = childVariant,
                         ["overrides"] = new JsonObject(),
                         ["inputs"] = childInputs,
@@ -2068,18 +2076,22 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
 {
     var preview = Object("""
         {"collections":[{"id":"messages","label":"Messages","jsonKey":"messages","itemLabel":"Message","fields":[
+          {"id":"name","label":"Name","jsonKey":"name","kind":"text","defaultValue":""},
           {"id":"direction","label":"Direction","jsonKey":"direction","kind":"option","defaultValue":"incoming","options":[{"value":"incoming","label":"Incoming"}]},
           {"id":"text","label":"Text","jsonKey":"text","kind":"text","defaultValue":""},
           {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","defaultValue":"none"}
-        ],"itemPresentation":{"subtitleFieldIds":["direction","text"],"subtitleMaxCharacters":24,"iconFieldId":"mediaType","fallbackIcon":"message","iconValueMap":{"image":"image"}}}]}
+        ],"itemPresentation":{"titleFieldId":"name","firstItemBadge":"Initial","subtitleFieldIds":["direction","text"],"subtitleMaxCharacters":24,"iconFieldId":"mediaType","fallbackIcon":"message","iconValueMap":{"image":"image"}}}]}
         """);
     var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, new JsonObject()).Single();
     var presentation = RuntimeCollectionItemPresentation.Resolve(
         collection,
-        Object("""{"direction":"incoming","text":"A message with enough words to be abbreviated","mediaType":"image"}"""),
+        Object("""{"name":"Welcome","direction":"incoming","text":"A message with enough words to be abbreviated","mediaType":"image"}"""),
+        0,
+        "Message 1",
         "Payload item 1",
         EditorIcons.Component);
 
+    Equal("Welcome · Initial", presentation.Title);
     Equal("Incoming · A message wi…", presentation.Subtitle);
     Equal(EditorIcons.Image, presentation.Icon);
 }

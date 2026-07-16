@@ -1628,6 +1628,7 @@ internal sealed class ComponentPreviewInputSession
                     OptionsSourceCollectionJsonKey = JsonString(field, "optionsSourceCollectionJsonKey"),
                     OptionsSourceValueJsonKey = JsonString(field, "optionsSourceValueJsonKey", "id"),
                     OptionsSourceLabelJsonKey = JsonString(field, "optionsSourceLabelJsonKey"),
+                    OptionsSourceFirstItemBadge = JsonString(field, "optionsSourceFirstItemBadge"),
                 });
             }
 
@@ -1676,6 +1677,8 @@ internal sealed class ComponentPreviewInputSession
                 StringComparer.OrdinalIgnoreCase)
             ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         return new RuntimeInputCollectionItemPresentation(
+            JsonString(presentation, "titleFieldId"),
+            JsonString(presentation, "firstItemBadge"),
             subtitleFieldIds,
             Math.Max(16, (int)JsonDecimal(presentation, "subtitleMaxCharacters", 72)),
             JsonString(presentation, "iconFieldId"),
@@ -2038,7 +2041,8 @@ internal sealed record ComponentInputDefinition(
     bool ActionOnly = false,
     string OptionsSourceCollectionJsonKey = "",
     string OptionsSourceValueJsonKey = "id",
-    string OptionsSourceLabelJsonKey = "");
+    string OptionsSourceLabelJsonKey = "",
+    string OptionsSourceFirstItemBadge = "");
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,
@@ -2061,6 +2065,8 @@ internal sealed record RuntimeComponentCollectionItemDefinition(
     string InputsJsonKey);
 
 internal sealed record RuntimeInputCollectionItemPresentation(
+    string TitleFieldId,
+    string FirstItemBadge,
     IReadOnlyList<string> SubtitleFieldIds,
     int SubtitleMaxCharacters,
     string IconFieldId,

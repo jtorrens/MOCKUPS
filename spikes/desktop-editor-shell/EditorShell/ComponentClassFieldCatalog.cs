@@ -443,6 +443,8 @@ internal static class ComponentClassFieldCatalog
                 EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text", "icon"]),
         ],
         ItemPresentation: new RuntimeInputCollectionItemPresentation(
+            "",
+            "",
             ["text", "subtext", "value"],
             72,
             "iconToken",

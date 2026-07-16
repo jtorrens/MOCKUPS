@@ -37,6 +37,7 @@ Inputs by a containing component or module.
 Scalar inputs are `sizingMode`, `startGapToken` and `endGapToken`. The `items`
 Runtime collection contains stable slots. Each slot contains:
 
+- an editable presentation name; the stable id remains its runtime/animation identity;
 - `alternatives`: ordered nested state collection;
 - `gapBeforeMode`: Fixed or Reflow;
 - `gapBeforeToken`: fixed `theme.spacing.*` token;
@@ -44,6 +45,7 @@ Runtime collection contains stable slots. Each slot contains:
 
 Each state has a stable id and contains:
 
+- an editable presentation name;
 - a full `componentClassId::preset::presetId` reference, or explicit None;
 - local Overrides and the selected child Variant's Runtime Inputs;
 - `active`: animatable boolean for states after the first;
@@ -51,11 +53,17 @@ Each state has a stable id and contains:
 - generic `placement` relative to the frame assigned to that slot;
 - generic `enterMotion` and `exitMotion` values.
 
-State 1 is always the default. It has no editable Active or Behavior fields and
-is treated as active/Replace. Later active states are evaluated in collection
+State 1 is always initial. It has no editable Active or Behavior fields and is
+treated as active/Replace. The editor marks it as `Initial`; `Default` is never
+used as its identity. Later active states are evaluated in collection
 order: Replace clears the current visible set; Overlay appends above it. None is
 a valid state and can therefore clear a slot through Replace without a switch,
 fallback or renderer exception.
+
+Names are Variant-owned presentation metadata projected into Runtime and
+Animation. Headers and action options show those names, while selection values,
+target ids and keyframes remain stable ids. Renaming a slot or State therefore
+cannot invalidate an existing instance animation.
 
 ## Generic nested collection editing
 

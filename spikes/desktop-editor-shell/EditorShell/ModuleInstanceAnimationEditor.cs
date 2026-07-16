@@ -95,7 +95,13 @@ internal sealed class ModuleInstanceAnimationEditor
             .Select((item, index) => new
             {
                 Id = item["id"]?.GetValue<string>() ?? "",
-                Label = $"{collection.ItemLabel} {index + 1}",
+                Label = RuntimeCollectionItemPresentation.Resolve(
+                    collection,
+                    item,
+                    index,
+                    $"{collection.ItemLabel} {index + 1}",
+                    $"Payload item {index + 1}",
+                    EditorIcons.Component).Title,
             })
             .Where((item) => !string.IsNullOrWhiteSpace(item.Id))
             .ToDictionary((item) => item.Id, (item) => item.Label, StringComparer.Ordinal);

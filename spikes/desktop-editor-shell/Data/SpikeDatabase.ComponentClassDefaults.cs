@@ -1316,6 +1316,11 @@ internal sealed partial class SpikeDatabase
         {
             new JsonObject
             {
+                ["id"] = "name", ["label"] = "Name", ["jsonKey"] = "name",
+                ["kind"] = "text", ["valueKind"] = "StringSingleLine", ["defaultValue"] = "Slot",
+            },
+            new JsonObject
+            {
                 ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
                 ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = componentTypeFilter,
             },
@@ -1440,6 +1445,7 @@ internal sealed partial class SpikeDatabase
         },
         ["itemPresentation"] = new JsonObject
         {
+            ["titleFieldId"] = "name",
             ["subtitleFieldIds"] = new JsonArray("alternatives"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",
@@ -1451,6 +1457,7 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "default",
+            ["name"] = "State",
             ["presetId"] = "",
             ["overrides"] = new JsonObject(),
             ["inputs"] = new JsonObject(),
@@ -1476,6 +1483,11 @@ internal sealed partial class SpikeDatabase
         },
         ["fields"] = new JsonArray
         {
+            new JsonObject
+            {
+                ["id"] = "name", ["label"] = "Name", ["jsonKey"] = "name",
+                ["kind"] = "text", ["valueKind"] = "StringSingleLine", ["defaultValue"] = "State",
+            },
             new JsonObject
             {
                 ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
@@ -1519,6 +1531,8 @@ internal sealed partial class SpikeDatabase
         },
         ["itemPresentation"] = new JsonObject
         {
+            ["titleFieldId"] = "name",
+            ["firstItemBadge"] = "Initial",
             ["subtitleFieldIds"] = new JsonArray("presetId", "behavior", "placement"),
             ["subtitleMaxCharacters"] = 72,
             ["fallbackIcon"] = "component",

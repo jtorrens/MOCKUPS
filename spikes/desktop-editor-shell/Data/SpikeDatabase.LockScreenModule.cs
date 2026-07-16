@@ -273,10 +273,33 @@ internal sealed partial class SpikeDatabase
             lockScreen["stackInputs"] = stackInputs;
         }
         stackInputs["items"] ??= new JsonArray();
+        stackInputs[RuntimeInputForwardingContract.StorageKey] = ComponentStackStateRuntimeForwarding();
         var next = config.ToJsonString();
-        if (next == originalConfig) return;
-        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
-            ("$id", moduleId), ("$configJson", next));
+        if (next != originalConfig)
+        {
+            Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
+                ("$id", moduleId), ("$configJson", next));
+        }
+
+        var originalMetadata = ScalarString(connection, "SELECT metadata_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}";
+        var metadata = ParseJsonObject(originalMetadata);
+        if (metadata["variants"] is not JsonArray variants) return;
+        foreach (var variant in variants.OfType<JsonObject>())
+        {
+            if (variant["config"] is not JsonObject variantConfig
+                || variantConfig["lockScreen"] is not JsonObject variantLockScreen
+                || variantLockScreen["stackInputs"] is not JsonObject variantStackInputs)
+            {
+                throw new InvalidOperationException("Lock Screen Variant is missing its explicit Content Stack contract.");
+            }
+            variantStackInputs[RuntimeInputForwardingContract.StorageKey] = ComponentStackStateRuntimeForwarding();
+        }
+        var nextMetadata = metadata.ToJsonString();
+        if (nextMetadata != originalMetadata)
+        {
+            Execute(connection, "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", moduleId), ("$metadataJson", nextMetadata));
+        }
     }
 
     private static JsonObject ComponentStackStateRuntimeForwarding() => new()
@@ -299,6 +322,12 @@ internal sealed partial class SpikeDatabase
                 {
                     new JsonObject
                     {
+                        ["id"] = "name", ["label"] = "Name", ["jsonKey"] = "name",
+                        ["kind"] = "text", ["valueKind"] = "StringSingleLine",
+                        ["defaultValue"] = "", ["actionOnly"] = true,
+                    },
+                    new JsonObject
+                    {
                         ["id"] = "runtimeStateId",
                         ["label"] = "State",
                         ["jsonKey"] = "runtimeStateId",
@@ -314,7 +343,8 @@ internal sealed partial class SpikeDatabase
                         },
                         ["optionsSourceCollectionJsonKey"] = "alternatives",
                         ["optionsSourceValueJsonKey"] = "id",
-                        ["optionsSourceLabelJsonKey"] = "presetId",
+                        ["optionsSourceLabelJsonKey"] = "name",
+                        ["optionsSourceFirstItemBadge"] = "Initial",
                     },
                 },
                 ["itemActions"] = new JsonArray
@@ -340,6 +370,7 @@ internal sealed partial class SpikeDatabase
                 },
                 ["itemPresentation"] = new JsonObject
                 {
+                    ["titleFieldId"] = "name",
                     ["subtitleFieldIds"] = new JsonArray("runtimeStateId"),
                     ["subtitleMaxCharacters"] = 72,
                     ["fallbackIcon"] = "component",
@@ -347,6 +378,7 @@ internal sealed partial class SpikeDatabase
             },
             ["projection"] = new JsonObject
             {
+                ["itemMetadataJsonKeys"] = new JsonArray("name"),
                 ["optionsSourceCollectionJsonKey"] = "alternatives",
                 ["stateJsonKey"] = "runtimeStateId",
                 ["transitionJsonKey"] = "runtimeStateTransition",
@@ -363,8 +395,15 @@ internal sealed partial class SpikeDatabase
                     ["presetJsonKey"] = "presetId",
                     ["runtimeContractJsonKey"] = "inputs",
                     ["sourceRuntimeContractJsonKey"] = "inputs",
+                    ["itemMetadataJsonKeys"] = new JsonArray("name"),
                     ["fields"] = new JsonArray
                     {
+                        new JsonObject
+                        {
+                            ["id"] = "name", ["label"] = "Name", ["jsonKey"] = "name",
+                            ["kind"] = "text", ["valueKind"] = "StringSingleLine",
+                            ["defaultValue"] = "", ["actionOnly"] = true,
+                        },
                         new JsonObject
                         {
                             ["id"] = "slotId", ["label"] = "Slot", ["jsonKey"] = "slotId",
@@ -380,6 +419,8 @@ internal sealed partial class SpikeDatabase
                     },
                     ["itemPresentation"] = new JsonObject
                     {
+                        ["titleFieldId"] = "name",
+                        ["firstItemBadge"] = "Initial",
                         ["subtitleFieldIds"] = new JsonArray("presetId"),
                         ["subtitleMaxCharacters"] = 72,
                         ["fallbackIcon"] = "component",
