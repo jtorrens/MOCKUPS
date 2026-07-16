@@ -77,8 +77,12 @@ static void ModuleVariantsAreExplicit()
 
         var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
-        var screen = database.AddModuleInstance(shot, new SpikeDatabase.ShotModuleChoice(
-            module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId));
+        var screen = database.AddModuleInstance(shot, new SpikeDatabase.ShotModuleInstanceDraft(
+            new SpikeDatabase.ShotModuleChoice(
+                module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId),
+            defaultVariant.Id,
+            defaultVariant.Name,
+            $"{module.Name} · {defaultVariant.Name}"));
         database.UpdateModuleInstanceRuntimeValue(screen.Id, "orphan", JsonValue.Create("remove me"));
         database.UpdateModuleInstanceAnimationJson(screen.Id,
             "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"targetId\":\"\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
@@ -326,6 +330,18 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
+        var forwardedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(effective, config);
+        var passwordTrigger = forwardedInputs.Single((input) => input.Label == "Enter password" && input.ActionOnly);
+        var passwordFrame = forwardedInputs.Single((input) => input.Label == "Entry frame" && input.ActionOnly);
+        var passwordTiming = forwardedInputs.Single((input) => input.Label == "Entry timing");
+        var passwordAttempt = forwardedInputs.Single((input) => input.Label == "Attempt");
+        True(passwordTrigger.Animation is not null);
+        Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
+        var forwardedPasswordAction = ComponentPreviewActions.Read(effective)
+            .Single((action) => action.Label == "Enter password");
+        Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
+        Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
+        Equal(passwordTiming.Id, forwardedPasswordAction.DurationBehaviorTimingInputId);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
         var slots = collections.Single((collection) => collection.Id == "stackStates");
         var items = DesignPreviewTestValues.CollectionItems(effective, slots);
@@ -1526,7 +1542,7 @@ static void PasswordSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Password preview.");
         var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         SequenceEqual(
-            ["expectedPassword", "attemptPassword", "enabled", "entryTiming"],
+            ["initialText", "correctText", "incorrectText", "expectedPassword", "attemptPassword", "enabled", "entryTiming", "entryTrigger", "entryFrame"],
             runtimeInputs.Select((input) => input.Id).ToList());
         var timing = runtimeInputs.Single((input) => input.Id == "entryTiming");
         Equal(ValueKind.BehaviorTiming, timing.ValueKind);
@@ -1545,6 +1561,12 @@ static void PasswordSeedOpensAndRenders()
         True(passwordConfig["labelGapToken"] is null);
         True(passwordConfig["indicatorGapToken"] is null);
         True(passwordConfig["keypadGapToken"] is null);
+        True(passwordConfig["initialText"] is null);
+        True(passwordConfig["correctText"] is null);
+        True(passwordConfig["incorrectText"] is null);
+        True(runtimeInputs.Single((input) => input.Id == "entryTrigger").Animation is not null);
+        True(runtimeInputs.Single((input) => input.Id == "entryTrigger").ActionOnly);
+        True(runtimeInputs.Single((input) => input.Id == "entryFrame").ActionOnly);
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -1809,8 +1831,8 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
 static void ScreenTreeNodesKeepActionsInEditor()
 {
     var screen = new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, "screen", "Screen", "", "module_instance");
-    True(!screen.CanDuplicate);
-    True(!screen.CanDelete);
+    True(screen.CanDuplicate);
+    True(screen.CanDelete);
 }
 
 static void NaturalBehaviorTimingUsesGraphemesAndThemePace()

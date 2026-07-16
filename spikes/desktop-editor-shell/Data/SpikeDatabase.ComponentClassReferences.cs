@@ -401,7 +401,10 @@ internal sealed partial class SpikeDatabase
                 input.UiParentGroupId,
                 input.UiOrder,
                 input.UiSectionLabel,
-                input.Transition))
+                input.Transition,
+                input.Animation,
+                input.BehaviorTiming,
+                input.ActionOnly))
             .ToList();
     }
 

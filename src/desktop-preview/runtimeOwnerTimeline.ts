@@ -242,7 +242,7 @@ export class RuntimeOwnerTimeline {
     let lastEnd = 0;
     for (const action of records(collection.itemActions)
       .filter((candidate) => candidate.extendsModuleDuration === true)) {
-      const playFieldId = optionalString(action, "playInputId");
+      const playFieldId = optionalString(action, "playFieldId") || optionalString(action, "playInputId");
       const definition = fields.find((field) => optionalString(field, "id") === playFieldId);
       if (!definition) continue;
       const origin = this.resolveFieldTiming(definition, item, targetId, fields, new Set()).origin;
@@ -297,7 +297,9 @@ function strings(value: unknown): string[] {
 }
 
 function collectionKey(collection: JsonRecord) {
-  return optionalString(collection, "sourceCollectionJsonKey") || optionalString(collection, "jsonKey");
+  return optionalString(collection, "storageCollectionJsonKey")
+    || optionalString(collection, "sourceCollectionJsonKey")
+    || optionalString(collection, "jsonKey");
 }
 
 function itemFields(collection: JsonRecord, item: JsonRecord) {

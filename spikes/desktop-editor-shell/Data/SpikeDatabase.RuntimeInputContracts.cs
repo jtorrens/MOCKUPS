@@ -71,15 +71,18 @@ internal sealed partial class SpikeDatabase
 
             foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                var sourceKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
-                    ?? collection["jsonKey"]?.GetValue<string>()
-                    ?? "";
-                if (string.IsNullOrWhiteSpace(sourceKey)) continue;
-                var items = content[sourceKey] as JsonArray ?? new JsonArray();
-                content[sourceKey] = items;
+                var storageKey = RuntimeCollectionStorageKey(collection);
+                if (string.IsNullOrWhiteSpace(storageKey)) continue;
+                var projected = collection["storageCollectionJsonKey"] is JsonValue;
+                var items = projected
+                    ? NormalizeProjectedRuntimeCollection(
+                        content[storageKey] as JsonArray,
+                        contract[collection["jsonKey"]?.GetValue<string>() ?? ""] as JsonArray)
+                    : content[storageKey] as JsonArray ?? new JsonArray();
+                content[storageKey] = items;
                 foreach (var (item, index) in items.OfType<JsonObject>().Select((item, index) => (item, index)))
                 {
-                    item["id"] ??= $"{sourceKey}_{index + 1:000}";
+                    item["id"] ??= $"{storageKey}_{index + 1:000}";
                     foreach (var field in (collection["fields"] as JsonArray)?.OfType<JsonObject>() ?? [])
                     {
                         if (!RuntimeInputDefinition(field)) continue;
@@ -248,9 +251,7 @@ internal sealed partial class SpikeDatabase
             var definition = (collection["fields"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((candidate) =>
                 candidate["id"]?.GetValue<string>() == fieldId
                 && candidate["animatable"]?.GetValue<bool>() == true);
-            var collectionKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
-                ?? collection["jsonKey"]?.GetValue<string>()
-                ?? "";
+            var collectionKey = RuntimeCollectionStorageKey(collection);
             runtimeOwner = (runtime[collectionKey] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((item) =>
                 item["id"]?.GetValue<string>() == targetId);
             if (runtimeOwner is null) continue;
@@ -323,6 +324,38 @@ internal sealed partial class SpikeDatabase
     {
         var source = definition["source"]?.GetValue<string>() ?? "runtime";
         return source == "runtime";
+    }
+
+    private static string RuntimeCollectionStorageKey(JsonObject collection) =>
+        collection["storageCollectionJsonKey"]?.GetValue<string>()
+        ?? collection["sourceCollectionJsonKey"]?.GetValue<string>()
+        ?? collection["jsonKey"]?.GetValue<string>()
+        ?? "";
+
+    private static JsonArray NormalizeProjectedRuntimeCollection(JsonArray? current, JsonArray? defaults)
+    {
+        if (defaults is null)
+            throw new InvalidOperationException("Projected runtime collection has no contract defaults.");
+        var currentById = (current ?? [])
+            .OfType<JsonObject>()
+            .Where((item) => item["id"]?.GetValue<string>() is { Length: > 0 })
+            .ToDictionary((item) => item["id"]!.GetValue<string>(), StringComparer.Ordinal);
+        var result = new JsonArray();
+        foreach (var defaultItem in defaults.OfType<JsonObject>())
+        {
+            var next = defaultItem.DeepClone() as JsonObject ?? new JsonObject();
+            var id = next["id"]?.GetValue<string>()
+                ?? throw new InvalidOperationException("Projected runtime collection item has no stable id.");
+            if (currentById.TryGetValue(id, out var currentItem))
+            {
+                foreach (var key in next.Select((entry) => entry.Key).ToList())
+                {
+                    if (currentItem[key] is { } value) next[key] = value.DeepClone();
+                }
+            }
+            result.Add(next);
+        }
+        return result;
     }
 
     private static JsonNode RuntimeDefaultValue(JsonObject definition)

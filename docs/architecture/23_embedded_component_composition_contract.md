@@ -305,6 +305,15 @@ inputs. This is particularly important for Actor references: the Lock Screen
 owner, an Audio Avatar, a Conversation participant and a notification sender
 may all be different Actors.
 
+Forwarding preserves the complete reusable runtime contract metadata, not only
+the scalar value kind. Animation eligibility, interpolation choices,
+`BehaviorTiming` natural-unit metadata, enablement and input transitions are
+rebased to the forwarded stable ids. If a promoted field participates in a
+declared action, that action is lifted only when every field it requires has
+also been promoted. Its play field, action clock, target and duration references
+are then rebased generically. An incomplete action is not exposed and no parent
+editor invents missing trigger, timing or progress values.
+
 Structured collections use one shared collection shell for Variant authoring,
 Runtime Test Values and instance runtime. The context is explicit metadata, not
 inferred from a card label or hierarchy depth. Add, duplicate, reorder, delete,
@@ -314,6 +323,15 @@ forwarding controls. Variant authoring reuses the normal child input binding
 control, so runtime inputs of a component selected inside an item receive the
 same forwarding triangle. Forward ids include the stable item id, never the
 item index.
+
+Structural collections may declare an explicit runtime projection. In that
+case the Variant remains the sole owner of ordered child structure, presets,
+Overrides, Placements and Motions. Test Values and Module Instances persist only
+the projection fields keyed by stable item id, such as selected State, source
+State, transition flag and elapsed action time. Before resolving a requested
+frame, the common contract layer joins that minimal runtime array to the Variant
+source array. The merged structure is transient and is never written back to
+the instance payload.
 
 A Component Stack adds one more stable nested identity level: the outer item is
 the slot and its nested item is a State. State actions and animation tracks use

@@ -381,16 +381,13 @@ internal sealed partial class SpikeDatabase
             ] },
             { "id": "labels", "label": "Labels", "subtitle": "Text and variant for each result state", "icon": "label", "order": 30, "visible": true, "defaultOpen": false, "groupLayout": "verticalCards", "groups": [
               { "id": "initial", "label": "Initial", "order": 10, "visible": true, "fields": [
-                { "id": "component.password.initialText", "order": 10, "visible": true },
-                { "id": "component.password.initialLabel.editor", "order": 20, "visible": true }
+                { "id": "component.password.initialLabel.editor", "order": 10, "visible": true }
               ] },
               { "id": "correct", "label": "Correct", "order": 20, "visible": true, "fields": [
-                { "id": "component.password.correctText", "order": 10, "visible": true },
-                { "id": "component.password.correctLabel.editor", "order": 20, "visible": true }
+                { "id": "component.password.correctLabel.editor", "order": 10, "visible": true }
               ] },
               { "id": "incorrect", "label": "Incorrect", "order": 30, "visible": true, "fields": [
-                { "id": "component.password.incorrectText", "order": 10, "visible": true },
-                { "id": "component.password.incorrectLabel.editor", "order": 20, "visible": true }
+                { "id": "component.password.incorrectLabel.editor", "order": 10, "visible": true }
               ] }
             ] },
             { "id": "indicator", "label": "Code Indicator", "subtitle": "Password glyph block", "icon": "component", "order": 40, "visible": true, "defaultOpen": false, "groups": [

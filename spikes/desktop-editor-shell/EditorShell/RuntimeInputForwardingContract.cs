@@ -17,6 +17,7 @@ internal static class RuntimeInputForwardingContract
         effective["inputs"] = inputs;
         var collections = effective["collections"] as JsonArray ?? new JsonArray();
         effective["collections"] = collections;
+        var actions = effective["actions"] as JsonArray;
         var existingIds = inputs.OfType<JsonObject>()
             .Select((input) => Text(input["id"]))
             .Where((id) => id.Length > 0)
@@ -31,15 +32,21 @@ internal static class RuntimeInputForwardingContract
             }
             var next = definition.DeepClone() as JsonObject ?? new JsonObject();
             RebaseTransitionForParent(next, container);
+            RebaseNaturalTimingForParent(next, container);
             next["source"] = "runtime";
             next["defaultValue"] = StorageText(container[targetKey]);
             if (next["collection"] is JsonObject collection)
             {
-                var projected = ProjectCollectionValue(container[targetKey], next["projection"] as JsonObject);
+                var sourceKey = $"{jsonKey}__variantSource";
+                var source = container[targetKey]?.DeepClone() as JsonArray
+                    ?? throw new InvalidOperationException("Forwarded runtime collection has no Variant collection value.");
+                var projected = ProjectCollectionRuntimeValue(source, next["projection"] as JsonObject);
+                effective[sourceKey] = source;
                 effective[jsonKey] ??= projected;
                 var runtimeCollection = collection.DeepClone() as JsonObject ?? new JsonObject();
                 runtimeCollection["jsonKey"] = jsonKey;
-                runtimeCollection["sourceCollectionJsonKey"] = jsonKey;
+                runtimeCollection["sourceCollectionJsonKey"] = sourceKey;
+                runtimeCollection["storageCollectionJsonKey"] = jsonKey;
                 if (!collections.OfType<JsonObject>().Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
                     collections.Add(runtimeCollection);
                 return;
@@ -60,28 +67,91 @@ internal static class RuntimeInputForwardingContract
                 effective[resolvedJsonKey] = resolvedValue.DeepClone();
             }
         });
+        VisitForwardedActionOwners(config, (container, forwards) =>
+        {
+            if (container["actions"] is not JsonArray childActions) return;
+            foreach (var childAction in childActions.OfType<JsonObject>())
+            {
+                var lifted = LiftAction(childAction, forwards);
+                if (lifted is null) continue;
+                var liftedId = Text(lifted["id"]);
+                actions ??= new JsonArray();
+                effective["actions"] = actions;
+                if (!actions.OfType<JsonObject>().Any((candidate) => Text(candidate["id"]) == liftedId))
+                    actions.Add(lifted);
+            }
+        });
         return effective;
     }
 
-    private static JsonArray ProjectCollectionValue(JsonNode? source, JsonObject? projection)
+    private static JsonObject? LiftAction(JsonObject action, JsonObject forwards)
     {
-        var result = source?.DeepClone() as JsonArray
-            ?? throw new InvalidOperationException("Forwarded runtime collection has no Variant collection value.");
-        if (projection is null) return result;
+        JsonObject? Forward(string sourceId) => forwards
+            .Select((entry) => entry.Value as JsonObject)
+            .FirstOrDefault((definition) => definition is not null
+                && Text(definition["sourceInputId"]) == sourceId);
+        var play = Forward(Text(action["playInputId"]));
+        var time = Forward(Text(action["timeJsonKey"]));
+        if (play is null || time is null) return null;
+        var lifted = action.DeepClone() as JsonObject ?? new JsonObject();
+        var childId = Text(action["id"]);
+        lifted["id"] = $"forwarded:{Text(play["id"])}:{childId}";
+        lifted["playFieldId"] = Text(play["id"]);
+        lifted["playInputId"] = Text(play["jsonKey"]);
+        lifted["timeJsonKey"] = Text(time["jsonKey"]);
+        foreach (var key in new[] { "durationInputId", "durationBehaviorTimingInputId", "targetInputId", "targetFromJsonKey" })
+        {
+            var source = Text(action[key]);
+            if (source.Length == 0) continue;
+            var mapped = Forward(source);
+            if (mapped is null) return null;
+            lifted[key] = key == "durationBehaviorTimingInputId"
+                ? Text(mapped["id"])
+                : Text(mapped["jsonKey"]);
+        }
+        return lifted;
+    }
+
+    private static void VisitForwardedActionOwners(JsonNode? node, Action<JsonObject, JsonObject> visitor)
+    {
+        switch (node)
+        {
+            case JsonArray array:
+                foreach (var child in array) VisitForwardedActionOwners(child, visitor);
+                break;
+            case JsonObject obj:
+                if (obj[StorageKey] is JsonObject forwards) visitor(obj, forwards);
+                foreach (var (key, child) in obj)
+                    if (!key.Equals(StorageKey, StringComparison.Ordinal)) VisitForwardedActionOwners(child, visitor);
+                break;
+        }
+    }
+
+    private static JsonArray ProjectCollectionRuntimeValue(JsonArray source, JsonObject? projection)
+    {
+        if (projection is null)
+            throw new InvalidOperationException("Forwarded structural runtime collection requires an explicit projection.");
+        var result = new JsonArray();
         var alternativesKey = Text(projection["optionsSourceCollectionJsonKey"]);
         var stateKey = Text(projection["stateJsonKey"]);
         var transitionKey = Text(projection["transitionJsonKey"]);
         var elapsedKey = Text(projection["elapsedJsonKey"]);
         var fromKey = Text(projection["fromJsonKey"]);
-        foreach (var item in result.OfType<JsonObject>())
+        foreach (var item in source.OfType<JsonObject>())
         {
             var alternatives = item[alternativesKey] as JsonArray
                 ?? throw new InvalidOperationException($"Forwarded runtime collection item is missing '{alternativesKey}'.");
             var firstId = alternatives.OfType<JsonObject>().FirstOrDefault()?["id"]?.GetValue<string>() ?? "";
-            item[stateKey] = firstId;
-            item[transitionKey] = false;
-            item[elapsedKey] = 0;
-            item[fromKey] = firstId;
+            var id = Text(item["id"]);
+            if (id.Length == 0) throw new InvalidOperationException("Forwarded runtime collection item has no stable id.");
+            result.Add(new JsonObject
+            {
+                ["id"] = id,
+                [stateKey] = firstId,
+                [transitionKey] = false,
+                [elapsedKey] = 0,
+                [fromKey] = firstId,
+            });
         }
         return result;
     }
@@ -100,6 +170,19 @@ internal static class RuntimeInputForwardingContract
             return;
         }
         transition["targetInputId"] = Text(sibling["id"]);
+    }
+
+    private static void RebaseNaturalTimingForParent(JsonObject definition, JsonObject container)
+    {
+        if (definition["naturalTiming"] is not JsonObject timing) return;
+        var sourceInputId = Text(timing["sourceFieldId"]);
+        var sibling = (container[StorageKey] as JsonObject)?
+            .Select((entry) => entry.Value as JsonObject)
+            .FirstOrDefault((candidate) => candidate is not null
+                && Text(candidate["sourceInputId"]).Equals(sourceInputId, StringComparison.Ordinal));
+        if (sibling is null)
+            throw new InvalidOperationException($"Forwarded BehaviorTiming input requires forwarded source field '{sourceInputId}'.");
+        timing["sourceFieldId"] = Text(sibling["id"]);
     }
 
     public static JsonObject Definition(
@@ -137,8 +220,26 @@ internal static class RuntimeInputForwardingContract
                     ["label"] = option.Label,
                 }).ToArray()),
             ["transition"] = TransitionNode(input.Transition),
+            ["animatable"] = input.Animation is not null,
+            ["animationInterpolations"] = input.Animation is null
+                ? null
+                : new JsonArray(input.Animation.Interpolations.Select((value) => (JsonNode?)value).ToArray()),
+            ["animationTimeline"] = input.Animation is null
+                ? null
+                : new JsonObject { ["extendsOwnerDuration"] = input.Animation.ExtendsOwnerDuration },
+            ["naturalTiming"] = NaturalTimingNode(input.BehaviorTiming),
+            ["actionOnly"] = input.ActionOnly,
         };
     }
+
+    private static JsonObject? NaturalTimingNode(BehaviorTimingDefinition? timing) => timing is null
+        ? null
+        : new JsonObject
+        {
+            ["sourceFieldId"] = timing.SourceFieldId,
+            ["unit"] = timing.Unit,
+            ["baseFramesPerUnit"] = timing.BaseFramesPerUnit,
+        };
 
     private static JsonObject? TransitionNode(ComponentInputTransitionDefinition? transition) =>
         transition is null

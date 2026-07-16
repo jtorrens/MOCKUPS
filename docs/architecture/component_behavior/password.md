@@ -18,10 +18,10 @@ Password owns a vertical interaction composed, in order, from:
 The input component is Keypad, Fingerprint, Face Recognition or Draw Password
 according to the Password Variant's explicit `mode`. All slots reference
 concrete child Variants and retain the shared Open and
-Override route. The Password Variant owns the three Label strings and Variants,
-the child Variants, its vertical anchor modes, tokenized gaps and the Icon Bar
-height. The empty Icon Bar Variant hides that region without switches or a
-component-specific exception.
+Override route. The Password Variant owns the three Label Variants, the child
+Variants, its vertical anchor modes, tokenized gaps and the Icon Bar height.
+The three Label strings are runtime content. The empty Icon Bar Variant hides
+that region without switches or a component-specific exception.
 
 The four input slots are presented in one `Modes` editor card using the shared
 vertical-card navigation: Keypad, Fingerprint, Face Recognition and Draw
@@ -39,14 +39,24 @@ or Password-specific layout rule crosses the component boundary.
 
 ## Runtime inputs
 
+- `initialText`, `correctText` and `incorrectText`;
 - `expectedPassword`, containing digits only;
 - `attemptPassword`, containing digits only and exactly the same length;
 - `enabled`;
 - `entryTiming`, using the generic `BehaviorTiming` value kind.
 
-The Design Preview action owns calculated `entryTrigger` and `entryFrame`
-fixtures. They are not separate public Test Values and do not introduce a
-persistent start switch.
+The action contract also owns `entryTrigger` and `entryFrame`. They are
+action-only runtime fields: Test Values presents them as one Play/Restore
+control rather than raw fields, while a containing component or module may
+Forward them with the other action dependencies. In a Shot instance the play
+field is authored as an ordinary v2 animation track and the owner timeline
+resolves `entryFrame` for every requested frame.
+
+At every parent boundary all these fields become Variant values by default.
+The parent designer chooses which ones to promote through the same generic
+Forward control used by Label and every other embedded component. Password,
+Lock Screen, the editor shell and the timeline have no special propagation
+path.
 
 Every attempted digit must map to an enabled emitted value in the selected
 Keypad Variant. A malformed value, length mismatch or unavailable digit is an

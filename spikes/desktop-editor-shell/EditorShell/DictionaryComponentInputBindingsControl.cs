@@ -235,16 +235,28 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private Control CreateInputField(ComponentInputBindingDefinition input)
     {
-        var services = ServicesFor(input);
-        var field = new DictionaryFieldControl(CreateFieldValue(input), services, compact: true)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
-        field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
-        field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
         var forwarded = Forwarding(input);
         var content = new StackPanel { Spacing = 6 };
-        content.Children.Add(field);
+        if (input.ActionOnly)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = input.Label,
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = 0.82,
+            });
+        }
+        else
+        {
+            var services = ServicesFor(input);
+            var field = new DictionaryFieldControl(CreateFieldValue(input), services, compact: true)
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            field.ValueChanged += (_, next) => SetInputValue(input, next, commit: false);
+            field.ValueCommitted += (_, next) => SetInputValue(input, next, commit: true);
+            content.Children.Add(field);
+        }
         if (forwarded is not null)
         {
             var runtimeLabel = new DictionaryFieldControl(

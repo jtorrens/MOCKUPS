@@ -1532,6 +1532,7 @@ internal sealed class ComponentPreviewInputSession
                 EnabledWhenPath = JsonString(item, "enabledWhenPath"),
                 EnabledWhenValue = JsonString(item, "enabledWhenValue"),
                 RefreshOnCommit = item["refreshOnCommit"]?.GetValue<bool>() == true,
+                ActionOnly = item["actionOnly"]?.GetValue<bool>() == true,
             };
             definitions.Add(definition with
             {
@@ -1640,7 +1641,8 @@ internal sealed class ComponentPreviewInputSession
                     itemFields,
                     JsonString(collection, "sourceCollectionJsonKey"),
                     ReadItemPresentation(collection),
-                    ReadComponentItems(collection)));
+                    ReadComponentItems(collection),
+                    JsonString(collection, "storageCollectionJsonKey")));
             }
         }
 
@@ -2041,7 +2043,8 @@ internal sealed record RuntimeInputCollectionDefinition(
     IReadOnlyList<ComponentInputDefinition> Fields,
     string SourceCollectionJsonKey = "",
     RuntimeInputCollectionItemPresentation? ItemPresentation = null,
-    RuntimeComponentCollectionItemDefinition? ComponentItems = null);
+    RuntimeComponentCollectionItemDefinition? ComponentItems = null,
+    string StorageCollectionJsonKey = "");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string PresetJsonKey,

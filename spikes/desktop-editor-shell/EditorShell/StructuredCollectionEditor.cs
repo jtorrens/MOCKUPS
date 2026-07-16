@@ -38,6 +38,7 @@ internal sealed class StructuredCollectionEditor
     private readonly Func<JsonObject, int, StructuredCollectionItemContent> _content;
     private readonly StructuredCollectionActions _actions;
     private readonly EditorSessionUiState _sessionUiState;
+    private readonly bool _canEditStructure;
 
     public StructuredCollectionEditor(
         StructuredCollectionEditingContext context,
@@ -48,7 +49,8 @@ internal sealed class StructuredCollectionEditor
         Func<JsonObject, int, RuntimeCollectionItemPresentationResult> presentation,
         Func<JsonObject, int, StructuredCollectionItemContent> content,
         StructuredCollectionActions actions,
-        EditorSessionUiState sessionUiState)
+        EditorSessionUiState sessionUiState,
+        bool canEditStructure = true)
     {
         _context = context;
         _scopeKey = scopeKey;
@@ -59,6 +61,7 @@ internal sealed class StructuredCollectionEditor
         _content = content;
         _actions = actions;
         _sessionUiState = sessionUiState;
+        _canEditStructure = canEditStructure;
     }
 
     public StructuredCollectionEditingContext Context => _context;
@@ -70,15 +73,18 @@ internal sealed class StructuredCollectionEditor
         {
             footer.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
         }
-        var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()}");
-        add.HorizontalAlignment = HorizontalAlignment.Left;
-        add.Click += (_, args) =>
+        if (_canEditStructure)
         {
-            args.Handled = true;
-            if (_items.Count == 0) _actions.AddFirst();
-            else _actions.AddAfter(_items.Count - 1);
-        };
-        footer.Children.Add(add);
+            var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()}");
+            add.HorizontalAlignment = HorizontalAlignment.Left;
+            add.Click += (_, args) =>
+            {
+                args.Handled = true;
+                if (_items.Count == 0) _actions.AddFirst();
+                else _actions.AddAfter(_items.Count - 1);
+            };
+            footer.Children.Add(add);
+        }
 
         var subcards = new List<EditorInternalNavigationSection>();
         for (var index = 0; index < _items.Count; index++)
@@ -96,7 +102,7 @@ internal sealed class StructuredCollectionEditor
                 presentation.Subtitle,
                 presentation.Icon,
                 itemContent.Content,
-                CreateActions(itemIndex),
+                _canEditStructure ? CreateActions(itemIndex) : null,
                 itemContent.Subcards,
                 EditorSubcardLayout.VerticalCards,
                 _sessionUiState.IsExpanded(expansionKey),

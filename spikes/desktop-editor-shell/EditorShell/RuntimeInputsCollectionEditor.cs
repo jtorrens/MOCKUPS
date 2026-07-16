@@ -124,10 +124,11 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        var visibleInputs = inputs.Where((input) => !input.ActionOnly).ToList();
+        var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
         var sections = new List<EditorInternalNavigationSection>();
         var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
-        var ownInputs = ComponentInputGrouping.OwnInputs(inputs).ToList();
+        var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
         if (ownInputs.Count > 0)
         {
             var general = new StackPanel { Spacing = 6 };
@@ -265,16 +266,17 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        var groups = ComponentInputGrouping.EmbeddedGroups(inputs);
+        var visibleInputs = inputs.Where((input) => !input.ActionOnly).ToList();
+        var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
         var sections = new List<EditorInternalNavigationSection>();
         var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
-        var ownInputs = ComponentInputGrouping.OwnInputs(inputs).ToList();
+        var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
         if (ownInputs.Count > 0)
         {
             var generalSubcards = new List<EditorInternalNavigationSection>();
             if (owner.IsInstance
                 && _animationEditor is not null
-                && ownInputs.Any((input) => input.Animation is not null))
+                && inputs.Any((input) => input.Animation is not null))
             {
                 var animation = _animationEditor.CreateTargetContent(owner.Node, "");
                 generalSubcards.Add(new EditorInternalNavigationSection(
@@ -578,7 +580,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 return new StructuredCollectionItemContent(content, itemSubcards);
             },
             collectionActions,
-            _sessionUiState);
+            _sessionUiState,
+            canEditStructure: string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
         return editor.Create();
     }
 
@@ -1290,9 +1293,11 @@ internal sealed class RuntimeInputsCollectionEditor
     }
 
     private static string StorageCollectionKey(RuntimeInputCollectionDefinition collection) =>
-        string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
-            ? collection.JsonKey
-            : collection.SourceCollectionJsonKey;
+        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
+            ? collection.StorageCollectionJsonKey
+            : string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
+                ? collection.JsonKey
+                : collection.SourceCollectionJsonKey;
 
     private sealed record RuntimeInputOwner(
         ProjectTreeNode Node,

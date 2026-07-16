@@ -597,9 +597,6 @@ internal sealed partial class SpikeDatabase
                 config["password"] = new JsonObject
                 {
                     ["mode"] = "pin",
-                    ["initialText"] = "Enter password",
-                    ["correctText"] = "Password correct",
-                    ["incorrectText"] = "Password incorrect",
                     ["upperAnchor"] = "container",
                     ["lowerAnchor"] = "container",
                     ["labelIndicatorGapToken"] = "theme.spacing.l",
@@ -1087,6 +1084,9 @@ internal sealed partial class SpikeDatabase
         }
         if (componentType == "password")
         {
+            preview["initialText"] = "Enter password";
+            preview["correctText"] = "Password correct";
+            preview["incorrectText"] = "Password incorrect";
             preview["expectedPassword"] = "2345";
             preview["attemptPassword"] = "2345";
             preview["enabled"] = true;
@@ -2212,13 +2212,22 @@ internal sealed partial class SpikeDatabase
 
         return
         [
+            ComponentInput("initialText", "Initial text", "initialText", "text", "Enter password"),
+            ComponentInput("correctText", "Correct text", "correctText", "text", "Password correct"),
+            ComponentInput("incorrectText", "Incorrect text", "incorrectText", "text", "Password incorrect"),
             ComponentInput("expectedPassword", "Password", "expectedPassword", "text", "2345"),
             ComponentInput("attemptPassword", "Attempt", "attemptPassword", "text", "2345"),
             ComponentInput("enabled", "Enabled", "enabled", "boolean", "true"),
             timing,
-            ComponentInput("entryTrigger", "Enter password", "entryTrigger", "boolean", "false", source: "calculated"),
-            ComponentInput("entryFrame", "Entry frame", "entryFrame", ValueKind.Integer, "0", minimum: 0, maximum: 100000, increment: 1, source: "calculated", unit: "frames"),
+            ActionInput(AnimatableComponentInput(ComponentInput("entryTrigger", "Enter password", "entryTrigger", "boolean", "false"))),
+            ActionInput(ComponentInput("entryFrame", "Entry frame", "entryFrame", ValueKind.Integer, "0", minimum: 0, maximum: 100000, increment: 1, unit: "frames")),
         ];
+    }
+
+    private static JsonObject ActionInput(JsonObject input)
+    {
+        input["actionOnly"] = true;
+        return input;
     }
 
     private static JsonObject ComponentInput(

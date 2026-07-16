@@ -57,7 +57,7 @@ export function resolvePasswordComponent(payload: DesignPreviewPayload): Passwor
 
   const labelSlot = asRecord(password[`${progress.state}LabelSlot`]);
   const labelConfig = embeddedConfig(labelSlot, "label", bases, `component.password.${progress.state}LabelSlot`);
-  const labelText = requiredString(password, `${progress.state}Text`, `component.password.${progress.state}Text`);
+  const labelText = requiredString(preview, `${progress.state}Text`, `component.password.runtime.${progress.state}Text`);
   const indicatorConfig = embeddedConfig(asRecord(password.indicatorSlot), "codeIndicator", bases, "component.password.indicatorSlot");
   const input = resolvePasswordInput(mode, password, attempt, progress, enabled, availableWidth, bases);
   const iconBarHeight = requiredNumber(password, "iconBarHeight", "component.password.iconBarHeight");

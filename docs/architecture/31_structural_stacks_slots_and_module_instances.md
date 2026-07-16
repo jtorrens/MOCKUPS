@@ -229,6 +229,13 @@ Each Module Instance stores:
 - v2 parameter-animation tracks;
 - duration/transition data owned by the Shot timeline.
 
+The Module editor's Runtime Test Values and a Shot Module Instance consume the
+same effective runtime contract. Their ownership differs: Test Values are
+session-only samples and Reset discards them, while `content_json` is the real,
+persistent payload for that concrete instance. A field visible in module Test
+Values must therefore be visible at the same nested level in the instance; the
+instance must not receive a second, module-specific editor schema.
+
 The effective instance contract is formed before editing or preview:
 
 ```text
@@ -243,6 +250,14 @@ the module's shared Runtime Inputs plus fields promoted by the selected Module
 Variant. Consequently an iPhone Lock Screen and Android Lock Screen may have
 different slot structures while their instances expose only the runtime values
 appropriate to that explicit Variant.
+
+For a projected Component Stack collection, `content_json` contains one minimal
+entry per selected Variant slot. Each entry keeps the stable slot id plus only
+its runtime State/action values. The complete `alternatives` collection,
+component Variant references, Overrides, Placement and Motions remain in the
+Module Variant. They are joined to the minimal payload only while preparing the
+requested frame. Unknown or retired slot ids are migration errors; they are not
+resolved through positional matching or fallback defaults.
 
 Changing the selected Module Variant is a contract change. The instance retains
 only Runtime values still declared by the new effective contract and removes
@@ -297,6 +312,13 @@ values, not a second persisted Stack schema. Production uses ordinary v2 tracks:
 
 The stable State id is the animation target. Collection position is never an
 animation identity, so reordering States or slots does not rewrite keyframes.
+
+Root and embedded component actions follow the same rule. Test Values renders
+the generic Play/Restore control from the action contract. A Module Instance
+does not store a simulated button press: its animation editor authors a v2
+track for the promoted play field, and the common owner timeline derives the
+action's frame clock before the component resolver runs. Action controls remain
+at their declared nested item when the owner is a collection.
 
 ## 9. Requested-frame transition resolution
 

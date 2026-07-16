@@ -363,7 +363,9 @@ internal static class RuntimeAnimationFrameOrigin
 
             var fieldId = Text(definition["id"]);
             return actions?.OfType<JsonObject>()
-                .Where((action) => Text(action["playInputId"]) == fieldId)
+                .Where((action) => (Text(action["playFieldId"]) is { Length: > 0 } playFieldId
+                    ? playFieldId
+                    : Text(action["playInputId"])) == fieldId)
                 .Select((action) =>
                 {
                     var durationFieldId = Text(action["durationInputId"]);
@@ -468,7 +470,11 @@ internal static class RuntimeAnimationFrameOrigin
     private static JsonObject Timeline(JsonObject owner) => owner["animationTimeline"] as JsonObject ?? new JsonObject();
 
     private static string CollectionKey(JsonObject collection) =>
-        Text(collection["sourceCollectionJsonKey"]) is { Length: > 0 } source ? source : Text(collection["jsonKey"]);
+        Text(collection["storageCollectionJsonKey"]) is { Length: > 0 } storage
+            ? storage
+            : Text(collection["sourceCollectionJsonKey"]) is { Length: > 0 } source
+                ? source
+                : Text(collection["jsonKey"]);
 
     private static string[] StringArray(JsonNode? value) =>
         (value as JsonArray)?.OfType<JsonValue>().Select((item) => item.GetValue<string>()).ToArray() ?? [];

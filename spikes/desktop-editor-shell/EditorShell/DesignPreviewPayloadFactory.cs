@@ -143,7 +143,8 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = EffectiveThemeMode(module.ConfigJson, themeMode);
         var app = database.GetAppSettings(instance.AppId);
         var shot = database.GetShotSettings(instance.ShotId);
-        var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(
+            database.GetModuleInstanceRuntimePreviewJson(node.Id)));
         if (localTimelineFrame is not null
             && runtimePreview["timelineFrameJsonKey"]?.GetValue<string>() is { Length: > 0 } timelineFrameJsonKey)
         {

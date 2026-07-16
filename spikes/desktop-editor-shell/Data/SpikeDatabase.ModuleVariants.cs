@@ -240,10 +240,13 @@ internal sealed partial class SpikeDatabase
         }
         foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
-            var jsonKey = collection["sourceCollectionJsonKey"]?.GetValue<string>()
-                ?? collection["jsonKey"]?.GetValue<string>() ?? "";
-            if (string.IsNullOrWhiteSpace(jsonKey)) continue;
-            next[jsonKey] = current[jsonKey]?.DeepClone() ?? new JsonArray();
+            var storageKey = RuntimeCollectionStorageKey(collection);
+            if (string.IsNullOrWhiteSpace(storageKey)) continue;
+            next[storageKey] = collection["storageCollectionJsonKey"] is JsonValue
+                ? NormalizeProjectedRuntimeCollection(
+                    current[storageKey] as JsonArray,
+                    contract[collection["jsonKey"]?.GetValue<string>() ?? ""] as JsonArray)
+                : current[storageKey]?.DeepClone() ?? new JsonArray();
         }
         return next;
     }

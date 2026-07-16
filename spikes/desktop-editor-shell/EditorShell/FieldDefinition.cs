@@ -111,7 +111,10 @@ internal sealed record ComponentInputBindingDefinition(
     string UiParentGroupId = "",
     int UiOrder = 0,
     string UiSectionLabel = "",
-    ComponentInputTransitionDefinition? Transition = null);
+    ComponentInputTransitionDefinition? Transition = null,
+    AnimationFieldDefinition? Animation = null,
+    BehaviorTimingDefinition? BehaviorTiming = null,
+    bool ActionOnly = false);
 
 internal enum ImagePreviewMode
 {

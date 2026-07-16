@@ -721,9 +721,6 @@ internal static class ComponentClassFieldCatalog
         ["component.drawPassword.states.incorrect.lineColorToken"] = new("component.drawPassword.states.incorrect.lineColorToken", "Line", ValueKind.ThemeToken, ["drawPassword", "states", "incorrect", "lineColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
 
         ["component.password.mode"] = new("component.password.mode", "Mode", ValueKind.OptionToken, ["password", "mode"], "pin", Options: PasswordModeOptions),
-        ["component.password.initialText"] = new("component.password.initialText", "Initial text", ValueKind.StringSingleLine, ["password", "initialText"], "Enter password"),
-        ["component.password.correctText"] = new("component.password.correctText", "Correct text", ValueKind.StringSingleLine, ["password", "correctText"], "Password correct"),
-        ["component.password.incorrectText"] = new("component.password.incorrectText", "Incorrect text", ValueKind.StringSingleLine, ["password", "incorrectText"], "Password incorrect"),
         ["component.password.upperAnchor"] = new("component.password.upperAnchor", "Upper block anchor", ValueKind.OptionToken, ["password", "upperAnchor"], "container", Options: PasswordAnchorOptions),
         ["component.password.lowerAnchor"] = new("component.password.lowerAnchor", "Lower block anchor", ValueKind.OptionToken, ["password", "lowerAnchor"], "container", Options: PasswordAnchorOptions),
         ["component.password.labelIndicatorGapToken"] = new("component.password.labelIndicatorGapToken", "Label / indicator gap", ValueKind.ThemeToken, ["password", "labelIndicatorGapToken"], "theme.spacing.l", Options: SpacingTokenOptions),
