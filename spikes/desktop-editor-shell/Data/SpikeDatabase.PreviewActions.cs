@@ -6,35 +6,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private static void NormalizePreviewActionCompletionContracts(SqliteConnection connection)
-    {
-        foreach (var row in QueryComponentClassRows(connection))
-        {
-            var preview = ParseJsonObject(row.DesignPreviewJson);
-            NormalizePreviewActionCompletion(preview);
-            var normalized = preview.ToJsonString();
-            if (normalized == row.DesignPreviewJson) continue;
-            Execute(
-                connection,
-                "UPDATE component_classes SET design_preview_json = $preview WHERE id = $id",
-                ("$id", row.Id),
-                ("$preview", normalized));
-        }
-
-        foreach (var row in QueryModuleRows(connection))
-        {
-            var preview = ParseJsonObject(row.DesignPreviewJson);
-            NormalizePreviewActionCompletion(preview);
-            var normalized = preview.ToJsonString();
-            if (normalized == row.DesignPreviewJson) continue;
-            Execute(
-                connection,
-                "UPDATE modules SET design_preview_json = $preview WHERE id = $id",
-                ("$id", row.Id),
-                ("$preview", normalized));
-        }
-    }
-
     private static void NormalizePreviewActionCompletion(JsonObject preview)
     {
         SetMissingCompletionBehavior(preview["actions"] as JsonArray);

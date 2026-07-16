@@ -57,11 +57,11 @@ Schema v1 begins with `PRAGMA user_version = 1`. The committed desktop DB uses
 that version. Historical column-normalization code is no longer part of normal
 startup.
 
-## Data Preserved By The Converter
+## Data Preserved At Cutover
 
-The one-time converter must preserve all rows and stable ids in the canonical
-tables, plus all current JSON payloads after normalizing them to the shapes
-below:
+The removed one-time converter preserved all rows and stable ids in the
+canonical tables, plus all current JSON payloads after normalizing them to the
+shapes below:
 
 - component variants use full `componentClassId::preset::presetId` references;
 - `media` replaces the historical `video` component type;
@@ -75,14 +75,16 @@ below:
 - project media roots are project-relative whenever the source root is inside
   the project, so the DB remains portable between Mac, PC and packaged copies.
 
-The converter must report and stop on ambiguous references. It must not invent
-plausible data for missing required current-model values.
+The cutover stopped on ambiguous references and did not invent plausible data
+for missing required current-model values. These requirements remain mandatory
+for any future temporary migration.
 
 ## Historical Compatibility Kept Out Of Startup
 
-These operations are useful only while importing an older desktop DB. They are
-handled by the explicit schema-v1 generator or archived historical references
-and must not run during normal startup:
+These operations were useful only while importing the older desktop DB. The
+schema-v1 generator was removed after the cutover; their implementation now
+exists only in repository history and archived references. They must not run
+during normal startup or remain as dormant repair helpers:
 
 | Source compatibility | Canonical v1 result |
 | --- | --- |
@@ -100,13 +102,13 @@ and must not run during normal startup:
 The editor startup path may:
 
 - check the v1 schema version and required tables;
-- seed an empty development database directly in v1 shape;
 - validate current data and display explicit diagnostic errors;
 - use UI parsing safeguards while the user is editing;
 - use visibly diagnostic rendering for an already-resolved invalid paint node.
 
 It may not:
 
+- create or seed a missing/empty database implicitly;
 - alter table shape or normalize historical JSON during ordinary startup;
 - read legacy tables, old field names or short preset ids;
 - supply plausible fallback values for missing current-model data;
@@ -166,9 +168,9 @@ constraint. That route is outside the desktop v1 scope and is evidence for
 keeping React historical persistence isolated rather than reviving it as a
 desktop dependency.
 
-## Accepted Schema v1 State
+## Accepted Current Schema v1 State
 
-The committed active DB and the schema-v1 candidate DB have:
+The committed active DB has:
 
 - exactly the canonical table set above;
 - `user_version = 1`;
@@ -180,3 +182,9 @@ The committed active DB and the schema-v1 candidate DB have:
 
 The active app path validates schema v1 and refuses older physical schemas
 instead of applying hidden migrations.
+
+`npm run desktop:db:validate -- --source <current.sqlite>` performs the same
+read-only validation. `npm run desktop:db:create -- --source <current.sqlite>
+--output <copy.sqlite>` creates only a byte-identical validated clone and never
+overwrites its destination. The former schema-v1 candidate is historical
+cutover evidence, not a second active database or a generation source.

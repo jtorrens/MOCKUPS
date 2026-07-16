@@ -218,68 +218,6 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void SeedThemesIfEmpty(SqliteConnection connection)
-    {
-        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
-        foreach (var projectId in projectIds)
-        {
-            if (ScalarLong(connection, "SELECT COUNT(*) FROM themes WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
-            {
-                continue;
-            }
-
-            var iconThemeId = FirstId(connection, "icon_themes", projectId);
-            var textFontId = ScalarString(
-                connection,
-                "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'text' ORDER BY family_name, id LIMIT 1",
-                ("$projectId", projectId)) ?? "";
-            var emojiFontId = ScalarString(
-                connection,
-                "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'emoji' ORDER BY family_name, id LIMIT 1",
-                ("$projectId", projectId)) ?? "";
-            var statusBarId = DefaultComponentPresetReference(connection, projectId, "status_bar");
-            var navigationBarId = DefaultComponentPresetReference(connection, projectId, "navigation_bar");
-            Execute(
-                connection,
-                """
-                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
-                VALUES ($id, $projectId, $name, $family, $iconThemeId, $statusBarId, $navigationBarId, $tokensJson, $metadataJson)
-                """,
-                ("$id", $"theme_{projectId}_ios_default"),
-                ("$projectId", projectId),
-                ("$name", "iOS Default Theme"),
-                ("$family", "ios"),
-                ("$iconThemeId", iconThemeId),
-                ("$statusBarId", statusBarId),
-                ("$navigationBarId", navigationBarId),
-                ("$tokensJson", DefaultThemeTokensJson("ios", textFontId, emojiFontId)),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Default iOS-style production theme." })));
-        }
-    }
-
-    private static void EnsureThemeTokens(SqliteConnection connection)
-    {
-        foreach (var theme in QueryThemeRows(connection))
-        {
-            var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
-            var defaults = ParseJsonObject(DefaultThemeTokensJson(theme.Family));
-            var changed = RemoveJsonValue(tokens, ["modes", "light", "keyboard", "popoverBackground"])
-                | RemoveJsonValue(tokens, ["modes", "dark", "keyboard", "popoverBackground"])
-                | RemoveJsonValue(tokens, ["typography", "size"])
-                | MergeMissing(tokens, defaults);
-            if (!changed)
-            {
-                continue;
-            }
-
-            Execute(
-                connection,
-                "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id",
-                ("$id", theme.Id),
-                ("$tokensJson", tokens.ToJsonString()));
-        }
-    }
-
     private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)
     {
         var rows = new List<ThemeRow>();

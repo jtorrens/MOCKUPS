@@ -111,6 +111,12 @@ function assertContains(relativePath: string, term: string, message: string) {
   }
 }
 
+function assertSourceContains(sourceLabel: string, source: string, term: string, message: string) {
+  if (!source.includes(term)) {
+    addViolation(sourceLabel, message);
+  }
+}
+
 function assertAnyContains(relativePaths: string[], term: string, message: string) {
   const found = relativePaths.some((relativePath) => {
     const fullPath = path.join(root, relativePath);
@@ -190,6 +196,12 @@ function assertMatches(relativePath: string, pattern: RegExp, message: string) {
   const source = readText(relativePath);
   if (!pattern.test(source)) {
     addViolation(relativePath, message);
+  }
+}
+
+function assertSourceMatches(sourceLabel: string, source: string, pattern: RegExp, message: string) {
+  if (!pattern.test(source)) {
+    addViolation(sourceLabel, message);
   }
 }
 
@@ -1434,50 +1446,122 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
-const componentSeedSourceFiles = [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-];
-const componentSeedSource = componentSeedSourceFiles
-  .filter((relativePath) => existsSync(path.join(root, relativePath)))
-  .map((relativePath) => readText(relativePath))
-  .join("\n");
 const spikeDatabaseDataPaths = readdirSync(path.join(root, "spikes/desktop-editor-shell/Data"))
   .filter((entry) => /^SpikeDatabase.*\.cs$/.test(entry))
   .map((entry) => `spikes/desktop-editor-shell/Data/${entry}`);
-const editorLayoutSource = readText(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+for (const relativePath of spikeDatabaseDataPaths) {
+  const source = readText(relativePath);
+  if (/\b(?:Ensure|Normalize|Retire|Migrate)\w*\s*\(\s*SqliteConnection\b/.test(source)) {
+    addViolation(
+      relativePath,
+      "normal runtime data code must not retain database-wide compatibility or repair routines",
+    );
+  }
+  if (/\bSeed\w*IfEmpty\s*\(/.test(source)) {
+    addViolation(
+      relativePath,
+      "normal runtime data code must not seed partially missing current data",
+    );
+  }
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "Mode = SqliteOpenMode.ReadOnly",
+  "existing databases must be opened read-only until strict current validation succeeds",
 );
-const seededComponentClasses = new Set(
-  [...componentSeedSource.matchAll(/NewComponentSeed\("([^"]+)"/g)]
-    .map((match) => match[1])
-    .filter((value): value is string => typeof value === "string" && value.length > 0),
+assertContains(
+  "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
+  "File.Copy(sourcePath, outputPath, overwrite: false)",
+  "current database provisioning must preserve an already-validated source byte-for-byte",
 );
-for (const componentClass of seededComponentClasses) {
+for (const retiredPersistenceCommand of [
+  "--migrate-database",
+  "--create-schema-v1",
+  "--validate-schema-v1",
+]) {
+  assertDoesNotContain(
+    "package.json",
+    retiredPersistenceCommand,
+    `retired persistence command ${retiredPersistenceCommand} must not return`,
+  );
+}
+const desktopDatabasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+type CurrentComponentClassRow = {
+  id: string;
+  component_type: string;
+  record_class_id: string;
+  config_json: string;
+  metadata_json: string;
+};
+let currentComponentClassRows: CurrentComponentClassRow[] = [];
+let editorLayoutSource = "";
+let moduleContractSource = "";
+const editorLayoutRecordClassIds = new Set<string>();
+if (!existsSync(desktopDatabasePath)) {
+  addViolation("data/desktop-editor-spike.sqlite", "committed current database is missing");
+} else {
+  const database = new Database(desktopDatabasePath, { readonly: true, fileMustExist: true });
+  try {
+    currentComponentClassRows = database
+      .prepare("SELECT id, component_type, record_class_id, config_json, metadata_json FROM component_classes")
+      .all() as CurrentComponentClassRow[];
+    const layouts = database
+      .prepare("SELECT record_class_id, layout_json FROM editor_layouts ORDER BY record_class_id")
+      .all() as { record_class_id: string; layout_json: string }[];
+    for (const layout of layouts) editorLayoutRecordClassIds.add(layout.record_class_id);
+    editorLayoutSource = layouts.map((layout) => layout.layout_json).join("\n");
+    moduleContractSource = (database
+      .prepare("SELECT config_json, design_preview_json, metadata_json FROM modules ORDER BY id")
+      .all() as { config_json: string; design_preview_json: string; metadata_json: string }[])
+      .flatMap((row) => [row.config_json, row.design_preview_json, row.metadata_json])
+      .join("\n");
+  } finally {
+    database.close();
+  }
+}
+const currentComponentClasses = new Set(
+  currentComponentClassRows.map((row) => row.component_type),
+);
+for (const row of currentComponentClassRows) {
+  const componentClass = row.component_type;
   if (!desktopPreviewComponents[componentClass]) {
     addViolation(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-      `seeded component class "${componentClass}" is missing from desktop preview manifest`,
+      "data/desktop-editor-spike.sqlite",
+      `current component class "${componentClass}" is missing from desktop preview manifest`,
     );
   }
   if (!routedComponentClasses.has(componentClass)) {
     addViolation(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-      `seeded component class "${componentClass}" is missing from desktop preview registry`,
+      "data/desktop-editor-spike.sqlite",
+      `current component class "${componentClass}" is missing from desktop preview registry`,
     );
   }
-}
-if (!editorLayoutSource.includes("ComponentSeedRows.Select((seed) => seed.RecordClassId)")) {
-  addViolation(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
-    "component editor layouts must be seeded from ComponentSeedRows so new components get layouts automatically",
-  );
+  if (!editorLayoutRecordClassIds.has(row.record_class_id)) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `current component class "${componentClass}" is missing editor layout "${row.record_class_id}"`,
+    );
+  }
+
+  if (componentClass === "bubble") {
+    const metadata = jsonRecord(jsonParse(row.metadata_json));
+    const configs = [jsonParse(row.config_json), ...jsonArray(metadata.presets).map((preset) => jsonRecord(preset).config)];
+    configs.forEach((config, index) => {
+      const gapToken = jsonRecord(jsonRecord(jsonRecord(config).bubble).status).gapToken;
+      if (typeof gapToken !== "string" || !gapToken.startsWith("theme.spacing.")) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `Bubble current config ${index} must declare status.gapToken as a spacing token`,
+        );
+      }
+    });
+  }
 }
 for (const componentClass of Object.keys(desktopPreviewComponents)) {
-  if (!seededComponentClasses.has(componentClass)) {
+  if (!currentComponentClasses.has(componentClass)) {
     addViolation(
       "src/desktop-preview/desktopPreviewComponents.ts",
-      `manifest component class "${componentClass}" is not seeded in the desktop editor`,
+      `manifest component class "${componentClass}" is absent from the committed current database`,
     );
   }
 }
@@ -1609,11 +1693,12 @@ for (const forbiddenLegacyLayoutTerm of [
   "recordClassId == \"status_bar\"",
   "recordClassId == \"navigation_bar\"",
 ]) {
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
-    forbiddenLegacyLayoutTerm,
-    `legacy system bar layout term ${forbiddenLegacyLayoutTerm} must not return; use component layouts`,
-  );
+  if (editorLayoutSource.includes(forbiddenLegacyLayoutTerm)) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `legacy system bar layout term ${forbiddenLegacyLayoutTerm} must not return; use component layouts`,
+    );
+  }
 }
 assertMatches(
   "archive/react-legacy/src/domain/fields/themeFields.ts",
@@ -2223,12 +2308,17 @@ for (const retiredInstanceEditorTerm of [
 ]) {
   for (const file of [
     "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
     "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
   ]) {
     assertDoesNotContain(
       file,
       retiredInstanceEditorTerm,
+      `module instances must not restore the retired Conversation-specific editor route (${retiredInstanceEditorTerm})`,
+    );
+  }
+  if (editorLayoutSource.includes(retiredInstanceEditorTerm)) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
       `module instances must not restore the retired Conversation-specific editor route (${retiredInstanceEditorTerm})`,
     );
   }
@@ -2494,11 +2584,6 @@ assertContains(
   "Bubble status row spacing must use its declared spacing token",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassSeeds.cs",
-  "NormalizeBubbleStatusGapTokens",
-  "persisted Bubble presets must be explicitly migrated to the status gap token contract",
-);
-assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
   "[\"timelineFrameJsonKey\"] = \"conversationFrame\"",
   "modules with a local timeline must declare its runtime frame key",
@@ -2713,9 +2798,10 @@ assertContains(
   "RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit",
   "timeline synchronization must preserve explicitly authored Screen durations",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.LockScreenModule.cs",
-  '["durationPolicy"] = "explicit"',
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"durationPolicy":"explicit"',
   "Lock Screen must declare its explicit duration policy in its own module contract",
 );
 assertDoesNotContain(
@@ -2763,9 +2849,10 @@ assertContains(
   '["animationTimeline"] = new JsonObject { ["sequenceItems"] = false }',
   "Component Stack slots must share a parallel Screen-time origin",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.LockScreenModule.cs",
-  /"stackStates"[\s\S]*?"animationPresentation"\]\s*=\s*"collectionFooter"[\s\S]*?"animationTimeline"\]\s*=\s*new JsonObject \{ \["sequenceItems"\]\s*=\s*false \}/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  /"stackStates"[\s\S]*?"animationPresentation":"collectionFooter"[\s\S]*?"animationTimeline":\{"sequenceItems":false\}/,
   "forwarded Lock Screen slots must preserve the parallel Component Stack timeline",
 );
 assertContains(
@@ -2823,18 +2910,21 @@ assertDoesNotContain(
   "resolveParameterAnimation",
   "Conversation renderable must not evaluate parameter tracks",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
   /"subtitle": "Theme color behavior"[\s\S]*?"groupLayout": "verticalCards"/,
   "Theme Colors groups must use the shared vertical-card organization",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
   /"id": "icons"[\s\S]*?"groupLayout": "verticalCards"/,
   "Theme Icons groups must use the shared vertical-card organization",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
   '"pairLayout": "sharedHeader"',
   "palette-pair groups must opt into the generic shared Light/Dark header through layout metadata",
 );
@@ -2851,9 +2941,10 @@ for (const semanticIcon of [
   "Text sizes",
   "Style and line heights",
 ]) {
-  assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
-    `EditorIcons.SemanticAsset("${semanticIcon}")`,
+  assertSourceContains(
+    "data/desktop-editor-spike.sqlite",
+    editorLayoutSource,
+    `"icon": "navigation-asset:${semanticIcon}"`,
     `Theme group '${semanticIcon}' must use its dedicated reusable system icon`,
   );
 }
@@ -2872,8 +2963,9 @@ assertContains(
   "var controlLabels = control.UseSharedPairHeader();",
   "shared palette-pair presentation must be applied to every control in the group",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
   /"id": "typography"[\s\S]*?"groupLayout": "verticalCards"[\s\S]*?"id": "fontFamilies"[\s\S]*?"id": "typographySizes"[\s\S]*?"id": "typographyStyle"/,
   "Theme Typography must remain split into semantic vertical cards",
 );

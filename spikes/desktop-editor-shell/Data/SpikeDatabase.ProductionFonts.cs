@@ -169,11 +169,6 @@ internal sealed partial class SpikeDatabase
             ("$value", value));
     }
 
-    private static void SeedProductionFontsIfEmpty(SqliteConnection connection)
-    {
-        _ = connection;
-    }
-
     private static List<ProductionFontRow> QueryProductionFontRows(SqliteConnection connection)
     {
         var rows = new List<ProductionFontRow>();

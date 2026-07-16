@@ -169,35 +169,6 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static void SeedDevicesIfEmpty(SqliteConnection connection)
-    {
-        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
-        foreach (var projectId in projectIds)
-        {
-            if (ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
-            {
-                continue;
-            }
-
-            foreach (var seed in DeviceSeedRows)
-            {
-                Execute(
-                    connection,
-                    """
-                    INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
-                    VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
-                    """,
-                    ("$id", seed.Id),
-                    ("$projectId", projectId),
-                    ("$name", seed.Name),
-                    ("$manufacturer", seed.Manufacturer),
-                    ("$model", seed.Model),
-                    ("$osFamily", seed.OsFamily),
-                    ("$metricsJson", seed.MetricsJson));
-            }
-        }
-    }
-
     private static string DefaultDeviceMetricsJson(int width, int height, double scale)
     {
         return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);
@@ -207,16 +178,6 @@ internal sealed partial class SpikeDatabase
     {
         return DeviceMetricRules.CreateMetricsJson(width, height, scale, includeDynamicIsland);
     }
-
-    private static readonly DeviceSeedRow[] DeviceSeedRows =
-    [
-        new("device_iphone_15_pro", "iPhone 15 Pro", "Apple", "iPhone 15 Pro", "ios", DeviceMetricsJson(1179, 2556, 3, includeDynamicIsland: false)),
-        new("device_iphone_generic", "iPhone 15 Pro Max", "Apple", "iPhone 15 Pro Max", "ios", DeviceMetricsJson(1290, 2796, 3, includeDynamicIsland: true)),
-        new("device_iphone_14_pro", "iPhone 14 Pro", "Apple", "iPhone 14 Pro", "ios", DeviceMetricsJson(1179, 2556, 3, includeDynamicIsland: false)),
-        new("device_samsung_galaxy_s24", "Samsung Galaxy S24", "Samsung", "Galaxy S24", "android", DeviceMetricsJson(1080, 2340, 3, includeDynamicIsland: false)),
-        new("device_samsung_galaxy_s24_ultra", "Samsung Galaxy S24 Ultra", "Samsung", "Galaxy S24 Ultra", "android", DeviceMetricsJson(1440, 3120, 3, includeDynamicIsland: false)),
-        new("device_google_pixel_8_pro", "Google Pixel 8 Pro", "Google", "Pixel 8 Pro", "android", DeviceMetricsJson(1344, 2992, 3, includeDynamicIsland: false)),
-    ];
 
     public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)
     {

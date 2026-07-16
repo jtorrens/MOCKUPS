@@ -221,9 +221,5 @@ internal sealed partial class SpikeDatabase
         string CanvasJson,
         string MetadataJson);
 
-    private sealed record PaletteSeedRow(string Token, string ValueHex, bool IsNeutral, string MetadataJson);
-    private sealed record DeviceSeedRow(string Id, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
-    private sealed record ActorSeedRow(string Id, string DisplayName, string ShortName, string MetadataJson);
-    private sealed record RenderPresetSeedRow(string IdSuffix, string Name, string Format, string Codec);
     private sealed record ComponentSeedRow(string ComponentType, string RecordClassId, string Name, string ConfigJson, string DesignPreviewJson, string MetadataJson);
 }

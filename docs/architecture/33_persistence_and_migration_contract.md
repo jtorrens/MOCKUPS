@@ -18,8 +18,8 @@ renderers.
 The target route is:
 
 ```text
-canonical schema + canonical seeds
-→ explicit database creation or one-shot migration
+canonical schema + current record-creation contracts + committed current DB
+→ explicit validated clone or temporary one-shot migration
 → strict read-only validation
 → repositories and editors
 → resolvers
@@ -30,12 +30,17 @@ canonical schema + canonical seeds
 
 - `SpikeDatabase.Schema.cs` owns the current SQL schema: tables, columns,
   constraints, indexes, defaults and `PRAGMA user_version`.
-- Current seed routines own the canonical built-in records and JSON shapes.
+- Repository creation commands and component/module default factories own the
+  current shape of records created by an explicit user action. They are not
+  startup seeds and do not repair existing records.
 - `data/desktop-editor-spike.sqlite` is the committed parity artifact used by
-  the desktop application. It must exactly satisfy the current schema and seed
-  contracts; it is not a cache or a migration log.
-- Explicit database tooling owns database creation, candidate generation,
-  validation and temporary one-shot migration.
+  the desktop application and the current canonical project database. It must
+  exactly satisfy the current schema and contract validators; it is not a cache
+  or a migration log.
+- `CurrentDatabaseMaintenance` owns read-only validation and explicit validated
+  copying of an already-current database. It does not understand retired data.
+- A phase-specific temporary tool owns a declared one-shot migration and is
+  removed in the same delivery that promotes its output.
 - Repositories own current-model persistence only. They do not repair or infer
   retired data.
 - Component and module contracts own their JSON payload shapes. Persistence
@@ -72,13 +77,24 @@ the same committed database repeatedly must leave its SHA-256 unchanged.
 ## 4. Creation is explicit
 
 A missing or empty database must not cause normal application startup to create
-and seed a new persistent database implicitly. Database creation is an explicit
-command or maintenance mode with an explicit source and destination.
+and seed a new persistent database implicitly. Database provisioning is an
+explicit maintenance operation with an explicit source and destination.
 
-Creation must produce the current schema directly. It must not create an old
-schema and then replay historical normalizers to reach the current state. The
-created database must pass the same strict validator used for the committed
-database before it can replace a parity artifact or be opened by the app.
+The current provisioning command is a validated clone:
+
+```text
+npm run desktop:db:create -- --source <current.sqlite> --output <new.sqlite>
+```
+
+It first validates the source read-only, copies it byte-for-byte without
+overwriting an existing destination, and validates the output before reporting
+success. It is intentionally not a partial seed generator.
+
+Any future fresh-project/template generator must produce the current schema and
+all required current contracts directly. It must not create an old schema and
+then replay historical normalizers. Its output must pass the same strict
+validator used for the committed database before it can replace a parity
+artifact or be opened by the app.
 
 ## 5. Migration is explicit and temporary
 
@@ -164,6 +180,11 @@ exists, and validated on every supported desktop runtime affected by a change.
 Do not suppress a security warning or swap native providers without documenting
 the runtime and packaging consequence.
 
+The runtime validator rejects SQLite older than 3.50.2. At this phase the
+desktop project resolves `Microsoft.Data.Sqlite` 10.0.10 and
+`SQLitePCLRaw.bundle_e_sqlite3` 2.1.12; the loaded bundled engine reports
+SQLite 3.53.3 on the validated Mac runtime.
+
 ## 10. Required checks for a persistence phase
 
 Before the phase is complete:
@@ -174,7 +195,7 @@ Before the phase is complete:
 [ ] two consecutive opens leave the database SHA-256 unchanged
 [ ] invalid or legacy fixtures fail without being modified
 [ ] JSON, full references, animation v2 and foreign keys validate
-[ ] candidate/creation output validates before replacement
+[ ] validated clone or migration output validates before replacement
 [ ] temporary migration code and retired compatibility paths are removed
 [ ] affected unit, architecture and desktop integration checks pass
 [ ] the latest validated desktop build opens the committed database

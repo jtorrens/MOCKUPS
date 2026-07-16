@@ -798,7 +798,7 @@ Before accepting architecture changes run:
 ```text
 npm test
 npm run check:architecture
-npm run desktop:schema-v1:validate
+npm run desktop:db:validate
 ```
 
 Key implementation locations:
@@ -806,7 +806,7 @@ Key implementation locations:
 - shell/orchestration: `spikes/desktop-editor-shell/MainWindow.axaml*`;
 - editor generic controls: `spikes/desktop-editor-shell/EditorShell/`;
 - shared algorithms: `spikes/desktop-editor-shell/Common/`;
-- schema/repositories/seeds: `spikes/desktop-editor-shell/Data/`;
+- schema, validation and current repositories: `spikes/desktop-editor-shell/Data/`;
 - committed parity data: `data/desktop-editor-spike.sqlite`;
 - production assets: `assets/FOQN_S2` and `assets/system/system_icons`;
 - preview contracts/resolvers/renderables: `src/desktop-preview/`;

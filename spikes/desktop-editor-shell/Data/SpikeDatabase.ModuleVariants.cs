@@ -38,61 +38,6 @@ internal sealed partial class SpikeDatabase
         return true;
     }
 
-    private static void NormalizeModuleVariants(SqliteConnection connection)
-    {
-        foreach (var module in QueryModuleRows(connection))
-        {
-            var metadata = ParseJsonObject(module.MetadataJson);
-            if (metadata["variants"] is JsonArray existing && existing.Count > 0)
-            {
-                continue;
-            }
-
-            metadata["variants"] = new JsonArray
-            {
-                new JsonObject
-                {
-                    ["id"] = DefaultModuleVariantId,
-                    ["name"] = "Default",
-                    ["protected"] = true,
-                    ["locked"] = false,
-                    ["config"] = ParseJsonObject(module.ConfigJson),
-                },
-            };
-            Execute(connection,
-                "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
-                ("$metadataJson", metadata.ToJsonString()),
-                ("$id", module.Id));
-        }
-
-        using var select = connection.CreateCommand();
-        select.CommandText = "SELECT id, module_id, metadata_json FROM module_instances";
-        using var reader = select.ExecuteReader();
-        var updates = new List<(string Id, string MetadataJson)>();
-        while (reader.Read())
-        {
-            var id = reader.GetString(0);
-            var moduleId = reader.GetString(1);
-            var metadata = ParseJsonObject(ReadString(reader, 2));
-            if (metadata["moduleVariantReference"] is JsonValue)
-            {
-                continue;
-            }
-
-            metadata["moduleVariantReference"] = ModuleVariantNodeId(moduleId, DefaultModuleVariantId);
-            updates.Add((id, metadata.ToJsonString()));
-        }
-
-        reader.Close();
-        foreach (var update in updates)
-        {
-            Execute(connection,
-                "UPDATE module_instances SET metadata_json = $metadataJson WHERE id = $id",
-                ("$metadataJson", update.MetadataJson),
-                ("$id", update.Id));
-        }
-    }
-
     internal static IReadOnlyList<ModuleVariant> ModuleVariants(string metadataJson)
     {
         var metadata = ParseJsonObject(metadataJson);
@@ -224,7 +169,7 @@ internal sealed partial class SpikeDatabase
             ("$contentJson", content.ToJsonString()),
             ("$animationJson", animation.ToJsonString()),
             ("$id", moduleInstanceId));
-        NormalizeModuleInstanceRuntimePayloads(connection);
+        ReconcileModuleInstanceRuntimePayload(connection, moduleInstanceId);
         SynchronizeTimelineDurations(connection);
     }
 
@@ -243,7 +188,7 @@ internal sealed partial class SpikeDatabase
             var storageKey = RuntimeCollectionStorageKey(collection);
             if (string.IsNullOrWhiteSpace(storageKey)) continue;
             next[storageKey] = collection["storageCollectionJsonKey"] is JsonValue
-                ? NormalizeProjectedRuntimeCollection(
+                ? ReconcileProjectedRuntimeCollection(
                     current[storageKey] as JsonArray,
                     contract[collection["jsonKey"]?.GetValue<string>() ?? ""] as JsonArray)
                 : current[storageKey]?.DeepClone() ?? new JsonArray();

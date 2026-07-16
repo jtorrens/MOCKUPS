@@ -25,13 +25,12 @@ this index wins.
   boundaries and the brief for the next architecture/functionality/UX audit.
 - `33_persistence_and_migration_contract.md`: ownership and mandatory workflows
   for SQLite creation, read-only startup validation, explicit one-shot
-  migrations, canonical seeds and committed database parity.
+  migrations, current record creation and committed database parity.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
 - `schema_v1_consolidation_manifest.md`: active database schema and startup
   rules.
-- `schema_v1_candidate_validation.md`: cutover validation record.
 
 `00_project_vision.md`, `01_data_model.md`, `05_decisions_log.md` and
 `15_target_system_architecture.md` remain supporting architecture references.
@@ -58,7 +57,8 @@ treated as implementation instructions: `02_render_architecture.md`,
 `editor_architecture_second_review_questions.md`,
 `editor_icon_theme_script_prompt.md`,
 `icon_theme_generator_implementation_plan.md` and
-`icon_theme_set_script_contract.md`.
+`icon_theme_set_script_contract.md`. `schema_v1_candidate_validation.md` is the
+historical cutover validation record; it is evidence, not an active workflow.
 
 They remain in place because historical handoffs link to them. Before using one
 for visual or behavioral comparison, reconcile it with the active contracts

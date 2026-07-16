@@ -127,33 +127,6 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static void SeedActorsIfEmpty(SqliteConnection connection)
-    {
-        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
-        foreach (var projectId in projectIds)
-        {
-            if (ScalarLong(connection, "SELECT COUNT(*) FROM actors WHERE project_id = $projectId", ("$projectId", projectId)) > 0)
-            {
-                continue;
-            }
-
-            foreach (var seed in ActorSeedRows)
-            {
-                Execute(
-                    connection,
-                    """
-                    INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
-                    VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
-                    """,
-                    ("$id", seed.Id),
-                    ("$projectId", projectId),
-                    ("$displayName", seed.DisplayName),
-                    ("$shortName", seed.ShortName),
-                    ("$metadataJson", seed.MetadataJson));
-            }
-        }
-    }
-
     private static string DefaultActorMetadataJson(string colorToken, string avatarTextColorToken)
     {
         var root = new JsonObject
@@ -197,13 +170,6 @@ internal sealed partial class SpikeDatabase
 
         return root.ToJsonString();
     }
-
-    private static readonly ActorSeedRow[] ActorSeedRows =
-    [
-        new("actor_alex", "Alex", "Alex", DefaultActorMetadataJson("pastel_sky", "gray_010")),
-        new("actor_sam", "Sam", "Sam", DefaultActorMetadataJson("pastel_mint", "gray_010")),
-        new("actor_alex_b", "Alex B", "Alex B", DefaultActorMetadataJson("pastel_yellow", "gray_010")),
-    ];
 
     public IReadOnlyList<FieldOption> GetActorOptions(string projectId)
     {

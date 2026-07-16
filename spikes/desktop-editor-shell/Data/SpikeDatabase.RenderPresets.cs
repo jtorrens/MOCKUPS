@@ -84,32 +84,6 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
-    private static void SeedRenderPresetsIfEmpty(SqliteConnection connection)
-    {
-        var projectIds = QueryProjectRows(connection).Select((project) => project.Id).ToList();
-        foreach (var projectId in projectIds)
-        {
-            foreach (var seed in RenderPresetSeedRows)
-            {
-                Execute(
-                    connection,
-                    """
-                    INSERT OR IGNORE INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json, metadata_json)
-                    VALUES ($id, $projectId, $name, 1, 1, 1, $format, $codecJson, $colorJson, $qualityJson, $exportJson, $metadataJson)
-                    """,
-                    ("$id", $"render_preset_{projectId}_{seed.IdSuffix}"),
-                    ("$projectId", projectId),
-                    ("$name", seed.Name),
-                    ("$format", seed.Format),
-                    ("$codecJson", DefaultRenderPresetCodecJson(seed.Codec)),
-                    ("$colorJson", DefaultRenderPresetColorJson(seed.Format, seed.Codec)),
-                    ("$qualityJson", DefaultRenderPresetQualityJson(seed.Codec)),
-                    ("$exportJson", DefaultRenderPresetExportJson(seed.Format, seed.Codec)),
-                    ("$metadataJson", JsonSerializer.Serialize(new { note = "Seed render preset from React desktop editor." })));
-            }
-        }
-    }
-
     private static List<RenderPresetRow> QueryRenderPresetRows(SqliteConnection connection)
     {
         var rows = new List<RenderPresetRow>();
@@ -192,25 +166,4 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static void ClearShotRenderPresetReferences(SqliteConnection connection)
-    {
-        Execute(
-            connection,
-            """
-            UPDATE shots
-            SET render_preset_id = ''
-            WHERE trim(render_preset_id) <> ''
-            """);
-    }
-
-    private static readonly RenderPresetSeedRow[] RenderPresetSeedRows =
-    [
-        new("mov_prores_422_hq", "MOV ProRes 422 HQ", "mov", "prores_422_hq"),
-        new("mov_prores_4444_alpha", "MOV ProRes 4444 Alpha", "mov", "prores_4444"),
-        new("mov_h264_low", "MOV H.264 Low", "mov", "h264_low"),
-        new("mov_h264_medium", "MOV H.264 Medium", "mov", "h264_medium"),
-        new("mov_h264_high", "MOV H.264 High", "mov", "h264_high"),
-        new("image_png", "PNG Image Sequence", "image", "png"),
-        new("image_exr", "EXR Image Sequence", "image", "exr"),
-    ];
 }

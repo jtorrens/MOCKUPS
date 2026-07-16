@@ -259,6 +259,17 @@ internal sealed partial class SpikeDatabase
         };
     }
 
+    private static JsonObject DefaultAvatarBadgeInputs() => new()
+    {
+        ["showBadge"] = false,
+        ["badgeContentMode"] = "icon",
+        ["badgeIconToken"] = "system_check",
+        ["badgeText"] = "1",
+        ["badgeSize"] = 20,
+        ["badgeBackgroundPaletteColor"] = "blue",
+        ["badgeContentPaletteColor"] = "gray_100",
+    };
+
     private static string DefaultComponentClassConfigJson(string componentType)
     {
         var config = new JsonObject

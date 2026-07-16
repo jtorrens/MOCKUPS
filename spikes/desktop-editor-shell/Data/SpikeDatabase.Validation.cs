@@ -10,6 +10,8 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
+    private static readonly Version MinimumSafeSqliteVersion = new(3, 50, 2);
+
     private static readonly HashSet<string> CurrentComponentPresetReferenceKeys = new(StringComparer.Ordinal)
     {
         "presetId",
@@ -58,6 +60,7 @@ internal sealed partial class SpikeDatabase
 
     private void ValidateSchemaV1(SqliteConnection connection)
     {
+        ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
         ValidateCurrentEditorLayouts(connection);
@@ -65,6 +68,21 @@ internal sealed partial class SpikeDatabase
         ValidateCurrentComponentPresets(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private static void ValidateSqliteRuntime(SqliteConnection connection)
+    {
+        var value = ScalarString(connection, "SELECT sqlite_version()") ?? "";
+        if (!Version.TryParse(value, out var version))
+        {
+            throw new InvalidOperationException($"Unable to identify the SQLite runtime version '{value}'.");
+        }
+
+        if (version < MinimumSafeSqliteVersion)
+        {
+            throw new InvalidOperationException(
+                $"SQLite runtime {version} is below the required safe version {MinimumSafeSqliteVersion}. Update the bundled SQLite dependency before opening project data.");
+        }
     }
 
     private void ValidatePhysicalSchema(SqliteConnection connection)
