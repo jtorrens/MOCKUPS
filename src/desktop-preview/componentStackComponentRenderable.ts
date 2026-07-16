@@ -90,23 +90,26 @@ function renderAlternative(
   const node = renderChild(childPayload, assignedBox);
   if (!node.box) throw new Error(`Component Stack state ${alternative.id} has no resolved box`);
   if (alternative.exitFrame !== undefined) {
-    const exitElapsedFrames = Math.max(0, payload.localFrame - alternative.exitFrame);
+    const exitElapsedMs = alternative.exitElapsedMs
+      ?? Math.max(0, payload.localFrame - alternative.exitFrame) / Math.max(1, payload.frameRate) * 1000;
     const wrapped = wrapExitMotionFrame(
       payload,
       node,
       alternative.exitMotion,
-      { trigger: true, elapsedMs: exitElapsedFrames / Math.max(1, payload.frameRate) * 1000 },
+      { trigger: true, elapsedMs: exitElapsedMs },
       node.box,
       previewScreenBox(payload),
     );
     return { ...wrapped, box: node.box };
   }
-  if (alternative.isDefault || alternative.activationFrame === undefined) return node;
+  if (alternative.activationFrame === undefined && alternative.enterElapsedMs === undefined) return node;
+  const enterElapsedMs = alternative.enterElapsedMs
+    ?? localFrame / Math.max(1, payload.frameRate) * 1000;
   const wrapped = wrapMotionFrame(
     payload,
     node,
     alternative.enterMotion,
-    { trigger: true, elapsedMs: localFrame / Math.max(1, payload.frameRate) * 1000 },
+    { trigger: true, elapsedMs: enterElapsedMs },
     node.box,
     previewScreenBox(payload),
   );

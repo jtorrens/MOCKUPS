@@ -115,6 +115,36 @@ test("Component Stack active tracks use each state stable id", () => {
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
 });
 
+test("Component Stack runtime transition frames use explicit action time when owner frame is static", () => {
+  const source = payload([
+    alternative("clock", "stub::preset::clock", false),
+    alternative("password", "stub::preset::password", false),
+  ]);
+  const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
+  Object.assign(preview.items[0]!, {
+    runtimeStateId: "password",
+    runtimeStateFromId: "clock",
+    runtimeStateTransition: true,
+    runtimeStateElapsedMs: 120,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const resolved = resolveComponentStackComponent(source);
+  const renderable = componentStackComponentToRenderable(source, resolved, (child) => ({
+    id: JSON.parse(child.designPreviewJson ?? "{}").id ?? "stub",
+    type: "group",
+    frame: 0,
+    box: { x: 100, y: 100, width: 20, height: 10 },
+    children: [],
+  }));
+  const entering = renderable.children?.[0]?.children?.[0];
+  const outgoing = renderable.children?.[0]?.children?.[1];
+  assert.equal(entering?.id, "password.motion");
+  assert.equal(outgoing?.id, "clock.exit-motion");
+  assert.notEqual(entering?.children?.[0]?.transform?.y, 710);
+  assert.notEqual(outgoing?.children?.[0]?.transform?.y, 0);
+});
+
 test("Component Stack runtime state actions resolve the selected state and transition frame", () => {
   const source = payload([
     alternative("clock", "stub::preset::clock", false),
@@ -132,7 +162,9 @@ test("Component Stack runtime state actions resolve the selected state and trans
   const resolved = resolveComponentStackComponent(source);
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
   assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
+  assert.equal(resolved.slots[0]?.alternatives[0]?.enterElapsedMs, 80);
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
+  assert.equal(resolved.slots[0]?.alternatives[1]?.exitElapsedMs, 80);
 });
 
 test("each Component Stack state resolves its own placement inside the assigned slot", () => {

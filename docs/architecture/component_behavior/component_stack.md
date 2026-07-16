@@ -106,6 +106,13 @@ the generic Motion helper resolves the outgoing transform. There are no timers,
 CSS animations or inferred renderer state. The bridge and web renderer receive
 only generic nodes for the requested frame.
 
+The Test Values State action follows the same frame contract without depending
+on an advancing module frame: every precomputed preview payload carries its
+explicit elapsed action time into the incoming and outgoing State contracts.
+Exit, entry and container Reflow start together. The shared action duration is
+the maximum of the selected outgoing Exit Motion, incoming Enter Motion and
+`theme.motion.reflowDurationMs`; their durations are never added serially.
+
 ## Preview boundary
 
 The component resolver validates the slot/state contract, resolves concrete

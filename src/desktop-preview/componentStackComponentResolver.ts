@@ -86,9 +86,19 @@ function runtimeSelectedAlternatives(
   const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
   const fromId = optionalString(slot, "runtimeStateFromId");
   const outgoing = alternatives.find((alternative) => alternative.id === fromId);
-  const entering = desired.map((item) => ({ ...item, active: true, activationFrame: eventFrame }));
+  const entering = desired.map((item) => ({
+    ...item,
+    active: true,
+    activationFrame: eventFrame,
+    enterElapsedMs: elapsedMs,
+  }));
   if (!outgoing || entering.some((item) => item.id === outgoing.id)) return entering;
-  return [...entering, { ...outgoing, active: false, exitFrame: eventFrame }];
+  return [...entering, {
+    ...outgoing,
+    active: false,
+    exitFrame: eventFrame,
+    exitElapsedMs: elapsedMs,
+  }];
 }
 
 function resolveAlternative(

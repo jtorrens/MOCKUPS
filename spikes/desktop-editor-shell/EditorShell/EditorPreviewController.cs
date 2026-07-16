@@ -1848,6 +1848,7 @@ internal sealed class EditorPreviewController
             || (string.IsNullOrWhiteSpace(durationInputId)
                 && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
                 && string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey)
+                && string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)
                 && !action.DurationOwnerTimeline
                 && animationDurationSeconds <= 0))
         {
@@ -1930,6 +1931,16 @@ internal sealed class EditorPreviewController
         if (action.DurationOwnerTimeline)
         {
             return RuntimeTimeline.DurationFrames(preview.ToJsonString(), preview.ToJsonString(), "{}", 1, themeTokensJson);
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
+        {
+            var durationMs = ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                preview,
+                action,
+                themeTokensJson);
+            return durationMs <= 0
+                ? 0
+                : Math.Max(1, (int)Math.Ceiling(durationMs / 1000.0 * Math.Max(1, fps)));
         }
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {

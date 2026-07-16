@@ -1105,6 +1105,13 @@ internal sealed class ComponentPreviewInputSession
 
     private double DurationSeconds(ComponentPreviewActionDefinition action)
     {
+        if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
+        {
+            return ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                _runtimePreview,
+                action,
+                _themeTokens.ToJsonString()) / 1000.0;
+        }
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
             var value = ThemeTokenNumber(action.DurationThemeToken, 1);

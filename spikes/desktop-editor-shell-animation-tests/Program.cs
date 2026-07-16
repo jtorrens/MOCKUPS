@@ -334,6 +334,10 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var stateAction = actions.Single((action) => action.CollectionJsonKey == slots.JsonKey
             && action.TargetInputId == "runtimeStateId"
             && action.CollectionItemId == items[0]?["id"]?.GetValue<string>());
+        Equal("alternatives", stateAction.DurationStateCollectionJsonKey);
+        Equal("enterMotion", stateAction.DurationEnterMotionJsonKey);
+        Equal("exitMotion", stateAction.DurationExitMotionJsonKey);
+        SequenceEqual(["theme.motion.reflowDurationMs"], stateAction.DurationAdditionalThemeTokens.ToList());
 
         var theme = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
@@ -345,6 +349,19 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var selected = session.ApplyInputs(payload, "light", settings.ProjectId);
         var selectedPreview = DesignPreviewTestValues.Parse(selected.DesignPreviewJson);
         Equal(deletedStateId, selectedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
+        var themeTokens = JsonNode.Parse(payload.ThemeTokensJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Theme tokens.");
+        var slide = themeTokens["motion"]?["transitions"]?["slide"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Slide timing.");
+        var expectedDurationMs = Math.Max(
+            (slide["delayMs"]?.GetValue<double>() ?? 0) + (slide["durationMs"]?.GetValue<double>() ?? 0),
+            themeTokens["motion"]?["reflowDurationMs"]?.GetValue<double>() ?? 0);
+        Equal(
+            expectedDurationMs,
+            ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                selectedPreview,
+                stateAction,
+                payload.ThemeTokensJson));
 
         var stackItems = config["lockScreen"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");

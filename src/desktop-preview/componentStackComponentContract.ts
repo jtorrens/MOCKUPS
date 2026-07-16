@@ -20,6 +20,8 @@ export interface ComponentStackAlternativeContract {
   exitMotion: ComponentMotionContract;
   activationFrame?: number;
   exitFrame?: number;
+  enterElapsedMs?: number;
+  exitElapsedMs?: number;
 }
 
 export interface ComponentStackSlotContract {

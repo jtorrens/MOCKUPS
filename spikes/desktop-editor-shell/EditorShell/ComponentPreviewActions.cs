@@ -217,6 +217,7 @@ internal static class ComponentPreviewActions
         var durationBehaviorTimingInputId = JsonString(action, "durationBehaviorTimingInputId");
         var durationCollectionJsonKey = JsonString(action, "durationCollectionJsonKey");
         var durationThemeToken = JsonString(action, "durationThemeToken");
+        var durationStateCollectionJsonKey = JsonString(action, "durationStateCollectionJsonKey");
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var timeJsonKey = JsonString(action, "timeJsonKey");
@@ -225,6 +226,7 @@ internal static class ComponentPreviewActions
                 && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
                 && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
                 && string.IsNullOrWhiteSpace(durationThemeToken)
+                && string.IsNullOrWhiteSpace(durationStateCollectionJsonKey)
                 && !durationOwnerTimeline
                 && durationSeconds <= 0)
             || string.IsNullOrWhiteSpace(timeJsonKey))
@@ -253,6 +255,11 @@ internal static class ComponentPreviewActions
             durationSeconds,
             durationCollectionJsonKey,
             durationThemeToken,
+            durationStateCollectionJsonKey,
+            JsonString(action, "durationStateIdJsonKey"),
+            JsonString(action, "durationEnterMotionJsonKey"),
+            JsonString(action, "durationExitMotionJsonKey"),
+            JsonStringArray(action, "durationAdditionalThemeTokens"),
             JsonStringArray(action, "durationItemNumberKeys"),
             JsonStringArray(action, "durationCollectionMultiplierNumberKeys"),
             JsonNumber(action, "durationBaseFrames", 0),
@@ -275,6 +282,59 @@ internal static class ComponentPreviewActions
             "",
             JsonString(action, "visibleWhenItemJsonKey"),
             JsonStringArray(action, "visibleWhenItemValues"));
+    }
+
+    public static double MotionStateTransitionDurationMilliseconds(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string themeTokensJson)
+    {
+        if (string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)) return 0;
+        var target = Target(preview, action);
+        if (target?[action.DurationStateCollectionJsonKey] is not JsonArray states) return 0;
+        var theme = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
+            ?? new JsonObject();
+        var stateIdKey = string.IsNullOrWhiteSpace(action.DurationStateIdJsonKey)
+            ? "id"
+            : action.DurationStateIdJsonKey;
+        var targetId = JsonString(target, action.TargetInputId);
+        var fromId = JsonString(target, action.TargetFromJsonKey);
+        var entering = states.OfType<JsonObject>().FirstOrDefault((state) => JsonString(state, stateIdKey) == targetId);
+        var outgoing = states.OfType<JsonObject>().FirstOrDefault((state) => JsonString(state, stateIdKey) == fromId);
+        var duration = Math.Max(
+            MotionDurationMilliseconds(theme, entering?[action.DurationEnterMotionJsonKey] as JsonObject),
+            MotionDurationMilliseconds(theme, outgoing?[action.DurationExitMotionJsonKey] as JsonObject));
+        foreach (var token in action.DurationAdditionalThemeTokens)
+        {
+            duration = Math.Max(duration, ThemeTokenNumber(theme, token));
+        }
+        return Math.Max(0, duration);
+    }
+
+    private static double MotionDurationMilliseconds(JsonObject theme, JsonObject? motion)
+    {
+        if (motion is null) return 0;
+        var transition = JsonString(motion, "transition");
+        var fade = motion["fade"] is JsonValue fadeValue
+            && fadeValue.TryGetValue<bool>(out var enabled)
+            && enabled;
+        if (transition == "none" && !fade) return 0;
+        var timingKey = transition == "none" ? "fade" : transition;
+        var timing = theme["motion"]?["transitions"]?[timingKey] as JsonObject;
+        return timing is null
+            ? 0
+            : Math.Max(0, JsonNumber(timing, "delayMs", 0) + JsonNumber(timing, "durationMs", 0));
+    }
+
+    private static double ThemeTokenNumber(JsonObject theme, string token)
+    {
+        JsonNode? current = theme;
+        foreach (var segment in token.Split('.', StringSplitOptions.RemoveEmptyEntries)
+                     .SkipWhile((segment) => segment == "theme"))
+        {
+            current = current is JsonObject owner ? owner[segment] : null;
+        }
+        return current is JsonValue value && value.TryGetValue<double>(out var number) ? number : 0;
     }
 
     private static ComponentPreviewActionTargetMode ParseTargetMode(string value)
@@ -389,6 +449,11 @@ internal sealed record ComponentPreviewActionDefinition(
     double DurationSeconds,
     string DurationCollectionJsonKey,
     string DurationThemeToken,
+    string DurationStateCollectionJsonKey,
+    string DurationStateIdJsonKey,
+    string DurationEnterMotionJsonKey,
+    string DurationExitMotionJsonKey,
+    IReadOnlyList<string> DurationAdditionalThemeTokens,
     IReadOnlyList<string> DurationItemNumberKeys,
     IReadOnlyList<string> DurationCollectionMultiplierNumberKeys,
     double DurationBaseFrames,
