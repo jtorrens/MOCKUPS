@@ -248,6 +248,11 @@ internal sealed class DictionaryFieldControl : Grid
         }
     }
 
+    public void SetPresentedValue(string value)
+    {
+        _valueControl?.SetValue(value);
+    }
+
     private void SetLocalValue(string value)
     {
         if (_definition.CanInherit && value == _definition.InheritedStorageValue)

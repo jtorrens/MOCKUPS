@@ -2699,6 +2699,31 @@ assertContains(
   "animation authoring panels must use the complete Shot scale",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_playbackState.Changed += RefreshResolvedValue",
+  "animated Runtime Values must follow the authoritative Preview playhead",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "control.IsEnabled = false",
+  "an animated Runtime Value must be read-only outside its Animation editor",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
+  "public void SetPresentedValue(string value)",
+  "dictionary controls must support a resolved display value without committing it as runtime payload",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationValueResolver.cs",
+  "destination.Interpolation is \"linear\" or \"easeInOut\"",
+  "Runtime Values must resolve numeric keyframes with the generic interpolation contract",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "ModuleInstanceAnimationValueResolver.ResolveDisplayValue(",
+  "Animation keyframe controls and Runtime Values must share one resolved-value presentation path",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "timelineDuration += 10",
   "the provisional authoring horizon must grow in session-only ten-frame steps",

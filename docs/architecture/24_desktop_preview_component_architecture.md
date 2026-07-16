@@ -68,6 +68,14 @@ runtime contracts keep their own Animation cards at their nested owner. This is
 presentation metadata only: persisted tracks still use their real `fieldId`
 and stable `targetId`, and no module name is known by the shell.
 
+Runtime Values and Animation share the authoritative Shot playhead. Once a
+runtime field has an active track, its dictionary control becomes a read-only
+view of the value resolved for that playhead. The editor resolves the persisted
+owner-local keyframes through the generic owner timeline and presents the result
+without changing the stored runtime payload. The mandatory initial keyframe is
+always authored at owner-local frame zero and appears on the Shot-wide scale at
+that owner's absolute origin.
+
 ```text
 After the component renderable/helper boundary, preview data must not contain
 component field names, component slot names, unresolved token names, inheritance

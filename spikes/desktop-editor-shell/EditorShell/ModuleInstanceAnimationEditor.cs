@@ -55,6 +55,39 @@ internal sealed class ModuleInstanceAnimationEditor
             targetId);
     }
 
+    public string ResolveRuntimeValue(
+        ProjectTreeNode node,
+        ComponentInputDefinition input,
+        string targetId,
+        string baseValue)
+    {
+        var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        var animation = DesignPreviewTestValues.Parse(_database.GetModuleInstanceSettings(node.Id).AnimationJson);
+        var track = new ModuleInstanceAnimationDocument(animation.ToJsonString()).Track(input.Id, targetId);
+        if (track is null) return baseValue;
+        var themeTokens = DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
+        var screenFrame = _shotFrame() - ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
+        var ownerFrame = RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+            preview,
+            preview,
+            animation,
+            targetId,
+            screenFrame,
+            themeTokens);
+        var fieldOrigin = RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(
+            preview,
+            preview,
+            animation,
+            input.Id,
+            targetId,
+            themeTokens);
+        return ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+            track,
+            ownerFrame - fieldOrigin,
+            ValueNode(input.ValueKind, baseValue),
+            input.ValueKind);
+    }
+
     public AnimationTargetEditorContent CreateCollectionContent(
         ProjectTreeNode node,
         RuntimeInputCollectionDefinition collection)
@@ -491,8 +524,11 @@ internal sealed class ModuleInstanceAnimationEditor
         header.Children.Add(count);
         panel.Children.Add(header);
 
-        var effective = exact ?? previous;
-        var displayedValue = effective?.Value is null ? target.BaseValue : DisplayValue(effective.Value, target.Input.ValueKind);
+        var displayedValue = ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+            selected.Track,
+            localFrame,
+            ValueNode(target.Input.ValueKind, target.BaseValue),
+            target.Input.ValueKind);
         var valueControl = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, node, target.Input), displayedValue),
             _dictionaryServices.ForNode(node, (_) => ""));
@@ -780,13 +816,6 @@ internal sealed class ModuleInstanceAnimationEditor
         ValueKind.Decimal => JsonValue.Create(decimal.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : 0)!,
         _ => JsonValue.Create(value)!,
     };
-
-    private static string DisplayValue(JsonNode value, ValueKind kind)
-    {
-        if (kind == ValueKind.Boolean && value is JsonValue boolean && boolean.TryGetValue<bool>(out var flag)) return flag ? "true" : "false";
-        if (value is JsonValue scalar && scalar.TryGetValue<string>(out var text)) return text;
-        return value.ToJsonString().Trim('"');
-    }
 
     private static string InterpolationLabel(string interpolation) => interpolation switch
     {

@@ -1167,6 +1167,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var document = new ModuleInstanceAnimationDocument(
             _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
         var active = document.HasTrack(input.Id, targetId);
+        var baseValue = control.Value;
         var toggle = new Button
         {
             Content = EditorTimelineTransport.CreateAnimationActivationGlyph(
@@ -1215,6 +1216,15 @@ internal sealed class RuntimeInputsCollectionEditor
         row.Children.Add(toggle);
         Grid.SetColumn(control, 1);
         row.Children.Add(control);
+        if (active && _animationEditor is not null)
+        {
+            control.IsEnabled = false;
+            void RefreshResolvedValue() => control.SetPresentedValue(
+                _animationEditor.ResolveRuntimeValue(owner.Node, input, targetId, baseValue));
+            _playbackState.Changed += RefreshResolvedValue;
+            row.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= RefreshResolvedValue;
+            RefreshResolvedValue();
+        }
         return row;
     }
 

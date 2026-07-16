@@ -10,6 +10,7 @@ var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
+    ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
     ("keyframe upsert updates and orders", KeyframeUpsertUpdatesAndOrders),
@@ -438,6 +439,31 @@ static void TrackActivationCreatesInitialKeyframe()
     True(track.Keyframes[0].Enabled);
     document.AddTrack("subtitle", "", JsonValue.Create("duplicate")!, "linear");
     Equal(1, document.Tracks.Count);
+}
+
+static void RuntimeControlsResolveActiveFrameValue()
+{
+    var document = EmptyDocument();
+    document.AddTrack("state", "slot-1", JsonValue.Create("clock")!, "hold");
+    document.UpsertKeyframe("state", "slot-1", 10, JsonValue.Create("password")!, "hold");
+    var state = Required(document.Track("state", "slot-1"));
+    Equal("clock", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        state, 0, JsonValue.Create("base")!, ValueKind.OptionToken));
+    Equal("clock", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        state, 9, JsonValue.Create("base")!, ValueKind.OptionToken));
+    Equal("password", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        state, 10, JsonValue.Create("base")!, ValueKind.OptionToken));
+    Equal("password", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        state, 40, JsonValue.Create("base")!, ValueKind.OptionToken));
+
+    var numericDocument = EmptyDocument();
+    numericDocument.AddTrack("opacity", "", JsonValue.Create(0)!, "linear");
+    numericDocument.UpsertKeyframe("opacity", "", 10, JsonValue.Create(1)!, "linear");
+    Equal("0.5", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        Required(numericDocument.Track("opacity", "")),
+        5,
+        JsonValue.Create(0)!,
+        ValueKind.Decimal));
 }
 
 static void TrackTargetsRoundTrip()
