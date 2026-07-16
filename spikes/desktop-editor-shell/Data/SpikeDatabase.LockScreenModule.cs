@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,6 +169,7 @@ internal sealed partial class SpikeDatabase
                 ["startGapToken"] = "theme.spacing.none",
                 ["endGapToken"] = "theme.spacing.none",
                 ["items"] = new JsonArray(),
+                [RuntimeInputForwardingContract.StorageKey] = ComponentStackStateRuntimeForwarding(),
             },
         },
     }.ToJsonString();
@@ -277,6 +279,71 @@ internal sealed partial class SpikeDatabase
         Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
             ("$id", moduleId), ("$configJson", next));
     }
+
+    private static JsonObject ComponentStackStateRuntimeForwarding() => new()
+    {
+        ["items"] = new JsonObject
+        {
+            ["id"] = "forwarded.module.lockScreen.stackStates",
+            ["label"] = "Slots",
+            ["jsonKey"] = "forwarded_module_lockScreen_stackStates",
+            ["kind"] = "collection",
+            ["collection"] = new JsonObject
+            {
+                ["id"] = "stackStates",
+                ["label"] = "Slots",
+                ["jsonKey"] = "forwarded_module_lockScreen_stackStates",
+                ["itemLabel"] = "Slot",
+                ["fields"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "runtimeStateId",
+                        ["label"] = "State",
+                        ["jsonKey"] = "runtimeStateId",
+                        ["kind"] = "option",
+                        ["valueKind"] = "OptionToken",
+                        ["defaultValue"] = "",
+                        ["actionOnly"] = true,
+                        ["optionsSourceCollectionJsonKey"] = "alternatives",
+                        ["optionsSourceValueJsonKey"] = "id",
+                        ["optionsSourceLabelJsonKey"] = "presetId",
+                    },
+                },
+                ["itemActions"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "changeState",
+                        ["label"] = "State",
+                        ["playInputId"] = "runtimeStateTransition",
+                        ["targetInputId"] = "runtimeStateId",
+                        ["targetMode"] = "option",
+                        ["targetFromJsonKey"] = "runtimeStateFromId",
+                        ["durationThemeToken"] = "theme.motion.transitions.slide.durationMs",
+                        ["timeJsonKey"] = "runtimeStateElapsedMs",
+                        ["timeUnit"] = "milliseconds",
+                        ["prewarmFrames"] = false,
+                        ["completionBehavior"] = "reset",
+                    },
+                },
+                ["itemPresentation"] = new JsonObject
+                {
+                    ["subtitleFieldIds"] = new JsonArray("runtimeStateId"),
+                    ["subtitleMaxCharacters"] = 72,
+                    ["fallbackIcon"] = "component",
+                },
+            },
+            ["projection"] = new JsonObject
+            {
+                ["optionsSourceCollectionJsonKey"] = "alternatives",
+                ["stateJsonKey"] = "runtimeStateId",
+                ["transitionJsonKey"] = "runtimeStateTransition",
+                ["elapsedJsonKey"] = "runtimeStateElapsedMs",
+                ["fromJsonKey"] = "runtimeStateFromId",
+            },
+        },
+    };
 
     private static string DefaultLockScreenDesignPreviewJson()
     {

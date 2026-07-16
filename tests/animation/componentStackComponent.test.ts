@@ -112,3 +112,23 @@ test("Component Stack active tracks use each state stable id", () => {
   assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
 });
+
+test("Component Stack runtime state actions resolve the selected state and transition frame", () => {
+  const source = payload([
+    alternative("clock", "stub::preset::clock", false),
+    alternative("password", "stub::preset::password", false),
+  ], 12);
+  const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
+  Object.assign(preview.items[0]!, {
+    runtimeStateId: "password",
+    runtimeStateFromId: "clock",
+    runtimeStateTransition: true,
+    runtimeStateElapsedMs: 80,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const resolved = resolveComponentStackComponent(source);
+  assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
+  assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
+  assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
+});

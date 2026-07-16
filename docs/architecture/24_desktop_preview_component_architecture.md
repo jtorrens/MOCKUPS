@@ -596,6 +596,13 @@ Rules:
 - Runtime Input Forwarding promotes one of those Variant-bound values into the
   effective runtime contract of the parent; it does not replace or reclassify
   inputs the parent design already declares as Runtime;
+- the same forwarding contract may project a structured Variant collection as
+  a parent runtime collection. The projection retains stable item ids, declares
+  its fields and item actions through collection metadata, and is written back
+  to the original nested collection before the owning resolver runs;
+- collection action options may come from a declared nested collection. This is
+  how a slot state selector derives its values from that slot's state items
+  without an editor, module, bridge or renderer exception;
 - input names and record types never create implicit propagation. In
   particular, a parent `actor` does not replace an Actor reference owned by an
   embedded Avatar, Audio item, message or future notification;

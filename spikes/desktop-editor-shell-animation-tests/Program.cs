@@ -51,6 +51,7 @@ var tests = new (string Name, Action Run)[]
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
+    ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
 
@@ -288,6 +289,26 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
     {
         File.Delete(temporary);
     }
+}
+
+static void ForwardedRuntimeCollectionsExposeSlotStateActions()
+{
+    var database = new SpikeDatabase(Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite"));
+    var module = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .Single((node) => node.RecordClassId == "module.core.lockScreen" && node.Kind == ProjectTreeNodeKind.Module);
+    var settings = database.GetModuleSettings(module.Id);
+    var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
+    var effective = RuntimeInputForwardingContract.EffectivePreview(
+        DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
+        config);
+    var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
+    var slots = collections.Single((collection) => collection.Id == "stackStates");
+    var items = DesignPreviewTestValues.CollectionItems(effective, slots);
+    Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
+    var actions = ComponentPreviewActions.Read(effective);
+    True(actions.Any((action) => action.CollectionJsonKey == slots.JsonKey
+        && action.TargetInputId == "runtimeStateId"));
 }
 
 static void RejectsMalformedDocuments()

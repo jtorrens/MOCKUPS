@@ -15,6 +15,8 @@ internal static class RuntimeInputForwardingContract
         var effective = preview.DeepClone() as JsonObject ?? new JsonObject();
         var inputs = effective["inputs"] as JsonArray ?? new JsonArray();
         effective["inputs"] = inputs;
+        var collections = effective["collections"] as JsonArray ?? new JsonArray();
+        effective["collections"] = collections;
         var existingIds = inputs.OfType<JsonObject>()
             .Select((input) => Text(input["id"]))
             .Where((id) => id.Length > 0)
@@ -31,6 +33,17 @@ internal static class RuntimeInputForwardingContract
             RebaseTransitionForParent(next, container);
             next["source"] = "runtime";
             next["defaultValue"] = StorageText(container[targetKey]);
+            if (next["collection"] is JsonObject collection)
+            {
+                var projected = ProjectCollectionValue(container[targetKey], next["projection"] as JsonObject);
+                effective[jsonKey] = projected;
+                var runtimeCollection = collection.DeepClone() as JsonObject ?? new JsonObject();
+                runtimeCollection["jsonKey"] = jsonKey;
+                runtimeCollection["sourceCollectionJsonKey"] = jsonKey;
+                if (!collections.OfType<JsonObject>().Any((candidate) => Text(candidate["id"]) == Text(runtimeCollection["id"])))
+                    collections.Add(runtimeCollection);
+                return;
+            }
             if (existingIds.Add(id)) inputs.Add(next);
             if (effective[jsonKey] is null)
             {
@@ -48,6 +61,29 @@ internal static class RuntimeInputForwardingContract
             }
         });
         return effective;
+    }
+
+    private static JsonArray ProjectCollectionValue(JsonNode? source, JsonObject? projection)
+    {
+        var result = source?.DeepClone() as JsonArray
+            ?? throw new InvalidOperationException("Forwarded runtime collection has no Variant collection value.");
+        if (projection is null) return result;
+        var alternativesKey = Text(projection["optionsSourceCollectionJsonKey"]);
+        var stateKey = Text(projection["stateJsonKey"]);
+        var transitionKey = Text(projection["transitionJsonKey"]);
+        var elapsedKey = Text(projection["elapsedJsonKey"]);
+        var fromKey = Text(projection["fromJsonKey"]);
+        foreach (var item in result.OfType<JsonObject>())
+        {
+            var alternatives = item[alternativesKey] as JsonArray
+                ?? throw new InvalidOperationException($"Forwarded runtime collection item is missing '{alternativesKey}'.");
+            var firstId = alternatives.OfType<JsonObject>().FirstOrDefault()?["id"]?.GetValue<string>() ?? "";
+            item[stateKey] = firstId;
+            item[transitionKey] = false;
+            item[elapsedKey] = 0;
+            item[fromKey] = firstId;
+        }
+        return result;
     }
 
     private static void RebaseTransitionForParent(JsonObject definition, JsonObject container)

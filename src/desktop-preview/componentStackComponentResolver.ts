@@ -60,14 +60,41 @@ function resolveSlot(
     requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
   ));
+  const runtimeStateId = optionalString(slot, "runtimeStateId");
   return {
     id: requiredString(slot, "id", `${path}.id`),
     alignment: alignment as ComponentStackAlignment,
     gapBeforeMode: gapBeforeMode as ComponentStackGapMode,
     gapBeforeToken: requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     gapBeforeWeight: Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
-    alternatives: visibleAlternativesWithExits(payload, rawAlternatives, alternatives),
+    alternatives: runtimeStateId
+      ? runtimeSelectedAlternatives(payload, slot, runtimeStateId, alternatives, path)
+      : visibleAlternativesWithExits(payload, rawAlternatives, alternatives),
   };
+}
+
+function runtimeSelectedAlternatives(
+  payload: DesignPreviewPayload,
+  slot: Record<string, unknown>,
+  stateId: string,
+  alternatives: ComponentStackAlternativeContract[],
+  path: string,
+) {
+  const target = alternatives.find((alternative) => alternative.id === stateId);
+  if (!target) throw new Error(`Unknown Component Stack runtime state ${stateId} at ${path}`);
+  const desired = target.behavior === "replace"
+    ? [target]
+    : [alternatives[0], target].filter((item, index, items) => item && items.indexOf(item) === index);
+  if (slot.runtimeStateTransition !== true) return desired.map((item) => ({ ...item, active: true }));
+
+  const frame = Math.max(0, Math.floor(Number(asRecord(parseObject(payload.instanceJson ?? "{}").context).localFrame) || 0));
+  const elapsedMs = Math.max(0, Number(slot.runtimeStateElapsedMs) || 0);
+  const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
+  const fromId = optionalString(slot, "runtimeStateFromId");
+  const outgoing = alternatives.find((alternative) => alternative.id === fromId);
+  const entering = desired.map((item) => ({ ...item, active: true, activationFrame: eventFrame }));
+  if (!outgoing || entering.some((item) => item.id === outgoing.id)) return entering;
+  return [...entering, { ...outgoing, active: false, exitFrame: eventFrame }];
 }
 
 function resolveAlternative(

@@ -1575,6 +1575,10 @@ internal sealed class ComponentPreviewInputSession
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
                     StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
                     AllowEmptyComponentPreset = field["allowEmpty"]?.GetValue<bool>() == true,
+                    ActionOnly = field["actionOnly"]?.GetValue<bool>() == true,
+                    OptionsSourceCollectionJsonKey = JsonString(field, "optionsSourceCollectionJsonKey"),
+                    OptionsSourceValueJsonKey = JsonString(field, "optionsSourceValueJsonKey", "id"),
+                    OptionsSourceLabelJsonKey = JsonString(field, "optionsSourceLabelJsonKey"),
                 });
             }
 
@@ -1975,7 +1979,11 @@ internal sealed record ComponentInputDefinition(
     string EnabledWhenValue = "",
     bool RefreshOnCommit = false,
     RuntimeInputCollectionDefinition? StructuredCollection = null,
-    bool AllowEmptyComponentPreset = false);
+    bool AllowEmptyComponentPreset = false,
+    bool ActionOnly = false,
+    string OptionsSourceCollectionJsonKey = "",
+    string OptionsSourceValueJsonKey = "id",
+    string OptionsSourceLabelJsonKey = "");
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,

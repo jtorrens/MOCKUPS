@@ -1931,6 +1931,25 @@ internal sealed class EditorPreviewController
         {
             return RuntimeTimeline.DurationFrames(preview.ToJsonString(), preview.ToJsonString(), "{}", 1, themeTokensJson);
         }
+        if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
+        {
+            var themeTokens = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
+                ?? new JsonObject();
+            JsonNode? current = themeTokens;
+            foreach (var segment in action.DurationThemeToken.Split('.', StringSplitOptions.RemoveEmptyEntries)
+                         .SkipWhile((segment) => segment == "theme"))
+            {
+                current = current is JsonObject owner ? owner[segment] : null;
+            }
+            var value = current is JsonValue tokenValue && tokenValue.TryGetValue<double>(out var number) ? number : 0;
+            var seconds = action.TimeUnit switch
+            {
+                ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
+                ComponentPreviewActionTimeUnit.Frames => value / Math.Max(1, fps),
+                _ => value,
+            };
+            return seconds <= 0 ? 0 : Math.Max(1, (int)Math.Ceiling(seconds * Math.Max(1, fps)));
+        }
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
             return CollectionDurationFrames(preview, action);
