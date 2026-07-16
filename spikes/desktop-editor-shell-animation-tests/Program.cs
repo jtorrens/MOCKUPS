@@ -1918,6 +1918,53 @@ static void LockScreenComposesRuntimeStack()
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var instanceVariantConfig = JsonNode.Parse(
+            database.GetModuleInstanceVariantSettings(lockScreenInstance.Id).ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen instance Variant config.");
+        var instanceStackInputs = instanceVariantConfig["lockScreen"]?["stackInputs"] as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen instance Stack inputs.");
+        var configuredStackSlots = instanceStackInputs["items"] as JsonArray
+            ?? throw new InvalidOperationException("Missing configured Lock Screen Stack slots.");
+        var passwordState = configuredStackSlots.OfType<JsonObject>()
+            .SelectMany((slot) => slot["alternatives"]?.AsArray().OfType<JsonObject>()
+                .Select((state) => (Slot: slot, State: state)) ?? [])
+            .Single((candidate) => (candidate.State["presetId"]?.GetValue<string>() ?? "")
+                .Contains("_password::preset::", StringComparison.Ordinal));
+        var passwordSlotId = passwordState.Slot["id"]?.GetValue<string>() ?? "";
+        var passwordStateId = passwordState.State["id"]?.GetValue<string>() ?? "";
+        var instanceAnimation = new ModuleInstanceAnimationDocument(
+            database.GetModuleInstanceSettings(lockScreenInstance.Id).AnimationJson);
+        if (!instanceAnimation.HasTrack("runtimeStateId", passwordSlotId))
+        {
+            var initialStateId = passwordState.Slot["alternatives"]?.AsArray()
+                .OfType<JsonObject>()
+                .First()["id"]?.GetValue<string>() ?? "";
+            instanceAnimation.AddTrack(
+                "runtimeStateId",
+                passwordSlotId,
+                JsonValue.Create(initialStateId)!,
+                "hold");
+        }
+        instanceAnimation.UpsertKeyframe(
+            "runtimeStateId",
+            passwordSlotId,
+            24,
+            JsonValue.Create(passwordStateId)!,
+            "hold");
+        database.UpdateModuleInstanceAnimationJson(lockScreenInstance.Id, instanceAnimation.ToJson());
+        var passwordFramePayload = Required(DesignPreviewPayloadFactory.Create(
+            database,
+            lockScreenInstance,
+            theme.Id,
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 40));
+        var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            "light",
+            false,
+            passwordFramePayload).GetAwaiter().GetResult();
+        True(!passwordFrameHtml.Contains("preview-error", StringComparison.Ordinal));
+        True(passwordFrameHtml.Contains("Enter password", StringComparison.Ordinal));
+
         var payload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
         var session = new ComponentPreviewInputSession(database, () => { });
         session.UpdateForPayload(payload, settings.ProjectId);

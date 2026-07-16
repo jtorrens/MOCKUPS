@@ -88,7 +88,6 @@ internal sealed class EditorCollectionCardFactory
                 _database,
                 _dictionaryServices,
                 _onChanged,
-                _reloadAndSelect,
                 _sessionUiState,
                 _shotFrame,
                 _setShotFrame,

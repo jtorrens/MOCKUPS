@@ -17,7 +17,6 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly SpikeDatabase _database;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
-    private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly EditorSessionUiState _sessionUiState;
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
@@ -28,7 +27,6 @@ internal sealed class ModuleInstanceAnimationEditor
         SpikeDatabase database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
-        Action<ProjectTreeNode> reloadAndSelect,
         EditorSessionUiState sessionUiState,
         Func<int> shotFrame,
         Action<int> setShotFrame,
@@ -38,7 +36,6 @@ internal sealed class ModuleInstanceAnimationEditor
         _database = database;
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
-        _reloadAndSelect = reloadAndSelect;
         _sessionUiState = sessionUiState;
         _shotFrame = shotFrame;
         _setShotFrame = setShotFrame;
@@ -128,10 +125,16 @@ internal sealed class ModuleInstanceAnimationEditor
         var animation = DesignPreviewTestValues.Parse(instance.AnimationJson);
         var themeTokens = DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
-        var targets = ReadTargets(node, preview, config, animation, themeTokens)
+        List<AnimationTarget> ReadScopeTargets(JsonObject currentAnimation) => ReadTargets(
+                node,
+                preview,
+                config,
+                currentAnimation,
+                themeTokens)
             .Where(includesTarget)
             .Select((target) => decorateTarget?.Invoke(target) ?? target)
             .ToList();
+        var targets = ReadScopeTargets(animation);
         var targetKeys = targets
             .Select((target) => (target.FieldId, target.TargetId))
             .ToHashSet();
@@ -163,7 +166,8 @@ internal sealed class ModuleInstanceAnimationEditor
                 durationTargetId,
                 preview,
                 animation,
-                themeTokens));
+                themeTokens,
+                ReadScopeTargets));
         }
         return new AnimationTargetEditorContent(content, activeTrackCount);
     }
@@ -171,32 +175,36 @@ internal sealed class ModuleInstanceAnimationEditor
     private Control CreateTimelineEditor(
         ProjectTreeNode node,
         ModuleInstanceAnimationDocument document,
-        IReadOnlyList<ResolvedAnimationTarget> targets,
+        List<ResolvedAnimationTarget> targets,
         string scopeKey,
         string? durationTargetId,
         JsonObject preview,
         JsonObject animation,
-        JsonObject themeTokens)
+        JsonObject themeTokens,
+        Func<JsonObject, List<AnimationTarget>> readScopeTargets)
     {
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
         var actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, node.Id));
         var durationPolicy = RuntimeDurationContract.Policy(
             _database.GetModuleInstanceEffectiveContractJson(node.Id));
-        var maximumAuthoredScreenFrame = targets
+        var currentAnimation = animation;
+        int MaximumAuthoredScreenFrame() => targets
             .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
                 .Where((keyframe) => keyframe.Enabled)
                 .Select((keyframe) => candidate.Target?.ScreenFrameForOwnerFrame(
                     (candidate.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame))
             .DefaultIfEmpty(-1)
             .Max();
-        var calculatedAuthoringDuration = Math.Max(
-            Math.Max(actualScreenDuration, maximumAuthoredScreenFrame + 1),
+        int CalculatedAuthoringDuration(int maximumAuthoredFrame) => Math.Max(
+            Math.Max(actualScreenDuration, maximumAuthoredFrame + 1),
             targets
                 .Where((candidate) => candidate.Target is { ReferenceDurationFrames: > 0 })
                 .Select((candidate) => candidate.Target!.ScreenFrameForOwnerFrame(
                     candidate.Target.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
                 .DefaultIfEmpty(actualScreenDuration)
                 .Max());
+        var maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
+        var calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
         var timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
             ? actualScreenDuration
             : calculatedAuthoringDuration;
@@ -227,7 +235,7 @@ internal sealed class ModuleInstanceAnimationEditor
         double OwnerFrame() => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
             preview,
             preview,
-            animation,
+            currentAnimation,
             selected.Target?.TargetId ?? durationTargetId ?? "",
             TimelineFrame(),
             themeTokens);
@@ -291,11 +299,41 @@ internal sealed class ModuleInstanceAnimationEditor
             RefreshVisuals();
         }
 
-        void SaveAndReload()
+        void SaveAndRefresh()
         {
+            var selectedKey = TargetKey(selected);
+            var authoringHorizon = timelineDuration;
             _database.UpdateModuleInstanceAnimationJson(node.Id, document.ToJson());
+            currentAnimation = DesignPreviewTestValues.Parse(
+                _database.GetModuleInstanceSettings(node.Id).AnimationJson);
+            screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_database, node.Id);
+            actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, node.Id));
+            var refreshedTargets = readScopeTargets(currentAnimation)
+                .ToDictionary((candidate) => (candidate.FieldId, candidate.TargetId));
+            for (var index = 0; index < targets.Count; index++)
+            {
+                var candidate = targets[index];
+                var fieldId = candidate.Target?.FieldId ?? candidate.Track?.FieldId ?? "";
+                var targetId = candidate.Target?.TargetId ?? candidate.Track?.TargetId ?? "";
+                refreshedTargets.TryGetValue((fieldId, targetId), out var refreshedTarget);
+                targets[index] = candidate with
+                {
+                    Target = refreshedTarget,
+                    Track = document.Track(fieldId, targetId),
+                };
+            }
+            selected = targets.FirstOrDefault((candidate) => TargetKey(candidate) == selectedKey)
+                ?? targets[0];
+            maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
+            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
+            hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
+            timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
+                ? Math.Max(actualScreenDuration, authoringHorizon)
+                : Math.Max(calculatedAuthoringDuration, authoringHorizon);
+            currentFrame = Math.Clamp(currentFrame, 0, timelineDuration - 1);
+            slider.Maximum = timelineDuration - 1;
             _onChanged();
-            _reloadAndSelect(node);
+            RefreshVisuals();
         }
 
         void RefreshVisuals()
@@ -362,7 +400,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 selected,
                 (int)Math.Round(OwnerFrame(), MidpointRounding.AwayFromZero),
                 (ownerFrame) => SetFrame(selected.Target?.ScreenFrameForOwnerFrame(ownerFrame) ?? TimelineFrame()),
-                SaveAndReload);
+                SaveAndRefresh);
         }
 
         var firstFrameButton = EditorTimelineTransport.CreateNavigationButton(
@@ -443,7 +481,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 document,
                 durationTargetId,
                 referenceNaturalDuration,
-                SaveAndReload));
+                SaveAndRefresh));
         }
         root.Children.Add(EditorGroupBlock.CreateSeparator());
         root.Children.Add(trackList);

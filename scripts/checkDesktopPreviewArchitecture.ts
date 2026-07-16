@@ -2728,6 +2728,11 @@ assertDoesNotContain(
   "screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame",
   "Screen-local keyframe markers must not persist or display absolute Shot offsets",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "_reloadAndSelect",
+  "keyframe edits must refresh their local animation surface without rebuilding the editor",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "firstMatchingValue",

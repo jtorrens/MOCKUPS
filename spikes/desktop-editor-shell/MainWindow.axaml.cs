@@ -547,7 +547,10 @@ public partial class MainWindow : SukiWindow
 
     private void ReloadAndSelect(ProjectTreeNode node)
     {
-        ReloadAndSelect(node, null);
+        var viewState = _selectedNode?.Id == node.Id
+            ? _editorViewState.CaptureState(_editorContent.Cards)
+            : null;
+        ReloadAndSelect(node, viewState);
     }
 
     private void ReloadAndSelect(ProjectTreeNode node, EditorViewState? viewState)
