@@ -250,7 +250,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 TextWrapping = TextWrapping.Wrap,
             });
         }
-        var rootActions = actions.Where((candidate) => !candidate.IsCollectionItemAction).ToList();
+        var rootActions = owner.IsInstance
+            ? []
+            : actions.Where((candidate) => !candidate.IsCollectionItemAction).ToList();
         if (rootActions.Count > 0)
         {
             var actionPanel = CreateActionPanel();
@@ -266,7 +268,7 @@ internal sealed class RuntimeInputsCollectionEditor
             return panel;
         }
 
-        var visibleInputs = inputs.Where((input) => !input.ActionOnly).ToList();
+        var visibleInputs = inputs.Where((input) => IsVisibleRuntimeValue(owner, input)).ToList();
         var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
         var sections = new List<EditorInternalNavigationSection>();
         var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
@@ -680,7 +682,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 actionRow.IsVisible = actionControls.Any((entry) => entry.Control.IsVisible);
             }
         }
-        if (itemActions.Count > 0)
+        if (!owner.IsInstance && itemActions.Count > 0)
         {
             actionRow = CreateActionPanel();
             foreach (var action in itemActions)
@@ -692,7 +694,10 @@ internal sealed class RuntimeInputsCollectionEditor
             RefreshActionVisibility();
             content.Children.Add(actionRow);
         }
-        foreach (var input in ComponentInputGrouping.OwnInputs(collection.Fields).Where((input) => !input.ActionOnly))
+        var visibleCollectionFields = collection.Fields
+            .Where((input) => IsVisibleRuntimeValue(owner, input))
+            .ToList();
+        foreach (var input in ComponentInputGrouping.OwnInputs(visibleCollectionFields))
         {
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
@@ -705,7 +710,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 openComponentOverrides));
         }
 
-        var groups = ComponentInputGrouping.EmbeddedGroups(collection.Fields.Where((input) => !input.ActionOnly).ToList());
+        var groups = ComponentInputGrouping.EmbeddedGroups(visibleCollectionFields);
         var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
         var groupSubcards = new List<EditorInternalNavigationSection>();
         foreach (var groupId in topLevelGroupIds)
@@ -747,7 +752,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var applicableNestedActions = nestedActions.Where((action) =>
                         ComponentPreviewActions.AppliesToItem(action, itemRuntimeContract))
                     .ToList();
-                if (applicableNestedActions.Count > 0)
+                if (!owner.IsInstance && applicableNestedActions.Count > 0)
                 {
                     var nestedActionPanel = CreateActionPanel();
                     foreach (var nestedAction in applicableNestedActions)
@@ -756,7 +761,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     }
                     nestedPanel.Children.Add(nestedActionPanel);
                 }
-                foreach (var nestedInput in nestedInputs)
+                foreach (var nestedInput in nestedInputs.Where((input) => IsVisibleRuntimeValue(owner, input)))
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
                         owner, preview, collection, itemIndex, item, itemRuntimeContract, nestedInput));
@@ -793,6 +798,9 @@ internal sealed class RuntimeInputsCollectionEditor
             ? id
             : $"item-{index}";
     }
+
+    private static bool IsVisibleRuntimeValue(RuntimeInputOwner owner, ComponentInputDefinition input) =>
+        !input.ActionOnly || (owner.IsInstance && input.Animation is not null);
 
     private JsonObject DefaultCollectionItem(RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection)
     {
@@ -960,9 +968,14 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 : null,
         };
+        var definition = RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input);
+        if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
+        {
+            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(_database, input, item) };
+        }
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
+                definition,
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
             services);
@@ -1268,7 +1281,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ? null
             : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
         var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
-            ? action.TargetOptions.Count > 0 ? action.TargetOptions : DynamicOptions(targetInput, values)
+            ? action.TargetOptions.Count > 0 ? action.TargetOptions : RuntimeInputDynamicOptions.Resolve(_database, targetInput, values)
             : null;
         var currentTargetValue = targetInput is null
             ? ""
@@ -1281,29 +1294,6 @@ internal sealed class RuntimeInputsCollectionEditor
             _playbackState,
             targetOptions,
             currentTargetValue);
-    }
-
-    private IReadOnlyList<FieldOption>? DynamicOptions(ComponentInputDefinition? input, JsonObject values)
-    {
-        if (input is null) return null;
-        if (string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)) return input.Options;
-        if (values[input.OptionsSourceCollectionJsonKey] is not JsonArray items) return [];
-        return items.OfType<JsonObject>().Select((item, index) =>
-        {
-            var value = item[input.OptionsSourceValueJsonKey]?.GetValue<string>() ?? "";
-            var rawLabel = string.IsNullOrWhiteSpace(input.OptionsSourceLabelJsonKey)
-                ? ""
-                : item[input.OptionsSourceLabelJsonKey]?.GetValue<string>() ?? "";
-            var label = rawLabel;
-            if (input.OptionsSourceLabelJsonKey.Equals("presetId", StringComparison.Ordinal)
-                && !string.IsNullOrWhiteSpace(rawLabel))
-            {
-                try { label = _database.GetRuntimeComponentPresetName(rawLabel, new JsonObject(), []); }
-                catch { label = rawLabel; }
-            }
-            if (string.IsNullOrWhiteSpace(label)) label = $"State {index + 1}";
-            return new FieldOption(value, label);
-        }).Where((option) => !string.IsNullOrWhiteSpace(option.Value)).ToList();
     }
 
     private static WrapPanel CreateActionPanel() => new()

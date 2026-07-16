@@ -167,6 +167,31 @@ test("Component Stack runtime state actions resolve the selected state and trans
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitElapsedMs, 80);
 });
 
+test("Component Stack animatable State keyframes derive the outgoing state and transition clock", () => {
+  const source = payload([
+    alternative("clock", "stub::preset::clock", false),
+    alternative("password", "stub::preset::password", false),
+  ], 12);
+  source.instanceJson = JSON.stringify({
+    context: { localFrame: 12 },
+    animation: {
+      tracks: [{
+        fieldId: "runtimeStateId",
+        targetId: "central",
+        keyframes: [
+          { frame: 0, value: "clock", interpolation: "hold" },
+          { frame: 10, value: "password", interpolation: "hold" },
+        ],
+      }],
+    },
+  });
+
+  const resolved = resolveComponentStackComponent(source);
+  assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
+  assert.equal(resolved.slots[0]?.alternatives[0]?.enterElapsedMs, 80);
+  assert.equal(resolved.slots[0]?.alternatives[1]?.exitElapsedMs, 80);
+});
+
 test("each Component Stack state resolves its own placement inside the assigned slot", () => {
   const states = [
     alternative("clock", "stub::preset::clock", false),

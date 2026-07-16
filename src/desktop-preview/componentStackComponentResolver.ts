@@ -40,6 +40,7 @@ function resolveSlot(
   index: number,
 ): ComponentStackSlotContract {
   const path = `componentStack.items[${index}]`;
+  const slotId = requiredString(slot, "id", `${path}.id`);
   const gapBeforeMode = requiredString(slot, "gapBeforeMode", `${path}.gapBeforeMode`);
   if (gapBeforeMode !== "fixed" && gapBeforeMode !== "reflow") {
     throw new Error(`Unsupported componentStack gap-before mode ${gapBeforeMode}`);
@@ -55,17 +56,41 @@ function resolveSlot(
     requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
   ));
-  const runtimeStateId = optionalString(slot, "runtimeStateId");
+  const instance = parseObject(payload.instanceJson ?? "{}");
+  const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
+  const authoredRuntimeStateId = optionalString(slot, "runtimeStateId");
+  const baseStateId = authoredRuntimeStateId || alternatives[0]?.id || "";
+  const animatedState = resolveParameterAnimation(
+    asRecord(instance.animation),
+    "runtimeStateId",
+    slotId,
+    frame,
+    baseStateId,
+  );
+  const runtimeStateId = typeof animatedState.value === "string" ? animatedState.value : baseStateId;
+  const animatedTransition = animatedState.sourceKeyframeFrame !== undefined
+    && typeof animatedState.previousValue === "string"
+    && animatedState.previousValue !== runtimeStateId
+    ? {
+        fromId: animatedState.previousValue,
+        elapsedMs: Math.max(0, frame - animatedState.sourceKeyframeFrame) / Math.max(1, payload.frameRate) * 1000,
+      }
+    : undefined;
   return {
-    id: requiredString(slot, "id", `${path}.id`),
+    id: slotId,
     gapBeforeMode: gapBeforeMode as ComponentStackGapMode,
     gapBeforeToken: requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     gapBeforeWeight: Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
-    alternatives: runtimeStateId
-      ? runtimeSelectedAlternatives(payload, slot, runtimeStateId, alternatives, path)
+    alternatives: (authoredRuntimeStateId || animatedState.animated) && runtimeStateId
+      ? runtimeSelectedAlternatives(payload, slot, runtimeStateId, alternatives, path, animatedTransition)
       : visibleAlternativesWithExits(payload, rawAlternatives, alternatives),
   };
 }
+
+type RuntimeStateTransitionFrame = {
+  fromId: string;
+  elapsedMs: number;
+};
 
 function runtimeSelectedAlternatives(
   payload: DesignPreviewPayload,
@@ -73,26 +98,39 @@ function runtimeSelectedAlternatives(
   stateId: string,
   alternatives: ComponentStackAlternativeContract[],
   path: string,
+  animatedTransition?: RuntimeStateTransitionFrame,
 ) {
   const target = alternatives.find((alternative) => alternative.id === stateId);
   if (!target) throw new Error(`Unknown Component Stack runtime state ${stateId} at ${path}`);
   const desired = target.behavior === "replace"
     ? [target]
     : [alternatives[0], target].filter((item, index, items) => item && items.indexOf(item) === index);
-  if (slot.runtimeStateTransition !== true) return desired.map((item) => ({ ...item, active: true }));
+  const transition = slot.runtimeStateTransition === true
+    ? {
+        fromId: optionalString(slot, "runtimeStateFromId"),
+        elapsedMs: Math.max(0, Number(slot.runtimeStateElapsedMs) || 0),
+      }
+    : animatedTransition;
+  if (!transition) return desired.map((item) => ({ ...item, active: true }));
 
   const frame = Math.max(0, Math.floor(Number(asRecord(parseObject(payload.instanceJson ?? "{}").context).localFrame) || 0));
-  const elapsedMs = Math.max(0, Number(slot.runtimeStateElapsedMs) || 0);
+  const elapsedMs = transition.elapsedMs;
   const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
-  const fromId = optionalString(slot, "runtimeStateFromId");
-  const outgoing = alternatives.find((alternative) => alternative.id === fromId);
+  const outgoing = alternatives.find((alternative) => alternative.id === transition.fromId);
+  const exitDurationMs = outgoing && !desired.some((item) => item.id === outgoing.id)
+    ? motionTotalDurationMs(payload, outgoing.exitMotion)
+    : 0;
+  const enterDurationMs = Math.max(0, ...desired.map((item) => motionTotalDurationMs(payload, item.enterMotion)));
+  if (elapsedMs >= Math.max(exitDurationMs, enterDurationMs)) {
+    return desired.map((item) => ({ ...item, active: true }));
+  }
   const entering = desired.map((item) => ({
     ...item,
     active: true,
     activationFrame: eventFrame,
     enterElapsedMs: elapsedMs,
   }));
-  if (!outgoing || entering.some((item) => item.id === outgoing.id)) return entering;
+  if (!outgoing || entering.some((item) => item.id === outgoing.id) || elapsedMs >= exitDurationMs) return entering;
   return [...entering, {
     ...outgoing,
     active: false,

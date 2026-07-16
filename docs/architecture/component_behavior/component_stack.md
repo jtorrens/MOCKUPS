@@ -124,11 +124,15 @@ The shared Transition helper resolves State Motion bounds after placement:
 `Screen` uses the immutable device screen even though Lock Screen supplies a
 smaller content frame, while `Parent` uses the State's assigned slot frame.
 
-Inside a Module Instance the same change is authored as the standard `active`
-v2 track targeted by the State's stable id. The Module Variant determines which
-slot actions and nested child Runtime Inputs reach that instance contract.
-Changing Module Variant removes tracks whose stable State targets no longer
-exist; neither the timeline nor resolver guesses a replacement.
+Inside a Module Instance the same change is authored as the standard
+`runtimeStateId` v2 track targeted by the slot's stable id. Keyframe values are
+stable State ids and use Hold interpolation. Test Values keeps the derived
+State combo plus Play/Restore; the instance shows only the animatable State
+property and never exposes its source/transition/elapsed transport fields. The
+Module Variant determines which slot actions and nested child Runtime Inputs
+reach that instance contract. Changing Module Variant removes tracks whose
+stable targets or State values no longer exist; neither the timeline nor
+resolver guesses a replacement.
 
 ## Preview boundary
 

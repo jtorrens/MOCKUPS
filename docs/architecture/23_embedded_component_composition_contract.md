@@ -326,12 +326,13 @@ item index.
 
 Structural collections may declare an explicit runtime projection. In that
 case the Variant remains the sole owner of ordered child structure, presets,
-Overrides, Placements and Motions. Test Values and Module Instances persist only
-the projection fields keyed by stable item id, such as selected State, source
-State, transition flag and elapsed action time. Before resolving a requested
-frame, the common contract layer joins that minimal runtime array to the Variant
-source array. The merged structure is transient and is never written back to
-the instance payload.
+Overrides, Placements and Motions. Test Values persists only the projection
+fields keyed by stable item id, including selected State and its transient
+source/transition/elapsed action transport. A Module Instance persists the
+selected State value and v2 animation tracks; derived action clocks are not
+editable instance data. Before resolving a requested frame, the common contract
+layer joins that minimal runtime array to the Variant source array. The merged
+structure is transient and is never written back to the instance payload.
 
 When a projected structural item owns nested States, the projection may also
 declare a second, related runtime collection. That collection contains one
@@ -344,10 +345,11 @@ and timeline ownership; their parent relation is contract metadata, not an
 editor-specific hierarchy rule.
 
 A Component Stack adds one more stable nested identity level: the outer item is
-the slot and its nested item is a State. State actions and animation tracks use
-the State id, while flow and gap ownership use the slot id/order. Collection
-Stack has only item identity and must not be interpreted as this two-level State
-model.
+the slot and its nested item is a State. The slot's animatable State-selection
+track targets the slot id and stores State ids as values. Forwarded fields and
+actions owned by a State target that State id. Flow and gap ownership use the
+slot id/order. Collection Stack has only item identity and must not be
+interpreted as this two-level State model.
 
 JSON-valued inputs retain their declared shape while forwarded. For example,
 `IconSlots` is exposed through the generic `iconList` runtime kind and remains

@@ -335,6 +335,11 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
         var slots = collections.Single((collection) => collection.Id == "stackStates");
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
+        var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
+        Equal(true, stateSelection.ActionOnly);
+        Equal(true, stateSelection.Animation is not null);
+        SequenceEqual(["hold"], stateSelection.Animation?.Interpolations.ToList() ?? []);
+        Equal(false, stateSelection.Animation?.ExtendsOwnerDuration ?? true);
         Equal(slots.JsonKey, stateInputs.UiParentCollectionJsonKey);
         Equal("slotId", stateInputs.UiParentItemIdJsonKey);
         Equal("inputs", stateInputs.ItemRuntimeContractJsonKey);
@@ -349,6 +354,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var passwordTiming = passwordInputs.Single((input) => input.Label == "Entry timing");
         var passwordAttempt = passwordInputs.Single((input) => input.Label == "Attempt");
         Equal(true, passwordTrigger.Animation is not null);
+        Equal(true, passwordFrame.Animation is null);
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
         var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(database, effective)
             .Single((action) => action.Label == "Enter password");

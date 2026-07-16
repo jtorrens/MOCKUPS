@@ -56,9 +56,11 @@ component still receives a fully resolved requested frame.
 The action contract also owns `entryTrigger` and `entryFrame`. They are
 action-only runtime fields: Test Values presents them as one Play/Restore
 control rather than raw fields, while a containing component or module may
-Forward them with the other action dependencies. In a Shot instance the play
-field is authored as an ordinary v2 animation track and the owner timeline
-resolves `entryFrame` for every requested frame.
+Forward them with the other action dependencies. In a Shot instance only the
+animatable `entryTrigger` is presented, under its owning State, with the normal
+animation control. `entryFrame` is the derived owner-local action clock: it is
+never editable or visible in an instance. The owner timeline resolves it for
+every requested frame before Password resolves the PIN sequence.
 
 At every parent boundary all these fields become Variant values by default.
 The parent designer chooses which ones to promote through the same generic

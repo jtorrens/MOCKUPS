@@ -7,6 +7,7 @@ export type ResolvedParameterAnimation = {
   value: unknown;
   animated: boolean;
   sourceKeyframeFrame?: number;
+  previousValue?: unknown;
 };
 
 export function resolveParameterAnimation(
@@ -38,12 +39,23 @@ export function resolveParameterAnimation(
 
   const exact = keyframes.find((keyframe) => keyframe.frame === frame);
   if (exact) {
-    return { value: exact.value, animated: true, sourceKeyframeFrame: exact.frame };
+    const exactIndex = keyframes.indexOf(exact);
+    return {
+      value: exact.value,
+      animated: true,
+      sourceKeyframeFrame: exact.frame,
+      previousValue: exactIndex > 0 ? keyframes[exactIndex - 1]!.value : baseValue,
+    };
   }
   const destinationIndex = keyframes.findIndex((keyframe) => keyframe.frame > frame);
   if (destinationIndex < 0) {
     const final = keyframes[keyframes.length - 1]!;
-    return { value: final.value, animated: true, sourceKeyframeFrame: final.frame };
+    return {
+      value: final.value,
+      animated: true,
+      sourceKeyframeFrame: final.frame,
+      previousValue: keyframes.length > 1 ? keyframes[keyframes.length - 2]!.value : baseValue,
+    };
   }
 
   const source = keyframes[destinationIndex - 1]!;
@@ -56,6 +68,7 @@ export function resolveParameterAnimation(
       value: rewriteText(source.value, destination.value, progress),
       animated: true,
       sourceKeyframeFrame: source.frame,
+      previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
     };
   }
   if ((destination.interpolation === "linear" || destination.interpolation === "easeInOut")
@@ -68,9 +81,15 @@ export function resolveParameterAnimation(
       value: source.value + (destination.value - source.value) * p,
       animated: true,
       sourceKeyframeFrame: source.frame,
+      previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
     };
   }
-  return { value: source.value, animated: true, sourceKeyframeFrame: source.frame };
+  return {
+    value: source.value,
+    animated: true,
+    sourceKeyframeFrame: source.frame,
+    previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
+  };
 }
 
 function rewriteText(source: string, destination: string, progress: number) {

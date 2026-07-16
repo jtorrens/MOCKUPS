@@ -676,16 +676,40 @@ internal sealed class ModuleInstanceAnimationEditor
                 var item = items[index];
                 var targetId = item["id"]?.GetValue<string>() ?? "";
                 foreach (var input in collection.Fields.Where((input) => input.Animation is not null))
+                {
+                    var targetInput = string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
+                        ? input
+                        : input with { Options = RuntimeInputDynamicOptions.Resolve(_database, input, item) };
                     result.Add(new AnimationTarget(
-                        input.Id,
+                        targetInput.Id,
                         targetId,
-                        input.Label,
-                        input,
-                        DesignPreviewTestValues.CollectionValue(item, input),
-                        RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens),
-                        RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens),
+                        targetInput.Label,
+                        targetInput,
+                        DesignPreviewTestValues.CollectionValue(item, targetInput),
+                        RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens),
+                        RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens),
                         (ownerFrame) => screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                             preview, preview, animation, targetId, ownerFrame, themeTokens)));
+                }
+                if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+                    && item[collection.ItemRuntimeContractJsonKey] is JsonObject runtimeContract)
+                {
+                    foreach (var input in ComponentPreviewInputSession
+                        .ReadRuntimeInputs(runtimeContract, new JsonObject())
+                        .Where((input) => input.Animation is not null))
+                    {
+                        result.Add(new AnimationTarget(
+                            input.Id,
+                            targetId,
+                            input.Label,
+                            input,
+                            DesignPreviewTestValues.Value(runtimeContract, input),
+                            RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens),
+                            RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens),
+                            (ownerFrame) => screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
+                                preview, preview, animation, targetId, ownerFrame, themeTokens)));
+                    }
+                }
             }
         }
         return result;

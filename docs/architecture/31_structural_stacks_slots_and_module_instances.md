@@ -294,7 +294,7 @@ runtime contract exposes its own option action at that exact nested level. The
 options are derived generically from the State collection's stable ids and
 component Variant names. There is no Lock Screen-specific state control.
 
-The shared action control shows:
+In module Test Values the shared action control shows:
 
 - a compact State combo;
 - the current State option visible but disabled as a destination;
@@ -303,6 +303,13 @@ The shared action control shows:
 
 An action inside a collection item remains inside that item. It is never lifted
 to the top Runtime Inputs card merely because it is animatable.
+
+A persistent Module Instance does not show Play/Restore. At that boundary the
+same declared State appears as a dictionary option field with the standard
+animation activation control. Its options still come from the slot's State
+collection. Action-only fields with animation metadata are visible as timeline
+properties; action-only clocks without animation metadata are internal and are
+never rendered as editable instance values.
 
 The same ownership rule applies to forwarded child fields: Clock text belongs
 to its Label State; Password text, attempt, timing and Enter Password action
@@ -313,28 +320,32 @@ instance payload.
 
 Design Test Values use transient `runtimeStateId`, source id, transition flag
 and elapsed action time in prepared payloads. These are preview transport
-values, not a second persisted Stack schema. Production uses ordinary v2 tracks:
+values, not a second persisted Stack schema. Production animates the slot's
+State property with ordinary v2 tracks. The track target is the stable slot id
+and each keyframe value is a stable State id:
 
 ```json
 {
-  "fieldId": "active",
-  "targetId": "stable-state-id",
+  "fieldId": "runtimeStateId",
+  "targetId": "stable-slot-id",
   "keyframes": [
-    { "frame": 0, "value": false },
-    { "frame": 25, "value": true }
+    { "frame": 0, "value": "clock-state-id", "interpolation": "hold" },
+    { "frame": 25, "value": "password-state-id", "interpolation": "hold" }
   ]
 }
 ```
 
-The stable State id is the animation target. Collection position is never an
-animation identity, so reordering States or slots does not rewrite keyframes.
+The stable slot id owns selection and the stable State ids are its values.
+Collection position is never an animation identity, so reordering States or
+slots does not rewrite keyframes.
 
 Root and embedded component actions follow the same rule. Test Values renders
 the generic Play/Restore control from the action contract. A Module Instance
-does not store a simulated button press: its animation editor authors a v2
-track for the promoted play field, and the common owner timeline derives the
-action's frame clock before the component resolver runs. Action controls remain
-at their declared nested item when the owner is a collection.
+does not store a simulated button press: it exposes the promoted play field as
+an animatable property at its declared nested owner. The animation editor
+authors a v2 track for that field, and the common owner timeline derives the
+action's frame clock before the component resolver runs. The clock field itself
+is hidden.
 
 ## 9. Requested-frame transition resolution
 

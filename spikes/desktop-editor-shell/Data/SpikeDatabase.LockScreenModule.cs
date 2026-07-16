@@ -304,6 +304,12 @@ internal sealed partial class SpikeDatabase
                         ["valueKind"] = "OptionToken",
                         ["defaultValue"] = "",
                         ["actionOnly"] = true,
+                        ["animatable"] = true,
+                        ["animationInterpolations"] = new JsonArray("hold"),
+                        ["animationTimeline"] = new JsonObject
+                        {
+                            ["extendsOwnerDuration"] = false,
+                        },
                         ["optionsSourceCollectionJsonKey"] = "alternatives",
                         ["optionsSourceValueJsonKey"] = "id",
                         ["optionsSourceLabelJsonKey"] = "presetId",

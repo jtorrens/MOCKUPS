@@ -59,9 +59,11 @@ Forward. Design Test Values and module instances consume only the resulting
 effective Lock Screen runtime contract.
 
 If a Stack slot State action is forwarded by that contract, Test Values and the
-Module Instance show it at the slot's nested level. Production persists its
-animation as an `active` v2 track targeted by the stable State id. Other slots
-keep their own selected States and continue participating in flow.
+Module Instance keep it at the slot's nested level. Test Values uses the generic
+State action control; the Module Instance exposes the animatable State option
+without Play/Restore. Production persists `runtimeStateId` targeted by the
+stable slot id, with stable State ids as keyframe values. Other slots keep their
+own selected States and continue participating in flow.
 
 `actor` is not an ambient Actor propagated into Stack descendants. It owns the
 Lock Screen context and wallpaper. An Actor input declared by an Audio, Avatar,
