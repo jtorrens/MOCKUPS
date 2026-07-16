@@ -13,6 +13,7 @@ import type { PasswordDesignContract } from "./passwordComponentContract.js";
 export function passwordComponentToRenderable(
   payload: DesignPreviewPayload,
   password: PasswordDesignContract,
+  assignedBox?: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
   const labelSize = measureLabelComponent(password.label, payload);
@@ -24,7 +25,7 @@ export function passwordComponentToRenderable(
   const upperGap = gap(payload, password.upperGapToken, scale);
   const lowerGap = gap(payload, password.lowerGapToken, scale);
   const endGap = gap(payload, password.endGapToken, scale);
-  const box = previewScreenBox(payload);
+  const box = assignedBox ?? previewScreenBox(payload);
   const keypadBox = centeredChildBox(
     box,
     box.y + (box.height - inputSize.height) * 0.5,

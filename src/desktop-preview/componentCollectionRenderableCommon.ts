@@ -86,18 +86,22 @@ function renderMeasuredFlow(
         ? current.fixedGapBefore
         : totalWeight > 0 ? reflowSpace * current.item.gapBeforeWeight / totalWeight : 0;
     }
+    const remainingHeight = Math.max(0, parentBox.y + parentBox.height - endGap - cursorY);
+    const assignedHeight = resolveAssignedNode && options.sizingMode === "fill"
+      ? Math.min(current.box.height, remainingHeight)
+      : current.box.height;
     const slotBox: RenderableBox = {
       x: parentBox.x,
       y: cursorY,
       width: parentBox.width,
-      height: current.box.height,
+      height: assignedHeight,
     };
     const assigned = resolveAssignedNode?.(current.item, slotBox);
     const translated = assigned ?? translateRenderableNode(current.node, {
       x: alignedX(parentBox, current.box, current.item.alignment) - current.box.x,
       y: cursorY - current.box.y,
     });
-    cursorY += current.box.height;
+    cursorY += assignedHeight;
     return translated;
   });
   return collectionGroup(options.id, parentBox, children);

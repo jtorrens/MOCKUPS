@@ -158,3 +158,70 @@ test("each Component Stack state resolves its own placement inside the assigned 
   assert.equal(slot?.children?.[0]?.box?.y, 0);
   assert.equal(slot?.children?.[1]?.box?.y, 0);
 });
+
+test("independent slots keep their occupied flow space when a later slot changes state", () => {
+  const source = payload([alternative("clock", "stub::preset::clock", false)]);
+  const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
+  preview.items = [
+    {
+      ...preview.items[0],
+      id: "clock-slot",
+      alternatives: [alternative("clock", "stub::preset::clock", false)],
+    },
+    {
+      id: "password-slot",
+      gapBeforeMode: "fixed",
+      gapBeforeToken: "theme.spacing.gap",
+      gapBeforeWeight: 1,
+      runtimeStateId: "password",
+      alternatives: [
+        alternative("empty", "", false),
+        alternative("password", "stub::preset::password", false),
+      ],
+    },
+  ];
+  source.designPreviewJson = JSON.stringify(preview);
+  source.componentBaseConfigsJson = JSON.stringify({
+    presetTypes: {
+      "stub::preset::clock": "stub",
+      "stub::preset::password": "stub",
+    },
+    presets: {
+      "stub::preset::clock": {},
+      "stub::preset::password": {},
+    },
+  });
+  source.themeTokensJson = JSON.stringify({
+    spacing: { none: 0, gap: 20 },
+    motion: {
+      transitions: {
+        slide: { durationMs: 240, delayMs: 0, easing: "linear", intensity: 1 },
+      },
+    },
+  });
+
+  const resolved = resolveComponentStackComponent(source);
+  const renderable = componentStackComponentToRenderable(source, resolved, (child, assignedBox) => {
+    if (child.designPreviewJson?.includes("password")) {
+      return {
+        id: "password",
+        type: "group",
+        frame: 0,
+        box: assignedBox ?? { x: 0, y: 0, width: 360, height: 720 },
+        children: [],
+      };
+    }
+    return {
+      id: "clock",
+      type: "group",
+      frame: 0,
+      box: { x: 100, y: 100, width: 160, height: 80 },
+      children: [],
+    };
+  });
+
+  const clockSlot = renderable.children?.[0]?.box;
+  const passwordSlot = renderable.children?.[1]?.box;
+  assert.deepEqual(clockSlot, { x: 0, y: 0, width: 360, height: 80 });
+  assert.deepEqual(passwordSlot, { x: 0, y: 100, width: 360, height: 620 });
+});

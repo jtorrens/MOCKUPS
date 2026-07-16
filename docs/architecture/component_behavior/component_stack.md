@@ -13,6 +13,11 @@ ordered collection of allowed states, so one stable position may show a default
 clock, replace it with Password, overlay another component, or resolve to an
 explicit empty state without changing the Stack schema.
 
+State identity and selection are local to their slot. There is no global State
+index and no implicit substitution when another slot does not contain the same
+number of States. Changing one slot leaves every other slot's selected State
+unchanged; those unchanged slots remain measured participants in the same flow.
+
 The Stack owns slot order, the gap before each slot,
 leading/trailing container gaps, fill/content sizing and state selection inside
 each slot. It does not copy child schemas. The class therefore has only its
@@ -76,6 +81,16 @@ placement to the parent. Every visible state is placed independently inside the
 frame assigned to its slot using the generic Center/Inside edge/Outside edge
 contract. Visible Overlay states share that slot region and collection order is
 paint order.
+
+Layout is resolved in two passes. First, each slot measures the union of all
+States that are still visible for the requested frame, including an outgoing
+State during its finite Exit Motion. The common vertical flow then assigns one
+non-overlapping frame to every slot in order. A child that consumes its parent
+frame, such as Password, receives that exact assigned frame on the second pass;
+intrinsic children are placed inside it by the State Placement. In Fill mode an
+assigned frame is limited to the remaining container height, so a preceding
+slot always pushes later slots instead of allowing a full-frame child to paint
+back over it.
 
 ## Frame and transition contract
 

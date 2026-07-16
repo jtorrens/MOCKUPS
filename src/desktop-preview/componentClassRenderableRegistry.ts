@@ -98,8 +98,8 @@ export const componentRenderableFactories = {
     faceRecognitionComponentToRenderable(payload, resolveFaceRecognitionComponent(payload)),
   drawPassword: (payload) =>
     drawPasswordComponentToRenderable(payload, resolveDrawPasswordComponent(payload)),
-  password: (payload) =>
-    passwordComponentToRenderable(payload, resolvePasswordComponent(payload)),
+  password: (payload, assignedBox) =>
+    passwordComponentToRenderable(payload, resolvePasswordComponent(payload), assignedBox),
   media: (payload) => mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
   bubble: (payload) => bubbleComponentToRenderable(payload, resolveBubbleComponent(payload)),
   status_bar: (payload) =>

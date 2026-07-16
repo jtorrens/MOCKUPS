@@ -1450,7 +1450,7 @@ static void KeypadSeedOpensAndRenders()
             new JsonObject { ["kind"] = "text" }, iconField, 0));
         Equal("text", keypadConfig["keys"]?[0]?["kind"]?.GetValue<string>() ?? "");
         True(keypadConfig["labelSlot"] is JsonObject);
-        Equal("theme.colors.surface", keypadConfig["states"]?["normal"]?["backgroundColorToken"]?.GetValue<string>() ?? "");
+        Equal("theme.keyboard.keyBackground", keypadConfig["states"]?["normal"]?["backgroundColorToken"]?.GetValue<string>() ?? "");
         Equal("theme.colors.accent", keypadConfig["states"]?["pushed"]?["textColorToken"]?.GetValue<string>() ?? "");
         Equal(1d, keypadConfig["states"]?["disabled"]?["borderAlpha"]?.GetValue<double>() ?? -1);
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
