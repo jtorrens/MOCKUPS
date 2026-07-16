@@ -20,6 +20,8 @@ Current summary:
 
 - Conversation, Bubble, Text Input Bar, Keyboard, Keypad, Password, Media and Audio are active
   on the component resolver -> renderable -> generic renderer route.
+  Bubble explicitly binds `showBadge: false` when composing its owned Audio
+  child; missing child input data is not repaired by the Audio resolver.
 - Lock Screen is active on its module resolver -> renderable route. It owns the
   composition of its runtime Component Stack and optional status/navigation
   slots, and consumes the Actor wallpaper contract without adding bridge or
@@ -32,6 +34,10 @@ Current summary:
   a full `moduleId::variant::variantId` reference. Runtime forwarding, preview,
   duration and animation use the selected Variant contract; no Actor/Device
   inference chooses module composition.
+- Production context is tree-owned: Shot selection renders the complete Shot,
+  Screen selection renders that Module Instance, and both Preview and Animation
+  use the same absolute Shot playhead without changing tree selection while
+  scrubbing or playing.
 - The atoms and system bars are active on the same route.
 - Keypad is a System component with Variant-owned ordered text/icon/spacer keys,
   generic structured collection editing and runtime active/pushed/disabled

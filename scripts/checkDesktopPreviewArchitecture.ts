@@ -2300,18 +2300,18 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "ModuleInstanceStartFrame(shotId, contextNode.Id)",
-  "a selected module instance must retain its owning Shot navigator context",
+  "{ Kind: ProjectTreeNodeKind.ModuleInstance } instance => _database.GetModuleInstanceSettings(instance.Id).ShotId",
+  "a selected module instance must retain its owning Shot playhead context",
 );
-assertContains(
+assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   'new FieldOption("screen", "Screen")',
-  "production navigation must expose the user-facing Shot or Screen scope",
+  "production navigation must not duplicate tree context with a Shot or Screen scope control",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "NavigationFrameRange()",
-  "production slider and playback must resolve their selected Shot or Screen range",
+  "production slider and playback must share the Shot-wide navigation range",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
@@ -2333,10 +2333,10 @@ assertMatches(
   /_shotPreviousKeyframeButton,[\s\S]*?_shotPreviousFrameButton,[\s\S]*?_shotPlayButton,[\s\S]*?_shotNextFrameButton,[\s\S]*?_shotNextKeyframeButton/,
   "production transport must keep frame stepping next to playback and keyframe stepping outside it",
 );
-assertContains(
+assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  'contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance ? "screen" : "shot"',
-  "selecting a Production Screen must automatically activate its local navigation scope",
+  "_shotNavigationScope",
+  "Production preview context must come from the selected tree node rather than a duplicate scope control",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
@@ -2346,22 +2346,17 @@ assertContains(
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "_shotTimelineControls.DesiredSize.Width",
-  "production navigation scope and transport controls must reflow as one measured unit",
+  "production transport controls must reflow as one measured unit",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "availableWidth < 880",
   "production transport must not use a fixed wrapping breakpoint",
 );
-assertContains(
+assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "_shotFrameSlider.PointerReleased += (_, _) => SynchronizeExplicitScreenSelection()",
-  "explicit production scrubbing must synchronize Screen selection only after confirmation",
-);
-assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "if (IsPreviewPlaybackActive) return false;",
-  "automatic playback must not synchronize the editor or tree selection",
+  "SynchronizeExplicitScreenSelection",
+  "Production scrubbing must move the shared playhead without changing tree selection",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
@@ -2400,13 +2395,28 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  'var showScreenStep = _shotNavigationScope == "shot"',
+  "var showScreenStep = contextNode?.Kind == ProjectTreeNodeKind.Shot",
   "previous and next Screen controls must appear only in Shot context",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "var range = ActiveScreenFrameRange(shotId)",
-  "keyframe navigation must stay inside the Screen containing the active Shot frame",
+  "? ScreenFrameRange(shotId, contextNode.Id)",
+  "Screen context keyframe navigation must stay inside the selected Screen",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private ProjectTreeNode? ProductionPayloadNode() => ProductionContextNode();",
+  "the selected Production tree node must be the sole preview payload context",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_designContextLockButton.IsVisible = _workspace != EditorWorkspace.Production",
+  "Production preview must not expose a context lock that can diverge from tree selection",
+);
+assertMatches(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  /function bubbleAudioInputs[\s\S]*?showBadge:\s*false/,
+  "Bubble must explicitly bind its embedded Audio badge visibility at the child boundary",
 );
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",

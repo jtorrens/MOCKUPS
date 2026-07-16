@@ -29,7 +29,7 @@ The current schema/default writer emits that same v1 empty object. There is no a
 | `Common/RuntimeTimeline.cs` | module duration | reads `tracks[].events[]` as `startFrame + durationFrames`; this is inconsistent with every parameter-keyframe contract |
 | `EditorShell/ModuleInstanceTimeline.cs` | module/Shot duration | delegates to `RuntimeTimeline`; Shot is the sequential sum of slots |
 | `DesignPreviewPayloadFactory.cs` | Production payload/frame ownership | selects the active slot from global Shot frame and provides its local frame plus raw `animation_json` |
-| `EditorPreviewController.cs` | Production transport | owns the one global Shot cursor; Screen scope translates it to the active slot range |
+| `EditorPreviewController.cs` | Production transport | owns the one global Shot cursor shared by Preview and Animation; tree selection chooses full Shot or isolated Screen payload |
 | `ComponentInputsPanel.cs` | Design action playback | owns declarative, isolated action frames; it must not become a Production timeline reader |
 | legacy `schemas/animation.ts` | evidence schema | uses `tracks[].keyframes[]`, `parameterId`, optional `itemId`, `frame`, `value`, optional `enabled` |
 | legacy `resolveChatScreen.ts` | evidence resolver | sorts keyframes, gives exact frame priority, then uses the destination keyframe interpolation; text algorithm is useful but is not grapheme safe |
@@ -229,7 +229,15 @@ component transitions.
 
 ## 8. Context, resolver, and presentation boundaries
 
-Production owns one global Shot cursor and one playback owner. Its Screen scope only changes the displayed range; it never creates an independent clock. Design actions are isolated fixtures: their action frame and Test Values do not read Shot navigation and are never persisted into Production animation.
+Production owns one global Shot cursor and one playback owner. The selected tree
+node is its sole context: Shot renders the complete sequence and Module Instance
+renders that isolated Screen. Both keep the complete Shot authoring scale and
+read/write the same absolute cursor; the Screen boundary only translates that
+cursor to a resolver-local frame. Preview navigation never changes tree
+selection, and no scope combo or Production context lock may create a second
+context. Design actions are isolated fixtures: their action frame and Test
+Values do not read Shot navigation and are never persisted into Production
+animation.
 
 ```text
 ResolvedFrameRequest {
@@ -282,7 +290,10 @@ The audited committed data is empty, so step 2 presently has no event or keyfram
 
 ## 10. Editor scope after approval
 
-The Production Animation surface is bound to the existing authoritative Shot playhead. Screen-owned tracks live in an `Animation` subcard below the fields in Runtime Values `General`. Collection tracks normally live inside their owning item. A collection may instead declare the generic `collectionFooter` animation presentation; its direct item tracks are then aggregated in one `Animation` card below the complete collection, while nested runtime contracts retain their own local cards. Each panel presents the complete Shot frame scale and translates every selected stable target at its own owner boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
+The Production Animation surface is bound bidirectionally to the authoritative
+Preview Shot playhead. Moving or playing either transport updates the other;
+neither owns an alternate cursor. Screen-owned tracks live in an `Animation`
+subcard below the fields in Runtime Values `General`. Collection tracks normally live inside their owning item. A collection may instead declare the generic `collectionFooter` animation presentation; its direct item tracks are then aggregated in one `Animation` card below the complete collection, while nested runtime contracts retain their own local cards. Each panel presents the complete Shot frame scale and translates every selected stable target at its own owner boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
 
 Retime is an explicit persisted switch represented by the presence of `targetDurationFrames`. Off means no retime override and hides the target-duration input. Turning it on initializes the target from the generic natural/reference duration and reveals the editable frame target; turning it off removes the override. The editor never presents an effective keyframe-shortened span as the natural duration of a contract-declared behavior.
 

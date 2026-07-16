@@ -94,11 +94,6 @@ internal sealed class EditorPreviewController
         MinWidth = 280,
         MaxWidth = 600,
     };
-    private readonly EditorInstantComboBox _shotNavigationScopeComboBox = new()
-    {
-        MinWidth = 92,
-        MinHeight = 30,
-    };
     private readonly TextBlock _shotFrameText = new()
     {
         MinWidth = 70,
@@ -169,12 +164,12 @@ internal sealed class EditorPreviewController
         var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
         var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
         var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
-        SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1), useSelectedScope: false);
+        SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1));
     }
 
     public int ProductionShotFrame() => _shotPreviewFrame;
 
-    public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame, useSelectedScope: false);
+    public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
 
     public void ToggleProductionPlayback() => ToggleShotPlayback();
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -211,9 +206,7 @@ internal sealed class EditorPreviewController
     private int _shotPreviewFrame;
     private string _shotTimelineShotId = "";
     private string _shotTimelineContextNodeId = "";
-    private string _shotNavigationScope = "shot";
     private bool _isUpdatingShotTimeline;
-    private int? _pendingExplicitScreenFrame;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
@@ -683,21 +676,10 @@ internal sealed class EditorPreviewController
         AddReferenceSlider(splitGrid, 2, "Opacity", _referenceOpacitySlider);
         AddReferenceSlider(splitGrid, 3, "Angle", _referenceAngleSlider);
         _referenceSplitControls.Children.Add(splitGrid);
-        _shotNavigationScopeComboBox.ItemsSource = new[]
-        {
-            new FieldOption("shot", "Shot"),
-            new FieldOption("screen", "Screen"),
-        };
-        _shotNavigationScopeComboBox.SelectedItem = ((IEnumerable<FieldOption>)_shotNavigationScopeComboBox.ItemsSource)
-            .First((option) => option.Value == _shotNavigationScope);
-        EditorAccessibility.Describe(
-            _shotNavigationScopeComboBox,
-            "Preview navigation scope",
-            "Choose whether the frame slider navigates the current Shot or Screen");
         EditorAccessibility.Describe(
             _shotFrameSlider,
             "Navigate preview frames",
-            "Navigate frames in the selected Shot or Screen scope");
+            "Navigate the shared Shot playhead used by Preview and Animation");
         _shotHeaderTimelineControls.Children.Add(_shotFrameSlider);
         _shotHeaderTimelineControls.Children.Add(_shotFrameText);
         var navigationRow = new Border
@@ -713,8 +695,6 @@ internal sealed class EditorPreviewController
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Children =
                 {
-                    _shotNavigationScopeComboBox,
-                    TimelineSeparator(),
                     TimelineButtonGroup(
                         _shotAbsoluteStartButton,
                         _shotPreviousSlotButton,
@@ -755,20 +735,20 @@ internal sealed class EditorPreviewController
         EditorAccessibility.Describe(_shotPreviousSlotButton, "Previous Screen");
         EditorAccessibility.Describe(_shotAbsoluteStartButton, "First Shot frame");
         EditorAccessibility.Describe(_shotPreviousFrameButton, "Previous frame");
-        EditorAccessibility.Describe(_shotPlayButton, "Play or pause the selected scope");
+        EditorAccessibility.Describe(_shotPlayButton, "Play or pause the shared Shot timeline");
         EditorAccessibility.Describe(_shotNextFrameButton, "Next frame");
         EditorAccessibility.Describe(_shotNextKeyframeButton, "Next animation keyframe in the current Screen");
         EditorAccessibility.Describe(_shotNextSlotButton, "Next Screen");
         EditorAccessibility.Describe(_shotAbsoluteEndButton, "Last Shot frame");
-        _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0, useSelectedScope: false, synchronizeScreenSelection: true);
+        _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
         _shotPreviousKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(-1);
-        _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1, synchronizeScreenSelection: true);
+        _shotPreviousFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame - 1);
         _shotPlayButton.Click += (_, _) => ToggleShotPlayback();
-        _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1, synchronizeScreenSelection: true);
+        _shotNextFrameButton.Click += (_, _) => SetShotPreviewFrame(_shotPreviewFrame + 1);
         _shotNextKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(1);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
-        _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame(), useSelectedScope: false, synchronizeScreenSelection: true);
+        _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame());
 
         var controlsRow = new Grid
         {
@@ -1029,15 +1009,6 @@ internal sealed class EditorPreviewController
                     shotFrameMagnet.Resolve(_shotFrameSlider.Value),
                     MidpointRounding.AwayFromZero));
             }
-        };
-        _shotFrameSlider.PointerReleased += (_, _) => SynchronizeExplicitScreenSelection();
-        _shotFrameSlider.KeyUp += (_, _) => SynchronizeExplicitScreenSelection();
-        _shotNavigationScopeComboBox.SelectionChanged += (_, _) =>
-        {
-            if (_shotNavigationScopeComboBox.SelectedItem is not { } option || _isUpdatingShotTimeline) return;
-            SetShotNavigationScope(option.Value);
-            StopShotPlayback();
-            Refresh();
         };
         _marksToggle.PropertyChanged += (_, change) =>
         {
@@ -2151,8 +2122,7 @@ internal sealed class EditorPreviewController
         if (_workspace == EditorWorkspace.Production)
         {
             var selected = _selectedNode();
-            if (!_isDesignPreviewContextLocked
-                && selected?.Kind is not ProjectTreeNodeKind.Shot and not ProjectTreeNodeKind.ModuleInstance)
+            if (selected?.Kind is not ProjectTreeNodeKind.Shot and not ProjectTreeNodeKind.ModuleInstance)
             {
                 _activeDesignPreviewNode = null;
                 return null;
@@ -2253,16 +2223,8 @@ internal sealed class EditorPreviewController
         var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shotId);
         if (_shotTimelineShotId != shotId || _shotTimelineContextNodeId != contextNode?.Id)
         {
-            var pendingExplicitFrame = _pendingExplicitScreenFrame;
-            _pendingExplicitScreenFrame = null;
             _shotTimelineShotId = shotId;
             _shotTimelineContextNodeId = contextNode?.Id ?? "";
-            SetShotNavigationScope(
-                contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance ? "screen" : "shot");
-            _shotPreviewFrame = pendingExplicitFrame
-                ?? (contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
-                    ? ModuleInstanceStartFrame(shotId, contextNode.Id)
-                    : 0);
         }
         _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, 0, Math.Max(0, duration - 1));
         var range = NavigationFrameRange();
@@ -2290,11 +2252,11 @@ internal sealed class EditorPreviewController
         EditorAccessibility.Describe(
             _shotPlayButton,
             isOnKeyframe
-                ? "Play or pause the selected scope; current frame is an animation keyframe"
-                : "Play or pause the selected scope");
+                ? "Play or pause the shared Shot timeline; current frame is an animation keyframe"
+                : "Play or pause the shared Shot timeline");
         var activeSlotIndex = ActiveShotSlotIndex(shotId);
         var slotCount = _database.GetShotModuleInstanceSlots(shotId).Count;
-        var showScreenStep = _shotNavigationScope == "shot";
+        var showScreenStep = contextNode?.Kind == ProjectTreeNodeKind.Shot;
         _shotPreviousSlotButton.IsVisible = showScreenStep;
         _shotNextSlotButton.IsVisible = showScreenStep;
         _shotPreviousSlotButton.IsEnabled = showScreenStep && activeSlotIndex > 0;
@@ -2304,25 +2266,12 @@ internal sealed class EditorPreviewController
         _isUpdatingShotTimeline = false;
     }
 
-    private void SetShotNavigationScope(string scope)
-    {
-        _shotNavigationScope = scope == "screen" ? "screen" : "shot";
-        if (_shotNavigationScopeComboBox.ItemsSource is not IEnumerable<FieldOption> options) return;
-        var selected = options.FirstOrDefault((option) => option.Value == _shotNavigationScope);
-        if (selected is null || ReferenceEquals(_shotNavigationScopeComboBox.SelectedItem, selected)) return;
-        var wasUpdating = _isUpdatingShotTimeline;
-        _isUpdatingShotTimeline = true;
-        _shotNavigationScopeComboBox.SelectedItem = selected;
-        _isUpdatingShotTimeline = wasUpdating;
-    }
-
     private (int StartFrame, int EndFrame, int DurationFrames) NavigationFrameRange()
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return (0, 0, 1);
         var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
-        if (_shotNavigationScope != "screen") return (0, shotDuration - 1, shotDuration);
-        return ActiveScreenFrameRange(shotId);
+        return (0, shotDuration - 1, shotDuration);
     }
 
     private (int StartFrame, int EndFrame, int DurationFrames) ActiveScreenFrameRange(string shotId)
@@ -2336,26 +2285,16 @@ internal sealed class EditorPreviewController
         return (start, start + duration - 1, duration);
     }
 
-    private void SetShotPreviewFrame(
-        int frame,
-        bool useSelectedScope = true,
-        bool synchronizeScreenSelection = false)
+    private void SetShotPreviewFrame(int frame)
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
         StopShotPlayback();
-        var range = useSelectedScope
-            ? NavigationFrameRange()
-            : (StartFrame: 0, EndFrame: ShotLastFrame(), DurationFrames: ShotLastFrame() + 1);
+        var range = NavigationFrameRange();
         var next = Math.Clamp(frame, range.StartFrame, range.EndFrame);
-        if (next == _shotPreviewFrame)
-        {
-            if (synchronizeScreenSelection) SynchronizeExplicitScreenSelection();
-            return;
-        }
+        if (next == _shotPreviewFrame) return;
         _shotPreviewFrame = next;
         PlaybackState.NotifyFrameChanged();
-        if (synchronizeScreenSelection && SynchronizeExplicitScreenSelection()) return;
         Refresh();
     }
 
@@ -2397,10 +2336,22 @@ internal sealed class EditorPreviewController
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return [];
-        var range = ActiveScreenFrameRange(shotId);
+        var contextNode = ProductionContextNode();
+        var range = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
+            ? ScreenFrameRange(shotId, contextNode.Id)
+            : ActiveScreenFrameRange(shotId);
         return ModuleInstanceTimeline.ShotKeyframeFrames(_database, shotId)
             .Where((frame) => frame >= range.StartFrame && frame <= range.EndFrame)
             .ToList();
+    }
+
+    private (int StartFrame, int EndFrame, int DurationFrames) ScreenFrameRange(
+        string shotId,
+        string moduleInstanceId)
+    {
+        var start = ModuleInstanceStartFrame(shotId, moduleInstanceId);
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        return (start, start + duration - 1, duration);
     }
 
     private void MoveAnimationKeyframe(int direction)
@@ -2410,27 +2361,7 @@ internal sealed class EditorPreviewController
             ? keyframes.LastOrDefault((frame) => frame < _shotPreviewFrame, -1)
             : keyframes.FirstOrDefault((frame) => frame > _shotPreviewFrame, -1);
         if (target < 0) return;
-        SetShotPreviewFrame(target, useSelectedScope: false, synchronizeScreenSelection: true);
-    }
-
-    private bool SynchronizeExplicitScreenSelection()
-    {
-        if (IsPreviewPlaybackActive) return false;
-        var shotId = ProductionShotId();
-        if (string.IsNullOrWhiteSpace(shotId)) return false;
-        var slots = _database.GetShotModuleInstanceSlots(shotId);
-        var target = ActiveShotSlotIndex(shotId);
-        if (target < 0 || target >= slots.Count) return false;
-        if (string.Equals(_selectedNode()?.Id, slots[target].Id, StringComparison.Ordinal)) return false;
-        return SelectExplicitScreen(slots[target].Id);
-    }
-
-    private bool SelectExplicitScreen(string screenId)
-    {
-        _pendingExplicitScreenFrame = _shotPreviewFrame;
-        if (_selectNodeById(screenId, null)) return true;
-        _pendingExplicitScreenFrame = null;
-        return false;
+        SetShotPreviewFrame(target);
     }
 
     private int ModuleInstanceStartFrame(string shotId, string instanceId)
@@ -2453,7 +2384,8 @@ internal sealed class EditorPreviewController
         }
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
-        var shot = new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
+        var payloadNode = ProductionPayloadNode();
+        if (payloadNode is null) return;
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
         _shotPlaybackIsPreparing = true;
@@ -2461,7 +2393,7 @@ internal sealed class EditorPreviewController
         PlaybackState.SetBusy(true);
         try
         {
-            _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(shot, _shotPreviewFrame, navigationRange.EndFrame).ToList();
+            _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(payloadNode, _shotPreviewFrame, navigationRange.EndFrame).ToList();
             if (!await PreparePlaybackFramesAsync(null))
             {
                 PlaybackState.SetPlaying(false);
@@ -2484,14 +2416,14 @@ internal sealed class EditorPreviewController
         AdvanceShotPlayback();
     }
 
-    private IEnumerable<DesignPreviewPayload> ShotPlaybackFramePayloads(ProjectTreeNode shot, int startFrame, int endFrame)
+    private IEnumerable<DesignPreviewPayload> ShotPlaybackFramePayloads(ProjectTreeNode payloadNode, int startFrame, int endFrame)
     {
         var lastFrame = Math.Max(startFrame, endFrame);
         for (var frame = startFrame; frame <= lastFrame; frame++)
         {
             var payload = DesignPreviewPayloadFactory.Create(
                 _database,
-                shot,
+                payloadNode,
                 _selectedThemeId,
                 _selectedMode,
                 frame);
@@ -2606,18 +2538,9 @@ internal sealed class EditorPreviewController
         _designContextText.Foreground = EditorNavigationVisuals.VariantLockBrush(true);
         _designContextText.Opacity = 1;
         var productionContext = !string.IsNullOrWhiteSpace(ProductionShotId());
-        if (productionContext)
-        {
-            _designContextAddHistoryButton.IsVisible = true;
-            _designContextLockButton.IsVisible = true;
-            RefreshDesignContextHistoryChrome();
-        }
-        else
-        {
-            _designContextAddHistoryButton.IsVisible = true;
-            _designContextLockButton.IsVisible = true;
-            RefreshDesignContextHistoryChrome();
-        }
+        _designContextAddHistoryButton.IsVisible = true;
+        _designContextLockButton.IsVisible = _workspace != EditorWorkspace.Production;
+        RefreshDesignContextHistoryChrome();
         ToolTip.SetTip(
             _designContextText,
             _activeDesignPreviewNode is not null
@@ -2680,34 +2603,13 @@ internal sealed class EditorPreviewController
 
     private ProjectTreeNode? ProductionContextNode()
     {
-        if (_workspace == EditorWorkspace.Production
-            && _isDesignPreviewContextLocked
-            && _lockedDesignPreviewNode?.Kind is ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance)
-        {
-            return _lockedDesignPreviewNode.ToNode();
-        }
         var selected = _selectedNode();
-        if (selected?.Kind is ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance)
-        {
-            return selected;
-        }
-        return _lastProductionPreviewNode?.ToNode();
+        return selected?.Kind is ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance
+            ? selected
+            : null;
     }
 
-    private ProjectTreeNode? ProductionPayloadNode()
-    {
-        var shotId = ProductionShotId();
-        if (string.IsNullOrWhiteSpace(shotId)) return null;
-        if (_shotNavigationScope == "shot")
-        {
-            return new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
-        }
-        var slots = _database.GetShotModuleInstanceSlots(shotId);
-        var index = ActiveShotSlotIndex(shotId);
-        return index >= 0 && index < slots.Count
-            ? new PreviewNodeKey(ProjectTreeNodeKind.ModuleInstance, slots[index].Id).ToNode()
-            : new PreviewNodeKey(ProjectTreeNodeKind.Shot, shotId).ToNode();
-    }
+    private ProjectTreeNode? ProductionPayloadNode() => ProductionContextNode();
 
     private static string RuntimeContextValue(DesignPreviewPayload? payload, string key)
     {

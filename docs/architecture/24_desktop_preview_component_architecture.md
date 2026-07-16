@@ -51,6 +51,14 @@ published by the newly selected Variant, and animation tracks whose owner or
 target survives that selection. Preview, duration and animation authoring all
 consume that same effective contract.
 
+In Production the selected tree node is the sole preview context. Selecting a
+Shot renders the complete Shot; selecting one Module Instance renders only that
+Screen. There is no duplicate Shot/Screen scope selector and Production does
+not expose a context lock that can diverge from the tree. Both contexts retain
+the same absolute Shot playhead: Preview transport and Animation authoring read
+and write that one cursor, while a Module Instance payload translates the
+absolute frame to its Screen-local resolver frame.
+
 Animation authoring follows the same ownership tree. Root Runtime Values place
 their `Animation` card below the fields in `General`. A structured runtime
 collection may explicitly declare `animationPresentation: collectionFooter`;
@@ -224,6 +232,9 @@ Allowed responsibilities:
 Examples:
 
 - Audio resolver may know waveform, progress, avatar slot and Badge slot.
+- Bubble resolver may explicitly bind inputs of its owned Audio child slot,
+  including hiding Audio's Badge; the Audio resolver remains strict and does
+  not supply a compatibility fallback.
 - Avatar resolver may know label slot.
 - Status Bar resolver may know status icons and clock semantics.
 - Keyboard resolver may know key rows and key labels.
