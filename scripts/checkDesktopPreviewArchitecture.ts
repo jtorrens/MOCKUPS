@@ -2719,6 +2719,16 @@ assertContains(
   "Runtime Values must resolve numeric keyframes with the generic interpolation contract",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+  '["animationTimeline"] = new JsonObject { ["sequenceItems"] = false }',
+  "Component Stack slots must share a parallel Screen-time origin",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.LockScreenModule.cs",
+  /"stackStates"[\s\S]*?"animationPresentation"\]\s*=\s*"collectionFooter"[\s\S]*?"animationTimeline"\]\s*=\s*new JsonObject \{ \["sequenceItems"\]\s*=\s*false \}/,
+  "forwarded Lock Screen slots must preserve the parallel Component Stack timeline",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "ModuleInstanceAnimationValueResolver.ResolveDisplayValue(",
   "Animation keyframe controls and Runtime Values must share one resolved-value presentation path",

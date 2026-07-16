@@ -115,6 +115,13 @@ The initial interpolation matrix is intentionally small:
 
 `animationTimeline` is owner-authored contract metadata, never a user-editable setting. Every top-level field is owned by its Screen; every collection field is owned by the stable item selected by `targetId`. A field origin is either `{ kind: "ownerStart" }` or `{ kind: "fieldCompletion", fieldId, offsetFrames }`. A dependency may reference only another field in the same owner and the dependency graph must be acyclic. Collections separately declare their serial pre-duration and post-duration fields. This keeps collection sequencing, field dependency, animation evaluation and rendering as distinct responsibilities.
 
+A collection target id is addressing, not proof of temporal sequencing.
+Collections with spatially concurrent owners declare
+`animationTimeline.sequenceItems: false`; all item owner origins then begin at
+the Screen origin. Component Stack slots use this mode, while Conversation
+messages remain serial. The editor and timeline must read this metadata rather
+than infer sequencing from collection order or `targetId` presence.
+
 `animationTimeline.extendsOwnerDuration` defaults to `true`. When `false`, the field does not move the end used to start the next serial collection item, but its absolute keyframes still extend the owning Screen and remain part of the owner's visual span. Conversation delivery/status fields use this mode: a read receipt can appear after later messages have started. Runtime activation controls distinguish these non-sequencing tracks with a circle; the Animation panel continues to use the shared diamond vocabulary.
 
 Enabling animation for a field creates its track with an enabled keyframe at

@@ -1400,6 +1400,7 @@ internal sealed partial class SpikeDatabase
         ["label"] = "Slots",
         ["jsonKey"] = "items",
         ["itemLabel"] = "Slot",
+        ["animationTimeline"] = new JsonObject { ["sequenceItems"] = false },
         ["fields"] = new JsonArray
         {
             new JsonObject

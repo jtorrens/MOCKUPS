@@ -17,6 +17,7 @@ var tests = new (string Name, Action Run)[]
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
     ("target-owned fields use target-relative origins", TargetFieldsUseRelativeOrigins),
+    ("parallel collection targets share the Screen origin", ParallelCollectionTargetsShareScreenOrigin),
     ("target-owned origins include their own delay", TargetOriginsMoveWithOwnDelay),
     ("animated text replaces base write-on duration", AnimatedTextReplacesWriteOnDuration),
     ("later targets move after prior animated extent", LaterTargetsFollowAnimatedExtent),
@@ -553,6 +554,32 @@ static void TargetFieldsUseRelativeOrigins()
     Equal(10, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, "text", "m2"));
 }
 
+static void ParallelCollectionTargetsShareScreenOrigin()
+{
+    var contract = Object("""
+        {
+          "collections": [{
+            "jsonKey": "slots",
+            "animationTimeline": {"sequenceItems":false},
+            "fields": [{
+              "id":"state",
+              "jsonKey":"state",
+              "animationTimeline":{"origin":{"kind":"ownerStart"},"extendsOwnerDuration":false}
+            }]
+          }]
+        }
+        """);
+    var runtime = Object("""
+        {"slots":[
+          {"id":"slot-1","state":"clock"},
+          {"id":"slot-2","state":"password"}
+        ]}
+        """);
+
+    Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, "state", "slot-1"));
+    Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, "state", "slot-2"));
+}
+
 static void TargetOriginsMoveWithOwnDelay()
 {
     var contract = SequenceContract();
@@ -984,7 +1011,9 @@ static void ComponentStackSeedOpensAndRenders()
         Equal("theme.spacing.none", runtimeInputs[1].DefaultValue);
         Equal("theme.spacing.none", runtimeInputs[2].DefaultValue);
         var collections = designPreview["collections"] as JsonArray ?? throw new InvalidOperationException("Missing Component Stack collection contract.");
-        Equal("items", collections.OfType<JsonObject>().Single()["jsonKey"]?.GetValue<string>() ?? "");
+        var slotCollection = collections.OfType<JsonObject>().Single();
+        Equal("items", slotCollection["jsonKey"]?.GetValue<string>() ?? "");
+        Equal(false, slotCollection["animationTimeline"]?["sequenceItems"]?.GetValue<bool>() ?? true);
         var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
         var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
             ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
@@ -1755,6 +1784,15 @@ static void LockScreenComposesRuntimeStack()
             ?? throw new InvalidOperationException("Missing Lock Screen Stack bindings.");
         Equal("fill", stackInputs["sizingMode"]?.GetValue<string>() ?? "");
         True(stackInputs["items"] is JsonArray);
+        var forwardedSlots = stackInputs[RuntimeInputForwardingContract.StorageKey]?["items"]?["collection"]
+            ?? throw new InvalidOperationException("Missing forwarded Lock Screen slot contract.");
+        Equal(false, forwardedSlots["animationTimeline"]?["sequenceItems"]?.GetValue<bool>() ?? true);
+        var defaultVariant = module.Children.Single((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant && child.IsProtected);
+        var variantConfig = JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson) as JsonObject
+            ?? throw new InvalidOperationException("Missing Lock Screen Variant config.");
+        Equal(false,
+            variantConfig["lockScreen"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["collection"]?["animationTimeline"]?["sequenceItems"]?.GetValue<bool>()
+            ?? true);
         var lockScreenFields = database.LoadEditorLayout("module.core.lockScreen").Cards
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)

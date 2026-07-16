@@ -348,6 +348,14 @@ The stable slot id owns selection and the stable State ids are its values.
 Collection position is never an animation identity, so reordering States or
 slots does not rewrite keyframes.
 
+Component Stack slots are parallel timeline owners. Their projected collection
+declares `animationTimeline.sequenceItems: false`: `targetId` identifies the
+stable slot but does not move that slot's temporal origin after the preceding
+slot. Consequently every direct slot `State` KF0 maps to the beginning of the
+containing Screen. Spatial Stack order still controls layout only. Runtime
+fields inside an entering State keep their nested owner origin and may begin at
+that State's activation frame.
+
 Root and embedded component actions follow the same rule. Test Values renders
 the generic Play/Restore control from the action contract. A Module Instance
 does not store a simulated button press: it exposes the promoted play field as
