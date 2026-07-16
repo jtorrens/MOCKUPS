@@ -384,7 +384,19 @@ internal sealed partial class SpikeDatabase
                         ["subtitleMaxCharacters"] = 72,
                         ["fallbackIcon"] = "component",
                     },
-                    ["animationTimeline"] = new JsonObject { ["sequenceItems"] = false },
+                    ["animationTimeline"] = new JsonObject
+                    {
+                        ["sequenceItems"] = false,
+                        ["ownerOrigin"] = new JsonObject
+                        {
+                            ["kind"] = "firstMatchingValue",
+                            ["sourceCollectionJsonKey"] = "forwarded_module_lockScreen_stackStates",
+                            ["sourceTargetIdJsonKey"] = "slotId",
+                            ["sourceFieldId"] = "runtimeStateId",
+                            ["sourceValueJsonKey"] = "runtimeStateId",
+                            ["matchValueJsonKey"] = "id",
+                        },
+                    },
                 },
             },
         },

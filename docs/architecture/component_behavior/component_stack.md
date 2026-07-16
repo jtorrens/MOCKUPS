@@ -108,11 +108,12 @@ state tracks and applies ordered Replace/Overlay semantics. It compares the
 resolved visible sets at track change frames so a displaced or deactivated
 state remains explicitly resolved during its finite Exit Motion.
 
-Entry gives the child local frame zero at its activation keyframe. Re-entry
-restarts it. During exit the child is frozen at its final internal frame while
-the generic Motion helper resolves the outgoing transform. There are no timers,
-CSS animations or inferred renderer state. The bridge and web renderer receive
-only generic nodes for the requested frame.
+First entry gives the child local frame zero at its first activation keyframe.
+Re-entry restarts the parent-owned Enter Motion but preserves that first internal
+origin, so the child's own keyframes do not restart. During exit the child holds
+its resolved internal frame while the generic Motion helper resolves the outgoing
+transform. There are no timers, CSS animations or inferred renderer state. The
+bridge and web renderer receive only generic nodes for the requested frame.
 
 The Test Values State action follows the same frame contract without depending
 on an advancing module frame: every precomputed preview payload carries its

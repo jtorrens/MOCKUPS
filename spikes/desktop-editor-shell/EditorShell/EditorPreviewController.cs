@@ -2228,6 +2228,7 @@ internal sealed class EditorPreviewController
         }
         _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, 0, Math.Max(0, duration - 1));
         var range = NavigationFrameRange();
+        _shotPreviewFrame = Math.Clamp(_shotPreviewFrame, range.StartFrame, range.EndFrame);
         var displayedFrame = Math.Clamp(_shotPreviewFrame - range.StartFrame, 0, Math.Max(0, range.DurationFrames - 1));
         _isUpdatingShotTimeline = true;
         _shotFrameSlider.Maximum = Math.Max(0, range.DurationFrames - 1);
@@ -2239,8 +2240,8 @@ internal sealed class EditorPreviewController
             showToolTip: false);
         _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
         _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
-        _shotAbsoluteStartButton.IsEnabled = _shotPreviewFrame > 0;
-        _shotAbsoluteEndButton.IsEnabled = _shotPreviewFrame < duration - 1;
+        _shotAbsoluteStartButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
+        _shotAbsoluteEndButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
         var keyframes = AnimationKeyframesInCurrentScreen();
         _shotPreviousKeyframeButton.IsEnabled = keyframes.Any((frame) => frame < _shotPreviewFrame);
         _shotNextKeyframeButton.IsEnabled = keyframes.Any((frame) => frame > _shotPreviewFrame);
@@ -2270,6 +2271,8 @@ internal sealed class EditorPreviewController
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return (0, 0, 1);
+        if (ProductionContextNode() is { Kind: ProjectTreeNodeKind.ModuleInstance } screen)
+            return ScreenFrameRange(shotId, screen.Id);
         var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
         return (0, shotDuration - 1, shotDuration);
     }

@@ -2311,7 +2311,12 @@ assertDoesNotContain(
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "NavigationFrameRange()",
-  "production slider and playback must share the Shot-wide navigation range",
+  "production slider and playback must share the tree-owned navigation range",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "return ScreenFrameRange(shotId, screen.Id);",
+  "a selected Screen must present and play its own local range",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
@@ -2685,18 +2690,28 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  "TimelineFrame() - screenStartFrame",
-  "target-owned animation panels must obtain owner-relative frames from the common timeline",
+  "_shotFrame() - screenStartFrame",
+  "Screen animation panels must present the authoritative Shot playhead as Screen-local time",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(",
-  "owner-relative keyframes must translate through the common timeline onto the authoritative Shot playhead",
+  "owner-relative keyframes must translate through the common timeline onto the containing Screen",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  "ModuleInstanceTimeline.ShotDurationFrames",
-  "animation authoring panels must use the complete Shot scale",
+  "ModuleInstanceTimeline.DurationFrames(_database, node.Id)",
+  "animation authoring panels must use their containing Screen scale",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame",
+  "Screen-local keyframe markers must not persist or display absolute Shot offsets",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "firstMatchingValue",
+  "entity-owned keyframes must support a generic stable first-appearance origin",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

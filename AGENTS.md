@@ -142,7 +142,16 @@ Persist parameter animation only as v2 `fieldId`/`targetId` keyframe tracks. Fra
 
 Reusable behavioral timing uses the dictionary `BehaviorTiming` value kind. Fixed mode resolves authored frames. Natural mode resolves semantic units × the module-owned base rate × a `theme.motion.naturalPace.*` multiplier. The module resolver owns deterministic cadence inside that final duration; the bridge and renderer receive only the resolved frame state.
 
-Animation editors show a Shot-wide authoring scale while persisted collection keyframes remain relative to their stable owner. Contract-declared base/finite durations use the shared reference-duration lane. Retime is off when `targetDurationFrames` is absent; provisional right-side authoring margin is session-only and must never be persisted as duration or window state.
+Animation editors show a Screen-local authoring scale while persisted collection keyframes remain relative to their stable owner; the shared Preview playhead remains absolute in Shot time internally. Contract-declared base/finite durations use the shared reference-duration lane. Retime is off when `targetDurationFrames` is absent; provisional right-side authoring margin is session-only and must never be persisted as duration or window state.
+
+Temporal ownership is uniform for every entity. Appearance, disappearance,
+activation and selection are authored in the local time of the parent; the
+entity's own fields and keyframes are authored relative to its first appearance.
+Reordering or moving an entity recalculates effective frames without rewriting
+stored local keyframes. Re-entry restarts parent-owned Enter/Exit Motion but does
+not restart the entity's internal timeline. Stable ids, never indices, bind
+owners and tracks. A selected Screen presents its own local authoring scale even
+when Preview keeps one absolute Shot playhead internally.
 
 Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
 

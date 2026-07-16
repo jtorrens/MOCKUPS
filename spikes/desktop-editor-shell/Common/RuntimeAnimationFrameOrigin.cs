@@ -143,7 +143,7 @@ internal static class RuntimeAnimationFrameOrigin
                     var fields = Fields(collection, item);
                     var pre = StringArray(Timeline(collection)["preDurationFieldIds"])
                         .Sum((fieldId) => FieldValue(item, fields, fieldId));
-                    var start = (sequenceItems ? cursor : 0) + pre;
+                    var start = (sequenceItems ? cursor : ItemOwnerOrigin(collection, item)) + pre;
                     var durations = CalculateItemDurations(collection, item, targetId);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
@@ -427,6 +427,43 @@ internal static class RuntimeAnimationFrameOrigin
             (_animation["tracks"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((track) =>
                 Text(track["fieldId"]) == fieldId
                 && Text(track["targetId"]) == targetId);
+
+        private double ItemOwnerOrigin(JsonObject collection, JsonObject item)
+        {
+            var origin = Timeline(collection)["ownerOrigin"] as JsonObject;
+            if (Text(origin?["kind"]) != "firstMatchingValue") return 0;
+
+            var sourceCollectionKey = Text(origin?["sourceCollectionJsonKey"]);
+            var sourceTargetIdJsonKey = Text(origin?["sourceTargetIdJsonKey"]);
+            var sourceFieldId = Text(origin?["sourceFieldId"]);
+            var sourceValueJsonKey = Text(origin?["sourceValueJsonKey"]);
+            var matchValueJsonKey = Text(origin?["matchValueJsonKey"]);
+            var sourceTargetId = Text(item[sourceTargetIdJsonKey]);
+            var matchValue = Text(item[matchValueJsonKey]);
+            if (string.IsNullOrWhiteSpace(sourceCollectionKey)
+                || string.IsNullOrWhiteSpace(sourceTargetId)
+                || string.IsNullOrWhiteSpace(sourceFieldId)
+                || string.IsNullOrWhiteSpace(sourceValueJsonKey)
+                || string.IsNullOrWhiteSpace(matchValue))
+            {
+                throw new InvalidOperationException("Incomplete firstMatchingValue owner-origin contract.");
+            }
+
+            var sourceItem = (_runtime[sourceCollectionKey] as JsonArray)?.OfType<JsonObject>()
+                .FirstOrDefault((candidate) => Text(candidate["id"]) == sourceTargetId)
+                ?? throw new InvalidOperationException(
+                    $"Owner-origin source item '{sourceTargetId}' is missing from '{sourceCollectionKey}'.");
+            if (Text(sourceItem[sourceValueJsonKey]) == matchValue) return 0;
+
+            var firstMatch = (Track(sourceFieldId, sourceTargetId)?["keyframes"] as JsonArray)?
+                .OfType<JsonObject>()
+                .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
+                .Where((keyframe) => Text(keyframe["value"]) == matchValue)
+                .Select((keyframe) => Number(keyframe["frame"]))
+                .DefaultIfEmpty(0)
+                .Min() ?? 0;
+            return firstMatch;
+        }
 
         private double TargetDuration(string targetId, double natural) =>
             PositiveDuration((((_animation["retime"] as JsonObject)?["targets"] as JsonObject)?[targetId] as JsonObject)?["targetDurationFrames"])

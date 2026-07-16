@@ -73,8 +73,8 @@ runtime field has an active track, its dictionary control becomes a read-only
 view of the value resolved for that playhead. The editor resolves the persisted
 owner-local keyframes through the generic owner timeline and presents the result
 without changing the stored runtime payload. The mandatory initial keyframe is
-always authored at owner-local frame zero and appears on the Shot-wide scale at
-that owner's absolute origin.
+always authored at owner-local frame zero and appears on the selected Screen's
+local scale at that owner's effective Screen-local origin.
 
 ```text
 After the component renderable/helper boundary, preview data must not contain

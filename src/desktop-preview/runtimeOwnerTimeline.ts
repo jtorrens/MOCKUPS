@@ -39,7 +39,7 @@ export class RuntimeOwnerTimeline {
         const timeline = asRecord(collection.animationTimeline);
         const pre = strings(timeline.preDurationFieldIds)
           .reduce((sum, fieldId) => sum + fieldValue(item, fields, fieldId), 0);
-        const start = (sequenceItems ? cursor : 0) + pre;
+        const start = (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
         const durations = this.itemDurations(collection, item, targetId);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -79,6 +79,10 @@ export class RuntimeOwnerTimeline {
   screenFrame(fieldId: string, targetId: string, localFrame: number) {
     const rootNatural = this.rootNaturalFrame(fieldId, targetId, Math.max(0, localFrame));
     return round(scale(rootNatural, this.naturalDuration, this.durationFrames));
+  }
+
+  ownsTarget(targetId: string) {
+    return this.items.has(targetId);
   }
 
   localFrame(fieldId: string, targetId: string, screenFrame: number) {
@@ -275,6 +279,33 @@ export class RuntimeOwnerTimeline {
     return records(this.animation.tracks).find((track) =>
       optionalString(track, "fieldId") === fieldId
       && optionalString(track, "targetId") === targetId);
+  }
+
+  private itemOwnerOrigin(collection: JsonRecord, item: JsonRecord) {
+    const origin = asRecord(asRecord(collection.animationTimeline).ownerOrigin);
+    if (optionalString(origin, "kind") !== "firstMatchingValue") return 0;
+
+    const sourceCollectionKey = optionalString(origin, "sourceCollectionJsonKey");
+    const sourceTargetIdJsonKey = optionalString(origin, "sourceTargetIdJsonKey");
+    const sourceFieldId = optionalString(origin, "sourceFieldId");
+    const sourceValueJsonKey = optionalString(origin, "sourceValueJsonKey");
+    const matchValueJsonKey = optionalString(origin, "matchValueJsonKey");
+    const sourceTargetId = optionalString(item, sourceTargetIdJsonKey);
+    const matchValue = optionalString(item, matchValueJsonKey);
+    if (!sourceCollectionKey || !sourceTargetId || !sourceFieldId || !sourceValueJsonKey || !matchValue) {
+      throw new Error("Incomplete firstMatchingValue owner-origin contract");
+    }
+
+    const sourceItem = records(this.runtime[sourceCollectionKey])
+      .find((candidate) => optionalString(candidate, "id") === sourceTargetId);
+    if (!sourceItem) {
+      throw new Error(`Owner-origin source item '${sourceTargetId}' is missing from '${sourceCollectionKey}'`);
+    }
+    if (optionalString(sourceItem, sourceValueJsonKey) === matchValue) return 0;
+    const matchingFrames = enabledKeyframes(this.track(sourceFieldId, sourceTargetId))
+      .filter((keyframe) => optionalString(keyframe, "value") === matchValue)
+      .map((keyframe) => Math.max(0, optionalNumber(keyframe, "frame", 0)));
+    return matchingFrames.length ? Math.min(...matchingFrames) : 0;
   }
 
   private targetDuration(targetId: string, natural: number) {

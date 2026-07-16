@@ -3,6 +3,7 @@ import { componentPresetConfig, mergeComponentDefaults } from "./componentPrevie
 import { asRecord, optionalBoolean, optionalNumber, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
+import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -39,6 +40,9 @@ export function resolveComponentCollectionItem(
     const instance = parseObject(payload.instanceJson ?? "{}");
     const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
     const animation = asRecord(instance.animation);
+    const preview = parseObject(payload.designPreviewJson);
+    const themeTokens = parseObject(payload.themeTokensJson);
+    const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
     const presence = ownsPresence
       ? resolveParameterAnimation(animation, "present", rawId, frame, item.present === true)
       : { value: true, animated: false, sourceKeyframeFrame: undefined };
@@ -62,7 +66,7 @@ export function resolveComponentCollectionItem(
       ? presence.sourceKeyframeFrame + exitDurationFrames
       : undefined;
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
-    const inputResolution = resolveAnimatedInputs(animation, rawInputs, rawId, frame);
+    const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame);
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
     const presetReference = requiredString(item, "presetId", `${itemPath}.presetId`);
     const componentType = presetTypes[presetReference];
@@ -102,34 +106,59 @@ export function resolveComponentCollectionItem(
 }
 
 function resolveAnimatedInputs(
+  timeline: RuntimeOwnerTimeline,
   animation: Record<string, unknown>,
   inputs: Record<string, unknown>,
   targetId: string,
-  frame: number,
+  screenFrame: number,
 ) {
+  const localFrame = (fieldId: string, frame = screenFrame) => timeline.ownsTarget(targetId)
+    ? Math.floor(timeline.localFrame(fieldId, targetId, frame))
+    : frame;
   const resolved = Object.fromEntries(Object.entries(inputs).map(([fieldId, value]) => [
     fieldId,
-    resolveParameterAnimation(animation, fieldId, targetId, frame, value).value,
+    resolveParameterAnimation(animation, fieldId, targetId, localFrame(fieldId), value).value,
   ]));
   const sourceFrames = Object.keys(inputs).flatMap((fieldId) => {
-    const source = resolveParameterAnimation(animation, fieldId, targetId, frame, inputs[fieldId]).sourceKeyframeFrame;
-    return source === undefined || source <= 0 ? [] : [source];
+    const source = resolveParameterAnimation(
+      animation,
+      fieldId,
+      targetId,
+      localFrame(fieldId),
+      inputs[fieldId],
+    ).sourceKeyframeFrame;
+    return source === undefined || source <= 0 ? [] : [timeline.screenFrame(fieldId, targetId, source)];
   });
   const changeFrame = sourceFrames.length ? Math.max(...sourceFrames) : undefined;
   if (changeFrame === undefined) return { values: resolved, changeFrame, previousValues: undefined };
   const previousValues = Object.fromEntries(Object.entries(inputs).map(([fieldId, value]) => [
     fieldId,
-    resolveParameterAnimation(animation, fieldId, targetId, Math.max(0, changeFrame - 1), value).value,
+    resolveParameterAnimation(
+      animation,
+      fieldId,
+      targetId,
+      localFrame(fieldId, Math.max(0, changeFrame - 1)),
+      value,
+    ).value,
   ]));
   const transitionValues = Object.fromEntries(Object.keys(inputs).flatMap((fieldId) => {
-    const sourceFrame = resolveParameterAnimation(animation, fieldId, targetId, frame, inputs[fieldId]).sourceKeyframeFrame;
+    const sourceLocalFrame = resolveParameterAnimation(
+      animation,
+      fieldId,
+      targetId,
+      localFrame(fieldId),
+      inputs[fieldId],
+    ).sourceKeyframeFrame;
+    const sourceFrame = sourceLocalFrame === undefined
+      ? undefined
+      : timeline.screenFrame(fieldId, targetId, sourceLocalFrame);
     return sourceFrame === undefined || sourceFrame <= 0
       ? []
       : [[fieldId, { sourceFrame, previousValue: resolveParameterAnimation(
           animation,
           fieldId,
           targetId,
-          Math.max(0, sourceFrame - 1),
+          localFrame(fieldId, Math.max(0, sourceFrame - 1)),
           inputs[fieldId],
         ).value }]];
   }));

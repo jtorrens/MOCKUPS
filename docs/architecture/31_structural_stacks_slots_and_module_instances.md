@@ -353,8 +353,10 @@ declares `animationTimeline.sequenceItems: false`: `targetId` identifies the
 stable slot but does not move that slot's temporal origin after the preceding
 slot. Consequently every direct slot `State` KF0 maps to the beginning of the
 containing Screen. Spatial Stack order still controls layout only. Runtime
-fields inside an entering State keep their nested owner origin and may begin at
-that State's activation frame.
+fields inside a State use a generic `firstMatchingValue` owner origin: their
+local zero maps to the first Screen-local frame at which the slot selector chose
+that stable State id. Reordering States or changing the Screen's Shot position
+does not rewrite those local keyframes.
 
 Root and embedded component actions follow the same rule. Test Values renders
 the generic Play/Restore control from the action contract. A Module Instance
@@ -378,11 +380,13 @@ frame `F`:
    opacity;
 7. the bridge and renderer paint only those resolved generic nodes.
 
-An entering child's owner-local frame is zero at activation, so its internal
-animation starts relative to appearance. Re-entry restarts that local origin.
-An outgoing child is held at its final internal state while Exit Motion is
-resolved. Motion `Screen` bounds use the immutable device screen; `Parent`
-bounds use the State's assigned slot frame, even through nested parent boxes.
+An entity's first entry establishes its internal owner-local zero. Re-entry does
+not restart that local origin: internal properties continue to resolve from the
+first appearance. Enter and Exit Motion are separate parent-owned actions and do
+restart on every appearance/disappearance. An outgoing child is held at its
+resolved internal state while Exit Motion is evaluated. Motion `Screen` bounds
+use the immutable device screen; `Parent` bounds use the State's assigned slot
+frame, even through nested parent boxes.
 
 There are no timers, CSS transitions or renderer-owned interpolation. Design
 Play and Shot playback are two sources for the same deterministic requested-

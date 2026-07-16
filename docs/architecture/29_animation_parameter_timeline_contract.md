@@ -122,13 +122,32 @@ the Screen origin. Component Stack slots use this mode, while Conversation
 messages remain serial. The editor and timeline must read this metadata rather
 than infer sequencing from collection order or `targetId` presence.
 
+Every entity follows one temporal ownership rule. Its appearance, disappearance,
+activation and selection are authored in the local time of its parent. Its own
+fields and keyframes are authored in the entity's local time, whose origin is
+its first appearance. Moving or reordering the entity recalculates the effective
+parent/Screen frame without rewriting those stored local frames. Re-entry starts
+new Enter/Exit Motion in parent time but does not restart the entity's internal
+timeline. Stable ids, never collection indices, bind both the entity and its
+tracks.
+
+A non-serial child collection whose owner is activated by a stable selector may
+declare `animationTimeline.ownerOrigin.kind: "firstMatchingValue"`. The contract
+names the source collection, source target id, selector field/value and the child
+match value. The common owner timeline then uses the earliest matching selector
+keyframe. Later re-entries do not replace that origin. An entity without an
+authored first appearance remains at provisional owner-local zero for authoring;
+it is not rendered until its parent activation selects it.
+
 `animationTimeline.extendsOwnerDuration` defaults to `true`. When `false`, the field does not move the end used to start the next serial collection item, but its absolute keyframes still extend the owning Screen and remain part of the owner's visual span. Conversation delivery/status fields use this mode: a read receipt can appear after later messages have started. Runtime activation controls distinguish these non-sequencing tracks with a circle; the Animation panel continues to use the shared diamond vocabulary.
 
 Enabling animation for a field creates its track with an enabled keyframe at
 owner-local frame `0`, containing the effective base value at that origin and
 the field's default interpolation. This origin keyframe is mandatory, enabled
-and cannot be deleted. On the Shot-wide slider it is drawn at the absolute Shot
-frame obtained from that owner origin; it is not forced to Shot frame zero.
+and cannot be deleted. A Screen editor draws it on a Screen-local slider at the
+effective Screen frame obtained from that owner origin. The shared production
+playhead remains absolute internally, but selected Screen controls display
+`shotFrame - screenStartFrame`; a selected Shot displays the complete Shot scale.
 Disabling the field animation at its Runtime control removes the complete track
 after confirmation. At any frame without an exact keyframe, the editor shows a
 hollow diamond; the filled diamond is reserved for an exact keyframe.
@@ -245,12 +264,13 @@ component transitions.
 
 Production owns one global Shot cursor and one playback owner. The selected tree
 node is its sole context: Shot renders the complete sequence and Module Instance
-renders that isolated Screen. Both keep the complete Shot authoring scale and
-read/write the same absolute cursor; the Screen boundary only translates that
-cursor to a resolver-local frame. Preview navigation never changes tree
-selection, and no scope combo or Production context lock may create a second
-context. Design actions are isolated fixtures: their action frame and Test
-Values do not read Shot navigation and are never persisted into Production
+renders that isolated Screen. Shot selection presents the complete Shot scale;
+Module Instance selection presents `0..Screen duration - 1`. Both read/write the
+same absolute cursor internally, and the Screen boundary translates between its
+local display frame and `screenStartFrame + localFrame`. Preview navigation never
+changes tree selection, and no scope combo or Production context lock may create
+a second context. Design actions are isolated fixtures: their action frame and
+Test Values do not read Shot navigation and are never persisted into Production
 animation.
 
 ```text
@@ -311,7 +331,7 @@ read-only on the Runtime Values surface and displays the value resolved at the
 current Shot playhead after translating it through its Screen and owner origin.
 The displayed value is presentation-only: it never overwrites the instance
 payload, and keyframe editing remains in Animation. Screen-owned tracks live in an `Animation`
-subcard below the fields in Runtime Values `General`. Collection tracks normally live inside their owning item. A collection may instead declare the generic `collectionFooter` animation presentation; its direct item tracks are then aggregated in one `Animation` card below the complete collection, while nested runtime contracts retain their own local cards. Each panel presents the complete Shot frame scale and translates every selected stable target at its own owner boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Shot duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
+subcard below the fields in Runtime Values `General`. Collection tracks normally live inside their owning item. A collection may instead declare the generic `collectionFooter` animation presentation; its direct item tracks are then aggregated in one `Animation` card below the complete collection, while nested runtime contracts retain their own local cards. Each panel presents the containing Screen's local frame scale and translates every selected stable target at its own owner boundary through the generic owner timeline; persisted keyframes remain authored in owner-local frames and therefore survive delay changes, insertion, reordering and retime unchanged. The authoring horizon starts at the complete Screen duration and always includes the selected duration reference. A `+` beside the slider extends its right edge by ten session-only frames at a time; the provisional limit is shown muted in parentheses and becomes real duration when a keyframe is authored there. The list contains only active properties, while all active properties remain visible when another is selected.
 
 Retime is an explicit persisted switch represented by the presence of `targetDurationFrames`. Off means no retime override and hides the target-duration input. Turning it on initializes the target from the generic natural/reference duration and reveals the editable frame target; turning it off removes the override. The editor never presents an effective keyframe-shortened span as the natural duration of a contract-declared behavior.
 
