@@ -12,6 +12,7 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
+    ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -103,6 +104,32 @@ static void RejectedDatabaseOpenIsReadOnly()
         Throws<InvalidOperationException>(() => _ = new SpikeDatabase(temporary));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EditorLayoutSaveOmitsDerivedProperties()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-layout-serialization-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var layout = database.LoadEditorLayout("component.keypad");
+        database.SaveEditorLayout("component.keypad", layout);
+        using var connection = new SqliteConnection($"Data Source={temporary}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT layout_json FROM editor_layouts WHERE record_class_id = 'component.keypad'";
+        var json = command.ExecuteScalar() as string ?? throw new InvalidOperationException("Missing Keypad editor layout.");
+        True(!json.Contains("\"VisibleGroups\"", StringComparison.Ordinal));
+        True(!json.Contains("\"VisibleFields\"", StringComparison.Ordinal));
+        True(!json.Contains("\"Entries\"", StringComparison.Ordinal));
+        Equal(layout.Cards.Count, JsonNode.Parse(json)?["cards"]?.AsArray().Count ?? -1);
     }
     finally
     {

@@ -60,6 +60,7 @@ internal sealed partial class SpikeDatabase
     {
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentEditorLayouts(connection);
         ValidateCurrentReferences(connection);
         ValidateCurrentComponentPresets(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
@@ -126,6 +127,18 @@ internal sealed partial class SpikeDatabase
             {
                 throw InvalidCurrentDatabase($"{table}.{column} has {invalid} invalid {rootKind} JSON value(s)");
             }
+        }
+    }
+
+    private void ValidateCurrentEditorLayouts(SqliteConnection connection)
+    {
+        var derivedProperties = ScalarLong(
+            connection,
+            "SELECT COUNT(*) FROM editor_layouts, json_tree(editor_layouts.layout_json) WHERE json_tree.key IN ('VisibleGroups', 'VisibleFields', 'Entries')");
+        if (derivedProperties > 0)
+        {
+            throw InvalidCurrentDatabase(
+                $"editor_layouts contains {derivedProperties} persisted projection properties instead of authored metadata");
         }
     }
 
