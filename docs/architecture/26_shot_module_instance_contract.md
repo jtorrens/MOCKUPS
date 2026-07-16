@@ -77,6 +77,10 @@ use the same creation workflow. Before writing any data the modal requires:
 - one concrete Variant belonging to that Module;
 - one editable tree name, initially `Module · Variant`.
 
+The proposed name follows Module and Variant changes until the user edits the
+Name field. From that point it is user-owned; clearing it returns the field to
+the automatic `Module · Variant` proposal.
+
 Cancel closes the workflow without writes. Confirm persists the full
 `moduleId::variant::variantId` reference and initializes `content_json` only
 from the effective Runtime Input contract of that Variant. It does not copy the

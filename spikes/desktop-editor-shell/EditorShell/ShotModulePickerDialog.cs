@@ -75,7 +75,7 @@ internal sealed class ShotModulePickerDialog
         };
 
         var nameEdited = false;
-        var updatingName = false;
+        var automaticName = "";
         SpikeDatabase.ShotModuleChoice? SelectedModule() => modules.FirstOrDefault((module) => module.Id == moduleCombo.SelectedItem?.Value);
         void RefreshAddButton() => addButton.IsEnabled = SelectedModule() is not null
             && variantCombo.SelectedItem is not null
@@ -85,9 +85,8 @@ internal sealed class ShotModulePickerDialog
             if (nameEdited) return;
             var module = SelectedModule();
             var variant = variantCombo.SelectedItem;
-            updatingName = true;
-            nameBox.Text = module is null || variant is null ? "" : $"{module.Name} · {variant.Label}";
-            updatingName = false;
+            automaticName = module is null || variant is null ? "" : $"{module.Name} · {variant.Label}";
+            nameBox.Text = automaticName;
             RefreshAddButton();
         }
         void RefreshVariants()
@@ -112,7 +111,10 @@ internal sealed class ShotModulePickerDialog
         variantCombo.SelectionChanged += (_, _) => ApplyDefaultName();
         nameBox.TextChanged += (_, _) =>
         {
-            if (!updatingName) nameEdited = true;
+            var currentName = nameBox.Text ?? "";
+            nameEdited = !string.IsNullOrWhiteSpace(currentName)
+                && !currentName.Equals(automaticName, StringComparison.Ordinal);
+            if (!nameEdited && string.IsNullOrWhiteSpace(currentName)) ApplyDefaultName();
             RefreshAddButton();
         };
         nameBox.KeyDown += (_, eventArgs) =>
