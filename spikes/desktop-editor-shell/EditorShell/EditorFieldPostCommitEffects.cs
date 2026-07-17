@@ -6,7 +6,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorFieldPostCommitEffects
 {
-    private readonly SpikeDatabase _database;
+    private readonly EditorPresentationContextDataSource _contextData;
     private readonly Func<string?> _selectedPreviewDeviceId;
     private readonly Action<string> _setEditorTitle;
     private readonly Action _rebuildNavigation;
@@ -21,7 +21,7 @@ internal sealed class EditorFieldPostCommitEffects
         Action refreshPreview,
         Action refreshPreviewOptions)
     {
-        _database = database;
+        _contextData = new EditorPresentationContextDataSource(database);
         _selectedPreviewDeviceId = selectedPreviewDeviceId;
         _setEditorTitle = setEditorTitle;
         _rebuildNavigation = rebuildNavigation;
@@ -69,7 +69,7 @@ internal sealed class EditorFieldPostCommitEffects
         if (node.Kind == ProjectTreeNodeKind.Theme &&
             fieldId is "theme.family" or "theme.iconThemeId" or "theme.statusBarId" or "theme.navigationBarId")
         {
-            var settings = _database.GetThemeSettings(node.Id);
+            var settings = _contextData.ThemeNavigation(node.Id);
             var linkedCount = new[] { settings.IconThemeId, settings.StatusBarId, settings.NavigationBarId }
                 .Count((id) => !string.IsNullOrWhiteSpace(id));
             node.Notes = $"{settings.Family} · {linkedCount}/3 refs";
@@ -79,8 +79,8 @@ internal sealed class EditorFieldPostCommitEffects
 
         if (node.Kind == ProjectTreeNodeKind.ProductionFont && fieldId == "font.category")
         {
-            var fileCount = _database
-                .GetProductionFontFieldValue(node.Id, "font.files")
+            var fileCount = _contextData
+                .ProductionFontFiles(node.Id)
                 .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
                 .Length;
             node.Notes = $"{value} · {fileCount} files";

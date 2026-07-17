@@ -881,6 +881,57 @@ for (const forbiddenEmbeddedDocumentStoreDependency of [
   );
 }
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/65_editor_presentation_context_data_boundary_contract.md",
+  "AGENTS must require the editor presentation context data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "65_editor_presentation_context_data_boundary_contract.md",
+  "the architecture index must include contract 65",
+);
+for (const editorPresentationContextConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/EditorPathBrowser.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorFieldPostCommitEffects.cs",
+]) {
+  assertContains(
+    editorPresentationContextConsumer,
+    "new EditorPresentationContextDataSource(database)",
+    "shared editor presentation consumers must compose the typed context source",
+  );
+  assertDoesNotContain(
+    editorPresentationContextConsumer,
+    "private readonly SpikeDatabase _database",
+    "shared editor presentation consumers must not retain the database facade",
+  );
+  assertDoesNotContain(
+    editorPresentationContextConsumer,
+    "_database.",
+    "shared editor presentation consumers must use the typed context source",
+  );
+}
+for (const forbiddenEditorPresentationContextDependency of [
+  "SELECT ",
+  "INSERT ",
+  "UPDATE ",
+  "DELETE FROM",
+  "SqliteConnection",
+  "Avalonia",
+  "System.IO",
+  "IStorageProvider",
+  "ProjectTreeNode",
+  "FieldDefinition",
+  "PreviewBridge",
+  "Renderer",
+  "Resolver",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorPresentationContextDataSource.cs",
+    forbiddenEditorPresentationContextDependency,
+    `the editor presentation context source must remain a narrow read boundary (${forbiddenEditorPresentationContextDependency})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",

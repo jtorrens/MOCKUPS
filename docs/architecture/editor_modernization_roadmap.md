@@ -459,6 +459,12 @@ Embedded Component field documents are governed by
 serves exact Variant names, inherited field reads and explicit Design or
 Runtime local Override commits to both breadcrumbs and embedded field access.
 
+Shared editor presentation context is governed by
+`65_editor_presentation_context_data_boundary_contract.md`. File pickers and
+post-commit tree presentation now receive exact Project, Theme and Production
+Font values through one typed read source while retaining their filesystem and
+field-specific UI behavior outside persistence.
+
 ## Guardrails
 
 Reject new changes that add:

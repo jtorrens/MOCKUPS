@@ -10,7 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorPathBrowser
 {
     private readonly IStorageProvider _storageProvider;
-    private readonly SpikeDatabase _database;
+    private readonly EditorPresentationContextDataSource _contextData;
     private readonly Func<ProjectTreeNode?> _selectedNode;
 
     public EditorPathBrowser(
@@ -19,7 +19,7 @@ internal sealed class EditorPathBrowser
         Func<ProjectTreeNode?> selectedNode)
     {
         _storageProvider = storageProvider;
-        _database = database;
+        _contextData = new EditorPresentationContextDataSource(database);
         _selectedNode = selectedNode;
     }
 
@@ -96,7 +96,7 @@ internal sealed class EditorPathBrowser
         if (selectedNode is null) return null;
 
         var project = ProjectAncestor(selectedNode);
-        return _database.GetProjectSettings(project.Id).MediaRoot;
+        return _contextData.ProjectMediaRoot(project.Id);
     }
 
     public static async Task<string?> BrowseImageFile(

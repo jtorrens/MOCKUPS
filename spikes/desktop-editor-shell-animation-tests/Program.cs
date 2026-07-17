@@ -23,6 +23,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
+    ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
     ("Runtime Input instance store preserves explicit scalar collection and animation writes", RuntimeInputInstanceStorePreservesExplicitWrites),
@@ -952,6 +953,41 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
         var afterRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRuntimeOverride, afterRuntimeOverride);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EditorPresentationContextBoundaryPreservesCurrentData()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-editor-presentation-context-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new EditorPresentationContextDataSource(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var productionFont = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ProductionFont);
+        var themeSettings = database.GetThemeSettings(theme.Id);
+
+        Equal(database.GetProjectSettings(project.Id).MediaRoot, dataSource.ProjectMediaRoot(project.Id));
+        var themeSource = dataSource.ThemeNavigation(theme.Id);
+        Equal(themeSettings.Family, themeSource.Family);
+        Equal(themeSettings.IconThemeId, themeSource.IconThemeId);
+        Equal(themeSettings.StatusBarId, themeSource.StatusBarId);
+        Equal(themeSettings.NavigationBarId, themeSource.NavigationBarId);
+        Equal(
+            database.GetProductionFontFieldValue(productionFont.Id, "font.files"),
+            dataSource.ProductionFontFiles(productionFont.Id));
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
     }
     finally
     {
