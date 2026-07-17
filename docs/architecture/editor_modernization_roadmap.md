@@ -422,6 +422,12 @@ Component Variant configs and effective embedded action contracts now enter the
 Test Values session through a typed source. The session no longer retains a
 database handle, and the action interpreter is persistence-independent.
 
+Module Instance animation document access is governed by
+`59_module_instance_animation_document_boundary_contract.md`. One typed store
+now composes the shared timeline source, loads the exact selected Variant and
+Screen documents and delegates complete v2 animation writes. The animation
+editor retains authoring semantics without retaining a database handle.
+
 ## Guardrails
 
 Reject new changes that add:

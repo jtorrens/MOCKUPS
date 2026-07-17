@@ -15,8 +15,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ModuleInstanceAnimationEditor
 {
-    private readonly SpikeDatabase _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
+    private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
@@ -36,8 +36,8 @@ internal sealed class ModuleInstanceAnimationEditor
         PreviewPlaybackState playbackState,
         Action togglePlayback)
     {
-        _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _animationDocuments = new ModuleInstanceAnimationDocumentStore(database, _timelineDataSource);
         _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
@@ -63,11 +63,12 @@ internal sealed class ModuleInstanceAnimationEditor
         string targetId,
         string baseValue)
     {
-        var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
-        var animation = DesignPreviewTestValues.Parse(_database.GetModuleInstanceSettings(node.Id).AnimationJson);
+        var source = _animationDocuments.Load(node.Id);
+        var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
+        var animation = DesignPreviewTestValues.Parse(source.AnimationJson);
         var track = new ModuleInstanceAnimationDocument(animation.ToJsonString()).Track(input.Id, targetId);
         if (track is null) return baseValue;
-        var themeTokens = DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
+        var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
         var screenFrame = _shotFrame() - ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
         var ownerFrame = RuntimeAnimationFrameOrigin.OwnerLocalFrame(
             preview,
@@ -94,7 +95,7 @@ internal sealed class ModuleInstanceAnimationEditor
         ProjectTreeNode node,
         RuntimeInputCollectionDefinition collection)
     {
-        var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
+        var preview = DesignPreviewTestValues.Parse(_animationDocuments.Load(node.Id).RuntimePreviewJson);
         var items = DesignPreviewTestValues.CollectionItems(preview, collection).ToList();
         var itemLabels = items
             .Select((item, index) => new
@@ -129,12 +130,11 @@ internal sealed class ModuleInstanceAnimationEditor
         string? durationTargetId,
         Func<AnimationTarget, AnimationTarget>? decorateTarget = null)
     {
-        var instance = _database.GetModuleInstanceSettings(node.Id);
-        var module = _database.GetModuleInstanceVariantSettings(node.Id);
-        var preview = DesignPreviewTestValues.Parse(_database.GetModuleInstanceRuntimePreviewJson(node.Id));
-        var config = DesignPreviewTestValues.Parse(module.ConfigJson);
-        var animation = DesignPreviewTestValues.Parse(instance.AnimationJson);
-        var themeTokens = DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
+        var source = _animationDocuments.Load(node.Id);
+        var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
+        var config = DesignPreviewTestValues.Parse(source.VariantConfigJson);
+        var animation = DesignPreviewTestValues.Parse(source.AnimationJson);
+        var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
         List<AnimationTarget> ReadScopeTargets(JsonObject currentAnimation) => ReadTargets(
                 node,
@@ -149,7 +149,7 @@ internal sealed class ModuleInstanceAnimationEditor
         var targetKeys = targets
             .Select((target) => (target.FieldId, target.TargetId))
             .ToHashSet();
-        var document = new ModuleInstanceAnimationDocument(instance.AnimationJson);
+        var document = new ModuleInstanceAnimationDocument(source.AnimationJson);
         var resolvedTargets = document.Tracks
             .Where((track) => targetKeys.Contains((track.FieldId, track.TargetId)))
             .Select((track) => new ResolvedAnimationTarget(
@@ -178,6 +178,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 preview,
                 animation,
                 themeTokens,
+                source.EffectiveContractJson,
                 ReadScopeTargets));
         }
         return new AnimationTargetEditorContent(content, activeTrackCount);
@@ -192,12 +193,12 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject preview,
         JsonObject animation,
         JsonObject themeTokens,
+        string effectiveContractJson,
         Func<JsonObject, List<AnimationTarget>> readScopeTargets)
     {
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
         var actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id));
-        var durationPolicy = RuntimeDurationContract.Policy(
-            _database.GetModuleInstanceEffectiveContractJson(node.Id));
+        var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
         int MaximumAuthoredScreenFrame() => targets
             .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
@@ -324,9 +325,8 @@ internal sealed class ModuleInstanceAnimationEditor
         {
             var selectedKey = TargetKey(selected);
             var authoringHorizon = timelineDuration;
-            _database.UpdateModuleInstanceAnimationJson(node.Id, document.ToJson());
             currentAnimation = DesignPreviewTestValues.Parse(
-                _database.GetModuleInstanceSettings(node.Id).AnimationJson);
+                _animationDocuments.SaveAnimationJson(node.Id, document.ToJson()));
             screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
             actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id));
             var refreshedTargets = readScopeTargets(currentAnimation)

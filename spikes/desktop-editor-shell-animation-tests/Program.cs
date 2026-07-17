@@ -24,6 +24,7 @@ var tests = new (string Name, Action Run)[]
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
+    ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
@@ -885,6 +886,42 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-instance-animation-store-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        var store = new ModuleInstanceAnimationDocumentStore(database, timelineDataSource);
+        var screen = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var instance = database.GetModuleInstanceSettings(screen.Id);
+        var variant = database.GetModuleInstanceVariantSettings(screen.Id);
+        var source = store.Load(screen.Id);
+
+        Equal(variant.ConfigJson, source.VariantConfigJson);
+        Equal(instance.AnimationJson, source.AnimationJson);
+        Equal(database.GetModuleInstanceRuntimePreviewJson(screen.Id), source.RuntimePreviewJson);
+        Equal(database.GetModuleInstanceThemeTokensJson(screen.Id), source.ThemeTokensJson);
+        Equal(database.GetModuleInstanceEffectiveContractJson(screen.Id), source.EffectiveContractJson);
+
+        var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, afterReads);
+
+        var persisted = store.SaveAnimationJson(screen.Id, source.AnimationJson);
+        Equal(source.AnimationJson, persisted);
+        Equal(source.AnimationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
     finally
     {

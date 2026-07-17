@@ -73,6 +73,11 @@ The repository validates document roots and positive stored duration. It does
 not calculate duration, create animation origins, remove orphan tracks, merge
 Runtime defaults or resolve a Theme.
 
+Desktop animation editing additionally follows contract 59. Its typed document
+store may delegate one complete prepared animation v2 write through the facade,
+but SQL, row mapping, current-document validation and synchronization remain in
+this repository boundary.
+
 ## 4. Coordinated operations
 
 `SpikeDatabase` remains the compatibility facade. It may validate a requested

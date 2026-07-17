@@ -1,0 +1,126 @@
+# Module Instance Animation Document Boundary Contract
+
+Status: normative.
+
+This document governs the desktop boundary between persisted Screen animation
+documents and the Module Instance animation editor. It extends contracts 23,
+29, 31, 36, 47 and 52 without changing animation v2, temporal ownership,
+duration policy or editor interaction.
+
+## 1. Objective
+
+Persistence, timeline calculation and animation authoring have separate owners:
+
+```text
+validated current Module Instance and selected Module Variant documents
+→ ModuleInstanceTimelineDataSource + ModuleInstanceAnimationDocumentStore
+→ exact current strings
+→ ModuleInstanceAnimationEditor
+→ owner-relative authoring through ModuleInstanceAnimationDocument
+→ explicit prepared animation JSON write
+→ ModuleInstanceRepository through the compatibility facade
+```
+
+The store is the editor's narrow document boundary. The shared timeline data
+source remains the only input to duration and frame-origin calculation.
+
+## 2. Document-store ownership
+
+`ModuleInstanceAnimationDocumentStore` may:
+
+- load the complete current selected Module Variant config;
+- reuse `ModuleInstanceTimelineDataSource` to load the current animation,
+  Runtime Input preview, Theme tokens and effective runtime contract documents;
+- accept one complete prepared animation v2 JSON document for an explicit
+  Module Instance id;
+- delegate that explicit write through the current facade to the owning Module
+  Instance repository;
+- return the exact persisted current animation document after the write.
+
+It must not parse tracks; infer fields or targets; calculate duration, origins
+or frame projections; manufacture a missing document; repair malformed JSON;
+create UI; select a Screen or Variant; execute SQL; or persist derived duration.
+
+The store is a staged domain/document boundary, not a repository. SQL, row
+mapping, validation at the repository write boundary and write synchronization
+remain owned as declared by contract 47.
+
+## 3. Animation-editor ownership
+
+`ModuleInstanceAnimationEditor` retains:
+
+- parsing the strict current animation document for authoring;
+- discovering animatable targets from declared Runtime Input metadata;
+- stable `fieldId`/`targetId` track selection;
+- the Screen-local authoring scale projected from the absolute Shot playhead;
+- keyframe activation, values, interpolation, removal and move intent;
+- session-only selection and provisional authoring horizon;
+- Retime and reference-duration presentation;
+- delegating Play/Pause to the shared Preview playback owner;
+- producing one complete animation v2 document before an explicit save.
+
+The editor may receive `SpikeDatabase` only as a construction/composition
+parameter while it creates the shared timeline source and document store. It
+must not retain a database field or call database methods directly.
+
+## 4. Temporal ownership remains common
+
+`ModuleInstanceTimeline`, `RuntimeAnimationFrameOrigin` and declared runtime
+contract metadata remain the only authorities for:
+
+- Screen start and effective duration;
+- explicit versus calculated duration policy;
+- owner first appearance and owner-local frame zero;
+- field completion dependencies and reference duration;
+- stable target projection into the Screen authoring scale;
+- retime projection without rewriting authored keyframes.
+
+The store must not reproduce any of these formulas. A save persists authored
+animation only; it must not persist a calculated Screen extent or absolute Shot
+frame.
+
+## 5. Preserved contracts
+
+- Tracks persist only v2 `fieldId`/stable `targetId` keyframes.
+- Keyframes remain relative to their owner.
+- Reordering an owner changes projection without rewriting its keyframes.
+- Re-entry does not restart the entity's internal timeline.
+- Explicit Screen duration remains instance-owned and authoritative.
+- The selected Module Variant remains a complete explicit reference.
+- Runtime Input forwarding and local Overrides remain explicit.
+- Preview resolution completes before the generic bridge and renderer.
+- The renderer runs no animation timer or component-specific interpolation.
+
+## 6. Enforcement and tests
+
+Architecture enforcement must verify:
+
+- `ModuleInstanceAnimationDocumentStore` owns the editor's database dependency,
+  contains no SQL and reuses `ModuleInstanceTimelineDataSource`;
+- `ModuleInstanceAnimationEditor` retains no database field and performs no
+  direct database call;
+- the editor still uses the shared timeline and owner-frame utilities;
+- the store delegates only a complete animation document write;
+- this contract is linked from `AGENTS.md` and the architecture index.
+
+A disposable-database test must compare every loaded document with the exact
+current facade value, prove loads are byte-for-byte read-only, explicitly save
+the same complete current animation document and verify the persisted result.
+Existing animation tests remain authoritative for tracks, duration, origins,
+retime and frame resolution.
+
+## 7. Out of scope
+
+This phase does not fix or redesign keyframe dragging, alter animation controls,
+change timing metadata, add a second playback clock, change tables or JSON
+shape, migrate data, add Render Mode/export or modify parity assets.
+
+## 8. Forbidden shortcuts
+
+- accepting partial tracks or a plausible empty animation document;
+- binding tracks by label, type, owner position or collection index;
+- storing absolute Shot frames in owner-local keyframes;
+- recalculating or persisting Screen duration during a document read;
+- bypassing the Module Instance repository with local SQL;
+- moving duration formulas into the store or UI;
+- adding animation behavior to the Preview bridge or renderer.

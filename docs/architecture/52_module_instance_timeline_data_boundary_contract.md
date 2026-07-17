@@ -88,6 +88,10 @@ Mutation remains in the existing animation/document owners. This read boundary
 does not authorize the timeline data source to persist a duration, keyframe or
 derived value.
 
+Contract 59 composes this same source inside the animation document store. The
+store may delegate a complete prepared animation v2 write, but the timeline
+source remains read-only and all duration/origin formulas remain common.
+
 ## 6. Enforcement and tests
 
 Architecture enforcement must verify:

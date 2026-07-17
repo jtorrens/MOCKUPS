@@ -585,6 +585,65 @@ for (const componentPreviewActionConsumer of [
     "Preview action consumers must use the typed embedded Component contract boundary",
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/59_module_instance_animation_document_boundary_contract.md",
+  "AGENTS must require the Module Instance animation document boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "59_module_instance_animation_document_boundary_contract.md",
+  "the architecture index must include contract 59",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "private readonly SpikeDatabase _database",
+  "the animation document store must own the editor's database dependency",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "private readonly ModuleInstanceTimelineDataSource _timelineDataSource",
+  "the animation document store must reuse the common timeline data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "_database.UpdateModuleInstanceAnimationJson(moduleInstanceId, animationJson)",
+  "the animation document store must delegate one explicit complete document write",
+);
+for (const forbiddenAnimationDocumentStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+    forbiddenAnimationDocumentStoreSql,
+    `the animation document store must delegate through current services rather than owning SQL (${forbiddenAnimationDocumentStoreSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "_animationDocuments = new ModuleInstanceAnimationDocumentStore(database, _timelineDataSource)",
+  "the animation editor must reuse one typed document store and timeline source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "_animationDocuments.SaveAnimationJson(node.Id, document.ToJson())",
+  "the animation editor must hand the store one complete prepared animation document",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "private readonly SpikeDatabase _database",
+  "the animation editor must not retain a general database handle",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "_database.",
+  "the animation editor must not bypass its typed document and timeline boundaries",
+);
+for (const forbiddenTimelineMutation of ["SaveAnimationJson", "UpdateModuleInstanceAnimationJson"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+    forbiddenTimelineMutation,
+    `the common timeline source must remain read-only (${forbiddenTimelineMutation})`,
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

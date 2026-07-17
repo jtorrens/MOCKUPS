@@ -101,6 +101,9 @@ this index wins.
 - `58_component_preview_input_data_boundary_contract.md`: typed Project fps,
   complete Component Variant config and effective embedded action contracts for
   session-only Preview Test Values.
+- `59_module_instance_animation_document_boundary_contract.md`: typed current
+  Screen animation documents and explicit complete v2 writes, separated from
+  owner-relative animation authoring and common timeline formulas.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

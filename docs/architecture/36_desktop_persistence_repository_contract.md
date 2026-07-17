@@ -184,6 +184,11 @@ Contract 58 establishes the isolated Component Preview input slice:
 Component Variant configs and effective runtime contracts while the Test Values
 session and action interpreter retain transient input and action semantics.
 
+Contract 59 establishes the Module Instance animation document slice:
+`ModuleInstanceAnimationDocumentStore` composes the common timeline source and
+delegates complete animation v2 writes while the editor retains target,
+owner-frame and interaction semantics without a database handle.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.
