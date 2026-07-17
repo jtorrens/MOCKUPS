@@ -10,6 +10,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`
 - `docs/architecture/35_current_json_and_variant_contract.md`
 - `docs/architecture/36_desktop_persistence_repository_contract.md`
+- `docs/architecture/37_desktop_resource_repository_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -232,6 +233,12 @@ connection-string construction, write synchronization or table-specific row
 mapping must not be added to it when an owning repository exists. Repositories
 consume only the current validated model and must not introduce repair,
 normalization, migration or fallback behavior.
+
+Palette, Device and Actor persistence additionally follows
+`docs/architecture/37_desktop_resource_repository_contract.md`. Their
+repositories own table SQL, row mapping, explicit lifecycle persistence and
+stored-document writes. Device/Actor interpretation remains in common/domain
+services and must not move into the repository, tree or UI shell.
 
 ## Data migrations, not compatibility fallbacks
 

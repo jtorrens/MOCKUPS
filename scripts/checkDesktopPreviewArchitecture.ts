@@ -1911,6 +1911,9 @@ for (const [contractType, implementationType] of [
   ["IEditorLayoutRepository", "EditorLayoutRepository"],
   ["IProjectEpisodeRepository", "ProjectEpisodeRepository"],
   ["IRenderPresetRepository", "RenderPresetRepository"],
+  ["IPaletteRepository", "PaletteRepository"],
+  ["IDeviceRepository", "DeviceRepository"],
+  ["IActorRepository", "ActorRepository"],
 ] as const) {
   assertContains(
     "spikes/desktop-editor-shell/Data/PersistenceContracts.cs",
@@ -1927,6 +1930,9 @@ for (const facadePath of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectsEpisodes.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RenderPresets.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Palette.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -1940,6 +1946,9 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs", "editor_layouts"],
   ["spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs", "episodes"],
   ["spikes/desktop-editor-shell/Data/RenderPresetRepository.cs", "render_presets"],
+  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "palette_colors"],
+  ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
+  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -1952,6 +1961,36 @@ assertDoesNotContain(
   "SqliteProjectContext",
   "MainWindow must not receive persistence infrastructure or repositories",
 );
+for (const ownedResourceTable of ["palette_colors", "devices", "actors"]) {
+  for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
+    assertDoesNotContain(
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+      `${sqlOperation} ${ownedResourceTable}`,
+      `tree orchestration must delegate ${ownedResourceTable} lifecycle writes to its repository`,
+    );
+  }
+}
+for (const resourceRepositoryPath of [
+  "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
+  "spikes/desktop-editor-shell/Data/DeviceRepository.cs",
+  "spikes/desktop-editor-shell/Data/ActorRepository.cs",
+]) {
+  assertDoesNotContain(
+    resourceRepositoryPath,
+    "MainWindow",
+    `${resourceRepositoryPath} must not import or construct the desktop shell`,
+  );
+  assertDoesNotContain(
+    resourceRepositoryPath,
+    "LIKE $needle",
+    `${resourceRepositoryPath} must not copy the broad inferred Usage scanner`,
+  );
+  assertDoesNotContain(
+    resourceRepositoryPath,
+    "ReferenceSearchTables",
+    `${resourceRepositoryPath} must not infer Usage from text-column discovery`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",

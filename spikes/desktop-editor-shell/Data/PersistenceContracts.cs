@@ -47,6 +47,65 @@ internal sealed record RenderPresetRecord(
 
 internal sealed record RenderPresetOption(string Value, string Label);
 
+internal sealed record PaletteColorSettings(
+    string Token,
+    string ValueHex,
+    bool IsNeutral,
+    string Source,
+    bool IsProtected,
+    bool HiddenFromPickers,
+    string Note);
+
+internal sealed record DeviceSettings(
+    string Name,
+    string Manufacturer,
+    string Model,
+    string OsFamily,
+    string MetricsJson);
+
+internal sealed record ActorSettings(
+    string ProjectId,
+    string DisplayName,
+    string ShortName,
+    string DefaultDeviceId,
+    string DefaultThemeId,
+    string MetadataJson);
+
+internal sealed record ResourceOption(string Value, string Label);
+
+internal sealed record PaletteColorOption(
+    string Token,
+    string Label,
+    string ColorHex,
+    bool IsNeutral);
+
+internal sealed record PaletteColorRecord(
+    string Id,
+    string ProjectId,
+    string Token,
+    string ValueHex,
+    string Note,
+    bool IsNeutral,
+    string MetadataJson);
+
+internal sealed record DeviceRecord(
+    string Id,
+    string ProjectId,
+    string Name,
+    string Manufacturer,
+    string Model,
+    string OsFamily,
+    string MetricsJson);
+
+internal sealed record ActorRecord(
+    string Id,
+    string ProjectId,
+    string DisplayName,
+    string ShortName,
+    string DefaultDeviceId,
+    string DefaultThemeId,
+    string MetadataJson);
+
 internal interface IEditorLayoutRepository
 {
     EditorLayout Load(string recordClassId);
@@ -98,4 +157,74 @@ internal interface IRenderPresetRepository
     void Delete(SqliteConnection connection, string renderPresetId);
 
     void Rename(SqliteConnection connection, string renderPresetId, string name);
+}
+
+internal interface IPaletteRepository
+{
+    PaletteColorSettings GetSettings(string colorId);
+
+    void UpdateField(string colorId, string fieldId, string value);
+
+    IReadOnlyList<PaletteColorOption> GetOptions(string projectId);
+
+    IReadOnlyDictionary<string, string> GetColorMap(string projectId);
+
+    IReadOnlyDictionary<string, bool> GetNeutralMap(string projectId);
+
+    IReadOnlyList<PaletteColorRecord> QueryAll(SqliteConnection connection);
+
+    PaletteColorRecord Create(SqliteConnection connection, string projectId);
+
+    PaletteColorRecord Duplicate(SqliteConnection connection, string sourceId);
+
+    void Delete(SqliteConnection connection, string colorId);
+
+    void UpdateNode(SqliteConnection connection, string colorId, string token, string note);
+}
+
+internal interface IDeviceRepository
+{
+    DeviceSettings GetSettings(string deviceId);
+
+    void UpdateField(string deviceId, string fieldId, string value);
+
+    IReadOnlyList<ResourceOption> GetOptions(string projectId);
+
+    IReadOnlyList<DeviceRecord> QueryAll(SqliteConnection connection);
+
+    DeviceRecord Create(SqliteConnection connection, string projectId);
+
+    DeviceRecord CreateImported(
+        SqliteConnection connection,
+        string projectId,
+        string name,
+        string manufacturer,
+        string model,
+        string osFamily,
+        string metricsJson);
+
+    DeviceRecord Duplicate(SqliteConnection connection, string sourceId, string copyName);
+
+    void Delete(SqliteConnection connection, string deviceId);
+
+    void Rename(SqliteConnection connection, string deviceId, string name);
+}
+
+internal interface IActorRepository
+{
+    ActorSettings GetSettings(string actorId);
+
+    void UpdateField(string actorId, string fieldId, string value);
+
+    IReadOnlyList<ResourceOption> GetOptions(string projectId);
+
+    IReadOnlyList<ActorRecord> QueryAll(SqliteConnection connection);
+
+    ActorRecord Create(SqliteConnection connection, string projectId);
+
+    ActorRecord Duplicate(SqliteConnection connection, string sourceId, string copyName);
+
+    void Delete(SqliteConnection connection, string actorId);
+
+    void Rename(SqliteConnection connection, string actorId, string name);
 }

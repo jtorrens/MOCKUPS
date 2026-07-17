@@ -33,114 +33,12 @@ internal sealed partial class SpikeDatabase
 
     public DeviceSettings GetDeviceSettings(string deviceId)
     {
-        using var connection = OpenConnection();
-        return GetDeviceSettings(connection, deviceId);
-    }
-
-    private static DeviceSettings GetDeviceSettings(SqliteConnection connection, string deviceId)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT name, manufacturer, model, os_family, metrics_json FROM devices WHERE id = $id";
-        command.Parameters.AddWithValue("$id", deviceId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing device '{deviceId}'.");
-        }
-
-        return new DeviceSettings(
-            reader.GetString(0),
-            ReadString(reader, 1),
-            ReadString(reader, 2),
-            ReadString(reader, 3),
-            reader.GetString(4));
+        return _deviceRepository.GetSettings(deviceId);
     }
 
     public void UpdateDeviceField(string deviceId, string fieldId, string value)
     {
-        using var connection = OpenConnection();
-        switch (fieldId)
-        {
-            case "device.manufacturer":
-                Execute(connection, "UPDATE devices SET manufacturer = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-            case "device.model":
-                Execute(connection, "UPDATE devices SET model = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-            case "device.osFamily":
-                Execute(connection, "UPDATE devices SET os_family = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-        }
-
-        if (!fieldId.StartsWith("device.metrics.", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"Unknown device field '{fieldId}'.");
-        }
-
-        var settings = GetDeviceSettings(connection, deviceId);
-        var metrics = ParseJsonObject(settings.MetricsJson);
-        switch (fieldId)
-        {
-            case "device.metrics.designSpace.size":
-                SetPair(metrics, value, ["designSpace", "width"], ["designSpace", "height"]);
-                break;
-            case "device.metrics.renderSize":
-                SetPair(metrics, value, ["renderSize", "width"], ["renderSize", "height"]);
-                break;
-            case "device.metrics.canvas.size":
-                SetPair(metrics, value, ["canvas", "width"], ["canvas", "height"]);
-                break;
-            case "device.metrics.screen.position":
-                SetPair(metrics, value, ["screen", "x"], ["screen", "y"]);
-                break;
-            case "device.metrics.screen.size":
-                SetPair(metrics, value, ["screen", "width"], ["screen", "height"]);
-                break;
-            case "device.metrics.viewport.position":
-                SetPair(metrics, value, ["viewport", "x"], ["viewport", "y"]);
-                break;
-            case "device.metrics.viewport.size":
-                SetPair(metrics, value, ["viewport", "width"], ["viewport", "height"]);
-                break;
-            case "device.metrics.safeArea.vertical":
-                SetPair(metrics, value, ["safeArea", "top"], ["safeArea", "bottom"]);
-                break;
-            case "device.metrics.safeArea.horizontal":
-                SetPair(metrics, value, ["safeArea", "left"], ["safeArea", "right"]);
-                break;
-            case "device.metrics.statusBar.position":
-                SetPair(metrics, value, ["statusBar", "x"], ["statusBar", "y"]);
-                break;
-            case "device.metrics.statusBar.size":
-                SetPair(metrics, value, ["statusBar", "width"], ["statusBar", "height"]);
-                break;
-            case "device.metrics.dynamicIsland.position":
-                SetPair(metrics, value, ["dynamicIsland", "x"], ["dynamicIsland", "y"]);
-                break;
-            case "device.metrics.dynamicIsland.size":
-                SetPair(metrics, value, ["dynamicIsland", "width"], ["dynamicIsland", "height"]);
-                break;
-            case "device.metrics.scaleToPixels":
-                SetJsonValue(metrics, ["scaleToPixels"], NumberNode(value));
-                break;
-            case "device.metrics.pixelRatio":
-                SetJsonValue(metrics, ["pixelRatio"], NumberNode(value));
-                break;
-            case "device.metrics.defaultScreenScale":
-                SetJsonValue(metrics, ["defaultScreenScale"], NumberNode(value));
-                break;
-            case "device.metrics.cornerRadius":
-                SetJsonValue(metrics, ["cornerRadius"], NumberNode(value));
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
-        }
-
-        Execute(
-            connection,
-            "UPDATE devices SET metrics_json = $metricsJson WHERE id = $id",
-            ("$id", deviceId),
-            ("$metricsJson", metrics.ToJsonString()));
+        _deviceRepository.UpdateField(deviceId, fieldId, value);
     }
 
     public string GetDeviceMetricFieldValue(string deviceId, string fieldId)
@@ -169,45 +67,15 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static string DefaultDeviceMetricsJson(int width, int height, double scale)
-    {
-        return DeviceMetricsJson(width, height, scale, includeDynamicIsland: false);
-    }
-
-    private static string DeviceMetricsJson(int width, int height, double scale, bool includeDynamicIsland)
-    {
-        return DeviceMetricRules.CreateMetricsJson(width, height, scale, includeDynamicIsland);
-    }
-
     public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)
     {
-        using var connection = OpenConnection();
-        return QueryDeviceRows(connection)
-            .Where((device) => device.ProjectId == projectId)
-            .OrderBy((device) => device.Name)
-            .Select((device) => new FieldOption(device.Id, device.Name))
+        return _deviceRepository.GetOptions(projectId)
+            .Select((option) => new FieldOption(option.Value, option.Label))
             .ToList();
     }
 
-    private static List<DeviceRow> QueryDeviceRows(SqliteConnection connection)
+    private IReadOnlyList<DeviceRecord> QueryDeviceRows(SqliteConnection connection)
     {
-        var rows = new List<DeviceRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, manufacturer, model, os_family, metrics_json FROM devices ORDER BY name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new DeviceRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ReadString(reader, 3),
-                ReadString(reader, 4),
-                ReadString(reader, 5),
-                reader.GetString(6)));
-        }
-
-        return rows;
+        return _deviceRepository.QueryAll(connection);
     }
-
 }

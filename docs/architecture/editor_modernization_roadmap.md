@@ -282,6 +282,11 @@ context plus Editor Layout, Project/Episode and Render Preset repositories
 behind the existing `SpikeDatabase` facade. Later slices must extend that
 boundary instead of adding new table SQL back to the facade.
 
+The next resource slice is governed by
+`37_desktop_resource_repository_contract.md`. Palette, Device and Actor table
+access moves behind focused repositories while device metrics and actor visual
+interpretation remain common/domain behavior rather than persistence logic.
+
 ## Guardrails
 
 Reject new changes that add:

@@ -17,6 +17,7 @@ var tests = new (string Name, Action Run)[]
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
+    ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -437,6 +438,127 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() =>
             renderPresetRepository.UpdateField(renderPreset.Id, "renderPreset.codec", "[]"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ResourceRepositoriesPreserveFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-resource-repositories-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IPaletteRepository paletteRepository = new PaletteRepository(context);
+        IDeviceRepository deviceRepository = new DeviceRepository(context);
+        IActorRepository actorRepository = new ActorRepository(context);
+
+        var tree = database.LoadProjectTree();
+        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var color = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.PaletteColor);
+        var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var actor = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Actor);
+
+        Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSettings(color.Id));
+        Equal(database.GetDeviceSettings(device.Id), deviceRepository.GetSettings(device.Id));
+        Equal(database.GetActorSettings(actor.Id), actorRepository.GetSettings(actor.Id));
+        SequenceEqual(
+            database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
+            paletteRepository.GetOptions(project.Id).Select((option) => option.Token));
+        SequenceEqual(
+            database.GetDeviceOptions(project.Id).Select((option) => option.Value),
+            deviceRepository.GetOptions(project.Id).Select((option) => option.Value));
+        SequenceEqual(
+            database.GetActorOptions(project.Id).Skip(1).Select((option) => option.Value),
+            actorRepository.GetOptions(project.Id).Select((option) => option.Value));
+        SequenceEqual(database.GetPaletteColorMap(project.Id), paletteRepository.GetColorMap(project.Id));
+        SequenceEqual(database.GetPaletteNeutralMap(project.Id), paletteRepository.GetNeutralMap(project.Id));
+
+        using (var connection = context.OpenConnection())
+        {
+            True(paletteRepository.QueryAll(connection).Any((row) => row.Id == color.Id));
+            True(deviceRepository.QueryAll(connection).Any((row) => row.Id == device.Id));
+            True(actorRepository.QueryAll(connection).Any((row) => row.Id == actor.Id));
+        }
+
+        var originalColor = database.GetPaletteColorSettings(color.Id);
+        paletteRepository.UpdateField(color.Id, "palette.valueHex", "#123456");
+        Equal("#123456", database.GetPaletteColorSettings(color.Id).ValueHex);
+        database.UpdatePaletteColorField(color.Id, "palette.valueHex", originalColor.ValueHex);
+        Equal(originalColor, paletteRepository.GetSettings(color.Id));
+
+        var originalDevice = database.GetDeviceSettings(device.Id);
+        deviceRepository.UpdateField(device.Id, "device.manufacturer", "Repository Manufacturer");
+        Equal("Repository Manufacturer", database.GetDeviceSettings(device.Id).Manufacturer);
+        database.UpdateDeviceField(device.Id, "device.manufacturer", originalDevice.Manufacturer);
+        var originalScreenSize = database.GetDeviceMetricFieldValue(device.Id, "device.metrics.screen.size");
+        deviceRepository.UpdateField(device.Id, "device.metrics.screen.size", "100|200");
+        Equal("100|200", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.screen.size"));
+        database.UpdateDeviceField(device.Id, "device.metrics.screen.size", originalScreenSize);
+        Equal(originalDevice, deviceRepository.GetSettings(device.Id));
+
+        var originalActor = database.GetActorSettings(actor.Id);
+        actorRepository.UpdateField(actor.Id, "actor.shortName", "Repository Actor");
+        Equal("Repository Actor", database.GetActorSettings(actor.Id).ShortName);
+        database.UpdateActorField(actor.Id, "actor.shortName", originalActor.ShortName);
+        var originalWallpaperOpacity = database.GetActorFieldValue(actor.Id, "actor.wallpaper.opacity");
+        actorRepository.UpdateField(actor.Id, "actor.wallpaper.opacity", "0.35");
+        Equal("0.35", database.GetActorFieldValue(actor.Id, "actor.wallpaper.opacity"));
+        database.UpdateActorField(actor.Id, "actor.wallpaper.opacity", originalWallpaperOpacity);
+        Equal(originalActor, actorRepository.GetSettings(actor.Id));
+
+        var paletteRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.PaletteRoot);
+        var createdColor = database.AddChild(paletteRoot);
+        var duplicatedColor = database.Duplicate(createdColor);
+        duplicatedColor.Name = "resource_test_token";
+        duplicatedColor.Notes = "Repository lifecycle note";
+        database.UpdateNode(duplicatedColor);
+        using (var connection = context.OpenConnection())
+        {
+            var persisted = paletteRepository.QueryAll(connection).Single((row) => row.Id == duplicatedColor.Id);
+            Equal(duplicatedColor.Name, persisted.Token);
+            Equal(duplicatedColor.Notes, persisted.Note);
+        }
+        database.Delete(duplicatedColor);
+        database.Delete(createdColor);
+
+        var devicesRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.DevicesRoot);
+        var createdDevice = database.AddChild(devicesRoot);
+        var duplicatedDevice = database.Duplicate(createdDevice);
+        duplicatedDevice.Name = "Repository Device";
+        database.UpdateNode(duplicatedDevice);
+        Equal(duplicatedDevice.Name, deviceRepository.GetSettings(duplicatedDevice.Id).Name);
+        var importedDevice = database.AddImportedDevice(
+            devicesRoot,
+            new DeviceImportDraft("Imported Repository Device", "Mockups", "Test", "ios", database.GetDeviceSettings(createdDevice.Id).MetricsJson));
+        Equal("Imported Repository Device", deviceRepository.GetSettings(importedDevice.Id).Name);
+        database.Delete(importedDevice);
+        database.Delete(duplicatedDevice);
+        database.Delete(createdDevice);
+
+        var actorsRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ActorsRoot);
+        var createdActor = database.AddChild(actorsRoot);
+        var duplicatedActor = database.Duplicate(createdActor);
+        duplicatedActor.Name = "Repository Actor";
+        database.UpdateNode(duplicatedActor);
+        Equal(duplicatedActor.Name, actorRepository.GetSettings(duplicatedActor.Id).DisplayName);
+        database.Delete(duplicatedActor);
+        database.Delete(createdActor);
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.AddImportedDevice(
+            devicesRoot,
+            new DeviceImportDraft("Invalid Device", "Mockups", "Invalid", "ios", "[]")));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

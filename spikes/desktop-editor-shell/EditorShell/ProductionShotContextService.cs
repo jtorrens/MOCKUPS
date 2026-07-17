@@ -27,7 +27,7 @@ internal sealed class ProductionShotContextService
         {
             return Invalid($"Shot {shotId} has no Actor assigned.");
         }
-        SpikeDatabase.ActorSettings actor;
+        ActorSettings actor;
         try
         {
             actor = _database.GetActorSettings(shot.OwnerActorId);

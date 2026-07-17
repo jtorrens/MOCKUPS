@@ -475,54 +475,28 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
         {
             var project = ProjectAncestor(parent);
-            var id = $"palette_{Guid.NewGuid():N}";
-            var token = $"color_{ScalarLong(connection, "SELECT COUNT(*) FROM palette_colors WHERE project_id = $projectId", ("$projectId", project.Id)) + 1}";
-            Execute(
-                connection,
-                """
-                INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
-                VALUES ($id, $projectId, $token, '#808080', $metadataJson, 1)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$token", token),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "Project palette primitive color." })));
+            var color = _paletteRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteColor,
-                id,
-                token,
-                "Project palette primitive color.",
+                color.Id,
+                color.Token,
+                color.Note,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
                 parent,
-                "#808080",
+                color.ValueHex,
                 false);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
         {
             var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM devices WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"device_{Guid.NewGuid():N}";
-            var metricsJson = DefaultDeviceMetricsJson(1170, 2532, 3);
-            Execute(
-                connection,
-                """
-                INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
-                VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$name", $"Device {index}"),
-                ("$manufacturer", ""),
-                ("$model", ""),
-                ("$osFamily", "ios"),
-                ("$metricsJson", metricsJson));
+            var device = _deviceRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Device,
-                id,
-                $"Device {index}",
+                device.Id,
+                device.Name,
                 "",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
                 parent);
@@ -531,26 +505,13 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.ActorsRoot)
         {
             var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM actors WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"actor_{Guid.NewGuid():N}";
-            var displayName = $"Actor {index}";
-            Execute(
-                connection,
-                """
-                INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
-                VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$displayName", displayName),
-                ("$shortName", $"A{index}"),
-                ("$metadataJson", DefaultActorMetadataJson("blue", "gray_010")));
+            var actor = _actorRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Actor,
-                id,
-                displayName,
-                $"A{index}",
+                actor.Id,
+                actor.DisplayName,
+                actor.ShortName,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor),
                 parent);
         }
@@ -636,26 +597,20 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         var project = ProjectAncestor(devicesRoot);
-        var id = $"device_{Guid.NewGuid():N}";
-        Execute(
+        var imported = _deviceRepository.CreateImported(
             connection,
-            """
-            INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
-            VALUES ($id, $projectId, $name, $manufacturer, $model, $osFamily, $metricsJson)
-            """,
-            ("$id", id),
-            ("$projectId", project.Id),
-            ("$name", device.Name),
-            ("$manufacturer", device.Manufacturer),
-            ("$model", device.Model),
-            ("$osFamily", device.OsFamily),
-            ("$metricsJson", device.MetricsJson));
+            project.Id,
+            device.Name,
+            device.Manufacturer,
+            device.Model,
+            device.OsFamily,
+            device.MetricsJson);
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Device,
-            id,
-            device.Name,
-            $"{device.Manufacturer} {device.Model}".Trim(),
+            imported.Id,
+            imported.Name,
+            $"{imported.Manufacturer} {imported.Model}".Trim(),
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device),
             devicesRoot);
     }
@@ -779,63 +734,31 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.PaletteColor)
         {
-            var id = $"palette_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
-                SELECT $id, project_id, token || '_copy', value_hex, metadata_json, is_neutral
-                FROM palette_colors
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$sourceId", node.Id));
+            var copy = _paletteRepository.Duplicate(connection, node.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteColor,
-                id,
-                $"{node.Name}_copy",
-                node.Notes,
+                copy.Id,
+                copy.Token,
+                copy.Note,
                 node.RecordClassId,
                 node.Parent,
-                node.ColorHex,
+                copy.ValueHex,
                 false);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Device)
         {
-            var id = $"device_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
-                SELECT $id, project_id, $name, manufacturer, model, os_family, metrics_json
-                FROM devices
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
+            var copy = _deviceRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Device, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Device, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Actor)
         {
-            var id = $"actor_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
-                SELECT $id, project_id, $name, short_name, default_device_id, default_theme_id, metadata_json
-                FROM actors
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
+            var copy = _actorRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Actor, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Actor, copy.Id, copy.DisplayName, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Theme)
@@ -929,13 +852,11 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
-            ProjectTreeNodeKind.PaletteColor => "palette_colors",
-            ProjectTreeNodeKind.Device => "devices",
-            ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset => "",
+            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset
+                or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor => "",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -959,6 +880,24 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.RenderPreset)
         {
             _renderPresetRepository.Delete(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor)
+        {
+            _paletteRepository.Delete(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Device)
+        {
+            _deviceRepository.Delete(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Actor)
+        {
+            _actorRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -1014,14 +953,29 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor)
+        {
+            _paletteRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Device)
+        {
+            _deviceRepository.Rename(connection, node.Id, node.Name);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Actor)
+        {
+            _actorRepository.Rename(connection, node.Id, node.Name);
+            return;
+        }
+
         var table = node.Kind switch
         {
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.PaletteColor => "palette_colors",
-            ProjectTreeNodeKind.Device => "devices",
-            ProjectTreeNodeKind.Actor => "actors",
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
@@ -1030,33 +984,6 @@ internal sealed partial class SpikeDatabase
         };
 
         if (string.IsNullOrWhiteSpace(table)) return;
-
-        if (node.Kind == ProjectTreeNodeKind.PaletteColor)
-        {
-            Execute(connection, "UPDATE palette_colors SET token = $token WHERE id = $id", ("$id", node.Id), ("$token", node.Name));
-            UpdatePaletteMetadata(connection, node.Id, "note", node.Notes);
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.Device)
-        {
-            Execute(
-                connection,
-                "UPDATE devices SET name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.Actor)
-        {
-            Execute(
-                connection,
-                "UPDATE actors SET display_name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
-            return;
-        }
 
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {

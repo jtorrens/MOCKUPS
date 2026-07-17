@@ -51,9 +51,9 @@ internal sealed partial class SpikeDatabase
 
     private static Dictionary<string, List<string>> BuildReferenceUsageIndex(
         IReadOnlyList<ShotRow> shots,
-        IReadOnlyList<ActorRow> actors,
+        IReadOnlyList<ActorRecord> actors,
         IReadOnlyList<ThemeRow> themes,
-        IReadOnlyList<PaletteColorRow> paletteColors,
+        IReadOnlyList<PaletteColorRecord> paletteColors,
         IReadOnlyList<ProductionFontRow> productionFonts,
         IReadOnlyList<IconThemeRow> iconThemes,
         IReadOnlyList<RenderPresetRecord> renderPresets,

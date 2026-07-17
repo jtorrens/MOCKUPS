@@ -34,6 +34,9 @@ this index wins.
 - `36_desktop_persistence_repository_contract.md`: shared SQLite context,
   focused repository ownership and the compatibility-facade boundary for the
   staged split of `SpikeDatabase`.
+- `37_desktop_resource_repository_contract.md`: persistence ownership for
+  Palette, Device and Actor resources, with domain interpretation kept outside
+  repositories and Usage inference explicitly prohibited.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

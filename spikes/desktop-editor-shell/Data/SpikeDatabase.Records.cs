@@ -54,7 +54,6 @@ internal sealed partial class SpikeDatabase
         string BehaviorJson,
         string AnimationJson,
         string MetadataJson);
-    public sealed record DeviceSettings(string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
     public sealed record DevicePreviewMetrics(
         string Name,
         double CanvasWidth,
@@ -69,13 +68,6 @@ internal sealed partial class SpikeDatabase
         double StatusBarHeight,
         double SafeAreaBottom,
         double ScaleToPixels);
-    public sealed record ActorSettings(
-        string ProjectId,
-        string DisplayName,
-        string ShortName,
-        string DefaultDeviceId,
-        string DefaultThemeId,
-        string MetadataJson);
     public sealed record ThemeSettings(
         string ProjectId,
         string Name,
@@ -85,14 +77,6 @@ internal sealed partial class SpikeDatabase
         string NavigationBarId,
         string TokensJson,
         string MetadataJson);
-    public sealed record PaletteColorSettings(
-        string Token,
-        string ValueHex,
-        bool IsNeutral,
-        string Source,
-        bool IsProtected,
-        bool HiddenFromPickers,
-        string Note);
     public sealed record ProductionFontSettings(
         string FamilyName,
         string Category,
@@ -169,9 +153,6 @@ internal sealed partial class SpikeDatabase
         string TransitionJson,
         string ModuleName,
         string MetadataJson);
-    private sealed record PaletteColorRow(string Id, string ProjectId, string Token, string ValueHex, string Note, bool IsNeutral, string MetadataJson);
-    private sealed record DeviceRow(string Id, string ProjectId, string Name, string Manufacturer, string Model, string OsFamily, string MetricsJson);
-    private sealed record ActorRow(string Id, string ProjectId, string DisplayName, string ShortName, string DefaultDeviceId, string DefaultThemeId, string MetadataJson);
     private sealed record ThemeRow(string Id, string ProjectId, string Name, string Family, string IconThemeId, string StatusBarId, string NavigationBarId, string TokensJson, string MetadataJson);
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
