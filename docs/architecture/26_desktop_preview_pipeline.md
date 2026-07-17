@@ -78,6 +78,7 @@ The current route is:
 
 ```text
 Avalonia editor selection / test inputs
+  -> DesignPreviewPayloadDataSource
   -> DesignPreviewPayloadFactory
   -> WebDesignPreviewRenderer request
   -> persistent Node renderer
@@ -95,14 +96,20 @@ Important invariant:
 
 ## Payload creation
 
-Owner: `spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs`
+Owners:
 
-The factory receives:
+- `spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs`:
+  exact current database/context reads and typed source records;
+- `spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs`:
+  forwarding, effective runtime envelopes, Shot/Screen frame selection and
+  final payload construction.
+
+The route receives:
 
 - selected tree node;
 - selected theme;
 - selected preview mode;
-- database access.
+- typed current data through the dedicated payload data source.
 
 It returns a `DesignPreviewPayload` for one of these contexts:
 

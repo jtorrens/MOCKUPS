@@ -30,6 +30,7 @@ internal sealed class EditorPreviewController
     private static readonly IBrush PreviewStatusGoodBrush = new SolidColorBrush(Color.Parse("#2ECC71"));
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly SpikeDatabase _database;
+    private readonly DesignPreviewPayloadDataSource _previewPayloadData;
     private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
@@ -234,6 +235,7 @@ internal sealed class EditorPreviewController
         Window owner)
     {
         _database = database;
+        _previewPayloadData = new DesignPreviewPayloadDataSource(database);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -295,7 +297,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var payload = DesignPreviewPayloadFactory.Create(_database, key.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
+        var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, key.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
         if (payload is null)
         {
             return;
@@ -310,7 +312,7 @@ internal sealed class EditorPreviewController
         var node = ProductionContextNode();
         if (node is null) return;
         var payload = DesignPreviewPayloadFactory.Create(
-            _database,
+            _previewPayloadData,
             node,
             _selectedThemeId,
             _selectedMode,
@@ -1260,7 +1262,7 @@ internal sealed class EditorPreviewController
     public JsonObject ApplyDesignPreviewTransientTestValues(ProjectTreeNode node, JsonObject preview)
     {
         var payload = DesignPreviewPayloadFactory.Create(
-            _database,
+            _previewPayloadData,
             node,
             _selectedThemeId,
             _selectedMode,
@@ -1273,7 +1275,7 @@ internal sealed class EditorPreviewController
     public bool ResetDesignPreviewTestValues(ProjectTreeNode node)
     {
         var payload = DesignPreviewPayloadFactory.Create(
-            _database,
+            _previewPayloadData,
             node,
             _selectedThemeId,
             _selectedMode,
@@ -2097,7 +2099,7 @@ internal sealed class EditorPreviewController
             }
             var productionNode = ProductionPayloadNode();
             var productionPayload = DesignPreviewPayloadFactory.Create(
-                _database,
+                _previewPayloadData,
                 productionNode,
                 _selectedThemeId,
                 _selectedMode,
@@ -2115,7 +2117,7 @@ internal sealed class EditorPreviewController
         }
         if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
         {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(_database, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
+            var lockedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
             if (lockedPayload is not null)
             {
                 _activeDesignPreviewNode = _lockedDesignPreviewNode;
@@ -2127,7 +2129,7 @@ internal sealed class EditorPreviewController
         }
 
         var selectedNode = _selectedNode();
-        var selectedPayload = DesignPreviewPayloadFactory.Create(_database, selectedNode, _selectedThemeId, _selectedMode, _shotPreviewFrame);
+        var selectedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, selectedNode, _selectedThemeId, _selectedMode, _shotPreviewFrame);
         if (selectedPayload is not null && selectedNode is not null)
         {
             _lastDesignPreviewNode = PreviewNodeKey.From(selectedNode);
@@ -2161,7 +2163,7 @@ internal sealed class EditorPreviewController
         foreach (var child in node.Children)
         {
             if (DesignPreviewPayloadFactory.Create(
-                    _database,
+                    _previewPayloadData,
                     child,
                     _selectedThemeId,
                     _selectedMode,
@@ -2393,7 +2395,7 @@ internal sealed class EditorPreviewController
         for (var frame = startFrame; frame <= lastFrame; frame++)
         {
             var payload = DesignPreviewPayloadFactory.Create(
-                _database,
+                _previewPayloadData,
                 payloadNode,
                 _selectedThemeId,
                 _selectedMode,

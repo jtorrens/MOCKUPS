@@ -77,6 +77,9 @@ this index wins.
 - `50_module_definition_source_contract.md`: canonical current Module
   definition authorities, retirement of the disconnected Conversation factory
   and constraints for future explicit development scaffolding.
+- `51_preview_payload_data_boundary_contract.md`: typed desktop data access for
+  Preview payload construction, separated from forwarding, temporal-envelope
+  and Shot-to-Screen selection semantics owned by the payload factory.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

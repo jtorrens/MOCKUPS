@@ -373,6 +373,13 @@ complete Module documents/Variants and owner implementations remain the active
 authorities. Future Module scaffolding must be an explicit complete
 development workflow.
 
+Preview payload data access is governed by
+`51_preview_payload_data_boundary_contract.md`. A typed data source now owns
+the payload route's database/context reads while `DesignPreviewPayloadFactory`
+retains forwarding, effective runtime envelopes and absolute Shot to local
+Screen frame selection. This is the first Preview/resolver-data slice in the
+final extraction item of contract 36.
+
 ## Guardrails
 
 Reject new changes that add:

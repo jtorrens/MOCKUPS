@@ -1669,7 +1669,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
 
         var theme = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, moduleVariant, theme.Id));
+        var payload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         var session = new ComponentPreviewInputSession(database, () => { });
         session.UpdateForPayload(payload, settings.ProjectId);
         var deletedStateId = items[0]?["alternatives"]?[1]?["id"]?.GetValue<string>() ?? "";
@@ -1695,7 +1695,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
         database.UpdateModuleVariantField(moduleVariant, "module.lockScreen.stackItems", stackItems.ToJsonString());
-        var updatedPayload = Required(DesignPreviewPayloadFactory.Create(database, moduleVariant, theme.Id));
+        var updatedPayload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         session.UpdateForPayload(updatedPayload, settings.ProjectId);
         var normalized = session.ApplyInputs(updatedPayload, "light", settings.ProjectId);
         var normalizedPreview = DesignPreviewTestValues.Parse(normalized.DesignPreviewJson);
@@ -2725,7 +2725,7 @@ static void ComponentStackSeedOpensAndRenders()
         _ = database.GetReferenceUsageDetails(stack);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var refreshCount = 0;
         var inputSession = new ComponentPreviewInputSession(database, () => refreshCount++);
         inputSession.UpdateForPayload(payload, settings.ProjectId);
@@ -2776,7 +2776,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(!database.CreateComponentPresetFieldValue(
             childVariantNode,
             "component.audio.surface.editor").Definition.SelectComponentClass);
-        var otherPayload = Required(DesignPreviewPayloadFactory.Create(database, childVariantNode, theme.Id));
+        var otherPayload = Required(CreatePreviewPayload(database, childVariantNode, theme.Id));
         inputSession.UpdateForPayload(otherPayload, settings.ProjectId);
         var revisitedPreview = inputSession.ApplyTransientTestValues(designPreview, payload);
         Equal(1, (revisitedPreview["items"] as JsonArray)?.Count ?? -1);
@@ -2891,7 +2891,7 @@ static void ComponentStackSeedOpensAndRenders()
 
         designPreview["items"] = new JsonArray(runtimeItem.DeepClone());
         database.UpdateComponentClassDesignPreviewJson(stack.Id, designPreview.ToJsonString());
-        var populatedPayloadSource = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var populatedPayloadSource = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var populatedInputSession = new ComponentPreviewInputSession(database, () => { });
         populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
         var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", settings.ProjectId);
@@ -2959,7 +2959,7 @@ static void CollectionStackSeedOpensAndRenders()
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, variants[0], theme.Id));
+        var payload = Required(CreatePreviewPayload(database, variants[0], theme.Id));
         var inputSession = new ComponentPreviewInputSession(database, () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
@@ -3071,7 +3071,7 @@ static void NotificationsSeedOpensAndRenders()
 
         foreach (var variant in new[] { notificationVariant, notificationsVariant })
         {
-            var payload = Required(DesignPreviewPayloadFactory.Create(database, variant, theme.Id));
+            var payload = Required(CreatePreviewPayload(database, variant, theme.Id));
             var inputSession = new ComponentPreviewInputSession(database, () => { });
             inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
             var html = WebDesignPreviewRenderer.RenderBodyAsync(
@@ -3080,7 +3080,7 @@ static void NotificationsSeedOpensAndRenders()
             True(!html.Contains("preview-error", StringComparison.Ordinal));
         }
 
-        var transitionPayload = Required(DesignPreviewPayloadFactory.Create(database, notificationVariant, theme.Id));
+        var transitionPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
         var transitionPreview = JsonNode.Parse(transitionPayload.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing Notification transition preview.");
         var transitionAction = ComponentPreviewActions.ReadWithEmbedded(database, transitionPreview)
@@ -3121,7 +3121,7 @@ static void NotificationsSeedOpensAndRenders()
         wrappingPreview["maxWidth"] = 45;
         wrappingPreview["summaryText"] = "A deliberately long notification title that must wrap";
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
-        var wrappingPayload = Required(DesignPreviewPayloadFactory.Create(database, notificationVariant, theme.Id));
+        var wrappingPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
         var wrappingSession = new ComponentPreviewInputSession(database, () => { });
         wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
         var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
@@ -3165,7 +3165,7 @@ static void NotificationsSeedOpensAndRenders()
         };
         preview["distributionMode"] = "stacked";
         database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
-        var populated = Required(DesignPreviewPayloadFactory.Create(database, notificationsVariant, theme.Id));
+        var populated = Required(CreatePreviewPayload(database, notificationsVariant, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(database, () => { });
         populatedSession.UpdateForPayload(populated, settings.ProjectId);
         var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
@@ -3254,7 +3254,7 @@ static void KeypadSeedOpensAndRenders()
             ComponentPreviewInputSession.ReadRuntimeInputs(preview, config).Select((input) => input.Id).ToList());
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var inputSession = new ComponentPreviewInputSession(database, () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         inputSession.SetExternalInputValue("activeKey", "5");
@@ -3331,7 +3331,7 @@ static void PasswordSeedOpensAndRenders()
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, defaultVariant, theme.Id));
+        var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var inputSession = new ComponentPreviewInputSession(database, () => { });
         var playbackBusy = false;
         inputSession.PlaybackBusyChanged += (value) => playbackBusy = value;
@@ -3388,7 +3388,7 @@ static void PasswordSeedOpensAndRenders()
                 && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
             Equal("System", component.Parent?.Name ?? "");
             var componentVariant = component.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
-            var componentPayload = Required(DesignPreviewPayloadFactory.Create(database, componentVariant, theme.Id));
+            var componentPayload = Required(CreatePreviewPayload(database, componentVariant, theme.Id));
             var componentHtml = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
                 "light",
@@ -3400,7 +3400,7 @@ static void PasswordSeedOpensAndRenders()
         foreach (var mode in new[] { "fingerprint", "faceRecognition", "drawPassword" })
         {
             var variant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Id.EndsWith($"::preset::{mode}", StringComparison.Ordinal));
-            var modePayload = Required(DesignPreviewPayloadFactory.Create(database, variant, theme.Id));
+            var modePayload = Required(CreatePreviewPayload(database, variant, theme.Id));
             var modePreview = JsonNode.Parse(modePayload.DesignPreviewJson)?.AsObject()
                 ?? throw new InvalidOperationException($"Missing {mode} Password preview.");
             modePreview["entryTrigger"] = true;
@@ -3578,7 +3578,7 @@ static void LockScreenComposesRuntimeStack()
             JsonValue.Create(true)!,
             "hold");
         database.UpdateModuleInstanceAnimationJson(lockScreenInstance.Id, instanceAnimation.ToJson());
-        var passwordFramePayload = Required(DesignPreviewPayloadFactory.Create(
+        var passwordFramePayload = Required(CreatePreviewPayload(
             database,
             lockScreenInstance,
             theme.Id,
@@ -3597,7 +3597,7 @@ static void LockScreenComposesRuntimeStack()
             passwordFrameHtml.Split(
                 "data-renderable-id=\"component.password.indicator.initial.filled\"",
                 StringSplitOptions.None).Length - 1);
-        var completedPasswordPayload = Required(DesignPreviewPayloadFactory.Create(
+        var completedPasswordPayload = Required(CreatePreviewPayload(
             database,
             lockScreenInstance,
             theme.Id,
@@ -3615,7 +3615,7 @@ static void LockScreenComposesRuntimeStack()
                 $"(initial={completedPasswordHtml.Contains("Enter password", StringComparison.Ordinal)}, " +
                 $"incorrect={completedPasswordHtml.Contains("Password incorrect", StringComparison.Ordinal)}).");
 
-        var payload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
+        var payload = Required(CreatePreviewPayload(database, module, theme.Id));
         var session = new ComponentPreviewInputSession(database, () => { });
         session.UpdateForPayload(payload, settings.ProjectId);
         var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
@@ -3675,7 +3675,7 @@ static void LockScreenComposesRuntimeStack()
                 ["gapBeforeWeight"] = 1,
             },
         }.ToJsonString());
-        var populatedPayload = Required(DesignPreviewPayloadFactory.Create(database, module, theme.Id));
+        var populatedPayload = Required(CreatePreviewPayload(database, module, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(database, () => { });
         populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
         var populatedPreview = JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject();
@@ -3851,6 +3851,18 @@ static object? InvokeDatabaseStatic(string name, params object?[] arguments)
 }
 
 static T Required<T>(T? value) where T : class => value ?? throw new Exception("Expected a value.");
+static DesignPreviewPayload? CreatePreviewPayload(
+    SpikeDatabase database,
+    ProjectTreeNode? node,
+    string? themeId,
+    string themeMode = "light",
+    int timelineFrame = 0) =>
+    DesignPreviewPayloadFactory.Create(
+        new DesignPreviewPayloadDataSource(database),
+        node,
+        themeId,
+        themeMode,
+        timelineFrame);
 static void True(bool condition)
 {
     if (!condition) throw new Exception("Expected true.");

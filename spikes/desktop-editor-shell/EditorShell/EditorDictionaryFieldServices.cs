@@ -9,6 +9,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorDictionaryFieldServices
 {
     private readonly SpikeDatabase _database;
+    private readonly DesignPreviewPayloadDataSource _previewPayloadData;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly Func<string?> _selectedThemeId;
@@ -23,6 +24,7 @@ internal sealed class EditorDictionaryFieldServices
         Action<string, string> setRuntimeTestValue)
     {
         _database = database;
+        _previewPayloadData = new DesignPreviewPayloadDataSource(database);
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
         _selectedThemeId = selectedThemeId;
@@ -40,7 +42,7 @@ internal sealed class EditorDictionaryFieldServices
         var projectId = ProjectAncestor(node).Id;
         string IconThemeId()
         {
-            var effectiveThemeId = DesignPreviewPayloadFactory.ResolveThemeId(_database, node, _selectedThemeId());
+            var effectiveThemeId = _previewPayloadData.ResolveThemeId(node, _selectedThemeId());
             return string.IsNullOrWhiteSpace(effectiveThemeId)
                 ? ""
                 : _database.GetThemeSettings(effectiveThemeId).IconThemeId;
@@ -51,7 +53,7 @@ internal sealed class EditorDictionaryFieldServices
             {
                 return DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
             }
-            var effectiveThemeId = DesignPreviewPayloadFactory.ResolveThemeId(_database, node, _selectedThemeId());
+            var effectiveThemeId = _previewPayloadData.ResolveThemeId(node, _selectedThemeId());
             return string.IsNullOrWhiteSpace(effectiveThemeId)
                 ? new JsonObject()
                 : DesignPreviewTestValues.Parse(_database.GetThemeSettings(effectiveThemeId).TokensJson);

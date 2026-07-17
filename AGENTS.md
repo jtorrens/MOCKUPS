@@ -24,6 +24,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/48_shot_persistence_contract.md`
 - `docs/architecture/49_component_definition_source_contract.md`
 - `docs/architecture/50_module_definition_source_contract.md`
+- `docs/architecture/51_preview_payload_data_boundary_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -292,6 +293,13 @@ hard-coded Module config/runtime-contract factories must not compete with the
 current manifest, committed complete Module Variants and owner implementation.
 Future Module scaffolding is an explicit complete development workflow, never
 normal startup or a generic editor Add action.
+
+Preview payload data access follows
+`docs/architecture/51_preview_payload_data_boundary_contract.md`.
+`DesignPreviewPayloadDataSource` is the payload factory's only database
+boundary and contains no SQL. The factory retains forwarding, effective runtime
+envelopes and Shot-to-Screen frame selection; resolvers, bridge and renderer
+retain their established semantic and generic boundaries.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

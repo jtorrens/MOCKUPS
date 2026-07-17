@@ -89,6 +89,14 @@ internal sealed record ActorSettings(
 
 internal sealed record ResourceOption(string Value, string Label);
 
+internal sealed record ProductionFontFace(
+    string FontId,
+    string FamilyName,
+    string Category,
+    string RelativePath,
+    int Weight,
+    string Style);
+
 internal sealed record PaletteColorOption(
     string Token,
     string Label,

@@ -219,6 +219,38 @@ assertContains(
   "50_module_definition_source_contract.md",
   "the architecture index must include contract 50",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/51_preview_payload_data_boundary_contract.md",
+  "AGENTS must require the Preview payload data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "51_preview_payload_data_boundary_contract.md",
+  "the architecture index must include contract 51",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "SpikeDatabase",
+  "the Preview payload factory must consume only its typed data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Preview payload data source must own the factory route's database dependency",
+);
+for (const forbiddenPreviewDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+    forbiddenPreviewDataSql,
+    `the Preview payload data source must compose current services rather than owning SQL (${forbiddenPreviewDataSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_previewPayloadData = new DesignPreviewPayloadDataSource(database)",
+  "the Preview controller must reuse one typed payload data source",
+);
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",
@@ -3417,9 +3449,9 @@ assertDoesNotContain(
   "Label text separation must use the canonical spacing-token field",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
   "ValidateComponentPresetReferencesForPreview",
-  "design preview payloads must validate full embedded preset references before web rendering",
+  "the Preview data boundary must validate full embedded preset references before payload construction",
 );
 for (const embeddedPresetField of [
   "component.avatar.label.presetId",
@@ -3497,9 +3529,9 @@ assertContains(
   "design preview must route selected component preset nodes",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "database.GetComponentPresetSettings(node)",
-  "component preset preview payload must load preset config",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "_database.GetComponentPresetSettings(node)",
+  "the Preview data boundary must load selected Component Variant config",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
@@ -3668,7 +3700,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  '["moduleInstanceId"] = node.Id',
+  '["moduleInstanceId"] = moduleInstanceId',
   "production preview payloads must identify their active module instance",
 );
 assertContains(
@@ -3768,7 +3800,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "ModuleInstanceLocalFrame(database, node.Id, timelineFrame)",
+  "dataSource.ModuleInstanceLocalFrame(node.Id, timelineFrame)",
   "module-instance production preview must translate the global Shot frame to a local frame",
 );
 assertContains(
