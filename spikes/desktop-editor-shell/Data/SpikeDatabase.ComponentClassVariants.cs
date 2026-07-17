@@ -210,7 +210,7 @@ internal sealed partial class SpikeDatabase
                     throw new InvalidOperationException("Locked component variants cannot be deleted.");
                 }
 
-                var usages = GetComponentPresetReferenceUsages(connection, node);
+                var usages = GetReferenceUsages(connection, node.Kind, node.Id);
                 if (usages.Count > 0)
                 {
                     throw new InvalidOperationException($"This component variant is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
@@ -339,211 +339,26 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(ProjectTreeNode node)
     {
-        using var connection = OpenConnection();
-        return GetComponentPresetReferenceUsageDetails(connection, node);
-    }
-
-    private static IReadOnlyList<string> GetComponentPresetReferenceUsages(SqliteConnection connection, ProjectTreeNode node)
-    {
-        return GetComponentPresetReferenceUsageDetails(connection, node)
-            .Select((usage) => $"{usage.SourceKind}: {usage.SourceName}{(string.IsNullOrWhiteSpace(usage.Detail) ? "" : $" · {usage.Detail}")}")
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy((usage) => usage, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static IReadOnlyList<ComponentPresetReferenceUsage> GetComponentPresetReferenceUsageDetails(SqliteConnection connection, ProjectTreeNode node)
-    {
-        if (!TryParseComponentPresetNodeId(node.Id, out var componentClassId, out var presetId))
-        {
-            return [];
-        }
-
-        var owner = GetComponentClassSettings(connection, componentClassId);
-        var usages = new List<ComponentPresetReferenceUsage>();
-        foreach (var row in QueryComponentClassRows(connection).Where((candidate) => candidate.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
-        {
-            AddComponentPresetEmbeddedReferenceUsage(
-                usages,
-                row,
-                "Component Class",
-                row.Name,
-                row.Id,
-                row.ConfigJson,
-                componentClassId,
-                owner.ComponentType,
-                presetId);
-
-            foreach (var preset in ComponentClassPresets(row.MetadataJson))
-            {
-                AddComponentPresetEmbeddedReferenceUsage(
-                    usages,
-                    row,
-                    "Component Variant",
-                    $"{row.Name} · {preset.Name}",
-                    ComponentPresetNodeId(row.Id, preset.Id),
-                    preset.ConfigJson,
-                    componentClassId,
-                    owner.ComponentType,
-                    presetId);
-            }
-        }
-
-        foreach (var theme in QueryThemeRows(connection).Where((candidate) => candidate.ProjectId.Equals(owner.ProjectId, StringComparison.Ordinal)))
-        {
-            if (owner.ComponentType.Equals("status_bar", StringComparison.Ordinal)
-                && theme.StatusBarId.Equals(node.Id, StringComparison.Ordinal))
-            {
-                usages.Add(new ComponentPresetReferenceUsage(
-                    "Theme",
-                    theme.Name,
-                    "Status Bar",
-                    theme.Id,
-                    null));
-            }
-
-            if (owner.ComponentType.Equals("navigation_bar", StringComparison.Ordinal)
-                && theme.NavigationBarId.Equals(node.Id, StringComparison.Ordinal))
-            {
-                usages.Add(new ComponentPresetReferenceUsage(
-                    "Theme",
-                    theme.Name,
-                    "Navigation Bar",
-                    theme.Id,
-                null));
-            }
-        }
-
-        var targetReference = ComponentPresetNodeId(componentClassId, presetId);
-        var appProjectIds = QueryAppRows(connection)
-            .ToDictionary((app) => app.Id, (app) => app.ProjectId, StringComparer.Ordinal);
-        foreach (var module in QueryModuleRows(connection))
-        {
-            if (!appProjectIds.TryGetValue(module.AppId, out var projectId)
-                || !projectId.Equals(owner.ProjectId, StringComparison.Ordinal)
-                || (!JsonContainsString(module.ConfigJson, targetReference)
-                    && !JsonContainsString(module.MetadataJson, targetReference)))
-            {
-                continue;
-            }
-
-            usages.Add(new ComponentPresetReferenceUsage(
-                "Module",
-                module.Name,
-                "Component variant",
-                module.Id,
-                null));
-        }
-
-        return usages
+        return _referenceUsageService.GetUsages(node.Kind, node.Id)
+            .Select((usage) => new ComponentPresetReferenceUsage(
+                usage.SourceTypeLabel,
+                usage.SourceName,
+                usage.FieldLabel,
+                usage.SourceNodeId,
+                usage.EmbeddedContext is null
+                    ? null
+                    : new EmbeddedComponentUsage(
+                        usage.EmbeddedContext.ParentComponentClassId,
+                        usage.EmbeddedContext.ParentComponentName,
+                        usage.EmbeddedContext.ParentComponentType,
+                        usage.EmbeddedContext.SlotFieldId,
+                        usage.EmbeddedContext.SlotLabel,
+                        usage.EmbeddedContext.HasOverrides,
+                        usage.EmbeddedContext.SourceNodeId)))
             .OrderBy((usage) => usage.SourceKind, StringComparer.OrdinalIgnoreCase)
             .ThenBy((usage) => usage.SourceName, StringComparer.OrdinalIgnoreCase)
             .ThenBy((usage) => usage.Detail, StringComparer.OrdinalIgnoreCase)
             .ToList();
-    }
-
-    private static void AddComponentPresetEmbeddedReferenceUsage(
-        ICollection<ComponentPresetReferenceUsage> usages,
-        ComponentClassRow row,
-        string sourceKind,
-        string sourceName,
-        string sourceNodeId,
-        string configJson,
-        string componentClassId,
-        string componentType,
-        string presetId)
-    {
-        var config = ParseJsonObject(configJson);
-        foreach (var slot in EmbeddedComponentSlotCatalog.All())
-        {
-            if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
-            {
-                continue;
-            }
-
-            if (!SlotPresetMatches(slotNode, componentClassId, presetId))
-            {
-                continue;
-            }
-
-            var embeddedUsage = new EmbeddedComponentUsage(
-                row.Id,
-                row.Name,
-                row.ComponentType,
-                slot.FieldId,
-                slot.Label,
-                EmbeddedComponentHasOverrides(configJson, slot),
-                sourceNodeId);
-            usages.Add(new ComponentPresetReferenceUsage(
-                sourceKind,
-                sourceName,
-                embeddedUsage.HasOverrides ? $"{slot.Label} · overrides" : slot.Label,
-                sourceNodeId,
-                embeddedUsage));
-        }
-    }
-
-    private static bool ComponentPresetIsUsedByConfig(
-        string configJson,
-        string componentClassId,
-        string componentType,
-        string presetId)
-    {
-        var config = ParseJsonObject(configJson);
-        foreach (var slot in EmbeddedComponentSlotCatalog.All())
-        {
-            if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
-            {
-                continue;
-            }
-
-            if (SlotPresetMatches(slotNode, componentClassId, presetId))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool SlotPresetMatches(JsonObject slotNode, string componentClassId, string presetId)
-    {
-        var value = JsonPath.String(slotNode, "presetId", DefaultComponentPresetId);
-        if (TryParseComponentPresetNodeId(value, out var referencedClassId, out var referencedPresetId))
-        {
-            return referencedClassId.Equals(componentClassId, StringComparison.Ordinal)
-                && referencedPresetId.Equals(presetId, StringComparison.Ordinal);
-        }
-
-        throw new InvalidOperationException(
-            $"Component Variant reference '{value}' must use the full componentClassId::preset::presetId form.");
-    }
-
-    private static bool JsonContainsString(string json, string expected)
-    {
-        var node = ParseJsonObject(json);
-        return JsonContainsString(node, expected);
-    }
-
-    private static bool JsonContainsString(JsonNode? node, string expected)
-    {
-        return node switch
-        {
-            JsonValue value when value.TryGetValue<string>(out var text) => text.Equals(expected, StringComparison.Ordinal),
-            JsonObject obj => obj.Any((entry) => JsonContainsString(entry.Value, expected)),
-            JsonArray array => array.Any((item) => JsonContainsString(item, expected)),
-            _ => false,
-        };
     }
 
     private static JsonObject? FindPreset(JsonArray presets, string presetId) =>

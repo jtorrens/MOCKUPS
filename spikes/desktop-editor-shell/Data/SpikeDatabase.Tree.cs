@@ -27,15 +27,7 @@ internal sealed partial class SpikeDatabase
         var iconThemes = QueryIconThemeRows(connection);
         var renderPresets = QueryRenderPresetRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
-        var referenceUsageIndex = BuildReferenceUsageIndex(
-            shots,
-            actors,
-            themes,
-            paletteColors,
-            productionFonts,
-            iconThemes,
-            renderPresets,
-            componentClasses);
+        var referenceUsageIndex = _referenceUsageService.BuildIndex(connection);
 
         var projectNodes = projects
             .Select((project) => new ProjectTreeNode(
@@ -205,8 +197,7 @@ internal sealed partial class SpikeDatabase
             foreach (var variant in ModuleVariants(module.MetadataJson))
             {
                 var reference = ModuleVariantNodeId(module.Id, variant.Id);
-                var used = moduleInstances.Any((instance) =>
-                    ParseJsonObject(instance.MetadataJson)["moduleVariantReference"]?.GetValue<string>() == reference);
+                var used = IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ModuleVariant, reference);
                 moduleNode.AddChild(new ProjectTreeNode(
                     ProjectTreeNodeKind.ModuleVariant,
                     reference,
@@ -860,7 +851,7 @@ internal sealed partial class SpikeDatabase
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
-        var usages = GetReferenceUsages(connection, node.Kind, node.Id, ReferenceSearchValue(connection, node));
+        var usages = GetReferenceUsages(connection, node.Kind, node.Id);
         if (usages.Count > 0)
         {
             throw new InvalidOperationException($"This {node.Kind} is still used and cannot be deleted.\n\n{string.Join(Environment.NewLine, usages.Take(12))}");
@@ -910,26 +901,8 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
-        {
-            using var presetConnection = OpenConnection();
-            return GetComponentPresetReferenceUsages(presetConnection, node);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
-        {
-            using var variantConnection = OpenConnection();
-            using var command = variantConnection.CreateCommand();
-            command.CommandText = "SELECT name FROM module_instances WHERE json_extract(metadata_json, '$.moduleVariantReference') = $reference ORDER BY name";
-            command.Parameters.AddWithValue("$reference", node.Id);
-            using var reader = command.ExecuteReader();
-            var usages = new List<string>();
-            while (reader.Read()) usages.Add($"Screen: {reader.GetString(0)}");
-            return usages;
-        }
-
         using var connection = OpenConnection();
-        return GetReferenceUsages(connection, node.Kind, node.Id, ReferenceSearchValue(connection, node));
+        return GetReferenceUsages(connection, node.Kind, node.Id);
     }
 
     public void UpdateNode(ProjectTreeNode node)

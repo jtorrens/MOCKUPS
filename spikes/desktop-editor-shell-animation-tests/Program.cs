@@ -18,6 +18,7 @@ var tests = new (string Name, Action Run)[]
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
+    ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -900,6 +901,130 @@ static void RejectsMalformedDocuments()
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{}"));
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":1,\"tracks\":[]}"));
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2}"));
+}
+
+static void ExplicitReferenceUsageIsExactTypedAndShared()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-explicit-usage-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var context = new SqliteProjectContext(temporary);
+        IReferenceUsageService usageService = new ReferenceUsageService(context);
+        using (var connection = context.OpenConnection())
+        {
+            var index = usageService.BuildIndex(connection);
+            foreach (var node in nodes.Where((candidate) => candidate.Kind is ProjectTreeNodeKind.PaletteColor
+                         or ProjectTreeNodeKind.Device
+                         or ProjectTreeNodeKind.Actor
+                         or ProjectTreeNodeKind.Theme
+                         or ProjectTreeNodeKind.ProductionFont
+                         or ProjectTreeNodeKind.IconTheme
+                         or ProjectTreeNodeKind.RenderPreset
+                         or ProjectTreeNodeKind.ComponentPreset
+                         or ProjectTreeNodeKind.ModuleVariant))
+            {
+                Equal(node.IsUsed, index.ContainsKey(new ReferenceTarget(node.Kind, node.Id)));
+            }
+        }
+
+        var usedDevice = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed);
+        var deviceUsages = database.GetReferenceUsageDetails(usedDevice);
+        True(deviceUsages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.Actor && !usage.IsProduction));
+        Throws<InvalidOperationException>(() => database.Delete(usedDevice));
+
+        var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor && node.IsUsed);
+        var actorUsages = database.GetReferenceUsageDetails(actor);
+        True(actorUsages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.Shot && usage.IsProduction));
+        True(actorUsages.Any((usage) =>
+            (usage.TargetKind is ProjectTreeNodeKind.ComponentClass
+                or ProjectTreeNodeKind.Module
+                or ProjectTreeNodeKind.ComponentPreset)
+            && !usage.IsProduction));
+
+        var usedComponentVariant = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset)
+            .Select((node) => (Node: node, Usages: database.GetReferenceUsageDetails(node)))
+            .First((candidate) => candidate.Usages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.ComponentPreset));
+        True(usedComponentVariant.Usages.Any((usage) =>
+            usage.TargetKind == ProjectTreeNodeKind.ComponentPreset
+            && usage.TargetNodeId.Contains("::preset::", StringComparison.Ordinal)));
+
+        var usedModuleVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsUsed);
+        True(database.GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
+            usage.TargetKind == ProjectTreeNodeKind.ModuleInstance && usage.IsProduction));
+
+        const string designActorId = "actor_usage_design_only";
+        const string productionActorId = "actor_usage_production_only";
+        var projectId = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project).Id;
+        using (var connection = context.OpenConnection())
+        {
+            SqliteCommandExecutor.Execute(
+                connection,
+                "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
+                ("$id", designActorId),
+                ("$projectId", projectId),
+                ("$name", "Design-only Usage Actor"));
+            SqliteCommandExecutor.Execute(
+                connection,
+                "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
+                ("$id", productionActorId),
+                ("$projectId", projectId),
+                ("$name", "Production-only Usage Actor"));
+            SqliteCommandExecutor.Execute(
+                connection,
+                "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.testValues.actorId', $actorId) WHERE id = 'module_project_foqn_s2_lock_screen'",
+                ("$actorId", designActorId));
+            SqliteCommandExecutor.Execute(
+                connection,
+                "UPDATE module_instances SET content_json = json_set(content_json, '$.actorId', $actorId) WHERE id = (SELECT id FROM module_instances WHERE module_id = 'module_project_foqn_s2_lock_screen' ORDER BY id LIMIT 1)",
+                ("$actorId", productionActorId));
+        }
+
+        var designOnlyUsages = usageService.GetUsages(ProjectTreeNodeKind.Actor, designActorId);
+        True(designOnlyUsages.Any((usage) =>
+            usage.SourceKind == ProjectTreeNodeKind.Module
+            && usage.Scope == ReferenceUsageScope.Design));
+        True(designOnlyUsages.All((usage) => usage.Scope == ReferenceUsageScope.Design));
+        var productionOnlyUsages = usageService.GetUsages(ProjectTreeNodeKind.Actor, productionActorId);
+        True(productionOnlyUsages.Any((usage) =>
+            usage.SourceKind == ProjectTreeNodeKind.ModuleInstance
+            && usage.Scope == ReferenceUsageScope.Production));
+        True(productionOnlyUsages.All((usage) => usage.Scope == ReferenceUsageScope.Production));
+
+        var blue = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.PaletteColor && node.Name == "blue");
+        using (var connection = context.OpenConnection())
+        {
+            SqliteCommandExecutor.Execute(
+                connection,
+                "UPDATE projects SET notes = $notes, metadata_json = $metadataJson",
+                ("$notes", $"Unrelated prose blue plus substring prefix-{blue.Id}-suffix"),
+                ("$metadataJson", "{\"comment\":\"blue\"}"));
+        }
+        var blueUsages = database.GetReferenceUsageDetails(blue);
+        True(blueUsages.Count > 0);
+        True(blueUsages.All((usage) => usage.TargetKind != ProjectTreeNodeKind.Project));
+
+        var unusedRenderPreset = nodes.First((node) => node.Kind == ProjectTreeNodeKind.RenderPreset && !node.IsUsed);
+        using (var connection = context.OpenConnection())
+        {
+            SqliteCommandExecutor.Execute(
+                connection,
+                "UPDATE projects SET notes = $notes, metadata_json = $metadataJson",
+                ("$notes", $"Unrelated prefix-{unusedRenderPreset.Id}-suffix"),
+                ("$metadataJson", $"{{\"comment\":\"{unusedRenderPreset.Id}\"}}"));
+        }
+        Equal(0, database.GetReferenceUsageDetails(unusedRenderPreset).Count);
+        database.Delete(unusedRenderPreset);
+        True(Descendants(database.LoadProjectTree()).All((node) => node.Id != unusedRenderPreset.Id));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void TrackActivationCreatesInitialKeyframe()

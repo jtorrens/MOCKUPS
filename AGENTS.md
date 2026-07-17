@@ -11,6 +11,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/35_current_json_and_variant_contract.md`
 - `docs/architecture/36_desktop_persistence_repository_contract.md`
 - `docs/architecture/37_desktop_resource_repository_contract.md`
+- `docs/architecture/38_explicit_reference_usage_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -239,6 +240,13 @@ Palette, Device and Actor persistence additionally follows
 repositories own table SQL, row mapping, explicit lifecycle persistence and
 stored-document writes. Device/Actor interpretation remains in common/domain
 services and must not move into the repository, tree or UI shell.
+
+Reference discovery, tree `Used` state, Usage presentation and deletion
+protection additionally follow
+`docs/architecture/38_explicit_reference_usage_contract.md`. They must consume
+one typed edge set produced from exact relational declarations and
+owner-declared JSON paths/contracts. Never scan text columns or arbitrary JSON,
+match substrings, or infer navigation/scope from source labels.
 
 ## Data migrations, not compatibility fallbacks
 

@@ -106,6 +106,33 @@ internal sealed record ActorRecord(
     string DefaultThemeId,
     string MetadataJson);
 
+internal enum ReferenceUsageScope
+{
+    Design,
+    Production,
+}
+
+internal sealed record ReferenceTarget(ProjectTreeNodeKind Kind, string Id);
+
+internal sealed record ReferenceEmbeddedContext(
+    string ParentComponentClassId,
+    string ParentComponentName,
+    string ParentComponentType,
+    string SlotFieldId,
+    string SlotLabel,
+    bool HasOverrides,
+    string SourceNodeId);
+
+internal sealed record ReferenceUsageRecord(
+    ReferenceTarget Referenced,
+    string SourceNodeId,
+    ProjectTreeNodeKind SourceKind,
+    string SourceTypeLabel,
+    string SourceName,
+    string FieldLabel,
+    ReferenceUsageScope Scope,
+    ReferenceEmbeddedContext? EmbeddedContext = null);
+
 internal interface IEditorLayoutRepository
 {
     EditorLayout Load(string recordClassId);
@@ -227,4 +254,16 @@ internal interface IActorRepository
     void Delete(SqliteConnection connection, string actorId);
 
     void Rename(SqliteConnection connection, string actorId, string name);
+}
+
+internal interface IReferenceUsageService
+{
+    IReadOnlyDictionary<ReferenceTarget, IReadOnlyList<ReferenceUsageRecord>> BuildIndex(SqliteConnection connection);
+
+    IReadOnlyList<ReferenceUsageRecord> GetUsages(ProjectTreeNodeKind targetKind, string targetId);
+
+    IReadOnlyList<ReferenceUsageRecord> GetUsages(
+        SqliteConnection connection,
+        ProjectTreeNodeKind targetKind,
+        string targetId);
 }

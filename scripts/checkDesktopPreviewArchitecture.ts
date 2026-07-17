@@ -1914,6 +1914,7 @@ for (const [contractType, implementationType] of [
   ["IPaletteRepository", "PaletteRepository"],
   ["IDeviceRepository", "DeviceRepository"],
   ["IActorRepository", "ActorRepository"],
+  ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
   assertContains(
     "spikes/desktop-editor-shell/Data/PersistenceContracts.cs",
@@ -1991,6 +1992,60 @@ for (const resourceRepositoryPath of [
     `${resourceRepositoryPath} must not infer Usage from text-column discovery`,
   );
 }
+for (const retiredUsageInference of [
+  "LIKE $needle",
+  " LIKE ",
+  "sqlite_master",
+  "PRAGMA table_info",
+  "ReferenceSearchTables",
+  "TextColumns(",
+  "LabelColumn(",
+  "JsonContainsString",
+  "ReferenceKindForSource",
+  "IsProductionUsageSource",
+  "AddUsageIfContains",
+  "ReferenceSearchValue",
+]) {
+  for (const usagePath of [
+    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+  ]) {
+    assertDoesNotContain(
+      usagePath,
+      retiredUsageInference,
+      `Usage must not restore inferred reference behavior ${retiredUsageInference}`,
+    );
+  }
+}
+for (const explicitUsageContract of [
+  "RecordReferenceKinds",
+  "ModuleComponentReferencePaths",
+  "ThemeColorTokenCatalog.ColorTokens",
+  "ComponentClassFieldCatalog.All()",
+  "ReferenceUsageScope.Production",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+    explicitUsageContract,
+    `Usage must retain explicit typed contract ${explicitUsageContract}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "_referenceUsageService.BuildIndex(connection)",
+  "tree Used state must consume the shared explicit Usage edge set",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+  "usage.Scope == ReferenceUsageScope.Production",
+  "Usage scope must come from typed edge data",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "MainWindow",
+  "the Usage service must not import or construct the desktop shell",
+);
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",
@@ -2878,14 +2933,14 @@ assertContains(
   "component preset fields must write to preset config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
-  "Component Variant: {row.Name} · {preset.Name}",
-  "component variant usage must scan references stored inside other variants",
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 3)",
+  "theme status bar references must target concrete Component Variants",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
-  "ProjectTreeNodeKind.ComponentPreset, id",
-  "theme system bar references must mark component presets, not parent classes",
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 4)",
+  "theme navigation bar references must target concrete Component Variants",
 );
 assertAnyContains(
   desktopPersistenceDataPaths,

@@ -37,6 +37,9 @@ this index wins.
 - `37_desktop_resource_repository_contract.md`: persistence ownership for
   Palette, Device and Actor resources, with domain interpretation kept outside
   repositories and Usage inference explicitly prohibited.
+- `38_explicit_reference_usage_contract.md`: one typed, exact reference-edge
+  projection for tree Used state, Usage navigation and deletion protection,
+  based only on declared relational and JSON owner contracts.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -936,6 +936,8 @@ internal static class ComponentClassFieldCatalog
         throw new InvalidOperationException($"Unknown component class field '{fieldId}'.");
     }
 
+    public static IReadOnlyList<ComponentClassFieldDescriptor> All() => Fields.Values.ToList();
+
     public static bool IsRuntimeOverrideField(string fieldId) =>
         Fields.TryGetValue(fieldId, out var field)
         && field.IsEditable

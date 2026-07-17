@@ -287,6 +287,13 @@ The next resource slice is governed by
 access moves behind focused repositories while device metrics and actor visual
 interpretation remain common/domain behavior rather than persistence logic.
 
+Cross-domain reference discovery is governed by
+`38_explicit_reference_usage_contract.md`. The extracted Usage service owns one
+typed set of exact reference edges shared by tree Used state, the Usage card
+and deletion protection. Relational columns and JSON paths/contracts must be
+declared; text-column scans, substring matching and label-based navigation are
+not valid compatibility behavior.
+
 ## Guardrails
 
 Reject new changes that add:
