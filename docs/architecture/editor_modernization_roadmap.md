@@ -434,6 +434,12 @@ Component Variant and Screen documents plus concrete embedded Component sources
 now enter the Runtime Inputs editor through a typed store. Instance
 scalar/collection mutations remain the next separate extraction slice.
 
+Runtime Input instance document mutations are governed by
+`61_runtime_input_instance_document_boundary_contract.md`. Persisted Screen
+scalar, stable collection and complete animation writes now pass through a
+typed store that composes the animation document boundary. The Runtime Inputs
+editor no longer retains a general database handle.
+
 ## Guardrails
 
 Reject new changes that add:

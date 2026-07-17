@@ -194,6 +194,11 @@ Contract 60 establishes the Runtime Input owner document slice:
 documents and delegates explicit isolated Design Preview writes while Runtime
 Input, collection, Override and forwarding semantics remain in the editor.
 
+Contract 61 establishes the Runtime Input instance document slice:
+`RuntimeInputInstanceDocumentStore` delegates explicit stable scalar,
+collection and complete animation writes while the editor retains ids,
+mappings, interaction and document preparation without a database handle.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

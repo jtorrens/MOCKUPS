@@ -82,6 +82,11 @@ Runtime Input owner lookup additionally follows contract 60. A Screen supplies
 its exact effective Variant config and runtime envelope through a typed store;
 it never exposes or accepts an isolated Design Preview write target.
 
+Persisted Runtime Input mutations additionally follow contract 61. Its typed
+instance store delegates stable scalar/collection operations and complete
+animation writes through existing facade coordinators; repository SQL and
+atomic content/animation persistence remain unchanged.
+
 ## 4. Coordinated operations
 
 `SpikeDatabase` remains the compatibility facade. It may validate a requested

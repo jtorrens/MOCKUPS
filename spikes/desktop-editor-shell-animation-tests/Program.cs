@@ -23,6 +23,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
+    ("Runtime Input instance store preserves explicit scalar collection and animation writes", RuntimeInputInstanceStorePreservesExplicitWrites),
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
@@ -892,6 +893,75 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         Equal(componentSource.RuntimePreviewJson, database.GetComponentClassSettings(componentClass.Id).DesignPreviewJson);
         Throws<InvalidOperationException>(() =>
             store.SaveDesignPreviewJson(instanceSource, instanceSource.RuntimePreviewJson));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RuntimeInputInstanceStorePreservesExplicitWrites()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-instance-store-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var store = new RuntimeInputInstanceDocumentStore(database);
+        var screen = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var animationJson = database.GetModuleInstanceSettings(screen.Id).AnimationJson;
+
+        Equal(animationJson, store.AnimationJson(screen.Id));
+        var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, afterReads);
+
+        const string collectionKey = "test_runtime_items";
+        store.UpdateRuntimeValue(screen.Id, "test_runtime_scalar", JsonValue.Create("value"));
+        store.AddCollectionItem(screen.Id, collectionKey, new JsonObject
+        {
+            ["id"] = "test_a",
+            ["name"] = "A",
+        });
+        store.InsertCollectionItemAfter(screen.Id, collectionKey, "test_a", new JsonObject
+        {
+            ["id"] = "test_b",
+            ["name"] = "B",
+        });
+        store.DuplicateCollectionItem(
+            screen.Id,
+            collectionKey,
+            "test_a",
+            new JsonObject
+            {
+                ["id"] = "test_c",
+                ["name"] = "C",
+            },
+            new Dictionary<string, string>());
+        store.UpdateCollectionValue(
+            screen.Id,
+            collectionKey,
+            "test_b",
+            "name",
+            JsonValue.Create("B2"));
+        store.MoveCollectionItem(screen.Id, collectionKey, "test_c", 1);
+        store.DeleteCollectionItem(screen.Id, collectionKey, "test_a");
+
+        var content = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            $"Module Instance '{screen.Id}' content");
+        Equal("value", content["test_runtime_scalar"]?.GetValue<string>() ?? "");
+        var items = content[collectionKey]?.AsArray()
+            ?? throw new InvalidOperationException("Missing test runtime collection.");
+        SequenceEqual(
+            new[] { "test_b", "test_c" },
+            items.Select((item) => item?["id"]?.GetValue<string>() ?? ""));
+        Equal("B2", items[0]?["name"]?.GetValue<string>() ?? "");
+
+        Equal(animationJson, store.SaveAnimationJson(screen.Id, animationJson));
+        Equal(animationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
     finally
     {

@@ -14,9 +14,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RuntimeInputsCollectionEditor
 {
-    private readonly SpikeDatabase _database;
     private readonly ComponentPreviewInputDataSource _previewInputData;
     private readonly RuntimeInputOwnerDocumentStore _ownerDocuments;
+    private readonly RuntimeInputInstanceDocumentStore _instanceDocuments;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
@@ -61,9 +61,9 @@ internal sealed class RuntimeInputsCollectionEditor
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
-        _database = database;
         _previewInputData = new ComponentPreviewInputDataSource(database);
         _ownerDocuments = new RuntimeInputOwnerDocumentStore(database);
+        _instanceDocuments = new RuntimeInputInstanceDocumentStore(database);
         _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
@@ -454,7 +454,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             if (owner.IsInstance)
             {
-                _database.UpdateModuleInstanceRuntimeValue(owner.Node.Id, input.JsonKey, DesignPreviewTestValues.ValueNode(input, next));
+                _instanceDocuments.UpdateRuntimeValue(owner.Node.Id, input.JsonKey, DesignPreviewTestValues.ValueNode(input, next));
                 _onChanged();
             }
             else
@@ -507,7 +507,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var item = DefaultCollectionItem(owner, collection);
                 editor!.ActivateOnly(item, items.Count);
                 if (owner.IsInstance)
-                    _database.AddModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
+                    _instanceDocuments.AddCollectionItem(owner.Node.Id, StorageCollectionKey(collection), item);
                 else
                     _setPreviewCollectionTestItems(collection.JsonKey, [item]);
                 Changed();
@@ -519,7 +519,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var next = DefaultCollectionItem(owner, collection);
                 editor!.ActivateOnly(next, items.Count);
                 if (owner.IsInstance)
-                    _database.InsertModuleInstanceRuntimeCollectionItemAfter(owner.Node.Id, StorageCollectionKey(collection), itemId, next);
+                    _instanceDocuments.InsertCollectionItemAfter(owner.Node.Id, StorageCollectionKey(collection), itemId, next);
                 else
                 {
                     var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
@@ -542,7 +542,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 editor!.ActivateOnly(copy, items.Count);
                 if (owner.IsInstance)
                 {
-                    _database.DuplicateModuleInstanceRuntimeCollectionItem(
+                    _instanceDocuments.DuplicateCollectionItem(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
@@ -561,7 +561,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var itemId = ItemId(items[itemIndex], itemIndex);
                 if (owner.IsInstance)
-                    _database.MoveModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, delta);
+                    _instanceDocuments.MoveCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId, delta);
                 else
                     MoveTransientCollectionItem(preview, collection, itemIndex, delta);
                 Changed();
@@ -579,7 +579,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     EditorIcons.Component).Title;
                 if (!await _confirmCollectionItemDelete(label)) return;
                 if (owner.IsInstance)
-                    _database.DeleteModuleInstanceRuntimeCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
+                    _instanceDocuments.DeleteCollectionItem(owner.Node.Id, StorageCollectionKey(collection), itemId);
                 else
                 {
                     var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
@@ -926,7 +926,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (owner.IsInstance)
             {
-                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                _instanceDocuments.UpdateCollectionValue(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     ItemId(item, itemIndex),
@@ -1010,9 +1010,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
-                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                        _instanceDocuments.AnimationJson(owner.Node.Id));
                     foreach (var targetId in targetIds) document.RemoveTarget(targetId);
-                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
                     _onChanged();
                 }
                 : null,
@@ -1020,9 +1020,9 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
-                        _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+                        _instanceDocuments.AnimationJson(owner.Node.Id));
                     document.DuplicateTargets(targetIds);
-                    _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+                    _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
                     _onChanged();
                 }
                 : null,
@@ -1057,7 +1057,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (owner.IsInstance)
             {
-                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                _instanceDocuments.UpdateCollectionValue(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
@@ -1065,13 +1065,13 @@ internal sealed class RuntimeInputsCollectionEditor
                     nextNode);
                 if (selectsComponent && componentItems is not null)
                 {
-                    _database.UpdateModuleInstanceRuntimeCollectionValue(
+                    _instanceDocuments.UpdateCollectionValue(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
                         componentItems.OverridesJsonKey,
                         item[componentItems.OverridesJsonKey]);
-                    _database.UpdateModuleInstanceRuntimeCollectionValue(
+                    _instanceDocuments.UpdateCollectionValue(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
@@ -1147,7 +1147,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var itemId = ItemId(item, itemIndex);
             if (owner.IsInstance)
             {
-                _database.UpdateModuleInstanceRuntimeCollectionValue(
+                _instanceDocuments.UpdateCollectionValue(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
@@ -1197,7 +1197,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         if (!owner.IsInstance || input.Animation is null) return control;
         var document = new ModuleInstanceAnimationDocument(
-            _database.GetModuleInstanceSettings(owner.Node.Id).AnimationJson);
+            _instanceDocuments.AnimationJson(owner.Node.Id));
         var active = document.HasTrack(input.Id, targetId);
         var baseValue = control.Value;
         var toggle = new Button
@@ -1236,7 +1236,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 targetId,
                 DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
                 input.Animation.Interpolations.First());
-            _database.UpdateModuleInstanceAnimationJson(owner.Node.Id, document.ToJson());
+            _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
             if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
             else _onChanged();
         };

@@ -1,0 +1,131 @@
+# Runtime Input Instance Document Boundary Contract
+
+Status: normative.
+
+This document governs persisted Screen Runtime Value, structured collection and
+animation document mutations initiated by the Runtime Inputs editor. It extends
+contracts 23, 29, 31, 36, 47, 52, 59 and 60 without changing payload or JSON
+shape.
+
+## 1. Objective
+
+Editor intent, document delegation and persistence have explicit owners:
+
+```text
+dictionary/collection/animation editor intent
+→ RuntimeInputInstanceDocumentStore
+→ existing strict facade domain operation
+→ ModuleInstanceRepository complete current document write
+→ duration synchronization through the existing common timeline owner
+```
+
+The editor supplies stable ids and already prepared values/documents. The store
+is a narrow delegation boundary. Existing facade coordinators preserve atomic
+content/animation updates and the repository remains the SQL owner.
+
+## 2. Instance-store ownership
+
+`RuntimeInputInstanceDocumentStore` may delegate only these explicit operations
+for one stable Module Instance id:
+
+- update one declared runtime scalar by its explicit JSON key;
+- add one complete prepared structured collection item;
+- insert one complete prepared item after an explicit stable item id;
+- duplicate one complete prepared item with explicit stable target-id mappings;
+- move one explicit stable item by a requested relative offset;
+- delete one explicit stable item;
+- update one field of one explicit stable collection item;
+- load the exact current animation document through
+  `ModuleInstanceAnimationDocumentStore`;
+- save one complete prepared animation v2 document through that same store.
+
+It must not create ids; find a collection from a label or field type; parse
+Runtime Input contracts; choose a Component Variant; manufacture Overrides;
+infer target mappings; calculate duration or frame origins; create UI; execute
+SQL; repair current data; or accept a partial animation patch.
+
+The store composes current facade/domain operations and contract 59. It is not a
+repository and does not replace the coordinated content/animation operations
+already owned outside persistence.
+
+## 3. Editor ownership
+
+`RuntimeInputsCollectionEditor` retains:
+
+- generic dictionary controls and the generic commit route;
+- the explicit Design Test Values versus Production Runtime Values distinction;
+- declared storage collection keys;
+- stable collection item and nested target id generation;
+- item insertion, duplication, reorder and delete intent;
+- explicit target-id mapping when duplicating nested structures;
+- explicit complete Component Variant selection and Default at new boundaries;
+- local Overrides and Runtime Input envelope construction;
+- track activation/removal and complete animation v2 document preparation;
+- confirmations, session state and presentation.
+
+After this phase the editor may receive `SpikeDatabase` only as a
+construction/composition parameter for its typed sources and stores. It must not
+retain a database field or call database methods directly.
+
+## 4. Atomic persistence and timeline effects
+
+The existing facade/domain coordinator remains responsible for operations that
+must update content and animation together, such as duplicating or deleting an
+item with owned animation targets. The store passes explicit prepared items and
+target mappings unchanged.
+
+The Module Instance repository owns SQL, current-root validation and synchronized
+complete document writes. Common temporal services own effective duration. No
+read, scalar update or collection UI action may persist absolute Shot frames,
+derived origins or a calculated duration outside that established coordinator.
+
+## 5. Preserved contracts
+
+- Stored collection and animation ownership binds through stable ids, never
+  indices.
+- Full Component Variant references remain stored values; labels are display
+  only.
+- Forwarding and local Overrides remain explicit.
+- Crossing a new Component boundary still selects an explicit Default Variant.
+- Keyframes remain relative to their stable owner.
+- Reorder and move alter effective projection without rewriting local
+  keyframes.
+- Design Test Values remain transient; instance Runtime Values remain persisted
+  Production payload.
+- Preview resolves the complete payload before the generic bridge and renderer.
+
+## 6. Enforcement and tests
+
+Architecture enforcement must verify:
+
+- `RuntimeInputInstanceDocumentStore` owns the remaining database dependency of
+  the Runtime Inputs editor and contains no SQL;
+- animation access composes `ModuleInstanceAnimationDocumentStore`;
+- the store contains no UI, dictionary, forwarding, Variant-selection or frame
+  calculation logic;
+- `RuntimeInputsCollectionEditor` retains no database field and performs no
+  direct database call;
+- every scalar, collection and animation write in that editor delegates through
+  the typed store;
+- this contract is linked from `AGENTS.md` and the architecture index.
+
+A disposable-database test must prove animation reads are byte-for-byte
+read-only, exercise explicit scalar, add, insert, duplicate, field update, move
+and delete operations, verify stable item order/content, and round-trip one
+complete current animation v2 document.
+
+## 7. Out of scope
+
+This phase does not redesign Runtime Inputs or collections, change Add/Duplicate
+behavior, alter Overrides or forwarding, fix keyframe dragging, change tables
+or JSON, migrate data, add Render Mode/export or modify parity assets.
+
+## 8. Forbidden shortcuts
+
+- binding collection operations by row index without the stored stable id;
+- deriving target mappings from labels, names, component types or positions;
+- saving a partial animation track or absolute Shot frame;
+- treating Test Values as persisted instance content;
+- creating ids or choosing Variants inside the store;
+- adding duration formulas or timeline synchronization to the editor/store;
+- bypassing owning repositories with local SQL.

@@ -717,6 +717,80 @@ for (const forbiddenRuntimeInputOwnerRead of [
     `the Runtime Inputs editor must use its typed owner/config boundaries (${forbiddenRuntimeInputOwnerRead})`,
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/61_runtime_input_instance_document_boundary_contract.md",
+  "AGENTS must require the Runtime Input instance document boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "61_runtime_input_instance_document_boundary_contract.md",
+  "the architecture index must include contract 61",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+  "private readonly SpikeDatabase _database",
+  "the Runtime Input instance store must own that route's database dependency",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+  "private readonly ModuleInstanceAnimationDocumentStore _animationDocuments",
+  "the Runtime Input instance store must compose the animation document boundary",
+);
+for (const forbiddenRuntimeInputInstanceStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+    forbiddenRuntimeInputInstanceStoreSql,
+    `the Runtime Input instance store must delegate through current services rather than owning SQL (${forbiddenRuntimeInputInstanceStoreSql})`,
+  );
+}
+for (const forbiddenRuntimeInputInstanceSemantic of [
+  "FieldDefinition",
+  "RuntimeInputCollectionDefinition",
+  "RuntimeInputForwardingContract",
+  "ProjectTreeNode",
+  "Avalonia",
+  "Guid.NewGuid",
+  "RuntimeAnimationFrameOrigin",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+    forbiddenRuntimeInputInstanceSemantic,
+    `the Runtime Input instance store must not absorb editor or temporal semantics (${forbiddenRuntimeInputInstanceSemantic})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_instanceDocuments = new RuntimeInputInstanceDocumentStore(database)",
+  "the Runtime Inputs editor must reuse one typed instance document store",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "private readonly SpikeDatabase _database",
+  "the Runtime Inputs editor must not retain a general database handle",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_database.",
+  "the Runtime Inputs editor must not bypass its typed owner and instance stores",
+);
+for (const requiredRuntimeInputInstanceOperation of [
+  "_instanceDocuments.UpdateRuntimeValue",
+  "_instanceDocuments.AddCollectionItem",
+  "_instanceDocuments.InsertCollectionItemAfter",
+  "_instanceDocuments.DuplicateCollectionItem",
+  "_instanceDocuments.MoveCollectionItem",
+  "_instanceDocuments.DeleteCollectionItem",
+  "_instanceDocuments.UpdateCollectionValue",
+  "_instanceDocuments.AnimationJson",
+  "_instanceDocuments.SaveAnimationJson",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    requiredRuntimeInputInstanceOperation,
+    `the Runtime Inputs editor must delegate persisted instance operations (${requiredRuntimeInputInstanceOperation})`,
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

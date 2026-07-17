@@ -109,6 +109,10 @@ the same complete current animation document and verify the persisted result.
 Existing animation tests remain authoritative for tracks, duration, origins,
 retime and frame resolution.
 
+Contract 61 composes this store for track activation and structured collection
+target reconciliation initiated by the Runtime Inputs editor. It must still
+receive and persist only one complete prepared animation v2 document.
+
 ## 7. Out of scope
 
 This phase does not fix or redesign keyframe dragging, alter animation controls,

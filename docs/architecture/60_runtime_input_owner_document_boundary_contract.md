@@ -80,10 +80,10 @@ in their contract 46/47 owners.
 - animation activation and stable target reconciliation through their declared
   animation document boundary.
 
-This phase does not yet remove the editor's temporary general database field:
-persisted Module Instance scalar/collection mutations remain a separate next
-slice. It does remove direct owner-document and embedded-preset reads from the
-editor.
+Contract 61 owns the separate persisted Module Instance scalar, collection and
+animation mutation slice. Together the two boundaries remove the editor's
+general database handle while keeping owner lookup and instance writes
+independent.
 
 ## 5. Preserved contracts
 
