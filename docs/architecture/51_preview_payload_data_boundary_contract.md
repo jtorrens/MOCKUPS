@@ -95,6 +95,11 @@ Actor record values are delegated to the narrower boundary in contract 53.
 not duplicate Actor field reads or absorb Actor mode, Palette, initials or
 media interpretation.
 
+Production Preview controller reads outside payload construction follow
+contract 57. They must not be folded into `DesignPreviewPayloadFactory`:
+transport fps, Screen ownership, ordered slots and appearance context remain
+separate session/timeline inputs around the complete payload boundary.
+
 ## 6. Enforcement and tests
 
 Architecture enforcement must verify:

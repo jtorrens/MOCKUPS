@@ -29,10 +29,10 @@ internal sealed class EditorPreviewController
     private static readonly IBrush PreviewStatusLoadingBrush = new SolidColorBrush(Color.Parse("#2F80ED"));
     private static readonly IBrush PreviewStatusGoodBrush = new SolidColorBrush(Color.Parse("#2ECC71"));
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
-    private readonly SpikeDatabase _database;
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
     private readonly PreviewVisualContextDataSource _visualContextData;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
+    private readonly ProductionPreviewSessionDataSource _productionPreviewData;
     private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
@@ -155,16 +155,16 @@ internal sealed class EditorPreviewController
 
     public int ProductionScreenFrame(string moduleInstanceId)
     {
-        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
-        var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
+        var shotId = _productionPreviewData.ModuleInstanceShotId(moduleInstanceId);
+        var start = ModuleInstanceStartFrame(shotId, moduleInstanceId);
         var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
         return Math.Clamp(_shotPreviewFrame - start, 0, duration - 1);
     }
 
     public void SetProductionScreenFrame(string moduleInstanceId, int localFrame)
     {
-        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
-        var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
+        var shotId = _productionPreviewData.ModuleInstanceShotId(moduleInstanceId);
+        var start = ModuleInstanceStartFrame(shotId, moduleInstanceId);
         var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
         SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1));
     }
@@ -236,10 +236,10 @@ internal sealed class EditorPreviewController
         Func<string, bool> selectNodeById,
         Window owner)
     {
-        _database = database;
         _previewPayloadData = new DesignPreviewPayloadDataSource(database);
         _visualContextData = new PreviewVisualContextDataSource(database);
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _productionPreviewData = new ProductionPreviewSessionDataSource(database);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -382,7 +382,7 @@ internal sealed class EditorPreviewController
         {
             var subtitle = entry.Key.Kind == ProjectTreeNodeKind.Shot
                 ? "Shot"
-                : $"Screen · {_database.GetModuleInstanceSettings(entry.Key.Id).ShotId}";
+                : $"Screen · {_productionPreviewData.ModuleInstanceShotId(entry.Key.Id)}";
             var button = new Button
             {
                 Content = new StackPanel
@@ -2230,7 +2230,7 @@ internal sealed class EditorPreviewController
                 ? "Play or pause the shared Shot timeline; current frame is an animation keyframe"
                 : "Play or pause the shared Shot timeline");
         var activeSlotIndex = ActiveShotSlotIndex(shotId);
-        var slotCount = _database.GetShotModuleInstanceSlots(shotId).Count;
+        var slotCount = _timelineDataSource.ShotSlotIds(shotId).Count;
         var showScreenStep = contextNode?.Kind == ProjectTreeNodeKind.Shot;
         _shotPreviousSlotButton.IsVisible = showScreenStep;
         _shotNextSlotButton.IsVisible = showScreenStep;
@@ -2254,11 +2254,11 @@ internal sealed class EditorPreviewController
     private (int StartFrame, int EndFrame, int DurationFrames) ActiveScreenFrameRange(string shotId)
     {
         var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId));
-        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var slots = _timelineDataSource.ShotSlotIds(shotId);
         var index = ActiveShotSlotIndex(shotId);
         if (index < 0 || index >= slots.Count) return (0, shotDuration - 1, shotDuration);
-        var start = ModuleInstanceStartFrame(shotId, slots[index].Id);
-        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index].Id));
+        var start = ModuleInstanceStartFrame(shotId, slots[index]);
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index]));
         return (start, start + duration - 1, duration);
     }
 
@@ -2286,10 +2286,10 @@ internal sealed class EditorPreviewController
     private int ActiveShotSlotIndex(string shotId)
     {
         var cursor = 0;
-        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var slots = _timelineDataSource.ShotSlotIds(shotId);
         for (var index = 0; index < slots.Count; index++)
         {
-            cursor += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index].Id);
+            cursor += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index]);
             if (_shotPreviewFrame < cursor) return index;
         }
         return slots.Count - 1;
@@ -2299,10 +2299,10 @@ internal sealed class EditorPreviewController
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return;
-        var slots = _database.GetShotModuleInstanceSlots(shotId);
+        var slots = _timelineDataSource.ShotSlotIds(shotId);
         var target = ActiveShotSlotIndex(shotId) + offset;
         if (target < 0 || target >= slots.Count) return;
-        var start = ModuleInstanceStartFrame(shotId, slots[target].Id);
+        var start = ModuleInstanceStartFrame(shotId, slots[target]);
         StopShotPlayback();
         _shotPreviewFrame = start;
         PlaybackState.NotifyFrameChanged();
@@ -2344,10 +2344,10 @@ internal sealed class EditorPreviewController
     private int ModuleInstanceStartFrame(string shotId, string instanceId)
     {
         var start = 0;
-        foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
+        foreach (var slotId in _timelineDataSource.ShotSlotIds(shotId))
         {
-            if (slot.Id == instanceId) return start;
-            start += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
+            if (slotId == instanceId) return start;
+            start += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slotId);
         }
         return 0;
     }
@@ -2389,7 +2389,7 @@ internal sealed class EditorPreviewController
         _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Pause, 16);
         OnPlaybackStarted(new ComponentPreviewInputSession.PlaybackRunInfo(
             navigationRange.EndFrame - _shotPlaybackStartFrame + 1,
-            Math.Max(1, _database.GetShotSettings(shotId).Fps)));
+            Math.Max(1, _productionPreviewData.ShotFrameRate(shotId))));
         AdvanceShotPlayback();
     }
 
@@ -2420,7 +2420,7 @@ internal sealed class EditorPreviewController
             return;
         }
         var elapsed = Stopwatch.GetElapsedTime(_shotPlaybackStartedTimestamp).TotalSeconds;
-        var next = _shotPlaybackStartFrame + (int)Math.Floor(elapsed * Math.Max(1, _database.GetShotSettings(shotId).Fps));
+        var next = _shotPlaybackStartFrame + (int)Math.Floor(elapsed * Math.Max(1, _productionPreviewData.ShotFrameRate(shotId)));
         var last = NavigationFrameRange().EndFrame;
         if (next >= last)
         {
@@ -2448,7 +2448,7 @@ internal sealed class EditorPreviewController
             OnPlaybackStopped(new ComponentPreviewInputSession.PlaybackRunInfo(
                 Math.Max(1, ShotLastFrame() - _shotPlaybackStartFrame + 1),
                 Math.Max(1, ProductionShotId() is { Length: > 0 } shotId
-                    ? _database.GetShotSettings(shotId).Fps
+                    ? _productionPreviewData.ShotFrameRate(shotId)
                     : 25)));
         }
     }
@@ -2459,7 +2459,7 @@ internal sealed class EditorPreviewController
     private int CurrentPlaybackFrameRate() =>
         _shotPlaybackTimer.IsEnabled
         && ProductionShotId() is { Length: > 0 } shotId
-            ? _database.GetShotSettings(shotId).Fps
+            ? _productionPreviewData.ShotFrameRate(shotId)
             : _designInputsPanel.PlaybackFrameRate;
 
     private int CurrentNavigationFrame() =>
@@ -2573,7 +2573,7 @@ internal sealed class EditorPreviewController
         return ProductionContextNode() switch
         {
             { Kind: ProjectTreeNodeKind.Shot } shot => shot.Id,
-            { Kind: ProjectTreeNodeKind.ModuleInstance } instance => _database.GetModuleInstanceSettings(instance.Id).ShotId,
+            { Kind: ProjectTreeNodeKind.ModuleInstance } instance => _productionPreviewData.ModuleInstanceShotId(instance.Id),
             _ => "",
         };
     }
@@ -2635,10 +2635,10 @@ internal sealed class EditorPreviewController
         var shotId = ProductionShotId();
         if (!string.IsNullOrWhiteSpace(shotId) && !string.IsNullOrWhiteSpace(screenId))
         {
-            foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
+            foreach (var slotId in _timelineDataSource.ShotSlotIds(shotId))
             {
-                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
-                if (slot.Id == screenId)
+                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slotId);
+                if (slotId == screenId)
                 {
                     durationFrames = duration;
                     break;
@@ -2797,19 +2797,19 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(instanceId) && ProductionShotId() is { Length: > 0 } shotId)
         {
             var frame = 0;
-            foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
+            foreach (var slotId in _timelineDataSource.ShotSlotIds(shotId))
             {
-                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
+                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slotId);
                 if (_shotPreviewFrame < frame + duration)
                 {
-                    instanceId = slot.Id;
+                    instanceId = slotId;
                     break;
                 }
                 frame += duration;
             }
         }
         if (string.IsNullOrWhiteSpace(instanceId)) return "inherit";
-        var config = DesignPreviewTestValues.Parse(_database.GetModuleInstanceVariantSettings(instanceId).ConfigJson);
+        var config = DesignPreviewTestValues.Parse(_productionPreviewData.ModuleInstanceVariantConfigJson(instanceId));
         return config["appearanceMode"]?.GetValue<string>() ?? "inherit";
     }
 

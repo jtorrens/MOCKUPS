@@ -108,6 +108,11 @@ typed data source supplies only the exact stored Shot/Actor/Device/Theme route;
 `ProductionShotContextService` remains the owner of invalid-context messages
 and Screen navigation availability.
 
+Production transport and playback reads additionally follow contract 57. Shot
+fps, owning Shot ids and selected Variant config enter the Preview controller
+through a typed source, while ordered Screen ids and durations remain in the
+common timeline boundary.
+
 ## 6. Forbidden shortcuts
 
 - selecting the first Theme in a Project;

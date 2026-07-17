@@ -410,6 +410,12 @@ the Project media root and resolved Device frame metrics now enter the Preview
 controller through one typed source. The web Preview consumes a common metrics
 DTO and no longer references `SpikeDatabase`.
 
+Production Preview session data access is governed by
+`57_production_preview_session_data_boundary_contract.md`. Shot fps, owning
+Shot ids and selected Module Variant configs now enter the controller through a
+typed source, while ordered Screen ids reuse the timeline data source. The
+Preview controller no longer retains a database handle.
+
 ## Guardrails
 
 Reject new changes that add:

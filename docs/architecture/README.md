@@ -95,6 +95,9 @@ this index wins.
 - `56_preview_visual_context_data_boundary_contract.md`: typed Device/Theme
   options, Project media root and resolved common Device metrics for Preview,
   separated from shell selection and generic web presentation.
+- `57_production_preview_session_data_boundary_contract.md`: typed Shot fps,
+  Screen owner and selected Module Variant data for Production Preview,
+  composed with the common ordered timeline source.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

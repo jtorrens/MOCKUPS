@@ -174,6 +174,11 @@ Contract 56 establishes the Preview visual-context slice:
 media root and common resolved Device metrics while the controller retains
 session selection/orientation and the web Preview remains database-independent.
 
+Contract 57 establishes the Production Preview session slice:
+`ProductionPreviewSessionDataSource` supplies exact Shot/Screen/Variant values,
+ordered Screen ids reuse `ModuleInstanceTimelineDataSource`, and the Preview
+controller no longer retains a database handle.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

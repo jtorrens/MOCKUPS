@@ -80,6 +80,10 @@ data preparation create or receive one reusable timeline data source for their
 working service lifetime. They must not bypass it with direct database reads
 when invoking `ModuleInstanceTimeline`.
 
+Production Preview additionally follows contract 57: the controller obtains
+ordered stable Screen ids from this same data source while its separate session
+data source supplies only Shot fps, owning Shot ids and selected Variant config.
+
 Mutation remains in the existing animation/document owners. This read boundary
 does not authorize the timeline data source to persist a duration, keyframe or
 derived value.

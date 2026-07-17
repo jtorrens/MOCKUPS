@@ -22,6 +22,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
+    ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
@@ -803,6 +804,39 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
             dataSource.ThemeOptions(project.Id).Select((option) => option.Value));
         Equal(database.GetProjectSettings(project.Id).MediaRoot, dataSource.ProjectMediaRoot(project.Id));
         Equal(database.GetDevicePreviewMetrics(device.Id), dataSource.DeviceMetrics(device.Id));
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionPreviewSessionBoundaryPreservesCurrentData()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-preview-session-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new ProductionPreviewSessionDataSource(database);
+        var timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        var tree = database.LoadProjectTree();
+        var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var screen = shot.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+
+        Equal(database.GetModuleInstanceSettings(screen.Id).ShotId, dataSource.ModuleInstanceShotId(screen.Id));
+        Equal(database.GetShotSettings(shot.Id).Fps, dataSource.ShotFrameRate(shot.Id));
+        Equal(
+            database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
+            dataSource.ModuleInstanceVariantConfigJson(screen.Id));
+        SequenceEqual(
+            database.GetShotModuleInstanceSlots(shot.Id).Select((slot) => slot.Id),
+            timelineDataSource.ShotSlotIds(shot.Id));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

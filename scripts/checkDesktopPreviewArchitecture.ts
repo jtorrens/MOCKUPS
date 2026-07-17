@@ -474,6 +474,53 @@ for (const forbiddenPreviewControllerRead of [
     `the Preview controller must use its typed visual context boundary (${forbiddenPreviewControllerRead})`,
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/57_production_preview_session_data_boundary_contract.md",
+  "AGENTS must require the Production Preview session data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "57_production_preview_session_data_boundary_contract.md",
+  "the architecture index must include contract 57",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewSessionDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Production Preview session data source must own that route's database dependency",
+);
+for (const forbiddenProductionPreviewSessionSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ProductionPreviewSessionDataSource.cs",
+    forbiddenProductionPreviewSessionSql,
+    `the Production Preview session data source must compose current services rather than owning SQL (${forbiddenProductionPreviewSessionSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_productionPreviewData = new ProductionPreviewSessionDataSource(database)",
+  "the Preview controller must reuse one typed Production session data source",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private readonly SpikeDatabase _database",
+  "the Preview controller must not retain a general database handle",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_database.",
+  "the Preview controller must not bypass its typed data sources",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "GetShotModuleInstanceSlots",
+  "the Preview controller must reuse the ordered stable ids from the timeline data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_timelineDataSource.ShotSlotIds(shotId)",
+  "the Preview controller must reuse the typed timeline slot boundary",
+);
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",
@@ -3953,7 +4000,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "{ Kind: ProjectTreeNodeKind.ModuleInstance } instance => _database.GetModuleInstanceSettings(instance.Id).ShotId",
+  "{ Kind: ProjectTreeNodeKind.ModuleInstance } instance => _productionPreviewData.ModuleInstanceShotId(instance.Id)",
   "a selected module instance must retain its owning Shot playhead context",
 );
 assertDoesNotContain(
