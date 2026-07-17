@@ -66,11 +66,7 @@ internal sealed partial class SpikeDatabase
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            Execute(
-                connection,
-                "UPDATE component_classes SET name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", nextName));
+            _componentClassRepository.Rename(connection, node.Id, nextName);
         }
 
         return new ProjectTreeNode(
@@ -112,11 +108,7 @@ internal sealed partial class SpikeDatabase
                 ["config"] = (source["config"] as JsonObject
                     ?? throw new InvalidOperationException($"Component Variant '{presetId}' has no config snapshot.")).DeepClone(),
             });
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentPreset,
@@ -163,11 +155,7 @@ internal sealed partial class SpikeDatabase
                 ["locked"] = false,
                 ["config"] = sourceConfig,
             });
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentPreset,
@@ -217,11 +205,7 @@ internal sealed partial class SpikeDatabase
                 }
 
                 presets.RemoveAt(index);
-                Execute(
-                    connection,
-                    "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                    ("$id", componentClassId),
-                    ("$metadataJson", metadata.ToJsonString()));
+                _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
                 return;
             }
         }
@@ -251,11 +235,7 @@ internal sealed partial class SpikeDatabase
             var preset = FindPreset(presets, presetId)
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             preset["name"] = nextName;
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
         }
 
         return new ProjectTreeNode(
@@ -287,11 +267,7 @@ internal sealed partial class SpikeDatabase
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             var nextLocked = !JsonBool(preset, ["locked"]);
             preset["locked"] = nextLocked;
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentPreset,
@@ -329,11 +305,7 @@ internal sealed partial class SpikeDatabase
             }
 
             preset["config"] = nextConfig;
-            Execute(
-                connection,
-                "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$metadataJson", metadata.ToJsonString()));
+            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
         }
     }
 

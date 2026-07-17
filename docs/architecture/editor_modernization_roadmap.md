@@ -337,6 +337,13 @@ navigation and clamped scroll are retained only in memory by exact editor
 layout `recordClassId`; stable card/section ids replace node ids or positions,
 and Preview/Variant history cannot persist or override that state.
 
+Component Class definition persistence is governed by
+`46_component_class_definition_persistence_contract.md`.
+`ComponentClassRepository` owns strict current rows, ordered definition reads
+and prepared complete document writes while component field semantics,
+Variants, embedded composition, forwarding and Preview resolution remain in
+their existing owners.
+
 ## Guardrails
 
 Reject new changes that add:

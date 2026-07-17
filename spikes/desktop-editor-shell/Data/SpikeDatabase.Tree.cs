@@ -978,10 +978,15 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ComponentClass)
+        {
+            _componentClassRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
         var table = node.Kind switch
         {
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
 

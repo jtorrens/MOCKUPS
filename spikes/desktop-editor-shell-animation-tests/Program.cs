@@ -23,6 +23,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
+    ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -974,6 +975,93 @@ static void AppModuleRepositoryPreservesFacadeContract()
             Throws<InvalidOperationException>(() => repository.UpdateModuleMetadata(connection, module.Id, "{\"variants\":[]}"));
         }
         Throws<InvalidOperationException>(() => repository.UpdateModuleDesignPreview(module.Id, "[]"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ComponentClassRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-class-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IComponentClassRepository repository = new ComponentClassRepository(context);
+        var componentNode = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
+        var original = repository.Get(componentNode.Id);
+        var settings = database.GetComponentClassSettings(componentNode.Id);
+
+        Equal(original.ProjectId, settings.ProjectId);
+        Equal(original.ComponentType, settings.ComponentType);
+        Equal(original.RecordClassId, settings.RecordClassId);
+        Equal(original.DesignPreviewJson, settings.DesignPreviewJson);
+        Equal(original.MetadataJson, settings.MetadataJson);
+        using (var connection = context.OpenConnection())
+        {
+            True(repository.QueryAll(connection).Any((candidate) => candidate.Id == original.Id));
+            True(repository.QueryByProject(connection, original.ProjectId).Any((candidate) => candidate.Id == original.Id));
+        }
+
+        var preview = JsonPath.ParseRequiredObject(original.DesignPreviewJson, $"Component class '{original.Id}' design_preview_json");
+        preview["repositoryTest"] = true;
+        repository.UpdateDesignPreview(original.Id, preview.ToJsonString());
+        Equal(preview.ToJsonString(), database.GetComponentClassSettings(original.Id).DesignPreviewJson);
+        database.UpdateComponentClassDesignPreviewJson(original.Id, original.DesignPreviewJson);
+
+        var config = JsonPath.ParseRequiredObject(original.ConfigJson, $"Component class '{original.Id}' config_json");
+        config["repositoryTest"] = true;
+        var metadata = JsonPath.ParseRequiredObject(original.MetadataJson, $"Component class '{original.Id}' metadata_json");
+        var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{original.Id}'");
+        var defaultPreset = presets.OfType<JsonObject>()
+            .Single((preset) => JsonPath.String(preset, "id", "") == "default");
+        defaultPreset["config"] = config.DeepClone();
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateConfigAndMetadata(
+                connection,
+                original.Id,
+                config.ToJsonString(),
+                metadata.ToJsonString());
+        }
+        var storedConfig = JsonPath.ParseRequiredObject(
+            database.GetComponentClassSettings(original.Id).ConfigJson,
+            "repository test config");
+        True(storedConfig["repositoryTest"]?.GetValue<bool>() == true);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateConfigAndMetadata(
+                connection,
+                original.Id,
+                original.ConfigJson,
+                original.MetadataJson);
+        }
+
+        var renamed = database.RenameDirectNode(componentNode, "Repository Component");
+        Equal("Repository Component", repository.Get(original.Id).Name);
+        database.RenameDirectNode(renamed, original.Name);
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() => repository.UpdateConfigAndMetadata(
+                connection,
+                original.Id,
+                "[]",
+                original.MetadataJson));
+            Throws<InvalidOperationException>(() => repository.UpdateMetadata(
+                connection,
+                original.Id,
+                "{\"presets\":[]}"));
+        }
+        Throws<InvalidOperationException>(() => repository.UpdateDesignPreview(original.Id, "[]"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

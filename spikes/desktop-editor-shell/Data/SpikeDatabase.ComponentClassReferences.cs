@@ -59,7 +59,7 @@ internal sealed partial class SpikeDatabase
 
     private static void AddEmbeddedComponentUsages(
         ICollection<EmbeddedComponentUsage> usages,
-        ComponentClassRow row,
+        ComponentClassDefinitionRecord row,
         string sourceName,
         string sourceNodeId,
         string configJson,
@@ -129,7 +129,7 @@ internal sealed partial class SpikeDatabase
         return GetEmbeddedComponentPresetName(connection, projectId, ownerConfig, slots);
     }
 
-    private static string GetEmbeddedComponentPresetName(
+    private string GetEmbeddedComponentPresetName(
         SqliteConnection connection,
         string projectId,
         JsonObject ownerConfig,
@@ -170,46 +170,23 @@ internal sealed partial class SpikeDatabase
         var configs = new JsonObject();
         var presets = new JsonObject();
         var presetTypes = new JsonObject();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT id, component_type, config_json, metadata_json
-            FROM component_classes
-            WHERE project_id = $projectId
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        foreach (var row in _componentClassRepository.QueryByProject(connection, projectId))
         {
-            var componentClassId = reader.GetString(0);
-            var componentType = reader.GetString(1);
-            var classConfigJson = ReadString(reader, 2);
-            var metadataJson = ReadString(reader, 3);
-            var row = new ComponentClassRow(
-                componentClassId,
-                projectId,
-                componentType,
-                "",
-                "",
-                "",
-                classConfigJson,
-                "",
-                metadataJson);
             AddComponentPresetConfigs(connection, presets, row);
             foreach (var preset in RequiredComponentClassPresets(row))
             {
-                presetTypes[ComponentPresetNodeId(componentClassId, preset.Id)] = componentType;
+                presetTypes[ComponentPresetNodeId(row.Id, preset.Id)] = row.ComponentType;
             }
-            if (configs.ContainsKey(componentType))
+            if (configs.ContainsKey(row.ComponentType))
             {
                 continue;
             }
 
             var defaultConfig = ParseJsonObject(DefaultComponentPresetConfigJson(
-                metadataJson,
-                $"Component class '{componentClassId}'"));
+                row.MetadataJson,
+                $"Component class '{row.Id}'"));
             ValidateEmbeddedSlotPresetReferences(connection, projectId, defaultConfig);
-            configs[componentType] = defaultConfig;
+            configs[row.ComponentType] = defaultConfig;
         }
 
         configs["presets"] = presets;
@@ -225,7 +202,7 @@ internal sealed partial class SpikeDatabase
         return config.ToJsonString();
     }
 
-    private static void AddComponentPresetConfigs(SqliteConnection connection, JsonObject target, ComponentClassRow row)
+    private void AddComponentPresetConfigs(SqliteConnection connection, JsonObject target, ComponentClassDefinitionRecord row)
     {
         foreach (var preset in RequiredComponentClassPresets(row))
         {
@@ -235,7 +212,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void ValidateEmbeddedSlotPresetReferences(
+    private void ValidateEmbeddedSlotPresetReferences(
         SqliteConnection connection,
         string projectId,
         JsonObject config)
@@ -484,7 +461,7 @@ internal sealed partial class SpikeDatabase
         return ValidateComponentPresetReference(connection, projectId, componentType, reference, allowEmpty);
     }
 
-    private static string DefaultComponentPresetReference(
+    private string DefaultComponentPresetReference(
         SqliteConnection connection,
         string projectId,
         string componentType)
@@ -500,7 +477,7 @@ internal sealed partial class SpikeDatabase
         return ComponentPresetNodeId(componentClass.Id, preset.Id);
     }
 
-    private static string ValidateComponentPresetReference(
+    private string ValidateComponentPresetReference(
         SqliteConnection connection,
         string projectId,
         string componentType,
@@ -542,7 +519,7 @@ internal sealed partial class SpikeDatabase
         return reference;
     }
 
-    private static List<ComponentClassRow> ComponentClassRowsByType(
+    private List<ComponentClassDefinitionRecord> ComponentClassRowsByType(
         SqliteConnection connection,
         string projectId,
         string componentType)
@@ -555,19 +532,19 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
-    private static IReadOnlyList<ComponentClassPreset> RequiredComponentClassPresets(ComponentClassRow row)
+    private static IReadOnlyList<ComponentClassPreset> RequiredComponentClassPresets(ComponentClassDefinitionRecord row)
     {
         return ComponentClassPresets(row.MetadataJson, $"Component class '{row.Id}'");
     }
 
-    private static string PreferredPresetId(ComponentClassRow row)
+    private static string PreferredPresetId(ComponentClassDefinitionRecord row)
     {
         var presets = RequiredComponentClassPresets(row);
         return presets.FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))?.Id
             ?? presets[0].Id;
     }
 
-    private static string GetComponentClassPresetConfigJson(
+    private string GetComponentClassPresetConfigJson(
         SqliteConnection connection,
         string projectId,
         string componentType,
@@ -592,7 +569,7 @@ internal sealed partial class SpikeDatabase
         return ComponentPresetConfigJson(referencedRow, referencedPresetId);
     }
 
-    private static string ComponentPresetConfigJson(ComponentClassRow row, string presetId)
+    private static string ComponentPresetConfigJson(ComponentClassDefinitionRecord row, string presetId)
     {
         return RequiredComponentClassPresets(row)
             .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal))
@@ -602,18 +579,9 @@ internal sealed partial class SpikeDatabase
     private IReadOnlyList<FieldOption> EmbeddedComponentOptions(string projectId, string recordClassId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT name
-            FROM component_classes
-            WHERE project_id = $projectId
-              AND record_class_id = $recordClassId
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END, name
-            LIMIT 1
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$recordClassId", recordClassId);
-        var name = command.ExecuteScalar() as string;
+        var name = _componentClassRepository.QueryByProject(connection, projectId)
+            .FirstOrDefault((row) => row.RecordClassId.Equals(recordClassId, StringComparison.Ordinal))
+            ?.Name;
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
@@ -622,7 +590,7 @@ internal sealed partial class SpikeDatabase
         return GetComponentPresetReferenceOptionsByType(projectId, componentType);
     }
 
-    private static string ComponentPresetName(
+    private string ComponentPresetName(
         SqliteConnection connection,
         string projectId,
         string componentType,

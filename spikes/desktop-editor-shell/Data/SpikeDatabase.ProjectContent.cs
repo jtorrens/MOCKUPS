@@ -387,7 +387,7 @@ internal sealed partial class SpikeDatabase
         _appModuleRepository.UpdateModuleConfig(connection, moduleId, config.ToJsonString());
     }
 
-    private static void UpdateModuleConfigFieldValue(
+    private void UpdateModuleConfigFieldValue(
         SqliteConnection connection,
         string projectId,
         JsonObject config,

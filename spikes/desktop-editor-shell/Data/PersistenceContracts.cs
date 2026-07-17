@@ -158,6 +158,17 @@ internal sealed record ModuleDefinitionRecord(
     string DesignPreviewJson,
     string MetadataJson);
 
+internal sealed record ComponentClassDefinitionRecord(
+    string Id,
+    string ProjectId,
+    string ComponentType,
+    string RecordClassId,
+    string Name,
+    string Notes,
+    string ConfigJson,
+    string DesignPreviewJson,
+    string MetadataJson);
+
 internal enum ReferenceUsageScope
 {
     Design,
@@ -431,6 +442,31 @@ internal interface IAppModuleRepository
     void UpdateAppNode(SqliteConnection connection, string appId, string name, string notes);
 
     void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes);
+}
+
+internal interface IComponentClassRepository
+{
+    ComponentClassDefinitionRecord Get(string componentClassId);
+
+    ComponentClassDefinitionRecord Get(SqliteConnection connection, string componentClassId);
+
+    IReadOnlyList<ComponentClassDefinitionRecord> QueryAll(SqliteConnection connection);
+
+    IReadOnlyList<ComponentClassDefinitionRecord> QueryByProject(SqliteConnection connection, string projectId);
+
+    void UpdateDesignPreview(string componentClassId, string designPreviewJson);
+
+    void UpdateConfigAndMetadata(
+        SqliteConnection connection,
+        string componentClassId,
+        string configJson,
+        string metadataJson);
+
+    void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson);
+
+    void Rename(SqliteConnection connection, string componentClassId, string name);
+
+    void UpdateNode(SqliteConnection connection, string componentClassId, string name, string notes);
 }
 
 internal interface IModuleInstanceThemeContextService

@@ -2123,6 +2123,73 @@ assertContains(
   "the active architecture index must include the editor session view state contract",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "new ComponentClassRepository(_context)",
+  "SpikeDatabase must construct the focused Component Class repository",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "_componentClassRepository.UpdateConfigAndMetadata(",
+  "Component Class coordinated document writes must delegate to the repository",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "_componentClassRepository.UpdateMetadata(",
+  "Component Variant document writes must delegate prepared metadata to the repository",
+);
+for (const componentClassFacadePath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
+] as const) {
+  for (const forbiddenComponentClassSql of [
+    "FROM component_classes",
+    "UPDATE component_classes",
+    "INSERT INTO component_classes",
+    "DELETE FROM component_classes",
+  ]) {
+    assertDoesNotContain(
+      componentClassFacadePath,
+      forbiddenComponentClassSql,
+      `${componentClassFacadePath} must delegate Component Class persistence instead of retaining ${forbiddenComponentClassSql}`,
+    );
+  }
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  'ProjectTreeNodeKind.ComponentClass => "component_classes"',
+  "tree node writes must delegate Component Classes to their repository",
+);
+for (const forbiddenComponentClassRepositoryConcern of [
+  "MainWindow",
+  "ProjectTreeNode",
+  "ComponentClassFieldCatalog",
+  "EmbeddedComponent",
+  "RuntimeInput",
+  "Renderable",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+    forbiddenComponentClassRepositoryConcern,
+    `ComponentClassRepository must not own UI, field, composition, Runtime or render concern ${forbiddenComponentClassRepositoryConcern}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+  "has no explicit default Variant",
+  "Component Class persistence must reject metadata without an explicit current default Variant id",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/46_component_class_definition_persistence_contract.md",
+  "AGENTS must require the Component Class definition persistence contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "46_component_class_definition_persistence_contract.md",
+  "the active architecture index must include the Component Class definition persistence contract",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",

@@ -13,8 +13,7 @@ internal sealed partial class SpikeDatabase
 {
     public ComponentClassSettings GetComponentClassSettings(string componentClassId)
     {
-        using var connection = OpenConnection();
-        return GetComponentClassSettings(connection, componentClassId);
+        return ComponentClassSettingsFrom(_componentClassRepository.Get(componentClassId));
     }
 
     public ComponentClassSettings GetComponentPresetSettings(ProjectTreeNode presetNode)
@@ -23,18 +22,10 @@ internal sealed partial class SpikeDatabase
         return GetComponentPresetSettings(connection, presetNode);
     }
 
-    public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson)
-    {
-        ParseJsonObject(designPreviewJson);
-        using var connection = OpenConnection();
-        Execute(
-            connection,
-            "UPDATE component_classes SET design_preview_json = $json WHERE id = $id",
-            ("$json", designPreviewJson),
-            ("$id", componentClassId));
-    }
+    public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson) =>
+        _componentClassRepository.UpdateDesignPreview(componentClassId, designPreviewJson);
 
-    private static ComponentClassSettings GetComponentPresetSettings(SqliteConnection connection, ProjectTreeNode presetNode)
+    private ComponentClassSettings GetComponentPresetSettings(SqliteConnection connection, ProjectTreeNode presetNode)
     {
         if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
             || !TryParseComponentPresetNodeId(presetNode.Id, out var componentClassId, out var presetId))
@@ -68,7 +59,7 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static JsonObject ComponentPresetConfigForUpdate(
+    private JsonObject ComponentPresetConfigForUpdate(
         SqliteConnection connection,
         ProjectTreeNode presetNode,
         out string componentClassId,
@@ -103,31 +94,22 @@ internal sealed partial class SpikeDatabase
     }
 
 
-    private static ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
+    private ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json
-            FROM component_classes
-            WHERE id = $id
-            """;
-        command.Parameters.AddWithValue("$id", componentClassId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing component class '{componentClassId}'.");
-        }
+        return ComponentClassSettingsFrom(_componentClassRepository.Get(connection, componentClassId));
+    }
 
-        var metadataJson = ReadString(reader, 7);
+    private static ComponentClassSettings ComponentClassSettingsFrom(ComponentClassDefinitionRecord record)
+    {
         return new ComponentClassSettings(
-            reader.GetString(0),
-            reader.GetString(1),
-            reader.GetString(2),
-            reader.GetString(3),
-            ReadString(reader, 4),
-            DefaultComponentPresetConfigJson(metadataJson, $"Component class '{componentClassId}'"),
-            ReadString(reader, 6),
-            metadataJson);
+            record.ProjectId,
+            record.ComponentType,
+            record.RecordClassId,
+            record.Name,
+            record.Notes,
+            DefaultComponentPresetConfigJson(record.MetadataJson, $"Component class '{record.Id}'"),
+            record.DesignPreviewJson,
+            record.MetadataJson);
     }
 
     public FieldValue CreateComponentClassFieldValue(string componentClassId, string fieldId)
@@ -325,12 +307,11 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(settings.MetadataJson);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             SetDefaultComponentPresetConfig(metadata, config);
-            Execute(
+            _componentClassRepository.UpdateConfigAndMetadata(
                 connection,
-                "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", componentClassId),
-                ("$configJson", config.ToJsonString()),
-                ("$metadataJson", metadata.ToJsonString()));
+                componentClassId,
+                config.ToJsonString(),
+                metadata.ToJsonString());
         }
     }
 
@@ -694,22 +675,21 @@ internal sealed partial class SpikeDatabase
         defaultPreset["config"] = config.DeepClone();
     }
 
-    private static void PersistDefaultComponentConfig(
+    private void PersistDefaultComponentConfig(
         SqliteConnection connection,
         string componentClassId,
         JsonObject config,
         JsonObject metadata)
     {
         SetDefaultComponentPresetConfig(metadata, config);
-        Execute(
+        _componentClassRepository.UpdateConfigAndMetadata(
             connection,
-            "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
-            ("$id", componentClassId),
-            ("$configJson", config.ToJsonString()),
-            ("$metadataJson", metadata.ToJsonString()));
+            componentClassId,
+            config.ToJsonString(),
+            metadata.ToJsonString());
     }
 
-    private static void PersistComponentPresetUpdate(
+    private void PersistComponentPresetUpdate(
         SqliteConnection connection,
         ProjectTreeNode presetNode,
         string componentClassId,
@@ -725,39 +705,11 @@ internal sealed partial class SpikeDatabase
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
             return;
         }
-        Execute(
-            connection,
-            "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
-            ("$id", componentClassId),
-            ("$metadataJson", metadata.ToJsonString()));
+        _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
     }
 
-    private static List<ComponentClassRow> QueryComponentClassRows(SqliteConnection connection)
-    {
-        var rows = new List<ComponentClassRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT id, project_id, component_type, record_class_id, name, notes, config_json, design_preview_json, metadata_json
-            FROM component_classes
-            ORDER BY component_type, name
-            """;
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ComponentClassRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                reader.GetString(4),
-                ReadString(reader, 5),
-                ReadString(reader, 6),
-                ReadString(reader, 7),
-                ReadString(reader, 8)));
-        }
-
-        return rows;
-    }
+    private IReadOnlyList<ComponentClassDefinitionRecord> QueryComponentClassRows(SqliteConnection connection) =>
+        _componentClassRepository.QueryAll(connection);
     private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
     {
         if (descriptor.ValueKind == ValueKind.EmbeddedComponent)
@@ -884,7 +836,7 @@ internal sealed partial class SpikeDatabase
         return overrides is not null && HasEffectiveJsonValue(overrides);
     }
 
-    private static JsonObject EffectiveEmbeddedBaseConfig(
+    private JsonObject EffectiveEmbeddedBaseConfig(
         SqliteConnection connection,
         string projectId,
         JsonObject ownerConfig,

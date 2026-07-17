@@ -152,7 +152,6 @@ internal sealed partial class SpikeDatabase
         string ModuleName,
         string MetadataJson);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
-    private sealed record ComponentClassRow(string Id, string ProjectId, string ComponentType, string RecordClassId, string Name, string Notes, string ConfigJson, string DesignPreviewJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,
         string EpisodeId,

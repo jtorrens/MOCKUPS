@@ -19,6 +19,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/43_icon_theme_persistence_and_asset_contract.md`
 - `docs/architecture/44_app_module_definition_persistence_contract.md`
 - `docs/architecture/45_editor_session_view_state_contract.md`
+- `docs/architecture/46_component_class_definition_persistence_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -252,6 +253,13 @@ Palette, Device and Actor persistence additionally follows
 repositories own table SQL, row mapping, explicit lifecycle persistence and
 stored-document writes. Device/Actor interpretation remains in common/domain
 services and must not move into the repository, tree or UI shell.
+
+Component Class definition persistence follows
+`docs/architecture/46_component_class_definition_persistence_contract.md`.
+`ComponentClassRepository` owns current row SQL/mapping and prepared complete
+document writes. Field paths, Variants, embedded composition, forwarding,
+payloads, resolvers and renderables remain in their domain owners. Definition
+creation/retirement remains an explicit development/scaffolding workflow.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

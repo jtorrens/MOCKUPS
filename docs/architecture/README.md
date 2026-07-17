@@ -61,6 +61,9 @@ this index wins.
 - `45_editor_session_view_state_contract.md`: process-local continuity of
   editor cards, internal navigation and clamped scroll by exact layout class,
   with stable UI ids and no persistence through window or history state.
+- `46_component_class_definition_persistence_contract.md`: focused ownership
+  of Component Class current rows and prepared document writes while field
+  semantics, Variants, embedded composition and Preview remain domain-owned.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
