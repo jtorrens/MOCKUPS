@@ -4,15 +4,14 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActions
 {
     public static IReadOnlyList<ComponentPreviewActionDefinition> ReadWithEmbedded(
-        SpikeDatabase database,
-        JsonObject preview)
+        JsonObject preview,
+        Func<string, JsonObject> componentPresetRuntimeContract)
     {
         var definitions = Read(preview).ToList();
         if (preview["collections"] is not JsonArray collections) return definitions;
@@ -51,7 +50,7 @@ internal static class ComponentPreviewActions
                 var itemId = JsonString(item, "id");
                 var presetReference = JsonString(item, presetJsonKey);
                 if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(presetReference)) continue;
-                var childContract = database.GetComponentPresetRuntimeContract(presetReference);
+                var childContract = componentPresetRuntimeContract(presetReference);
                 definitions.AddRange(Read(childContract)
                     .Where((action) => !action.IsCollectionItemAction)
                     .Select((action) => action with

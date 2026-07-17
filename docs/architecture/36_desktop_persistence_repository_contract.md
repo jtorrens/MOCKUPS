@@ -179,6 +179,11 @@ Contract 57 establishes the Production Preview session slice:
 ordered Screen ids reuse `ModuleInstanceTimelineDataSource`, and the Preview
 controller no longer retains a database handle.
 
+Contract 58 establishes the isolated Component Preview input slice:
+`ComponentPreviewInputDataSource` supplies exact Project fps, complete
+Component Variant configs and effective runtime contracts while the Test Values
+session and action interpreter retain transient input and action semantics.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

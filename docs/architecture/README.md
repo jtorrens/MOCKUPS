@@ -98,6 +98,9 @@ this index wins.
 - `57_production_preview_session_data_boundary_contract.md`: typed Shot fps,
   Screen owner and selected Module Variant data for Production Preview,
   composed with the common ordered timeline source.
+- `58_component_preview_input_data_boundary_contract.md`: typed Project fps,
+  complete Component Variant config and effective embedded action contracts for
+  session-only Preview Test Values.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

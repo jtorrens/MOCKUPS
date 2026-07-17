@@ -16,7 +16,8 @@ internal sealed class ComponentPreviewInputSession
     public event Action<PlaybackRunInfo>? PlaybackStarted;
     public event Action<PlaybackRunInfo>? PlaybackStopped;
     public event Action<bool>? PlaybackBusyChanged;
-    private readonly SpikeDatabase _database;
+    private readonly ComponentPreviewInputDataSource _previewInputData;
+    private readonly RuntimeInputOptionsDataSource _inputOptionsData;
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
     private readonly Action _refreshPreview;
@@ -81,7 +82,8 @@ internal sealed class ComponentPreviewInputSession
         Action refreshPreview,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
-        _database = database;
+        _previewInputData = new ComponentPreviewInputDataSource(database);
+        _inputOptionsData = new RuntimeInputOptionsDataSource(database);
         var actorDataSource = new ActorPreviewDataSource(database);
         _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
         _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
@@ -123,7 +125,9 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            _previewInputData.ComponentPresetRuntimeContract);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             _scopeKey = "";
@@ -371,7 +375,9 @@ internal sealed class ComponentPreviewInputSession
         _runtimePreview = preview;
         var inputs = ReadRuntimeInputs(preview, config);
         var collections = ReadRuntimeCollections(preview, config);
-        _actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
+        _actions = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            _previewInputData.ComponentPresetRuntimeContract);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             return payload;
@@ -454,7 +460,7 @@ internal sealed class ComponentPreviewInputSession
                     continue;
                 }
 
-                var componentConfig = _database.GetComponentPresetConfig(presetReference);
+                var componentConfig = _previewInputData.ComponentPresetConfig(presetReference);
                 ResolveRecordReferenceInputs(
                     componentInputs,
                     ReadRuntimeInputs(componentInputs, componentConfig),
@@ -667,7 +673,7 @@ internal sealed class ComponentPreviewInputSession
             var reference = _values.GetValueOrDefault(key, input.DefaultValue);
             if (!string.IsNullOrWhiteSpace(reference))
             {
-                _values[key] = _database.ValidateComponentPresetReferenceValue(
+                _values[key] = _previewInputData.ValidateComponentPresetReference(
                     projectId,
                     input.ComponentType,
                     reference);
@@ -713,7 +719,7 @@ internal sealed class ComponentPreviewInputSession
     {
         return string.IsNullOrWhiteSpace(input.ComponentType)
             ? []
-            : _database.GetComponentPresetReferenceOptions(projectId, input.ComponentType);
+            : _inputOptionsData.ComponentPresetOptions(projectId, input.ComponentType, includeNone: false);
     }
 
     private static ComponentInputDefinition CreateInputDefinition(
@@ -811,7 +817,7 @@ internal sealed class ComponentPreviewInputSession
 
     private void ApplyProjectFrameRate(string projectId)
     {
-        var projectFps = _database.GetProjectSettings(projectId).DefaultFps;
+        var projectFps = _previewInputData.ProjectDefaultFrameRate(projectId);
         var previousFps = _playbackFrameRate;
         var previousInterval = _playbackTimer.Interval;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);

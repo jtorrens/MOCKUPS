@@ -21,6 +21,7 @@ var tests = new (string Name, Action Run)[]
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
+    ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
@@ -772,6 +773,50 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         Equal(
             database.GetRuntimeComponentPresetName(presetReference, new JsonObject(), []),
             dynamicOptions[0].Label);
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-preview-input-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new ComponentPreviewInputDataSource(database);
+        var componentClass = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
+        var preset = componentClass.Children
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var settings = database.GetComponentClassSettings(componentClass.Id);
+
+        Equal(
+            database.GetProjectSettings(settings.ProjectId).DefaultFps,
+            dataSource.ProjectDefaultFrameRate(settings.ProjectId));
+        Equal(
+            database.GetComponentPresetConfig(preset.Id).ToJsonString(),
+            dataSource.ComponentPresetConfig(preset.Id).ToJsonString());
+        Equal(
+            database.GetComponentPresetRuntimeContract(preset.Id).ToJsonString(),
+            dataSource.ComponentPresetRuntimeContract(preset.Id).ToJsonString());
+        Equal(
+            database.ValidateComponentPresetReferenceValue(
+                settings.ProjectId,
+                settings.ComponentType,
+                preset.Id),
+            dataSource.ValidateComponentPresetReference(
+                settings.ProjectId,
+                settings.ComponentType,
+                preset.Id));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
@@ -1885,7 +1930,9 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(true, passwordTrigger.Animation is not null);
         Equal(true, passwordFrame.Animation is null);
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
-        var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(database, effective)
+        var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(
+                effective,
+                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
             .Single((action) => action.Label == "Enter password");
         Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
         Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
@@ -3322,7 +3369,9 @@ static void NotificationsSeedOpensAndRenders()
         var transitionPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
         var transitionPreview = JsonNode.Parse(transitionPayload.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing Notification transition preview.");
-        var transitionAction = ComponentPreviewActions.ReadWithEmbedded(database, transitionPreview)
+        var transitionAction = ComponentPreviewActions.ReadWithEmbedded(
+                transitionPreview,
+                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
             .Single((action) => action.Id == "changeDisplayMode");
         var transitionSession = new ComponentPreviewInputSession(database, () => { });
         var transitionBusy = false;
@@ -3409,7 +3458,9 @@ static void NotificationsSeedOpensAndRenders()
         populatedSession.UpdateForPayload(populated, settings.ProjectId);
         var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
-        var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(database, populatedContract)
+        var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(
+                populatedContract,
+                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
             .Where((action) => action.TargetInputId == "displayMode")
             .ToList();
         Equal(2, embeddedActions.Count);

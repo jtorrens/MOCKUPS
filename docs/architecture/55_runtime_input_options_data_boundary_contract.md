@@ -69,6 +69,10 @@ Dynamic options remain a presentation of current structured values. They do
 not create ids, alter ordering, forward Runtime Inputs, change selected state
 or persist collection data.
 
+Contract 58 reuses this source for isolated Preview Component Variant options.
+Complete Variant config, effective child runtime contracts and strict reference
+validation remain in that contract's separate typed data boundary.
+
 ## 5. Preserved boundaries
 
 - Every editable Runtime scalar still follows

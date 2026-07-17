@@ -100,6 +100,11 @@ contract 57. They must not be folded into `DesignPreviewPayloadFactory`:
 transport fps, Screen ownership, ordered slots and appearance context remain
 separate session/timeline inputs around the complete payload boundary.
 
+Isolated Test Values and action reads follow contract 58. Project fps and
+embedded Component Variant contracts enter their session through a separate
+typed source; they must not be folded into payload construction or persisted as
+Module Instance runtime content.
+
 ## 6. Enforcement and tests
 
 Architecture enforcement must verify:

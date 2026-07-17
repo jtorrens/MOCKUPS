@@ -15,6 +15,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RuntimeInputsCollectionEditor
 {
     private readonly SpikeDatabase _database;
+    private readonly ComponentPreviewInputDataSource _previewInputData;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
@@ -60,6 +61,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
         _database = database;
+        _previewInputData = new ComponentPreviewInputDataSource(database);
         _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
@@ -92,7 +94,9 @@ internal sealed class RuntimeInputsCollectionEditor
             config);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
-        var actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
+        var actions = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            _previewInputData.ComponentPresetRuntimeContract);
         var valuesTab = new TabItem
         {
             Header = owner.IsInstance ? "Runtime Values" : "Test Values",

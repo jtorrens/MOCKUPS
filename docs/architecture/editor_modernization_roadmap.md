@@ -416,6 +416,12 @@ Shot ids and selected Module Variant configs now enter the controller through a
 typed source, while ordered Screen ids reuse the timeline data source. The
 Preview controller no longer retains a database handle.
 
+Isolated Component Preview input data access is governed by
+`58_component_preview_input_data_boundary_contract.md`. Project fps, complete
+Component Variant configs and effective embedded action contracts now enter the
+Test Values session through a typed source. The session no longer retains a
+database handle, and the action interpreter is persistence-independent.
+
 ## Guardrails
 
 Reject new changes that add:

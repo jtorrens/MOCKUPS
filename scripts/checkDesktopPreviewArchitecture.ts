@@ -521,6 +521,70 @@ assertContains(
   "_timelineDataSource.ShotSlotIds(shotId)",
   "the Preview controller must reuse the typed timeline slot boundary",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/58_component_preview_input_data_boundary_contract.md",
+  "AGENTS must require the Component Preview input data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "58_component_preview_input_data_boundary_contract.md",
+  "the architecture index must include contract 58",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewInputDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Component Preview input data source must own that route's database dependency",
+);
+for (const forbiddenComponentPreviewInputSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewInputDataSource.cs",
+    forbiddenComponentPreviewInputSql,
+    `the Component Preview input data source must compose current services rather than owning SQL (${forbiddenComponentPreviewInputSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "_previewInputData = new ComponentPreviewInputDataSource(database)",
+  "the isolated Preview input session must reuse one typed input data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "_inputOptionsData = new RuntimeInputOptionsDataSource(database)",
+  "the isolated Preview input session must reuse the Runtime Input options boundary",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "private readonly SpikeDatabase _database",
+  "the isolated Preview input session must not retain a general database handle",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "_database.",
+  "the isolated Preview input session must not bypass its typed data sources",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "Func<string, JsonObject> componentPresetRuntimeContract",
+  "the action interpreter must receive exact embedded contracts without persistence coupling",
+);
+for (const forbiddenActionPersistenceDependency of ["SpikeDatabase", "Mockups.DesktopEditorShell.Data"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    forbiddenActionPersistenceDependency,
+    `the action interpreter must remain persistence-independent (${forbiddenActionPersistenceDependency})`,
+  );
+}
+for (const componentPreviewActionConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+]) {
+  assertContains(
+    componentPreviewActionConsumer,
+    "_previewInputData.ComponentPresetRuntimeContract",
+    "Preview action consumers must use the typed embedded Component contract boundary",
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",
