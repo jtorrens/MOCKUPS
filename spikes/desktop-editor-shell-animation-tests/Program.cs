@@ -19,6 +19,7 @@ var tests = new (string Name, Action Run)[]
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
+    ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
@@ -636,6 +637,68 @@ static void ResourceRepositoriesPreserveFacadeContract()
             new DeviceImportDraft("Invalid Device", "Mockups", "Invalid", "ios", "[]")));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ActorPreviewDataBoundaryPreservesCurrentValues()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-actor-preview-data-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new ActorPreviewDataSource(database);
+        var actor = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.Actor);
+        var settings = database.GetActorSettings(actor.Id);
+        var context = dataSource.LoadContext(actor.Id);
+        var previewSource = dataSource.LoadPreview(actor.Id);
+
+        Equal(settings.ProjectId, context.ProjectId);
+        Equal(settings.DefaultDeviceId, context.DefaultDeviceId);
+        Equal(settings.DefaultThemeId, context.DefaultThemeId);
+        Equal(settings.ProjectId, previewSource.ProjectId);
+        Equal(settings.DisplayName, previewSource.DisplayName);
+        Equal(settings.ShortName, previewSource.ShortName);
+        Equal(settings.MetadataJson, previewSource.MetadataJson);
+        Equal(database.GetProjectSettings(settings.ProjectId).MediaRoot, previewSource.ProjectMediaRoot);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.color.modes"), previewSource.ColorModes);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatarTextColor.modes"), previewSource.AvatarTextColorModes);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.filePath"), previewSource.AvatarFilePath);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.scale"), previewSource.AvatarScale);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.offset"), previewSource.AvatarOffset);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.useInitials"), previewSource.AvatarUseInitials);
+        Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.initialsPadding"), previewSource.AvatarInitialsPadding);
+        SequenceEqual(
+            database.GetActorOptions(settings.ProjectId).Select((option) => option.Value),
+            dataSource.Options(settings.ProjectId).Select((option) => option.Value));
+        SequenceEqual(
+            database.GetPaletteColorOptions(settings.ProjectId).Select((option) => option.Value),
+            dataSource.PaletteColorOptions(settings.ProjectId).Select((option) => option.Value));
+
+        var paletteColors = database.GetPaletteColorMap(settings.ProjectId);
+        var lightPayload = ActorPreviewInputFactory.Create(dataSource, actor.Id, "light", paletteColors);
+        var darkPayload = ActorPreviewInputFactory.Create(dataSource, actor.Id, "dark", paletteColors);
+        Equal(actor.Id, lightPayload["id"]!.GetValue<string>());
+        Equal(settings.DisplayName, lightPayload["displayName"]!.GetValue<string>());
+        Equal(
+            paletteColors[previewSource.ColorModes.Split('|', 2)[0]],
+            lightPayload["avatar"]!["backgroundColor"]!.GetValue<string>());
+        Equal(
+            paletteColors[previewSource.ColorModes.Split('|', 2)[1]],
+            darkPayload["avatar"]!["backgroundColor"]!.GetValue<string>());
+        True(JsonNode.DeepEquals(
+            JsonPath.ParseRequiredObject(settings.MetadataJson, $"Actor '{actor.Id}' metadata_json")["wallpaper"],
+            lightPayload["wallpaper"]));
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
     }
     finally
     {

@@ -83,6 +83,9 @@ this index wins.
 - `52_module_instance_timeline_data_boundary_contract.md`: typed read access
   for current Screen/Shot timeline inputs, separated from contract-owned
   duration, owner-origin and keyframe projection formulas.
+- `53_actor_preview_data_boundary_contract.md`: typed read access for current
+  Actor Preview inputs, separated from Runtime Actor resolution and inline
+  avatar presentation semantics.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -4,7 +4,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,11 +13,11 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ActorAvatarPreviewFactory
 {
-    private readonly SpikeDatabase _database;
+    private readonly ActorPreviewDataSource _dataSource;
 
-    public ActorAvatarPreviewFactory(SpikeDatabase database)
+    public ActorAvatarPreviewFactory(ActorPreviewDataSource dataSource)
     {
-        _database = database;
+        _dataSource = dataSource;
     }
 
     public Control Create(
@@ -26,17 +25,17 @@ internal sealed class ActorAvatarPreviewFactory
         bool isDark,
         IReadOnlyDictionary<string, string>? draftValues = null)
     {
-        var settings = _database.GetActorSettings(actorId);
-        var imagePath = PreviewField(actorId, "actor.avatar.filePath", draftValues);
-        var useInitials = StringToBool(PreviewField(actorId, "actor.avatar.useInitials", draftValues));
-        var initialsPadding = ParseDouble(PreviewField(actorId, "actor.avatar.initialsPadding", draftValues), 96);
-        var scale = ParseDouble(PreviewField(actorId, "actor.avatar.scale", draftValues), 1);
-        var offset = SplitPair(PreviewField(actorId, "actor.avatar.offset", draftValues));
+        var source = _dataSource.LoadPreview(actorId);
+        var imagePath = PreviewField("actor.avatar.filePath", source.AvatarFilePath, draftValues);
+        var useInitials = StringToBool(PreviewField("actor.avatar.useInitials", source.AvatarUseInitials, draftValues));
+        var initialsPadding = ParseDouble(PreviewField("actor.avatar.initialsPadding", source.AvatarInitialsPadding, draftValues), 96);
+        var scale = ParseDouble(PreviewField("actor.avatar.scale", source.AvatarScale, draftValues), 1);
+        var offset = SplitPair(PreviewField("actor.avatar.offset", source.AvatarOffset, draftValues));
         var offsetX = ParseDouble(offset.First, 0) / 4;
         var offsetY = ParseDouble(offset.Second, 0) / 4;
-        var colorPair = SplitPair(PreviewField(actorId, "actor.color.modes", draftValues));
-        var textColorPair = SplitPair(PreviewField(actorId, "actor.avatarTextColor.modes", draftValues));
-        var paletteOptions = _database.GetPaletteColorOptions(settings.ProjectId);
+        var colorPair = SplitPair(PreviewField("actor.color.modes", source.ColorModes, draftValues));
+        var textColorPair = SplitPair(PreviewField("actor.avatarTextColor.modes", source.AvatarTextColorModes, draftValues));
+        var paletteOptions = _dataSource.PaletteColorOptions(source.ProjectId);
         var background = PaletteBrush(paletteOptions, colorPair.First, "#808080");
         var foreground = PaletteBrush(paletteOptions, textColorPair.First, "#1A1A1A");
 
@@ -52,8 +51,7 @@ internal sealed class ActorAvatarPreviewFactory
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var mediaRoot = _database.GetProjectSettings(settings.ProjectId).MediaRoot;
-        var fullPath = ProjectPathService.ResolveLocalPath(imagePath, mediaRoot);
+        var fullPath = ProjectPathService.ResolveLocalPath(imagePath, source.ProjectMediaRoot);
         if (!useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
         {
             try
@@ -86,7 +84,7 @@ internal sealed class ActorAvatarPreviewFactory
         var initialsFontSize = Math.Max(12, (160 - previewPadding * 2) * 0.46);
         viewport.Child = new TextBlock
         {
-            Text = Initials(settings.ShortName, settings.DisplayName),
+            Text = Initials(source.ShortName, source.DisplayName),
             Foreground = foreground,
             FontSize = initialsFontSize,
             FontWeight = FontWeight.Bold,
@@ -98,19 +96,18 @@ internal sealed class ActorAvatarPreviewFactory
 
     public string? RelativeActorMediaPath(string actorId, string path)
     {
-        var settings = _database.GetActorSettings(actorId);
-        var mediaRoot = _database.GetProjectSettings(settings.ProjectId).MediaRoot;
-        return ProjectPathService.RelativePathIfInsideMediaRoot(path, mediaRoot);
+        var source = _dataSource.LoadPreview(actorId);
+        return ProjectPathService.RelativePathIfInsideMediaRoot(path, source.ProjectMediaRoot);
     }
 
-    private string PreviewField(
-        string actorId,
+    private static string PreviewField(
         string fieldId,
+        string storedValue,
         IReadOnlyDictionary<string, string>? draftValues)
     {
         return draftValues is not null && draftValues.TryGetValue(fieldId, out var value)
             ? value
-            : _database.GetActorFieldValue(actorId, fieldId);
+            : storedValue;
     }
 
     private static Control Wrap(Control viewport)

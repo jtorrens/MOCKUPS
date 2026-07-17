@@ -1,5 +1,4 @@
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,20 +31,18 @@ internal static class ActorPreviewInputFactory
     }
 
     public static JsonObject Create(
-        SpikeDatabase database,
+        ActorPreviewDataSource dataSource,
         string actorId,
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        var settings = database.GetActorSettings(actorId);
-        var metadata = JsonPath.ParseRequiredObject(settings.MetadataJson, $"Actor '{actorId}' metadata");
-        var mediaRoot = database.GetProjectSettings(settings.ProjectId).MediaRoot;
-        var colorToken = ModeValue(database.GetActorFieldValue(actorId, "actor.color.modes"), themeMode);
-        var textColorToken = ModeValue(database.GetActorFieldValue(actorId, "actor.avatarTextColor.modes"), themeMode);
-        var filePath = database.GetActorFieldValue(actorId, "actor.avatar.filePath");
-        var useInitials = BooleanText.Parse(database.GetActorFieldValue(actorId, "actor.avatar.useInitials"));
-        var offset = SplitPair(database.GetActorFieldValue(actorId, "actor.avatar.offset"));
-        var fullPath = ProjectPathService.ResolveLocalPath(filePath, mediaRoot);
+        var source = dataSource.LoadPreview(actorId);
+        var metadata = JsonPath.ParseRequiredObject(source.MetadataJson, $"Actor '{actorId}' metadata");
+        var colorToken = ModeValue(source.ColorModes, themeMode);
+        var textColorToken = ModeValue(source.AvatarTextColorModes, themeMode);
+        var useInitials = BooleanText.Parse(source.AvatarUseInitials);
+        var offset = SplitPair(source.AvatarOffset);
+        var fullPath = ProjectPathService.ResolveLocalPath(source.AvatarFilePath, source.ProjectMediaRoot);
         var imageUri = !useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath)
             ? DataUri(fullPath)
             : "";
@@ -53,9 +50,9 @@ internal static class ActorPreviewInputFactory
         return new JsonObject
         {
             ["id"] = actorId,
-            ["displayName"] = settings.DisplayName,
-            ["shortName"] = settings.ShortName,
-            ["initials"] = Initials(settings.ShortName, settings.DisplayName),
+            ["displayName"] = source.DisplayName,
+            ["shortName"] = source.ShortName,
+            ["initials"] = Initials(source.ShortName, source.DisplayName),
             ["wallpaper"] = metadata["wallpaper"]?.DeepClone(),
             ["modes"] = metadata["modes"]?.DeepClone(),
             ["avatar"] = new JsonObject
@@ -63,7 +60,7 @@ internal static class ActorPreviewInputFactory
                 ["imageUri"] = imageUri,
                 ["backgroundColor"] = PaletteColor(paletteColors, colorToken, actorId, "actor.color.modes"),
                 ["textColor"] = PaletteColor(paletteColors, textColorToken, actorId, "actor.avatarTextColor.modes"),
-                ["scale"] = NumericText.Double(database.GetActorFieldValue(actorId, "actor.avatar.scale"), 1),
+                ["scale"] = NumericText.Double(source.AvatarScale, 1),
                 ["offsetX"] = NumericText.Double(offset.First, 0),
                 ["offsetY"] = NumericText.Double(offset.Second, 0),
                 ["baseSize"] = 640,

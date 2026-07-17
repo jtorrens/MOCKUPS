@@ -155,6 +155,10 @@ Contract 52 establishes the next part: `ModuleInstanceTimelineDataSource`
 supplies exact current timeline inputs while `ModuleInstanceTimeline` retains
 all duration and owner-frame formulas without a database dependency.
 
+Contract 53 establishes the Actor Preview slice: `ActorPreviewDataSource`
+supplies exact current Actor context and raw preview values while the Actor
+input/avatar factories retain mode, Palette, media and presentation semantics.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

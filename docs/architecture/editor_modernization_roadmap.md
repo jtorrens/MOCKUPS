@@ -386,6 +386,12 @@ Instance/Shot timeline now consumes typed current documents and ordered stable
 Screen ids rather than the complete database facade; all duration, origin and
 keyframe projection formulas remain in `ModuleInstanceTimeline`.
 
+Actor Preview data access is governed by
+`53_actor_preview_data_boundary_contract.md`. One typed source now supplies
+exact current Actor context and avatar/mode values to Runtime record references
+and the inline avatar preview. Actor payload and visual interpretation remain
+in their factories, outside repositories, the bridge and the renderer.
+
 ## Guardrails
 
 Reject new changes that add:

@@ -82,8 +82,9 @@ internal sealed class ComponentPreviewInputSession
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
         _database = database;
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
-        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(database);
+        var actorDataSource = new ActorPreviewDataSource(database);
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
+        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
         _refreshPreview = refreshPreview;
         _preparePlaybackFrames = preparePlaybackFrames;
         _playbackTimer = new DispatcherTimer

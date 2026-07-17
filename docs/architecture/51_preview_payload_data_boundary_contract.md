@@ -90,6 +90,11 @@ database property is forbidden.
 stored rows only; filesystem interpretation and face construction remain
 outside persistence as required by contract 42.
 
+Actor record values are delegated to the narrower boundary in contract 53.
+`DesignPreviewPayloadDataSource` may compose `ActorPreviewDataSource`; it must
+not duplicate Actor field reads or absorb Actor mode, Palette, initials or
+media interpretation.
+
 ## 6. Enforcement and tests
 
 Architecture enforcement must verify:

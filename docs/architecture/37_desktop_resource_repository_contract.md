@@ -127,6 +127,11 @@ writes, create/duplicate/rename/delete routing and rejection of invalid current
 JSON without a partial write. The committed database and assets remain
 byte-for-byte unchanged by this extraction.
 
+Actor Preview reads additionally follow contract 53. The typed Preview data
+source composes current facade/domain reads; Runtime Actor and inline avatar
+factories own interpretation and must not bypass that source or move visual
+rules into `ActorRepository`.
+
 ## 8. Forbidden shortcuts
 
 - resolving Device or Actor visuals inside a repository;

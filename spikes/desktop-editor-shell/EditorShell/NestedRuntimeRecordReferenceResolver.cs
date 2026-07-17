@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +14,9 @@ internal sealed class NestedRuntimeRecordReferenceResolver
 {
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
 
-    public NestedRuntimeRecordReferenceResolver(SpikeDatabase database)
+    public NestedRuntimeRecordReferenceResolver(ActorPreviewDataSource actorDataSource)
     {
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
     }
 
     public void Resolve(

@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +11,9 @@ internal sealed class ActorAvatarPreviewController : IEditorInlinePreviewControl
     private readonly Func<bool> _isDark;
     private readonly List<ContentControl> _previewHosts = [];
 
-    public ActorAvatarPreviewController(SpikeDatabase database, Func<bool> isDark)
+    public ActorAvatarPreviewController(ActorPreviewDataSource dataSource, Func<bool> isDark)
     {
-        _previewFactory = new ActorAvatarPreviewFactory(database);
+        _previewFactory = new ActorAvatarPreviewFactory(dataSource);
         _isDark = isDark;
     }
 

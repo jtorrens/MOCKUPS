@@ -58,11 +58,13 @@ internal sealed class DesignPreviewPayloadDataSource
 {
     private readonly SpikeDatabase _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
+    private readonly ActorPreviewDataSource _actorDataSource;
 
     public DesignPreviewPayloadDataSource(SpikeDatabase database)
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _actorDataSource = new ActorPreviewDataSource(database);
     }
 
     public DesignPreviewThemeContext? LoadThemeContext(
@@ -108,7 +110,7 @@ internal sealed class DesignPreviewPayloadDataSource
         var shot = ShotFor(node);
         if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return selectedThemeId;
 
-        var actor = _database.GetActorSettings(shot.OwnerActorId);
+        var actor = _actorDataSource.LoadContext(shot.OwnerActorId);
         return string.IsNullOrWhiteSpace(actor.DefaultThemeId)
             ? selectedThemeId
             : actor.DefaultThemeId;
@@ -187,7 +189,7 @@ internal sealed class DesignPreviewPayloadDataSource
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        return ActorPreviewInputFactory.Create(_database, actorId, themeMode, paletteColors);
+        return ActorPreviewInputFactory.Create(_actorDataSource, actorId, themeMode, paletteColors);
     }
 
     private DesignPreviewComponentSource ComponentSource(SpikeDatabase.ComponentClassSettings settings)
@@ -221,7 +223,7 @@ internal sealed class DesignPreviewPayloadDataSource
         if (node.Kind is not ProjectTreeNodeKind.ModuleInstance and not ProjectTreeNodeKind.Shot) return "";
         var shot = ShotFor(node);
         if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return "";
-        return _database.GetActorSettings(shot.OwnerActorId).DefaultDeviceId;
+        return _actorDataSource.LoadContext(shot.OwnerActorId).DefaultDeviceId;
     }
 
     private SpikeDatabase.ShotSettings ShotFor(ProjectTreeNode node)

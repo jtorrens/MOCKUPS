@@ -283,6 +283,49 @@ assertContains(
   "_timelineDataSource = new ModuleInstanceTimelineDataSource(database)",
   "the Preview payload data source must reuse the typed timeline boundary",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/53_actor_preview_data_boundary_contract.md",
+  "AGENTS must require the Actor Preview data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "53_actor_preview_data_boundary_contract.md",
+  "the architecture index must include contract 53",
+);
+for (const actorPreviewConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/ActorPreviewInputFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/ActorAvatarPreviewFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewRecordInputResolver.cs",
+]) {
+  assertDoesNotContain(
+    actorPreviewConsumer,
+    "SpikeDatabase",
+    "Actor Preview interpretation and routing must consume only the typed Actor data source",
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ActorPreviewDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Actor Preview data source must own the Actor Preview database dependency",
+);
+for (const forbiddenActorPreviewSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ActorPreviewDataSource.cs",
+    forbiddenActorPreviewSql,
+    `the Actor Preview data source must compose current services rather than owning SQL (${forbiddenActorPreviewSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "_actorDataSource = new ActorPreviewDataSource(database)",
+  "the Preview payload boundary must compose the typed Actor Preview source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorInlinePreviewControllerFactory.cs",
+  "new ActorPreviewDataSource(database)",
+  "the inline Actor avatar route must compose the typed Actor Preview source",
+);
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

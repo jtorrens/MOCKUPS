@@ -17,8 +17,9 @@ internal sealed class ProductionPreviewRuntimeResolver
 
     public ProductionPreviewRuntimeResolver(SpikeDatabase database)
     {
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(database);
-        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(database);
+        var actorDataSource = new ActorPreviewDataSource(database);
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
+        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
     }
 
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)
