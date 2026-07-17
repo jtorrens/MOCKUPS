@@ -16,7 +16,7 @@ internal sealed class EditorHeaderController
     private readonly Panel _breadcrumbPanel;
     private readonly Panel _contextStripHost;
     private readonly Panel _actionsPanel;
-    private readonly SpikeDatabase _database;
+    private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly EditorNodeSelectionState _nodeSelection;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
@@ -47,7 +47,7 @@ internal sealed class EditorHeaderController
         _breadcrumbPanel = breadcrumbPanel;
         _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
-        _database = database;
+        _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
         _selectedNode = selectedNode;
         _nodeSelection = nodeSelection;
         _embeddedUsageNavigator = embeddedUsageNavigator;
@@ -97,17 +97,14 @@ internal sealed class EditorHeaderController
 
     public void SetEmbeddedTitle(EditorEmbeddedContext context)
     {
-        var activePresetName = context.ActivePresetName(_database);
+        var activePresetName = _embeddedDocuments.ActivePresetName(context);
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
         if (context.RuntimeSource is not null)
         {
-            var rootPresetName = _database.GetRuntimeComponentPresetName(
-                context.RuntimeSource.PresetReference,
-                context.RuntimeSource.Overrides,
-                []);
+            var rootPresetName = _embeddedDocuments.ActivePresetName(context.Ancestor(0));
             items.Add(context.Slots.Count == 0
                 ? new EditorBreadcrumbItem($"Component: {rootPresetName}")
                 : new EditorBreadcrumbItem(

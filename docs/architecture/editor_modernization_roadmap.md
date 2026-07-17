@@ -453,6 +453,12 @@ enter the generic dictionary service through one typed read source. The service
 retains UI composition without retaining or calling the general database
 facade.
 
+Embedded Component field documents are governed by
+`64_embedded_component_document_boundary_contract.md`. Structural
+`EditorEmbeddedContext` values no longer call persistence; one typed store now
+serves exact Variant names, inherited field reads and explicit Design or
+Runtime local Override commits to both breadcrumbs and embedded field access.
+
 ## Guardrails
 
 Reject new changes that add:

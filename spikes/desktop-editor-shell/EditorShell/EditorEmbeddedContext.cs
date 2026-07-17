@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Text.Json.Nodes;
-using Mockups.DesktopEditorShell.Data;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -33,30 +32,6 @@ internal sealed record EditorEmbeddedContext(
     public EditorEmbeddedContext Ancestor(int slotCount) =>
         new(OwnerNode, Slots.Take(slotCount).ToArray(), RuntimeSource);
 
-    public string ActivePresetName(SpikeDatabase database) => RuntimeSource is null
-        ? database.GetEmbeddedComponentPresetName(OwnerNode, Slots)
-        : database.GetRuntimeComponentPresetName(RuntimeSource.PresetReference, RuntimeSource.Overrides, Slots);
-
-    public FieldValue CreateFieldValue(SpikeDatabase database, string fieldId) => RuntimeSource is null
-        ? database.CreateEmbeddedComponentFieldValue(OwnerNode, Slots, fieldId)
-        : database.CreateRuntimeComponentOverrideFieldValue(
-            RuntimeSource.ProjectId,
-            RuntimeSource.BaseConfigJson,
-            RuntimeSource.Overrides,
-            Slots,
-            fieldId);
-
-    public void CommitFieldValue(SpikeDatabase database, string fieldId, string value)
-    {
-        if (RuntimeSource is null)
-        {
-            database.UpdateEmbeddedComponentField(OwnerNode, Slots, fieldId, value);
-            return;
-        }
-
-        database.UpdateRuntimeComponentOverride(RuntimeSource.Overrides, Slots, fieldId, value);
-        RuntimeSource.OverridesChanged(RuntimeSource.Overrides);
-    }
 }
 
 internal sealed record RuntimeComponentOverrideSource(

@@ -813,6 +813,74 @@ for (const forbiddenDictionaryContextDependency of [
   );
 }
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/64_embedded_component_document_boundary_contract.md",
+  "AGENTS must require the embedded Component document boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "64_embedded_component_document_boundary_contract.md",
+  "the architecture index must include contract 64",
+);
+for (const forbiddenEmbeddedContextDependency of [
+  "Mockups.DesktopEditorShell.Data",
+  "SpikeDatabase",
+  "ActivePresetName(",
+  "CreateFieldValue(",
+  "CommitFieldValue(",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorEmbeddedContext.cs",
+    forbiddenEmbeddedContextDependency,
+    `embedded editor context must remain structural and persistence-independent (${forbiddenEmbeddedContextDependency})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "_embeddedDocuments = new EmbeddedComponentDocumentStore(database)",
+  "embedded breadcrumbs must use the typed Component document store",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "private readonly SpikeDatabase _database",
+  "the header controller must not retain the general database facade",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "_database.",
+  "the header controller must use typed data boundaries",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "_embeddedDocuments.CreateFieldValue(context, embeddedFieldId)",
+  "embedded field reads must delegate to the typed document store",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "_embeddedDocuments.CommitFieldValue(context, embeddedFieldId, value)",
+  "embedded field writes must delegate to the typed document store",
+);
+for (const forbiddenEmbeddedDocumentStoreDependency of [
+  "SELECT ",
+  "INSERT ",
+  "UPDATE ",
+  "DELETE FROM",
+  "SqliteConnection",
+  "Avalonia",
+  "Dialog",
+  "RuntimeInputForwardingContract",
+  "PreviewBridge",
+  "Renderer",
+  "Resolver",
+  "JsonNode.Parse",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentDocumentStore.cs",
+    forbiddenEmbeddedDocumentStoreDependency,
+    `the embedded Component document store must remain a narrow domain boundary (${forbiddenEmbeddedDocumentStoreDependency})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",

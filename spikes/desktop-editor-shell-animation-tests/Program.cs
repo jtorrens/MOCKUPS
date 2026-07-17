@@ -22,6 +22,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
+    ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
     ("Runtime Input instance store preserves explicit scalar collection and animation writes", RuntimeInputInstanceStorePreservesExplicitWrites),
@@ -863,6 +864,94 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EmbeddedComponentDocumentStorePreservesOwnership()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-embedded-component-documents-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var store = new EmbeddedComponentDocumentStore(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var audioClass = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
+            .First((node) => database.GetComponentClassSettings(node.Id).ComponentType == "audio");
+        var audioVariant = audioClass.Children
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
+        var designContext = new EditorEmbeddedContext(audioVariant, [surfaceSlot]);
+        var embeddedFieldId = database.LoadEditorLayout(surfaceSlot.RecordClassId).Cards
+            .Where((card) => card.Visible)
+            .SelectMany((card) => card.VisibleGroups)
+            .SelectMany((group) => group.VisibleFields)
+            .Select((field) => field.Id)
+            .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
+
+        Equal(
+            database.GetEmbeddedComponentPresetName(audioVariant, [surfaceSlot]),
+            store.ActivePresetName(designContext));
+        var expectedField = database.CreateEmbeddedComponentFieldValue(
+            audioVariant,
+            [surfaceSlot],
+            embeddedFieldId);
+        var storedField = store.CreateFieldValue(designContext, embeddedFieldId);
+        Equal(expectedField.Value, storedField.Value);
+        Equal(expectedField.IsInherited, storedField.IsInherited);
+
+        var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, afterReads);
+
+        var editableVariant = database.SaveComponentPreset(audioVariant, "Embedded boundary test");
+        var editableContext = new EditorEmbeddedContext(editableVariant, [surfaceSlot]);
+        var editableField = store.CreateFieldValue(editableContext, embeddedFieldId);
+        store.CommitFieldValue(editableContext, embeddedFieldId, editableField.Value);
+        Equal(
+            editableField.Value,
+            database.CreateEmbeddedComponentFieldValue(
+                editableVariant,
+                [surfaceSlot],
+                embeddedFieldId).Value);
+
+        var selection = database.GetComponentPresetSelectionSettings(audioVariant.Id);
+        var overrides = new JsonObject();
+        var overrideChanges = 0;
+        var runtimeContext = new EditorEmbeddedContext(
+            audioVariant,
+            [],
+            new RuntimeComponentOverrideSource(
+                selection.ProjectId,
+                audioVariant.Id,
+                selection.ComponentType,
+                selection.RecordClassId,
+                selection.ConfigJson,
+                overrides,
+                (_) => overrideChanges++));
+        Equal(
+            database.GetRuntimeComponentPresetName(audioVariant.Id, overrides, []),
+            store.ActivePresetName(runtimeContext));
+        True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+
+        var beforeRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
+        store.CommitFieldValue(
+            runtimeContext,
+            "component.audio.padding",
+            "theme.spacing.xl|theme.spacing.l");
+        Equal(1, overrideChanges);
+        True(!store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+        store.CommitFieldValue(runtimeContext, "component.audio.padding", "inherited");
+        Equal(2, overrideChanges);
+        True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+        var afterRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRuntimeOverride, afterRuntimeOverride);
     }
     finally
     {
@@ -3364,6 +3453,7 @@ static void ComponentStackSeedOpensAndRenders()
         var selectedComponent = database.GetComponentPresetSelectionSettings(childVariant);
         var overrides = new JsonObject();
         var runtimeOverrideChanges = 0;
+        var embeddedDocuments = new EmbeddedComponentDocumentStore(database);
         var runtimeContext = new EditorEmbeddedContext(
             defaultVariant,
             [],
@@ -3377,11 +3467,11 @@ static void ComponentStackSeedOpensAndRenders()
                 (_) => runtimeOverrideChanges++));
         Equal(selectedComponent.RecordClassId, runtimeContext.RecordClassId);
         Equal(selectedComponent.ComponentType, runtimeContext.ComponentType);
-        True(runtimeContext.CreateFieldValue(database, "component.audio.padding").IsInherited);
-        runtimeContext.CommitFieldValue(database, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
+        True(embeddedDocuments.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+        embeddedDocuments.CommitFieldValue(runtimeContext, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
         Equal(1, runtimeOverrideChanges);
-        True(!runtimeContext.CreateFieldValue(database, "component.audio.padding").IsInherited);
-        runtimeContext.CommitFieldValue(database, "component.audio.padding", "inherited");
+        True(!embeddedDocuments.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
+        embeddedDocuments.CommitFieldValue(runtimeContext, "component.audio.padding", "inherited");
         Equal(2, runtimeOverrideChanges);
         var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
         var badgeSlot = EmbeddedComponentSlotCatalog.Get("component.audio.badge.editor");
@@ -3396,7 +3486,7 @@ static void ComponentStackSeedOpensAndRenders()
             .SelectMany((group) => group.VisibleFields)
             .Select((field) => field.Id)
             .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
-        _ = nestedRuntimeContext.CreateFieldValue(database, nestedFieldId);
+        _ = embeddedDocuments.CreateFieldValue(nestedRuntimeContext, nestedFieldId);
         var avatarVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "avatar").First().Value;
         var avatarSelection = database.GetComponentPresetSelectionSettings(avatarVariant);
         var avatarContext = new EditorEmbeddedContext(
@@ -3418,7 +3508,7 @@ static void ComponentStackSeedOpensAndRenders()
                      .Where(ComponentClassFieldCatalog.IsRuntimeOverrideField)
                      .Distinct(StringComparer.Ordinal))
         {
-            _ = avatarContext.CreateFieldValue(database, avatarFieldId);
+            _ = embeddedDocuments.CreateFieldValue(avatarContext, avatarFieldId);
         }
         var selectedLayout = database.LoadEditorLayout(selectedComponent.RecordClassId);
         foreach (var fieldId in selectedLayout.Cards

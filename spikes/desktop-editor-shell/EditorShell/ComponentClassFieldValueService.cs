@@ -7,10 +7,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ComponentClassFieldValueService
 {
     private readonly SpikeDatabase _database;
+    private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
 
     public ComponentClassFieldValueService(SpikeDatabase database)
     {
         _database = database;
+        _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
     }
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)
@@ -123,10 +125,10 @@ internal sealed class ComponentClassFieldValueService
     }
 
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
-        context.CreateFieldValue(_database, embeddedFieldId);
+        _embeddedDocuments.CreateFieldValue(context, embeddedFieldId);
 
     public void CommitEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId, string value) =>
-        context.CommitFieldValue(_database, embeddedFieldId, value);
+        _embeddedDocuments.CommitFieldValue(context, embeddedFieldId, value);
 
     private static FieldValue ApplyPresetLock(ProjectTreeNode node, FieldValue fieldValue)
     {

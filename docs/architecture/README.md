@@ -116,6 +116,9 @@ this index wins.
 - `63_dictionary_field_context_data_boundary_contract.md`: typed Theme, Icon
   Theme, Palette and Component Variant context for shared dictionary controls,
   separated from UI composition and field semantics.
+- `64_embedded_component_document_boundary_contract.md`: pure structural
+  embedded-editor context plus one typed Variant/Override field document
+  boundary shared by breadcrumbs and dictionary field access.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
