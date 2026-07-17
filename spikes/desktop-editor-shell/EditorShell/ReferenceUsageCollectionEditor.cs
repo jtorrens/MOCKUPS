@@ -48,7 +48,10 @@ internal sealed class ReferenceUsageCollectionEditor
             EditorCardHeader.Create("Usage", usages.Count == 1 ? "1 reference" : $"{usages.Count} references", EditorIcons.CreateSemantic("Usage", EditorIcons.Structure, 18)),
             new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
             isExpanded: false)
-        { HorizontalAlignment = HorizontalAlignment.Stretch };
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:usage",
+        };
     }
 
     private void AddGroup(Panel host, string label, IEnumerable<SpikeDatabase.ReferenceUsageDetail> usages)

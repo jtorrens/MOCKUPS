@@ -112,8 +112,7 @@ internal sealed class EditorPreviewController
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
-    private readonly Func<EditorViewState?> _captureCurrentEditorViewState;
-    private readonly Func<string, EditorViewState?, bool> _selectNodeById;
+    private readonly Func<string, bool> _selectNodeById;
     private readonly TextBlock _designContextText;
     private readonly Button _designContextHistoryButton;
     private readonly Button _designContextAddHistoryButton;
@@ -231,8 +230,7 @@ internal sealed class EditorPreviewController
         Panel previewTitle,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
-        Func<EditorViewState?> captureCurrentEditorViewState,
-        Func<string, EditorViewState?, bool> selectNodeById,
+        Func<string, bool> selectNodeById,
         Window owner)
     {
         _database = database;
@@ -244,7 +242,6 @@ internal sealed class EditorPreviewController
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
-        _captureCurrentEditorViewState = captureCurrentEditorViewState;
         _selectNodeById = selectNodeById;
         _designContextText = designContextText;
         _designContextHistoryButton = designContextHistoryButton;
@@ -262,7 +259,7 @@ internal sealed class EditorPreviewController
         _designPreviewPane.ContextActionRequested += targetId =>
         {
             if (targetId == PreviewRetryTargetId) Refresh();
-            else _selectNodeById(targetId, null);
+            else _selectNodeById(targetId);
         };
         _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
@@ -304,11 +301,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var selected = _selectedNode();
-        var viewState = selected is not null && PreviewNodeKey.From(selected).Equals(key)
-            ? _captureCurrentEditorViewState()
-            : null;
-        AddDesignHistory(key, payload.Name, viewState);
+        AddDesignHistory(key, payload.Name);
         RefreshDesignContextHistoryChrome();
     }
 
@@ -324,8 +317,7 @@ internal sealed class EditorPreviewController
             _shotPreviewFrame);
         if (payload is null) return;
         var key = PreviewNodeKey.From(node);
-        var viewState = _selectedNode()?.Id == node.Id ? _captureCurrentEditorViewState() : null;
-        AddHistory(_productionHistory, key, payload.Name, viewState);
+        AddHistory(_productionHistory, key, payload.Name);
         RefreshDesignContextHistoryChrome();
     }
 
@@ -407,7 +399,7 @@ internal sealed class EditorPreviewController
             {
                 _designContextHistoryPopup.IsOpen = false;
                 MoveHistoryToFront(_productionHistory, entry.Key.Id);
-                _selectNodeById(entry.Key.Id, entry.ViewState);
+                _selectNodeById(entry.Key.Id);
                 RefreshDesignContextHistoryChrome();
             };
             _designContextHistoryItems.Children.Add(button);
@@ -438,7 +430,7 @@ internal sealed class EditorPreviewController
             {
                 _designContextHistoryPopup.IsOpen = false;
                 MoveDesignHistoryToFront(entry.Key.Id);
-                _selectNodeById(entry.Key.Id, entry.ViewState);
+                _selectNodeById(entry.Key.Id);
                 RefreshDesignContextHistoryChrome();
             };
             _designContextHistoryItems.Children.Add(button);
@@ -458,19 +450,18 @@ internal sealed class EditorPreviewController
         _designHistory.Insert(0, entry);
     }
 
-    private void AddDesignHistory(PreviewNodeKey key, string name, EditorViewState? viewState)
+    private void AddDesignHistory(PreviewNodeKey key, string name)
     {
-        AddHistory(_designHistory, key, name, viewState);
+        AddHistory(_designHistory, key, name);
     }
 
     private static void AddHistory(
         List<DesignPreviewHistoryEntry> history,
         PreviewNodeKey key,
-        string name,
-        EditorViewState? viewState)
+        string name)
     {
         history.RemoveAll((entry) => entry.Key.Id.Equals(key.Id, StringComparison.Ordinal));
-        history.Insert(0, new DesignPreviewHistoryEntry(key, name, viewState));
+        history.Insert(0, new DesignPreviewHistoryEntry(key, name));
         if (history.Count > 10) history.RemoveRange(10, history.Count - 10);
     }
 
@@ -490,7 +481,6 @@ internal sealed class EditorPreviewController
             Kind = entry.Key.Kind,
             Id = entry.Key.Id,
             Name = entry.Name,
-            ViewState = entry.ViewState is null ? null : EditorViewStateSnapshot.From(entry.ViewState),
         }).ToList();
     }
 
@@ -510,8 +500,7 @@ internal sealed class EditorPreviewController
             var key = new PreviewNodeKey(entry.Kind, entry.Id);
             _designHistory.Add(new DesignPreviewHistoryEntry(
                 key,
-                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name,
-                entry.ViewState?.ToViewState()));
+                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name));
         }
         RefreshDesignContextHistoryChrome();
     }
@@ -522,7 +511,6 @@ internal sealed class EditorPreviewController
             Kind = entry.Key.Kind,
             Id = entry.Key.Id,
             Name = entry.Name,
-            ViewState = entry.ViewState is null ? null : EditorViewStateSnapshot.From(entry.ViewState),
         }).ToList();
 
     public void RestoreProductionHistoryState(IReadOnlyList<EditorDesignPreviewHistoryEntryState>? entries)
@@ -534,8 +522,7 @@ internal sealed class EditorPreviewController
                 || string.IsNullOrWhiteSpace(entry.Id)) continue;
             _productionHistory.Add(new DesignPreviewHistoryEntry(
                 new PreviewNodeKey(entry.Kind, entry.Id),
-                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name,
-                entry.ViewState?.ToViewState()));
+                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name));
             if (_productionHistory.Count == 10) break;
         }
         RefreshDesignContextHistoryChrome();
@@ -2513,7 +2500,7 @@ internal sealed class EditorPreviewController
         var previewItems = _workspace == EditorWorkspace.Production
             ? productionNodes.Select((node, index) => new EditorBreadcrumbItem(
                 node.Name,
-                index == productionNodes.Count - 1 ? null : () => _selectNodeById(node.Id, null)))
+                index == productionNodes.Count - 1 ? null : () => _selectNodeById(node.Id)))
             : [new EditorBreadcrumbItem(string.IsNullOrWhiteSpace(payload?.Name) ? "Preview" : payload.Name)];
         EditorBreadcrumbBar.Render(
             _previewTitle,
@@ -2562,7 +2549,7 @@ internal sealed class EditorPreviewController
     {
         if (!string.IsNullOrWhiteSpace(_activeProductionModuleInstanceId))
         {
-            _selectNodeById(_activeProductionModuleInstanceId, null);
+            _selectNodeById(_activeProductionModuleInstanceId);
             return;
         }
         var node = _activeDesignPreviewNode ?? _lockedDesignPreviewNode ?? _lastDesignPreviewNode;
@@ -2571,7 +2558,7 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        _selectNodeById(node.Id, null);
+        _selectNodeById(node.Id);
     }
 
     private string ProductionShotId()
@@ -2727,7 +2714,7 @@ internal sealed class EditorPreviewController
         var pathNodes = ProductionNodePath(selected);
         var path = pathNodes.Select((node, index) => new ProductionPreviewPathItem(
             node.Name,
-            index == pathNodes.Count - 1 ? null : () => _selectNodeById(node.Id, null))).ToList();
+            index == pathNodes.Count - 1 ? null : () => _selectNodeById(node.Id))).ToList();
         var shotId = ProductionShotId();
         string actorName;
         string device;
@@ -2871,6 +2858,5 @@ internal sealed class EditorPreviewController
 
     private sealed record DesignPreviewHistoryEntry(
         PreviewNodeKey Key,
-        string Name,
-        EditorViewState? ViewState);
+        string Name);
 }

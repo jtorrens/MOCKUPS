@@ -15,8 +15,7 @@ internal sealed class EditorContentController
     private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
-    private readonly Dictionary<string, EditorPresentationMode> _presentationModes = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, bool> _simplifiedExpansionStates = new(StringComparer.Ordinal);
+    private readonly EditorSessionUiState _sessionUiState;
 
     public EditorContentController(
         SpikeDatabase database,
@@ -26,7 +25,8 @@ internal sealed class EditorContentController
         EditorActiveFieldControls activeFieldControls,
         IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
-        EditorCollectionCardFactory collectionCards)
+        EditorCollectionCardFactory collectionCards,
+        EditorSessionUiState sessionUiState)
     {
         _database = database;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
@@ -34,6 +34,7 @@ internal sealed class EditorContentController
         _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
         _collectionCards = collectionCards;
+        _sessionUiState = sessionUiState;
     }
 
     public IReadOnlyList<InstantEditorCard> Cards => _cardHost.Cards;
@@ -42,9 +43,9 @@ internal sealed class EditorContentController
     {
         var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
         var projection = new EditorSimplifiedProjectionState(_database, layoutNode.RecordClassId, layout);
-        var presentationKey = $"{layoutNode.RecordClassId}:{dataNode.Id}";
-        var mode = _presentationModes.GetValueOrDefault(
-            presentationKey,
+        var presentationKey = $"editor:{layoutNode.RecordClassId}:presentation";
+        var mode = ParsePresentationMode(
+            _sessionUiState.Selection(presentationKey),
             projection.IsAvailable ? EditorPresentationMode.Simplified : EditorPresentationMode.Complete);
         ResetRegistries();
         var simplifiedMode = mode == EditorPresentationMode.Simplified && projection.IsAvailable;
@@ -54,9 +55,10 @@ internal sealed class EditorContentController
             var simplifiedCard = _layoutCards.CreateSimplified(
                 dataNode,
                 projection,
-                _simplifiedExpansionStates.GetValueOrDefault(presentationKey, true));
+                _sessionUiState.IsExpanded($"{presentationKey}:card"),
+                layoutNode.RecordClassId);
             simplifiedCard.ExpansionChanged += (expanded) =>
-                _simplifiedExpansionStates[presentationKey] = expanded;
+                _sessionUiState.SetExpanded($"{presentationKey}:card", expanded);
             cards = [simplifiedCard];
         }
         else
@@ -65,7 +67,11 @@ internal sealed class EditorContentController
                 .Where((card) => card.Visible)
                 .OrderBy((card) => card.Order)
                 .ThenBy((card) => card.Label)
-                .Select((layoutCard) => _layoutCards.Create(dataNode, layoutCard, projection))
+                .Select((layoutCard) => _layoutCards.Create(
+                    dataNode,
+                    layoutCard,
+                    layoutNode.RecordClassId,
+                    projection))
                 .Concat(_collectionCards.Create(dataNode))
                 .ToList();
         }
@@ -73,7 +79,7 @@ internal sealed class EditorContentController
             ? EditorPresentationModeSelector.Create(mode, (next) =>
             {
                 if (next == mode) return;
-                _presentationModes[presentationKey] = next;
+                _sessionUiState.Select(presentationKey, next.ToString());
                 Build(layoutNode, dataNode);
             })
             : null;
@@ -116,7 +122,7 @@ internal sealed class EditorContentController
                             .ToList(),
                     },
                 ],
-            }, projection));
+            }, ownerLayoutRecordClassId, projection));
         }
 
         var layout = _database.LoadEditorLayout(context.RecordClassId);
@@ -140,5 +146,14 @@ internal sealed class EditorContentController
     {
         _activeFieldControls.Clear();
         _inlinePreviews.Reset();
+    }
+
+    private static EditorPresentationMode ParsePresentationMode(
+        string? stored,
+        EditorPresentationMode fallback)
+    {
+        return Enum.TryParse<EditorPresentationMode>(stored, ignoreCase: false, out var mode)
+            ? mode
+            : fallback;
     }
 }

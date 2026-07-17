@@ -91,14 +91,25 @@ internal sealed class RuntimeInputsCollectionEditor
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
         var actions = ComponentPreviewActions.ReadWithEmbedded(_database, preview);
+        var valuesTab = new TabItem
+        {
+            Header = owner.IsInstance ? "Runtime Values" : "Test Values",
+            Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions),
+        };
+        var apiTab = new TabItem
+        {
+            Header = "Runtime API",
+            Content = CreateApiTab(owner, inputs, collections),
+        };
+        var tabStateKey = $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:runtime-inputs:tab";
+        var selectedTabId = _sessionUiState.Selection(tabStateKey);
         var tabs = new TabControl
         {
-            Items =
-            {
-                new TabItem { Header = owner.IsInstance ? "Runtime Values" : "Test Values", Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions) },
-                new TabItem { Header = "Runtime API", Content = CreateApiTab(owner, inputs, collections) },
-            },
+            Items = { valuesTab, apiTab },
+            SelectedItem = selectedTabId == "api" ? apiTab : valuesTab,
         };
+        tabs.SelectionChanged += (_, _) =>
+            _sessionUiState.Select(tabStateKey, ReferenceEquals(tabs.SelectedItem, apiTab) ? "api" : "values");
 
         var card = new InstantEditorCard(
             EditorCardHeader.Create(
@@ -107,7 +118,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 EditorIcons.CreateSemantic("Runtime Inputs", EditorIcons.Design, 18)),
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
-        { HorizontalAlignment = HorizontalAlignment.Stretch };
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:runtime-inputs",
+        };
         EditorGroupBlock.ApplyContentSeparator(card);
         return card;
     }

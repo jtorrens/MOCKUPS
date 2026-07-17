@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,16 +10,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorViewStateController
 {
     private readonly ScrollViewer _scrollViewer;
-    private readonly Dictionary<string, EditorViewState> _statesByNodeId = [];
+    private readonly EditorSessionViewStateStore _sessionStates;
 
-    public EditorViewStateController(ScrollViewer scrollViewer)
+    public EditorViewStateController(
+        ScrollViewer scrollViewer,
+        EditorSessionViewStateStore? sessionStates = null)
     {
         _scrollViewer = scrollViewer;
-    }
-
-    public bool ShouldPreserve(ProjectTreeNode? previousNode, ProjectTreeNode nextNode)
-    {
-        return previousNode is not null;
+        _sessionStates = sessionStates ?? new EditorSessionViewStateStore();
     }
 
     public void Capture(ProjectTreeNode? node, IReadOnlyList<InstantEditorCard> cards)
@@ -27,13 +27,14 @@ internal sealed class EditorViewStateController
         var state = CaptureState(cards);
         if (state is not null)
         {
-            _statesByNodeId[node.Id] = state;
+            _sessionStates.Set(StateKey(node), state);
         }
     }
 
     public void Restore(ProjectTreeNode node, IReadOnlyList<InstantEditorCard> cards)
     {
-        if (!_statesByNodeId.TryGetValue(node.Id, out var state))
+        var state = _sessionStates.Get(StateKey(node));
+        if (state is null)
         {
             return;
         }
@@ -48,8 +49,11 @@ internal sealed class EditorViewStateController
             return null;
         }
 
+        ValidateStableCardIds(cards);
         return new EditorViewState(
-            cards.Select((card) => card.IsExpanded).ToArray(),
+            cards.Where((card) => card.IsExpanded)
+                .Select((card) => card.SessionStateId)
+                .ToArray(),
             _scrollViewer.Offset);
     }
 
@@ -60,13 +64,43 @@ internal sealed class EditorViewStateController
             return;
         }
 
-        for (var index = 0; index < cards.Count && index < state.ExpandedCards.Length; index++)
+        ValidateStableCardIds(cards);
+        var expandedCardIds = state.ExpandedCardIds.ToHashSet(StringComparer.Ordinal);
+        foreach (var card in cards)
         {
-            cards[index].IsExpanded = state.ExpandedCards[index];
+            card.RestoreExpansion(expandedCardIds.Contains(card.SessionStateId));
         }
 
         Dispatcher.UIThread.Post(
-            () => _scrollViewer.Offset = state.ScrollOffset,
+            () => _scrollViewer.Offset = ClampOffset(
+                state.ScrollOffset,
+                _scrollViewer.Extent,
+                _scrollViewer.Viewport),
             DispatcherPriority.Loaded);
+    }
+
+    internal static string StateKey(ProjectTreeNode node)
+    {
+        return EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId;
+    }
+
+    internal static Vector ClampOffset(Vector requested, Size extent, Size viewport)
+    {
+        return new Vector(
+            Math.Clamp(requested.X, 0, Math.Max(0, extent.Width - viewport.Width)),
+            Math.Clamp(requested.Y, 0, Math.Max(0, extent.Height - viewport.Height)));
+    }
+
+    private static void ValidateStableCardIds(IReadOnlyList<InstantEditorCard> cards)
+    {
+        if (cards.Any((card) => string.IsNullOrWhiteSpace(card.SessionStateId)))
+        {
+            throw new InvalidOperationException("Every top-level editor card requires a stable session state id.");
+        }
+
+        if (cards.Select((card) => card.SessionStateId).Distinct(StringComparer.Ordinal).Count() != cards.Count)
+        {
+            throw new InvalidOperationException("Top-level editor card session state ids must be unique.");
+        }
     }
 }

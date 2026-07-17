@@ -61,6 +61,7 @@ internal sealed class NavigationBarItemsCollectionEditor
             isExpanded: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:navigation-bar-items",
         };
     }
 

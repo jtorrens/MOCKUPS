@@ -79,6 +79,7 @@ internal sealed class EditorSimplifiedProjectionState
     }
 
     public EditorSimplifiedLayout? Layout => _layout.Simplified;
+    public string RecordClassId => _recordClassId;
 
     public bool IsAvailable => _layout.Simplified is not null;
 

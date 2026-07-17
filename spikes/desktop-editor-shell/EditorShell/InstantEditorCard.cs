@@ -110,6 +110,7 @@ internal sealed class InstantEditorCard : Grid
     }
 
     public EditorSubcardLayout SubcardLayout { get; }
+    public string SessionStateId { get; init; } = "";
 
     public event EventHandler? Expanded;
     public event Action<bool>? ExpansionChanged;
@@ -123,19 +124,25 @@ internal sealed class InstantEditorCard : Grid
     public bool IsExpanded
     {
         get => _isExpanded;
-        set
-        {
-            if (_isExpanded == value) return;
+        set => SetExpanded(value, requestVisibility: true);
+    }
 
-            _isExpanded = value;
-            ApplyExpandedState();
-            ExpansionChanged?.Invoke(_isExpanded);
-            if (_isExpanded)
-            {
-                DeferredBringIntoView.Request(this);
-                Expanded?.Invoke(this, EventArgs.Empty);
-            }
+    public void RestoreExpansion(bool isExpanded) =>
+        SetExpanded(isExpanded, requestVisibility: false);
+
+    private void SetExpanded(bool isExpanded, bool requestVisibility)
+    {
+        if (_isExpanded == isExpanded) return;
+
+        _isExpanded = isExpanded;
+        ApplyExpandedState();
+        ExpansionChanged?.Invoke(_isExpanded);
+        if (!_isExpanded) return;
+        if (requestVisibility)
+        {
+            DeferredBringIntoView.Request(this);
         }
+        Expanded?.Invoke(this, EventArgs.Empty);
     }
 
     private void ApplyExpandedState()

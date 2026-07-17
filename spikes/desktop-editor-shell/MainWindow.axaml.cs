@@ -33,6 +33,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
+    private readonly EditorSessionUiState _editorSessionUiState = new();
     private readonly Dictionary<string, EditorViewState> _embeddedParentViewStates = new(StringComparer.Ordinal);
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
@@ -91,8 +92,7 @@ public partial class MainWindow : SukiWindow
             PreviewTitlePanel,
             () => _themeController.IsDark,
             () => _selectedNode,
-            () => _editorViewState.CaptureState(_editorContent!.Cards),
-            (nodeId, viewState) => SelectNodeById(nodeId, viewState, "preview-context"),
+            (nodeId) => SelectNodeById(nodeId, "preview-context"),
             this);
         _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
         _nodeCommands = new EditorNodeCommandController(
@@ -101,7 +101,6 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => _treeRoots,
             LoadProjectTree,
-            ReloadAndSelect,
             ReloadAndSelect,
             NavigateToReferenceUsage,
             _messages);
@@ -164,7 +163,8 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ToggleComponentPresetLock,
             ShowEmbeddedContext,
             ScheduleActiveEditorReload,
-            RefreshPreviewDevice);
+            RefreshPreviewDevice,
+            _editorSessionUiState);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             _database,
             this,
@@ -216,7 +216,8 @@ public partial class MainWindow : SukiWindow
             ShowEmbeddedContext,
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
-            _previewController.ToggleProductionPlayback);
+            _previewController.ToggleProductionPlayback,
+            _editorSessionUiState);
         _editorContent = new EditorContentController(
             _database,
             EditorCardsPanel,
@@ -225,7 +226,8 @@ public partial class MainWindow : SukiWindow
             _activeFieldControls,
             _inlinePreviews,
             _layoutCards,
-            _collectionCards);
+            _collectionCards,
+            _editorSessionUiState);
         UsageRefreshButton.Content = new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Horizontal,
@@ -417,20 +419,19 @@ public partial class MainWindow : SukiWindow
     private void ShowNode(ProjectTreeNode node, bool rebuildTree, string source)
     {
         node = _nodeSelection.ResolveSelectionNode(node);
+        var previousWasEmbedded = _activeEmbeddedContext is not null;
         _activeEmbeddedContext = null;
         _editorContextRevision++;
         using var transaction = BeginContextTransaction(source, node.Id);
         var previousNode = _selectedNode;
-        var previousViewState = _editorViewState.CaptureState(_editorContent.Cards);
-        var keepEditorViewState = _editorViewState.ShouldPreserve(previousNode, node);
-        if (keepEditorViewState)
+        if (!previousWasEmbedded)
         {
             _editorViewState.Capture(previousNode, _editorContent.Cards);
         }
 
         try
         {
-            _variantHistory.TrackTransition(previousNode, node, previousViewState);
+            _variantHistory.TrackTransition(previousNode, node);
         }
         catch (Exception exception)
         {
@@ -445,10 +446,7 @@ public partial class MainWindow : SukiWindow
         _editorContent.Build(editorNode, node);
         SetEditorRootTitle(editorNode.Name);
         transaction.Checkpoint("after-editor-swap");
-        if (keepEditorViewState)
-        {
-            _editorViewState.Restore(node, _editorContent.Cards);
-        }
+        _editorViewState.Restore(node, _editorContent.Cards);
 
         RefreshPreviewDevice();
         if (rebuildTree)
@@ -555,30 +553,17 @@ public partial class MainWindow : SukiWindow
 
     private void ReloadAndSelect(ProjectTreeNode node)
     {
-        var viewState = _selectedNode?.Id == node.Id
-            ? _editorViewState.CaptureState(_editorContent.Cards)
-            : null;
-        ReloadAndSelect(node, viewState);
-    }
-
-    private void ReloadAndSelect(ProjectTreeNode node, EditorViewState? viewState)
-    {
         LoadProjectTree();
         RefreshPreviewOptions();
-        SelectNodeById(node.Id, viewState);
+        SelectNodeById(node.Id);
     }
 
     private bool SelectNodeById(string nodeId)
     {
-        return SelectNodeById(nodeId, null);
+        return SelectNodeById(nodeId, "node-id");
     }
 
-    private bool SelectNodeById(string nodeId, EditorViewState? viewState)
-    {
-        return SelectNodeById(nodeId, viewState, "node-id");
-    }
-
-    private bool SelectNodeById(string nodeId, EditorViewState? viewState, string source)
+    private bool SelectNodeById(string nodeId, string source)
     {
         var node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
         if (node is null)
@@ -590,7 +575,6 @@ public partial class MainWindow : SukiWindow
         selectableNode = _nodeSelection.ResolveSelectionNode(selectableNode);
         _treeExpansion.ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true, source);
-        _editorViewState.RestoreState(viewState, _editorContent.Cards);
         ApplyUiTextScale();
         return true;
     }
@@ -632,7 +616,7 @@ public partial class MainWindow : SukiWindow
             _shellState.SetProductionId(_selectedProductionId);
         }
 
-        if (!SelectNodeById(nodeId, null, "reference-usage"))
+        if (!SelectNodeById(nodeId, "reference-usage"))
         {
             return false;
         }

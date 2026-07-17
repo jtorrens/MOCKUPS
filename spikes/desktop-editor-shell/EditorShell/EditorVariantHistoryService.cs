@@ -10,8 +10,7 @@ internal sealed record EditorVariantHistorySnapshot(
     string Id,
     string Label,
     DateTime CreatedAt,
-    string ConfigJson,
-    EditorViewState? ViewState);
+    string ConfigJson);
 
 internal sealed class EditorVariantHistoryService
 {
@@ -26,7 +25,7 @@ internal sealed class EditorVariantHistoryService
         _database = database;
     }
 
-    public void TrackTransition(ProjectTreeNode? previousNode, ProjectTreeNode nextNode, EditorViewState? previousViewState)
+    public void TrackTransition(ProjectTreeNode? previousNode, ProjectTreeNode nextNode)
     {
         if (previousNode?.Id == nextNode.Id)
         {
@@ -35,7 +34,7 @@ internal sealed class EditorVariantHistoryService
 
         if (previousNode?.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
-            Leave(previousNode, VariantConfig(previousNode), previousViewState);
+            Leave(previousNode, VariantConfig(previousNode));
         }
 
         if (nextNode.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
@@ -54,7 +53,7 @@ internal sealed class EditorVariantHistoryService
         _activeEntryConfigJsonByVariant[node.Id] = Normalize(configJson);
     }
 
-    private void Leave(ProjectTreeNode? node, string configJson, EditorViewState? viewState)
+    private void Leave(ProjectTreeNode? node, string configJson)
     {
         if (node?.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
         {
@@ -68,7 +67,7 @@ internal sealed class EditorVariantHistoryService
             return;
         }
 
-        AddSnapshot(node.Id, nextConfig, viewState);
+        AddSnapshot(node.Id, nextConfig);
         _activeEntryConfigJsonByVariant[node.Id] = nextConfig;
     }
 
@@ -100,7 +99,6 @@ internal sealed class EditorVariantHistoryService
                     Label = snapshot.Label,
                     CreatedAt = snapshot.CreatedAt,
                     ConfigJson = snapshot.ConfigJson,
-                    ViewState = snapshot.ViewState is null ? null : EditorViewStateSnapshot.From(snapshot.ViewState),
                 }).ToList(),
                 StringComparer.Ordinal),
         };
@@ -124,13 +122,12 @@ internal sealed class EditorVariantHistoryService
                     snapshot.Id,
                     snapshot.Label,
                     snapshot.CreatedAt,
-                    string.IsNullOrWhiteSpace(snapshot.ConfigJson) ? "{}" : snapshot.ConfigJson,
-                    snapshot.ViewState?.ToViewState()))
+                    string.IsNullOrWhiteSpace(snapshot.ConfigJson) ? "{}" : snapshot.ConfigJson))
                 .ToList();
         }
     }
 
-    private void AddSnapshot(string nodeId, string configJson, EditorViewState? viewState)
+    private void AddSnapshot(string nodeId, string configJson)
     {
         if (!_snapshotsByVariant.TryGetValue(nodeId, out var snapshots))
         {
@@ -146,8 +143,7 @@ internal sealed class EditorVariantHistoryService
             (++_sequence).ToString(),
             label,
             now,
-            configJson,
-            viewState));
+            configJson));
 
         if (snapshots.Count > MaxSnapshotsPerVariant)
         {

@@ -14,7 +14,6 @@ internal sealed class EditorNodeCommandController
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Action _loadProjectTree;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Action<ProjectTreeNode, EditorViewState?> _reloadAndSelectWithViewState;
     private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
 
@@ -25,7 +24,6 @@ internal sealed class EditorNodeCommandController
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Action loadProjectTree,
         Action<ProjectTreeNode> reloadAndSelect,
-        Action<ProjectTreeNode, EditorViewState?> reloadAndSelectWithViewState,
         Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages)
     {
@@ -35,7 +33,6 @@ internal sealed class EditorNodeCommandController
         _treeRoots = treeRoots;
         _loadProjectTree = loadProjectTree;
         _reloadAndSelect = reloadAndSelect;
-        _reloadAndSelectWithViewState = reloadAndSelectWithViewState;
         _navigateToUsage = navigateToUsage;
         _messages = messages;
     }
@@ -96,7 +93,7 @@ internal sealed class EditorNodeCommandController
                 _database.ReplaceComponentPresetConfig(node, snapshot.ConfigJson);
             else
                 _database.ReplaceModuleVariantConfig(node, snapshot.ConfigJson);
-            _reloadAndSelectWithViewState(node, snapshot.ViewState);
+            _reloadAndSelect(node);
         }
         catch (Exception exception)
         {

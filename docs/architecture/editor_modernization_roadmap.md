@@ -331,6 +331,12 @@ their current rows and document writes while App/Module field semantics,
 complete Module Variant authoring, Runtime forwarding, Module Instances and
 Preview resolution remain in their existing domain owners.
 
+Editor working-point continuity is governed by
+`45_editor_session_view_state_contract.md`. Top-level card expansion, internal
+navigation and clamped scroll are retained only in memory by exact editor
+layout `recordClassId`; stable card/section ids replace node ids or positions,
+and Preview/Variant history cannot persist or override that state.
+
 ## Guardrails
 
 Reject new changes that add:

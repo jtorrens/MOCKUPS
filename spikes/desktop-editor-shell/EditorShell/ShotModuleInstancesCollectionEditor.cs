@@ -54,7 +54,10 @@ internal sealed class ShotModuleInstancesCollectionEditor
             new Border { Padding = new Thickness(10), Child = body },
             isExpanded: false,
             headerTrailing: add)
-        { HorizontalAlignment = HorizontalAlignment.Stretch };
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:shot-modules",
+        };
     }
 
     private Control CreateSlot(

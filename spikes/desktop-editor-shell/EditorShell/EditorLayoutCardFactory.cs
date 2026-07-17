@@ -28,8 +28,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Action<EditorEmbeddedContext> _openRuntimeComponentOverrides;
     private readonly Action<ProjectTreeNode> _scheduleActiveEditorReload;
     private readonly Action _refreshPreview;
-    private readonly Dictionary<string, string> _groupNavigationSelections = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, double> _groupNavigationWidths = new(StringComparer.Ordinal);
+    private readonly EditorSessionUiState _sessionUiState;
 
     public EditorLayoutCardFactory(
         EditorFieldValueRouter fieldValues,
@@ -47,7 +46,8 @@ internal sealed class EditorLayoutCardFactory
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Action<EditorEmbeddedContext> openRuntimeComponentOverrides,
         Action<ProjectTreeNode> scheduleActiveEditorReload,
-        Action refreshPreview)
+        Action refreshPreview,
+        EditorSessionUiState sessionUiState)
     {
         _fieldValues = fieldValues;
         _componentClassFieldValues = componentClassFieldValues;
@@ -65,11 +65,13 @@ internal sealed class EditorLayoutCardFactory
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
         _scheduleActiveEditorReload = scheduleActiveEditorReload;
         _refreshPreview = refreshPreview;
+        _sessionUiState = sessionUiState;
     }
 
     public InstantEditorCard Create(
         ProjectTreeNode node,
         EditorLayoutCard layoutCard,
+        string editorStateKey,
         EditorSimplifiedProjectionState? simplifiedProjection = null)
     {
         var body = new StackPanel
@@ -115,7 +117,7 @@ internal sealed class EditorLayoutCardFactory
         ComposeOrganizedGroups(
             body,
             layoutCard,
-            $"{node.RecordClassId}:{layoutCard.Id}",
+            $"{editorStateKey}:{layoutCard.Id}",
             organizedGroups,
             useSectionChrome,
             exclusiveGroupCards);
@@ -140,6 +142,7 @@ internal sealed class EditorLayoutCardFactory
             VariantLockButton(node, layoutCard))
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = $"layout:{layoutCard.Id}",
         };
         if (organizedGroups.Any((item) => item.Layout == EditorSubcardLayout.VerticalCards))
         {
@@ -216,7 +219,7 @@ internal sealed class EditorLayoutCardFactory
         ComposeOrganizedGroups(
             body,
             layoutCard,
-            $"{context.OwnerNode.RecordClassId}:{layoutCard.Id}:embedded",
+            $"{context.RecordClassId}:{layoutCard.Id}:embedded",
             organizedGroups,
             useSectionChrome,
             exclusiveGroupCards);
@@ -234,6 +237,7 @@ internal sealed class EditorLayoutCardFactory
             layoutCard.DefaultOpen)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = $"embedded:{layoutCard.Id}",
         };
         if (organizedGroups.Any((item) => item.Layout == EditorSubcardLayout.VerticalCards))
         {
@@ -254,7 +258,8 @@ internal sealed class EditorLayoutCardFactory
     public InstantEditorCard CreateSimplified(
         ProjectTreeNode node,
         EditorSimplifiedProjectionState projection,
-        bool isExpanded)
+        bool isExpanded,
+        string editorStateKey)
     {
         var groups = projection.Layout?.Groups
             .OrderBy((group) => group.Order)
@@ -277,7 +282,7 @@ internal sealed class EditorLayoutCardFactory
                 .Select((group) => SimplifiedSection(node, projection, group, 0, group.Id))
                 .ToList();
             content = CreateGroupLayoutHost(
-                $"{node.Id}:simplified:root",
+                $"{editorStateKey}:simplified:root",
                 sections,
                 EditorSubcardLayout.VerticalCards);
         }
@@ -293,6 +298,7 @@ internal sealed class EditorLayoutCardFactory
             isExpanded)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "simplified:root",
         };
         EditorGroupBlock.ApplyContentSeparator(card);
         return card;
@@ -336,7 +342,7 @@ internal sealed class EditorLayoutCardFactory
                     $"{statePath}:{child.Id}"))
                 .ToList();
             stack.Children.Add(CreateGroupLayoutHost(
-                $"{node.Id}:simplified:{statePath}:children",
+                $"{projection.RecordClassId}:simplified:{statePath}:children",
                 childSections,
                 depth == 0 ? EditorSubcardLayout.VerticalCards : EditorSubcardLayout.SeparatedSections));
         }
@@ -623,17 +629,17 @@ internal sealed class EditorLayoutCardFactory
         IReadOnlyList<EditorInternalNavigationSection> sections,
         EditorSubcardLayout layout)
     {
-        _groupNavigationSelections.TryGetValue(stateKey, out var selectedId);
-        var navigationWidth = _groupNavigationWidths.GetValueOrDefault(
+        var selectedId = _sessionUiState.Selection(stateKey);
+        var navigationWidth = _sessionUiState.NavigationWidth(
             stateKey,
             EditorInternalNavigation.DefaultNavigationWidth);
         return new EditorSubcardLayoutHost(
             sections,
             layout,
             selectedId,
-            (nextId) => _groupNavigationSelections[stateKey] = nextId,
+            (nextId) => _sessionUiState.Select(stateKey, nextId),
             navigationWidth,
-            (next) => _groupNavigationWidths[stateKey] = next);
+            (next) => _sessionUiState.SetNavigationWidth(stateKey, next));
     }
 
     private void ComposeOrganizedGroups(

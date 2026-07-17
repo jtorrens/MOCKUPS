@@ -64,6 +64,7 @@ internal sealed class StatusBarItemsCollectionEditor
             isExpanded: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:status-bar-items",
         };
     }
 

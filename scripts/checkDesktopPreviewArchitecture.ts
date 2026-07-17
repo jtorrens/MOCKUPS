@@ -2113,6 +2113,16 @@ assertContains(
   "the active architecture index must include the App and Module definition persistence contract",
 );
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/45_editor_session_view_state_contract.md",
+  "AGENTS must require the editor session view state contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "45_editor_session_view_state_contract.md",
+  "the active architecture index must include the editor session view state contract",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",
@@ -3780,15 +3790,50 @@ assertDoesNotContain(
   "ExpandedCards",
   "card expansion must never be written to persisted window state",
 );
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorSessionHistoryState.cs",
+  "EditorViewState",
+  "Preview and Variant history must never persist editor view state",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
   "card.IsExpanded = false;",
   "a new editor session must begin with every editor card closed",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorSessionViewStateStore.cs",
+  "_statesByRecordClassId[RequiredRecordClassId(recordClassId)] = state;",
+  "card expansion and scroll must remain available by exact layout class within the current session",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
-  "_statesByNodeId[node.Id] = state;",
-  "card expansion and scroll must remain available per editor within the current session",
+  "EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId",
+  "Variant editor state must resolve through the parent layout record class",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "node.Id",
+  "editor view state must not be keyed by the selected node id",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "card.SessionStateId",
+  "top-level editor card state must restore through explicit stable ids",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorViewState.cs",
+  "bool[]",
+  "top-level editor card expansion must not be stored by array position",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContentController.cs",
+  'var presentationKey = $"editor:{layoutNode.RecordClassId}:presentation";',
+  "editor presentation mode must be shared by exact layout class within the session",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  'EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId',
+  "Runtime Inputs tabs must retain their session selection by exact layout class",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",

@@ -83,6 +83,7 @@ internal sealed class IconThemeTokensCollectionEditor
             isExpanded: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:icon-theme-tokens",
         };
     }
 

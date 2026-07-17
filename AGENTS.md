@@ -18,6 +18,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/42_production_font_persistence_contract.md`
 - `docs/architecture/43_icon_theme_persistence_and_asset_contract.md`
 - `docs/architecture/44_app_module_definition_persistence_contract.md`
+- `docs/architecture/45_editor_session_view_state_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -125,6 +126,11 @@ ellipsis and border treatment; an editor must not restyle individual rows.
 Editor card expansion, internal selection and editor scroll position are
 session-only state. A new application session starts with every editor card
 closed. This state must not be written to `data/window-state.json`.
+It is keyed only by the exact editor layout `recordClassId`, with top-level
+cards and internal sections restored by explicit stable ids rather than node
+ids, labels or positions. Preview and Variant history must not serialize or
+override this state. See
+`docs/architecture/45_editor_session_view_state_contract.md`.
 
 ## Hard rule: padding uses spacing tokens
 

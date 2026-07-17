@@ -32,7 +32,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
     private readonly Action _toggleProductionPlayback;
-    private readonly EditorSessionUiState _sessionUiState = new();
+    private readonly EditorSessionUiState _sessionUiState;
 
     public EditorCollectionCardFactory(
         SpikeDatabase database,
@@ -57,7 +57,8 @@ internal sealed class EditorCollectionCardFactory
         Action<EditorEmbeddedContext> openEmbeddedContext,
         Func<int> shotFrame,
         Action<int> setShotFrame,
-        Action toggleProductionPlayback)
+        Action toggleProductionPlayback,
+        EditorSessionUiState sessionUiState)
     {
         _database = database;
         _isDark = isDark;
@@ -82,6 +83,7 @@ internal sealed class EditorCollectionCardFactory
         _shotFrame = shotFrame;
         _setShotFrame = setShotFrame;
         _toggleProductionPlayback = toggleProductionPlayback;
+        _sessionUiState = sessionUiState;
     }
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)

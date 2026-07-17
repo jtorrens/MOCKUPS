@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Avalonia;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
@@ -26,6 +27,8 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
+    ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
+    ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -79,6 +82,66 @@ var tests = new (string Name, Action Run)[]
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void EditorViewStateFollowsRecordClass()
+{
+    var firstTheme = new ProjectTreeNode(ProjectTreeNodeKind.Theme, "theme-a", "Theme A", "", "theme");
+    var secondTheme = new ProjectTreeNode(ProjectTreeNodeKind.Theme, "theme-b", "Theme B", "", "theme");
+    var actor = new ProjectTreeNode(ProjectTreeNodeKind.Actor, "actor-a", "Actor A", "", "actor");
+    Equal("theme", EditorViewStateController.StateKey(firstTheme));
+    Equal(EditorViewStateController.StateKey(firstTheme), EditorViewStateController.StateKey(secondTheme));
+    True(EditorViewStateController.StateKey(firstTheme) != EditorViewStateController.StateKey(actor));
+
+    var componentClass = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentClass,
+        "component-a",
+        "Component A",
+        "",
+        "component.label");
+    var componentVariant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentPreset,
+        "component-a::preset::default",
+        "Default",
+        "",
+        "component.preset",
+        componentClass);
+    Equal("component.label", EditorViewStateController.StateKey(componentVariant));
+}
+
+static void EditorViewStateRoundTripsPerClass()
+{
+    var store = new EditorSessionViewStateStore();
+    True(store.Get("theme") is null);
+
+    var themeState = new EditorViewState(
+        ["layout:general"],
+        new Vector(12, 240));
+    var actorState = new EditorViewState(
+        ["layout:wallpaper"],
+        new Vector(0, 72));
+    store.Set("theme", themeState);
+    store.Set("actor", actorState);
+
+    var restoredTheme = Required(store.Get("theme"));
+    SequenceEqual(["layout:general"], restoredTheme.ExpandedCardIds);
+    Equal(new Vector(12, 240), restoredTheme.ScrollOffset);
+    var restoredActor = Required(store.Get("actor"));
+    SequenceEqual(["layout:wallpaper"], restoredActor.ExpandedCardIds);
+    Equal(new Vector(0, 72), restoredActor.ScrollOffset);
+
+    Equal(
+        new Vector(200, 300),
+        EditorViewStateController.ClampOffset(
+            new Vector(900, 900),
+            new Size(500, 700),
+            new Size(300, 400)));
+    Equal(
+        new Vector(0, 0),
+        EditorViewStateController.ClampOffset(
+            new Vector(-20, -10),
+            new Size(100, 100),
+            new Size(300, 400)));
+}
 
 static void ExistingDatabaseOpenIsReadOnly()
 {
