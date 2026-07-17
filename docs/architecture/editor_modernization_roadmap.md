@@ -392,6 +392,12 @@ exact current Actor context and avatar/mode values to Runtime record references
 and the inline avatar preview. Actor payload and visual interpretation remain
 in their factories, outside repositories, the bridge and the renderer.
 
+Production Shot context data access is governed by
+`54_production_shot_context_data_boundary_contract.md`. The explicit
+Shot-to-Actor-to-Device/Theme route now enters navigation and Preview through a
+typed source, while context validity, errors and navigation availability remain
+in `ProductionShotContextService`.
+
 ## Guardrails
 
 Reject new changes that add:

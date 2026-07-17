@@ -86,6 +86,9 @@ this index wins.
 - `53_actor_preview_data_boundary_contract.md`: typed read access for current
   Actor Preview inputs, separated from Runtime Actor resolution and inline
   avatar presentation semantics.
+- `54_production_shot_context_data_boundary_contract.md`: typed read access for
+  the explicit Shot owner Actor, Device, Theme and mode route, separated from
+  context validity and navigation policy.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -103,6 +103,11 @@ Disposable integration tests cover:
 - explicit missing-context failure without `{}` or ordered Theme fallback;
 - byte-for-byte read-only startup after migration.
 
+Desktop navigation and Preview reads additionally follow contract 54. The
+typed data source supplies only the exact stored Shot/Actor/Device/Theme route;
+`ProductionShotContextService` remains the owner of invalid-context messages
+and Screen navigation availability.
+
 ## 6. Forbidden shortcuts
 
 - selecting the first Theme in a Project;

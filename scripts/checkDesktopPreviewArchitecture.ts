@@ -326,6 +326,48 @@ assertContains(
   "new ActorPreviewDataSource(database)",
   "the inline Actor avatar route must compose the typed Actor Preview source",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/54_production_shot_context_data_boundary_contract.md",
+  "AGENTS must require the Production Shot context data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "54_production_shot_context_data_boundary_contract.md",
+  "the architecture index must include contract 54",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextService.cs",
+  "SpikeDatabase",
+  "Production Shot context policy must consume only its typed data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Production Shot context data source must own that route's database dependency",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+  "_actorDataSource = new ActorPreviewDataSource(database)",
+  "Production Shot context must reuse the typed Actor context boundary",
+);
+for (const forbiddenProductionContextSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+    forbiddenProductionContextSql,
+    `the Production Shot context data source must compose current services rather than owning SQL (${forbiddenProductionContextSql})`,
+  );
+}
+for (const productionContextConsumer of [
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+]) {
+  assertContains(
+    productionContextConsumer,
+    "new ProductionShotContextService(new ProductionShotContextDataSource(",
+    "navigation and Preview must compose the typed Production Shot context boundary",
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

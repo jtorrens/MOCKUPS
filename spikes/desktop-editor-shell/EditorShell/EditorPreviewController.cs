@@ -255,7 +255,7 @@ internal sealed class EditorPreviewController
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(database);
-        _productionShotContext = new ProductionShotContextService(database);
+        _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(database));
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);

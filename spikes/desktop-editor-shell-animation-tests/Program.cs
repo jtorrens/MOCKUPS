@@ -28,6 +28,7 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
+    ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -661,6 +662,7 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
         var previewSource = dataSource.LoadPreview(actor.Id);
 
         Equal(settings.ProjectId, context.ProjectId);
+        Equal(settings.DisplayName, context.DisplayName);
         Equal(settings.DefaultDeviceId, context.DefaultDeviceId);
         Equal(settings.DefaultThemeId, context.DefaultThemeId);
         Equal(settings.ProjectId, previewSource.ProjectId);
@@ -1439,6 +1441,41 @@ static void ShotActorContextIsExplicit()
         database.Delete(screen);
         database.Delete(shot);
         True(Descendants(database.LoadProjectTree()).All((node) => node.Id != shot.Id && node.Id != screen.Id));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionShotContextBoundaryPreservesInheritedContext()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-context-data-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new ProductionShotContextDataSource(database);
+        var service = new ProductionShotContextService(dataSource);
+        var shot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var shotSettings = database.GetShotSettings(shot.Id);
+        var actor = database.GetActorSettings(shotSettings.OwnerActorId);
+        var context = service.Resolve(shot.Id);
+
+        True(context.IsValid);
+        Equal("", context.Error);
+        Equal(actor.DisplayName, context.Actor);
+        Equal(database.GetDeviceSettings(actor.DefaultDeviceId).Name, context.Device);
+        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, context.Theme);
+        Equal(database.GetThemeFieldValue(actor.DefaultThemeId, "theme.defaultMode"), context.ThemeMode);
+        True(service.CanExposeChildren(shot));
+        True(shot.Children.All(service.IsNavigationNodeEnabled));
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
     }
     finally
     {

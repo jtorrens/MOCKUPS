@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -13,24 +12,24 @@ internal sealed record ProductionShotContext(
 
 internal sealed class ProductionShotContextService
 {
-    private readonly SpikeDatabase _database;
+    private readonly ProductionShotContextDataSource _dataSource;
 
-    public ProductionShotContextService(SpikeDatabase database)
+    public ProductionShotContextService(ProductionShotContextDataSource dataSource)
     {
-        _database = database;
+        _dataSource = dataSource;
     }
 
     public ProductionShotContext Resolve(string shotId)
     {
-        var shot = _database.GetShotSettings(shotId);
-        if (string.IsNullOrWhiteSpace(shot.OwnerActorId))
+        var ownerActorId = _dataSource.LoadShotOwnerActorId(shotId);
+        if (string.IsNullOrWhiteSpace(ownerActorId))
         {
             return Invalid($"Shot {shotId} has no Actor assigned.");
         }
-        ActorSettings actor;
+        ActorPreviewContextSource actor;
         try
         {
-            actor = _database.GetActorSettings(shot.OwnerActorId);
+            actor = _dataSource.LoadActor(ownerActorId);
         }
         catch (Exception)
         {
@@ -42,10 +41,9 @@ internal sealed class ProductionShotContextService
         }
         try
         {
-            var device = _database.GetDeviceSettings(actor.DefaultDeviceId).Name;
-            var theme = _database.GetThemeSettings(actor.DefaultThemeId).Name;
-            var mode = _database.GetThemeFieldValue(actor.DefaultThemeId, "theme.defaultMode");
-            return new ProductionShotContext(true, "", actor.DisplayName, device, theme, mode);
+            var device = _dataSource.LoadDeviceName(actor.DefaultDeviceId);
+            var theme = _dataSource.LoadTheme(actor.DefaultThemeId);
+            return new ProductionShotContext(true, "", actor.DisplayName, device, theme.Name, theme.DefaultMode);
         }
         catch (Exception)
         {

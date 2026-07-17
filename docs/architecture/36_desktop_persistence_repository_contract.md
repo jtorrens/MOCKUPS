@@ -159,6 +159,11 @@ Contract 53 establishes the Actor Preview slice: `ActorPreviewDataSource`
 supplies exact current Actor context and raw preview values while the Actor
 input/avatar factories retain mode, Palette, media and presentation semantics.
 
+Contract 54 establishes the Production Shot context slice:
+`ProductionShotContextDataSource` supplies the explicit owner Actor, Device,
+Theme and mode route while `ProductionShotContextService` retains validity,
+error and navigation policy.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

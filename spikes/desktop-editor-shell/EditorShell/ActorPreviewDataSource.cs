@@ -5,6 +5,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record ActorPreviewContextSource(
     string ProjectId,
+    string DisplayName,
     string DefaultDeviceId,
     string DefaultThemeId);
 
@@ -36,6 +37,7 @@ internal sealed class ActorPreviewDataSource
         var settings = _database.GetActorSettings(actorId);
         return new ActorPreviewContextSource(
             settings.ProjectId,
+            settings.DisplayName,
             settings.DefaultDeviceId,
             settings.DefaultThemeId);
     }

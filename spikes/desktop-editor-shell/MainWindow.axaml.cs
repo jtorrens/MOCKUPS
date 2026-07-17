@@ -105,7 +105,7 @@ public partial class MainWindow : SukiWindow
             NavigateToReferenceUsage,
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
-        _productionShotContext = new ProductionShotContextService(_database);
+        _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(_database));
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
             () => _themeController.IsDark,
