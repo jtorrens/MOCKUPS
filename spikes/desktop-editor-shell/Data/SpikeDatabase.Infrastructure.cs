@@ -10,38 +10,28 @@ internal sealed partial class SpikeDatabase
 {
     private SqliteConnection OpenConnection()
     {
-        var connection = new SqliteConnection(_connectionString);
-        connection.Open();
-        return connection;
+        return _context.OpenConnection();
     }
 
     private SqliteConnection OpenValidationConnection()
     {
-        var connection = new SqliteConnection(_validationConnectionString);
-        connection.Open();
-        return connection;
+        return _context.OpenValidationConnection();
     }
 
 
     private static int NextSortOrder(SqliteConnection connection, string table, string parentColumn, string parentId)
     {
-        return (int)ScalarLong(
-            connection,
-            $"SELECT COALESCE(MAX(sort_order), -1) + 1 FROM {table} WHERE {parentColumn} = $parentId",
-            ("$parentId", parentId));
+        return SqliteCommandExecutor.NextSortOrder(connection, table, parentColumn, parentId);
     }
 
     private static string FirstId(SqliteConnection connection, string table, string projectId)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT id FROM {table} WHERE project_id = $projectId ORDER BY name, id LIMIT 1";
-        command.Parameters.AddWithValue("$projectId", projectId);
-        return command.ExecuteScalar() as string ?? "";
+        return SqliteCommandExecutor.FirstId(connection, table, projectId);
     }
 
     private static string ReadString(SqliteDataReader reader, int index)
     {
-        return reader.IsDBNull(index) ? "" : reader.GetString(index);
+        return SqliteCommandExecutor.ReadString(reader, index);
     }
 
     private static string Slug(string value)
@@ -169,12 +159,7 @@ internal sealed partial class SpikeDatabase
 
     private static void ExecuteScript(SqliteConnection connection, string script)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = script;
-        lock (WriteGate)
-        {
-            command.ExecuteNonQuery();
-        }
+        SqliteCommandExecutor.ExecuteScript(connection, script);
     }
 
     private static void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
@@ -188,41 +173,16 @@ internal sealed partial class SpikeDatabase
         string sql,
         params (string Key, object? Value)[] parameters)
     {
-        using var command = connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = sql;
-        foreach (var (key, value) in parameters)
-        {
-            command.Parameters.AddWithValue(key, value ?? DBNull.Value);
-        }
-
-        lock (WriteGate)
-        {
-            command.ExecuteNonQuery();
-        }
+        SqliteCommandExecutor.Execute(connection, transaction, sql, parameters);
     }
 
     private static long ScalarLong(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        foreach (var (key, value) in parameters)
-        {
-            command.Parameters.AddWithValue(key, value ?? DBNull.Value);
-        }
-
-        return Convert.ToInt64(command.ExecuteScalar());
+        return SqliteCommandExecutor.ScalarLong(connection, sql, parameters);
     }
 
     private static string? ScalarString(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        foreach (var (key, value) in parameters)
-        {
-            command.Parameters.AddWithValue(key, value ?? DBNull.Value);
-        }
-
-        return command.ExecuteScalar() as string;
+        return SqliteCommandExecutor.ScalarString(connection, sql, parameters);
     }
 }

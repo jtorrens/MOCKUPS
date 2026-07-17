@@ -4,8 +4,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
-    public sealed record EpisodeSettings(string Slug, int SortOrder);
     public sealed record ShotSettings(
         string ProjectId,
         string Slug,
@@ -135,18 +133,6 @@ internal sealed partial class SpikeDatabase
         bool Charging,
         string Zone,
         int Order);
-    public sealed record RenderPresetSettings(
-        string ProjectId,
-        string Name,
-        int Width,
-        int Height,
-        int Fps,
-        string Format,
-        string CodecJson,
-        string ColorJson,
-        string QualityJson,
-        string ExportJson,
-        string MetadataJson);
     public sealed record NavigationBarItem(
         string Id,
         string Label,
@@ -169,8 +155,6 @@ internal sealed partial class SpikeDatabase
         string Value,
         string? LightColorHex,
         string? DarkColorHex);
-    private sealed record ProjectRow(string Id, string Name, string Notes);
-    private sealed record EpisodeRow(string Id, string ProjectId, string Name, string Slug, string Notes, int SortOrder);
     private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
     private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder, string ConfigJson, string DesignPreviewJson, string MetadataJson);
     private sealed record ModuleInstanceRow(
@@ -192,19 +176,6 @@ internal sealed partial class SpikeDatabase
     private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
-    private sealed record RenderPresetRow(
-        string Id,
-        string ProjectId,
-        string Name,
-        int Width,
-        int Height,
-        int Fps,
-        string Format,
-        string CodecJson,
-        string ColorJson,
-        string QualityJson,
-        string ExportJson,
-        string MetadataJson);
     private sealed record ComponentClassRow(string Id, string ProjectId, string ComponentType, string RecordClassId, string Name, string Notes, string ConfigJson, string DesignPreviewJson, string MetadataJson);
     private sealed record ShotRow(
         string Id,

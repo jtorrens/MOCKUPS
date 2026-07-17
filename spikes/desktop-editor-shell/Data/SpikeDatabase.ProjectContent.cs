@@ -10,37 +10,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private static void DuplicateShots(SqliteConnection connection, string sourceEpisodeId, string targetEpisodeId)
-    {
-        var sourceShots = QueryShotRows(connection)
-            .Where((shot) => shot.EpisodeId == sourceEpisodeId)
-            .OrderBy((shot) => shot.SortOrder)
-            .ToList();
-
-        for (var index = 0; index < sourceShots.Count; index++)
-        {
-            var shot = sourceShots[index];
-            Execute(
-                connection,
-                """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json)
-                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride, $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
-                """,
-                ("$id", $"shot_{Guid.NewGuid():N}"),
-                ("$episodeId", targetEpisodeId),
-                ("$name", shot.Name),
-                ("$slug", shot.Slug),
-                ("$version", shot.Version),
-                ("$notes", shot.Notes),
-                ("$sortOrder", index),
-                ("$fpsOverride", shot.FpsOverride),
-                ("$durationFrames", shot.DurationFrames),
-                ("$ownerActorId", shot.OwnerActorId),
-                ("$canvasJson", shot.CanvasJson),
-                ("$metadataJson", shot.MetadataJson));
-        }
-    }
-
     public ShotSettings GetShotSettings(string shotId)
     {
         using var connection = OpenConnection();

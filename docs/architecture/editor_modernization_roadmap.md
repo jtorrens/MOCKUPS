@@ -276,6 +276,12 @@ Once field access is delegated, split database responsibilities into focused ser
 - collection repositories;
 - preview payload/resolver service.
 
+The first repository slice is governed by
+`36_desktop_persistence_repository_contract.md`. It extracts the shared SQLite
+context plus Editor Layout, Project/Episode and Render Preset repositories
+behind the existing `SpikeDatabase` facade. Later slices must extend that
+boundary instead of adding new table SQL back to the facade.
+
 ## Guardrails
 
 Reject new changes that add:

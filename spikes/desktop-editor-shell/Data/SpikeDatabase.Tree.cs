@@ -573,27 +573,12 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.RenderPresetsRoot)
         {
             var project = ProjectAncestor(parent);
-            var index = ScalarLong(connection, "SELECT COUNT(*) FROM render_presets WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-            var id = $"render_preset_{Guid.NewGuid():N}";
-            var name = $"Render Preset {index}";
-            Execute(
-                connection,
-                """
-                INSERT INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json)
-                VALUES ($id, $projectId, $name, 1, 1, 1, 'mov', $codecJson, $colorJson, $qualityJson, $exportJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$name", name),
-                ("$codecJson", DefaultRenderPresetCodecJson()),
-                ("$colorJson", DefaultRenderPresetColorJson()),
-                ("$qualityJson", DefaultRenderPresetQualityJson()),
-                ("$exportJson", DefaultRenderPresetExportJson()));
+            var preset = _renderPresetRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.RenderPreset,
-                id,
-                name,
+                preset.Id,
+                preset.Name,
                 "1x1 · 1 fps · mov",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPreset),
                 parent);
@@ -602,30 +587,13 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
         {
             var project = ProjectAncestor(parent);
-            var index = NextSortOrder(connection, "episodes", "project_id", project.Id);
-            var id = $"episode_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO episodes (id, project_id, name, notes, sort_order)
-                VALUES ($id, $projectId, $name, $notes, $sortOrder)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$name", $"Episode {index + 1}"),
-                ("$notes", "New episode created in the desktop shell spike."),
-                ("$sortOrder", index));
-            Execute(
-                connection,
-                "UPDATE episodes SET slug = $slug WHERE id = $id",
-                ("$id", id),
-                ("$slug", $"episode-{index + 1}"));
+            var episode = _projectEpisodeRepository.CreateEpisode(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Episode,
-                id,
-                $"Episode {index + 1}",
-                "New episode created in the desktop shell spike.",
+                episode.Id,
+                episode.Name,
+                episode.Notes,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Episode),
                 parent);
         }
@@ -752,25 +720,9 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
-            var id = $"episode_{Guid.NewGuid():N}";
-            var project = node.Parent?.Parent ?? throw new InvalidOperationException("Episode has no project parent.");
-            var sortOrder = NextSortOrder(connection, "episodes", "project_id", project.Id);
-            Execute(
-                connection,
-                """
-                INSERT INTO episodes (id, project_id, name, slug, notes, sort_order)
-                SELECT $id, project_id, $name, slug || '-copy', notes, $sortOrder
-                FROM episodes
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sortOrder", sortOrder),
-                ("$sourceId", node.Id));
+            var copy = _projectEpisodeRepository.DuplicateEpisode(connection, node.Id, $"{node.Name} copy");
 
-            DuplicateShots(connection, node.Id, id);
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.Episode, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Episode, copy.Id, copy.Name, copy.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Shot)
@@ -940,20 +892,9 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.RenderPreset)
         {
-            var id = $"render_preset_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO render_presets (id, project_id, name, width, height, fps, format, codec_json, color_json, quality_json, export_json, metadata_json)
-                SELECT $id, project_id, $name, width, height, fps, format, codec_json, color_json, quality_json, export_json, metadata_json
-                FROM render_presets
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
+            var copy = _renderPresetRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.RenderPreset, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.RenderPreset, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
@@ -986,7 +927,6 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var table = node.Kind switch
         {
-            ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
@@ -995,7 +935,7 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.RenderPreset => "render_presets",
+            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset => "",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -1008,6 +948,18 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {
             DeleteProductionFontFiles(connection, node.Id);
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Episode)
+        {
+            _projectEpisodeRepository.DeleteEpisode(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
+        {
+            _renderPresetRepository.Delete(connection, node.Id);
+            return;
         }
 
         Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
@@ -1044,12 +996,28 @@ internal sealed partial class SpikeDatabase
     public void UpdateNode(ProjectTreeNode node)
     {
         using var connection = OpenConnection();
+        if (node.Kind == ProjectTreeNodeKind.Project)
+        {
+            _projectEpisodeRepository.UpdateProjectNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Episode)
+        {
+            _projectEpisodeRepository.UpdateEpisodeNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
+        {
+            _renderPresetRepository.Rename(connection, node.Id, node.Name);
+            return;
+        }
+
         var table = node.Kind switch
         {
-            ProjectTreeNodeKind.Project => "projects",
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
-            ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
@@ -1057,7 +1025,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.RenderPreset => "render_presets",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
@@ -1124,16 +1091,6 @@ internal sealed partial class SpikeDatabase
                 ("$name", renamedAssets.Name),
                 ("$assetRoot", renamedAssets.AssetRoot),
                 ("$metadataJson", metadata.ToJsonString()));
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
-        {
-            Execute(
-                connection,
-                "UPDATE render_presets SET name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
             return;
         }
 

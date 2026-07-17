@@ -343,20 +343,19 @@ internal sealed partial class SpikeDatabase
         return familyName.Contains("emoji", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
+    private void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT projects.media_root, production_fonts.source_directory
+            SELECT project_id, source_directory
             FROM production_fonts
-            INNER JOIN projects ON projects.id = production_fonts.project_id
-            WHERE production_fonts.id = $id
+            WHERE id = $id
             """;
         command.Parameters.AddWithValue("$id", fontId);
         using var reader = command.ExecuteReader();
         if (!reader.Read()) return;
 
-        var mediaRoot = ResolveProjectPath(ReadString(reader, 0));
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, ReadString(reader, 0)).MediaRoot);
         var sourceDirectory = ReadString(reader, 1);
         if (string.IsNullOrWhiteSpace(mediaRoot) || string.IsNullOrWhiteSpace(sourceDirectory)) return;
 

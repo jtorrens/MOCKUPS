@@ -56,7 +56,7 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<PaletteColorRow> paletteColors,
         IReadOnlyList<ProductionFontRow> productionFonts,
         IReadOnlyList<IconThemeRow> iconThemes,
-        IReadOnlyList<RenderPresetRow> renderPresets,
+        IReadOnlyList<RenderPresetRecord> renderPresets,
         IReadOnlyList<ComponentClassRow> componentClasses)
     {
         var index = new Dictionary<string, List<string>>(StringComparer.Ordinal);

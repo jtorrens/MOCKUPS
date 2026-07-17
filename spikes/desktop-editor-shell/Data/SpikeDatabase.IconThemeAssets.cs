@@ -59,7 +59,7 @@ internal sealed partial class SpikeDatabase
             Path.GetFileName(targetDirectory));
     }
 
-    private static string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    private string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
         return Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
@@ -118,7 +118,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    private void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
         var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));

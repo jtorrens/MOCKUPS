@@ -9,6 +9,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/33_persistence_and_migration_contract.md`
 - `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`
 - `docs/architecture/35_current_json_and_variant_contract.md`
+- `docs/architecture/36_desktop_persistence_repository_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -221,6 +222,16 @@ lock/protection from the `default` id and must not fall back from a missing
 Variant config to class config. Variant creation may construct a new complete
 snapshot explicitly; editing current data may not repair an incomplete one.
 See `docs/architecture/35_current_json_and_variant_contract.md`.
+
+## Hard rule: desktop repositories have explicit ownership
+
+Desktop persistence uses the shared SQLite context and focused repositories
+defined by `docs/architecture/36_desktop_persistence_repository_contract.md`.
+`SpikeDatabase` is a compatibility facade and orchestration boundary; new SQL,
+connection-string construction, write synchronization or table-specific row
+mapping must not be added to it when an owning repository exists. Repositories
+consume only the current validated model and must not introduce repair,
+normalization, migration or fallback behavior.
 
 ## Data migrations, not compatibility fallbacks
 

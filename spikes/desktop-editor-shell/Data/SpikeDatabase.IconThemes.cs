@@ -231,7 +231,7 @@ internal sealed partial class SpikeDatabase
         return rows;
     }
 
-    private static IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection, string projectId)
+    private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection, string projectId)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
         var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");

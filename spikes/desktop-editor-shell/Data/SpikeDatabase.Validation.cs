@@ -511,5 +511,5 @@ internal sealed partial class SpikeDatabase
         char.IsLetterOrDigit(value) || value is '_' or '-' or '.';
 
     private InvalidOperationException InvalidCurrentDatabase(string detail) =>
-        new($"Desktop database '{_databasePath}' does not satisfy the current persistence contract: {detail}. Run an explicit migration on a copy; startup will not repair it.");
+        new($"Desktop database '{_context.DatabasePath}' does not satisfy the current persistence contract: {detail}. Run an explicit migration on a copy; startup will not repair it.");
 }

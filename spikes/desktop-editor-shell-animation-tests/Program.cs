@@ -16,6 +16,7 @@ var tests = new (string Name, Action Run)[]
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
+    ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -318,6 +319,126 @@ static void EditorLayoutSaveOmitsDerivedProperties()
         True(!json.Contains("\"VisibleFields\"", StringComparison.Ordinal));
         True(!json.Contains("\"Entries\"", StringComparison.Ordinal));
         Equal(layout.Cards.Count, JsonNode.Parse(json)?["cards"]?.AsArray().Count ?? -1);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ExtractedRepositoriesPreserveFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-repository-contract-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IEditorLayoutRepository layoutRepository = new EditorLayoutRepository(context);
+        IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context);
+        IRenderPresetRepository renderPresetRepository = new RenderPresetRepository(context);
+
+        var tree = database.LoadProjectTree();
+        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var episode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Episode);
+        var renderPreset = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.RenderPreset);
+
+        Equal(database.GetProjectSettings(project.Id), projectEpisodeRepository.GetProjectSettings(project.Id));
+        Equal(database.GetEpisodeSettings(episode.Id), projectEpisodeRepository.GetEpisodeSettings(episode.Id));
+        Equal(database.GetRenderPresetSettings(renderPreset.Id), renderPresetRepository.GetSettings(renderPreset.Id));
+        SequenceEqual(
+            database.GetRenderPresetOptions(project.Id).Skip(1).Select((option) => option.Value),
+            renderPresetRepository.GetOptions(project.Id).Select((option) => option.Value));
+
+        var facadeLayout = database.LoadEditorLayout("component.keypad");
+        var repositoryLayout = layoutRepository.Load("component.keypad");
+        Equal(facadeLayout.Cards.Count, repositoryLayout.Cards.Count);
+        layoutRepository.Save("component.keypad", repositoryLayout);
+        Equal(repositoryLayout.Cards.Count, database.LoadEditorLayout("component.keypad").Cards.Count);
+
+        using (var connection = context.OpenConnection())
+        {
+            True(projectEpisodeRepository.QueryProjects(connection).Any((row) => row.Id == project.Id));
+            True(projectEpisodeRepository.QueryEpisodes(connection).Any((row) => row.Id == episode.Id));
+            True(renderPresetRepository.QueryAll(connection).Any((row) => row.Id == renderPreset.Id));
+        }
+
+        var originalProject = database.GetProjectSettings(project.Id);
+        projectEpisodeRepository.UpdateProjectField(project.Id, "project.slug", $"{originalProject.Slug}-repository");
+        Equal($"{originalProject.Slug}-repository", database.GetProjectSettings(project.Id).Slug);
+        database.UpdateProjectField(project.Id, "project.slug", originalProject.Slug);
+        Equal(originalProject, projectEpisodeRepository.GetProjectSettings(project.Id));
+
+        var originalEpisode = database.GetEpisodeSettings(episode.Id);
+        projectEpisodeRepository.UpdateEpisodeField(episode.Id, "episode.slug", $"{originalEpisode.Slug}-repository");
+        Equal($"{originalEpisode.Slug}-repository", database.GetEpisodeSettings(episode.Id).Slug);
+        database.UpdateEpisodeField(episode.Id, "episode.slug", originalEpisode.Slug);
+        Equal(originalEpisode, projectEpisodeRepository.GetEpisodeSettings(episode.Id));
+
+        var originalPreset = database.GetRenderPresetSettings(renderPreset.Id);
+        renderPresetRepository.UpdateField(renderPreset.Id, "renderPreset.width", "1234");
+        Equal(1234, database.GetRenderPresetSettings(renderPreset.Id).Width);
+        database.UpdateRenderPresetField(renderPreset.Id, "renderPreset.width", originalPreset.Width.ToString());
+        Equal(originalPreset, renderPresetRepository.GetSettings(renderPreset.Id));
+
+        var originalProjectName = project.Name;
+        project.Name = $"{project.Name} repository";
+        database.UpdateNode(project);
+        using (var connection = context.OpenConnection())
+        {
+            Equal(project.Name, projectEpisodeRepository.QueryProjects(connection).Single((row) => row.Id == project.Id).Name);
+        }
+        project.Name = originalProjectName;
+        database.UpdateNode(project);
+
+        var originalEpisodeName = episode.Name;
+        episode.Name = $"{episode.Name} repository";
+        database.UpdateNode(episode);
+        using (var connection = context.OpenConnection())
+        {
+            Equal(episode.Name, projectEpisodeRepository.QueryEpisodes(connection).Single((row) => row.Id == episode.Id).Name);
+        }
+        episode.Name = originalEpisodeName;
+        database.UpdateNode(episode);
+
+        var originalPresetName = renderPreset.Name;
+        renderPreset.Name = $"{renderPreset.Name} repository";
+        database.UpdateNode(renderPreset);
+        using (var connection = context.OpenConnection())
+        {
+            Equal(renderPreset.Name, renderPresetRepository.QueryAll(connection).Single((row) => row.Id == renderPreset.Id).Name);
+        }
+        renderPreset.Name = originalPresetName;
+        database.UpdateNode(renderPreset);
+
+        var episodesRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        var createdEpisode = database.AddChild(episodesRoot);
+        using (var connection = context.OpenConnection())
+        {
+            True(projectEpisodeRepository.QueryEpisodes(connection).Any((row) => row.Id == createdEpisode.Id));
+        }
+        var duplicatedEpisode = database.Duplicate(createdEpisode);
+        database.Delete(duplicatedEpisode);
+        database.Delete(createdEpisode);
+
+        var renderPresetsRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.RenderPresetsRoot);
+        var createdPreset = database.AddChild(renderPresetsRoot);
+        using (var connection = context.OpenConnection())
+        {
+            True(renderPresetRepository.QueryAll(connection).Any((row) => row.Id == createdPreset.Id));
+        }
+        var duplicatedPreset = database.Duplicate(createdPreset);
+        database.Delete(duplicatedPreset);
+        database.Delete(createdPreset);
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() =>
+            renderPresetRepository.UpdateField(renderPreset.Id, "renderPreset.codec", "[]"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }
     finally
     {

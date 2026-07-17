@@ -1884,10 +1884,10 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
-const spikeDatabaseDataPaths = readdirSync(path.join(root, "spikes/desktop-editor-shell/Data"))
-  .filter((entry) => /^SpikeDatabase.*\.cs$/.test(entry))
+const desktopPersistenceDataPaths = readdirSync(path.join(root, "spikes/desktop-editor-shell/Data"))
+  .filter((entry) => entry.endsWith(".cs"))
   .map((entry) => `spikes/desktop-editor-shell/Data/${entry}`);
-for (const relativePath of spikeDatabaseDataPaths) {
+for (const relativePath of desktopPersistenceDataPaths) {
   const source = readText(relativePath);
   if (/\b(?:Ensure|Normalize|Retire|Migrate)\w*\s*\(\s*SqliteConnection\b/.test(source)) {
     addViolation(
@@ -1903,9 +1903,54 @@ for (const relativePath of spikeDatabaseDataPaths) {
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "spikes/desktop-editor-shell/Data/SqliteProjectContext.cs",
   "Mode = SqliteOpenMode.ReadOnly",
-  "existing databases must be opened read-only until strict current validation succeeds",
+  "the shared SQLite context must open existing databases read-only until strict current validation succeeds",
+);
+for (const [contractType, implementationType] of [
+  ["IEditorLayoutRepository", "EditorLayoutRepository"],
+  ["IProjectEpisodeRepository", "ProjectEpisodeRepository"],
+  ["IRenderPresetRepository", "RenderPresetRepository"],
+] as const) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/PersistenceContracts.cs",
+    `interface ${contractType}`,
+    `persistence contract ${contractType} must remain explicit`,
+  );
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    `new ${implementationType}(_context)`,
+    `SpikeDatabase must delegate through ${implementationType}`,
+  );
+}
+for (const facadePath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectsEpisodes.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RenderPresets.cs",
+]) {
+  for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
+    assertDoesNotContain(
+      facadePath,
+      forbiddenPersistenceDetail,
+      `${facadePath} must delegate instead of owning extracted repository SQL or row mapping`,
+    );
+  }
+}
+for (const [repositoryPath, ownedTable] of [
+  ["spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs", "editor_layouts"],
+  ["spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs", "episodes"],
+  ["spikes/desktop-editor-shell/Data/RenderPresetRepository.cs", "render_presets"],
+] as const) {
+  assertContains(
+    repositoryPath,
+    ownedTable,
+    `${repositoryPath} must own its declared persistence slice`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "SqliteProjectContext",
+  "MainWindow must not receive persistence infrastructure or repositories",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
@@ -2804,22 +2849,22 @@ assertContains(
   "theme system bar references must mark component presets, not parent classes",
 );
 assertAnyContains(
-  spikeDatabaseDataPaths,
+  desktopPersistenceDataPaths,
   "GetComponentPresetReferenceOptionsByType(projectId, \"status_bar\"",
   "theme status bar selector must list component presets",
 );
 assertAnyContains(
-  spikeDatabaseDataPaths,
+  desktopPersistenceDataPaths,
   "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
   "theme navigation bar selector must list component presets",
 );
 assertAnyContains(
-  spikeDatabaseDataPaths,
+  desktopPersistenceDataPaths,
   "[\"id\"] = DefaultComponentPresetId",
   "component class normalization must create a Default preset",
 );
 assertAnyContains(
-  spikeDatabaseDataPaths,
+  desktopPersistenceDataPaths,
   "[\"protected\"] = true",
   "Default component preset must be protected in stored metadata",
 );
