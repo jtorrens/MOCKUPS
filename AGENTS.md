@@ -23,6 +23,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/47_module_instance_persistence_contract.md`
 - `docs/architecture/48_shot_persistence_contract.md`
 - `docs/architecture/49_component_definition_source_contract.md`
+- `docs/architecture/50_module_definition_source_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -284,6 +285,13 @@ runtime Component seed/default catalog must not return. Current manifest,
 committed Component rows, complete Variants, owner implementation and editor
 metadata are the authorities; future Component/Atom scaffolding is an explicit
 development workflow, never normal startup or a generic editor Add action.
+
+Module definition sources follow
+`docs/architecture/50_module_definition_source_contract.md`. Dormant
+hard-coded Module config/runtime-contract factories must not compete with the
+current manifest, committed complete Module Variants and owner implementation.
+Future Module scaffolding is an explicit complete development workflow, never
+normal startup or a generic editor Add action.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

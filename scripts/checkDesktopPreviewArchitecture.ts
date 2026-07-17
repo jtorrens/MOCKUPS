@@ -186,6 +186,19 @@ for (const retiredComponentFactoryTerm of [
     `runtime Data sources must not contain retired component factory ${retiredComponentFactoryTerm}`,
   );
 }
+for (const retiredModuleFactoryTerm of [
+  "DefaultConversationConfigJson",
+  "DefaultConversationDesignPreviewJson",
+  "SeededComponentPresetReference",
+  "ConversationPreviewMessageFields",
+  "ApplyConversationRuntimeGroups",
+]) {
+  assertFilesDoNotContain(
+    currentRepositoryFiles,
+    retiredModuleFactoryTerm,
+    `runtime Data sources must not contain retired Module factory ${retiredModuleFactoryTerm}`,
+  );
+}
 assertContains(
   "AGENTS.md",
   "docs/architecture/49_component_definition_source_contract.md",
@@ -195,6 +208,16 @@ assertContains(
   "docs/architecture/README.md",
   "49_component_definition_source_contract.md",
   "the architecture index must include contract 49",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/50_module_definition_source_contract.md",
+  "AGENTS must require the Module definition source contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "50_module_definition_source_contract.md",
+  "the architecture index must include contract 50",
 );
 assertFilesDoNotContain(
   currentRepositoryFiles,
@@ -3612,9 +3635,10 @@ assertDoesNotContain(
   "parseObject(payload.instanceJson).behavior",
   "module renderables must consume the canonical runtime preview payload instead of a second instance behavior channel",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "[\"definesModuleDuration\"] = true",
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"definesModuleDuration":true',
   "a module runtime contract must declare which action defines its finite instance duration",
 );
 assertContains(
@@ -3802,14 +3826,16 @@ assertContains(
   'Timeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false',
   "field metadata must decide whether a field advances serial owner duration",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  /preDurationFieldIds[\s\S]*?delay[\s\S]*?postDurationFieldIds[\s\S]*?postWriteOnHold/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  /"preDurationFieldIds":\["delay"\][\s\S]*?"postDurationFieldIds":\["postWriteOnHold"\]/,
   "Conversation runtime metadata must declare serial pre-delay and post-hold ownership explicitly",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  '["minimumEnabledKeyframes"] = 2',
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"minimumEnabledKeyframes":2',
   "Conversation must keep base write-on when text has only mandatory KF0",
 );
 assertContains(
@@ -3867,19 +3893,22 @@ assertContains(
   'requiredString(status, "gapToken"',
   "Bubble status row spacing must use its declared spacing token",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "[\"timelineFrameJsonKey\"] = \"conversationFrame\"",
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"timelineFrameJsonKey":"conversationFrame"',
   "modules with a local timeline must declare its runtime frame key",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "[\"jsonKey\"] = \"conversationType\"",
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"jsonKey":"conversationType"',
   "Conversation must publish its individual or group type through the runtime contract",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  /\["id"\] = "writeOn"[\s\S]*?\["valueKind"\] = ValueKind\.BehaviorTiming\.ToString\(\)[\s\S]*?\["baseFramesPerUnit"\] = 7/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  /"id":"writeOn"[\s\S]*?"valueKind":"BehaviorTiming"[\s\S]*?"baseFramesPerUnit":7/,
   "new Conversation messages must contribute a finite default write-on duration",
 );
 assertContains(
@@ -4340,9 +4369,10 @@ assertContains(
   "actorIdentityVisible",
   "Bubble must consume its parent-owned actor identity visibility override",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "[\"source\"] = \"calculated\"",
+assertSourceContains(
+  "data/desktop-editor-spike.sqlite",
+  moduleContractSource,
+  '"source":"calculated"',
   "parent-owned timeline frame inputs must be declared calculated",
 );
 for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {

@@ -74,6 +74,9 @@ this index wins.
 - `49_component_definition_source_contract.md`: canonical current Component
   definition authorities, retirement of the disconnected runtime defaults
   catalog and constraints for future explicit development scaffolding.
+- `50_module_definition_source_contract.md`: canonical current Module
+  definition authorities, retirement of the disconnected Conversation factory
+  and constraints for future explicit development scaffolding.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

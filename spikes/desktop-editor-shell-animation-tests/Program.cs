@@ -2445,7 +2445,16 @@ static void LegacyAnimationRequiresExplicitMigration()
 
 static void AnimatableFieldVocabularyIsConstrained()
 {
-    var preview = (JsonObject)RequiredObject(InvokeDatabaseStatic("DefaultConversationDesignPreviewJson"));
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var database = new SpikeDatabase(source);
+    var module = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .Single((node) => node.Kind == ProjectTreeNodeKind.Module
+            && database.GetModuleSettings(node.Id).RecordClassId == "module.core.chat");
+    var settings = database.GetModuleSettings(module.Id);
+    var preview = JsonPath.ParseRequiredObject(
+        settings.DesignPreviewJson,
+        $"Module '{module.Id}' design_preview_json");
     var screenFields = preview["inputs"]!.AsArray().OfType<JsonObject>().ToList();
     var messageFields = preview["collections"]!.AsArray().OfType<JsonObject>()
         .Single(collection => collection["id"]!.GetValue<string>() == "messages")["fields"]!
@@ -3842,7 +3851,6 @@ static object? InvokeDatabaseStatic(string name, params object?[] arguments)
 }
 
 static T Required<T>(T? value) where T : class => value ?? throw new Exception("Expected a value.");
-static object RequiredObject(object? value) => value ?? throw new Exception("Expected a value.");
 static void True(bool condition)
 {
     if (!condition) throw new Exception("Expected true.");

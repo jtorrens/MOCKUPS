@@ -32,8 +32,8 @@ canonical schema + current record-creation contracts + committed current DB
   constraints, indexes, defaults and `PRAGMA user_version`.
 - Explicit repository creation commands and reviewed development scaffolding
   own the current shape of records they create. They are not startup seeds and
-  do not repair existing records. Component definition sources additionally
-  follow contract 49.
+  do not repair existing records. Component and Module definition sources
+  additionally follow contracts 49 and 50.
 - `data/desktop-editor-spike.sqlite` is the committed parity artifact used by
   the desktop application and the current canonical project database. It must
   exactly satisfy the current schema and contract validators; it is not a cache

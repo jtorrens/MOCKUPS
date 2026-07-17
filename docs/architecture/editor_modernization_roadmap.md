@@ -366,6 +366,13 @@ Component Class documents and complete Variants, owner implementation and
 editor metadata remain the only active authorities. Future Component/Atom
 scaffolding must be an explicit complete development workflow.
 
+Module definition sources are governed by
+`50_module_definition_source_contract.md`. The disconnected Conversation
+config/runtime-contract factory is retired; current manifest routes, committed
+complete Module documents/Variants and owner implementations remain the active
+authorities. Future Module scaffolding must be an explicit complete
+development workflow.
+
 ## Guardrails
 
 Reject new changes that add:
