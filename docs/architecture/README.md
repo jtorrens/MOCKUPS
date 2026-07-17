@@ -113,6 +113,9 @@ this index wins.
 - `62_animation_keyframe_drag_interaction_contract.md`: stable keyframe pointer
   gestures across synchronous shared-Preview feedback, without a second
   playhead or intermediate persistence.
+- `63_dictionary_field_context_data_boundary_contract.md`: typed Theme, Icon
+  Theme, Palette and Component Variant context for shared dictionary controls,
+  separated from UI composition and field semantics.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

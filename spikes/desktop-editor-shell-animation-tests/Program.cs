@@ -21,6 +21,7 @@ var tests = new (string Name, Action Run)[]
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
+    ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
     ("Runtime Input instance store preserves explicit scalar collection and animation writes", RuntimeInputInstanceStorePreservesExplicitWrites),
@@ -777,6 +778,88 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         Equal(
             database.GetRuntimeComponentPresetName(presetReference, new JsonObject(), []),
             dynamicOptions[0].Label);
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void DictionaryFieldContextBoundaryPreservesCurrentData()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-dictionary-field-context-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new DictionaryFieldContextDataSource(database);
+        var payloadData = new DesignPreviewPayloadDataSource(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
+        var preset = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var componentSettings = database.GetComponentClassSettings(componentClass.Id);
+        var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var theme = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.Theme)
+            .First((node) => !string.IsNullOrWhiteSpace(database.GetThemeSettings(node.Id).IconThemeId));
+        var themeSettings = database.GetThemeSettings(theme.Id);
+
+        Equal(themeSettings.IconThemeId, dataSource.IconThemeId(preset, theme.Id));
+        True(JsonNode.DeepEquals(
+            DesignPreviewTestValues.Parse(themeSettings.TokensJson),
+            dataSource.ThemeTokens(preset, theme.Id)));
+
+        var productionThemeId = payloadData.ResolveThemeId(screen, null)
+            ?? throw new InvalidOperationException("Production Screen did not resolve its explicit Theme.");
+        Equal(
+            database.GetThemeSettings(productionThemeId).IconThemeId,
+            dataSource.IconThemeId(screen, null));
+        True(JsonNode.DeepEquals(
+            DesignPreviewTestValues.Parse(database.GetModuleInstanceThemeTokensJson(screen.Id)),
+            dataSource.ThemeTokens(screen, null)));
+
+        SequenceEqual(
+            database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
+            dataSource.PaletteColorOptions(project.Id).Select((option) => option.Value));
+        SequenceEqual(
+            database.GetComponentPresetReferenceOptionsByType(
+                project.Id,
+                componentSettings.ComponentType).Select((option) => option.Value),
+            dataSource.ComponentPresetOptions(
+                project.Id,
+                componentSettings.ComponentType).Select((option) => option.Value));
+
+        SequenceEqual(
+            database.GetComponentPresetRuntimeInputBindings(preset.Id)
+                .Select((input) => $"{input.Id}\u001f{input.JsonKey}\u001f{input.ValueKind}"),
+            dataSource.ComponentPresetRuntimeInputBindings(preset.Id)
+                .Select((input) => $"{input.Id}\u001f{input.JsonKey}\u001f{input.ValueKind}"));
+        Equal(
+            database.GetComponentPresetRuntimeInputs(preset.Id).ToJsonString(),
+            dataSource.ComponentPresetRuntimeValues(preset.Id).ToJsonString());
+        SequenceEqual(
+            database.GetComponentPresetRuntimeCollections(preset.Id)
+                .Select((collection) => $"{collection.Id}\u001f{collection.JsonKey}\u001f{collection.Fields.Count}"),
+            dataSource.ComponentPresetRuntimeCollections(preset.Id)
+                .Select((collection) => $"{collection.Id}\u001f{collection.JsonKey}\u001f{collection.Fields.Count}"));
+
+        var expectedSelection = database.GetComponentPresetSelectionSettings(preset.Id);
+        var selection = dataSource.ComponentPresetSelection(preset.Id);
+        Equal(expectedSelection.ProjectId, selection.ProjectId);
+        Equal(expectedSelection.ComponentType, selection.ComponentType);
+        Equal(expectedSelection.RecordClassId, selection.RecordClassId);
+        Equal(expectedSelection.ConfigJson, selection.ConfigJson);
+
+        var token = database.GetIconThemeTokens(themeSettings.IconThemeId).First();
+        Equal(
+            database.ResolveIconThemeAssetPath(themeSettings.IconThemeId, token.File),
+            dataSource.IconTokenAssetPath(themeSettings.IconThemeId, token.Token));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

@@ -446,6 +446,13 @@ distinguishes its own synchronous Preview frame publication from external
 playhead changes, preserving pointer capture without introducing another clock
 or changing owner-relative persistence.
 
+Shared dictionary persisted context is governed by
+`63_dictionary_field_context_data_boundary_contract.md`. Theme and Icon Theme
+context, Palette options and complete Component Variant Runtime documents now
+enter the generic dictionary service through one typed read source. The service
+retains UI composition without retaining or calling the general database
+facade.
+
 ## Guardrails
 
 Reject new changes that add:

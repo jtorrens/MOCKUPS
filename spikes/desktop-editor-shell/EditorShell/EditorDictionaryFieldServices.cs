@@ -8,8 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorDictionaryFieldServices
 {
-    private readonly SpikeDatabase _database;
-    private readonly DesignPreviewPayloadDataSource _previewPayloadData;
+    private readonly DictionaryFieldContextDataSource _contextData;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly Func<string?> _selectedThemeId;
@@ -23,8 +22,7 @@ internal sealed class EditorDictionaryFieldServices
         Func<string?> selectedThemeId,
         Action<string, string> setRuntimeTestValue)
     {
-        _database = database;
-        _previewPayloadData = new DesignPreviewPayloadDataSource(database);
+        _contextData = new DictionaryFieldContextDataSource(database);
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
         _selectedThemeId = selectedThemeId;
@@ -42,21 +40,11 @@ internal sealed class EditorDictionaryFieldServices
         var projectId = ProjectAncestor(node).Id;
         string IconThemeId()
         {
-            var effectiveThemeId = _previewPayloadData.ResolveThemeId(node, _selectedThemeId());
-            return string.IsNullOrWhiteSpace(effectiveThemeId)
-                ? ""
-                : _database.GetThemeSettings(effectiveThemeId).IconThemeId;
+            return _contextData.IconThemeId(node, _selectedThemeId());
         }
         JsonObject ThemeTokens()
         {
-            if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
-            {
-                return DesignPreviewTestValues.Parse(_database.GetModuleInstanceThemeTokensJson(node.Id));
-            }
-            var effectiveThemeId = _previewPayloadData.ResolveThemeId(node, _selectedThemeId());
-            return string.IsNullOrWhiteSpace(effectiveThemeId)
-                ? new JsonObject()
-                : DesignPreviewTestValues.Parse(_database.GetThemeSettings(effectiveThemeId).TokensJson);
+            return _contextData.ThemeTokens(node, _selectedThemeId());
         }
         int? ResolveBehaviorTimingFrames(FieldDefinition definition, string json)
         {
@@ -80,7 +68,7 @@ internal sealed class EditorDictionaryFieldServices
         Task OpenRuntimeOverrides(string presetReference, JsonObject overrides, Action<JsonObject> changed)
         {
             if (openRuntimeComponentOverrides is null) return Task.CompletedTask;
-            var selected = _database.GetComponentPresetSelectionSettings(presetReference);
+            var selected = _contextData.ComponentPresetSelection(presetReference);
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
                 [],
@@ -98,14 +86,17 @@ internal sealed class EditorDictionaryFieldServices
             BrowsePath: _pathBrowser.BrowsePath,
             ShowIconTokenPicker: (currentValue, allowMultiple) => _domainDialogs.ShowIconTokenPicker(IconThemeId(), currentValue, allowMultiple),
             ShowThemeTokenPicker: (currentValue, allowedOptions) => _domainDialogs.ShowThemeTokenPicker(projectId, currentValue, allowedOptions),
-            CreateIconPreview: (token) => SvgIconPreview.CreateIconTokenPreview(_database, IconThemeId(), token, 18),
+            CreateIconPreview: (token) => SvgIconPreview.CreateIconTokenPreview(
+                token,
+                18,
+                (singleToken) => _contextData.IconTokenAssetPath(IconThemeId(), singleToken)),
             ResolveImagePath: _pathBrowser.ResolveImagePath,
             GetFieldValue: getFieldValue,
-            GetPaletteColorOptions: () => _database.GetPaletteColorOptions(projectId),
-            GetComponentPresetOptions: (componentType) => _database.GetComponentPresetReferenceOptionsByType(projectId, componentType),
-            GetComponentPresetRuntimeInputs: _database.GetComponentPresetRuntimeInputBindings,
-            GetComponentPresetRuntimeValues: _database.GetComponentPresetRuntimeInputs,
-            GetComponentPresetRuntimeCollections: _database.GetComponentPresetRuntimeCollections,
+            GetPaletteColorOptions: () => _contextData.PaletteColorOptions(projectId),
+            GetComponentPresetOptions: (componentType) => _contextData.ComponentPresetOptions(projectId, componentType),
+            GetComponentPresetRuntimeInputs: _contextData.ComponentPresetRuntimeInputBindings,
+            GetComponentPresetRuntimeValues: _contextData.ComponentPresetRuntimeValues,
+            GetComponentPresetRuntimeCollections: _contextData.ComponentPresetRuntimeCollections,
             OpenComponentPresetReference: openComponentPresetReference,
             OpenEmbeddedComponent: openEmbeddedComponent,
             OpenComponentInputBinding: openComponentInputBinding,

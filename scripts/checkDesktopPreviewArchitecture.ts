@@ -762,6 +762,57 @@ for (const forbiddenTimelineFrameGateDependency of [
   );
 }
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/63_dictionary_field_context_data_boundary_contract.md",
+  "AGENTS must require the dictionary field context data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "63_dictionary_field_context_data_boundary_contract.md",
+  "the architecture index must include contract 63",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "_contextData = new DictionaryFieldContextDataSource(database)",
+  "the shared dictionary service must compose one typed persisted-context source",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "private readonly SpikeDatabase _database",
+  "the shared dictionary service must not retain the general database facade",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "_database.",
+  "the shared dictionary service must use its typed context source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "_contextData.IconTokenAssetPath(IconThemeId(), singleToken)",
+  "dictionary icon presentation must consume a resolved token asset path",
+);
+for (const forbiddenDictionaryContextDependency of [
+  "SELECT ",
+  "INSERT ",
+  "UPDATE ",
+  "DELETE FROM",
+  "SqliteConnection",
+  "Avalonia",
+  "FieldDefinition",
+  "DictionaryFieldControl",
+  "Dialog",
+  "RuntimeInputForwardingContract",
+  "Override",
+  "PreviewBridge",
+  "Renderer",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldContextDataSource.cs",
+    forbiddenDictionaryContextDependency,
+    `the dictionary context source must remain a read-only data boundary (${forbiddenDictionaryContextDependency})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",

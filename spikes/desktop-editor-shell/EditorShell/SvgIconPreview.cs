@@ -38,6 +38,25 @@ internal static class SvgIconPreview
 
     public static Control CreateIconTokenPreview(SpikeDatabase database, string iconThemeId, string token, double size)
     {
+        return CreateIconTokenPreview(
+            token,
+            size,
+            (singleToken) =>
+            {
+                if (string.IsNullOrWhiteSpace(iconThemeId)) return null;
+                var icon = database.GetIconThemeTokens(iconThemeId)
+                    .FirstOrDefault((candidate) => candidate.Token == singleToken);
+                return icon is null
+                    ? null
+                    : database.ResolveIconThemeAssetPath(iconThemeId, icon.File);
+            });
+    }
+
+    public static Control CreateIconTokenPreview(
+        string token,
+        double size,
+        Func<string, string?> resolveAssetPath)
+    {
         try
         {
             var firstToken = token
@@ -45,10 +64,7 @@ internal static class SvgIconPreview
                 .FirstOrDefault();
             if (string.IsNullOrWhiteSpace(firstToken)) return EditorIcons.Create(EditorIcons.Icon, size);
 
-            if (string.IsNullOrWhiteSpace(iconThemeId)) return EditorIcons.Create(EditorIcons.Icon, size);
-            var icon = database.GetIconThemeTokens(iconThemeId).FirstOrDefault((candidate) => candidate.Token == firstToken);
-            if (icon is null) return EditorIcons.Create(EditorIcons.Icon, size);
-            var path = database.ResolveIconThemeAssetPath(iconThemeId, icon.File);
+            var path = resolveAssetPath(firstToken);
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return EditorIcons.Create(EditorIcons.Icon, size);
 
             return CreateFromSvg(ReadSvg(path), size);
