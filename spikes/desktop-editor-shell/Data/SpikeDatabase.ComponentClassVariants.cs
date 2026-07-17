@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -97,8 +96,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var source = FindPreset(presets, presetId)
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             var sourceName = JsonPath.String(source, "name", presetId);
@@ -110,7 +109,8 @@ internal sealed partial class SpikeDatabase
                 ["name"] = copyName,
                 ["protected"] = false,
                 ["locked"] = false,
-                ["config"] = (source["config"] as JsonObject)?.DeepClone() ?? ParseJsonObject(settings.ConfigJson),
+                ["config"] = (source["config"] as JsonObject
+                    ?? throw new InvalidOperationException($"Component Variant '{presetId}' has no config snapshot.")).DeepClone(),
             });
             Execute(
                 connection,
@@ -150,9 +150,10 @@ internal sealed partial class SpikeDatabase
             }
 
             var sourceConfigJson = GetComponentPresetSettings(connection, sourceNode).ConfigJson;
+            var sourceConfig = ParseJsonObject(sourceConfigJson);
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var presetId = UniquePresetId(presets, presetName);
             presets.Add(new JsonObject
             {
@@ -160,7 +161,7 @@ internal sealed partial class SpikeDatabase
                 ["name"] = presetName,
                 ["protected"] = false,
                 ["locked"] = false,
-                ["config"] = JsonNode.Parse(sourceConfigJson),
+                ["config"] = sourceConfig,
             });
             Execute(
                 connection,
@@ -189,8 +190,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             for (var index = 0; index < presets.Count; index++)
             {
                 if (presets[index] is not JsonObject preset
@@ -204,7 +205,7 @@ internal sealed partial class SpikeDatabase
                     throw new InvalidOperationException("Protected component variants cannot be deleted.");
                 }
 
-                if (ComponentPresetIsLocked(preset))
+                if (JsonBool(preset, ["locked"]))
                 {
                     throw new InvalidOperationException("Locked component variants cannot be deleted.");
                 }
@@ -245,8 +246,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var preset = FindPreset(presets, presetId)
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
             preset["name"] = nextName;
@@ -280,11 +281,11 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var preset = FindPreset(presets, presetId)
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
-            var nextLocked = !ComponentPresetIsLocked(preset);
+            var nextLocked = !JsonBool(preset, ["locked"]);
             preset["locked"] = nextLocked;
             Execute(
                 connection,
@@ -312,18 +313,17 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
 
-        var nextConfig = JsonNode.Parse(configJson) as JsonObject
-            ?? throw new InvalidOperationException("Variant snapshot is not a valid object.");
+        var nextConfig = ParseJsonObject(configJson);
 
         lock (WriteGate)
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-            var presets = EnsurePresetArray(metadata);
+            var metadata = ParseJsonObject(settings.MetadataJson);
+            var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var preset = FindPreset(presets, presetId)
                 ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
-            if (ComponentPresetIsLocked(preset))
+            if (JsonBool(preset, ["locked"]))
             {
                 throw new InvalidOperationException($"Component variant '{presetId}' is locked.");
             }
@@ -453,7 +453,7 @@ internal sealed partial class SpikeDatabase
         string componentType,
         string presetId)
     {
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         foreach (var slot in EmbeddedComponentSlotCatalog.All())
         {
             if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
@@ -494,7 +494,7 @@ internal sealed partial class SpikeDatabase
         string componentType,
         string presetId)
     {
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         foreach (var slot in EmbeddedComponentSlotCatalog.All())
         {
             if (!slot.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal))
@@ -525,12 +525,13 @@ internal sealed partial class SpikeDatabase
                 && referencedPresetId.Equals(presetId, StringComparison.Ordinal);
         }
 
-        return value.Equals(presetId, StringComparison.Ordinal);
+        throw new InvalidOperationException(
+            $"Component Variant reference '{value}' must use the full componentClassId::preset::presetId form.");
     }
 
     private static bool JsonContainsString(string json, string expected)
     {
-        var node = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        var node = ParseJsonObject(json);
         return JsonContainsString(node, expected);
     }
 
@@ -543,18 +544,6 @@ internal sealed partial class SpikeDatabase
             JsonArray array => array.Any((item) => JsonContainsString(item, expected)),
             _ => false,
         };
-    }
-
-    private static JsonArray EnsurePresetArray(JsonObject metadata)
-    {
-        if (metadata["presets"] is JsonArray presets)
-        {
-            return presets;
-        }
-
-        presets = [];
-        metadata["presets"] = presets;
-        return presets;
     }
 
     private static JsonObject? FindPreset(JsonArray presets, string presetId) =>

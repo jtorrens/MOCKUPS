@@ -9,64 +9,40 @@ namespace Mockups.DesktopEditorShell.Common;
 
 internal static class JsonPath
 {
-    public static JsonObject ParseObject(string json)
+    public static JsonObject ParseRequiredObject(string json, string context)
     {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidOperationException($"{context} cannot be blank.");
+        }
+
         try
         {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? [];
+            return JsonNode.Parse(json) as JsonObject
+                ?? throw new InvalidOperationException($"{context} must be a JSON object.");
         }
-        catch
+        catch (JsonException exception)
         {
-            return [];
+            throw new InvalidOperationException($"{context} contains invalid JSON.", exception);
         }
     }
 
-    public static bool MergeMissing(JsonObject target, JsonObject defaults)
+    public static JsonArray ParseRequiredArray(string json, string context)
     {
-        var changed = false;
-        foreach (var pair in defaults)
+        if (string.IsNullOrWhiteSpace(json))
         {
-            if (!target.TryGetPropertyValue(pair.Key, out var existing) || existing is null)
-            {
-                target[pair.Key] = pair.Value?.DeepClone();
-                changed = true;
-                continue;
-            }
-
-            if (existing is JsonObject existingObject && pair.Value is JsonObject defaultObject)
-            {
-                changed |= MergeMissing(existingObject, defaultObject);
-            }
+            throw new InvalidOperationException($"{context} cannot be blank.");
         }
 
-        return changed;
-    }
-
-    public static bool MergeObjectArrayById(JsonArray target, JsonArray defaults, string idProperty = "id")
-    {
-        var changed = false;
-        foreach (var defaultNode in defaults.OfType<JsonObject>())
+        try
         {
-            var id = String(defaultNode, idProperty, "");
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                continue;
-            }
-
-            var existing = target
-                .OfType<JsonObject>()
-                .FirstOrDefault((node) => string.Equals(String(node, idProperty, ""), id, StringComparison.Ordinal));
-            if (existing is null)
-            {
-                target.Add(defaultNode.DeepClone());
-                changed = true;
-                continue;
-            }
-
-            changed |= MergeMissing(existing, defaultNode);
+            return JsonNode.Parse(json) as JsonArray
+                ?? throw new InvalidOperationException($"{context} must be a JSON array.");
         }
-
-        return changed;
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException($"{context} contains invalid JSON.", exception);
+        }
     }
 
     public static JsonNode? Get(JsonObject root, IReadOnlyList<string> path)

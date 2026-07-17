@@ -1460,14 +1460,7 @@ internal sealed class ComponentPreviewInputSession
 
     private static JsonObject ParseJsonObject(string json)
     {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
-        }
-        catch
-        {
-            return new JsonObject();
-        }
+        return JsonPath.ParseRequiredObject(json, "Component input JSON");
     }
 
     internal static IReadOnlyList<ComponentInputDefinition> ReadRuntimeInputs(JsonObject preview, JsonObject config)

@@ -1573,8 +1573,8 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview
-            || PlaybackFrameAction(preview)?.PrewarmFrames != true)
+        var preview = JsonPath.ParseRequiredObject(payload.DesignPreviewJson, "Design Preview payload");
+        if (PlaybackFrameAction(preview)?.PrewarmFrames != true)
         {
             return;
         }
@@ -1798,10 +1798,7 @@ internal sealed class EditorPreviewController
         ComponentPreviewActionDefinition? requestedAction = null)
     {
         var fps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
-        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
-        {
-            yield break;
-        }
+        var preview = JsonPath.ParseRequiredObject(payload.DesignPreviewJson, "Design Preview payload");
 
         var action = requestedAction is not null && ComponentPreviewActions.IsApplicable(preview, requestedAction)
             ? requestedAction
@@ -1834,7 +1831,7 @@ internal sealed class EditorPreviewController
 
         for (var frame = 0; frame <= frameCount; frame++)
         {
-            var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
+            var framePreview = (JsonObject)preview.DeepClone();
             ComponentPreviewActions.SetValue(
                 framePreview,
                 action,
@@ -1852,10 +1849,7 @@ internal sealed class EditorPreviewController
     private static IEnumerable<DesignPreviewPayload> PlaybackAheadFramePayloads(DesignPreviewPayload payload, int projectFps)
     {
         var fps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
-        if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
-        {
-            yield break;
-        }
+        var preview = JsonPath.ParseRequiredObject(payload.DesignPreviewJson, "Design Preview payload");
 
         var action = PlaybackFrameAction(preview);
         if (action is null || string.IsNullOrWhiteSpace(action.TimeJsonKey))
@@ -1882,7 +1876,7 @@ internal sealed class EditorPreviewController
                 yield break;
             }
 
-            var framePreview = JsonNode.Parse(preview.ToJsonString()) as JsonObject ?? new JsonObject();
+            var framePreview = (JsonObject)preview.DeepClone();
             ComponentPreviewActions.SetValue(
                 framePreview,
                 action,
@@ -1915,8 +1909,7 @@ internal sealed class EditorPreviewController
         }
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
-            var themeTokens = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
-                ?? new JsonObject();
+            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
             JsonNode? current = themeTokens;
             foreach (var segment in action.DurationThemeToken.Split('.', StringSplitOptions.RemoveEmptyEntries)
                          .SkipWhile((segment) => segment == "theme"))
@@ -1945,8 +1938,7 @@ internal sealed class EditorPreviewController
                 JsonString(field, "id") == action.DurationBehaviorTimingInputId)
                 ?? throw new InvalidOperationException(
                     $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
-            var themeTokens = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
-                ?? new JsonObject();
+            var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
             return BehaviorTimingResolver.ResolveFrames(preview, definition, fields, themeTokens);
         }
 
@@ -2000,25 +1992,14 @@ internal sealed class EditorPreviewController
 
     private static string PlaybackFrameTime(DesignPreviewPayload payload)
     {
-        try
-        {
-            if (JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) is not JsonObject preview)
-            {
-                return "";
-            }
-
-            var action = PlaybackFrameAction(preview);
-            if (action is null || string.IsNullOrWhiteSpace(action.TimeJsonKey))
-            {
-                return "";
-            }
-
-            return ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? "";
-        }
-        catch
+        var preview = JsonPath.ParseRequiredObject(payload.DesignPreviewJson, "Design Preview payload");
+        var action = PlaybackFrameAction(preview);
+        if (action is null || string.IsNullOrWhiteSpace(action.TimeJsonKey))
         {
             return "";
         }
+
+        return ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? "";
     }
 
     private static ComponentPreviewActionDefinition? PlaybackFrameAction(JsonObject preview)

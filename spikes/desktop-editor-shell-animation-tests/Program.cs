@@ -12,6 +12,9 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
+    ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
+    ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
+    ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
@@ -88,17 +91,201 @@ static void ExistingDatabaseOpenIsReadOnly()
 
 static void RejectedDatabaseOpenIsReadOnly()
 {
+    AssertRejectedDatabaseIsReadOnly("schema-version", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA user_version = 0";
+        command.ExecuteNonQuery();
+    });
+}
+
+static void PersistedJsonRootsAreStrict()
+{
+    Equal(0, JsonPath.ParseRequiredObject("{}", "test object").Count);
+    Equal(0, JsonPath.ParseRequiredArray("[]", "test array").Count);
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredObject("", "test object"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredObject("{", "test object"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredObject("[]", "test object"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredObject("null", "test object"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredArray("", "test array"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredArray("{}", "test array"));
+    Throws<InvalidOperationException>(() => JsonPath.ParseRequiredArray("null", "test array"));
+    AssertRejectedDatabaseIsReadOnly("blank-json-root", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE apps SET config_json = '' WHERE id = 'app_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("malformed-json-root", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE themes SET tokens_json = '{' WHERE id = 'theme_project_foqn_s2_ios_default'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("wrong-json-root", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE production_fonts SET files_json = '{}' WHERE id = (SELECT id FROM production_fonts LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
+}
+
+static void IncompleteVariantsFailReadOnly()
+{
+    AssertRejectedDatabaseIsReadOnly("component-variant-locked", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET metadata_json = json_remove(metadata_json, '$.presets[0].locked')
+            WHERE id = 'component_project_foqn_s2_label'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("component-variant-config", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET metadata_json = json_remove(metadata_json, '$.presets[0].config')
+            WHERE id = 'component_project_foqn_s2_label'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("component-variant-name", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.presets[0].name') WHERE id = 'component_project_foqn_s2_label'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("component-variant-protected", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.presets[0].protected') WHERE id = 'component_project_foqn_s2_label'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("component-variant-duplicate-id", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_insert(metadata_json, '$.presets[#]', json_extract(metadata_json, '$.presets[0]')) WHERE id = 'component_project_foqn_s2_label'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("component-default-unprotected", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_set(metadata_json, '$.presets[0].protected', json('false')) WHERE id = 'component_project_foqn_s2_label'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-variant-locked", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE modules
+            SET metadata_json = json_remove(metadata_json, '$.variants[0].locked')
+            WHERE id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-variant-entry", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE modules
+            SET metadata_json = json_insert(metadata_json, '$.variants[#]', json($entry))
+            WHERE id = 'module_core_chat'
+            """;
+        command.Parameters.AddWithValue("$entry", "\"malformed\"");
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-variant-config", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET metadata_json = json_remove(metadata_json, '$.variants[0].config') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-variant-name", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET metadata_json = json_remove(metadata_json, '$.variants[0].name') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-variant-protected", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET metadata_json = json_remove(metadata_json, '$.variants[0].protected') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+}
+
+static void VariantWritesDoNotRepairMissingArrays()
+{
     var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
-    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-rejected-open-{Guid.NewGuid():N}.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-variant-write-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
+            node.Id == "component_project_foqn_s2_label::preset::default");
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                UPDATE component_classes
+                SET metadata_json = json_remove(metadata_json, '$.presets')
+                WHERE id = 'component_project_foqn_s2_label'
+                """;
+            command.ExecuteNonQuery();
+        }
+
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.SaveComponentPreset(defaultVariant, "Must fail"));
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+
+    temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-variant-write-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
+            node.Id == "module_core_chat::variant::default");
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE modules SET metadata_json = json_remove(metadata_json, '$.variants') WHERE id = 'module_core_chat'";
+            command.ExecuteNonQuery();
+        }
+
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.SaveModuleVariant(defaultVariant, "Must fail"));
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnection> mutate)
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-rejected-{fixture}-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
     {
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
             connection.Open();
-            using var command = connection.CreateCommand();
-            command.CommandText = "PRAGMA user_version = 0";
-            command.ExecuteNonQuery();
+            mutate(connection);
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));

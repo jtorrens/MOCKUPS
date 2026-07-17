@@ -79,6 +79,6 @@ internal static class ModuleInstanceTimeline
     }
 
     private static JsonObject Parse(string json) =>
-        JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
+        JsonPath.ParseRequiredObject(json, "Module Instance timeline JSON");
 
 }

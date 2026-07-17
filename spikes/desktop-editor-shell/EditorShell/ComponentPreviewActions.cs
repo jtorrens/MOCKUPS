@@ -313,8 +313,7 @@ internal static class ComponentPreviewActions
         if (string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)) return 0;
         var target = Target(preview, action);
         if (target?[action.DurationStateCollectionJsonKey] is not JsonArray states) return 0;
-        var theme = JsonNode.Parse(string.IsNullOrWhiteSpace(themeTokensJson) ? "{}" : themeTokensJson) as JsonObject
-            ?? new JsonObject();
+        var theme = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
         var stateIdKey = string.IsNullOrWhiteSpace(action.DurationStateIdJsonKey)
             ? "id"
             : action.DurationStateIdJsonKey;

@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -66,7 +65,7 @@ internal sealed partial class SpikeDatabase
         string configJson,
         string componentType)
     {
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         foreach (var slot in EmbeddedComponentSlotCatalog.All()
                      .Where((candidate) => candidate.EmbeddedComponentType.Equals(componentType, StringComparison.Ordinal)))
         {
@@ -97,7 +96,7 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         var settings = GetComponentClassSettings(connection, componentClassId);
-        var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var ownerConfig = ParseJsonObject(settings.ConfigJson);
         return GetEmbeddedComponentPresetName(connection, settings.ProjectId, ownerConfig, slots);
     }
 
@@ -126,7 +125,7 @@ internal sealed partial class SpikeDatabase
             : ownerNode.Kind == ProjectTreeNodeKind.ComponentClass
                 ? GetComponentClassSettings(connection, ownerNode.Id).ConfigJson
                 : GetComponentPresetSettings(connection, ownerNode).ConfigJson;
-        var ownerConfig = ParseJsonObject(string.IsNullOrWhiteSpace(ownerConfigJson) ? "{}" : ownerConfigJson);
+        var ownerConfig = ParseJsonObject(ownerConfigJson);
         return GetEmbeddedComponentPresetName(connection, projectId, ownerConfig, slots);
     }
 
@@ -207,8 +206,8 @@ internal sealed partial class SpikeDatabase
             }
 
             var defaultConfig = ParseJsonObject(DefaultComponentPresetConfigJson(
-                classConfigJson,
-                metadataJson));
+                metadataJson,
+                $"Component class '{componentClassId}'"));
             ValidateEmbeddedSlotPresetReferences(connection, projectId, defaultConfig);
             configs[componentType] = defaultConfig;
         }
@@ -221,7 +220,7 @@ internal sealed partial class SpikeDatabase
     public string ValidateComponentPresetReferencesForPreview(string projectId, string configJson)
     {
         using var connection = OpenConnection();
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         ValidateEmbeddedSlotPresetReferences(connection, projectId, config);
         return config.ToJsonString();
     }
@@ -230,10 +229,7 @@ internal sealed partial class SpikeDatabase
     {
         foreach (var preset in RequiredComponentClassPresets(row))
         {
-            var config = ParseJsonObject(
-                string.IsNullOrWhiteSpace(preset.ConfigJson) || preset.ConfigJson == "{}"
-                    ? row.ConfigJson
-                    : preset.ConfigJson);
+            var config = ParseJsonObject(preset.ConfigJson);
             ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, config);
             target[ComponentPresetNodeId(row.Id, preset.Id)] = config;
         }
@@ -561,22 +557,7 @@ internal sealed partial class SpikeDatabase
 
     private static IReadOnlyList<ComponentClassPreset> RequiredComponentClassPresets(ComponentClassRow row)
     {
-        var presets = ComponentClassPresets(row.MetadataJson);
-        if (presets.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"Component class '{row.Id}' has no persisted variants.");
-        }
-
-        if (!presets.Any((preset) =>
-                preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal)
-                && preset.IsProtected))
-        {
-            throw new InvalidOperationException(
-                $"Component class '{row.Id}' must have a protected default variant.");
-        }
-
-        return presets;
+        return ComponentClassPresets(row.MetadataJson, $"Component class '{row.Id}'");
     }
 
     private static string PreferredPresetId(ComponentClassRow row)
@@ -613,16 +594,9 @@ internal sealed partial class SpikeDatabase
 
     private static string ComponentPresetConfigJson(ComponentClassRow row, string presetId)
     {
-        return ComponentPresetConfigJson(row.ConfigJson, row.MetadataJson, presetId);
-    }
-
-    private static string ComponentPresetConfigJson(string classConfigJson, string metadataJson, string presetId)
-    {
-        var preset = ComponentClassPresets(metadataJson)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
-        return string.IsNullOrWhiteSpace(preset?.ConfigJson) || preset.ConfigJson == "{}"
-            ? classConfigJson
-            : preset.ConfigJson;
+        return RequiredComponentClassPresets(row)
+            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal))
+            .ConfigJson;
     }
 
     private IReadOnlyList<FieldOption> EmbeddedComponentOptions(string projectId, string recordClassId)
@@ -716,7 +690,7 @@ internal sealed partial class SpikeDatabase
         string configJson,
         EmbeddedComponentSlotDefinition slot)
     {
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
         return overrides is not null && HasEffectiveJsonValue(overrides);
     }

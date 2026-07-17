@@ -2381,60 +2381,41 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
         private static string StablePreviewJson(string json)
         {
-            try
+            var preview = JsonPath.ParseRequiredObject(json, "Design Preview payload");
+            preview.Remove("currentTimeSeconds");
+            preview.Remove("motionElapsedMs");
+            foreach (var action in ComponentPreviewActions.ReadApplicable(preview))
             {
-                var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
-                preview.Remove("currentTimeSeconds");
-                preview.Remove("motionElapsedMs");
-                foreach (var action in ComponentPreviewActions.ReadApplicable(preview))
+                if (!string.IsNullOrWhiteSpace(action.TimeJsonKey))
                 {
-                    if (!string.IsNullOrWhiteSpace(action.TimeJsonKey))
-                    {
-                        ComponentPreviewActions.RemoveValue(preview, action, action.TimeJsonKey);
-                    }
-                    if (!string.IsNullOrWhiteSpace(action.PlayInputId))
-                    {
-                        ComponentPreviewActions.RemoveValue(preview, action, action.PlayInputId);
-                    }
+                    ComponentPreviewActions.RemoveValue(preview, action, action.TimeJsonKey);
                 }
-                return preview.ToJsonString();
+                if (!string.IsNullOrWhiteSpace(action.PlayInputId))
+                {
+                    ComponentPreviewActions.RemoveValue(preview, action, action.PlayInputId);
+                }
             }
-            catch
-            {
-                return json;
-            }
+            return preview.ToJsonString();
         }
 
         private static string CurrentTimeSignature(DesignPreviewPayload? payload)
         {
             if (payload is null) return "";
 
-            try
+            var preview = JsonPath.ParseRequiredObject(payload.DesignPreviewJson, "Design Preview payload");
+            var actionTimes = ComponentPreviewActions.ReadApplicable(preview)
+                .Where((action) => !string.IsNullOrWhiteSpace(action.TimeJsonKey)
+                    && ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) is not null)
+                .Select((action) => $"{action.Id}:{ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? ""}")
+                .ToList();
+            if (actionTimes.Count > 0)
             {
-                var preview = JsonNode.Parse(string.IsNullOrWhiteSpace(payload.DesignPreviewJson) ? "{}" : payload.DesignPreviewJson) as JsonObject;
-                if (preview is null)
-                {
-                    return "";
-                }
-
-                var actionTimes = ComponentPreviewActions.ReadApplicable(preview)
-                    .Where((action) => !string.IsNullOrWhiteSpace(action.TimeJsonKey)
-                        && ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) is not null)
-                    .Select((action) => $"{action.Id}:{ComponentPreviewActions.Value(preview, action, action.TimeJsonKey)?.ToJsonString() ?? ""}")
-                    .ToList();
-                if (actionTimes.Count > 0)
-                {
-                    return string.Join("|", actionTimes);
-                }
-
-                return preview["currentTimeSeconds"]?.ToJsonString()
-                    ?? preview["motionElapsedMs"]?.ToJsonString()
-                    ?? "";
+                return string.Join("|", actionTimes);
             }
-            catch
-            {
-                return "";
-            }
+
+            return preview["currentTimeSeconds"]?.ToJsonString()
+                ?? preview["motionElapsedMs"]?.ToJsonString()
+                ?? "";
         }
     }
 }

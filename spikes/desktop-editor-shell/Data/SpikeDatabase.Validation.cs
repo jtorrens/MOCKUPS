@@ -4,7 +4,6 @@ using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -411,7 +410,7 @@ internal sealed partial class SpikeDatabase
             while (reader.Read())
             {
                 var moduleId = reader.GetString(0);
-                var variants = ModuleVariants(reader.GetString(1));
+                var variants = ModuleVariants(reader.GetString(1), $"Module '{moduleId}'");
                 var ids = variants.Select((variant) => variant.Id).ToHashSet(StringComparer.Ordinal);
                 if (ids.Count != variants.Count || !ids.Contains(DefaultModuleVariantId))
                 {
@@ -465,15 +464,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject ParseRequiredObject(string json, string context)
     {
-        try
-        {
-            return JsonNode.Parse(json) as JsonObject
-                ?? throw new InvalidOperationException($"{context} must be a JSON object.");
-        }
-        catch (JsonException exception)
-        {
-            throw new InvalidOperationException($"{context} contains invalid JSON.", exception);
-        }
+        return JsonPath.ParseRequiredObject(json, context);
     }
 
     private void ValidateFullPresetReferences(JsonNode? node, string context, IReadOnlySet<string> validReferences)

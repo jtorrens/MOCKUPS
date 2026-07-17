@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -200,40 +201,26 @@ internal sealed partial class SpikeDatabase
 
     private static int ProductionFontFileCount(string filesJson)
     {
-        try
-        {
-            return JsonNode.Parse(filesJson)?.AsArray().Count ?? 0;
-        }
-        catch (JsonException)
-        {
-            return 0;
-        }
+        return JsonPath.ParseRequiredArray(filesJson, "Production Font files").Count;
     }
 
     private static string ProductionFontFilesSummary(string filesJson)
     {
-        try
-        {
-            var files = JsonNode.Parse(filesJson)?.AsArray();
-            if (files is null || files.Count == 0) return "No copied font files.";
+        var files = JsonPath.ParseRequiredArray(filesJson, "Production Font files");
+        if (files.Count == 0) return "No copied font files.";
 
-            return string.Join(
-                Environment.NewLine,
-                files
-                    .OfType<JsonObject>()
-                    .Select((file) =>
-                    {
-                        var name = JsonNodeString(file, "fileName");
-                        var style = JsonNodeString(file, "style");
-                        var weight = JsonNodeString(file, "weight");
-                        var relativePath = JsonNodeString(file, "relativePath");
-                        return $"{name} · {style} · {weight} · {relativePath}";
-                    }));
-        }
-        catch (JsonException)
-        {
-            return filesJson;
-        }
+        return string.Join(
+            Environment.NewLine,
+            files
+                .OfType<JsonObject>()
+                .Select((file) =>
+                {
+                    var name = JsonNodeString(file, "fileName");
+                    var style = JsonNodeString(file, "style");
+                    var weight = JsonNodeString(file, "weight");
+                    var relativePath = JsonNodeString(file, "relativePath");
+                    return $"{name} · {style} · {weight} · {relativePath}";
+                }));
     }
 
     private static string JsonNodeString(JsonObject node, string key)
@@ -246,25 +233,7 @@ internal sealed partial class SpikeDatabase
 
     private static IEnumerable<ProductionFontFace> FontFaces(ProductionFontRow font)
     {
-        if (string.IsNullOrWhiteSpace(font.FilesJson))
-        {
-            yield break;
-        }
-
-        JsonArray? files;
-        try
-        {
-            files = JsonNode.Parse(font.FilesJson) as JsonArray;
-        }
-        catch (JsonException)
-        {
-            yield break;
-        }
-
-        if (files is null)
-        {
-            yield break;
-        }
+        var files = JsonPath.ParseRequiredArray(font.FilesJson, $"Production Font '{font.Id}' files");
 
         foreach (var file in files.OfType<JsonObject>())
         {

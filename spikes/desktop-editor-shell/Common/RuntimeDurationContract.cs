@@ -37,5 +37,5 @@ internal static class RuntimeDurationContract
     }
 
     private static JsonObject Parse(string json) =>
-        JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
+        JsonPath.ParseRequiredObject(json, "Runtime duration contract");
 }

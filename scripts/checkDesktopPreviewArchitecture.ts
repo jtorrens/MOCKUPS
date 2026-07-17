@@ -156,6 +156,130 @@ function assertFilesDoNotContain(files: readonly string[], term: string, message
   }
 }
 
+const currentRepositoryFiles = walkFilesByExtension(
+  path.join(root, "spikes", "desktop-editor-shell", "Data"),
+  [".cs"],
+);
+assertFilesDoNotContain(
+  currentRepositoryFiles,
+  "EnsurePresetArray",
+  "current Component Variants must never synthesize a missing Variant array",
+);
+assertFilesDoNotContain(
+  currentRepositoryFiles,
+  "ComponentPresetIsLocked",
+  "current Component Variants must not infer lock state from an id",
+);
+assertFilesDoNotContain(
+  currentRepositoryFiles,
+  "ParseJsonObject(string.IsNullOrWhiteSpace",
+  "current persisted JSON roots must reject blank documents instead of parsing an empty object",
+);
+assertFilesDoNotContain(
+  currentRepositoryFiles,
+  "preset.ConfigJson == \"{}\"",
+  "a selected Component Variant config must not fall back to class config",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/35_current_json_and_variant_contract.md",
+  "AGENTS must require the current JSON and Variant contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "35_current_json_and_variant_contract.md",
+  "the architecture index must include contract 35",
+);
+const jsonRootInventorySource = readText("spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs");
+const executableJsonRoots = new Map(
+  [...jsonRootInventorySource.matchAll(/\("([a-z_]+)", "([a-z_]+)", "(object|array)"\)/g)]
+    .map((match) => [`${match[1]}.${match[2]}`, match[3]]),
+);
+const documentedJsonRoots = new Map<string, string>();
+let documentedRootKind = "";
+for (const line of readText("docs/architecture/35_current_json_and_variant_contract.md").split(/\r?\n/)) {
+  if (line === "object" || line === "array") {
+    documentedRootKind = line;
+    continue;
+  }
+  const entry = /^  ([a-z_]+\.[a-z_]+)$/.exec(line)?.[1];
+  if (entry && documentedRootKind) documentedJsonRoots.set(entry, documentedRootKind);
+}
+for (const [entry, rootKind] of executableJsonRoots) {
+  if (documentedJsonRoots.get(entry) !== rootKind) {
+    addViolation(
+      "docs/architecture/35_current_json_and_variant_contract.md",
+      `${entry} must document its executable ${rootKind} root`,
+    );
+  }
+}
+for (const [entry, rootKind] of documentedJsonRoots) {
+  if (executableJsonRoots.get(entry) !== rootKind) {
+    addViolation(
+      "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+      `${entry} must have the documented ${rootKind} startup root`,
+    );
+  }
+}
+function assertDesktopJsonRootsAreCanonical() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    for (const [entry, rootKind] of executableJsonRoots) {
+      const [table, column] = entry.split(".");
+      const rows = database.prepare(`SELECT rowid AS owner_rowid, ${column} AS json FROM ${table}`).all() as {
+        owner_rowid: number;
+        json: string;
+      }[];
+      for (const row of rows) {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(row.json);
+        } catch {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${entry} row ${row.owner_rowid} contains malformed JSON`,
+          );
+          continue;
+        }
+        const matches = rootKind === "array"
+          ? Array.isArray(parsed)
+          : typeof parsed === "object" && parsed !== null && !Array.isArray(parsed);
+        if (!matches) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${entry} row ${row.owner_rowid} must have a ${rootKind} root`,
+          );
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+assertDesktopJsonRootsAreCanonical();
+assertContains(
+  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  "RequiredBoolean",
+  "the shared Variant envelope must require explicit boolean flags",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  "must contain the stable Default Variant id 'default'",
+  "the shared Variant envelope must require the stable Default id",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewRuntimeResolver.cs",
+  "catch",
+  "Production payload parsing must reject invalid current JSON instead of returning an empty object",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "return new JsonObject();",
+  "Design Preview Test Values must not hide invalid current JSON behind an empty object",
+);
+
 function assertSharedEditorSurfacesHaveNoConcreteEditors() {
   const sharedSurfaces = [
     "spikes/desktop-editor-shell/MainWindow.axaml.cs",
@@ -313,17 +437,12 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
       }[];
     const rowsById = new Map(rows.map((row) => [row.id, row]));
     const variantsByClassId = new Map<string, Set<string>>();
+    const variantsByClassIdAndMetadata = new Map<string, Record<string, unknown>[]>();
     for (const row of rows) {
-      const metadata = JSON.parse(row.metadata_json || "{}") as { presets?: unknown };
-      const presetIds = new Set(
-        Array.isArray(metadata.presets)
-          ? metadata.presets
-              .filter((preset): preset is { id?: unknown } => typeof preset === "object" && preset !== null)
-              .map((preset) => preset.id)
-              .filter((id): id is string => typeof id === "string" && id.length > 0)
-          : [],
-      );
-      variantsByClassId.set(row.id, presetIds);
+      const metadata = parseRequiredJsonObject(row.metadata_json, `component ${row.id}.metadata_json`);
+      const variants = completeVariantEnvelopes(metadata.presets, `component ${row.id}.metadata_json.presets`);
+      variantsByClassIdAndMetadata.set(row.id, variants);
+      variantsByClassId.set(row.id, new Set(variants.map((variant) => variant.id as string)));
     }
 
     const validateValue = (owner: (typeof rows)[number], value: unknown, pathLabel: string) => {
@@ -352,16 +471,12 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
     };
 
     for (const row of rows) {
-      const classConfig = JSON.parse(row.config_json || "{}");
+      const classConfig = parseRequiredJsonObject(row.config_json, `component ${row.id}.config_json`);
       validateValue(row, classConfig, "config");
-      const metadata = JSON.parse(row.metadata_json || "{}") as { presets?: unknown };
-      if (!Array.isArray(metadata.presets)) continue;
-      metadata.presets.forEach((preset, index) => validateValue(row, preset, `metadata.presets[${index}]`));
-      const defaultPreset = metadata.presets.find((preset) =>
-        typeof preset === "object"
-        && preset !== null
-        && (preset as { id?: unknown }).id === "default") as { config?: unknown } | undefined;
-      if (!defaultPreset || JSON.stringify(defaultPreset.config ?? {}) !== JSON.stringify(classConfig)) {
+      const variants = variantsByClassIdAndMetadata.get(row.id) ?? [];
+      variants.forEach((variant, index) => validateValue(row, variant, `metadata.presets[${index}]`));
+      const defaultPreset = variants.find((variant) => variant.id === "default");
+      if (!defaultPreset || JSON.stringify(defaultPreset.config) !== JSON.stringify(classConfig)) {
         addViolation(
           "data/desktop-editor-spike.sqlite",
           `component ${row.id} config_json must mirror its canonical Default variant`,
@@ -376,12 +491,82 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
 assertDesktopComponentPresetReferencesAreCanonical();
 
 function jsonParse(value: string): unknown {
+  return JSON.parse(value) as unknown;
+}
+
+function parseRequiredJsonObject(value: string, owner: string): Record<string, unknown> {
+  if (!value.trim()) {
+    addViolation("data/desktop-editor-spike.sqlite", `${owner} is blank`);
+    return {};
+  }
   try {
-    return JSON.parse(value || "{}") as unknown;
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      addViolation("data/desktop-editor-spike.sqlite", `${owner} must be a JSON object`);
+      return {};
+    }
+    return parsed as Record<string, unknown>;
   } catch {
+    addViolation("data/desktop-editor-spike.sqlite", `${owner} contains malformed JSON`);
     return {};
   }
 }
+
+function completeVariantEnvelopes(value: unknown, owner: string): Record<string, unknown>[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    addViolation("data/desktop-editor-spike.sqlite", `${owner} must be a non-empty Variant array`);
+    return [];
+  }
+  const variants: Record<string, unknown>[] = [];
+  const ids = new Set<string>();
+  for (const [index, candidate] of value.entries()) {
+    if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
+      addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] must be an object`);
+      continue;
+    }
+    const variant = candidate as Record<string, unknown>;
+    const id = typeof variant.id === "string" ? variant.id : "";
+    const name = typeof variant.name === "string" ? variant.name : "";
+    if (!id.trim() || !/^[\p{L}\p{N}_.-]+$/u.test(id)) {
+      addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has an invalid stable id`);
+    } else if (ids.has(id)) {
+      addViolation("data/desktop-editor-spike.sqlite", `${owner} contains duplicate Variant id ${id}`);
+    }
+    ids.add(id);
+    if (!name.trim()) addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no display name`);
+    if (typeof variant.protected !== "boolean") addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no explicit protected flag`);
+    if (typeof variant.locked !== "boolean") addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no explicit locked flag`);
+    if (typeof variant.config !== "object" || variant.config === null || Array.isArray(variant.config)) {
+      addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no object config snapshot`);
+    }
+    variants.push(variant);
+  }
+  const defaults = variants.filter((variant) => variant.id === "default");
+  if (defaults.length !== 1 || defaults[0]?.protected !== true) {
+    addViolation("data/desktop-editor-spike.sqlite", `${owner} must contain exactly one protected Default Variant`);
+  }
+  return variants;
+}
+
+function assertDesktopModuleVariantEnvelopesAreCanonical() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const modules = database.prepare("SELECT id, metadata_json FROM modules").all() as {
+      id: string;
+      metadata_json: string;
+    }[];
+    for (const module of modules) {
+      const metadata = parseRequiredJsonObject(module.metadata_json, `module ${module.id}.metadata_json`);
+      completeVariantEnvelopes(metadata.variants, `module ${module.id}.metadata_json.variants`);
+    }
+  } finally {
+    database.close();
+  }
+}
+
+assertDesktopModuleVariantEnvelopesAreCanonical();
 
 function jsonRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)

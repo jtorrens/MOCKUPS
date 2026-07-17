@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -300,7 +299,7 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("Icon token must be lower_snake_case.");
         }
 
-        var mapping = ParseJsonObject(string.IsNullOrWhiteSpace(row.MappingJson) ? "{}" : row.MappingJson);
+        var mapping = ParseJsonObject(row.MappingJson);
         var tokens = mapping["tokens"] as JsonObject;
         var tokenObject = tokens?[token] as JsonObject
             ?? throw new InvalidOperationException($"Icon token '{token}' is not present in this icon set.");
@@ -385,7 +384,7 @@ internal sealed partial class SpikeDatabase
             metadata["manifest"] = manifest.DeepClone();
             metadata["iconSet"] = IconSetDefinition(manifest, setName);
         }
-        catch (JsonException)
+        catch (InvalidOperationException)
         {
             // A malformed manifest should not block refreshing SVG tokens.
         }
@@ -395,7 +394,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject IconSetDefinition(IconThemeRow row)
     {
-        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(row.MetadataJson) ? "{}" : row.MetadataJson);
+        var metadata = ParseJsonObject(row.MetadataJson);
         return metadata["iconSet"] is JsonObject iconSet
             ? (JsonObject)iconSet.DeepClone()
             : IconSetDefinitionFromName(row.Name);

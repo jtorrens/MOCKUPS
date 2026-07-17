@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -26,6 +25,7 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson)
     {
+        ParseJsonObject(designPreviewJson);
         using var connection = OpenConnection();
         Execute(
             connection,
@@ -43,11 +43,11 @@ internal sealed partial class SpikeDatabase
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
-        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-        if (metadata["presets"] is not JsonArray presets)
-        {
-            throw new InvalidOperationException($"Component class '{componentClassId}' has no variants.");
-        }
+        var metadata = ParseJsonObject(settings.MetadataJson);
+        var presets = VariantEnvelopeContract.RequiredArray(
+            metadata,
+            "presets",
+            $"Component class '{componentClassId}'");
 
         var preset = FindPreset(presets, presetId)
             ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
@@ -81,15 +81,15 @@ internal sealed partial class SpikeDatabase
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
-        metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
-        if (metadata["presets"] is not JsonArray presets)
-        {
-            throw new InvalidOperationException($"Component class '{componentClassId}' has no variants.");
-        }
+        metadata = ParseJsonObject(settings.MetadataJson);
+        var presets = VariantEnvelopeContract.RequiredArray(
+            metadata,
+            "presets",
+            $"Component class '{componentClassId}'");
 
         var preset = FindPreset(presets, presetId)
             ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
-        if (ComponentPresetIsLocked(preset))
+        if (JsonBool(preset, ["locked"]))
         {
             throw new InvalidOperationException($"Component variant '{presetId}' is locked.");
         }
@@ -119,14 +119,13 @@ internal sealed partial class SpikeDatabase
         }
 
         var metadataJson = ReadString(reader, 7);
-        var classConfigJson = ReadString(reader, 5);
         return new ComponentClassSettings(
             reader.GetString(0),
             reader.GetString(1),
             reader.GetString(2),
             reader.GetString(3),
             ReadString(reader, 4),
-            DefaultComponentPresetConfigJson(classConfigJson, metadataJson),
+            DefaultComponentPresetConfigJson(metadataJson, $"Component class '{componentClassId}'"),
             ReadString(reader, 6),
             metadataJson);
     }
@@ -322,8 +321,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var config = ParseJsonObject(settings.ConfigJson);
+            var metadata = ParseJsonObject(settings.MetadataJson);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             SetDefaultComponentPresetConfig(metadata, config);
             Execute(
@@ -367,7 +366,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfigJson = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, [slot]).ToJsonString();
         var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
@@ -408,7 +407,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
         var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
@@ -488,7 +487,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentPresetSettings(ownerNode);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
         var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
@@ -539,8 +538,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var config = ParseJsonObject(settings.ConfigJson);
+            var metadata = ParseJsonObject(settings.MetadataJson);
             var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
 
@@ -574,8 +573,8 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
-            var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+            var config = ParseJsonObject(settings.ConfigJson);
+            var metadata = ParseJsonObject(settings.MetadataJson);
             var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
@@ -664,59 +663,33 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(string metadataJson)
+    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(
+        string metadataJson,
+        string owner = "Component class metadata")
     {
-        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(metadataJson) ? "{}" : metadataJson);
-        if (metadata["presets"] is not JsonArray presets)
-        {
-            return [];
-        }
-
-        return presets
-            .OfType<JsonObject>()
-            .Select((preset) =>
-            {
-                var id = JsonPath.String(preset, "id", "");
-                var name = JsonPath.String(preset, "name", id);
-                var config = preset["config"] is JsonObject configObject ? configObject.ToJsonString() : "{}";
-                return new ComponentClassPreset(
-                    id,
-                    string.IsNullOrWhiteSpace(name) ? id : name,
-                    JsonBool(preset, ["protected"]),
-                    ComponentPresetIsLocked(preset),
-                    config);
-            })
-            .Where((preset) => !string.IsNullOrWhiteSpace(preset.Id))
+        var metadata = ParseJsonObject(metadataJson);
+        return VariantEnvelopeContract.Read(metadata, "presets", owner)
+            .Select((preset) => new ComponentClassPreset(
+                preset.Id,
+                preset.Name,
+                preset.IsProtected,
+                preset.IsLocked,
+                preset.Config.ToJsonString()))
             .OrderBy((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal) ? 0 : 1)
             .ThenBy((preset) => preset.Name, StringComparer.Ordinal)
             .ToList();
     }
 
-    private static bool ComponentPresetIsLocked(JsonObject preset)
+    private static string DefaultComponentPresetConfigJson(string metadataJson, string owner)
     {
-        if (JsonPath.Get(preset, ["locked"]) is not null)
-        {
-            return JsonBool(preset, ["locked"]);
-        }
-
-        return JsonPath.String(preset, "id", "").Equals(DefaultComponentPresetId, StringComparison.Ordinal);
-    }
-
-    private static string DefaultComponentPresetConfigJson(string classConfigJson, string metadataJson)
-    {
-        var defaultPreset = ComponentClassPresets(metadataJson)
-            .FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal));
-        return string.IsNullOrWhiteSpace(defaultPreset?.ConfigJson) || defaultPreset.ConfigJson == "{}"
-            ? classConfigJson
-            : defaultPreset.ConfigJson;
+        return ComponentClassPresets(metadataJson, owner)
+            .Single((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+            .ConfigJson;
     }
 
     private static void SetDefaultComponentPresetConfig(JsonObject metadata, JsonObject config)
     {
-        if (metadata["presets"] is not JsonArray presets)
-        {
-            throw new InvalidOperationException("Component class has no variants.");
-        }
+        var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", "Component class metadata");
         var defaultPreset = FindPreset(presets, DefaultComponentPresetId)
             ?? throw new InvalidOperationException("Component class has no Default variant.");
         defaultPreset["config"] = config.DeepClone();
@@ -793,7 +766,7 @@ internal sealed partial class SpikeDatabase
             return descriptor.DefaultValue;
         }
 
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         var node = GetJsonValue(config, descriptor.JsonPath);
         if (node is null)
         {

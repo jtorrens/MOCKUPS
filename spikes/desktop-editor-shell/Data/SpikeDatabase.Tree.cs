@@ -399,16 +399,9 @@ internal sealed partial class SpikeDatabase
 
     private static string ModuleTransitionLabel(string transitionJson)
     {
-        try
-        {
-            var transition = JsonNode.Parse(transitionJson)?.AsObject();
-            var type = transition?["type"]?.GetValue<string>();
-            return string.IsNullOrWhiteSpace(type) ? "Cut" : char.ToUpperInvariant(type[0]) + type[1..];
-        }
-        catch (JsonException)
-        {
-            return "Invalid transition";
-        }
+        var transition = ParseJsonObject(transitionJson);
+        var type = transition["type"]?.GetValue<string>();
+        return string.IsNullOrWhiteSpace(type) ? "Cut" : char.ToUpperInvariant(type[0]) + type[1..];
     }
 
     private static IReadOnlyList<DesktopPreviewComponentCategory> ComponentClassNavigationGroups()

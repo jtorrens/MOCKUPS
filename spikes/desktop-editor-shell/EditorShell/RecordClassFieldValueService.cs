@@ -525,44 +525,21 @@ internal sealed class RecordClassFieldValueService
 
     private static string JsonString(string json, string key)
     {
-        try
-        {
-            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
-            return owner?[key]?.GetValue<string>() ?? "";
-        }
-        catch
-        {
-            return "";
-        }
+        var owner = JsonPath.ParseRequiredObject(json, "Record field JSON");
+        return owner[key]?.GetValue<string>() ?? "";
     }
 
     private static string JsonBoolString(string json, string key, bool fallback)
     {
-        try
-        {
-            var owner = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
-            return owner?[key] is JsonValue value && value.TryGetValue<bool>(out var boolean)
-                ? BoolToString(boolean)
-                : BoolToString(fallback);
-        }
-        catch
-        {
-            return BoolToString(fallback);
-        }
+        var owner = JsonPath.ParseRequiredObject(json, "Record field JSON");
+        return owner[key] is JsonValue value && value.TryGetValue<bool>(out var boolean)
+            ? BoolToString(boolean)
+            : BoolToString(fallback);
     }
 
     private static string ExportFfmpegArgs(string exportJson)
     {
-        try
-        {
-            using var document = System.Text.Json.JsonDocument.Parse(string.IsNullOrWhiteSpace(exportJson) ? "{}" : exportJson);
-            return document.RootElement.TryGetProperty("ffmpegArgs", out var value) && value.ValueKind == System.Text.Json.JsonValueKind.String
-                ? value.GetString() ?? ""
-                : "";
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return "";
-        }
+        var export = JsonPath.ParseRequiredObject(exportJson, "Render Preset export JSON");
+        return export["ffmpegArgs"]?.GetValue<string>() ?? "";
     }
 }

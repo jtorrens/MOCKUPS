@@ -29,6 +29,8 @@ this index wins.
 - `34_manifest_routing_payload_and_dictionary_contract.md`: canonical Preview
   manifest, route-only registries, explicit payload/forwarding ownership,
   recursive temporal context and exhaustive dictionary/Runtime Input kinds.
+- `35_current_json_and_variant_contract.md`: strict persisted JSON roots and
+  complete Component/Module Variant envelopes without reader or writer repair.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -113,7 +113,7 @@ internal sealed partial class SpikeDatabase
     private static JsonObject StatusBarConfig(string json)
     {
         var fallback = ParseJsonObject(DefaultStatusBarConfigJson());
-        var parsed = ParseJsonObject(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        var parsed = ParseJsonObject(json);
         var layout = parsed["layout"] as JsonObject ?? [];
         var fallbackLayout = fallback["layout"]!.AsObject();
         parsed["schemaVersion"] = 3;
@@ -246,7 +246,7 @@ internal sealed partial class SpikeDatabase
     private static JsonObject NavigationBarConfig(string json)
     {
         var fallback = ParseJsonObject(DefaultNavigationBarConfigJson());
-        var parsed = ParseJsonObject(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+        var parsed = ParseJsonObject(json);
         var layout = parsed["layout"] as JsonObject ?? [];
         var gesture = parsed["gesture"] as JsonObject ?? [];
         var fallbackLayout = fallback["layout"]!.AsObject();

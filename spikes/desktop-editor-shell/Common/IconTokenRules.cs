@@ -36,7 +36,7 @@ internal static class IconTokenRules
 
     public static JsonObject BuildMapping(string currentMappingJson, HashSet<string> commonTokens)
     {
-        var current = JsonPath.ParseObject(currentMappingJson);
+        var current = JsonPath.ParseRequiredObject(currentMappingJson, "Icon Theme mapping");
         var currentTokens = current["tokens"] as JsonObject ?? [];
         var nextTokens = new JsonObject();
         foreach (var token in commonTokens.OrderBy((token) => token, StringComparer.OrdinalIgnoreCase))
@@ -82,7 +82,7 @@ internal static class IconTokenRules
 
     public static IReadOnlyList<IconThemeTokenMapping> Tokens(string mappingJson)
     {
-        var mapping = JsonPath.ParseObject(mappingJson);
+        var mapping = JsonPath.ParseRequiredObject(mappingJson, "Icon Theme mapping");
         var tokens = mapping["tokens"] as JsonObject;
         if (tokens is null) return [];
 

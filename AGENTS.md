@@ -8,6 +8,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/25_component_migration_status.md`
 - `docs/architecture/33_persistence_and_migration_contract.md`
 - `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`
+- `docs/architecture/35_current_json_and_variant_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -207,6 +208,19 @@ data: they may be created by cloning the active complete Variant, duplicated
 and renamed; deletion is allowed only when the Variant is unused, unlocked and
 not protected. The protected default Variant may be renamed but never deleted.
 All these operations preserve stable ids and full Variant references.
+
+## Hard rule: current JSON and Variant envelopes are strict
+
+Every persisted JSON column is consumed as its declared current root kind.
+Blank, malformed or wrong-root documents fail; normal readers and write paths
+must not turn them into `{}`, `[]` or a plausible default. Component and Module
+Variant arrays are required current data. Every Variant is a complete named
+snapshot with an explicit stable id, `protected`, `locked` and object `config`.
+Readers must reject malformed entries instead of filtering them, must not infer
+lock/protection from the `default` id and must not fall back from a missing
+Variant config to class config. Variant creation may construct a new complete
+snapshot explicitly; editing current data may not repair an incomplete one.
+See `docs/architecture/35_current_json_and_variant_contract.md`.
 
 ## Data migrations, not compatibility fallbacks
 

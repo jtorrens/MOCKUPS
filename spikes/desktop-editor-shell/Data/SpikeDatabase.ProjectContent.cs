@@ -100,6 +100,10 @@ internal sealed partial class SpikeDatabase
         object nextValue = fieldId is "shot.version" or "shot.sortOrder" or "shot.fps" or "shot.durationFrames"
             ? NumericText.Int32(value, 0)
             : value;
+        if (fieldId is "shot.canvas" or "shot.metadata")
+        {
+            ParseJsonObject(value);
+        }
 
         Execute(
             connection,
@@ -196,6 +200,7 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleDesignPreviewJson(string moduleId, string designPreviewJson)
     {
+        ParseJsonObject(designPreviewJson);
         using var connection = OpenConnection();
         Execute(
             connection,
@@ -250,6 +255,8 @@ internal sealed partial class SpikeDatabase
                     ("$value", NumericText.Int32(value, 0)));
                 return;
             case "module.metadata":
+                var metadata = ParseJsonObject(value);
+                VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
                 Execute(
                     connection,
                     "UPDATE modules SET metadata_json = $value WHERE id = $id",
@@ -271,7 +278,7 @@ internal sealed partial class SpikeDatabase
 
     private static string ModuleConfigFieldValue(string configJson, string fieldId)
     {
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(configJson) ? "{}" : configJson);
+        var config = ParseJsonObject(configJson);
         return fieldId switch
         {
             "module.appearanceMode" => JsonString(config, ["appearanceMode"]) is "light" or "dark" ? JsonString(config, ["appearanceMode"]) : "inherit",
@@ -333,6 +340,11 @@ internal sealed partial class SpikeDatabase
             _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
         };
 
+        if (fieldId is "app.config" or "app.metadata")
+        {
+            ParseJsonObject(value);
+        }
+
         Execute(
             connection,
             $"UPDATE apps SET {column} = $value WHERE id = $id",
@@ -343,7 +355,7 @@ internal sealed partial class SpikeDatabase
     public string GetAppConfigFieldValue(string appId, string fieldId)
     {
         var settings = GetAppSettings(appId);
-        var config = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ConfigJson) ? "{}" : settings.ConfigJson);
+        var config = ParseJsonObject(settings.ConfigJson);
         var lightWallpaperColor = JsonString(config, ["modes", "light", "wallpaper", "color"]);
         var darkWallpaperColor = JsonString(config, ["modes", "dark", "wallpaper", "color"]);
         return fieldId switch
@@ -360,7 +372,7 @@ internal sealed partial class SpikeDatabase
     public string GetAppMetadataFieldValue(string appId, string fieldId)
     {
         var settings = GetAppSettings(appId);
-        var metadata = ParseJsonObject(string.IsNullOrWhiteSpace(settings.MetadataJson) ? "{}" : settings.MetadataJson);
+        var metadata = ParseJsonObject(settings.MetadataJson);
         return fieldId switch
         {
             "app.note" => JsonString(metadata, ["note"]),
@@ -373,7 +385,9 @@ internal sealed partial class SpikeDatabase
 
     private static void UpdateAppConfigField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM apps WHERE id = $id", ("$id", appId)) ?? "{}");
+        var configJson = ScalarString(connection, "SELECT config_json FROM apps WHERE id = $id", ("$id", appId))
+            ?? throw new InvalidOperationException($"Missing app '{appId}'.");
+        var config = ParseJsonObject(configJson);
         switch (fieldId)
         {
             case "app.wallpaper.kind":
@@ -405,7 +419,9 @@ internal sealed partial class SpikeDatabase
 
     private static void UpdateAppMetadataField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var metadata = ParseJsonObject(ScalarString(connection, "SELECT metadata_json FROM apps WHERE id = $id", ("$id", appId)) ?? "{}");
+        var metadataJson = ScalarString(connection, "SELECT metadata_json FROM apps WHERE id = $id", ("$id", appId))
+            ?? throw new InvalidOperationException($"Missing app '{appId}'.");
+        var metadata = ParseJsonObject(metadataJson);
         switch (fieldId)
         {
             case "app.note":
@@ -499,7 +515,9 @@ internal sealed partial class SpikeDatabase
 
     private static void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
     {
-        var config = ParseJsonObject(ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId)) ?? "{}");
+        var configJson = ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId))
+            ?? throw new InvalidOperationException($"Missing module '{moduleId}'.");
+        var config = ParseJsonObject(configJson);
         var projectId = ScalarString(
             connection,
             """

@@ -38,8 +38,7 @@ internal static class ActorPreviewInputFactory
         IReadOnlyDictionary<string, string> paletteColors)
     {
         var settings = database.GetActorSettings(actorId);
-        var metadata = JsonNode.Parse(settings.MetadataJson) as JsonObject
-            ?? throw new InvalidOperationException($"Actor '{actorId}' has invalid metadata JSON.");
+        var metadata = JsonPath.ParseRequiredObject(settings.MetadataJson, $"Actor '{actorId}' metadata");
         var mediaRoot = database.GetProjectSettings(settings.ProjectId).MediaRoot;
         var colorToken = ModeValue(database.GetActorFieldValue(actorId, "actor.color.modes"), themeMode);
         var textColorToken = ModeValue(database.GetActorFieldValue(actorId, "actor.avatarTextColor.modes"), themeMode);

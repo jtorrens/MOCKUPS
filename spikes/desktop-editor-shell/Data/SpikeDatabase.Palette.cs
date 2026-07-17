@@ -125,36 +125,15 @@ internal sealed partial class SpikeDatabase
         using var select = connection.CreateCommand();
         select.CommandText = "SELECT metadata_json FROM palette_colors WHERE id = $id";
         select.Parameters.AddWithValue("$id", colorId);
-        var metadataJson = select.ExecuteScalar() as string ?? "{}";
-
-        var metadata = new Dictionary<string, object?>();
-        try
-        {
-            using var document = JsonDocument.Parse(metadataJson);
-            foreach (var property in document.RootElement.EnumerateObject())
-            {
-                metadata[property.Name] = property.Value.ValueKind switch
-                {
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Number when property.Value.TryGetInt64(out var number) => number,
-                    JsonValueKind.String => property.Value.GetString(),
-                    _ => property.Value.GetRawText(),
-                };
-            }
-        }
-        catch (JsonException)
-        {
-            // Invalid metadata is replaced by the field being edited. This is project data,
-            // but the table is internal to the spike and metadata must remain valid JSON.
-        }
-
-        metadata[key] = value;
+        var metadataJson = select.ExecuteScalar() as string
+            ?? throw new InvalidOperationException($"Missing palette color '{colorId}'.");
+        var metadata = ParseJsonObject(metadataJson);
+        metadata[key] = JsonSerializer.SerializeToNode(value);
         Execute(
             connection,
             "UPDATE palette_colors SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", colorId),
-            ("$metadataJson", JsonSerializer.Serialize(metadata)));
+            ("$metadataJson", metadata.ToJsonString()));
     }
 
 }

@@ -57,7 +57,7 @@ internal sealed partial class SpikeDatabase
             .FirstOrDefault((row) => row.Id == themeId)
             ?? QueryThemeRows(connection).FirstOrDefault((row) => row.ProjectId == projectId)
             ?? throw new InvalidOperationException($"No themes available for project '{projectId}'.");
-        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(theme.TokensJson) ? "{}" : theme.TokensJson);
+        var tokens = ParseJsonObject(theme.TokensJson);
         var palette = QueryPaletteColorRows(connection)
             .Where((color) => color.ProjectId == projectId)
             .ToDictionary((color) => color.Token, (color) => color.ValueHex, StringComparer.Ordinal);
@@ -140,7 +140,7 @@ internal sealed partial class SpikeDatabase
     public string GetThemeFieldValue(string themeId, string fieldId)
     {
         var settings = GetThemeSettings(themeId);
-        var tokens = ParseJsonObject(string.IsNullOrWhiteSpace(settings.TokensJson) ? "{}" : settings.TokensJson);
+        var tokens = ParseJsonObject(settings.TokensJson);
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
             var colors = $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
@@ -296,7 +296,9 @@ internal sealed partial class SpikeDatabase
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT tokens_json FROM themes WHERE id = $id";
         command.Parameters.AddWithValue("$id", themeId);
-        var tokens = ParseJsonObject(command.ExecuteScalar() as string ?? "{}");
+        var tokensJson = command.ExecuteScalar() as string
+            ?? throw new InvalidOperationException($"Missing theme '{themeId}'.");
+        var tokens = ParseJsonObject(tokensJson);
 
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {

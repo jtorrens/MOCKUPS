@@ -38,22 +38,18 @@ internal sealed partial class SpikeDatabase
         return true;
     }
 
-    internal static IReadOnlyList<ModuleVariant> ModuleVariants(string metadataJson)
+    internal static IReadOnlyList<ModuleVariant> ModuleVariants(
+        string metadataJson,
+        string owner = "Module metadata")
     {
         var metadata = ParseJsonObject(metadataJson);
-        if (metadata["variants"] is not JsonArray variants)
-        {
-            throw new InvalidOperationException("Module metadata has no explicit variants contract.");
-        }
-
-        return variants.OfType<JsonObject>().Select((variant) => new ModuleVariant(
-            JsonPath.String(variant, "id", ""),
-            JsonPath.String(variant, "name", ""),
-            JsonBool(variant, ["protected"]),
-            JsonBool(variant, ["locked"]),
-            (variant["config"] as JsonObject)?.ToJsonString()
-                ?? throw new InvalidOperationException("Module variant has no config.")))
-            .Where((variant) => !string.IsNullOrWhiteSpace(variant.Id))
+        return VariantEnvelopeContract.Read(metadata, "variants", owner)
+            .Select((variant) => new ModuleVariant(
+                variant.Id,
+                variant.Name,
+                variant.IsProtected,
+                variant.IsLocked,
+                variant.Config.ToJsonString()))
             .ToList();
     }
 
@@ -249,8 +245,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetModuleVariantSettings(sourceNode);
             var module = GetModuleSettings(moduleId);
             var metadata = ParseJsonObject(module.MetadataJson);
-            var variants = metadata["variants"] as JsonArray
-                ?? throw new InvalidOperationException("Module metadata has no variants.");
+            var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
             var variantId = UniqueModuleVariantId(variants, variantName);
             variants.Add(new JsonObject
             {
@@ -292,8 +287,7 @@ internal sealed partial class SpikeDatabase
             using var connection = OpenConnection();
             var module = GetModuleSettings(moduleId);
             var metadata = ParseJsonObject(module.MetadataJson);
-            var variants = metadata["variants"] as JsonArray
-                ?? throw new InvalidOperationException("Module metadata has no variants.");
+            var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
             var variant = FindModuleVariant(metadata, node.Id);
             if (JsonBool(variant, ["protected"])) throw new InvalidOperationException("Protected module variants cannot be deleted.");
             if (JsonBool(variant, ["locked"])) throw new InvalidOperationException("Locked module variants cannot be deleted.");
@@ -372,9 +366,9 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject FindModuleVariant(JsonObject metadata, string nodeId)
     {
-        if (!TryParseModuleVariantNodeId(nodeId, out _, out var variantId)
-            || metadata["variants"] is not JsonArray variants)
+        if (!TryParseModuleVariantNodeId(nodeId, out var moduleId, out var variantId))
             throw new InvalidOperationException($"Invalid module variant '{nodeId}'.");
+        var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
         return variants.OfType<JsonObject>().FirstOrDefault((variant) => JsonPath.String(variant, "id", "") == variantId)
             ?? throw new InvalidOperationException($"Missing module variant '{variantId}'.");
     }

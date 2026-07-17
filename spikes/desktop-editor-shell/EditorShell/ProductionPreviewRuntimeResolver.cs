@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
@@ -81,14 +82,6 @@ internal sealed class ProductionPreviewRuntimeResolver
 
     private static JsonObject ParseObject(string json)
     {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject
-                ?? new JsonObject();
-        }
-        catch
-        {
-            return new JsonObject();
-        }
+        return JsonPath.ParseRequiredObject(json, "Production Preview payload JSON");
     }
 }

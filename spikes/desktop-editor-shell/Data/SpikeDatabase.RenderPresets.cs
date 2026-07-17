@@ -43,7 +43,7 @@ internal sealed partial class SpikeDatabase
         if (fieldId == "renderPreset.export.ffmpegArgs")
         {
             var settings = GetRenderPresetSettings(renderPresetId);
-            var export = ParseJsonObject(string.IsNullOrWhiteSpace(settings.ExportJson) ? "{}" : settings.ExportJson);
+            var export = ParseJsonObject(settings.ExportJson);
             SetJsonValue(export, ["ffmpegArgs"], JsonValue.Create(value)!);
             Execute(connection, "UPDATE render_presets SET export_json = $value WHERE id = $id", ("$id", renderPresetId), ("$value", export.ToJsonString()));
             return;
@@ -64,6 +64,10 @@ internal sealed partial class SpikeDatabase
         object nextValue = fieldId is "renderPreset.width" or "renderPreset.height" or "renderPreset.fps"
             ? NumericText.Int32(value, 0)
             : value;
+        if (fieldId is "renderPreset.codec" or "renderPreset.color" or "renderPreset.quality" or "renderPreset.export")
+        {
+            ParseJsonObject(value);
+        }
 
         Execute(
             connection,

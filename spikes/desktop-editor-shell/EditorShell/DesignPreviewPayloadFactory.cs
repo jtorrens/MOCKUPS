@@ -346,9 +346,7 @@ internal static class DesignPreviewPayloadFactory
 
     private static string EffectiveThemeMode(string configJson, string selectedThemeMode)
     {
-        var config = string.IsNullOrWhiteSpace(configJson)
-            ? new JsonObject()
-            : JsonNode.Parse(configJson) as JsonObject ?? new JsonObject();
+        var config = JsonPath.ParseRequiredObject(configJson, "Preview config");
         var mode = config["appearanceMode"] is JsonValue modeValue
                    && modeValue.TryGetValue<string>(out var parsedMode)
             ? parsedMode
@@ -437,10 +435,10 @@ internal static class DesignPreviewPayloadFactory
         string themeTokensJson,
         string designPreviewJson)
     {
-        var preview = JsonPath.ParseObject(designPreviewJson);
+        var preview = JsonPath.ParseRequiredObject(designPreviewJson, "Design Preview contract");
         var changed = false;
-        var config = JsonPath.ParseObject(configJson);
-        var themeTokens = JsonPath.ParseObject(themeTokensJson);
+        var config = JsonPath.ParseRequiredObject(configJson, "Preview owner config");
+        var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
 
         if (preview["actions"] is JsonArray actions)
         {

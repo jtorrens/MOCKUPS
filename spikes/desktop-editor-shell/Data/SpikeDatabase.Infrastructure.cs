@@ -2,7 +2,6 @@ using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -67,46 +66,25 @@ internal sealed partial class SpikeDatabase
 
     private static string MetadataString(string metadataJson, string key)
     {
-        if (string.IsNullOrWhiteSpace(metadataJson)) return "";
-
-        try
-        {
-            using var document = JsonDocument.Parse(metadataJson);
-            return document.RootElement.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString() ?? ""
-                : "";
-        }
-        catch (JsonException)
-        {
-            return "";
-        }
+        var metadata = ParseJsonObject(metadataJson);
+        return JsonString(metadata, [key]);
     }
 
     private static bool MetadataBool(string metadataJson, string key)
     {
-        if (string.IsNullOrWhiteSpace(metadataJson)) return false;
-
-        try
-        {
-            using var document = JsonDocument.Parse(metadataJson);
-            if (!document.RootElement.TryGetProperty(key, out var value))
-            {
-                return false;
-            }
-
-            return value.ValueKind switch
-            {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.String => StringToBool(value.GetString() ?? ""),
-                JsonValueKind.Number => value.TryGetInt32(out var number) && number != 0,
-                _ => false,
-            };
-        }
-        catch (JsonException)
+        var metadata = ParseJsonObject(metadataJson);
+        if (metadata[key] is not JsonValue value)
         {
             return false;
         }
+
+        if (value.TryGetValue<bool>(out var boolean))
+        {
+            return boolean;
+        }
+
+        if (value.TryGetValue<string>(out var text)) return StringToBool(text);
+        return value.TryGetValue<int>(out var number) && number != 0;
     }
 
     private static bool StringToBool(string value)
@@ -121,12 +99,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject ParseJsonObject(string json)
     {
-        return JsonPath.ParseObject(json);
-    }
-
-    private static bool MergeMissing(JsonObject target, JsonObject defaults)
-    {
-        return JsonPath.MergeMissing(target, defaults);
+        return JsonPath.ParseRequiredObject(json, "Current persisted JSON object");
     }
 
     private static string MetricPair(string metricsJson, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)

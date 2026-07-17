@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -12,8 +13,7 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public ModuleInstanceAnimationDocument(string json)
     {
-        _root = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject
-            ?? throw new InvalidOperationException("animation_json must be an object.");
+        _root = JsonPath.ParseRequiredObject(json, "animation_json");
         if (_root["schemaVersion"]?.GetValue<int>() != 2)
             throw new InvalidOperationException("Animation editor requires animation_json schemaVersion 2.");
         _tracks = _root["tracks"] as JsonArray

@@ -13,5 +13,6 @@ internal static class RuntimeTimeline
         return RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, storedFallback, themeTokens);
     }
 
-    private static JsonObject Parse(string json) => JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
+    private static JsonObject Parse(string json) =>
+        JsonPath.ParseRequiredObject(json, "Runtime timeline JSON");
 }

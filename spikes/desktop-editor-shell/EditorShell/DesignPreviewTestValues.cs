@@ -38,14 +38,7 @@ internal static class DesignPreviewTestValues
     }
     public static JsonObject Parse(string json)
     {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject ?? new JsonObject();
-        }
-        catch
-        {
-            return new JsonObject();
-        }
+        return JsonPath.ParseRequiredObject(json, "Design Preview JSON");
     }
 
     public static string RuntimeJson(string previewJson)
