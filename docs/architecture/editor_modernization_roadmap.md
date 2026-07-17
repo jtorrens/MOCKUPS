@@ -428,6 +428,12 @@ now composes the shared timeline source, loads the exact selected Variant and
 Screen documents and delegates complete v2 animation writes. The animation
 editor retains authoring semantics without retaining a database handle.
 
+Runtime Input owner document access is governed by
+`60_runtime_input_owner_document_boundary_contract.md`. Module, Module Variant,
+Component Variant and Screen documents plus concrete embedded Component sources
+now enter the Runtime Inputs editor through a typed store. Instance
+scalar/collection mutations remain the next separate extraction slice.
+
 ## Guardrails
 
 Reject new changes that add:

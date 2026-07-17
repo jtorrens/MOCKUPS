@@ -16,6 +16,7 @@ internal sealed class RuntimeInputsCollectionEditor
 {
     private readonly SpikeDatabase _database;
     private readonly ComponentPreviewInputDataSource _previewInputData;
+    private readonly RuntimeInputOwnerDocumentStore _ownerDocuments;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
@@ -62,6 +63,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         _database = database;
         _previewInputData = new ComponentPreviewInputDataSource(database);
+        _ownerDocuments = new RuntimeInputOwnerDocumentStore(database);
         _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
@@ -793,7 +795,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 || !string.IsNullOrWhiteSpace(componentPresetReference)))
         {
             var componentConfig = string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
-                ? _database.GetComponentPresetConfig(componentPresetReference)
+                ? _previewInputData.ComponentPresetConfig(componentPresetReference)
                 : new JsonObject();
             nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(itemRuntimeContract, componentConfig).ToList();
             var nestedActions = actions.Where((action) =>
@@ -889,7 +891,7 @@ internal sealed class RuntimeInputsCollectionEditor
             item[componentItems.OverridesJsonKey] = new JsonObject();
             item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
                 ? new JsonObject()
-                : _database.GetComponentPresetRuntimeInputs(reference);
+                : _ownerDocuments.ComponentPresetRuntimeInputs(reference);
         }
         return item;
     }
@@ -912,7 +914,7 @@ internal sealed class RuntimeInputsCollectionEditor
             overrides = new JsonObject();
             item[componentItems.OverridesJsonKey] = overrides;
         }
-        var selected = _database.GetComponentPresetSelectionSettings(presetReference);
+        var selected = _ownerDocuments.ComponentPresetSelection(presetReference);
         void ApplyOverrides(JsonObject nextOverrides)
         {
             item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
@@ -1051,7 +1053,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
                     ? new JsonObject()
-                    : _database.GetComponentPresetRuntimeInputs(next);
+                    : _ownerDocuments.ComponentPresetRuntimeInputs(next);
             }
             if (owner.IsInstance)
             {
@@ -1377,41 +1379,15 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private RuntimeInputOwner ResolveOwner(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.Module)
-        {
-            var settings = _database.GetModuleSettings(node.Id);
-            return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
-                (json) => _database.UpdateModuleDesignPreviewJson(node.Id, json), false);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
-        {
-            var settings = _database.GetModuleVariantSettings(node);
-            return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
-                (json) => _database.UpdateModuleDesignPreviewJson(node.Parent?.Id
-                    ?? throw new InvalidOperationException("Module variant has no parent module."), json), false);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
-        {
-            var settings = _database.GetComponentPresetSettings(node);
-            return new RuntimeInputOwner(node, settings.ConfigJson, settings.DesignPreviewJson,
-                (json) => _database.UpdateComponentClassDesignPreviewJson(node.Parent.Id, json), false);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
-        {
-            var instance = _database.GetModuleInstanceSettings(node.Id);
-            var module = _database.GetModuleInstanceVariantSettings(node.Id);
-            return new RuntimeInputOwner(
-                node,
-                module.ConfigJson,
-                _database.GetModuleInstanceRuntimePreviewJson(node.Id),
-                (_) => { },
-                true);
-        }
-
-        throw new InvalidOperationException($"Runtime inputs are not supported by '{node.Kind}'.");
+        var source = _ownerDocuments.Load(node);
+        return new RuntimeInputOwner(
+            node,
+            source.ConfigJson,
+            source.RuntimePreviewJson,
+            source.IsInstance
+                ? (_) => { }
+                : (json) => _ownerDocuments.SaveDesignPreviewJson(source, json),
+            source.IsInstance);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

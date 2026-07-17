@@ -189,6 +189,11 @@ Contract 59 establishes the Module Instance animation document slice:
 delegates complete animation v2 writes while the editor retains target,
 owner-frame and interaction semantics without a database handle.
 
+Contract 60 establishes the Runtime Input owner document slice:
+`RuntimeInputOwnerDocumentStore` supplies exact Component/Module/Screen owner
+documents and delegates explicit isolated Design Preview writes while Runtime
+Input, collection, Override and forwarding semantics remain in the editor.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

@@ -104,6 +104,9 @@ this index wins.
 - `59_module_instance_animation_document_boundary_contract.md`: typed current
   Screen animation documents and explicit complete v2 writes, separated from
   owner-relative animation authoring and common timeline formulas.
+- `60_runtime_input_owner_document_boundary_contract.md`: exact owner documents
+  and explicit isolated Design Preview writes for Runtime Inputs, separated
+  from Test/Runtime Value and structured collection semantics.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -22,6 +22,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
+    ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
@@ -821,6 +822,76 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RuntimeInputOwnerStorePreservesCurrentDocuments()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-owner-store-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var store = new RuntimeInputOwnerDocumentStore(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
+        var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);
+        var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
+        var componentPreset = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+
+        var moduleSettings = database.GetModuleSettings(module.Id);
+        var moduleSource = store.Load(module);
+        Equal(moduleSettings.ConfigJson, moduleSource.ConfigJson);
+        Equal(moduleSettings.DesignPreviewJson, moduleSource.RuntimePreviewJson);
+        Equal(RuntimeInputDesignPreviewOwnerKind.Module, moduleSource.DesignPreviewOwnerKind);
+        Equal(module.Id, moduleSource.DesignPreviewOwnerId);
+
+        var moduleVariantSettings = database.GetModuleVariantSettings(moduleVariant);
+        var moduleVariantSource = store.Load(moduleVariant);
+        Equal(moduleVariantSettings.ConfigJson, moduleVariantSource.ConfigJson);
+        Equal(moduleVariantSettings.DesignPreviewJson, moduleVariantSource.RuntimePreviewJson);
+        Equal(module.Id, moduleVariantSource.DesignPreviewOwnerId);
+
+        var componentSettings = database.GetComponentPresetSettings(componentPreset);
+        var componentSource = store.Load(componentPreset);
+        Equal(componentSettings.ConfigJson, componentSource.ConfigJson);
+        Equal(componentSettings.DesignPreviewJson, componentSource.RuntimePreviewJson);
+        Equal(RuntimeInputDesignPreviewOwnerKind.ComponentClass, componentSource.DesignPreviewOwnerKind);
+        Equal(componentClass.Id, componentSource.DesignPreviewOwnerId);
+
+        var instanceVariant = database.GetModuleInstanceVariantSettings(screen.Id);
+        var instanceSource = store.Load(screen);
+        Equal(instanceVariant.ConfigJson, instanceSource.ConfigJson);
+        Equal(database.GetModuleInstanceRuntimePreviewJson(screen.Id), instanceSource.RuntimePreviewJson);
+        True(instanceSource.IsInstance);
+        Equal(RuntimeInputDesignPreviewOwnerKind.None, instanceSource.DesignPreviewOwnerKind);
+
+        var selection = database.GetComponentPresetSelectionSettings(componentPreset.Id);
+        var selectionSource = store.ComponentPresetSelection(componentPreset.Id);
+        Equal(selection.ProjectId, selectionSource.ProjectId);
+        Equal(selection.ComponentType, selectionSource.ComponentType);
+        Equal(selection.RecordClassId, selectionSource.RecordClassId);
+        Equal(selection.ConfigJson, selectionSource.ConfigJson);
+        Equal(
+            database.GetComponentPresetRuntimeInputs(componentPreset.Id).ToJsonString(),
+            store.ComponentPresetRuntimeInputs(componentPreset.Id).ToJsonString());
+
+        var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, afterReads);
+
+        store.SaveDesignPreviewJson(moduleSource, moduleSource.RuntimePreviewJson);
+        Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
+        store.SaveDesignPreviewJson(componentSource, componentSource.RuntimePreviewJson);
+        Equal(componentSource.RuntimePreviewJson, database.GetComponentClassSettings(componentClass.Id).DesignPreviewJson);
+        Throws<InvalidOperationException>(() =>
+            store.SaveDesignPreviewJson(instanceSource, instanceSource.RuntimePreviewJson));
     }
     finally
     {

@@ -78,6 +78,10 @@ store may delegate one complete prepared animation v2 write through the facade,
 but SQL, row mapping, current-document validation and synchronization remain in
 this repository boundary.
 
+Runtime Input owner lookup additionally follows contract 60. A Screen supplies
+its exact effective Variant config and runtime envelope through a typed store;
+it never exposes or accepts an isolated Design Preview write target.
+
 ## 4. Coordinated operations
 
 `SpikeDatabase` remains the compatibility facade. It may validate a requested

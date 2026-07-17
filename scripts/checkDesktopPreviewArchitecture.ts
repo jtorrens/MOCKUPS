@@ -644,6 +644,79 @@ for (const forbiddenTimelineMutation of ["SaveAnimationJson", "UpdateModuleInsta
     `the common timeline source must remain read-only (${forbiddenTimelineMutation})`,
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/60_runtime_input_owner_document_boundary_contract.md",
+  "AGENTS must require the Runtime Input owner document boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "60_runtime_input_owner_document_boundary_contract.md",
+  "the architecture index must include contract 60",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+  "private readonly SpikeDatabase _database",
+  "the Runtime Input owner store must own that route's database dependency",
+);
+for (const forbiddenRuntimeInputOwnerStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+    forbiddenRuntimeInputOwnerStoreSql,
+    `the Runtime Input owner store must delegate through current services rather than owning SQL (${forbiddenRuntimeInputOwnerStoreSql})`,
+  );
+}
+for (const forbiddenRuntimeInputOwnerSemantic of [
+  "FieldDefinition",
+  "RuntimeInputCollectionDefinition",
+  "RuntimeInputForwardingContract",
+  "ModuleInstanceAnimationDocument",
+  "Avalonia",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+    forbiddenRuntimeInputOwnerSemantic,
+    `the Runtime Input owner store must not absorb editor semantics (${forbiddenRuntimeInputOwnerSemantic})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+  "A Module Instance has no isolated Design Preview document.",
+  "a Screen must reject isolated Design Preview persistence explicitly",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_ownerDocuments = new RuntimeInputOwnerDocumentStore(database)",
+  "the Runtime Inputs editor must reuse one typed owner document store",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "var source = _ownerDocuments.Load(node)",
+  "Runtime Input owner resolution must delegate to the typed store",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "_previewInputData.ComponentPresetConfig(componentPresetReference)",
+  "the Runtime Inputs editor must reuse the Component Preview config boundary",
+);
+for (const forbiddenRuntimeInputOwnerRead of [
+  "_database.GetModuleSettings",
+  "_database.GetModuleVariantSettings",
+  "_database.GetComponentPresetSettings",
+  "_database.GetModuleInstanceVariantSettings",
+  "_database.GetModuleInstanceRuntimePreviewJson",
+  "_database.GetComponentPresetConfig",
+  "_database.GetComponentPresetRuntimeInputs",
+  "_database.GetComponentPresetSelectionSettings",
+  "_database.UpdateModuleDesignPreviewJson",
+  "_database.UpdateComponentClassDesignPreviewJson",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    forbiddenRuntimeInputOwnerRead,
+    `the Runtime Inputs editor must use its typed owner/config boundaries (${forbiddenRuntimeInputOwnerRead})`,
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

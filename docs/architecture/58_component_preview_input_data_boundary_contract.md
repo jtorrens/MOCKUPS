@@ -76,6 +76,10 @@ The Runtime Inputs editor and the isolated Preview session must use the same
 typed child-contract route so action availability cannot diverge between the
 editor and Preview.
 
+Contract 60 owns the broader editor-owner document route and concrete embedded
+Component selection metadata. It reuses this contract's exact Component config
+source rather than duplicating that read in the Runtime Inputs editor.
+
 ## 5. Preserved boundaries
 
 - Stable ids and complete `componentClassId::preset::presetId` references are
