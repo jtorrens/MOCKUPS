@@ -294,6 +294,13 @@ and deletion protection. Relational columns and JSON paths/contracts must be
 declared; text-column scans, substring matching and label-based navigation are
 not valid compatibility behavior.
 
+Current workspace resource ownership is governed by
+`39_design_production_resource_navigation_contract.md`. Production navigation
+has one Episodes card and one Production Data card containing Actors, Devices,
+Production Fonts and Render Presets. This is navigation ownership only; future
+Project duplication must explicitly choose copy, current seeds or empty per
+category and is not part of the current phase.
+
 ## Guardrails
 
 Reject new changes that add:

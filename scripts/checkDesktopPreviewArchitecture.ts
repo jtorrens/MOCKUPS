@@ -2085,6 +2085,62 @@ assertDoesNotContain(
   "GetReferenceUsages(node)",
   "blocked deletion must not flatten typed Usage edges into prose",
 );
+for (const productionDataTreeContract of [
+  "productionDataRoot.AddChild(actorsRoot);",
+  "productionDataRoot.AddChild(devicesRoot);",
+  "productionDataRoot.AddChild(productionFontsRoot);",
+  "productionDataRoot.AddChild(renderPresetsRoot);",
+  "systemDataRoot.AddChild(themesRoot);",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+    productionDataTreeContract,
+    `Production Data tree must retain ${productionDataTreeContract}`,
+  );
+}
+for (const productionWorkspaceKind of [
+  "ProjectTreeNodeKind.ProductionDataRoot",
+  "or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device",
+  "or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont",
+  "or ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorNavigationMetadata.cs",
+    productionWorkspaceKind,
+    `Production workspace metadata must retain ${productionWorkspaceKind}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  'ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Production',
+  "Actor-owned Usage must navigate to the Production workspace",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "node.CanAddChild && node.Parent?.Kind == ProjectTreeNodeKind.ProductionDataRoot",
+  "grouped Production Data sections must retain their explicit Add actions",
+);
+for (const resourceNavigationContract of [
+  "Actors, Devices, Production Fonts and Render Presets",
+  "copy current records | regenerate from current seeds | create empty",
+  "never fall back to records from another Project",
+]) {
+  assertContains(
+    "docs/architecture/39_design_production_resource_navigation_contract.md",
+    resourceNavigationContract,
+    `resource navigation contract must retain ${resourceNavigationContract}`,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/39_design_production_resource_navigation_contract.md",
+  "AGENTS must require the current Design/Production resource navigation contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "39_design_production_resource_navigation_contract.md",
+  "the architecture index must include contract 39",
+);
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",

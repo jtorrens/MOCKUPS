@@ -23,13 +23,14 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.IconThemesRoot or ProjectTreeNodeKind.IconTheme => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ComponentClassesRoot or ProjectTreeNodeKind.ComponentClassGroup
                 or ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset => EditorWorkspaceScope.Design,
-            ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ThemesRoot or ProjectTreeNodeKind.Theme => EditorWorkspaceScope.Design,
-            ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot
                 or ProjectTreeNodeKind.ModuleInstance => EditorWorkspaceScope.Production,
-            ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor => EditorWorkspaceScope.Production,
-            ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset => EditorWorkspaceScope.Production,
+            ProjectTreeNodeKind.ProductionDataRoot
+                or ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor
+                or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device
+                or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont
+                or ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset => EditorWorkspaceScope.Production,
             _ => EditorWorkspaceScope.None,
         };
     }
@@ -41,11 +42,8 @@ internal static class EditorNavigationMetadata
             or ProjectTreeNodeKind.ThemesRoot
             or ProjectTreeNodeKind.PaletteRoot
             or ProjectTreeNodeKind.IconThemesRoot
-            or ProjectTreeNodeKind.ProductionFontsRoot
-            or ProjectTreeNodeKind.DevicesRoot
             or ProjectTreeNodeKind.EpisodesRoot
-            or ProjectTreeNodeKind.ActorsRoot
-            or ProjectTreeNodeKind.RenderPresetsRoot;
+            or ProjectTreeNodeKind.ProductionDataRoot;
     }
 
     public static int WorkspaceOrder(ProjectTreeNodeKind kind)
@@ -57,11 +55,8 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.ThemesRoot => 30,
             ProjectTreeNodeKind.PaletteRoot => 40,
             ProjectTreeNodeKind.IconThemesRoot => 50,
-            ProjectTreeNodeKind.ProductionFontsRoot => 60,
-            ProjectTreeNodeKind.DevicesRoot => 70,
             ProjectTreeNodeKind.EpisodesRoot => 10,
-            ProjectTreeNodeKind.ActorsRoot => 20,
-            ProjectTreeNodeKind.RenderPresetsRoot => 30,
+            ProjectTreeNodeKind.ProductionDataRoot => 20,
             _ => 100,
         };
     }
@@ -107,8 +102,8 @@ internal static class EditorNavigationMetadata
         {
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
-            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production themes",
-            ProjectTreeNodeKind.SystemDataRoot => "Icon sets, component variants, palette, fonts, media and render presets",
+            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices, production fonts and render presets",
+            ProjectTreeNodeKind.SystemDataRoot => "Themes, icon sets, component variants, palette and media",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.RenderPresetsRoot => "Reusable render output definitions",

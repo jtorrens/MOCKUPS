@@ -12,6 +12,8 @@ production later does not need to expose low-level component design controls.
 For the implemented cross-system snapshot and the next architecture,
 functionality and UX/UI audit brief, see
 [Application Architecture, Functional Flows and UX Audit Handoff](32_application_architecture_functional_ux_handoff.md).
+Current concrete resource placement and Production Data grouping are governed
+by [Design and Production Resource Navigation Contract](39_design_production_resource_navigation_contract.md).
 
 ## Problem
 
@@ -51,7 +53,7 @@ the current tree.
 - test values and design preview fixtures;
 - app definitions;
 - module definitions;
-- themes, palettes, fonts, icons and base media;
+- themes, palettes, icons and base media;
 - usage impact across the design system.
 
 `Production` owns concrete audiovisual work:
@@ -61,6 +63,7 @@ the current tree.
 - shots;
 - module instances;
 - actor/app personalization;
+- devices, Production Fonts and Render Presets;
 - shot preview by frame;
 - timing;
 - approval state;

@@ -92,8 +92,8 @@ declared composition contracts above.
 Scope is data in the Usage edge, not a word inferred from a label.
 
 - definition/configuration owners such as App, Module, Component Variant,
-  Theme, Actor and isolated persisted Test Values are `Design`;
-- Episode, Shot and Module Instance payload owners are `Production`.
+  Theme and isolated persisted Test Values are `Design`;
+- Actor, Episode, Shot and Module Instance payload owners are `Production`.
 
 Persisted isolated Test Values and a Module Instance payload are distinct
 sources. Previewing, Play or Restore does not copy one into the other and does

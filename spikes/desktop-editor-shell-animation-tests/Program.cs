@@ -20,6 +20,7 @@ var tests = new (string Name, Action Run)[]
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
+    ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -934,7 +935,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
 
         var usedDevice = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed);
         var deviceUsages = database.GetReferenceUsageDetails(usedDevice);
-        True(deviceUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Actor && !usage.IsProduction));
+        True(deviceUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Actor && usage.IsProduction));
         Throws<InvalidOperationException>(() => database.Delete(usedDevice));
 
         var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor && node.IsUsed);
@@ -1079,6 +1080,42 @@ static void UsageNavigationPreservesTypedContext()
         },
         events);
     Equal(0, messages.Warnings.Count);
+}
+
+static void ProductionDataOwnsConcreteResources()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var project = database.LoadProjectTree().Single();
+    var productionSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Production);
+    SequenceEqual(
+        new[] { ProjectTreeNodeKind.EpisodesRoot, ProjectTreeNodeKind.ProductionDataRoot },
+        productionSections.Select((node) => node.Kind));
+
+    var productionData = productionSections.Single((node) => node.Kind == ProjectTreeNodeKind.ProductionDataRoot);
+    SequenceEqual(
+        new[]
+        {
+            ProjectTreeNodeKind.ActorsRoot,
+            ProjectTreeNodeKind.DevicesRoot,
+            ProjectTreeNodeKind.ProductionFontsRoot,
+            ProjectTreeNodeKind.RenderPresetsRoot,
+        },
+        productionData.Children.Select((node) => node.Kind));
+    True(productionData.Children.All((node) =>
+        EditorNavigationMetadata.WorkspaceScope(node.Kind) == EditorWorkspaceScope.Production));
+    True(productionData.Children.All((node) => EditorNavigationRenderer.ShowsActions(node, null)));
+
+    var designSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Design);
+    True(designSections.Any((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot));
+    True(designSections.All((node) => node.Kind is not ProjectTreeNodeKind.DevicesRoot
+        and not ProjectTreeNodeKind.ProductionFontsRoot
+        and not ProjectTreeNodeKind.RenderPresetsRoot
+        and not ProjectTreeNodeKind.ActorsRoot));
+    var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
+    Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
 }
 
 static void TrackActivationCreatesInitialKeyframe()

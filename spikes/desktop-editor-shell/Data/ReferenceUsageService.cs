@@ -237,7 +237,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Design, reader.GetString(4));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(4));
                 AddExact(usages, targets, ProjectTreeNodeKind.Device, ReadString(reader, 2), source, "Default device");
                 AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 3), source, "Default theme");
             }
@@ -286,7 +286,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Design, reader.GetString(3));
+            var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(3));
             var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 2), $"Actor '{source.NodeId}' metadata_json");
             foreach (var declaration in ActorPaletteReferencePaths)
             {

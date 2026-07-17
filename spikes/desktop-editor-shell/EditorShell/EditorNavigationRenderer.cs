@@ -518,6 +518,7 @@ internal sealed class EditorNavigationRenderer
 
     internal static bool ShowsActions(ProjectTreeNode node, ProjectTreeNode? selected) =>
         selected?.Id == node.Id
+            || (node.CanAddChild && node.Parent?.Kind == ProjectTreeNodeKind.ProductionDataRoot)
             || (node.Kind == ProjectTreeNodeKind.ComponentClass
                 && selected?.Kind == ProjectTreeNodeKind.ComponentPreset
                 && selected.Parent?.Id == node.Id)

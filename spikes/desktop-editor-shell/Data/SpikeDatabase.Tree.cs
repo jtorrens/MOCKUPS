@@ -100,14 +100,14 @@ internal sealed partial class SpikeDatabase
                 "Themes",
                 "Production visual themes.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ThemesRoot),
-                productionDataRoot);
+                systemDataRoot);
             var productionFontsRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ProductionFontsRoot,
                 $"production_fonts_root_{project.Id}",
                 "Production Fonts",
                 "Approved font families copied into this production.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFontsRoot),
-                systemDataRoot);
+                productionDataRoot);
             var iconThemesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.IconThemesRoot,
                 $"icon_themes_root_{project.Id}",
@@ -121,7 +121,7 @@ internal sealed partial class SpikeDatabase
                 "Render Presets",
                 "Reusable render output definitions.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPresetsRoot),
-                systemDataRoot);
+                productionDataRoot);
             var componentClassesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentClassesRoot,
                 $"component_classes_root_{project.Id}",
@@ -144,11 +144,11 @@ internal sealed partial class SpikeDatabase
 
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
-            productionDataRoot.AddChild(themesRoot);
+            productionDataRoot.AddChild(productionFontsRoot);
+            productionDataRoot.AddChild(renderPresetsRoot);
+            systemDataRoot.AddChild(themesRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
-            systemDataRoot.AddChild(renderPresetsRoot);
-            systemDataRoot.AddChild(productionFontsRoot);
             systemDataRoot.AddChild(componentClassesRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);

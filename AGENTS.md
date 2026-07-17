@@ -12,6 +12,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/36_desktop_persistence_repository_contract.md`
 - `docs/architecture/37_desktop_resource_repository_contract.md`
 - `docs/architecture/38_explicit_reference_usage_contract.md`
+- `docs/architecture/39_design_production_resource_navigation_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -247,6 +248,12 @@ protection additionally follow
 one typed edge set produced from exact relational declarations and
 owner-declared JSON paths/contracts. Never scan text columns or arbitrary JSON,
 match substrings, or infer navigation/scope from source labels.
+
+Design/Production resource placement additionally follows
+`docs/architecture/39_design_production_resource_navigation_contract.md`.
+Production exposes Episodes plus one Production Data card containing Actors,
+Devices, Production Fonts and Render Presets. Workspace changes must not move
+SQLite ownership, invent global records or introduce cross-Project fallback.
 
 ## Data migrations, not compatibility fallbacks
 
