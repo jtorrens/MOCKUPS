@@ -19,6 +19,7 @@ var tests = new (string Name, Action Run)[]
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
+    ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -640,6 +641,55 @@ static void ThemeRepositoryPreservesFacadeContract()
         Throws<InvalidOperationException>(() => themeRepository.UpdateDirectField(theme.Id, "theme.unknown", "value"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ShotActorContextIsExplicit()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-actor-context-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var tree = database.LoadProjectTree();
+        var episode = Descendants(tree)
+            .First((node) => node.Kind == ProjectTreeNodeKind.Episode && node.Id == "episode_002");
+        Throws<InvalidOperationException>(() => database.AddChild(episode));
+        Throws<InvalidOperationException>(() => database.AddShot(episode, ""));
+
+        var shot = database.AddShot(episode, "actor_alex");
+        Equal("actor_alex", database.GetShotSettings(shot.Id).OwnerActorId);
+        var module = database.GetAvailableShotModules(shot.Id).First();
+        var variant = database.GetModuleVariantOptions(module.Id).First();
+        var screen = database.AddModuleInstance(
+            shot,
+            new SpikeDatabase.ShotModuleInstanceDraft(
+                module,
+                variant.Value,
+                variant.Label,
+                $"{module.Name} · {variant.Label}"));
+        var before = database.GetModuleInstanceSettings(screen.Id);
+
+        database.UpdateShotField(shot.Id, "shot.ownerActorId", "actor_sam");
+        Equal("actor_sam", database.GetShotSettings(shot.Id).OwnerActorId);
+        var after = database.GetModuleInstanceSettings(screen.Id);
+        Equal(before.ContentJson, after.ContentJson);
+        Equal(before.BehaviorJson, after.BehaviorJson);
+        Equal(before.AnimationJson, after.AnimationJson);
+        Equal(before.MetadataJson, after.MetadataJson);
+
+        Throws<InvalidOperationException>(() => database.UpdateShotField(shot.Id, "shot.ownerActorId", ""));
+        Throws<InvalidOperationException>(() => database.UpdateShotField(shot.Id, "shot.ownerActorId", "missing_actor"));
+        Throws<InvalidOperationException>(() => database.UpdateActorField("actor_sam", "actor.defaultThemeId", ""));
+
+        database.Delete(screen);
+        database.Delete(shot);
+        True(Descendants(database.LoadProjectTree()).All((node) => node.Id != shot.Id && node.Id != screen.Id));
     }
     finally
     {

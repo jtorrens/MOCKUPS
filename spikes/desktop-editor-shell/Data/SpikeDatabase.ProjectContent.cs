@@ -53,6 +53,11 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (fieldId == "shot.ownerActorId")
+        {
+            _moduleInstanceThemeContextService.RequireShotOwnerChange(connection, shotId, value);
+        }
+
         var column = fieldId switch
         {
             "shot.slug" => "slug",
@@ -79,6 +84,10 @@ internal sealed partial class SpikeDatabase
             $"UPDATE shots SET {column} = $value WHERE id = $id",
             ("$id", shotId),
             ("$value", nextValue));
+        if (fieldId == "shot.ownerActorId")
+        {
+            SynchronizeTimelineDurations(connection, shotId);
+        }
     }
 
     public string GetShotRenderName(string shotId)

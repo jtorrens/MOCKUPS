@@ -189,8 +189,8 @@ not separate physical tables.
 | `icon_themes` | token mapping and asset root | selected by Theme; resolves semantic icon tokens to committed SVG assets |
 | `render_presets` | output dimensions/FPS/format/codec/color/quality/export JSON | referenced by Shots; data exists although Render Mode is not implemented |
 
-The current parity snapshot contains one Project, three Episodes, five Shots,
-three Apps, two Modules, three Module Instances, 26 component classes, two
+The current parity snapshot contains one Project, three Episodes, one Shot,
+three Apps, two Modules, two Module Instances, 26 component classes, two
 Themes, 24 palette colors, eight Devices, three Actors, four production fonts,
 six Icon Themes, seven Render Presets and 55 editor layouts. Counts describe the
 current seed, not schema cardinality requirements.

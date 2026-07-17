@@ -64,6 +64,12 @@ internal sealed class EditorAddChildWorkflow
             return draft is null ? null : _database.AddModuleInstance(parent, draft);
         }
 
+        if (parent.Kind == ProjectTreeNodeKind.Episode)
+        {
+            var actorId = await new ShotCreationDialog(_owner, _database).Show(parent);
+            return actorId is null ? null : _database.AddShot(parent, actorId);
+        }
+
         return _database.AddChild(parent);
     }
 

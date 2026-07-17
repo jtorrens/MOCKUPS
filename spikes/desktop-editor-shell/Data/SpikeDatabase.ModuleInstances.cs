@@ -370,6 +370,7 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("A Module Instance name is required.");
         var initialDuration = RuntimeDurationContract.InitialDurationFrames(GetModuleSettings(module.Id).DesignPreviewJson);
         using var connection = OpenConnection();
+        _moduleInstanceThemeContextService.RequireShotContext(connection, shot.Id);
         var index = NextSortOrder(connection, "module_instances", "shot_id", shot.Id);
         var id = $"module_instance_{Guid.NewGuid():N}";
         var name = UniqueModuleInstanceName(connection, shot.Id, requestedName);

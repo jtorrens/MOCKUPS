@@ -36,7 +36,7 @@ internal sealed partial class SpikeDatabase
           sort_order INTEGER NOT NULL DEFAULT 0,
           fps_override INTEGER,
           duration_frames INTEGER NOT NULL DEFAULT 240,
-          owner_actor_id TEXT NOT NULL DEFAULT '',
+          owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           render_preset_id TEXT NOT NULL DEFAULT '',
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'

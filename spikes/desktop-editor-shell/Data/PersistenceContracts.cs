@@ -297,6 +297,14 @@ internal interface IThemeRepository
 internal interface IModuleInstanceThemeContextService
 {
     string GetTokensJson(string moduleInstanceId);
+
+    void RequireShotContext(SqliteConnection connection, string shotId);
+
+    void RequireEpisodeActor(SqliteConnection connection, string episodeId, string actorId);
+
+    void RequireShotOwnerChange(SqliteConnection connection, string shotId, string actorId);
+
+    void RequireActorThemeChange(SqliteConnection connection, string actorId, string themeId);
 }
 
 internal interface IReferenceUsageService

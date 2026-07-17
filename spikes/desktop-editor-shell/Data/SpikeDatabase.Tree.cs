@@ -552,31 +552,47 @@ internal sealed partial class SpikeDatabase
 
         if (parent.Kind == ProjectTreeNodeKind.Episode)
         {
-            var index = NextSortOrder(connection, "shots", "episode_id", parent.Id);
-            var id = $"shot_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, duration_frames)
-                VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 240)
-                """,
-                ("$id", id),
-                ("$episodeId", parent.Id),
-                ("$name", $"Shot {index + 1:00}"),
-                ("$slug", $"shot-{index + 1:00}"),
-                ("$notes", "New shot created in the desktop shell spike."),
-                ("$sortOrder", index));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.Shot,
-                id,
-                $"Shot {index + 1:00}",
-                "New shot created in the desktop shell spike.",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
-                parent);
+            throw new InvalidOperationException(
+                "Shots require an explicit owner Actor and must be created through AddShot.");
         }
 
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
+    }
+
+    public ProjectTreeNode AddShot(ProjectTreeNode episode, string actorId)
+    {
+        if (episode.Kind != ProjectTreeNodeKind.Episode)
+        {
+            throw new InvalidOperationException("Shots can only be added to an Episode.");
+        }
+
+        using var connection = OpenConnection();
+        _moduleInstanceThemeContextService.RequireEpisodeActor(connection, episode.Id, actorId);
+        var index = NextSortOrder(connection, "shots", "episode_id", episode.Id);
+        var id = $"shot_{Guid.NewGuid():N}";
+        var name = $"Shot {index + 1:00}";
+        const string notes = "New shot created in the desktop shell spike.";
+        Execute(
+            connection,
+            """
+            INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, duration_frames, owner_actor_id)
+            VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 240, $actorId)
+            """,
+            ("$id", id),
+            ("$episodeId", episode.Id),
+            ("$name", name),
+            ("$slug", $"shot-{index + 1:00}"),
+            ("$notes", notes),
+            ("$sortOrder", index),
+            ("$actorId", actorId));
+
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.Shot,
+            id,
+            name,
+            notes,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
+            episode);
     }
 
     public ProjectTreeNode AddImportedDevice(ProjectTreeNode devicesRoot, DeviceImportDraft device)

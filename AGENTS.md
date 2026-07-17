@@ -14,6 +14,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/38_explicit_reference_usage_contract.md`
 - `docs/architecture/39_design_production_resource_navigation_contract.md`
 - `docs/architecture/40_theme_persistence_and_context_contract.md`
+- `docs/architecture/41_explicit_shot_production_context_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -247,9 +248,16 @@ Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.
 `ThemeRepository` owns Theme row SQL and lifecycle writes; the facade and tree
 delegate. Module Instance Theme context is a separate cross-domain service and
-must resolve a complete current document or fail explicitly. The current
-first-project-Theme fallback for one ownerless seeded Shot is a marked temporary
-exception pending an explicit data migration; do not copy or widen it.
+must resolve a complete current document or fail explicitly.
+
+Shot Production context additionally follows
+`docs/architecture/41_explicit_shot_production_context_contract.md`. A Module
+Instance requires an exact `Shot -> owner Actor -> Actor default Theme` route.
+Do not infer context from App, Module, Variant, name, type, order or position.
+Shot creation requires an explicit Actor selection, `owner_actor_id` is a
+non-empty restricted foreign key, and the Shot editor never offers `None`.
+The committed parity project retains only `episode_001 / shot_001`; lifecycle
+tests use disposable database copies rather than adding test Shots to it.
 
 Reference discovery, tree `Used` state, Usage presentation and deletion
 protection additionally follow

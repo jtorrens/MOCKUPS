@@ -305,8 +305,13 @@ Theme persistence and Production Theme lookup are governed by
 `40_theme_persistence_and_context_contract.md`. Theme row access and lifecycle
 writes move to `ThemeRepository`; Module Instance Theme lookup is isolated as a
 cross-domain service and no longer returns an empty document for missing
-context. The remaining ordered project-Theme fallback is a temporary exception
-until the ownerless seeded Shot is migrated to an explicitly approved Actor.
+context.
+
+Explicit Shot Production context and parity cleanup are governed by
+`41_explicit_shot_production_context_contract.md`. A Screen requires an exact
+Shot owner Actor and Actor Theme before creation; those references cannot be
+cleared while Screens exist. The canonical parity project retains only
+`episode_001 / shot_001`, and project-ordered Theme fallback is retired.
 
 ## Guardrails
 

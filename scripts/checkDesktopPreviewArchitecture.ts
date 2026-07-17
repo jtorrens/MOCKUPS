@@ -2014,11 +2014,54 @@ assertDoesNotContain(
   "?? \"{}\"",
   "Module Instance Theme context must not return a plausible empty document",
 );
+for (const inferredThemeContext of ["COALESCE(", "ORDER BY t.name", "JOIN apps a"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+    inferredThemeContext,
+    `Module Instance Theme context must not restore inferred fallback ${inferredThemeContext}`,
+  );
+}
+for (const [relativePath, requiredGuard] of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs", "RequireShotContext(connection, shot.Id)"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "RequireShotOwnerChange(connection, shotId, value)"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "RequireActorThemeChange(connection, actorId, value)"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs", "module instance without explicit Shot owner Theme context"],
+] as const) {
+  assertContains(
+    relativePath,
+    requiredGuard,
+    `${relativePath} must preserve explicit Shot owner Theme context`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "ORDER BY t.name, t.id",
+  "duration synchronization must not infer a Theme from project ordering",
+);
 assertContains(
   "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
-  "TODO(editor-architecture)",
-  "the temporary ordered project-Theme fallback must remain explicit until data migration",
+  "JOIN actors actor ON actor.id = s.owner_actor_id",
+  "Module Instance Theme context must resolve through the exact Shot owner Actor",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT",
+  "Shot owner Actor must remain a required restricted foreign key without an empty default",
+);
+for (const [relativePath, explicitShotCreationTerm] of [
+  ["spikes/desktop-editor-shell/EditorShell/EditorAddChildWorkflow.cs", "new ShotCreationDialog(_owner, _database).Show(parent)"],
+  ["spikes/desktop-editor-shell/EditorShell/ShotCreationDialog.cs", "SelectedItem = null"],
+  ["spikes/desktop-editor-shell/EditorShell/ShotCreationDialog.cs", "GetRequiredActorOptions(project.Id)"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "must be created through AddShot"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "RequireEpisodeActor(connection, episode.Id, actorId)"],
+  ["spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs", "GetRequiredActorOptions(settings.ProjectId)"],
+] as const) {
+  assertContains(
+    relativePath,
+    explicitShotCreationTerm,
+    `${relativePath} must retain explicit non-empty Shot Actor selection`,
+  );
+}
 assertContains(
   "AGENTS.md",
   "docs/architecture/40_theme_persistence_and_context_contract.md",
@@ -2028,6 +2071,16 @@ assertContains(
   "docs/architecture/README.md",
   "40_theme_persistence_and_context_contract.md",
   "the architecture index must include contract 40",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/41_explicit_shot_production_context_contract.md",
+  "AGENTS must require the explicit Shot Production context contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "41_explicit_shot_production_context_contract.md",
+  "the architecture index must include contract 41",
 );
 for (const retiredUsageInference of [
   "LIKE $needle",
@@ -2216,6 +2269,27 @@ if (!existsSync(desktopDatabasePath)) {
 } else {
   const database = new Database(desktopDatabasePath, { readonly: true, fileMustExist: true });
   try {
+    const parityShots = database
+      .prepare("SELECT id, episode_id FROM shots ORDER BY id")
+      .all() as { id: string; episode_id: string }[];
+    if (parityShots.length !== 1
+      || parityShots[0]?.id !== "shot_001"
+      || parityShots[0]?.episode_id !== "episode_001") {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "canonical parity data must retain only episode_001 / shot_001",
+      );
+    }
+    const parityModuleInstances = database
+      .prepare("SELECT id, shot_id FROM module_instances ORDER BY id")
+      .all() as { id: string; shot_id: string }[];
+    if (parityModuleInstances.length !== 2
+      || parityModuleInstances.some((row) => row.shot_id !== "shot_001")) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "canonical parity Module Instances must be the two authored Screens owned by shot_001",
+      );
+    }
     currentComponentClassRows = database
       .prepare("SELECT id, component_type, record_class_id, config_json, metadata_json FROM component_classes")
       .all() as CurrentComponentClassRow[];

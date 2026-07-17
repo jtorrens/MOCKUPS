@@ -95,17 +95,16 @@ Theme repository and the UI facade. It returns one complete current
 `tokens_json` document or fails explicitly; it never returns a plausible empty
 Theme document.
 
-The committed parity data currently contains one Module Instance whose Shot has
-no owner Actor. The previous implementation handled that incomplete context by
-selecting the first project Theme ordered by name/id. This is a documented
-temporary architecture exception, not a supported inference rule. It remains
-isolated and marked with `TODO(editor-architecture)` only until an explicit data
-migration assigns the intended owner Actor. New code must not copy, widen or
-depend on this fallback.
+The parity migration governed by contract 41 removed the disposable Shots that
+lacked this context. There is no project-first Theme fallback. Missing Shot,
+Actor, Actor Theme or Theme row is invalid for a Module Instance and fails
+explicitly.
 
-Removing the exception requires one reviewed migration of seeds and the
-committed parity database. Normal startup must not assign an Actor, choose a
-Theme or repair the Shot.
+A Shot is created with one explicit owner Actor and can never be ownerless. A
+Module Instance cannot be added until that Actor's default Theme also resolves.
+While a Shot contains Module Instances, its owner cannot be changed to an Actor
+without a Theme, and the owning Actor's Theme cannot be cleared. Normal startup
+never assigns an Actor, chooses a Theme or repairs the Shot.
 
 ## 6. Cross-domain queries
 
@@ -127,6 +126,7 @@ Architecture enforcement verifies:
 - the Theme facade and tree contain no Theme table lifecycle SQL;
 - the repository owns Theme table access and does not import the UI shell;
 - Module Instance Theme lookup cannot return `{}` for missing context;
+- creation and edits preserve explicit Shot owner Theme context;
 - this contract is required by `AGENTS.md` and the architecture index.
 
 Disposable-database tests compare facade/repository reads, exercise direct and
@@ -141,6 +141,6 @@ and assets byte-for-byte unchanged.
 - resolving palette hex, fonts, icons or Preview visuals inside the repository;
 - reconstructing a Component Variant reference from class, name or position;
 - returning `{}` when Theme context or `tokens_json` is missing;
-- treating the temporary first-Theme fallback as normal Production behavior;
+- selecting a project Theme by name, type, order or position;
 - assigning missing Shot Actors during startup or ordinary reads;
 - changing seeds or the committed database as an incidental repository edit.

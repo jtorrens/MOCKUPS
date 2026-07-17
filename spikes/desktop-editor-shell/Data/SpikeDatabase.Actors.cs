@@ -15,6 +15,11 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateActorField(string actorId, string fieldId, string value)
     {
+        if (fieldId == "actor.defaultThemeId")
+        {
+            using var connection = OpenConnection();
+            _moduleInstanceThemeContextService.RequireActorThemeChange(connection, actorId, value);
+        }
         _actorRepository.UpdateField(actorId, fieldId, value);
     }
 
@@ -45,11 +50,16 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<FieldOption> GetActorOptions(string projectId)
     {
-        var options = _actorRepository.GetOptions(projectId)
-            .Select((option) => new FieldOption(option.Value, option.Label))
-            .ToList();
+        var options = GetRequiredActorOptions(projectId).ToList();
         options.Insert(0, new FieldOption("", "None"));
         return options;
+    }
+
+    public IReadOnlyList<FieldOption> GetRequiredActorOptions(string projectId)
+    {
+        return _actorRepository.GetOptions(projectId)
+            .Select((option) => new FieldOption(option.Value, option.Label))
+            .ToList();
     }
 
     private IReadOnlyList<ActorRecord> QueryActorRows(SqliteConnection connection)

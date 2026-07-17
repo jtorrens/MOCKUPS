@@ -17,13 +17,13 @@ The shared worktree intentionally has unrelated local changes, including the des
 
 ### Persisted state
 
-`module_instances.animation_json` is the sole owner of shot-specific parameter animation. `content_json` remains the base public runtime inputs and `behavior_json` remains instance behaviour. The committed desktop database has three module instances and every `animation_json` value is exactly:
+`module_instances.animation_json` is the sole owner of shot-specific parameter animation. `content_json` remains the base public runtime inputs and `behavior_json` remains instance behaviour. At the historical baseline recorded by this section, the committed desktop database had three module instances and every `animation_json` value was exactly:
 
 ```json
 {"schemaVersion":1,"tracks":[]}
 ```
 
-The current schema/default writer emits that same v1 empty object. There is no active writer/editor for parameter tracks.
+The schema/default writer at that historical baseline emitted the same v1 empty object. Later sections and contracts 31/32 describe the implemented v2 writer/editor and supersede this inventory.
 
 ### Readers and duration writers
 

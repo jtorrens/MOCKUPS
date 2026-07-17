@@ -70,18 +70,21 @@ internal sealed partial class SpikeDatabase
             ("$json", next), ("$id", moduleInstanceId));
     }
 
-    private static void SynchronizeTimelineDurations(SqliteConnection connection)
+    private static void SynchronizeTimelineDurations(SqliteConnection connection, string? shotId = null)
     {
         using var select = connection.CreateCommand();
         select.CommandText = """
             SELECT mi.id, mi.duration_frames, mi.content_json, mi.animation_json, m.design_preview_json,
-                   COALESCE(
-                     (SELECT t.tokens_json FROM shots s JOIN actors actor ON actor.id = s.owner_actor_id JOIN themes t ON t.id = actor.default_theme_id WHERE s.id = mi.shot_id),
-                     (SELECT t.tokens_json FROM apps a JOIN themes t ON t.project_id = a.project_id WHERE a.id = mi.app_id ORDER BY t.name, t.id LIMIT 1),
-                     '{}'), m.id, m.metadata_json, mi.metadata_json
+                   t.tokens_json, m.id, m.metadata_json, mi.metadata_json
             FROM module_instances mi
             JOIN modules m ON m.id = mi.module_id
+            JOIN shots s ON s.id = mi.shot_id
+            JOIN episodes e ON e.id = s.episode_id
+            JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
+            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = actor.project_id
+            WHERE $shotId = '' OR mi.shot_id = $shotId
             """;
+        select.Parameters.AddWithValue("$shotId", shotId ?? "");
         using var reader = select.ExecuteReader();
         var updates = new List<(string Id, int Duration)>();
         while (reader.Read())

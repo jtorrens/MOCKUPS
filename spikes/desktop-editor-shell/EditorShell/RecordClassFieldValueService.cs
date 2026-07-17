@@ -399,7 +399,7 @@ internal sealed class RecordClassFieldValueService
         var settings = _database.GetShotSettings(shotId);
         return field.Id switch
         {
-            "shot.ownerActorId" => _database.GetActorOptions(settings.ProjectId),
+            "shot.ownerActorId" => _database.GetRequiredActorOptions(settings.ProjectId),
             "shot.renderPresetId" => _database.GetRenderPresetOptions(settings.ProjectId),
             _ => field.Options,
         };
