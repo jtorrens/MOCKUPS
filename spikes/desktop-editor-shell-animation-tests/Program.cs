@@ -46,6 +46,7 @@ var tests = new (string Name, Action Run)[]
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
     ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
+    ("App and Module definitions expose rename-only lifecycle actions", AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions),
     ("module parents open Default then remember the session Variant", ModuleParentsFollowComponentVariantSelection),
     ("only Default system bar variants are protected", OnlyDefaultSystemBarVariantsAreProtected),
     ("collection item presentation summarizes configured fields", CollectionItemPresentationSummarizesConfiguredFields),
@@ -1076,6 +1077,80 @@ static void ActiveVariantExposesParentClassActions()
     True(EditorNavigationRenderer.ShowsActions(variant, variant));
     True(!EditorNavigationRenderer.ShowsActions(otherComponentClass, variant));
     True(!EditorNavigationRenderer.ShowsActions(componentClass, null));
+}
+
+static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
+{
+    var appsRoot = new ProjectTreeNode(ProjectTreeNodeKind.AppsRoot, "apps", "Apps", "", "navigation.apps");
+    var app = new ProjectTreeNode(ProjectTreeNodeKind.App, "app", "System", "", "app.system", appsRoot);
+    var module = new ProjectTreeNode(
+        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.core.lockScreen", app);
+    var defaultVariant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleVariant, "module::variant::default", "Default", "", "module.variant", module,
+        isProtected: true);
+    var customVariant = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleVariant, "module::variant::custom", "Custom", "", "module.variant", module);
+
+    True(!appsRoot.CanAddChild);
+    True(app.CanRenameDirectly);
+    True(!app.CanAddChild);
+    True(!app.CanDuplicate);
+    True(!app.CanDelete);
+    True(module.CanRenameDirectly);
+    True(!module.CanAddChild);
+    True(!module.CanDuplicate);
+    True(!module.CanDelete);
+    True(defaultVariant.CanRenameDirectly);
+    True(defaultVariant.CanDuplicate);
+    True(!defaultVariant.CanDelete);
+    True(customVariant.CanRenameDirectly);
+    True(customVariant.CanDuplicate);
+    True(customVariant.CanDelete);
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-definition-lifecycle-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var currentAppsRoot = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.AppsRoot);
+        var currentApp = nodes.Single((node) => node.Id == "app_core_chat");
+        var currentModule = nodes.Single((node) => node.Id == "module_core_chat");
+        var currentDefaultVariant = currentModule.Children.Single((node) => node.IsProtected);
+
+        Throws<InvalidOperationException>(() => database.AddChild(currentAppsRoot));
+        Throws<InvalidOperationException>(() => database.AddChild(currentModule));
+        Throws<InvalidOperationException>(() => database.Duplicate(currentApp));
+        Throws<InvalidOperationException>(() => database.Duplicate(currentModule));
+        Throws<InvalidOperationException>(() => database.Delete(currentApp));
+        Throws<InvalidOperationException>(() => database.Delete(currentModule));
+
+        var renamedApp = database.RenameDirectNode(currentApp, "Chat renamed");
+        var renamedModule = database.RenameDirectNode(currentModule, "Conversation renamed");
+        var renamedDefaultVariant = database.RenameDirectNode(currentDefaultVariant, "Primary");
+        Equal(currentApp.Id, renamedApp.Id);
+        Equal(currentModule.Id, renamedModule.Id);
+        Equal(currentDefaultVariant.Id, renamedDefaultVariant.Id);
+        Equal("Chat renamed", renamedApp.Name);
+        Equal("Conversation renamed", renamedModule.Name);
+        Equal("Primary", renamedDefaultVariant.Name);
+
+        var copiedVariant = database.Duplicate(renamedDefaultVariant);
+        True(copiedVariant.Id != renamedDefaultVariant.Id);
+        True(copiedVariant.CanDelete);
+        database.Delete(copiedVariant);
+        Throws<InvalidOperationException>(() => database.Delete(renamedDefaultVariant));
+
+        var reloaded = Descendants(database.LoadProjectTree()).ToList();
+        Equal("Chat renamed", reloaded.Single((node) => node.Id == currentApp.Id).Name);
+        Equal("Conversation renamed", reloaded.Single((node) => node.Id == currentModule.Id).Name);
+        Equal("Primary", reloaded.Single((node) => node.Id == currentDefaultVariant.Id).Name);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ModuleParentsFollowComponentVariantSelection()

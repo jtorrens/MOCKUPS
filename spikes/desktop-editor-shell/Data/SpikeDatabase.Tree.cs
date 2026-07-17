@@ -479,33 +479,6 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("Project children are created through explicit Apps/Episodes roots.");
         }
 
-        if (parent.Kind == ProjectTreeNodeKind.AppsRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var index = NextSortOrder(connection, "apps", "project_id", project.Id);
-            var id = $"app_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO apps (id, project_id, record_class_id, name, notes, sort_order)
-                VALUES ($id, $projectId, $recordClassId, $name, $notes, $sortOrder)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$recordClassId", "app.generic"),
-                ("$name", $"App {index + 1}"),
-                ("$notes", "New app created in the desktop shell spike."),
-                ("$sortOrder", index));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.App,
-                id,
-                $"App {index + 1}",
-                "New app created in the desktop shell spike.",
-                "app.generic",
-                parent);
-        }
-
         if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
         {
             var project = ProjectAncestor(parent);
@@ -859,29 +832,6 @@ internal sealed partial class SpikeDatabase
                 node.Parent);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.App)
-        {
-            var id = $"app_{Guid.NewGuid():N}";
-            var project = node.Parent?.Parent ?? throw new InvalidOperationException("App has no project parent.");
-            var sortOrder = NextSortOrder(connection, "apps", "project_id", project.Id);
-            Execute(
-                connection,
-                """
-                INSERT INTO apps (id, project_id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json)
-                SELECT $id, project_id, record_class_id, $name, bundle_key || '-copy', app_type, notes, $sortOrder, config_json, metadata_json
-                FROM apps
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sortOrder", sortOrder),
-                ("$sourceId", node.Id));
-
-            DuplicateModules(connection, node.Id, id);
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.App, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
-        }
-
         if (node.Kind == ProjectTreeNodeKind.PaletteColor)
         {
             var id = $"palette_{Guid.NewGuid():N}";
@@ -905,26 +855,6 @@ internal sealed partial class SpikeDatabase
                 node.Parent,
                 node.ColorHex,
                 false);
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.Module)
-        {
-            var id = $"module_{Guid.NewGuid():N}";
-            var sortOrder = NextSortOrder(connection, "modules", "app_id", node.Parent!.Id);
-            Execute(
-                connection,
-                """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json)
-                SELECT $id, app_id, record_class_id, $name, notes, $sortOrder, config_json, design_preview_json, metadata_json
-                FROM modules
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sortOrder", sortOrder),
-                ("$sourceId", node.Id));
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.Module, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Device)
@@ -1065,8 +995,6 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.Episode => "episodes",
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.App => "apps",
-            ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
             ProjectTreeNodeKind.PaletteColor => "palette_colors",
             ProjectTreeNodeKind.Device => "devices",
@@ -1228,6 +1156,7 @@ internal sealed partial class SpikeDatabase
     {
         return node.Kind switch
         {
+            ProjectTreeNodeKind.App => RenameApp(node, name),
             ProjectTreeNodeKind.ComponentClass => RenameComponentClass(node, name),
             ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
             ProjectTreeNodeKind.Module => RenameModuleClass(node, name),
@@ -1235,6 +1164,20 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.ModuleInstance => RenameModuleInstance(node, name),
             _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
         };
+    }
+
+    private ProjectTreeNode RenameApp(ProjectTreeNode node, string name)
+    {
+        var nextName = name.Trim();
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            throw new InvalidOperationException("App name cannot be empty.");
+        }
+
+        using var connection = OpenConnection();
+        Execute(connection, "UPDATE apps SET name = $name WHERE id = $id", ("$name", nextName), ("$id", node.Id));
+        return new ProjectTreeNode(ProjectTreeNodeKind.App, node.Id, nextName, node.Notes,
+            node.RecordClassId, node.Parent, isUsed: node.IsUsed, isProtected: node.IsProtected, isLocked: node.IsLocked);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

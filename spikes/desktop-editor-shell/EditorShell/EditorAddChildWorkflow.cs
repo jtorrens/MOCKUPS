@@ -31,6 +31,11 @@ internal sealed class EditorAddChildWorkflow
 
     public async Task<ProjectTreeNode?> TryAdd(ProjectTreeNode parent)
     {
+        if (!parent.CanAddChild)
+        {
+            return null;
+        }
+
         if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
         {
             return await ImportProductionFont(parent);

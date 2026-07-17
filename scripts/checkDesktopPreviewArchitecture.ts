@@ -255,6 +255,23 @@ function assertPropertyBlockDoesNotContain(
   }
 }
 
+function assertPropertyBlockContainsKind(
+  relativePath: string,
+  propertyName: string,
+  kind: string,
+  expected: boolean,
+  message: string,
+) {
+  const source = readText(relativePath);
+  const match = new RegExp(`public bool ${propertyName} =>[\\s\\S]*?;`).exec(source);
+  if (!match) {
+    addViolation(relativePath, `could not find ${propertyName} permission block`);
+    return;
+  }
+  const contains = new RegExp(`ProjectTreeNodeKind\\.${kind}(?![A-Za-z0-9_])`).test(match[0]);
+  if (contains !== expected) addViolation(relativePath, message);
+}
+
 function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) {
@@ -454,15 +471,6 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
       ] as const) {
         visit(`${row.owner_type} ${row.id}.${column}`, JSON.parse(json), "$");
       }
-    }
-    const retiredGenericLayouts = database.prepare(
-      "SELECT COUNT(*) AS count FROM editor_layouts WHERE record_class_id = 'module.generic'",
-    ).get() as { count: number };
-    if (retiredGenericLayouts.count > 0) {
-      addViolation(
-        "data/desktop-editor-spike.sqlite",
-        "retired module.generic editor fallback remains in the current database",
-      );
     }
   } finally {
     database.close();
@@ -1881,6 +1889,33 @@ assertPropertyBlockDoesNotContain(
   "ProjectTreeNodeKind.StatusBarsRoot",
   "legacy status bar root must not expose Add; system bars are component presets",
 );
+assertPropertyBlockContainsKind(
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "CanAddChild",
+  "AppsRoot",
+  false,
+  "Apps root must not expose Add; App definitions are development-owned",
+);
+for (const propertyName of ["CanDuplicate", "CanDelete"]) {
+  for (const kind of ["App", "Module"]) {
+    assertPropertyBlockContainsKind(
+      "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+      propertyName,
+      kind,
+      false,
+      `${kind} definitions must not expose ${propertyName.replace("Can", "")}`,
+    );
+  }
+}
+for (const kind of ["App", "Module", "ModuleVariant"]) {
+  assertPropertyBlockContainsKind(
+    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "CanRenameDirectly",
+    kind,
+    true,
+    `${kind} must expose Rename without changing its stable id`,
+  );
+}
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
@@ -2406,6 +2441,22 @@ for (const retiredGenericModulePath of [
     "undeclared generic module fallback must not return",
   );
 }
+for (const retiredGenericAppPath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+]) {
+  assertDoesNotContain(
+    retiredGenericAppPath,
+    "app.generic",
+    "retired generic App fallback must not return",
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "if (parent.Kind == ProjectTreeNodeKind.AppsRoot)",
+  "repository must not create Apps through generic Add Child",
+);
 assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", [
   "\"audio\"",
   "\"avatar\"",
@@ -2508,16 +2559,15 @@ assertContains(
   "Component variants can only be saved from an active selected variant.",
   "component variant saving must reject ambiguous parent component class configs",
 );
-assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "Kind is ProjectTreeNodeKind.ComponentClass",
-  "parent component classes and component presets must expose direct rename",
-);
-assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "or ProjectTreeNodeKind.ComponentPreset",
-  "protected component presets must expose direct rename through the standard variant action",
-);
+for (const kind of ["ComponentClass", "ComponentPreset"]) {
+  assertPropertyBlockContainsKind(
+    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "CanRenameDirectly",
+    kind,
+    true,
+    `${kind} must expose direct rename through the standard variant action`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected)",
@@ -3655,6 +3705,28 @@ function assertDesktopDatabaseHasNoRetiredEditorLayouts() {
   }
 }
 
+function assertDesktopDatabaseHasCurrentDefinitionLifecycle() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const genericApps = database.prepare(
+      "SELECT id FROM apps WHERE record_class_id = 'app.generic'",
+    ).all() as { id: string }[];
+    for (const app of genericApps) {
+      addViolation("data/desktop-editor-spike.sqlite", `contains retired generic App ${app.id}`);
+    }
+    const genericLayouts = database.prepare(
+      "SELECT record_class_id FROM editor_layouts WHERE record_class_id IN ('app.generic', 'module.generic')",
+    ).all() as { record_class_id: string }[];
+    for (const layout of genericLayouts) {
+      addViolation("data/desktop-editor-spike.sqlite", `contains retired generic editor layout ${layout.record_class_id}`);
+    }
+  } finally {
+    database.close();
+  }
+}
+
 function assertModuleInstanceRuntimePayloadsMatchContracts() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
@@ -3719,6 +3791,7 @@ assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();
 assertDesktopDatabaseHasNoRetiredTimeFields();
 assertDesktopDatabaseHasNoRetiredEditorLayouts();
+assertDesktopDatabaseHasCurrentDefinitionLifecycle();
 assertDesktopRuntimeInputValueKindsAreCanonical();
 assertModuleInstanceRuntimePayloadsMatchContracts();
 

@@ -199,6 +199,15 @@ dictionary registry must exhaustively register every `ValueKind`. Missing or
 unknown routes, payload documents, kinds and value kinds fail explicitly. See
 `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`.
 
+App and Module definition nodes expose Rename as their only lifecycle action.
+Creating, duplicating or deleting either definition belongs to the explicit
+development/scaffolding process that also supplies its manifest route,
+resolver, renderable, contract and migration. Module Variants remain authored
+data: they may be created by cloning the active complete Variant, duplicated
+and renamed; deletion is allowed only when the Variant is unused, unlocked and
+not protected. The protected default Variant may be renamed but never deleted.
+All these operations preserve stable ids and full Variant references.
+
 ## Data migrations, not compatibility fallbacks
 
 When a persisted schema, token vocabulary, contract field, or identifier changes,

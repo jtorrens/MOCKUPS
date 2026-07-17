@@ -41,34 +41,6 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static void DuplicateModules(SqliteConnection connection, string sourceAppId, string targetAppId)
-    {
-        var sourceModules = QueryModuleRows(connection)
-            .Where((module) => module.AppId == sourceAppId)
-            .OrderBy((module) => module.SortOrder)
-            .ToList();
-
-        for (var index = 0; index < sourceModules.Count; index++)
-        {
-            var module = sourceModules[index];
-            Execute(
-                connection,
-                """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json)
-                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $configJson, $designPreviewJson, $metadataJson)
-                """,
-                ("$id", $"module_{Guid.NewGuid():N}"),
-                ("$appId", targetAppId),
-                ("$recordClassId", module.RecordClassId),
-                ("$name", module.Name),
-                ("$notes", module.Notes),
-                ("$sortOrder", index),
-                ("$configJson", module.ConfigJson),
-                ("$designPreviewJson", module.DesignPreviewJson),
-                ("$metadataJson", module.MetadataJson));
-        }
-    }
-
     public ShotSettings GetShotSettings(string shotId)
     {
         using var connection = OpenConnection();

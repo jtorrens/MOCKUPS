@@ -280,8 +280,6 @@ internal sealed partial class SpikeDatabase
     public ProjectTreeNode RenameModuleVariant(ProjectTreeNode node, string name) =>
         UpdateModuleVariantMetadata(node, (variant) =>
         {
-            if (JsonBool(variant, ["protected"]))
-                throw new InvalidOperationException("Protected module variants cannot be renamed.");
             variant["name"] = name.Trim();
         }, name.Trim());
 

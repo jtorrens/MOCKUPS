@@ -140,7 +140,6 @@ internal static class EditorNavigationMetadata
     {
         return node.Kind switch
         {
-            ProjectTreeNodeKind.AppsRoot => "Add app",
             ProjectTreeNodeKind.ComponentClassGroup => "Add component",
             ProjectTreeNodeKind.ComponentClass => "Add variant",
             ProjectTreeNodeKind.EpisodesRoot => "Add episode",

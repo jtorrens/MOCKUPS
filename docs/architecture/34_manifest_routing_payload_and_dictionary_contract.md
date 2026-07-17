@@ -72,6 +72,22 @@ its declared entrypoints in the same change. A module without an implemented
 resolver/renderable route is not creatable. There is no `module.generic` or
 generic Add Module fallback.
 
+### 2.1 Definition lifecycle
+
+App and Module definition nodes are development-owned. In the desktop editor
+their only lifecycle action is Rename. The editor must not create, duplicate or
+delete either definition, and the Apps root must not expose Add. A new App or
+Module enters current data only through an explicit development/scaffolding
+change that supplies its stable identity, complete contract, manifest route,
+resolver, renderable and required migration together.
+
+Module Variants are user-authored data inside an existing Module definition.
+The active complete Variant may be cloned to create or duplicate another
+Variant. Variants may be renamed without changing their stable id or any full
+Variant reference. A Variant may be deleted only when it is unused, unlocked
+and not protected. The protected default Variant may be renamed but cannot be
+deleted. No operation may infer a Variant from its name, index or position.
+
 ## 3. Registries route only
 
 Component, module and design-kind registries are maps from an explicit stable
@@ -233,7 +249,8 @@ defaults, module routes or repaired JSON.
 - exhaustive dictionary registry coverage;
 - strict Runtime Input kind/value-kind parsing;
 - manifest and Runtime Input parity in the committed database;
-- absence of retired generic module creation/layout paths.
+- absence of retired generic App/Module creation and layout paths;
+- rename-only App/Module definition permissions and repository enforcement.
 
 The architecture check complements compilation, strict database validation and
 behavioral tests. It does not replace them.
@@ -258,6 +275,7 @@ Before a routing, payload or dictionary change is complete:
 ## 11. Forbidden shortcuts
 
 - adding a component or module to only one language or registry;
+- creating, duplicating or deleting an App or Module from generic tree actions;
 - creating a generic module before its owner resolver/renderable exists;
 - returning an unsupported visual node for unknown current data;
 - defaulting a missing payload JSON document to `{}`;

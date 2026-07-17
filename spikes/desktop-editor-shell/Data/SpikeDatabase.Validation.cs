@@ -84,6 +84,7 @@ internal sealed partial class SpikeDatabase
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
         ValidateCurrentEditorLayouts(connection);
+        ValidateCurrentDefinitionLifecycle(connection);
         ValidateCurrentPreviewManifest(connection);
         ValidateCurrentRuntimeInputContracts(connection);
         ValidateCurrentReferences(connection);
@@ -123,6 +124,18 @@ internal sealed partial class SpikeDatabase
                     $"module '{id}' uses undeclared preview class '{moduleClass}'");
             }
         }
+    }
+
+    private void ValidateCurrentDefinitionLifecycle(SqliteConnection connection)
+    {
+        RequireNoRows(
+            connection,
+            "SELECT 1 FROM apps WHERE record_class_id = 'app.generic'",
+            "retired generic App definition");
+        RequireNoRows(
+            connection,
+            "SELECT 1 FROM editor_layouts WHERE record_class_id IN ('app.generic', 'module.generic')",
+            "retired generic App or Module editor layout");
     }
 
     private void ValidateCurrentRuntimeInputContracts(SqliteConnection connection)

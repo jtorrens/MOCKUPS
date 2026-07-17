@@ -119,7 +119,7 @@ internal sealed class EditorNodeCommandController
 
     public void DuplicateNode(ProjectTreeNode node)
     {
-        if (node.Parent is null) return;
+        if (node.Parent is null || !node.CanDuplicate) return;
 
         var copy = _database.Duplicate(node);
         _reloadAndSelect(copy);
@@ -176,7 +176,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task DeleteNode(ProjectTreeNode node)
     {
-        if (node.Parent is null) return;
+        if (node.Parent is null || !node.CanDelete) return;
 
         var deleteNodeId = node.Id;
         _loadProjectTree();

@@ -75,8 +75,7 @@ internal sealed class ProjectTreeNode
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
-    public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
-        or ProjectTreeNodeKind.PaletteRoot
+    public bool CanAddChild => Kind is ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.IconThemesRoot
         or ProjectTreeNodeKind.RenderPresetsRoot
         or ProjectTreeNodeKind.DevicesRoot
@@ -86,9 +85,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.EpisodesRoot
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot;
-    public bool CanDuplicate => Kind is ProjectTreeNodeKind.App
-        or ProjectTreeNodeKind.Module
-        or ProjectTreeNodeKind.ModuleVariant
+    public bool CanDuplicate => Kind is ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
@@ -99,11 +96,13 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
-    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleInstance
-        || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected);
-    public bool CanDelete => Kind is ProjectTreeNodeKind.App
+    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.App
+        or ProjectTreeNodeKind.ComponentClass
+        or ProjectTreeNodeKind.ComponentPreset
         or ProjectTreeNodeKind.Module
-        or ProjectTreeNodeKind.ModuleInstance
+        or ProjectTreeNodeKind.ModuleVariant
+        or ProjectTreeNodeKind.ModuleInstance;
+    public bool CanDelete => Kind is ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
@@ -157,7 +156,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.ThemesRoot => "navigation.themes",
             ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
-            ProjectTreeNodeKind.App => "app.generic",
             ProjectTreeNodeKind.ModuleVariant => "module.variant",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
