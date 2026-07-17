@@ -3511,9 +3511,9 @@ static void LockScreenComposesRuntimeStack()
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
         var values = new RecordClassFieldValueService(database);
         True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);
-        Equal(240, ModuleInstanceTimeline.DurationFrames(database, lockScreenInstance.Id));
+        Equal(240, ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id));
         database.UpdateModuleInstanceField(lockScreenInstance.Id, "moduleInstance.durationFrames", "180");
-        Equal(180, ModuleInstanceTimeline.DurationFrames(database, lockScreenInstance.Id));
+        Equal(180, ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id));
 
         var conversationInstance = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId == "module.core.chat");
@@ -3582,7 +3582,7 @@ static void LockScreenComposesRuntimeStack()
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 30));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id) + 30));
         var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",
@@ -3601,7 +3601,7 @@ static void LockScreenComposesRuntimeStack()
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(database, lockScreenInstance.Id) + 40));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id) + 40));
         var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             "light",

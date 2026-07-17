@@ -31,6 +31,7 @@ internal sealed class EditorPreviewController
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly SpikeDatabase _database;
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
+    private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
@@ -155,7 +156,7 @@ internal sealed class EditorPreviewController
     {
         var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
         var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
-        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
         return Math.Clamp(_shotPreviewFrame - start, 0, duration - 1);
     }
 
@@ -163,7 +164,7 @@ internal sealed class EditorPreviewController
     {
         var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
         var start = ModuleInstanceStartFrame(instance.ShotId, moduleInstanceId);
-        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
         SetShotPreviewFrame(start + Math.Clamp(localFrame, 0, duration - 1));
     }
 
@@ -236,6 +237,7 @@ internal sealed class EditorPreviewController
     {
         _database = database;
         _previewPayloadData = new DesignPreviewPayloadDataSource(database);
+        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -2190,7 +2192,7 @@ internal sealed class EditorPreviewController
             return;
         }
         var contextNode = ProductionContextNode();
-        var duration = ModuleInstanceTimeline.ShotDurationFrames(_database, shotId);
+        var duration = ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId);
         if (_shotTimelineShotId != shotId || _shotTimelineContextNodeId != contextNode?.Id)
         {
             _shotTimelineShotId = shotId;
@@ -2243,18 +2245,18 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(shotId)) return (0, 0, 1);
         if (ProductionContextNode() is { Kind: ProjectTreeNodeKind.ModuleInstance } screen)
             return ScreenFrameRange(shotId, screen.Id);
-        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
+        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId));
         return (0, shotDuration - 1, shotDuration);
     }
 
     private (int StartFrame, int EndFrame, int DurationFrames) ActiveScreenFrameRange(string shotId)
     {
-        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId));
+        var shotDuration = Math.Max(1, ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId));
         var slots = _database.GetShotModuleInstanceSlots(shotId);
         var index = ActiveShotSlotIndex(shotId);
         if (index < 0 || index >= slots.Count) return (0, shotDuration - 1, shotDuration);
         var start = ModuleInstanceStartFrame(shotId, slots[index].Id);
-        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, slots[index].Id));
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index].Id));
         return (start, start + duration - 1, duration);
     }
 
@@ -2275,7 +2277,7 @@ internal sealed class EditorPreviewController
     {
         var shotId = ProductionShotId();
         return !string.IsNullOrWhiteSpace(shotId)
-            ? Math.Max(0, ModuleInstanceTimeline.ShotDurationFrames(_database, shotId) - 1)
+            ? Math.Max(0, ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId) - 1)
             : 0;
     }
 
@@ -2285,7 +2287,7 @@ internal sealed class EditorPreviewController
         var slots = _database.GetShotModuleInstanceSlots(shotId);
         for (var index = 0; index < slots.Count; index++)
         {
-            cursor += ModuleInstanceTimeline.DurationFrames(_database, slots[index].Id);
+            cursor += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index].Id);
             if (_shotPreviewFrame < cursor) return index;
         }
         return slots.Count - 1;
@@ -2313,7 +2315,7 @@ internal sealed class EditorPreviewController
         var range = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
             ? ScreenFrameRange(shotId, contextNode.Id)
             : ActiveScreenFrameRange(shotId);
-        return ModuleInstanceTimeline.ShotKeyframeFrames(_database, shotId)
+        return ModuleInstanceTimeline.ShotKeyframeFrames(_timelineDataSource, shotId)
             .Where((frame) => frame >= range.StartFrame && frame <= range.EndFrame)
             .ToList();
     }
@@ -2323,7 +2325,7 @@ internal sealed class EditorPreviewController
         string moduleInstanceId)
     {
         var start = ModuleInstanceStartFrame(shotId, moduleInstanceId);
-        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId));
+        var duration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
         return (start, start + duration - 1, duration);
     }
 
@@ -2343,7 +2345,7 @@ internal sealed class EditorPreviewController
         foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
         {
             if (slot.Id == instanceId) return start;
-            start += ModuleInstanceTimeline.DurationFrames(_database, slot.Id);
+            start += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
         }
         return 0;
     }
@@ -2633,7 +2635,7 @@ internal sealed class EditorPreviewController
         {
             foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
             {
-                var duration = ModuleInstanceTimeline.DurationFrames(_database, slot.Id);
+                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
                 if (slot.Id == screenId)
                 {
                     durationFrames = duration;
@@ -2795,7 +2797,7 @@ internal sealed class EditorPreviewController
             var frame = 0;
             foreach (var slot in _database.GetShotModuleInstanceSlots(shotId))
             {
-                var duration = ModuleInstanceTimeline.DurationFrames(_database, slot.Id);
+                var duration = ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id);
                 if (_shotPreviewFrame < frame + duration)
                 {
                     instanceId = slot.Id;

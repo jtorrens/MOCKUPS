@@ -9,10 +9,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RecordClassFieldValueService
 {
     private readonly SpikeDatabase _database;
+    private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public RecordClassFieldValueService(SpikeDatabase database)
     {
         _database = database;
+        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
     }
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)
@@ -248,7 +250,7 @@ internal sealed class RecordClassFieldValueService
             "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.variant" => _database.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
-            "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_database, moduleInstanceId).ToString(),
+            "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId).ToString(),
             "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
@@ -262,7 +264,7 @@ internal sealed class RecordClassFieldValueService
             "shot.slug" => settings.Slug,
             "shot.version" => settings.Version.ToString(),
             "shot.sortOrder" => settings.SortOrder.ToString(),
-            "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_database, shotId).ToString(),
+            "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),

@@ -151,6 +151,10 @@ The first part of item 6 is now established by contract 51:
 `DesignPreviewPayloadFactory`. Further resolver-data extractions must preserve
 that typed boundary and proceed as separately validated slices.
 
+Contract 52 establishes the next part: `ModuleInstanceTimelineDataSource`
+supplies exact current timeline inputs while `ModuleInstanceTimeline` retains
+all duration and owner-frame formulas without a database dependency.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

@@ -251,6 +251,38 @@ assertContains(
   "_previewPayloadData = new DesignPreviewPayloadDataSource(database)",
   "the Preview controller must reuse one typed payload data source",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/52_module_instance_timeline_data_boundary_contract.md",
+  "AGENTS must require the Module Instance timeline data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "52_module_instance_timeline_data_boundary_contract.md",
+  "the architecture index must include contract 52",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimeline.cs",
+  "SpikeDatabase",
+  "the common Module Instance timeline must consume only its typed data source",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the timeline data source must own the timeline route's database dependency",
+);
+for (const forbiddenTimelineDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+    forbiddenTimelineDataSql,
+    `the timeline data source must compose current services rather than owning SQL (${forbiddenTimelineDataSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "_timelineDataSource = new ModuleInstanceTimelineDataSource(database)",
+  "the Preview payload data source must reuse the typed timeline boundary",
+);
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",
@@ -3825,7 +3857,7 @@ assertMatches(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "ModuleInstanceTimeline.ShotKeyframeFrames(_database, shotId)",
+  "ModuleInstanceTimeline.ShotKeyframeFrames(_timelineDataSource, shotId)",
   "Shot navigation must aggregate keyframes from every Screen before selecting the current Screen range",
 );
 assertContains(
@@ -4166,7 +4198,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  "ModuleInstanceTimeline.DurationFrames(_database, node.Id)",
+  "ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id)",
   "animation authoring panels must use their containing Screen scale",
 );
 assertContains(

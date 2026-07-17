@@ -57,10 +57,12 @@ internal sealed record DesignPreviewShotSlot(
 internal sealed class DesignPreviewPayloadDataSource
 {
     private readonly SpikeDatabase _database;
+    private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public DesignPreviewPayloadDataSource(SpikeDatabase database)
     {
         _database = database;
+        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
     }
 
     public DesignPreviewThemeContext? LoadThemeContext(
@@ -164,7 +166,7 @@ internal sealed class DesignPreviewPayloadDataSource
                 slot.Id,
                 slot.Name,
                 slot.ModuleName,
-                ModuleInstanceTimeline.DurationFrames(_database, slot.Id)))
+                ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id)))
             .ToList();
     }
 

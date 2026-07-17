@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Common;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,42 +7,41 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ModuleInstanceTimeline
 {
-    public static int DurationFrames(SpikeDatabase database, string moduleInstanceId)
+    public static int DurationFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
-        var instance = database.GetModuleInstanceSettings(moduleInstanceId);
-        var contract = database.GetModuleInstanceEffectiveContractJson(moduleInstanceId);
-        if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit)
-            return System.Math.Max(1, instance.DurationFrames);
+        var source = dataSource.Load(moduleInstanceId);
+        if (RuntimeDurationContract.Policy(source.EffectiveContractJson) == RuntimeDurationPolicy.Explicit)
+            return System.Math.Max(1, source.PersistedDurationFrames);
         return RuntimeTimeline.DurationFrames(
-            contract,
-            instance.ContentJson,
-            instance.AnimationJson,
-            instance.DurationFrames,
-            database.GetModuleInstanceThemeTokensJson(moduleInstanceId));
+            source.EffectiveContractJson,
+            source.ContentJson,
+            source.AnimationJson,
+            source.PersistedDurationFrames,
+            source.ThemeTokensJson);
     }
 
-    public static int ShotDurationFrames(SpikeDatabase database, string shotId) =>
-        database.GetShotModuleInstanceSlots(shotId).Sum((slot) => DurationFrames(database, slot.Id));
+    public static int ShotDurationFrames(ModuleInstanceTimelineDataSource dataSource, string shotId) =>
+        dataSource.ShotSlotIds(shotId).Sum((slotId) => DurationFrames(dataSource, slotId));
 
-    public static int ScreenStartFrame(SpikeDatabase database, string moduleInstanceId)
+    public static int ScreenStartFrame(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
-        var instance = database.GetModuleInstanceSettings(moduleInstanceId);
+        var source = dataSource.Load(moduleInstanceId);
         var start = 0;
-        foreach (var slot in database.GetShotModuleInstanceSlots(instance.ShotId))
+        foreach (var slotId in dataSource.ShotSlotIds(source.ShotId))
         {
-            if (slot.Id == moduleInstanceId) return start;
-            start += DurationFrames(database, slot.Id);
+            if (slotId == moduleInstanceId) return start;
+            start += DurationFrames(dataSource, slotId);
         }
         return 0;
     }
 
-    public static IReadOnlyList<int> KeyframeFrames(SpikeDatabase database, string moduleInstanceId)
+    public static IReadOnlyList<int> KeyframeFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
-        var instance = database.GetModuleInstanceSettings(moduleInstanceId);
-        var contract = Parse(database.GetModuleInstanceEffectiveContractJson(moduleInstanceId));
-        var runtime = Parse(database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId));
-        var animation = Parse(instance.AnimationJson);
-        var themeTokens = Parse(database.GetModuleInstanceThemeTokensJson(moduleInstanceId));
+        var source = dataSource.Load(moduleInstanceId);
+        var contract = Parse(source.EffectiveContractJson);
+        var runtime = Parse(source.RuntimePreviewJson);
+        var animation = Parse(source.AnimationJson);
+        var themeTokens = Parse(source.ThemeTokensJson);
         return (animation["tracks"] as JsonArray)?.OfType<JsonObject>()
             .SelectMany((track) =>
             {
@@ -66,14 +64,14 @@ internal static class ModuleInstanceTimeline
             .ToList() ?? [];
     }
 
-    public static IReadOnlyList<int> ShotKeyframeFrames(SpikeDatabase database, string shotId)
+    public static IReadOnlyList<int> ShotKeyframeFrames(ModuleInstanceTimelineDataSource dataSource, string shotId)
     {
         var result = new List<int>();
         var screenStart = 0;
-        foreach (var slot in database.GetShotModuleInstanceSlots(shotId))
+        foreach (var slotId in dataSource.ShotSlotIds(shotId))
         {
-            result.AddRange(KeyframeFrames(database, slot.Id).Select((frame) => screenStart + frame));
-            screenStart += DurationFrames(database, slot.Id);
+            result.AddRange(KeyframeFrames(dataSource, slotId).Select((frame) => screenStart + frame));
+            screenStart += DurationFrames(dataSource, slotId);
         }
         return result.Distinct().Order().ToList();
     }

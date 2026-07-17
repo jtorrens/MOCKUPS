@@ -380,6 +380,12 @@ retains forwarding, effective runtime envelopes and absolute Shot to local
 Screen frame selection. This is the first Preview/resolver-data slice in the
 final extraction item of contract 36.
 
+Timeline data access is governed by
+`52_module_instance_timeline_data_boundary_contract.md`. The common Module
+Instance/Shot timeline now consumes typed current documents and ordered stable
+Screen ids rather than the complete database facade; all duration, origin and
+keyframe projection formulas remain in `ModuleInstanceTimeline`.
+
 ## Guardrails
 
 Reject new changes that add:

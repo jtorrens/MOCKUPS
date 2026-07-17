@@ -25,6 +25,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/49_component_definition_source_contract.md`
 - `docs/architecture/50_module_definition_source_contract.md`
 - `docs/architecture/51_preview_payload_data_boundary_contract.md`
+- `docs/architecture/52_module_instance_timeline_data_boundary_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -300,6 +301,12 @@ Preview payload data access follows
 boundary and contains no SQL. The factory retains forwarding, effective runtime
 envelopes and Shot-to-Screen frame selection; resolvers, bridge and renderer
 retain their established semantic and generic boundaries.
+
+Timeline data access follows
+`docs/architecture/52_module_instance_timeline_data_boundary_contract.md`.
+`ModuleInstanceTimelineDataSource` supplies current documents and ordered stable
+Screen ids without SQL; `ModuleInstanceTimeline` alone owns duration, Screen
+origin and keyframe projections and must not accept `SpikeDatabase`.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

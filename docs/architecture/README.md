@@ -80,6 +80,9 @@ this index wins.
 - `51_preview_payload_data_boundary_contract.md`: typed desktop data access for
   Preview payload construction, separated from forwarding, temporal-envelope
   and Shot-to-Screen selection semantics owned by the payload factory.
+- `52_module_instance_timeline_data_boundary_contract.md`: typed read access
+  for current Screen/Shot timeline inputs, separated from contract-owned
+  duration, owner-origin and keyframe projection formulas.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
