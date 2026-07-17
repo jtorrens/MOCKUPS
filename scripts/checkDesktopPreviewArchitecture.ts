@@ -122,6 +122,12 @@ function assertSourceContains(sourceLabel: string, source: string, term: string,
   }
 }
 
+function assertSourceDoesNotContain(sourceLabel: string, source: string, term: string, message: string) {
+  if (source.includes(term)) {
+    addViolation(sourceLabel, message);
+  }
+}
+
 function assertAnyContains(relativePaths: string[], term: string, message: string) {
   const found = relativePaths.some((relativePath) => {
     const fullPath = path.join(root, relativePath);
@@ -159,6 +165,36 @@ function assertFilesDoNotContain(files: readonly string[], term: string, message
 const currentRepositoryFiles = walkFilesByExtension(
   path.join(root, "spikes", "desktop-editor-shell", "Data"),
   [".cs"],
+);
+const retiredComponentDefaultsPath = "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs";
+if (existsSync(path.join(root, retiredComponentDefaultsPath))) {
+  addViolation(
+    retiredComponentDefaultsPath,
+    "dormant runtime component seed/default catalogs must not return; use explicit development scaffolding",
+  );
+}
+for (const retiredComponentFactoryTerm of [
+  "ComponentSeedRow",
+  "ComponentSeedRows",
+  "NewComponentSeed",
+  "DefaultComponentClassConfigJson",
+  "DefaultComponentDesignPreviewJson",
+]) {
+  assertFilesDoNotContain(
+    currentRepositoryFiles,
+    retiredComponentFactoryTerm,
+    `runtime Data sources must not contain retired component factory ${retiredComponentFactoryTerm}`,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/49_component_definition_source_contract.md",
+  "AGENTS must require the Component definition source contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "49_component_definition_source_contract.md",
+  "the architecture index must include contract 49",
 );
 assertFilesDoNotContain(
   currentRepositoryFiles,
@@ -2573,6 +2609,7 @@ type CurrentComponentClassRow = {
   component_type: string;
   record_class_id: string;
   config_json: string;
+  design_preview_json: string;
   metadata_json: string;
 };
 type CurrentModuleClassRow = {
@@ -2582,6 +2619,7 @@ type CurrentModuleClassRow = {
 let currentComponentClassRows: CurrentComponentClassRow[] = [];
 let currentModuleClassRows: CurrentModuleClassRow[] = [];
 let editorLayoutSource = "";
+let componentContractSource = "";
 let moduleContractSource = "";
 const editorLayoutRecordClassIds = new Set<string>();
 if (!existsSync(desktopDatabasePath)) {
@@ -2611,8 +2649,11 @@ if (!existsSync(desktopDatabasePath)) {
       );
     }
     currentComponentClassRows = database
-      .prepare("SELECT id, component_type, record_class_id, config_json, metadata_json FROM component_classes")
+      .prepare("SELECT id, component_type, record_class_id, config_json, design_preview_json, metadata_json FROM component_classes")
       .all() as CurrentComponentClassRow[];
+    componentContractSource = currentComponentClassRows
+      .flatMap((row) => [row.config_json, row.design_preview_json, row.metadata_json])
+      .join("\n");
     currentModuleClassRows = database
       .prepare("SELECT id, record_class_id FROM modules")
       .all() as CurrentModuleClassRow[];
@@ -2904,15 +2945,9 @@ for (const collectionEditorPath of [
     );
   }
 }
-assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-  "\"actor\",",
-  "component input seeds must use generic recordReference + tableId, not a special actor input kind",
-);
 for (const recordReferenceSpecializationPath of [
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
 ]) {
   for (const forbiddenRecordReferenceSpecialization of [
     "ActorReference",
@@ -2993,10 +3028,11 @@ for (const legacyTextBoxComponentInput of [
   "\"leftIconRowPresetId\"",
   "\"rightIconRowPresetId\"",
 ]) {
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+  assertSourceDoesNotContain(
+    "data/desktop-editor-spike.sqlite",
+    componentContractSource,
     legacyTextBoxComponentInput,
-    "text box embedded component inputs must use preset slots, not legacy preset id fields",
+    "current text box embedded component inputs must use preset slots, not legacy preset id fields",
   );
 }
 assertDoesNotContain(
@@ -3177,7 +3213,6 @@ for (const legacyComponentRecordClassId of [
   "component.text_input_bar",
 ]) {
   for (const filePath of [
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
     "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
     "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs",
   ]) {
@@ -3477,16 +3512,6 @@ assertAnyContains(
   desktopPersistenceDataPaths,
   "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
   "theme navigation bar selector must list component presets",
-);
-assertAnyContains(
-  desktopPersistenceDataPaths,
-  "[\"id\"] = DefaultComponentPresetId",
-  "component class normalization must create a Default preset",
-);
-assertAnyContains(
-  desktopPersistenceDataPaths,
-  "[\"protected\"] = true",
-  "Default component preset must be protected in stored metadata",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/MotionVariantValue.cs",
@@ -3952,10 +3977,11 @@ assertContains(
   'EditorSubcardLayout.VerticalCards',
   "runtime input groups must use the shared vertical-card organization",
 );
-assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
+assertSourceDoesNotContain(
+  "data/desktop-editor-spike.sqlite",
+  componentContractSource,
   '"iconRow::preset::default"',
-  "component input contracts must store concrete component preset references",
+  "current component input contracts must store concrete component preset references",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorTreeExpansionState.cs",
@@ -4138,10 +4164,11 @@ assertContains(
   "destination.Interpolation is \"linear\" or \"easeInOut\"",
   "Runtime Values must resolve numeric keyframes with the generic interpolation contract",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-  '["animationTimeline"] = new JsonObject { ["sequenceItems"] = false }',
-  "Component Stack slots must share a parallel Screen-time origin",
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  componentContractSource,
+  /"componentType":"componentStack"[\s\S]*?"animationTimeline":\{"sequenceItems":false\}/,
+  "current Component Stack slots must share a parallel Screen-time origin",
 );
 assertSourceMatches(
   "data/desktop-editor-spike.sqlite",
@@ -4432,10 +4459,14 @@ assertContains(
   "ValueKind.TypographySystemStyle",
   "system-component typography must use its registered dictionary control route",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs",
-  "TypographyStyleValue.CreateDefault(\"theme.typography.sizes.s\", \"theme.system\")",
-  "new Keyboard variants must use the Theme system-font role",
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  currentComponentClassRows
+    .filter((row) => row.component_type === "keyboard")
+    .flatMap((row) => [row.config_json, row.metadata_json])
+    .join("\n"),
+  /"fontFamilyId":"theme\.system"/,
+  "current Keyboard variants must use the Theme system-font role",
 );
 assertContains(
   "src/desktop-preview/textInputBarComponentResolver.ts",

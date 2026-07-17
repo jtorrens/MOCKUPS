@@ -117,7 +117,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         var value = fieldId == "component.type"
-            ? ComponentTypeLabel(settings.ComponentType)
+            ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
@@ -147,7 +147,7 @@ internal sealed partial class SpikeDatabase
         var settings = GetComponentPresetSettings(presetNode);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         var value = fieldId == "component.type"
-            ? ComponentTypeLabel(settings.ComponentType)
+            ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset

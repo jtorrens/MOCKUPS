@@ -617,29 +617,6 @@ internal sealed partial class SpikeDatabase
         return preview;
     }
 
-    private static JsonObject HeaderButtonCollection(string jsonKey, string label) => new()
-    {
-        ["id"] = jsonKey,
-        ["label"] = label,
-        ["jsonKey"] = jsonKey,
-        ["itemLabel"] = "Button",
-        ["sourceCollectionJsonKey"] = jsonKey,
-        ["fields"] = IconRowButtonFields(),
-        ["itemActions"] = new JsonArray
-        {
-            new JsonObject
-            {
-                ["id"] = "push",
-                ["label"] = "Push",
-                ["playInputId"] = "pushTrigger",
-                ["durationThemeToken"] = "theme.motion.buttonPushedDurationMs",
-                ["timeJsonKey"] = "pushElapsedMs",
-                ["timeUnit"] = "milliseconds",
-                ["prewarmFrames"] = false,
-            },
-        },
-    };
-
     private static JsonObject ConversationPreviewMessage(
         string id,
         string direction,

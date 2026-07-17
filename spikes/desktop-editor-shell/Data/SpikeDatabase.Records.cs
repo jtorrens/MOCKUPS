@@ -140,5 +140,4 @@ internal sealed partial class SpikeDatabase
         string? LightColorHex,
         string? DarkColorHex);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
-    private sealed record ComponentSeedRow(string ComponentType, string RecordClassId, string Name, string ConfigJson, string DesignPreviewJson, string MetadataJson);
 }

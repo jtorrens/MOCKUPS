@@ -22,6 +22,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/46_component_class_definition_persistence_contract.md`
 - `docs/architecture/47_module_instance_persistence_contract.md`
 - `docs/architecture/48_shot_persistence_contract.md`
+- `docs/architecture/49_component_definition_source_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -276,6 +277,13 @@ Exact Actor/Theme context, Module/Variant selection, Screen timing, Shot
 duration aggregation, effective Device, payload preparation and Preview remain
 outside persistence. Shot and Episode duplication must preserve every current
 Shot column and generate new stable ids.
+
+Component definition sources follow
+`docs/architecture/49_component_definition_source_contract.md`. The retired
+runtime Component seed/default catalog must not return. Current manifest,
+committed Component rows, complete Variants, owner implementation and editor
+metadata are the authorities; future Component/Atom scaffolding is an explicit
+development workflow, never normal startup or a generic editor Add action.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

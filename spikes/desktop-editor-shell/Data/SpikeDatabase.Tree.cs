@@ -338,7 +338,7 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNodeKind.ComponentClass,
                 componentClass.Id,
                 componentClass.Name,
-                string.IsNullOrWhiteSpace(componentClass.Notes) ? ComponentTypeLabel(componentClass.ComponentType) : componentClass.Notes,
+                string.IsNullOrWhiteSpace(componentClass.Notes) ? EditorUiText.IdentifierLabel(componentClass.ComponentType) : componentClass.Notes,
                 componentClass.RecordClassId,
                 groupNode,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));

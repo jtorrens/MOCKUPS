@@ -359,6 +359,13 @@ Exact Actor/Theme context, Module selection, Screen timing, duration
 aggregation, render identity and Preview context remain in their domain
 coordinators.
 
+Component definition sources are governed by
+`49_component_definition_source_contract.md`. The disconnected desktop runtime
+Component seed/default catalog is retired; the current manifest, committed
+Component Class documents and complete Variants, owner implementation and
+editor metadata remain the only active authorities. Future Component/Atom
+scaffolding must be an explicit complete development workflow.
+
 ## Guardrails
 
 Reject new changes that add:

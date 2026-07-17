@@ -71,6 +71,9 @@ this index wins.
 - `48_shot_persistence_contract.md`: focused ownership of complete Shot rows,
   strict documents and lifecycle copies while Production context, Screen
   timing, duration aggregation and Preview remain domain-owned.
+- `49_component_definition_source_contract.md`: canonical current Component
+  definition authorities, retirement of the disconnected runtime defaults
+  catalog and constraints for future explicit development scaffolding.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
