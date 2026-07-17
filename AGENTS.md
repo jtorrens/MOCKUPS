@@ -41,6 +41,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/65_editor_presentation_context_data_boundary_contract.md`
 - `docs/architecture/66_simplified_editor_retirement_contract.md`
 - `docs/architecture/67_system_bar_item_authoring_contract.md`
+- `docs/architecture/68_architecture_ux_cleanup_and_scaffolding_plan.md`
 
 ## Hard rule: `MainWindow` is shell-only
 

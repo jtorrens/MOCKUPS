@@ -128,6 +128,9 @@ this index wins.
 - `67_system_bar_item_authoring_contract.md`: fixed Status/Navigation item
   collections through the generic dictionary route, with strict separate
   component contracts and stable Variant-owned item ids.
+- `68_architecture_ux_cleanup_and_scaffolding_plan.md`: ordered non-technical
+  plan for the remaining architecture/UX audit and the mandatory Codex brief,
+  approval and delivery process for new Atoms, Components and Modules.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
