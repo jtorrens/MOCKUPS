@@ -43,6 +43,9 @@ this index wins.
 - `39_design_production_resource_navigation_contract.md`: current workspace
   ownership and navigation for Design definitions, Episodes and the grouped
   Production Data resources, plus constraints for future Project duplication.
+- `40_theme_persistence_and_context_contract.md`: Theme row repository
+  ownership, strict current Theme documents and the separate Module Instance
+  Production Theme-context boundary.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

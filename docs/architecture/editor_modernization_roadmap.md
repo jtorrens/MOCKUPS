@@ -301,6 +301,13 @@ Production Fonts and Render Presets. This is navigation ownership only; future
 Project duplication must explicitly choose copy, current seeds or empty per
 category and is not part of the current phase.
 
+Theme persistence and Production Theme lookup are governed by
+`40_theme_persistence_and_context_contract.md`. Theme row access and lifecycle
+writes move to `ThemeRepository`; Module Instance Theme lookup is isolated as a
+cross-domain service and no longer returns an empty document for missing
+context. The remaining ordered project-Theme fallback is a temporary exception
+until the ownerless seeded Shot is migrated to an explicitly approved Actor.
+
 ## Guardrails
 
 Reject new changes that add:

@@ -22,7 +22,7 @@ internal sealed partial class SpikeDatabase
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
-        var themes = QueryThemeRows(connection);
+        var themes = _themeRepository.QueryAll(connection);
         var productionFonts = QueryProductionFontRows(connection);
         var iconThemes = QueryIconThemeRows(connection);
         var renderPresets = QueryRenderPresetRows(connection);
@@ -616,14 +616,6 @@ internal sealed partial class SpikeDatabase
         family = family is "ios" or "android" ? family : "custom";
         using var connection = OpenConnection();
         var project = ProjectAncestor(themesRoot);
-        var index = ScalarLong(connection, "SELECT COUNT(*) FROM themes WHERE project_id = $projectId", ("$projectId", project.Id)) + 1;
-        var id = $"theme_{Guid.NewGuid():N}";
-        var name = family switch
-        {
-            "ios" => $"iOS Theme {index}",
-            "android" => $"Android Theme {index}",
-            _ => $"Theme {index}",
-        };
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
         var textFontId = ScalarString(
             connection,
@@ -635,27 +627,21 @@ internal sealed partial class SpikeDatabase
             ("$projectId", project.Id)) ?? "";
         var statusBarId = DefaultComponentPresetReference(connection, project.Id, "status_bar");
         var navigationBarId = DefaultComponentPresetReference(connection, project.Id, "navigation_bar");
-        Execute(
+        var created = _themeRepository.Create(
             connection,
-            """
-            INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
-            VALUES ($id, $projectId, $name, $family, $iconThemeId, $statusBarId, $navigationBarId, $tokensJson, $metadataJson)
-            """,
-            ("$id", id),
-            ("$projectId", project.Id),
-            ("$name", name),
-            ("$family", family),
-            ("$iconThemeId", iconThemeId),
-            ("$statusBarId", statusBarId),
-            ("$navigationBarId", navigationBarId),
-            ("$tokensJson", DefaultThemeTokensJson(family, textFontId, emojiFontId)),
-            ("$metadataJson", JsonSerializer.Serialize(new { note = $"{family} preset production theme." })));
+            project.Id,
+            family,
+            iconThemeId,
+            statusBarId,
+            navigationBarId,
+            DefaultThemeTokensJson(family, textFontId, emojiFontId),
+            JsonSerializer.Serialize(new { note = $"{family} preset production theme." }));
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Theme,
-            id,
-            name,
-            $"{family} · {ThemeReferenceSummary(iconThemeId, statusBarId, navigationBarId)}",
+            created.Id,
+            created.Name,
+            $"{created.Family} · {ThemeReferenceSummary(created)}",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
             themesRoot);
     }
@@ -754,20 +740,9 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Theme)
         {
-            var id = $"theme_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
-                SELECT $id, project_id, $name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json
-                FROM themes
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sourceId", node.Id));
+            var copy = _themeRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
-            return new ProjectTreeNode(ProjectTreeNodeKind.Theme, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            return new ProjectTreeNode(ProjectTreeNodeKind.Theme, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
@@ -843,10 +818,9 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
-            ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
-            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset
+            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset or ProjectTreeNodeKind.Theme
                 or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor => "",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
@@ -889,6 +863,12 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.Actor)
         {
             _actorRepository.Delete(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Theme)
+        {
+            _themeRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -944,12 +924,17 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Theme)
+        {
+            _themeRepository.Rename(connection, node.Id, node.Name);
+            return;
+        }
+
         var table = node.Kind switch
         {
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.Theme => "themes",
             ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
@@ -963,16 +948,6 @@ internal sealed partial class SpikeDatabase
             Execute(
                 connection,
                 "UPDATE production_fonts SET family_name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.Theme)
-        {
-            Execute(
-                connection,
-                "UPDATE themes SET name = $name WHERE id = $id",
                 ("$id", node.Id),
                 ("$name", node.Name));
             return;

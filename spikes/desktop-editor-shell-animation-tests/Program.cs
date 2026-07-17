@@ -18,6 +18,7 @@ var tests = new (string Name, Action Run)[]
     ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
+    ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -562,6 +563,81 @@ static void ResourceRepositoriesPreserveFacadeContract()
         Throws<InvalidOperationException>(() => database.AddImportedDevice(
             devicesRoot,
             new DeviceImportDraft("Invalid Device", "Mockups", "Invalid", "ios", "[]")));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ThemeRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IThemeRepository themeRepository = new ThemeRepository(context);
+        IModuleInstanceThemeContextService themeContextService = new ModuleInstanceThemeContextService(context);
+        var tree = database.LoadProjectTree();
+        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var theme = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var settings = database.GetThemeSettings(theme.Id);
+        var record = themeRepository.Get(theme.Id);
+
+        Equal(settings.ProjectId, record.ProjectId);
+        Equal(settings.Name, record.Name);
+        Equal(settings.Family, record.Family);
+        Equal(settings.IconThemeId, record.IconThemeId);
+        Equal(settings.StatusBarId, record.StatusBarId);
+        Equal(settings.NavigationBarId, record.NavigationBarId);
+        Equal(settings.TokensJson, record.TokensJson);
+        Equal(settings.MetadataJson, record.MetadataJson);
+        using (var connection = context.OpenConnection())
+        {
+            SequenceEqual(
+                database.GetThemeOptions(project.Id).Select((option) => option.Value),
+                themeRepository.QueryAll(connection)
+                    .Where((row) => row.ProjectId == project.Id)
+                    .OrderBy((row) => row.Name)
+                    .Select((row) => row.Id));
+        }
+
+        themeRepository.UpdateDirectField(theme.Id, "theme.family", "repository-test");
+        Equal("repository-test", database.GetThemeSettings(theme.Id).Family);
+        database.UpdateThemeField(theme.Id, "theme.family", settings.Family);
+        Equal(settings.Family, themeRepository.Get(theme.Id).Family);
+
+        var originalBackground = database.GetThemeFieldValue(theme.Id, "theme.colors.background");
+        database.UpdateThemeField(theme.Id, "theme.colors.background", "gray_010|gray_100");
+        Equal("gray_010|gray_100", database.GetThemeFieldValue(theme.Id, "theme.colors.background"));
+        database.UpdateThemeField(theme.Id, "theme.colors.background", originalBackground);
+        Equal(settings.TokensJson, themeRepository.Get(theme.Id).TokensJson);
+
+        var themesRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
+        var created = database.AddTheme(themesRoot, "ios");
+        var duplicated = database.Duplicate(created);
+        duplicated.Name = "Repository Theme";
+        database.UpdateNode(duplicated);
+        Equal(duplicated.Name, themeRepository.Get(duplicated.Id).Name);
+        database.Delete(duplicated);
+        database.Delete(created);
+
+        var moduleInstance = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        Equal(
+            database.GetModuleInstanceThemeTokensJson(moduleInstance.Id),
+            themeContextService.GetTokensJson(moduleInstance.Id));
+        Throws<InvalidOperationException>(() => themeContextService.GetTokensJson("missing_module_instance"));
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => themeRepository.UpdateTokens(theme.Id, "[]"));
+        Throws<InvalidOperationException>(() => themeRepository.UpdateDirectField(theme.Id, "theme.unknown", "value"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

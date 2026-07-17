@@ -1,10 +1,8 @@
-using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -42,7 +40,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
     {
         using var connection = OpenConnection();
-        return QueryThemeRows(connection)
+        return _themeRepository.QueryAll(connection)
             .Where((theme) => theme.ProjectId == projectId)
             .OrderBy((theme) => theme.Name)
             .Select((theme) => new FieldOption(theme.Id, theme.Name))
@@ -52,15 +50,14 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<ThemeTokenOption> GetThemeTokenOptions(string projectId, string themeId)
     {
         using var connection = OpenConnection();
-        var theme = QueryThemeRows(connection)
+        var themes = _themeRepository.QueryAll(connection);
+        var theme = themes
             .Where((row) => row.ProjectId == projectId)
             .FirstOrDefault((row) => row.Id == themeId)
-            ?? QueryThemeRows(connection).FirstOrDefault((row) => row.ProjectId == projectId)
+            ?? themes.FirstOrDefault((row) => row.ProjectId == projectId)
             ?? throw new InvalidOperationException($"No themes available for project '{projectId}'.");
         var tokens = ParseJsonObject(theme.TokensJson);
-        var palette = QueryPaletteColorRows(connection)
-            .Where((color) => color.ProjectId == projectId)
-            .ToDictionary((color) => color.Token, (color) => color.ValueHex, StringComparer.Ordinal);
+        var palette = _paletteRepository.GetColorMap(projectId);
 
         var options = new List<ThemeTokenOption>();
         foreach (var pair in ThemeColorPairPaths.OrderBy((pair) => pair.Key, StringComparer.Ordinal))
@@ -91,50 +88,21 @@ internal sealed partial class SpikeDatabase
 
     public ThemeSettings GetThemeSettings(string themeId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes WHERE id = $id";
-        command.Parameters.AddWithValue("$id", themeId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing theme '{themeId}'.");
-        }
-
+        var theme = _themeRepository.Get(themeId);
         return new ThemeSettings(
-            reader.GetString(0),
-            reader.GetString(1),
-            ReadString(reader, 2),
-            ReadString(reader, 3),
-            ReadString(reader, 4),
-            ReadString(reader, 5),
-            ReadString(reader, 6),
-            ReadString(reader, 7));
+            theme.ProjectId,
+            theme.Name,
+            theme.Family,
+            theme.IconThemeId,
+            theme.StatusBarId,
+            theme.NavigationBarId,
+            theme.TokensJson,
+            theme.MetadataJson);
     }
 
     public string GetModuleInstanceThemeTokensJson(string moduleInstanceId)
     {
-        using var connection = OpenConnection();
-        return ScalarString(
-            connection,
-            """
-            SELECT COALESCE(
-              (SELECT t.tokens_json
-               FROM module_instances target
-               JOIN shots s ON s.id = target.shot_id
-               JOIN actors actor ON actor.id = s.owner_actor_id
-               JOIN themes t ON t.id = actor.default_theme_id
-               WHERE target.id = $id),
-              (SELECT t.tokens_json
-               FROM module_instances target
-               JOIN apps a ON a.id = target.app_id
-               JOIN themes t ON t.project_id = a.project_id
-               WHERE target.id = $id
-               ORDER BY t.name, t.id
-               LIMIT 1),
-              '{}')
-            """,
-            ("$id", moduleInstanceId)) ?? "{}";
+        return _moduleInstanceThemeContextService.GetTokensJson(moduleInstanceId);
     }
 
     public string GetThemeFieldValue(string themeId, string fieldId)
@@ -197,51 +165,21 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateThemeField(string themeId, string fieldId, string value)
     {
-        using var connection = OpenConnection();
         switch (fieldId)
         {
             case "theme.family":
-                Execute(connection, "UPDATE themes SET family = $value WHERE id = $id", ("$id", themeId), ("$value", value));
-                return;
             case "theme.iconThemeId":
-                Execute(connection, "UPDATE themes SET icon_theme_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
-                return;
             case "theme.statusBarId":
-                Execute(connection, "UPDATE themes SET status_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
-                return;
             case "theme.navigationBarId":
-                Execute(connection, "UPDATE themes SET navigation_bar_id = $value WHERE id = $id", ("$id", themeId), ("$value", value));
+                _themeRepository.UpdateDirectField(themeId, fieldId, value);
                 return;
             default:
-                UpdateThemeToken(connection, themeId, fieldId, value);
+                UpdateThemeToken(themeId, fieldId, value);
                 return;
         }
     }
 
-    private static List<ThemeRow> QueryThemeRows(SqliteConnection connection)
-    {
-        var rows = new List<ThemeRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json FROM themes ORDER BY name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ThemeRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ReadString(reader, 3),
-                ReadString(reader, 4),
-                ReadString(reader, 5),
-                ReadString(reader, 6),
-                ReadString(reader, 7),
-                ReadString(reader, 8)));
-        }
-
-        return rows;
-    }
-
-    private static string ThemeReferenceSummary(ThemeRow theme)
+    private static string ThemeReferenceSummary(ThemeRecord theme)
     {
         return ThemeReferenceSummary(theme.IconThemeId, theme.StatusBarId, theme.NavigationBarId);
     }
@@ -291,14 +229,9 @@ internal sealed partial class SpikeDatabase
         return palette.TryGetValue(token, out var hex) ? hex : null;
     }
 
-    private static void UpdateThemeToken(SqliteConnection connection, string themeId, string fieldId, string value)
+    private void UpdateThemeToken(string themeId, string fieldId, string value)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT tokens_json FROM themes WHERE id = $id";
-        command.Parameters.AddWithValue("$id", themeId);
-        var tokensJson = command.ExecuteScalar() as string
-            ?? throw new InvalidOperationException($"Missing theme '{themeId}'.");
-        var tokens = ParseJsonObject(tokensJson);
+        var tokens = ParseJsonObject(_themeRepository.Get(themeId).TokensJson);
 
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
@@ -312,14 +245,14 @@ internal sealed partial class SpikeDatabase
             {
                 SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
             }
-            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
             return;
         }
 
         if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
         {
             JsonPath.Set(tokens, numericToken.Path, NumberNode(value));
-            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
             return;
         }
         if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
@@ -327,13 +260,13 @@ internal sealed partial class SpikeDatabase
             var timing = JsonNode.Parse(value) as JsonObject
                 ?? throw new InvalidOperationException($"Theme motion field '{fieldId}' must be a JSON object.");
             SetJsonValue(tokens, timingPath, timing);
-            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
             return;
         }
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
             SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
-            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
             return;
         }
         if (fieldId == "theme.motion.reflow")
@@ -349,7 +282,7 @@ internal sealed partial class SpikeDatabase
             }
             SetJsonValue(tokens, ["motion", "reflowDurationMs"], JsonValue.Create(durationMs)!);
             SetJsonValue(tokens, ["motion", "reflowEasing"], JsonValue.Create(easing)!);
-            Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
             return;
         }
 
@@ -383,7 +316,7 @@ internal sealed partial class SpikeDatabase
                 throw new InvalidOperationException($"Unknown theme field '{fieldId}'.");
         }
 
-        Execute(connection, "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id", ("$id", themeId), ("$tokensJson", tokens.ToJsonString()));
+        _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
     }
 
     private static string DefaultThemeTokensJson(

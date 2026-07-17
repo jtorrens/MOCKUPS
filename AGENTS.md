@@ -13,6 +13,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/37_desktop_resource_repository_contract.md`
 - `docs/architecture/38_explicit_reference_usage_contract.md`
 - `docs/architecture/39_design_production_resource_navigation_contract.md`
+- `docs/architecture/40_theme_persistence_and_context_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -241,6 +242,14 @@ Palette, Device and Actor persistence additionally follows
 repositories own table SQL, row mapping, explicit lifecycle persistence and
 stored-document writes. Device/Actor interpretation remains in common/domain
 services and must not move into the repository, tree or UI shell.
+
+Theme persistence and Production Theme context additionally follow
+`docs/architecture/40_theme_persistence_and_context_contract.md`.
+`ThemeRepository` owns Theme row SQL and lifecycle writes; the facade and tree
+delegate. Module Instance Theme context is a separate cross-domain service and
+must resolve a complete current document or fail explicitly. The current
+first-project-Theme fallback for one ownerless seeded Shot is a marked temporary
+exception pending an explicit data migration; do not copy or widen it.
 
 Reference discovery, tree `Used` state, Usage presentation and deletion
 protection additionally follow

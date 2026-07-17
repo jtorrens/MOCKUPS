@@ -106,6 +106,17 @@ internal sealed record ActorRecord(
     string DefaultThemeId,
     string MetadataJson);
 
+internal sealed record ThemeRecord(
+    string Id,
+    string ProjectId,
+    string Name,
+    string Family,
+    string IconThemeId,
+    string StatusBarId,
+    string NavigationBarId,
+    string TokensJson,
+    string MetadataJson);
+
 internal enum ReferenceUsageScope
 {
     Design,
@@ -254,6 +265,38 @@ internal interface IActorRepository
     void Delete(SqliteConnection connection, string actorId);
 
     void Rename(SqliteConnection connection, string actorId, string name);
+}
+
+internal interface IThemeRepository
+{
+    ThemeRecord Get(string themeId);
+
+    IReadOnlyList<ThemeRecord> QueryAll(SqliteConnection connection);
+
+    void UpdateDirectField(string themeId, string fieldId, string value);
+
+    void UpdateTokens(string themeId, string tokensJson);
+
+    ThemeRecord Create(
+        SqliteConnection connection,
+        string projectId,
+        string family,
+        string iconThemeId,
+        string statusBarId,
+        string navigationBarId,
+        string tokensJson,
+        string metadataJson);
+
+    ThemeRecord Duplicate(SqliteConnection connection, string sourceId, string copyName);
+
+    void Delete(SqliteConnection connection, string themeId);
+
+    void Rename(SqliteConnection connection, string themeId, string name);
+}
+
+internal interface IModuleInstanceThemeContextService
+{
+    string GetTokensJson(string moduleInstanceId);
 }
 
 internal interface IReferenceUsageService

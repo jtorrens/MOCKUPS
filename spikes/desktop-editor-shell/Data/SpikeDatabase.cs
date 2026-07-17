@@ -14,6 +14,8 @@ internal sealed partial class SpikeDatabase
     private readonly IPaletteRepository _paletteRepository;
     private readonly IDeviceRepository _deviceRepository;
     private readonly IActorRepository _actorRepository;
+    private readonly IThemeRepository _themeRepository;
+    private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
     private readonly IReferenceUsageService _referenceUsageService;
 
     public SpikeDatabase(string databasePath)
@@ -25,6 +27,8 @@ internal sealed partial class SpikeDatabase
         _paletteRepository = new PaletteRepository(_context);
         _deviceRepository = new DeviceRepository(_context);
         _actorRepository = new ActorRepository(_context);
+        _themeRepository = new ThemeRepository(_context);
+        _moduleInstanceThemeContextService = new ModuleInstanceThemeContextService(_context);
         _referenceUsageService = new ReferenceUsageService(_context);
 
         Initialize();

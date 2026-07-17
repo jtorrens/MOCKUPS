@@ -1914,6 +1914,8 @@ for (const [contractType, implementationType] of [
   ["IPaletteRepository", "PaletteRepository"],
   ["IDeviceRepository", "DeviceRepository"],
   ["IActorRepository", "ActorRepository"],
+  ["IThemeRepository", "ThemeRepository"],
+  ["IModuleInstanceThemeContextService", "ModuleInstanceThemeContextService"],
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
   assertContains(
@@ -1934,6 +1936,7 @@ for (const facadePath of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Palette.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -1950,6 +1953,7 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "palette_colors"],
   ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
   ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
+  ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "themes"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -1971,10 +1975,18 @@ for (const ownedResourceTable of ["palette_colors", "devices", "actors"]) {
     );
   }
 }
+for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+    `${sqlOperation} themes`,
+    "tree orchestration must delegate Theme lifecycle writes to ThemeRepository",
+  );
+}
 for (const resourceRepositoryPath of [
   "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
   "spikes/desktop-editor-shell/Data/DeviceRepository.cs",
   "spikes/desktop-editor-shell/Data/ActorRepository.cs",
+  "spikes/desktop-editor-shell/Data/ThemeRepository.cs",
 ]) {
   assertDoesNotContain(
     resourceRepositoryPath,
@@ -1992,6 +2004,31 @@ for (const resourceRepositoryPath of [
     `${resourceRepositoryPath} must not infer Usage from text-column discovery`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "has no resolvable Theme context",
+  "Module Instance Theme context must fail explicitly when no Theme resolves",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "?? \"{}\"",
+  "Module Instance Theme context must not return a plausible empty document",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "TODO(editor-architecture)",
+  "the temporary ordered project-Theme fallback must remain explicit until data migration",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/40_theme_persistence_and_context_contract.md",
+  "AGENTS must require the Theme persistence and context contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "40_theme_persistence_and_context_contract.md",
+  "the architecture index must include contract 40",
+);
 for (const retiredUsageInference of [
   "LIKE $needle",
   " LIKE ",
