@@ -19,6 +19,7 @@ var tests = new (string Name, Action Run)[]
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
+    ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -639,6 +640,82 @@ static void ThemeRepositoryPreservesFacadeContract()
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => themeRepository.UpdateTokens(theme.Id, "[]"));
         Throws<InvalidOperationException>(() => themeRepository.UpdateDirectField(theme.Id, "theme.unknown", "value"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionFontRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-font-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IProductionFontRepository repository = new ProductionFontRepository(context);
+        var tree = database.LoadProjectTree();
+        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var fontNode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.ProductionFont);
+        var settings = database.GetProductionFontSettings(fontNode.Id);
+        var record = repository.Get(fontNode.Id);
+
+        Equal(settings.FamilyName, record.FamilyName);
+        Equal(settings.Category, record.Category);
+        Equal(settings.SourceDirectory, record.SourceDirectory);
+        Equal(settings.FilesJson, record.FilesJson);
+        JsonPath.ParseRequiredObject(record.MetadataJson, $"Production Font '{record.Id}' metadata_json");
+        using (var connection = context.OpenConnection())
+        {
+            SequenceEqual(
+                database.GetProductionFontOptions(project.Id).Skip(1).Select((option) => option.Value),
+                repository.QueryAll(connection)
+                    .Where((font) => font.ProjectId == project.Id)
+                    .OrderBy((font) => font.FamilyName)
+                    .Select((font) => font.Id));
+        }
+
+        repository.UpdateField(fontNode.Id, "font.family", "Repository Font");
+        Equal("Repository Font", database.GetProductionFontSettings(fontNode.Id).FamilyName);
+        database.UpdateProductionFontField(fontNode.Id, "font.family", settings.FamilyName);
+        Equal(settings.FamilyName, repository.Get(fontNode.Id).FamilyName);
+
+        ProductionFontRecord imported;
+        using (var connection = context.OpenConnection())
+        {
+            imported = repository.UpsertImported(
+                connection,
+                project.Id,
+                "Repository Lifecycle Font",
+                "text",
+                "fonts/repository-lifecycle-font",
+                "[]");
+        }
+        var importedNode = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ProductionFont && node.Id == imported.Id);
+        importedNode.Name = "Renamed Repository Font";
+        database.UpdateNode(importedNode);
+        Equal(importedNode.Name, repository.Get(imported.Id).FamilyName);
+        database.Delete(importedNode);
+        Throws<InvalidOperationException>(() => repository.Get(imported.Id));
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() => repository.UpsertImported(
+                connection,
+                project.Id,
+                "Invalid Repository Font",
+                "text",
+                "fonts/invalid-repository-font",
+                "{}"));
+        }
+        Throws<InvalidOperationException>(() => repository.UpdateField(fontNode.Id, "font.unknown", "value"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

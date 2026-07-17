@@ -49,6 +49,9 @@ this index wins.
 - `41_explicit_shot_production_context_contract.md`: exact Shot owner
   Actor/Theme context, protected Module Instance creation/editing and the
   intentional one-Shot canonical parity project.
+- `42_production_font_persistence_contract.md`: focused ownership of
+  `production_fonts` current rows while file import, asset lifecycle and
+  Preview font-face interpretation remain outside persistence.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

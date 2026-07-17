@@ -313,6 +313,12 @@ Shot owner Actor and Actor Theme before creation; those references cannot be
 cleared while Screens exist. The canonical parity project retains only
 `episode_001 / shot_001`, and project-ordered Theme fallback is retired.
 
+Production Font persistence is governed by
+`42_production_font_persistence_contract.md`. `ProductionFontRepository` owns
+the complete current `production_fonts` row and its explicit writes, while
+filesystem import, asset deletion, font-face interpretation and tree/UI
+presentation remain outside persistence.
+
 ## Guardrails
 
 Reject new changes that add:

@@ -15,6 +15,7 @@ internal sealed partial class SpikeDatabase
     private readonly IDeviceRepository _deviceRepository;
     private readonly IActorRepository _actorRepository;
     private readonly IThemeRepository _themeRepository;
+    private readonly IProductionFontRepository _productionFontRepository;
     private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
     private readonly IReferenceUsageService _referenceUsageService;
 
@@ -28,6 +29,7 @@ internal sealed partial class SpikeDatabase
         _deviceRepository = new DeviceRepository(_context);
         _actorRepository = new ActorRepository(_context);
         _themeRepository = new ThemeRepository(_context);
+        _productionFontRepository = new ProductionFontRepository(_context);
         _moduleInstanceThemeContextService = new ModuleInstanceThemeContextService(_context);
         _referenceUsageService = new ReferenceUsageService(_context);
 

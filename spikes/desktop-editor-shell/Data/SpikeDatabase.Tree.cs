@@ -23,7 +23,7 @@ internal sealed partial class SpikeDatabase
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
         var themes = _themeRepository.QueryAll(connection);
-        var productionFonts = QueryProductionFontRows(connection);
+        var productionFonts = _productionFontRepository.QueryAll(connection);
         var iconThemes = QueryIconThemeRows(connection);
         var renderPresets = QueryRenderPresetRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
@@ -633,14 +633,21 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var project = ProjectAncestor(themesRoot);
         var iconThemeId = FirstId(connection, "icon_themes", project.Id);
-        var textFontId = ScalarString(
-            connection,
-            "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'text' ORDER BY family_name, id LIMIT 1",
-            ("$projectId", project.Id)) ?? "";
-        var emojiFontId = ScalarString(
-            connection,
-            "SELECT id FROM production_fonts WHERE project_id = $projectId AND category = 'emoji' ORDER BY family_name, id LIMIT 1",
-            ("$projectId", project.Id)) ?? "";
+        var productionFonts = _productionFontRepository.QueryAll(connection)
+            .Where((font) => font.ProjectId == project.Id)
+            .ToList();
+        var textFontId = productionFonts
+            .Where((font) => font.Category == "text")
+            .OrderBy((font) => font.FamilyName)
+            .ThenBy((font) => font.Id)
+            .Select((font) => font.Id)
+            .FirstOrDefault() ?? "";
+        var emojiFontId = productionFonts
+            .Where((font) => font.Category == "emoji")
+            .OrderBy((font) => font.FamilyName)
+            .ThenBy((font) => font.Id)
+            .Select((font) => font.Id)
+            .FirstOrDefault() ?? "";
         var statusBarId = DefaultComponentPresetReference(connection, project.Id, "status_bar");
         var navigationBarId = DefaultComponentPresetReference(connection, project.Id, "navigation_bar");
         var created = _themeRepository.Create(
@@ -834,10 +841,10 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
-            ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset or ProjectTreeNodeKind.Theme
-                or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor => "",
+                or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor
+                or ProjectTreeNodeKind.ProductionFont => "",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -850,6 +857,8 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {
             DeleteProductionFontFiles(connection, node.Id);
+            _productionFontRepository.Delete(connection, node.Id);
+            return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
@@ -946,28 +955,23 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.ProductionFont)
+        {
+            _productionFontRepository.Rename(connection, node.Id, node.Name);
+            return;
+        }
+
         var table = node.Kind switch
         {
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.ProductionFont => "production_fonts",
             ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
 
         if (string.IsNullOrWhiteSpace(table)) return;
-
-        if (node.Kind == ProjectTreeNodeKind.ProductionFont)
-        {
-            Execute(
-                connection,
-                "UPDATE production_fonts SET family_name = $name WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", node.Name));
-            return;
-        }
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {

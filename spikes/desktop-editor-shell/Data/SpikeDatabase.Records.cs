@@ -153,7 +153,6 @@ internal sealed partial class SpikeDatabase
         string TransitionJson,
         string ModuleName,
         string MetadataJson);
-    private sealed record ProductionFontRow(string Id, string ProjectId, string FamilyName, string Category, string SourceDirectory, string FilesJson);
     private sealed record IconThemeRow(string Id, string ProjectId, string Name, string AssetRoot, string MappingJson, string MetadataJson);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
     private sealed record ComponentClassRow(string Id, string ProjectId, string ComponentType, string RecordClassId, string Name, string Notes, string ConfigJson, string DesignPreviewJson, string MetadataJson);

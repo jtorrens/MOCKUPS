@@ -1915,6 +1915,7 @@ for (const [contractType, implementationType] of [
   ["IDeviceRepository", "DeviceRepository"],
   ["IActorRepository", "ActorRepository"],
   ["IThemeRepository", "ThemeRepository"],
+  ["IProductionFontRepository", "ProductionFontRepository"],
   ["IModuleInstanceThemeContextService", "ModuleInstanceThemeContextService"],
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
@@ -1937,6 +1938,7 @@ for (const facadePath of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -1954,6 +1956,7 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
   ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
   ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "themes"],
+  ["spikes/desktop-editor-shell/Data/ProductionFontRepository.cs", "production_fonts"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -1966,7 +1969,7 @@ assertDoesNotContain(
   "SqliteProjectContext",
   "MainWindow must not receive persistence infrastructure or repositories",
 );
-for (const ownedResourceTable of ["palette_colors", "devices", "actors"]) {
+for (const ownedResourceTable of ["palette_colors", "devices", "actors", "production_fonts"]) {
   for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
     assertDoesNotContain(
       "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
@@ -1987,6 +1990,7 @@ for (const resourceRepositoryPath of [
   "spikes/desktop-editor-shell/Data/DeviceRepository.cs",
   "spikes/desktop-editor-shell/Data/ActorRepository.cs",
   "spikes/desktop-editor-shell/Data/ThemeRepository.cs",
+  "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
 ]) {
   assertDoesNotContain(
     resourceRepositoryPath,
@@ -2004,6 +2008,29 @@ for (const resourceRepositoryPath of [
     `${resourceRepositoryPath} must not infer Usage from text-column discovery`,
   );
 }
+for (const forbiddenProductionFontRepositoryConcern of [
+  "System.IO",
+  "File.",
+  "Directory.",
+  "ProductionFontFace",
+  "ProjectTreeNode",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
+    forbiddenProductionFontRepositoryConcern,
+    `ProductionFontRepository must not own filesystem, Preview or tree concern ${forbiddenProductionFontRepositoryConcern}`,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/42_production_font_persistence_contract.md",
+  "AGENTS must require the Production Font persistence contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "42_production_font_persistence_contract.md",
+  "the active architecture index must include the Production Font persistence contract",
+);
 assertContains(
   "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
   "has no resolvable Theme context",

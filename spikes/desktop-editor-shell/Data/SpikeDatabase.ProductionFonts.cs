@@ -16,7 +16,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<FieldOption> GetProductionFontOptions(string projectId, string? category = null)
     {
         using var connection = OpenConnection();
-        var fonts = QueryProductionFontRows(connection)
+        var fonts = _productionFontRepository.QueryAll(connection)
             .Where((font) => font.ProjectId == projectId)
             .Where((font) => string.IsNullOrWhiteSpace(category) || font.Category.Equals(category, StringComparison.OrdinalIgnoreCase))
             .OrderBy((font) => font.FamilyName)
@@ -30,7 +30,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<ProductionFontFace> GetProductionFontFaces(string projectId)
     {
         using var connection = OpenConnection();
-        return QueryProductionFontRows(connection)
+        return _productionFontRepository.QueryAll(connection)
             .Where((font) => font.ProjectId == projectId)
             .SelectMany(FontFaces)
             .ToList();
@@ -78,43 +78,17 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
-        var existingId = ExistingProductionFontId(connection, project.Id, familyName);
-        var id = string.IsNullOrWhiteSpace(existingId) ? $"font_{Guid.NewGuid():N}" : existingId;
-        if (string.IsNullOrWhiteSpace(existingId))
-        {
-            Execute(
-                connection,
-                """
-                INSERT INTO production_fonts (id, project_id, family_name, category, source_directory, files_json)
-                VALUES ($id, $projectId, $familyName, $category, $sourceDirectory, $filesJson)
-                """,
-                ("$id", id),
-                ("$projectId", project.Id),
-                ("$familyName", familyName),
-                ("$category", category),
-                ("$sourceDirectory", NormalizeRelativePath(relativeDirectory)),
-                ("$filesJson", copiedFiles.ToJsonString()));
-        }
-        else
-        {
-            Execute(
-                connection,
-                """
-                UPDATE production_fonts
-                SET category = $category,
-                    source_directory = $sourceDirectory,
-                    files_json = $filesJson
-                WHERE id = $id
-                """,
-                ("$id", id),
-                ("$category", category),
-                ("$sourceDirectory", NormalizeRelativePath(relativeDirectory)),
-                ("$filesJson", copiedFiles.ToJsonString()));
-        }
+        var imported = _productionFontRepository.UpsertImported(
+            connection,
+            project.Id,
+            familyName,
+            category,
+            NormalizeRelativePath(relativeDirectory),
+            copiedFiles.ToJsonString());
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ProductionFont,
-            id,
+            imported.Id,
             familyName,
             $"{category} · {copiedFiles.Count} files",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
@@ -123,21 +97,13 @@ internal sealed partial class SpikeDatabase
 
     public ProductionFontSettings GetProductionFontSettings(string fontId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT family_name, category, source_directory, files_json FROM production_fonts WHERE id = $id";
-        command.Parameters.AddWithValue("$id", fontId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing production font '{fontId}'.");
-        }
+        var record = _productionFontRepository.Get(fontId);
 
         return new ProductionFontSettings(
-            reader.GetString(0),
-            ReadString(reader, 1),
-            ReadString(reader, 2),
-            ReadString(reader, 3));
+            record.FamilyName,
+            record.Category,
+            record.SourceDirectory,
+            record.FilesJson);
     }
 
     public string GetProductionFontFieldValue(string fontId, string fieldId)
@@ -155,48 +121,7 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateProductionFontField(string fontId, string fieldId, string value)
     {
-        using var connection = OpenConnection();
-        var column = fieldId switch
-        {
-            "font.family" => "family_name",
-            "font.category" => "category",
-            _ => throw new InvalidOperationException($"Unknown editable production font field '{fieldId}'."),
-        };
-
-        Execute(
-            connection,
-            $"UPDATE production_fonts SET {column} = $value WHERE id = $id",
-            ("$id", fontId),
-            ("$value", value));
-    }
-
-    private static List<ProductionFontRow> QueryProductionFontRows(SqliteConnection connection)
-    {
-        var rows = new List<ProductionFontRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, family_name, category, source_directory, files_json FROM production_fonts ORDER BY family_name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ProductionFontRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ReadString(reader, 3),
-                ReadString(reader, 4),
-                ReadString(reader, 5)));
-        }
-
-        return rows;
-    }
-
-    private static string ExistingProductionFontId(SqliteConnection connection, string projectId, string familyName)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id FROM production_fonts WHERE project_id = $projectId AND family_name = $familyName";
-        command.Parameters.AddWithValue("$projectId", projectId);
-        command.Parameters.AddWithValue("$familyName", familyName);
-        return command.ExecuteScalar() as string ?? "";
+        _productionFontRepository.UpdateField(fontId, fieldId, value);
     }
 
     private static int ProductionFontFileCount(string filesJson)
@@ -231,7 +156,7 @@ internal sealed partial class SpikeDatabase
             : value.ToJsonString();
     }
 
-    private static IEnumerable<ProductionFontFace> FontFaces(ProductionFontRow font)
+    private static IEnumerable<ProductionFontFace> FontFaces(ProductionFontRecord font)
     {
         var files = JsonPath.ParseRequiredArray(font.FilesJson, $"Production Font '{font.Id}' files");
 
@@ -345,18 +270,9 @@ internal sealed partial class SpikeDatabase
 
     private void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT project_id, source_directory
-            FROM production_fonts
-            WHERE id = $id
-            """;
-        command.Parameters.AddWithValue("$id", fontId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read()) return;
-
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, ReadString(reader, 0)).MediaRoot);
-        var sourceDirectory = ReadString(reader, 1);
+        var font = _productionFontRepository.Get(connection, fontId);
+        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, font.ProjectId).MediaRoot);
+        var sourceDirectory = font.SourceDirectory;
         if (string.IsNullOrWhiteSpace(mediaRoot) || string.IsNullOrWhiteSpace(sourceDirectory)) return;
 
         var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, sourceDirectory));

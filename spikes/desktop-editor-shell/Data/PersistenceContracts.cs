@@ -117,6 +117,15 @@ internal sealed record ThemeRecord(
     string TokensJson,
     string MetadataJson);
 
+internal sealed record ProductionFontRecord(
+    string Id,
+    string ProjectId,
+    string FamilyName,
+    string Category,
+    string SourceDirectory,
+    string FilesJson,
+    string MetadataJson);
+
 internal enum ReferenceUsageScope
 {
     Design,
@@ -292,6 +301,29 @@ internal interface IThemeRepository
     void Delete(SqliteConnection connection, string themeId);
 
     void Rename(SqliteConnection connection, string themeId, string name);
+}
+
+internal interface IProductionFontRepository
+{
+    ProductionFontRecord Get(string fontId);
+
+    ProductionFontRecord Get(SqliteConnection connection, string fontId);
+
+    IReadOnlyList<ProductionFontRecord> QueryAll(SqliteConnection connection);
+
+    void UpdateField(string fontId, string fieldId, string value);
+
+    ProductionFontRecord UpsertImported(
+        SqliteConnection connection,
+        string projectId,
+        string familyName,
+        string category,
+        string sourceDirectory,
+        string filesJson);
+
+    void Delete(SqliteConnection connection, string fontId);
+
+    void Rename(SqliteConnection connection, string fontId, string name);
 }
 
 internal interface IModuleInstanceThemeContextService
