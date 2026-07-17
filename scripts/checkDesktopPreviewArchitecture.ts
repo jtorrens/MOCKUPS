@@ -2190,6 +2190,65 @@ assertContains(
   "the active architecture index must include the Component Class definition persistence contract",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "new ModuleInstanceRepository(_context)",
+  "SpikeDatabase must construct the focused Module Instance repository",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "_moduleInstanceRepository.UpdateDuration(",
+  "timeline coordination must delegate prepared Module Instance durations",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "_moduleInstanceRepository.UpdateVariantDocuments(",
+  "Module Variant changes must delegate prepared Module Instance documents",
+);
+for (const moduleInstanceFacadePath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+] as const) {
+  for (const forbiddenModuleInstanceSql of [
+    "FROM module_instances",
+    "UPDATE module_instances",
+    "INSERT INTO module_instances",
+    "DELETE FROM module_instances",
+  ]) {
+    assertDoesNotContain(
+      moduleInstanceFacadePath,
+      forbiddenModuleInstanceSql,
+      `${moduleInstanceFacadePath} must delegate Module Instance persistence instead of retaining ${forbiddenModuleInstanceSql}`,
+    );
+  }
+}
+for (const forbiddenModuleInstanceRepositoryConcern of [
+  "MainWindow",
+  "ProjectTreeNode",
+  "RuntimeInputForwardingContract",
+  "RuntimeTimeline",
+  "EffectiveModuleInstanceContract",
+  "ValueKind",
+  "Renderable",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/ModuleInstanceRepository.cs",
+    forbiddenModuleInstanceRepositoryConcern,
+    `ModuleInstanceRepository must not own UI, Runtime, timing or render concern ${forbiddenModuleInstanceRepositoryConcern}`,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/47_module_instance_persistence_contract.md",
+  "AGENTS must require the Module Instance persistence contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "47_module_instance_persistence_contract.md",
+  "the active architecture index must include the Module Instance persistence contract",
+);
+assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",
@@ -3484,7 +3543,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "SELECT SUM(mi.duration_frames)",
+  "group.Sum((instance) => instance.DurationFrames)",
   "cut-only Shot duration must remain the sum of its ordered module-instance durations",
 );
 assertContains(

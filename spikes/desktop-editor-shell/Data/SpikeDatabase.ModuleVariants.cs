@@ -159,12 +159,12 @@ internal sealed partial class SpikeDatabase
         var content = RuntimeContentForContract(ParseJsonObject(instance.ContentJson), contract);
         var animation = RemoveOrphanedAnimationTracks(ParseJsonObject(instance.AnimationJson), contract, content);
         using var connection = OpenConnection();
-        Execute(connection,
-            "UPDATE module_instances SET metadata_json = $metadataJson, content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
-            ("$metadataJson", metadata.ToJsonString()),
-            ("$contentJson", content.ToJsonString()),
-            ("$animationJson", animation.ToJsonString()),
-            ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateVariantDocuments(
+            connection,
+            moduleInstanceId,
+            metadata.ToJsonString(),
+            content.ToJsonString(),
+            animation.ToJsonString());
         ReconcileModuleInstanceRuntimePayload(connection, moduleInstanceId);
         SynchronizeTimelineDurations(connection);
     }
@@ -290,9 +290,7 @@ internal sealed partial class SpikeDatabase
             var variant = FindModuleVariant(metadata, node.Id);
             if (JsonBool(variant, ["protected"])) throw new InvalidOperationException("Protected module variants cannot be deleted.");
             if (JsonBool(variant, ["locked"])) throw new InvalidOperationException("Locked module variants cannot be deleted.");
-            if (ScalarLong(connection,
-                    "SELECT COUNT(*) FROM module_instances WHERE module_id = $moduleId AND json_extract(metadata_json, '$.moduleVariantReference') = $reference",
-                    ("$moduleId", moduleId), ("$reference", node.Id)) > 0)
+            if (_moduleInstanceRepository.CountVariantReferences(connection, moduleId, node.Id) > 0)
                 throw new InvalidOperationException("This module variant is still used and cannot be deleted.");
             for (var index = 0; index < variants.Count; index++)
             {

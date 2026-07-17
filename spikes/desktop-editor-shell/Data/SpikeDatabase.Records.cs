@@ -139,18 +139,6 @@ internal sealed partial class SpikeDatabase
         string Value,
         string? LightColorHex,
         string? DarkColorHex);
-    private sealed record ModuleInstanceRow(
-        string Id,
-        string ShotId,
-        string AppId,
-        string ModuleId,
-        string Name,
-        string Notes,
-        int SortOrder,
-        int DurationFrames,
-        string TransitionJson,
-        string ModuleName,
-        string MetadataJson);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
     private sealed record ShotRow(
         string Id,

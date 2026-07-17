@@ -169,6 +169,21 @@ internal sealed record ComponentClassDefinitionRecord(
     string DesignPreviewJson,
     string MetadataJson);
 
+internal sealed record ModuleInstanceRecord(
+    string Id,
+    string ShotId,
+    string AppId,
+    string ModuleId,
+    string Name,
+    string Notes,
+    int SortOrder,
+    int DurationFrames,
+    string TransitionJson,
+    string ContentJson,
+    string BehaviorJson,
+    string AnimationJson,
+    string MetadataJson);
+
 internal enum ReferenceUsageScope
 {
     Design,
@@ -469,9 +484,67 @@ internal interface IComponentClassRepository
     void UpdateNode(SqliteConnection connection, string componentClassId, string name, string notes);
 }
 
+internal interface IModuleInstanceRepository
+{
+    ModuleInstanceRecord Get(string moduleInstanceId);
+
+    ModuleInstanceRecord Get(SqliteConnection connection, string moduleInstanceId);
+
+    IReadOnlyList<ModuleInstanceRecord> QueryAll(SqliteConnection connection);
+
+    IReadOnlyList<ModuleInstanceRecord> QueryByShot(SqliteConnection connection, string shotId);
+
+    int NextSortOrder(SqliteConnection connection, string shotId);
+
+    string UniqueName(SqliteConnection connection, string shotId, string requestedName);
+
+    void Insert(SqliteConnection connection, ModuleInstanceRecord record);
+
+    ModuleInstanceRecord Duplicate(
+        SqliteConnection connection,
+        string sourceId,
+        string id,
+        string name,
+        int sortOrder);
+
+    void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson);
+
+    void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson);
+
+    void UpdateContentAndAnimation(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string contentJson,
+        string animationJson);
+
+    void UpdateVariantDocuments(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string metadataJson,
+        string contentJson,
+        string animationJson);
+
+    void UpdateDuration(SqliteConnection connection, string moduleInstanceId, int durationFrames);
+
+    void SwapSortOrder(
+        SqliteConnection connection,
+        string firstId,
+        int firstSortOrder,
+        string secondId,
+        int secondSortOrder);
+
+    long CountVariantReferences(SqliteConnection connection, string moduleId, string variantReference);
+
+    void Rename(SqliteConnection connection, string moduleInstanceId, string name);
+
+    void Delete(SqliteConnection connection, string moduleInstanceId);
+}
+
 internal interface IModuleInstanceThemeContextService
 {
     string GetTokensJson(string moduleInstanceId);
+
+    string GetTokensJson(SqliteConnection connection, string moduleInstanceId);
 
     void RequireShotContext(SqliteConnection connection, string shotId);
 

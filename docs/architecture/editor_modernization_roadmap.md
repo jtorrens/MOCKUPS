@@ -344,6 +344,14 @@ and prepared complete document writes while component field semantics,
 Variants, embedded composition, forwarding and Preview resolution remain in
 their existing owners.
 
+Module Instance persistence is governed by
+`47_module_instance_persistence_contract.md`.
+`ModuleInstanceRepository` now owns complete current Screen rows, ordered
+reads, strict object documents and prepared lifecycle/document writes. Runtime
+forwarding, Variant application, structured collection edits, owner-relative
+animation, duration calculation, Shot synchronization and Preview resolution
+remain in their existing domain coordinators.
+
 ## Guardrails
 
 Reject new changes that add:

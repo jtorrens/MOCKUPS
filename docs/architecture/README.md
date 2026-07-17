@@ -64,6 +64,10 @@ this index wins.
 - `46_component_class_definition_persistence_contract.md`: focused ownership
   of Component Class current rows and prepared document writes while field
   semantics, Variants, embedded composition and Preview remain domain-owned.
+- `47_module_instance_persistence_contract.md`: focused ownership of complete
+  Screen/Module Instance rows and prepared writes while Variants, Runtime
+  forwarding, structured collections, temporal ownership and Preview remain
+  domain-owned.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

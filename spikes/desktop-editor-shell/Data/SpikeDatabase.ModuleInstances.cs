@@ -45,28 +45,17 @@ internal sealed partial class SpikeDatabase
 
     public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
-            FROM module_instances
-            WHERE id = $id
-            """;
-        command.Parameters.AddWithValue("$id", moduleInstanceId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read()) throw new InvalidOperationException($"Missing module instance '{moduleInstanceId}'.");
+        var record = _moduleInstanceRepository.Get(moduleInstanceId);
         return new ModuleInstanceSettings(
-            reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
-            ReadString(reader, 4), reader.GetInt32(5), reader.GetInt32(6), ReadString(reader, 7),
-            ReadString(reader, 8), ReadString(reader, 9), ReadString(reader, 10), ReadString(reader, 11));
+            record.ShotId, record.AppId, record.ModuleId, record.Name, record.Notes,
+            record.SortOrder, record.DurationFrames, record.TransitionJson, record.ContentJson,
+            record.BehaviorJson, record.AnimationJson, record.MetadataJson);
     }
 
     public string GetModuleInstanceModuleName(string moduleInstanceId)
     {
-        using var connection = OpenConnection();
-        return ScalarString(connection, "SELECT m.name FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.id = $id", ("$id", moduleInstanceId))
-            ?? throw new InvalidOperationException($"Missing module instance '{moduleInstanceId}'.");
+        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
+        return _appModuleRepository.GetModule(instance.ModuleId).Name;
     }
 
     public string GetModuleInstanceTransitionType(string moduleInstanceId)
@@ -105,11 +94,7 @@ internal sealed partial class SpikeDatabase
         var animation = ParseJsonObject(animationJson);
         ValidateAnimationJson(animation, moduleInstanceId);
         using var connection = OpenConnection();
-        Execute(
-            connection,
-            "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
-            ("$animationJson", animation.ToJsonString()),
-            ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
@@ -200,12 +185,11 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
-        Execute(
+        _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
-            "UPDATE module_instances SET content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
-            ("$contentJson", content.ToJsonString()),
-            ("$animationJson", animation.ToJsonString()),
-            ("$id", moduleInstanceId));
+            moduleInstanceId,
+            content.ToJsonString(),
+            animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
@@ -230,12 +214,11 @@ internal sealed partial class SpikeDatabase
             }
         }
         using var connection = OpenConnection();
-        Execute(
+        _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
-            "UPDATE module_instances SET content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
-            ("$contentJson", content.ToJsonString()),
-            ("$animationJson", animation.ToJsonString()),
-            ("$id", moduleInstanceId));
+            moduleInstanceId,
+            content.ToJsonString(),
+            animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
@@ -291,38 +274,26 @@ internal sealed partial class SpikeDatabase
     private void SaveModuleInstanceRuntimeContent(string moduleInstanceId, JsonObject content)
     {
         using var connection = OpenConnection();
-        Execute(connection, "UPDATE module_instances SET content_json = $contentJson WHERE id = $id",
-            ("$contentJson", content.ToJsonString()), ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT mi.id, mi.name, m.name, mi.sort_order, mi.transition_json, mi.duration_frames
-            FROM module_instances mi
-            JOIN modules m ON m.id = mi.module_id
-            WHERE mi.shot_id = $shotId
-            ORDER BY mi.sort_order, mi.name, mi.id
-            """;
-        command.Parameters.AddWithValue("$shotId", shotId);
-        using var reader = command.ExecuteReader();
-        var slots = new List<ModuleInstanceSlot>();
-        while (reader.Read())
-        {
-            var transition = ParseJsonObject(ReadString(reader, 4));
-            slots.Add(new ModuleInstanceSlot(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetInt32(3),
-                transition["type"]?.GetValue<string>() ?? "cut",
-                reader.GetInt32(5)));
-        }
-
-        return slots;
+        var modules = _appModuleRepository.QueryModules(connection)
+            .ToDictionary((module) => module.Id, (module) => module.Name, StringComparer.Ordinal);
+        return _moduleInstanceRepository.QueryByShot(connection, shotId)
+            .Select((instance) => new ModuleInstanceSlot(
+                instance.Id,
+                instance.Name,
+                modules.TryGetValue(instance.ModuleId, out var moduleName)
+                    ? moduleName
+                    : throw new InvalidOperationException($"Missing module '{instance.ModuleId}'."),
+                instance.SortOrder,
+                ParseJsonObject(instance.TransitionJson)["type"]?.GetValue<string>() ?? "cut",
+                instance.DurationFrames))
+            .ToList();
     }
 
     public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
@@ -371,37 +342,31 @@ internal sealed partial class SpikeDatabase
         var initialDuration = RuntimeDurationContract.InitialDurationFrames(GetModuleSettings(module.Id).DesignPreviewJson);
         using var connection = OpenConnection();
         _moduleInstanceThemeContextService.RequireShotContext(connection, shot.Id);
-        var index = NextSortOrder(connection, "module_instances", "shot_id", shot.Id);
+        var index = _moduleInstanceRepository.NextSortOrder(connection, shot.Id);
         var id = $"module_instance_{Guid.NewGuid():N}";
-        var name = UniqueModuleInstanceName(connection, shot.Id, requestedName);
-        Execute(
+        var name = _moduleInstanceRepository.UniqueName(connection, shot.Id, requestedName);
+        _moduleInstanceRepository.Insert(
             connection,
-            """
-            INSERT INTO module_instances (
-              id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              transition_json, content_json, behavior_json, animation_json, metadata_json)
-            VALUES (
-              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $durationFrames,
-              '{"type":"cut"}', $contentJson, $behaviorJson, $animationJson, $metadataJson)
-            """,
-            ("$id", id),
-            ("$shotId", shot.Id),
-            ("$appId", module.AppId),
-            ("$moduleId", module.Id),
-            ("$name", name),
-            ("$notes", $"{module.Name} module instance."),
-            ("$sortOrder", index),
-            ("$durationFrames", initialDuration),
-            ("$contentJson", "{}"),
-            ("$behaviorJson", "{}"),
-            ("$animationJson", DefaultModuleAnimationJson()),
-            ("$metadataJson", new JsonObject
+            new ModuleInstanceRecord(
+                id,
+                shot.Id,
+                module.AppId,
+                module.Id,
+                name,
+                $"{module.Name} module instance.",
+                index,
+                initialDuration,
+                "{\"type\":\"cut\"}",
+                "{}",
+                "{}",
+                DefaultModuleAnimationJson(),
+                new JsonObject
             {
                 ["moduleVariantReference"] = draft.VariantReference,
             }.ToJsonString()));
         ReconcileModuleInstanceRuntimePayload(connection, id);
         SynchronizeTimelineDurations(connection);
-        var duration = ScalarLong(connection, "SELECT duration_frames FROM module_instances WHERE id = $id", ("$id", id));
+        var duration = _moduleInstanceRepository.Get(connection, id).DurationFrames;
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             id,
@@ -419,8 +384,7 @@ internal sealed partial class SpikeDatabase
         if (requestedName.Length == 0)
             throw new InvalidOperationException("A Module Instance name is required.");
         using var connection = OpenConnection();
-        Execute(connection, "UPDATE module_instances SET name = $name WHERE id = $id",
-            ("$name", requestedName), ("$id", node.Id));
+        _moduleInstanceRepository.Rename(connection, node.Id, requestedName);
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             node.Id,
@@ -428,21 +392,6 @@ internal sealed partial class SpikeDatabase
             node.Notes,
             node.RecordClassId,
             node.Parent);
-    }
-
-    private static string UniqueModuleInstanceName(SqliteConnection connection, string shotId, string requestedName)
-    {
-        var candidate = requestedName.Trim();
-        var suffix = 2;
-        while (ScalarLong(
-            connection,
-            "SELECT COUNT(*) FROM module_instances WHERE shot_id = $shotId AND name = $name",
-            ("$shotId", shotId),
-            ("$name", candidate)) > 0)
-        {
-            candidate = $"{requestedName.Trim()} {suffix++}";
-        }
-        return candidate;
     }
 
     public void MoveModuleInstance(string moduleInstanceId, int offset)
@@ -458,18 +407,12 @@ internal sealed partial class SpikeDatabase
         var currentSlot = slots[currentIndex];
         var targetSlot = slots[targetIndex];
         using var connection = OpenConnection();
-        using var transaction = connection.BeginTransaction();
-        Execute(connection,
-            transaction,
-            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-            ("$sortOrder", targetSlot.SortOrder),
-            ("$id", currentSlot.Id));
-        Execute(connection,
-            transaction,
-            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-            ("$sortOrder", currentSlot.SortOrder),
-            ("$id", targetSlot.Id));
-        transaction.Commit();
+        _moduleInstanceRepository.SwapSortOrder(
+            connection,
+            currentSlot.Id,
+            currentSlot.SortOrder,
+            targetSlot.Id,
+            targetSlot.SortOrder);
     }
 
     public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)
@@ -485,11 +428,10 @@ internal sealed partial class SpikeDatabase
                     throw new InvalidOperationException("Calculated Screen duration cannot be edited.");
                 using (var connection = OpenConnection())
                 {
-                    Execute(
+                    _moduleInstanceRepository.UpdateDuration(
                         connection,
-                        "UPDATE module_instances SET duration_frames = $value WHERE id = $id",
-                        ("$value", Math.Max(1, NumericText.Int32(value, 1))),
-                        ("$id", moduleInstanceId));
+                        moduleInstanceId,
+                        Math.Max(1, NumericText.Int32(value, 1)));
                     SynchronizeTimelineDurations(connection);
                 }
                 return;
@@ -536,11 +478,7 @@ internal sealed partial class SpikeDatabase
                 break;
         }
 
-        Execute(
-            connection,
-            "UPDATE module_instances SET content_json = $behaviorJson WHERE id = $id",
-            ("$behaviorJson", behavior.ToJsonString()),
-            ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, behavior.ToJsonString());
     }
 
     private IReadOnlyList<ConversationMessage> GetConversationMessages(string moduleInstanceId)
@@ -669,7 +607,7 @@ internal sealed partial class SpikeDatabase
         var content = ParseJsonObject(settings.ContentJson);
         update(content);
         using var connection = OpenConnection();
-        Execute(connection, "UPDATE module_instances SET content_json = $contentJson WHERE id = $id", ("$contentJson", content.ToJsonString()), ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
     }
 
     private static string DefaultModuleAnimationJson()
@@ -681,34 +619,4 @@ internal sealed partial class SpikeDatabase
         }.ToJsonString();
     }
 
-    private static List<ModuleInstanceRow> QueryModuleInstanceRows(SqliteConnection connection)
-    {
-        var rows = new List<ModuleInstanceRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT mi.id, mi.shot_id, mi.app_id, mi.module_id, mi.name, mi.notes,
-                   mi.sort_order, mi.duration_frames, mi.transition_json, m.name, mi.metadata_json
-            FROM module_instances mi
-            JOIN modules m ON m.id = mi.module_id
-            ORDER BY mi.shot_id, mi.sort_order, mi.name
-            """;
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ModuleInstanceRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                reader.GetString(4),
-                ReadString(reader, 5),
-                reader.GetInt32(6),
-                reader.GetInt32(7),
-                ReadString(reader, 8),
-                reader.GetString(9),
-                ReadString(reader, 10)));
-        }
-
-        return rows;
-    }
 }

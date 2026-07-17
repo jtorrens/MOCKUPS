@@ -16,6 +16,11 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
     public string GetTokensJson(string moduleInstanceId)
     {
         using var connection = _context.OpenConnection();
+        return GetTokensJson(connection, moduleInstanceId);
+    }
+
+    public string GetTokensJson(SqliteConnection connection, string moduleInstanceId)
+    {
         var tokensJson = SqliteCommandExecutor.ScalarString(
             connection,
             """

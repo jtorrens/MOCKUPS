@@ -10,23 +10,19 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private static void ReconcileModuleInstanceRuntimePayload(
+    private void ReconcileModuleInstanceRuntimePayload(
         SqliteConnection connection,
         string moduleInstanceId)
     {
-        using var select = connection.CreateCommand();
-        select.CommandText = "SELECT mi.content_json, m.design_preview_json, m.id, m.metadata_json, mi.metadata_json FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.id = $id";
-        select.Parameters.AddWithValue("$id", moduleInstanceId);
-        using var reader = select.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing module instance '{moduleInstanceId}'.");
-        }
-
-        var original = ReadString(reader, 0);
+        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+        var module = _appModuleRepository.GetModule(connection, instance.ModuleId);
+        var original = instance.ContentJson;
         var content = ParseJsonObject(original);
         var contract = EffectiveModuleInstanceContract(
-            reader.GetString(2), ReadString(reader, 3), ReadString(reader, 4), ReadString(reader, 1));
+            module.Id,
+            module.MetadataJson,
+            instance.MetadataJson,
+            module.DesignPreviewJson);
         foreach (var input in (contract["inputs"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
             var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
@@ -64,56 +60,59 @@ internal sealed partial class SpikeDatabase
         }
 
         var next = content.ToJsonString();
-        reader.Close();
         if (next == original) return;
-        Execute(connection, "UPDATE module_instances SET content_json = $json WHERE id = $id",
-            ("$json", next), ("$id", moduleInstanceId));
+        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, next);
     }
 
-    private static void SynchronizeTimelineDurations(SqliteConnection connection, string? shotId = null)
+    private void SynchronizeTimelineDurations(SqliteConnection connection, string? shotId = null)
     {
-        using var select = connection.CreateCommand();
-        select.CommandText = """
-            SELECT mi.id, mi.duration_frames, mi.content_json, mi.animation_json, m.design_preview_json,
-                   t.tokens_json, m.id, m.metadata_json, mi.metadata_json
-            FROM module_instances mi
-            JOIN modules m ON m.id = mi.module_id
-            JOIN shots s ON s.id = mi.shot_id
-            JOIN episodes e ON e.id = s.episode_id
-            JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
-            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = actor.project_id
-            WHERE $shotId = '' OR mi.shot_id = $shotId
-            """;
-        select.Parameters.AddWithValue("$shotId", shotId ?? "");
-        using var reader = select.ExecuteReader();
+        var instances = shotId is null
+            ? _moduleInstanceRepository.QueryAll(connection)
+            : _moduleInstanceRepository.QueryByShot(connection, shotId);
+        var modules = _appModuleRepository.QueryModules(connection)
+            .ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var updates = new List<(string Id, int Duration)>();
-        while (reader.Read())
+        foreach (var instance in instances)
         {
-            var stored = reader.GetInt32(1);
+            if (!modules.TryGetValue(instance.ModuleId, out var module))
+            {
+                throw new InvalidOperationException($"Missing module '{instance.ModuleId}'.");
+            }
             var contract = EffectiveModuleInstanceContract(
-                reader.GetString(6), ReadString(reader, 7), ReadString(reader, 8), ReadString(reader, 4));
+                module.Id,
+                module.MetadataJson,
+                instance.MetadataJson,
+                module.DesignPreviewJson);
             if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit) continue;
-            var duration = RuntimeTimeline.DurationFrames(contract.ToJsonString(), ReadString(reader, 2), ReadString(reader, 3), stored, ReadString(reader, 5));
-            if (duration != stored) updates.Add((reader.GetString(0), duration));
+            var duration = RuntimeTimeline.DurationFrames(
+                contract.ToJsonString(),
+                instance.ContentJson,
+                instance.AnimationJson,
+                instance.DurationFrames,
+                _moduleInstanceThemeContextService.GetTokensJson(connection, instance.Id));
+            if (duration != instance.DurationFrames) updates.Add((instance.Id, duration));
         }
-        reader.Close();
         foreach (var update in updates)
         {
-            Execute(connection, "UPDATE module_instances SET duration_frames = $duration WHERE id = $id",
-                ("$duration", update.Duration), ("$id", update.Id));
+            _moduleInstanceRepository.UpdateDuration(connection, update.Id, update.Duration);
         }
 
-        Execute(
-            connection,
-            """
-            UPDATE shots
-            SET duration_frames = MAX(1, COALESCE(
-              (SELECT SUM(mi.duration_frames) FROM module_instances mi WHERE mi.shot_id = shots.id),
-              0))
-            WHERE duration_frames <> MAX(1, COALESCE(
-              (SELECT SUM(mi.duration_frames) FROM module_instances mi WHERE mi.shot_id = shots.id),
-              0))
-            """);
+        var durationByShot = _moduleInstanceRepository.QueryAll(connection)
+            .GroupBy((instance) => instance.ShotId, StringComparer.Ordinal)
+            .ToDictionary(
+                (group) => group.Key,
+                (group) => Math.Max(1, group.Sum((instance) => instance.DurationFrames)),
+                StringComparer.Ordinal);
+        foreach (var shot in QueryShotRows(connection))
+        {
+            var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
+            if (duration == shot.DurationFrames) continue;
+            Execute(
+                connection,
+                "UPDATE shots SET duration_frames = $duration WHERE id = $id",
+                ("$duration", duration),
+                ("$id", shot.Id));
+        }
     }
 
     private static void ValidateAnimationJson(JsonObject animation, string instanceId)

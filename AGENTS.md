@@ -20,6 +20,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/44_app_module_definition_persistence_contract.md`
 - `docs/architecture/45_editor_session_view_state_contract.md`
 - `docs/architecture/46_component_class_definition_persistence_contract.md`
+- `docs/architecture/47_module_instance_persistence_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -260,6 +261,13 @@ Component Class definition persistence follows
 document writes. Field paths, Variants, embedded composition, forwarding,
 payloads, resolvers and renderables remain in their domain owners. Definition
 creation/retirement remains an explicit development/scaffolding workflow.
+
+Module Instance persistence follows
+`docs/architecture/47_module_instance_persistence_contract.md`.
+`ModuleInstanceRepository` owns current Screen rows, strict object documents
+and prepared row writes. Variant selection, Runtime forwarding, structured
+collections, owner-relative animation, duration policy, Production Theme
+context, payload preparation and Preview remain outside persistence.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.

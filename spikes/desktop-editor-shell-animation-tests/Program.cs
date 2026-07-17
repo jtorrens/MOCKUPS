@@ -24,6 +24,7 @@ var tests = new (string Name, Action Run)[]
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
+    ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -1062,6 +1063,148 @@ static void ComponentClassRepositoryPreservesFacadeContract()
                 "{\"presets\":[]}"));
         }
         Throws<InvalidOperationException>(() => repository.UpdateDesignPreview(original.Id, "[]"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ModuleInstanceRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-instance-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IModuleInstanceRepository repository = new ModuleInstanceRepository(context);
+        var node = Descendants(database.LoadProjectTree())
+            .First((candidate) => candidate.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var original = repository.Get(node.Id);
+        var settings = database.GetModuleInstanceSettings(node.Id);
+
+        Equal(original.ShotId, settings.ShotId);
+        Equal(original.AppId, settings.AppId);
+        Equal(original.ModuleId, settings.ModuleId);
+        Equal(original.DurationFrames, settings.DurationFrames);
+        Equal(original.ContentJson, settings.ContentJson);
+        Equal(original.AnimationJson, settings.AnimationJson);
+        using (var connection = context.OpenConnection())
+        {
+            True(repository.QueryAll(connection).Any((candidate) => candidate.Id == original.Id));
+            True(repository.QueryByShot(connection, original.ShotId).Any((candidate) => candidate.Id == original.Id));
+        }
+
+        var content = JsonPath.ParseRequiredObject(original.ContentJson, $"Module instance '{original.Id}' content_json");
+        content["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateContent(connection, original.Id, content.ToJsonString());
+        }
+        True(JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(original.Id).ContentJson,
+            "repository test content")["repositoryTest"]?.GetValue<bool>() == true);
+
+        var animation = JsonPath.ParseRequiredObject(original.AnimationJson, $"Module instance '{original.Id}' animation_json");
+        animation["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateContentAndAnimation(
+                connection,
+                original.Id,
+                original.ContentJson,
+                animation.ToJsonString());
+        }
+        True(JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(original.Id).AnimationJson,
+            "repository test animation")["repositoryTest"]?.GetValue<bool>() == true);
+
+        var metadata = JsonPath.ParseRequiredObject(original.MetadataJson, $"Module instance '{original.Id}' metadata_json");
+        var variantReference = JsonPath.String(metadata, "moduleVariantReference", "");
+        metadata["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateVariantDocuments(
+                connection,
+                original.Id,
+                metadata.ToJsonString(),
+                original.ContentJson,
+                original.AnimationJson);
+            True(repository.CountVariantReferences(connection, original.ModuleId, variantReference) > 0);
+            repository.UpdateDuration(connection, original.Id, original.DurationFrames + 1);
+        }
+        Equal(original.DurationFrames + 1, repository.Get(original.Id).DurationFrames);
+
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateVariantDocuments(
+                connection,
+                original.Id,
+                original.MetadataJson,
+                original.ContentJson,
+                original.AnimationJson);
+            repository.UpdateDuration(connection, original.Id, original.DurationFrames);
+        }
+
+        var renamed = database.RenameDirectNode(node, "Repository Screen");
+        Equal("Repository Screen", repository.Get(original.Id).Name);
+        database.RenameDirectNode(renamed, original.Name);
+
+        using (var connection = context.OpenConnection())
+        {
+            var siblings = repository.QueryByShot(connection, original.ShotId);
+            if (siblings.Count >= 2)
+            {
+                var first = siblings[0];
+                var second = siblings[1];
+                repository.SwapSortOrder(connection, first.Id, first.SortOrder, second.Id, second.SortOrder);
+                Equal(second.SortOrder, repository.Get(connection, first.Id).SortOrder);
+                Equal(first.SortOrder, repository.Get(connection, second.Id).SortOrder);
+                repository.SwapSortOrder(connection, first.Id, second.SortOrder, second.Id, first.SortOrder);
+            }
+
+            var duplicateId = $"module_instance_repository_{Guid.NewGuid():N}";
+            var duplicateName = repository.UniqueName(connection, original.ShotId, $"{original.Name} copy");
+            var duplicate = repository.Duplicate(
+                connection,
+                original.Id,
+                duplicateId,
+                duplicateName,
+                repository.NextSortOrder(connection, original.ShotId));
+            Equal(original.ModuleId, duplicate.ModuleId);
+            Equal(original.ContentJson, duplicate.ContentJson);
+            repository.Delete(connection, duplicate.Id);
+            Throws<InvalidOperationException>(() => repository.Get(connection, duplicate.Id));
+        }
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() => repository.UpdateContent(connection, original.Id, "[]"));
+            Throws<InvalidOperationException>(() => repository.UpdateAnimation(connection, original.Id, "[]"));
+            Throws<InvalidOperationException>(() => repository.UpdateContentAndAnimation(
+                connection,
+                original.Id,
+                original.ContentJson,
+                "[]"));
+            Throws<InvalidOperationException>(() => repository.UpdateVariantDocuments(
+                connection,
+                original.Id,
+                "[]",
+                original.ContentJson,
+                original.AnimationJson));
+            Throws<InvalidOperationException>(() => repository.Insert(
+                connection,
+                original with
+                {
+                    Id = $"invalid_module_instance_{Guid.NewGuid():N}",
+                    ContentJson = "[]",
+                }));
+        }
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

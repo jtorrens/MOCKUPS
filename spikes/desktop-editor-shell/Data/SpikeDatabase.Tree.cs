@@ -16,9 +16,13 @@ internal sealed partial class SpikeDatabase
         var projects = QueryProjectRows(connection);
         var episodes = QueryEpisodeRows(connection);
         var shots = QueryShotRows(connection);
-        var moduleInstances = QueryModuleInstanceRows(connection);
+        var moduleInstances = _moduleInstanceRepository.QueryAll(connection);
         var apps = _appModuleRepository.QueryApps(connection);
         var modules = _appModuleRepository.QueryModules(connection);
+        var moduleNames = modules.ToDictionary(
+            (module) => module.Id,
+            (module) => module.Name,
+            StringComparer.Ordinal);
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
@@ -373,12 +377,16 @@ internal sealed partial class SpikeDatabase
         foreach (var moduleInstance in moduleInstances)
         {
             if (!shotNodes.TryGetValue(moduleInstance.ShotId, out var shot)) continue;
+            if (!moduleNames.TryGetValue(moduleInstance.ModuleId, out var moduleName))
+            {
+                throw new InvalidOperationException($"Missing module '{moduleInstance.ModuleId}'.");
+            }
 
             shot.AddChild(new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleInstance,
                 moduleInstance.Id,
                 moduleInstance.Name,
-                $"{moduleInstance.ModuleName} · {moduleInstance.DurationFrames} frames · {ModuleTransitionLabel(moduleInstance.TransitionJson)}",
+                $"{moduleName} · {moduleInstance.DurationFrames} frames · {ModuleTransitionLabel(moduleInstance.TransitionJson)}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
                 shot));
         }
@@ -709,23 +717,14 @@ internal sealed partial class SpikeDatabase
         {
             var settings = GetModuleInstanceSettings(node.Id);
             var id = $"module_instance_{Guid.NewGuid():N}";
-            var sortOrder = NextSortOrder(connection, "module_instances", "shot_id", settings.ShotId);
-            var copyName = UniqueModuleInstanceName(connection, settings.ShotId, $"{node.Name} copy");
-            Execute(
+            var sortOrder = _moduleInstanceRepository.NextSortOrder(connection, settings.ShotId);
+            var copyName = _moduleInstanceRepository.UniqueName(connection, settings.ShotId, $"{node.Name} copy");
+            _moduleInstanceRepository.Duplicate(
                 connection,
-                """
-                INSERT INTO module_instances (
-                  id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-                  transition_json, content_json, behavior_json, animation_json, metadata_json)
-                SELECT $id, shot_id, app_id, module_id, $name, notes, $sortOrder, duration_frames,
-                       transition_json, content_json, behavior_json, animation_json, metadata_json
-                FROM module_instances
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", copyName),
-                ("$sortOrder", sortOrder),
-                ("$sourceId", node.Id));
+                node.Id,
+                id,
+                copyName,
+                sortOrder);
             SynchronizeTimelineDurations(connection);
 
             return new ProjectTreeNode(
@@ -838,7 +837,7 @@ internal sealed partial class SpikeDatabase
         var table = node.Kind switch
         {
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.ModuleInstance => "module_instances",
+            ProjectTreeNodeKind.ModuleInstance => "",
             ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset or ProjectTreeNodeKind.Theme
                 or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor
                 or ProjectTreeNodeKind.ProductionFont or ProjectTreeNodeKind.IconTheme => "",
@@ -902,11 +901,14 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
+            _moduleInstanceRepository.Delete(connection, node.Id);
             SynchronizeTimelineDurations(connection);
+            return;
         }
+
+        Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
     }
 
     public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
