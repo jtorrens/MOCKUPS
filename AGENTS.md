@@ -35,6 +35,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/59_module_instance_animation_document_boundary_contract.md`
 - `docs/architecture/60_runtime_input_owner_document_boundary_contract.md`
 - `docs/architecture/61_runtime_input_instance_document_boundary_contract.md`
+- `docs/architecture/62_animation_keyframe_drag_interaction_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 

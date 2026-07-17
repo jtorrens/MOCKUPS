@@ -110,6 +110,9 @@ this index wins.
 - `61_runtime_input_instance_document_boundary_contract.md`: typed persisted
   Screen scalar, structured collection and complete animation writes, separated
   from Runtime Input and collection interaction semantics.
+- `62_animation_keyframe_drag_interaction_contract.md`: stable keyframe pointer
+  gestures across synchronous shared-Preview feedback, without a second
+  playhead or intermediate persistence.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

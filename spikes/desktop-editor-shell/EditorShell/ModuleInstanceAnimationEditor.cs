@@ -299,26 +299,28 @@ internal sealed class ModuleInstanceAnimationEditor
             "Play Screen animation",
             42);
         EditorTimelineTransport.ApplyPrimaryStyle(playbackButton);
-        var changingFrame = false;
+        var frameUpdateGate = new TimelineFrameUpdateGate();
 
         void SetFrame(int screenFrame)
         {
-            currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
-            changingFrame = true;
-            slider.Value = TimelineFrame();
-            changingFrame = false;
-            if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+            frameUpdateGate.Run(() =>
+            {
+                currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
+                slider.Value = TimelineFrame();
+                if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+            });
             RefreshVisuals();
         }
 
         void PreviewDraggedFrame(int screenFrame)
         {
-            currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
-            changingFrame = true;
-            slider.Value = TimelineFrame();
-            changingFrame = false;
-            frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
-            if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+            frameUpdateGate.Run(() =>
+            {
+                currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
+                slider.Value = TimelineFrame();
+                frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
+                if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+            });
         }
 
         void SaveAndRefresh()
@@ -475,7 +477,7 @@ internal sealed class ModuleInstanceAnimationEditor
         root.Children.Add(transport);
         slider.ValueChanged += (_, args) =>
         {
-            if (!changingFrame)
+            if (!frameUpdateGate.IsActive)
                 SetFrame((int)Math.Round(
                     sliderMagnet.Resolve(args.NewValue),
                     MidpointRounding.AwayFromZero));
@@ -520,10 +522,12 @@ internal sealed class ModuleInstanceAnimationEditor
         root.Children.Add(detailHost);
         void OnPlaybackChanged()
         {
-            currentFrame = Math.Clamp(_shotFrame() - screenStartFrame, 0, timelineDuration - 1);
-            changingFrame = true;
-            slider.Value = TimelineFrame();
-            changingFrame = false;
+            if (frameUpdateGate.IsActive) return;
+            frameUpdateGate.Run(() =>
+            {
+                currentFrame = Math.Clamp(_shotFrame() - screenStartFrame, 0, timelineDuration - 1);
+                slider.Value = TimelineFrame();
+            });
             RefreshVisuals();
         }
         _playbackState.Changed += OnPlaybackChanged;

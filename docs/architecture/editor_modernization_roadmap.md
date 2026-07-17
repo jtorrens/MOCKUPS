@@ -440,6 +440,12 @@ scalar, stable collection and complete animation writes now pass through a
 typed store that composes the animation document boundary. The Runtime Inputs
 editor no longer retains a general database handle.
 
+Animation keyframe drag feedback is governed by
+`62_animation_keyframe_drag_interaction_contract.md`. The animation surface now
+distinguishes its own synchronous Preview frame publication from external
+playhead changes, preserving pointer capture without introducing another clock
+or changing owner-relative persistence.
+
 ## Guardrails
 
 Reject new changes that add:

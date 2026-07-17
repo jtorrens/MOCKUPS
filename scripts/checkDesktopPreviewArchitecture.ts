@@ -728,6 +728,40 @@ assertContains(
   "the architecture index must include contract 61",
 );
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/62_animation_keyframe_drag_interaction_contract.md",
+  "AGENTS must require the animation keyframe drag interaction contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "62_animation_keyframe_drag_interaction_contract.md",
+  "the architecture index must include contract 62",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "var frameUpdateGate = new TimelineFrameUpdateGate()",
+  "the animation editor must gate its own synchronous Preview frame feedback",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "if (frameUpdateGate.IsActive) return;",
+  "the animation surface must not rebuild during its own captured frame gesture",
+);
+for (const forbiddenTimelineFrameGateDependency of [
+  "Avalonia",
+  "SpikeDatabase",
+  "Json",
+  "PreviewBridge",
+  "Renderer",
+  "RuntimeAnimationFrameOrigin",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/TimelineFrameUpdateGate.cs",
+    forbiddenTimelineFrameGateDependency,
+    `the timeline frame update gate must remain a generic synchronous boundary (${forbiddenTimelineFrameGateDependency})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",

@@ -383,6 +383,10 @@ The compact transport and mini-timeline use the shared keyframe glyphs and one P
 
 Every other mini-timeline diamond is draggable on the containing Screen authoring scale. Ordinary drag snaps to five-Screen-frame increments; `Alt` drag snaps to every Screen frame. Existing keyframes provide a stronger soft detent even when they are outside that grid. During drag the shared Preview cursor follows the candidate frame, but the database is written only once on a valid release. `Escape`, capture loss, an owner-local frame below one, or a frame already occupied in the same track restores the original position without a write. The editor converts the accepted Screen position back through the target's owner timeline and persists that owner-local integer frame; keyframe id, value, interpolation and enabled state remain unchanged. Thus drag remains stable across entity delay, reorder and retime and does not introduce a second origin formula.
 
+The synchronous UI feedback boundary that keeps the captured marker stable
+while the shared Preview follows is specified by
+[Animation Keyframe Drag Interaction](62_animation_keyframe_drag_interaction_contract.md).
+
 Slider dragging uses a shared soft magnetic detent at keyframes without blocking continued movement. Preview aggregates enabled keyframes from every header and collection owner into Screen/Shot coordinates, disables unavailable directions and marks exact-keyframe parking with an amber Play/Pause border. Runtime field activation uses diamonds for sequencing tracks and circles for `extendsOwnerDuration: false` tracks; this distinction is not repeated inside Animation.
 
 It does not introduce a canvas/dope sheet, custom `MainWindow` behavior, component-specific controls, an independent playhead, or a private duration calculation. Empty/invalid/orphaned states are explicit. Curves, color/geometry animation, cross-Screen transitions, arbitrary scripted events, and unbounded/live media are deferred.

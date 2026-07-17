@@ -71,6 +71,7 @@ var tests = new (string Name, Action Run)[]
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
+    ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
     ("active component variants expose parent class actions", ActiveVariantExposesParentClassActions),
@@ -2959,6 +2960,27 @@ static void PlaybackStatePublishesChanges()
     True(state.IsBusy);
     state.SetPlaying(false);
     Equal(4, changes);
+}
+
+static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()
+{
+    var state = new PreviewPlaybackState();
+    var gate = new TimelineFrameUpdateGate();
+    var externalRefreshes = 0;
+    state.Changed += () =>
+    {
+        if (!gate.IsActive) externalRefreshes++;
+    };
+
+    gate.Run(state.NotifyFrameChanged);
+    Equal(0, externalRefreshes);
+    True(!gate.IsActive);
+
+    state.NotifyFrameChanged();
+    Equal(1, externalRefreshes);
+
+    Throws<InvalidOperationException>(() => gate.Run(() => throw new InvalidOperationException("test")));
+    True(!gate.IsActive);
 }
 
 static void CollectionItemReorderPersistsStableIds()
