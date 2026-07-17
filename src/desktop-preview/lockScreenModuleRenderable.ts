@@ -1,7 +1,7 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { componentClassToRenderable } from "./componentClassRenderableRegistry.js";
+import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";

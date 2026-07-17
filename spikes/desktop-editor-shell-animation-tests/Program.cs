@@ -2178,10 +2178,10 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
 {
     var preview = Object("""
         {"collections":[{"id":"messages","label":"Messages","jsonKey":"messages","itemLabel":"Message","fields":[
-          {"id":"name","label":"Name","jsonKey":"name","kind":"text","defaultValue":""},
-          {"id":"direction","label":"Direction","jsonKey":"direction","kind":"option","defaultValue":"incoming","options":[{"value":"incoming","label":"Incoming"}]},
-          {"id":"text","label":"Text","jsonKey":"text","kind":"text","defaultValue":""},
-          {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","defaultValue":"none"}
+          {"id":"name","label":"Name","jsonKey":"name","kind":"text","valueKind":"StringSingleLine","defaultValue":""},
+          {"id":"direction","label":"Direction","jsonKey":"direction","kind":"option","valueKind":"OptionToken","defaultValue":"incoming","options":[{"value":"incoming","label":"Incoming"}]},
+          {"id":"text","label":"Text","jsonKey":"text","kind":"text","valueKind":"StringSingleLine","defaultValue":""},
+          {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","valueKind":"OptionToken","defaultValue":"none"}
         ],"itemPresentation":{"titleFieldId":"name","firstItemBadge":"Initial","subtitleFieldIds":["direction","text"],"subtitleMaxCharacters":24,"iconFieldId":"mediaType","fallbackIcon":"message","iconValueMap":{"image":"image"}}}]}
         """);
     var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, new JsonObject()).Single();

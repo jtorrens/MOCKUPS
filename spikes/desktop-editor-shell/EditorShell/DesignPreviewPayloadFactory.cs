@@ -18,8 +18,9 @@ internal sealed record DesignPreviewPayload(
     string IconAssetRoot,
     string IconMappingJson,
     IReadOnlyList<SpikeDatabase.ProductionFontFace> FontFaces,
-    string ComponentType = "",
-    string DesignPreviewJson = "",
+    string ComponentType,
+    string DesignPreviewJson,
+    string RuntimeContractJson,
     string ComponentBaseConfigsJson = "{}",
     string AppConfigJson = "{}",
     string InstanceJson = "{}",
@@ -176,6 +177,7 @@ internal static class DesignPreviewPayloadFactory
                 ["localFrame"] = Math.Max(0, localTimelineFrame ?? 0),
             },
         };
+        var runtimePreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "moduleInstance",
             instance.Name,
@@ -188,7 +190,8 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             module.RecordClassId,
-            runtimePreview.ToJsonString(),
+            runtimePreviewJson,
+            runtimePreviewJson,
             database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
             instanceJson.ToJsonString(),
@@ -278,6 +281,7 @@ internal static class DesignPreviewPayloadFactory
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()
             : ActorPreviewInputFactory.Create(database, actorId, effectiveThemeMode, paletteColors);
+        var runtimePreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "module",
             node.Name,
@@ -290,7 +294,8 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.RecordClassId,
-            runtimePreview.ToJsonString(),
+            runtimePreviewJson,
+            runtimePreviewJson,
             componentBaseConfigsJson,
             appSettings.ConfigJson,
             ThemeMode: effectiveThemeMode);
@@ -319,6 +324,7 @@ internal static class DesignPreviewPayloadFactory
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()
             : ActorPreviewInputFactory.Create(database, actorId, effectiveThemeMode, paletteColors);
+        var runtimePreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "module",
             node.Name,
@@ -331,7 +337,8 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.RecordClassId,
-            runtimePreview.ToJsonString(),
+            runtimePreviewJson,
+            runtimePreviewJson,
             database.GetComponentClassBaseConfigsJson(settings.ProjectId),
             appSettings.ConfigJson,
             ThemeMode: effectiveThemeMode);
@@ -384,6 +391,7 @@ internal static class DesignPreviewPayloadFactory
             fontFaces,
             settings.ComponentType,
             designPreviewJson,
+            designPreviewJson,
             componentBaseConfigsJson);
     }
 
@@ -419,6 +427,7 @@ internal static class DesignPreviewPayloadFactory
             iconTheme?.MappingJson ?? "{}",
             fontFaces,
             settings.ComponentType,
+            designPreviewJson,
             designPreviewJson,
             componentBaseConfigsJson);
     }

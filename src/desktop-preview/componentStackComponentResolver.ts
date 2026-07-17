@@ -56,7 +56,7 @@ function resolveSlot(
     requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
   ));
-  const instance = parseObject(payload.instanceJson ?? "{}");
+  const instance = parseObject(payload.instanceJson);
   const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
   const authoredRuntimeStateId = optionalString(slot, "runtimeStateId");
   const baseStateId = authoredRuntimeStateId || alternatives[0]?.id || "";
@@ -113,7 +113,7 @@ function runtimeSelectedAlternatives(
     : animatedTransition;
   if (!transition) return desired.map((item) => ({ ...item, active: true }));
 
-  const frame = Math.max(0, Math.floor(Number(asRecord(parseObject(payload.instanceJson ?? "{}").context).localFrame) || 0));
+  const frame = Math.max(0, Math.floor(Number(asRecord(parseObject(payload.instanceJson).context).localFrame) || 0));
   const elapsedMs = transition.elapsedMs;
   const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
   const outgoing = alternatives.find((alternative) => alternative.id === transition.fromId);
@@ -153,7 +153,7 @@ function resolveAlternative(
   if (behavior !== "replace" && behavior !== "overlay") {
     throw new Error(`Unsupported Component Stack state behavior ${behavior}`);
   }
-  const instance = parseObject(payload.instanceJson ?? "{}");
+  const instance = parseObject(payload.instanceJson);
   const context = asRecord(instance.context);
   const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
   const animation = asRecord(instance.animation);
@@ -198,7 +198,7 @@ function visibleAlternativesWithExits(
   rawAlternatives: Record<string, unknown>[],
   alternatives: ComponentStackAlternativeContract[],
 ) {
-  const instance = parseObject(payload.instanceJson ?? "{}");
+  const instance = parseObject(payload.instanceJson);
   const animation = asRecord(instance.animation);
   const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
   const desired = visibleAlternatives(alternatives);

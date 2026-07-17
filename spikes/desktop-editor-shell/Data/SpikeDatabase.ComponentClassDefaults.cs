@@ -1333,12 +1333,13 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
-                ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = componentTypeFilter,
+                ["kind"] = "componentPreset", ["valueKind"] = ValueKind.ComponentPreset.ToString(),
+                ["defaultValue"] = "", ["componentType"] = componentTypeFilter,
             },
             new JsonObject
             {
                 ["id"] = "present", ["label"] = "Present", ["jsonKey"] = "present",
-                ["kind"] = "boolean", ["defaultValue"] = "true",
+                ["kind"] = "boolean", ["valueKind"] = ValueKind.Boolean.ToString(), ["defaultValue"] = "true",
                 ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
             },
             new JsonObject
@@ -1350,7 +1351,7 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "alignment", ["label"] = "Alignment", ["jsonKey"] = "alignment",
-                ["kind"] = "option", ["defaultValue"] = "center",
+                ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(), ["defaultValue"] = "center",
                 ["options"] = new JsonArray
                 {
                     new JsonObject { ["value"] = "start", ["label"] = "Left" },
@@ -1361,7 +1362,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
-                ["kind"] = "option", ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
+                ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(),
+                ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
                 ["options"] = new JsonArray
                 {
                     new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
@@ -1371,7 +1373,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
-                ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
+                ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(),
+                ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
                 ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                     .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
                 ["enabledWhenItemJsonKey"] = "gapBeforeMode",
@@ -1380,7 +1383,7 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
-                ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
+                ["kind"] = "number", ["valueKind"] = ValueKind.Decimal.ToString(), ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
                 ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
                 ["enabledWhenItemJsonKey"] = "gapBeforeMode",
                 ["enabledWhenItemValues"] = new JsonArray("reflow"),
@@ -1429,7 +1432,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeMode", ["label"] = "Gap before", ["jsonKey"] = "gapBeforeMode",
-                ["kind"] = "option", ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
+                ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(),
+                ["defaultValue"] = "fixed", ["minimumItemIndex"] = 1,
                 ["options"] = new JsonArray
                 {
                     new JsonObject { ["value"] = "fixed", ["label"] = "Fixed" },
@@ -1439,7 +1443,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeToken", ["label"] = "Fixed gap before", ["jsonKey"] = "gapBeforeToken",
-                ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
+                ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(),
+                ["defaultValue"] = "theme.spacing.m", ["minimumItemIndex"] = 1,
                 ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                     .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
                 ["enabledWhenItemJsonKey"] = "gapBeforeMode",
@@ -1448,7 +1453,7 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "gapBeforeWeight", ["label"] = "Reflow gap before weight", ["jsonKey"] = "gapBeforeWeight",
-                ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
+                ["kind"] = "number", ["valueKind"] = ValueKind.Decimal.ToString(), ["defaultValue"] = "1", ["minimumItemIndex"] = 1,
                 ["minimum"] = 0.01, ["maximum"] = 100, ["increment"] = 0.1,
                 ["enabledWhenItemJsonKey"] = "gapBeforeMode",
                 ["enabledWhenItemValues"] = new JsonArray("reflow"),
@@ -1502,19 +1507,22 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "presetId", ["label"] = "Component", ["jsonKey"] = "presetId",
-                ["kind"] = "componentPreset", ["defaultValue"] = "", ["componentType"] = "*,-componentStack",
+                ["kind"] = "componentPreset", ["valueKind"] = ValueKind.ComponentPreset.ToString(),
+                ["defaultValue"] = "", ["componentType"] = "*,-componentStack",
                 ["allowEmpty"] = true,
             },
             new JsonObject
             {
                 ["id"] = "active", ["label"] = "Active", ["jsonKey"] = "active",
-                ["kind"] = "boolean", ["defaultValue"] = "false", ["minimumItemIndex"] = 1,
+                ["kind"] = "boolean", ["valueKind"] = ValueKind.Boolean.ToString(),
+                ["defaultValue"] = "false", ["minimumItemIndex"] = 1,
                 ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
             },
             new JsonObject
             {
                 ["id"] = "behavior", ["label"] = "Behavior", ["jsonKey"] = "behavior",
-                ["kind"] = "option", ["defaultValue"] = "replace", ["minimumItemIndex"] = 1,
+                ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(),
+                ["defaultValue"] = "replace", ["minimumItemIndex"] = 1,
                 ["options"] = new JsonArray
                 {
                     new JsonObject { ["value"] = "replace", ["label"] = "Replace" },
@@ -1998,7 +2006,7 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "sizingMode", ["label"] = "Sizing", ["jsonKey"] = "sizingMode",
-            ["kind"] = "option", ["defaultValue"] = "fill",
+            ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(), ["defaultValue"] = "fill",
             ["options"] = new JsonArray
             {
                 new JsonObject { ["value"] = "fill", ["label"] = "Fill container" },
@@ -2008,14 +2016,14 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "startGapToken", ["label"] = "Start gap", ["jsonKey"] = "startGapToken",
-            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(), ["defaultValue"] = "theme.spacing.none",
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
         new JsonObject
         {
             ["id"] = "endGapToken", ["label"] = "End gap", ["jsonKey"] = "endGapToken",
-            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(), ["defaultValue"] = "theme.spacing.none",
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
@@ -2026,7 +2034,8 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "distributionMode", ["label"] = "Distribution", ["jsonKey"] = "distributionMode",
-            ["kind"] = "option", ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
+            ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(),
+            ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
             ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
             ["options"] = new JsonArray
             {
@@ -2037,7 +2046,7 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "sizingMode", ["label"] = "Sizing", ["jsonKey"] = "sizingMode",
-            ["kind"] = "option", ["defaultValue"] = "content",
+            ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(), ["defaultValue"] = "content",
             ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "flow",
             ["options"] = new JsonArray
             {
@@ -2048,21 +2057,21 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "startGapToken", ["label"] = "Start gap", ["jsonKey"] = "startGapToken",
-            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(), ["defaultValue"] = "theme.spacing.none",
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
         new JsonObject
         {
             ["id"] = "endGapToken", ["label"] = "End gap", ["jsonKey"] = "endGapToken",
-            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.none",
+            ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(), ["defaultValue"] = "theme.spacing.none",
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
         new JsonObject
         {
             ["id"] = "stackDirection", ["label"] = "Stack direction", ["jsonKey"] = "stackDirection",
-            ["kind"] = "option", ["defaultValue"] = "down",
+            ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(), ["defaultValue"] = "down",
             ["options"] = new JsonArray
             {
                 new JsonObject { ["value"] = "down", ["label"] = "Down" },
@@ -2072,14 +2081,14 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "stackOffsetToken", ["label"] = "Stack offset", ["jsonKey"] = "stackOffsetToken",
-            ["kind"] = "themeToken", ["defaultValue"] = "theme.spacing.m",
+            ["kind"] = "themeToken", ["valueKind"] = ValueKind.ThemeToken.ToString(), ["defaultValue"] = "theme.spacing.m",
             ["options"] = new JsonArray(ComponentClassFieldCatalog.SpacingTokenOptions
                 .Select((option) => (JsonNode?)new JsonObject { ["value"] = option.Value, ["label"] = option.Label }).ToArray()),
         },
         new JsonObject
         {
             ["id"] = "itemSizingMode", ["label"] = "Item sizing", ["jsonKey"] = "itemSizingMode",
-            ["kind"] = "option", ["defaultValue"] = "intrinsic",
+            ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(), ["defaultValue"] = "intrinsic",
             ["options"] = new JsonArray
             {
                 new JsonObject { ["value"] = "intrinsic", ["label"] = "Intrinsic" },
@@ -2089,14 +2098,14 @@ internal sealed partial class SpikeDatabase
         new JsonObject
         {
             ["id"] = "scaleRatio", ["label"] = "Scale ratio", ["jsonKey"] = "scaleRatio",
-            ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
+            ["kind"] = "number", ["valueKind"] = ValueKind.Decimal.ToString(), ["defaultValue"] = "1",
             ["minimum"] = 0.01, ["maximum"] = 1, ["increment"] = 0.01,
             ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "stacked",
         },
         new JsonObject
         {
             ["id"] = "opacityRatio", ["label"] = "Opacity ratio", ["jsonKey"] = "opacityRatio",
-            ["kind"] = "number", ["valueKind"] = "decimal", ["defaultValue"] = "1",
+            ["kind"] = "number", ["valueKind"] = ValueKind.Decimal.ToString(), ["defaultValue"] = "1",
             ["minimum"] = 0, ["maximum"] = 1, ["increment"] = 0.01,
             ["enabledWhenPath"] = "distributionMode", ["enabledWhenValue"] = "stacked",
         },
@@ -2109,7 +2118,8 @@ internal sealed partial class SpikeDatabase
             new JsonObject
             {
                 ["id"] = "distributionMode", ["label"] = "Distribution", ["jsonKey"] = "distributionMode",
-                ["kind"] = "option", ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
+                ["kind"] = "option", ["valueKind"] = ValueKind.OptionToken.ToString(),
+                ["defaultValue"] = "stacked", ["refreshOnCommit"] = true,
                 ["animatable"] = true, ["animationInterpolations"] = new JsonArray("hold"),
                 ["options"] = new JsonArray
                 {
@@ -2285,7 +2295,7 @@ internal sealed partial class SpikeDatabase
             id,
             label,
             jsonKey,
-            InputKindForValueKind(valueKind),
+            RuntimeInputValueKindContract.InputKind(valueKind),
             defaultValue,
             minimum,
             maximum,
@@ -2385,7 +2395,7 @@ internal sealed partial class SpikeDatabase
             id,
             label,
             jsonKey,
-            InputKindForValueKind(binding.ValueKind),
+            RuntimeInputValueKindContract.InputKind(binding.ValueKind),
             defaultValue,
             minimum: binding.Number?.Minimum ?? 0,
             maximum: binding.Number?.Maximum ?? 9999,
@@ -2396,42 +2406,9 @@ internal sealed partial class SpikeDatabase
             valueKind: binding.ValueKind.ToString());
     }
 
-    private static string InputKindForValueKind(ValueKind valueKind)
-    {
-        return valueKind switch
-        {
-            ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha => "number",
-            ValueKind.IntegerPair => "integerPair",
-            ValueKind.MediaFilePath => "mediaFilePath",
-            ValueKind.Boolean => "boolean",
-            ValueKind.OptionToken => "option",
-            ValueKind.RecordReference => "recordReference",
-            ValueKind.ComponentPreset => "componentPreset",
-            ValueKind.ThemeToken => "themeToken",
-            ValueKind.IconToken => "icon",
-            ValueKind.IconTokenList => "iconList",
-            ValueKind.StringMultiline => "multilineText",
-            _ => "text",
-        };
-    }
-
     private static string ValueKindForInputKind(string kind)
     {
-        return kind.Trim().ToLowerInvariant() switch
-        {
-            "number" => ValueKind.Decimal.ToString(),
-            "integerpair" or "integer_pair" or "size" => ValueKind.IntegerPair.ToString(),
-            "mediafilepath" or "media_file_path" => ValueKind.MediaFilePath.ToString(),
-            "boolean" => ValueKind.Boolean.ToString(),
-            "option" => ValueKind.OptionToken.ToString(),
-            "recordreference" or "record_reference" => ValueKind.RecordReference.ToString(),
-            "componentpreset" or "component_preset" => ValueKind.ComponentPreset.ToString(),
-            "themetoken" or "theme_token" => ValueKind.ThemeToken.ToString(),
-            "icon" => ValueKind.IconToken.ToString(),
-            "iconlist" or "icon_list" or "icons" => ValueKind.IconTokenList.ToString(),
-            "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ValueKind.StringMultiline.ToString(),
-            _ => ValueKind.StringSingleLine.ToString(),
-        };
+        return RuntimeInputValueKindContract.DefaultValueKind(kind).ToString();
     }
 
     private static JsonObject IconRowInputBindings(JsonArray? icons = null)

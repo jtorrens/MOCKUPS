@@ -98,7 +98,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       )
     : undefined;
   const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
-  const motionElapsedMs = conversationFrame / Math.max(1, payload.frameRate ?? 25) * 1000;
+  const motionElapsedMs = conversationFrame / Math.max(1, payload.frameRate) * 1000;
   const timing = conversationTiming(conversation, preview);
   const composer = composerState(conversationMessages(preview), conversationFrame, timing);
   const keyboardVisible = composer.keyboardVisible
@@ -289,7 +289,7 @@ function messageNodes(
       mediaScale: message.mediaScale,
       mediaOffset: message.mediaOffset,
       isPlaying: message.isPlaying,
-      currentTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate ?? 25),
+      currentTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate),
       durationSeconds: message.durationSeconds,
       playbackMode: message.playbackMode,
       isFullScreen: message.isFullScreen,
@@ -344,7 +344,7 @@ function messageNodes(
     {
       trigger: targetOverflow !== previousOverflow,
       elapsedMs: Math.max(0, conversationFrame - latestAppearanceFrame)
-        / Math.max(1, payload.frameRate ?? 25) * 1000,
+        / Math.max(1, payload.frameRate) * 1000,
     },
   );
   const scrollOffset = lerp(previousOverflow, targetOverflow, scrollProgress);

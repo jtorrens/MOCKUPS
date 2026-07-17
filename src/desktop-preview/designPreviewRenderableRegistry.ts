@@ -1,45 +1,23 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
-import { componentClassToRenderable } from "./componentClassRenderableRegistry.js";
+import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { moduleToRenderable } from "./moduleRenderableRegistry.js";
+import { moduleToRenderable } from "./moduleRenderableBoundary.js";
+
+type DesignPreviewKind = DesignPreviewPayload["kind"];
+type DesignPreviewRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
+
+const designPreviewRenderableFactories = {
+  componentClass: componentClassToRenderable,
+  module: moduleToRenderable,
+  moduleInstance: moduleToRenderable,
+} satisfies Record<DesignPreviewKind, DesignPreviewRenderableFactory>;
 
 export function designPreviewPayloadToRenderable(
   payload: DesignPreviewPayload,
 ): RenderableNode {
-  if (payload.kind === "componentClass") {
-    return componentClassToRenderable(payload);
+  const factory = designPreviewRenderableFactories[payload.kind];
+  if (!factory) {
+    throw new Error(`Unsupported design preview route '${String(payload.kind)}'.`);
   }
-  if (payload.kind === "module" || payload.kind === "moduleInstance") {
-    return moduleToRenderable(payload);
-  }
-
-  const box = {
-    x: payload.previewFrame.screenX + payload.previewFrame.screenWidth * 0.16,
-    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight * 0.42,
-    width: payload.previewFrame.screenWidth * 0.68,
-    height: 88,
-  };
-  return {
-    id: "design_preview.unsupported",
-    type: "surface",
-    frame: 0,
-    box,
-    text: `Unsupported design preview: ${payload.kind}`,
-    style: {
-      alignItems: "center",
-      backgroundColor: "#ff00ff",
-      borderRadius: 6,
-      color: "#ffffff",
-      display: "flex",
-      fontSize: 14,
-      fontWeight: 700,
-      justifyContent: "center",
-      lineHeight: box.height,
-      overflow: "hidden",
-      paddingLeft: 12,
-      paddingRight: 12,
-      textAlign: "center",
-      whiteSpace: "nowrap",
-    },
-  };
+  return factory(payload);
 }

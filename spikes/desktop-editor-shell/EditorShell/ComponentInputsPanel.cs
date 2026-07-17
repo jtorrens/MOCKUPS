@@ -428,6 +428,7 @@ internal sealed class ComponentPreviewInputSession
         {
             ConfigJson = config.ToJsonString(),
             DesignPreviewJson = preview.ToJsonString(),
+            RuntimeContractJson = preview.ToJsonString(),
         };
     }
 
@@ -737,7 +738,7 @@ internal sealed class ComponentPreviewInputSession
         string unit)
     {
         var normalizedKind = ParseKind(kind);
-        var normalizedValueKind = ParseValueKind(valueKind, normalizedKind);
+        var normalizedValueKind = ParseValueKind(valueKind);
         return new ComponentInputDefinition(
             id,
             label,
@@ -1895,41 +1896,30 @@ internal sealed class ComponentPreviewInputSession
     {
         return kind.Trim().ToLowerInvariant() switch
         {
+            "text" => ComponentInputKind.Text,
             "number" => ComponentInputKind.Number,
-            "integerpair" or "integer_pair" or "size" => ComponentInputKind.IntegerPair,
+            "integerpair" => ComponentInputKind.IntegerPair,
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
-            "recordreference" or "record_reference" => ComponentInputKind.RecordReference,
-            "componentpreset" or "component_preset" => ComponentInputKind.ComponentPreset,
-            "themetoken" or "theme_token" => ComponentInputKind.ThemeToken,
+            "recordreference" => ComponentInputKind.RecordReference,
+            "componentpreset" => ComponentInputKind.ComponentPreset,
+            "themetoken" => ComponentInputKind.ThemeToken,
             "icon" => ComponentInputKind.Icon,
-            "iconlist" or "icon_list" or "icons" => ComponentInputKind.IconList,
-            "multilinetext" or "multiline_text" or "textmultiline" or "text_multiline" => ComponentInputKind.MultilineText,
-            _ => ComponentInputKind.Text,
+            "iconlist" => ComponentInputKind.IconList,
+            "multilinetext" => ComponentInputKind.MultilineText,
+            "mediafilepath" or "behaviortiming" or "collection" => ComponentInputKind.Text,
+            _ => throw new InvalidOperationException($"Unsupported runtime input kind '{kind}'."),
         };
     }
 
-    private static ValueKind ParseValueKind(string valueKind, ComponentInputKind fallbackKind)
+    private static ValueKind ParseValueKind(string valueKind)
     {
-        if (Enum.TryParse<ValueKind>(valueKind, ignoreCase: true, out var parsed))
+        if (Enum.TryParse<ValueKind>(valueKind, ignoreCase: false, out var parsed)
+            && parsed.ToString().Equals(valueKind, StringComparison.Ordinal))
         {
             return parsed;
         }
-
-        return fallbackKind switch
-        {
-            ComponentInputKind.Number => ValueKind.Decimal,
-            ComponentInputKind.IntegerPair => ValueKind.IntegerPair,
-            ComponentInputKind.Boolean => ValueKind.Boolean,
-            ComponentInputKind.Option => ValueKind.OptionToken,
-            ComponentInputKind.RecordReference => ValueKind.RecordReference,
-            ComponentInputKind.ComponentPreset => ValueKind.ComponentPreset,
-            ComponentInputKind.ThemeToken => ValueKind.ThemeToken,
-            ComponentInputKind.Icon => ValueKind.IconToken,
-            ComponentInputKind.IconList => ValueKind.IconTokenList,
-            ComponentInputKind.MultilineText => ValueKind.StringMultiline,
-            _ => ValueKind.StringSingleLine,
-        };
+        throw new InvalidOperationException($"Unsupported or missing runtime input valueKind '{valueKind}'.");
     }
 
     private static ComponentInputSource ParseInputSource(string source)

@@ -1,4 +1,6 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +22,24 @@ internal sealed partial class SpikeDatabase
         "headerAvatarVariant",
         "keyboardVariant",
         "textInputBarVariant",
+    };
+
+    private static readonly HashSet<string> CurrentRuntimeInputKinds = new(StringComparer.Ordinal)
+    {
+        "text",
+        "number",
+        "integerPair",
+        "boolean",
+        "option",
+        "recordReference",
+        "componentPreset",
+        "themeToken",
+        "icon",
+        "iconList",
+        "multilineText",
+        "mediaFilePath",
+        "behaviorTiming",
+        "collection",
     };
 
     private static readonly (string Table, string Column, string RootKind)[] CurrentJsonColumns =
@@ -64,10 +84,149 @@ internal sealed partial class SpikeDatabase
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
         ValidateCurrentEditorLayouts(connection);
+        ValidateCurrentPreviewManifest(connection);
+        ValidateCurrentRuntimeInputContracts(connection);
         ValidateCurrentReferences(connection);
         ValidateCurrentComponentPresets(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentPreviewManifest(SqliteConnection connection)
+    {
+        using (var components = connection.CreateCommand())
+        {
+            components.CommandText = "SELECT id, component_type FROM component_classes";
+            using var reader = components.ExecuteReader();
+            while (reader.Read())
+            {
+                var id = reader.GetString(0);
+                var componentType = reader.GetString(1);
+                if (!DesktopPreviewManifest.Components.ContainsKey(componentType))
+                {
+                    throw InvalidCurrentDatabase(
+                        $"component class '{id}' uses undeclared preview type '{componentType}'");
+                }
+            }
+        }
+
+        using var modules = connection.CreateCommand();
+        modules.CommandText = "SELECT id, record_class_id FROM modules";
+        using var moduleReader = modules.ExecuteReader();
+        while (moduleReader.Read())
+        {
+            var id = moduleReader.GetString(0);
+            var moduleClass = moduleReader.GetString(1);
+            if (!DesktopPreviewManifest.Modules.ContainsKey(moduleClass))
+            {
+                throw InvalidCurrentDatabase(
+                    $"module '{id}' uses undeclared preview class '{moduleClass}'");
+            }
+        }
+    }
+
+    private void ValidateCurrentRuntimeInputContracts(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT 'component class', id, config_json, design_preview_json, metadata_json FROM component_classes
+            UNION ALL
+            SELECT 'module', id, config_json, design_preview_json, metadata_json FROM modules
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var owner = $"{reader.GetString(0)} '{reader.GetString(1)}'";
+            for (var column = 2; column <= 4; column++)
+            {
+                var document = ParseRequiredObject(reader.GetString(column), $"{owner} runtime contract");
+                ValidateRuntimeInputDefinitions(document, owner, "$");
+            }
+        }
+    }
+
+    private void ValidateRuntimeInputDefinitions(JsonNode? node, string owner, string path)
+    {
+        if (node is JsonArray array)
+        {
+            for (var index = 0; index < array.Count; index++)
+            {
+                ValidateRuntimeInputDefinitions(array[index], owner, $"{path}[{index}]");
+            }
+            return;
+        }
+        if (node is not JsonObject obj) return;
+
+        if (obj["inputs"] is JsonArray inputs)
+        {
+            ValidateRuntimeInputDefinitionArray(inputs, owner, $"{path}.inputs");
+        }
+        if (obj["fields"] is JsonArray fields
+            && obj["itemLabel"] is not null)
+        {
+            ValidateRuntimeInputDefinitionArray(fields, owner, $"{path}.fields");
+        }
+        if (obj[RuntimeInputForwardingContract.StorageKey] is JsonObject forwarded)
+        {
+            foreach (var (key, definition) in forwarded)
+            {
+                ValidateRuntimeInputDefinition(
+                    definition as JsonObject,
+                    owner,
+                    $"{path}.{RuntimeInputForwardingContract.StorageKey}.{key}");
+            }
+        }
+
+        foreach (var (key, child) in obj)
+        {
+            ValidateRuntimeInputDefinitions(child, owner, $"{path}.{key}");
+        }
+    }
+
+    private void ValidateRuntimeInputDefinitionArray(
+        JsonArray definitions,
+        string owner,
+        string path)
+    {
+        for (var index = 0; index < definitions.Count; index++)
+        {
+            ValidateRuntimeInputDefinition(
+                definitions[index] as JsonObject,
+                owner,
+                $"{path}[{index}]");
+        }
+    }
+
+    private void ValidateRuntimeInputDefinition(
+        JsonObject? definition,
+        string owner,
+        string path)
+    {
+        if (definition is null)
+        {
+            throw InvalidCurrentDatabase($"{owner} has a non-object runtime field at {path}");
+        }
+        var id = definition["id"]?.GetValue<string>() ?? "";
+        var label = definition["label"]?.GetValue<string>() ?? "";
+        var jsonKey = definition["jsonKey"]?.GetValue<string>() ?? "";
+        var kind = definition["kind"]?.GetValue<string>() ?? "";
+        var valueKind = definition["valueKind"]?.GetValue<string>() ?? "";
+        if (string.IsNullOrWhiteSpace(id)
+            || string.IsNullOrWhiteSpace(label)
+            || string.IsNullOrWhiteSpace(jsonKey))
+        {
+            throw InvalidCurrentDatabase($"{owner} has an incomplete runtime field at {path}");
+        }
+        if (!CurrentRuntimeInputKinds.Contains(kind))
+        {
+            throw InvalidCurrentDatabase($"{owner} runtime field '{id}' has unsupported kind '{kind}' at {path}");
+        }
+        if (!Enum.TryParse<ValueKind>(valueKind, ignoreCase: false, out var parsedValueKind)
+            || !parsedValueKind.ToString().Equals(valueKind, StringComparison.Ordinal))
+        {
+            throw InvalidCurrentDatabase(
+                $"{owner} runtime field '{id}' has unsupported or missing valueKind '{valueKind}' at {path}");
+        }
     }
 
     private static void ValidateSqliteRuntime(SqliteConnection connection)

@@ -1,5 +1,7 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -114,12 +116,10 @@ internal static class RecordClassFieldCatalog
             "Module class",
             ValueKind.OptionToken,
             IsEditable: false,
-            Options:
-            [
-                new FieldOption("module.generic", "Generic"),
-                new FieldOption("module.core.chat", "Core Chat"),
-                new FieldOption("module.core.lockScreen", "Lock Screen"),
-            ]),
+            Options: DesktopPreviewManifest.Modules
+                .OrderBy((entry) => entry.Value.Label, StringComparer.Ordinal)
+                .Select((entry) => new FieldOption(entry.Key, entry.Value.Label))
+                .ToList()),
         ["module.sortOrder"] = new("module.sortOrder", "Sort Order", ValueKind.Integer),
         ["module.appearanceMode"] = new("module.appearanceMode", "Appearance mode", ValueKind.OptionToken, Options:
         [

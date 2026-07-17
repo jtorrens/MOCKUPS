@@ -507,7 +507,7 @@ function fontRequirementsForPayload(payload: DesignPreviewPayload) {
 
   for (const root of [
     parseObject(payload.configJson),
-    parseObject(payload.componentBaseConfigsJson ?? "{}"),
+    parseObject(payload.componentBaseConfigsJson),
   ]) {
     collectTypographyFontRequirements(
       root,

@@ -54,11 +54,19 @@ import { textInputBarComponentToRenderable } from "./textInputBarComponentRender
 import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
 import { mediaComponentToRenderable } from "./mediaComponentRenderable.js";
 import { resolveMediaComponent } from "./mediaComponentResolver.js";
-import { applyRuntimeInputForwarding } from "./runtimeInputForwarding.js";
 import { badgeComponentToRenderable } from "./badgeComponentRenderable.js";
 import { resolveBadgeComponent } from "./badgeComponentResolver.js";
 
-type ComponentRenderableFactory = (payload: DesignPreviewPayload, assignedBox?: RenderableBox) => RenderableNode;
+export type ComponentRenderableBoundary = (
+  payload: DesignPreviewPayload,
+  assignedBox?: RenderableBox,
+) => RenderableNode;
+
+type ComponentRenderableFactory = (
+  payload: DesignPreviewPayload,
+  assignedBox: RenderableBox | undefined,
+  renderChild: ComponentRenderableBoundary,
+) => RenderableNode;
 
 export const componentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
@@ -72,15 +80,15 @@ export const componentRenderableFactories = {
     iconRowComponentToRenderable(payload, resolveIconRowComponent(payload)),
   iconBar: (payload) =>
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
-  componentStack: (payload) =>
-    componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), componentClassToRenderable),
-  collectionStack: (payload) =>
-    collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), componentClassToRenderable),
+  componentStack: (payload, _assignedBox, renderChild) =>
+    componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), renderChild),
+  collectionStack: (payload, _assignedBox, renderChild) =>
+    collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), renderChild),
   badge: (payload) => badgeComponentToRenderable(payload, resolveBadgeComponent(payload)),
   notification: (payload, assignedBox) =>
     notificationComponentToRenderable(payload, resolveNotificationComponent(payload), assignedBox),
-  notifications: (payload) =>
-    notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), componentClassToRenderable),
+  notifications: (payload, _assignedBox, renderChild) =>
+    notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), renderChild),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
@@ -108,49 +116,19 @@ export const componentRenderableFactories = {
     navigationBarComponentToRenderable(payload, resolveNavigationBarComponent(payload)),
 } satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
 
-export function componentClassToRenderable(payload: DesignPreviewPayload, assignedBox?: RenderableBox): RenderableNode {
-  payload = {
-    ...payload,
-    runtimeContractJson: payload.runtimeContractJson ?? payload.designPreviewJson,
-  };
-  payload = applyRuntimeInputForwarding(payload);
+export function routeComponentClassToRenderable(
+  payload: DesignPreviewPayload,
+  renderChild: ComponentRenderableBoundary,
+  assignedBox?: RenderableBox,
+): RenderableNode {
   const componentType = payload.componentType ?? "";
   const factory = isRoutedComponentClass(componentType)
     ? componentRenderableFactories[componentType]
     : undefined;
-  if (factory) {
-    return factory(payload, assignedBox);
+  if (!factory) {
+    throw new Error(`Unsupported component preview route '${componentType}'.`);
   }
-
-  const box = {
-    x: payload.previewFrame.screenX + payload.previewFrame.screenWidth * 0.16,
-    y: payload.previewFrame.screenY + payload.previewFrame.screenHeight * 0.42,
-    width: payload.previewFrame.screenWidth * 0.68,
-    height: 88,
-  };
-  return {
-    id: "component.preview.unsupported",
-    type: "surface",
-    frame: 0,
-    box,
-    text: `Unsupported component preview: ${componentType}`,
-    style: {
-      alignItems: "center",
-      backgroundColor: "#ff00ff",
-      borderRadius: 6,
-      color: "#ffffff",
-      display: "flex",
-      fontSize: 14,
-      fontWeight: 700,
-      justifyContent: "center",
-      lineHeight: box.height,
-      overflow: "hidden",
-      paddingLeft: 12,
-      paddingRight: 12,
-      textAlign: "center",
-      whiteSpace: "nowrap",
-    },
-  };
+  return factory(payload, assignedBox, renderChild);
 }
 
 function isRoutedComponentClass(

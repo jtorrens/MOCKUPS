@@ -38,11 +38,11 @@ export function resolveComponentCollectionItem(
     const presetTypes = presetTypesOverride
       ?? requiredRecord(bases, "presetTypes", "componentBaseConfigs.presetTypes");
     const rawId = requiredString(item, "id", `${itemPath}.id`);
-    const instance = parseObject(payload.instanceJson ?? "{}");
+    const instance = parseObject(payload.instanceJson);
     const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
     const animation = asRecord(instance.animation);
     const preview = parseObject(payload.designPreviewJson);
-    const runtimeContract = parseObject(payload.runtimeContractJson ?? payload.designPreviewJson);
+    const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);
     const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);
     const presence = ownsPresence

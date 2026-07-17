@@ -157,6 +157,7 @@ internal static class WebDesignPreviewRenderer
             componentType = payload.ComponentType,
             configJson = payload.ConfigJson,
             designPreviewJson = payload.DesignPreviewJson,
+            runtimeContractJson = payload.RuntimeContractJson,
             showMarks,
             themeMode = payload.ThemeMode is "dark" ? "dark" : themeMode is "dark" ? "dark" : "light",
             themeTokensJson = payload.ThemeTokensJson,

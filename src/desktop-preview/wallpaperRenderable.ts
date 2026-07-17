@@ -15,8 +15,8 @@ export function wallpaperRenderable(
   payload: DesignPreviewPayload,
   box: RenderableBox,
 ): RenderableNode | undefined {
-  const appConfig = parseObject(payload.appConfigJson ?? "{}");
-  const runtime = parseObject(payload.designPreviewJson ?? "{}");
+  const appConfig = parseObject(payload.appConfigJson);
+  const runtime = parseObject(payload.designPreviewJson);
   const actorConfig = asRecord(runtime.actor);
   const ownerConfig = isWallpaperOwner(appConfig) ? appConfig : actorConfig;
   if (!isWallpaperOwner(ownerConfig)) return undefined;

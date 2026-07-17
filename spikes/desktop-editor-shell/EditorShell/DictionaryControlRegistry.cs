@@ -16,6 +16,9 @@ internal static class DictionaryControlRegistry
     private static readonly IReadOnlyDictionary<ValueKind, Func<DictionaryControlRequest, IDictionaryValueControl>> Controls =
         new Dictionary<ValueKind, Func<DictionaryControlRequest, IDictionaryValueControl>>
         {
+            [ValueKind.StringSingleLine] = (request) => new DictionaryTextControl(request.Definition, request.Value),
+            [ValueKind.StringReadOnly] = (request) => new DictionaryTextControl(request.Definition, request.Value),
+            [ValueKind.StringMultiline] = (request) => new DictionaryTextControl(request.Definition, request.Value),
             [ValueKind.Boolean] = (request) => new DictionaryBooleanControl(request.Value, request.Definition.IsEditable),
             [ValueKind.OptionToken] = (request) => new DictionaryOptionTokenControl(request.Definition, request.Value),
             [ValueKind.RecordReference] = CreateRecordReferenceControl,
@@ -111,6 +114,16 @@ internal static class DictionaryControlRegistry
                 request.Services.ResolveBehaviorTimingFrames),
         };
 
+    static DictionaryControlRegistry()
+    {
+        var missing = Enum.GetValues<ValueKind>().Where((kind) => !Controls.ContainsKey(kind)).ToList();
+        if (missing.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Dictionary controls are missing explicit registrations for: {string.Join(", ", missing)}.");
+        }
+    }
+
     public static IDictionaryValueControl Create(
         FieldDefinition definition,
         string value,
@@ -119,9 +132,12 @@ internal static class DictionaryControlRegistry
         bool isInherited = false)
     {
         var request = new DictionaryControlRequest(definition, value, services, isHighlighted, isInherited);
-        return Controls.TryGetValue(definition.ValueKind, out var factory)
-            ? factory(request)
-            : new DictionaryTextControl(definition, value);
+        if (!Controls.TryGetValue(definition.ValueKind, out var factory))
+        {
+            throw new InvalidOperationException(
+                $"Field '{definition.Id}' uses unregistered dictionary value kind '{definition.ValueKind}'.");
+        }
+        return factory(request);
     }
 
     private static IDictionaryValueControl CreateNumberControl(DictionaryControlRequest request)

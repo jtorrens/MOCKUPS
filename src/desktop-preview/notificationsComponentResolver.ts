@@ -173,7 +173,7 @@ function resolveDistribution(
 ) {
   const base = requiredString(preview, "distributionMode", "component.notifications.runtime.distributionMode");
   if (base !== "flow" && base !== "stacked") throw new Error(`Unsupported Notifications distribution ${base}`);
-  const instance = parseObject(payload.instanceJson ?? "{}");
+  const instance = parseObject(payload.instanceJson);
   const animation = asRecord(instance.animation);
   const frame = Math.max(0, payload.localFrame);
   const resolved = resolveParameterAnimation(animation, "distributionMode", "", frame, base);

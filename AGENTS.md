@@ -7,6 +7,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/24_desktop_preview_component_architecture.md`
 - `docs/architecture/25_component_migration_status.md`
 - `docs/architecture/33_persistence_and_migration_contract.md`
+- `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -180,6 +181,23 @@ Component inputs are runtime component inputs, not preview-only controls. The pr
 Component composition must reference concrete component presets, not parent component classes. Parent classes own schema, resolver identity and preset lists; reusable visual instances store full preset references in the form `componentClassId::preset::presetId`. Short preset ids are legacy migration input only. Saving a new preset must clone the active selected preset config, never ambiguous "current class values".
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
+
+## Hard rule: manifest, routing and payload contracts are strict
+
+All Preview component/module identities, categories, entrypoints and declared
+embedded dependencies come from
+`src/desktop-preview/desktopPreviewManifest.json`. Registries route prepared
+payloads by exact stable id and do nothing else: no forwarding, defaults,
+merging, renderable construction or unsupported fallback surfaces.
+
+Payload preparation and explicit Runtime Input forwarding belong to the shared
+payload boundary before registry dispatch. `designPreviewJson` may become local
+at an embedded boundary; the complete `runtimeContractJson` temporal-owner
+envelope must remain unchanged through recursive composition. Every current
+Runtime Input definition has an explicit canonical `valueKind`, and the
+dictionary registry must exhaustively register every `ValueKind`. Missing or
+unknown routes, payload documents, kinds and value kinds fail explicitly. See
+`docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`.
 
 ## Data migrations, not compatibility fallbacks
 

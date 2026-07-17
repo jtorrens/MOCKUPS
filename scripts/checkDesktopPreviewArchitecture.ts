@@ -7,6 +7,11 @@ import {
 } from "../src/desktop-preview/desktopPreviewComponents.js";
 import { componentRenderableFactories } from "../src/desktop-preview/componentClassRenderableRegistry.js";
 import {
+  desktopPreviewModules,
+  type DesktopPreviewModuleManifestEntry,
+} from "../src/desktop-preview/desktopPreviewModules.js";
+import { moduleRenderableFactories } from "../src/desktop-preview/moduleRenderableRegistry.js";
+import {
   approximateTextWidth,
   approximateWrappedTextLines,
 } from "../src/desktop-preview/previewTextHelpers.js";
@@ -369,6 +374,99 @@ function jsonRecord(value: unknown): Record<string, unknown> {
 
 function jsonArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+function assertDesktopRuntimeInputValueKindsAreCanonical() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+
+  const valueKindSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
+  const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(valueKindSource);
+  const valueKinds = new Set(
+    (valueKindBlock?.[1] ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  const inputKinds = new Set([
+    "text",
+    "number",
+    "integerPair",
+    "boolean",
+    "option",
+    "recordReference",
+    "componentPreset",
+    "themeToken",
+    "icon",
+    "iconList",
+    "multilineText",
+    "mediaFilePath",
+    "behaviorTiming",
+    "collection",
+  ]);
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database.prepare(`
+      SELECT 'component class' AS owner_type, id, config_json, design_preview_json, metadata_json
+      FROM component_classes
+      UNION ALL
+      SELECT 'module', id, config_json, design_preview_json, metadata_json
+      FROM modules
+    `).all() as {
+      owner_type: string;
+      id: string;
+      config_json: string;
+      design_preview_json: string;
+      metadata_json: string;
+    }[];
+    const visit = (owner: string, value: unknown, pathLabel: string) => {
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => visit(owner, item, `${pathLabel}[${index}]`));
+        return;
+      }
+      if (typeof value !== "object" || value === null) return;
+      const definition = value as Record<string, unknown>;
+      if (typeof definition.id === "string"
+          && typeof definition.jsonKey === "string"
+          && typeof definition.kind === "string") {
+        if (!inputKinds.has(definition.kind)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner}.${pathLabel} uses unsupported runtime input kind "${definition.kind}"`,
+          );
+        }
+        if (typeof definition.valueKind !== "string" || !valueKinds.has(definition.valueKind)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner}.${pathLabel} uses missing or non-canonical valueKind "${String(definition.valueKind ?? "")}"`,
+          );
+        }
+      }
+      for (const [key, child] of Object.entries(definition)) {
+        visit(owner, child, pathLabel ? `${pathLabel}.${key}` : key);
+      }
+    };
+    for (const row of rows) {
+      for (const [column, json] of [
+        ["config_json", row.config_json],
+        ["design_preview_json", row.design_preview_json],
+        ["metadata_json", row.metadata_json],
+      ] as const) {
+        visit(`${row.owner_type} ${row.id}.${column}`, JSON.parse(json), "$");
+      }
+    }
+    const retiredGenericLayouts = database.prepare(
+      "SELECT COUNT(*) AS count FROM editor_layouts WHERE record_class_id = 'module.generic'",
+    ).get() as { count: number };
+    if (retiredGenericLayouts.count > 0) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "retired module.generic editor fallback remains in the current database",
+      );
+    }
+  } finally {
+    database.close();
+  }
 }
 
 function walkJson(value: unknown, visit: (value: unknown, pathLabel: string) => void, pathLabel = "") {
@@ -1103,6 +1201,7 @@ for (const relativePath of centralCommonFiles) {
 const registryFiles = new Set([
   "src/desktop-preview/componentClassRenderableRegistry.ts",
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
+  "src/desktop-preview/moduleRenderableRegistry.ts",
 ]);
 
 const sharedPreviewHelperFiles = new Set([
@@ -1121,6 +1220,7 @@ const filesystemAllowedPreviewFiles = new Set([
 ]);
 
 const manifestEntries = Object.entries(desktopPreviewComponents);
+const moduleManifestEntries = Object.entries(desktopPreviewModules);
 
 function moduleFile(entry: DesktopPreviewComponentManifestEntry, kind: "resolver" | "renderable") {
   return `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
@@ -1130,12 +1230,20 @@ function moduleImport(entry: DesktopPreviewComponentManifestEntry, kind: "resolv
   return `${entry[kind]}.js`;
 }
 
+function moduleEntrypointFile(entry: DesktopPreviewModuleManifestEntry, kind: "resolver" | "renderable") {
+  return `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
+}
+
+function moduleEntrypointImport(entry: DesktopPreviewModuleManifestEntry, kind: "resolver" | "renderable") {
+  return `${entry[kind]}.js`;
+}
+
 for (const [componentClass, entry] of manifestEntries) {
   for (const kind of ["contract", "resolver", "renderable"] as const) {
     const filePath = path.join(previewRoot, `${entry[kind].replace(/^\.\//, "")}.ts`);
     if (!existsSync(filePath)) {
       addViolation(
-        "src/desktop-preview/desktopPreviewComponents.ts",
+        "src/desktop-preview/desktopPreviewManifest.json",
         `manifest entry "${componentClass}" points to missing ${kind} file "${entry[kind]}"`,
       );
     }
@@ -1144,8 +1252,28 @@ for (const [componentClass, entry] of manifestEntries) {
   for (const child of entry.embeds) {
     if (!desktopPreviewComponents[child]) {
       addViolation(
-        "src/desktop-preview/desktopPreviewComponents.ts",
+        "src/desktop-preview/desktopPreviewManifest.json",
         `manifest entry "${componentClass}" embeds unknown component "${child}"`,
+      );
+    }
+  }
+}
+
+for (const [moduleClass, entry] of moduleManifestEntries) {
+  for (const kind of ["resolver", "renderable"] as const) {
+    const filePath = path.join(previewRoot, `${entry[kind].replace(/^\.\//, "")}.ts`);
+    if (!existsSync(filePath)) {
+      addViolation(
+        "src/desktop-preview/desktopPreviewManifest.json",
+        `module manifest entry "${moduleClass}" points to missing ${kind} file "${entry[kind]}"`,
+      );
+    }
+  }
+  for (const child of entry.embeds) {
+    if (!desktopPreviewComponents[child]) {
+      addViolation(
+        "src/desktop-preview/desktopPreviewManifest.json",
+        `module manifest entry "${moduleClass}" embeds unknown component "${child}"`,
       );
     }
   }
@@ -1191,6 +1319,106 @@ for (const [componentClass, entry] of manifestEntries) {
     );
   }
 }
+
+const routedModuleClasses = new Set(Object.keys(moduleRenderableFactories));
+for (const [moduleClass] of moduleManifestEntries) {
+  if (!routedModuleClasses.has(moduleClass)) {
+    addViolation(
+      "src/desktop-preview/moduleRenderableRegistry.ts",
+      `module class "${moduleClass}" is missing from module renderable registry`,
+    );
+  }
+}
+for (const moduleClass of routedModuleClasses) {
+  if (!desktopPreviewModules[moduleClass]) {
+    addViolation(
+      "src/desktop-preview/moduleRenderableRegistry.ts",
+      `module renderable registry contains unknown class "${moduleClass}"`,
+    );
+  }
+}
+
+for (const [componentClass, entry] of manifestEntries) {
+  if (!["component", "atom", "system"].includes(entry.category)) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `component "${componentClass}" has unsupported category "${entry.category}"`,
+    );
+  }
+  if (!["functional", "structural"].includes(entry.migrationStatus)) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `component "${componentClass}" has unsupported migration status "${entry.migrationStatus}"`,
+    );
+  }
+  if (new Set(entry.embeds).size !== entry.embeds.length) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `component "${componentClass}" has duplicate embedded dependencies`,
+    );
+  }
+}
+for (const [moduleClass, entry] of moduleManifestEntries) {
+  if (!entry.label.trim()) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `module "${moduleClass}" has no label`,
+    );
+  }
+  if (new Set(entry.embeds).size !== entry.embeds.length) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `module "${moduleClass}" has duplicate embedded dependencies`,
+    );
+  }
+}
+
+for (const registryPath of registryFiles) {
+  assertNoTerms(registryPath, [
+    "applyRuntimeInputForwarding",
+    "runtimeContractJson:",
+    "designPreviewJson:",
+    "backgroundColor:",
+    "previewFrame.screen",
+  ]);
+}
+assertContains(
+  "src/desktop-preview/componentRenderableBoundary.ts",
+  "resolveRenderablePayload(payload)",
+  "component payload preparation must happen before component registry routing",
+);
+assertContains(
+  "src/desktop-preview/moduleRenderableBoundary.ts",
+  "resolveRenderablePayload(payload)",
+  "module payload preparation must happen before module registry routing",
+);
+assertContains(
+  "src/desktop-preview/renderablePayloadBoundary.ts",
+  "applyRuntimeInputForwarding(payload)",
+  "runtime forwarding must belong to the payload boundary",
+);
+for (const recursivePayloadPath of [
+  "src/desktop-preview/previewPayloadHelpers.ts",
+  "src/desktop-preview/lockScreenModuleRenderable.ts",
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  "src/desktop-preview/notificationsComponentResolver.ts",
+]) {
+  assertDoesNotContain(
+    recursivePayloadPath,
+    "runtimeContractJson:",
+    "embedded component composition must preserve the complete temporal owner envelope",
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "var runtimePreviewJson = runtimePreview.ToJsonString();",
+  "desktop payloads must materialize one explicit effective temporal owner envelope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "RuntimeContractJson = preview.ToJsonString()",
+  "isolated Design Test Values must update the effective temporal owner envelope without persistence",
+);
 for (const componentClass of routedComponentClasses) {
   if (!desktopPreviewComponents[componentClass]) {
     addViolation(
@@ -1224,28 +1452,34 @@ for (const [, entry] of manifestEntries) {
   }
 }
 
-allowedComponentImports["src/desktop-preview/conversationModuleRenderable.ts"] = new Set([
-  "./avatarComponentRenderable.js",
-  "./avatarComponentResolver.js",
-  "./bubbleComponentRenderable.js",
-  "./bubbleComponentResolver.js",
-  "./keyboardComponentRenderable.js",
-  "./keyboardComponentResolver.js",
-  "./iconRowComponentRenderable.js",
-  "./iconRowComponentResolver.js",
-  "./navigationBarComponentRenderable.js",
-  "./navigationBarComponentResolver.js",
-  "./statusBarComponentRenderable.js",
-  "./statusBarComponentResolver.js",
-  "./textInputBarComponentRenderable.js",
-  "./textInputBarComponentResolver.js",
-]);
-allowedComponentImports["src/desktop-preview/lockScreenModuleRenderable.ts"] = new Set([
-  "./navigationBarComponentRenderable.js",
-  "./navigationBarComponentResolver.js",
-  "./statusBarComponentRenderable.js",
-  "./statusBarComponentResolver.js",
-]);
+const manifestModuleEntrypointImports = new Set<string>();
+const allowedOwningModuleImports: Record<string, Set<string>> = {};
+for (const [, entry] of moduleManifestEntries) {
+  desktopPreviewPaintTreeSourceFiles.add(moduleEntrypointFile(entry, "renderable"));
+  manifestModuleEntrypointImports.add(moduleEntrypointImport(entry, "resolver"));
+  manifestModuleEntrypointImports.add(moduleEntrypointImport(entry, "renderable"));
+  const ownerFiles = [
+    moduleEntrypointFile(entry, "resolver"),
+    moduleEntrypointFile(entry, "renderable"),
+  ];
+  const ownerImports = new Set([
+    moduleEntrypointImport(entry, "resolver"),
+    moduleEntrypointImport(entry, "renderable"),
+  ]);
+  for (const ownerFile of ownerFiles) allowedOwningModuleImports[ownerFile] = ownerImports;
+  for (const kind of ["resolver", "renderable"] as const) {
+    const filePath = moduleEntrypointFile(entry, kind);
+    const allowed = allowedComponentImports[filePath] ?? new Set<string>();
+    for (const child of entry.embeds) {
+      const childEntry = desktopPreviewComponents[child];
+      if (childEntry) {
+        allowed.add(moduleImport(childEntry, "resolver"));
+        allowed.add(moduleImport(childEntry, "renderable"));
+      }
+    }
+    allowedComponentImports[filePath] = allowed;
+  }
+}
 
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
@@ -1373,6 +1607,17 @@ for (const filePath of walkFiles(previewRoot)) {
       );
     }
   }
+
+  for (const target of imports) {
+    if (!manifestModuleEntrypointImports.has(target)) continue;
+    if (relativePath !== "src/desktop-preview/moduleRenderableRegistry.ts"
+        && !allowedOwningModuleImports[relativePath]?.has(target)) {
+      addViolation(
+        relativePath,
+        `concrete module entrypoint import "${target}" is allowed only in the module registry`,
+      );
+    }
+  }
 }
 
 const payloadSource = readText("src/desktop-preview/designPreviewPayload.ts");
@@ -1493,7 +1738,12 @@ type CurrentComponentClassRow = {
   config_json: string;
   metadata_json: string;
 };
+type CurrentModuleClassRow = {
+  id: string;
+  record_class_id: string;
+};
 let currentComponentClassRows: CurrentComponentClassRow[] = [];
+let currentModuleClassRows: CurrentModuleClassRow[] = [];
 let editorLayoutSource = "";
 let moduleContractSource = "";
 const editorLayoutRecordClassIds = new Set<string>();
@@ -1505,6 +1755,9 @@ if (!existsSync(desktopDatabasePath)) {
     currentComponentClassRows = database
       .prepare("SELECT id, component_type, record_class_id, config_json, metadata_json FROM component_classes")
       .all() as CurrentComponentClassRow[];
+    currentModuleClassRows = database
+      .prepare("SELECT id, record_class_id FROM modules")
+      .all() as CurrentModuleClassRow[];
     const layouts = database
       .prepare("SELECT record_class_id, layout_json FROM editor_layouts ORDER BY record_class_id")
       .all() as { record_class_id: string; layout_json: string }[];
@@ -1560,8 +1813,31 @@ for (const row of currentComponentClassRows) {
 for (const componentClass of Object.keys(desktopPreviewComponents)) {
   if (!currentComponentClasses.has(componentClass)) {
     addViolation(
-      "src/desktop-preview/desktopPreviewComponents.ts",
+      "src/desktop-preview/desktopPreviewManifest.json",
       `manifest component class "${componentClass}" is absent from the committed current database`,
+    );
+  }
+}
+const currentModuleClasses = new Set(currentModuleClassRows.map((row) => row.record_class_id));
+for (const row of currentModuleClassRows) {
+  if (!desktopPreviewModules[row.record_class_id]) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `current module "${row.id}" uses class "${row.record_class_id}" missing from the module manifest`,
+    );
+  }
+  if (!routedModuleClasses.has(row.record_class_id)) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `current module class "${row.record_class_id}" is missing from module registry`,
+    );
+  }
+}
+for (const moduleClass of Object.keys(desktopPreviewModules)) {
+  if (!currentModuleClasses.has(moduleClass)) {
+    addViolation(
+      "src/desktop-preview/desktopPreviewManifest.json",
+      `manifest module class "${moduleClass}" is absent from the committed current database`,
     );
   }
 }
@@ -1864,7 +2140,7 @@ for (const forbiddenLegacySystemBarMethod of [
   );
 }
 assertDoesNotContain(
-  "src/desktop-preview/desktopPreviewComponents.ts",
+  "src/desktop-preview/desktopPreviewManifest.json",
   "./systemBar",
   "system bars must be declared as explicit status/navigation component modules, not shared manifest entrypoints",
 );
@@ -1874,28 +2150,28 @@ assertDoesNotContain(
   "component registry must route status/navigation through their explicit component modules",
 );
 assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
-  "audio: {",
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "\"audio\": {",
   "desktop preview component manifest must use the current audio component type",
 );
 assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
-  "textBox: {",
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "\"textBox\": {",
   "desktop preview component manifest must route text box as an owning component module",
 );
 assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
-  "textInputBar: {",
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "\"textInputBar\": {",
   "desktop preview component manifest must route text input bar as an owning component module",
 );
 assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
-  "keyboard: {",
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "\"keyboard\": {",
   "desktop preview component manifest must route keyboard as an owning component module",
 );
 assertContains(
-  "src/desktop-preview/desktopPreviewComponents.ts",
-  "media: {",
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "\"media\": {",
   "desktop preview component manifest must route media as an owning component module",
 );
 assertContains(
@@ -1924,22 +2200,22 @@ assertContains(
   "component renderable registry must route the current media component type",
 );
 assertDoesNotContain(
-  "src/desktop-preview/desktopPreviewComponents.ts",
+  "src/desktop-preview/desktopPreviewManifest.json",
   "audio_message",
   "legacy audio_message component type must not return to the preview manifest",
 );
 assertDoesNotContain(
-  "src/desktop-preview/desktopPreviewComponents.ts",
+  "src/desktop-preview/desktopPreviewManifest.json",
   "button_icon",
   "legacy button_icon component type must not return to the preview manifest",
 );
 assertDoesNotContain(
-  "src/desktop-preview/desktopPreviewComponents.ts",
+  "src/desktop-preview/desktopPreviewManifest.json",
   "text_input_bar",
   "legacy text_input_bar component type must not return to the preview manifest",
 );
 assertDoesNotContain(
-  "src/desktop-preview/desktopPreviewComponents.ts",
+  "src/desktop-preview/desktopPreviewManifest.json",
   "video_message",
   "legacy video_message component type must not return to the preview manifest",
 );
@@ -2037,6 +2313,58 @@ assertContains(
   "ValueKind.ComponentPreset",
   "component preset fields must use their dedicated dictionary control",
 );
+{
+  const fieldDefinitionSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
+  const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(fieldDefinitionSource);
+  const valueKinds = new Set(
+    (valueKindBlock?.[1] ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+  const registrySource = readText("spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs");
+  const registeredKinds = new Set(
+    [...registrySource.matchAll(/\[ValueKind\.([A-Za-z0-9_]+)\]\s*=/g)]
+      .map((match) => match[1] ?? "")
+      .filter(Boolean),
+  );
+  for (const valueKind of valueKinds) {
+    if (!registeredKinds.has(valueKind)) {
+      addViolation(
+        "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+        `dictionary registry is missing explicit ValueKind.${valueKind}`,
+      );
+    }
+  }
+  for (const registeredKind of registeredKinds) {
+    if (!valueKinds.has(registeredKind)) {
+      addViolation(
+        "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+        `dictionary registry contains unknown ValueKind.${registeredKind}`,
+      );
+    }
+  }
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  ": new DictionaryTextControl(definition, value)",
+  "dictionary registry must fail for an unregistered ValueKind instead of falling back to text",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "uses unregistered dictionary value kind",
+  "dictionary registry must report an unregistered ValueKind visibly",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "ignoreCase: false",
+  "runtime input valueKind parsing must accept only the current canonical enum spelling",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "_ => ComponentInputKind.Text",
+  "runtime input kind parsing must not silently fall back to text",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",
@@ -2047,6 +2375,37 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs
   "ValueKind.DirectoryPath",
   "ValueKind.ImageFilePath",
 ]);
+assertContains(
+  "spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
+  "desktopPreviewManifest.json",
+  "desktop app must embed the canonical preview manifest",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)",
+  "component navigation category must come from the canonical preview manifest",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "ComponentClassNavigationGroupFor",
+  "component navigation must not infer category from a hard-coded component type switch",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  "DesktopPreviewManifest.Modules",
+  "module class options must come from the canonical preview manifest",
+);
+for (const retiredGenericModulePath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+]) {
+  assertDoesNotContain(
+    retiredGenericModulePath,
+    "module.generic",
+    "undeclared generic module fallback must not return",
+  );
+}
 assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", [
   "\"audio\"",
   "\"avatar\"",
@@ -2595,7 +2954,7 @@ assertContains(
 );
 assertMatches(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  /\["id"\] = "writeOn"[\s\S]*?\["valueKind"\] = "BehaviorTiming"[\s\S]*?\["baseFramesPerUnit"\] = 7/,
+  /\["id"\] = "writeOn"[\s\S]*?\["valueKind"\] = ValueKind\.BehaviorTiming\.ToString\(\)[\s\S]*?\["baseFramesPerUnit"\] = 7/,
   "new Conversation messages must contribute a finite default write-on duration",
 );
 assertContains(
@@ -3360,6 +3719,7 @@ assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();
 assertDesktopDatabaseHasNoRetiredTimeFields();
 assertDesktopDatabaseHasNoRetiredEditorLayouts();
+assertDesktopRuntimeInputValueKindsAreCanonical();
 assertModuleInstanceRuntimePayloadsMatchContracts();
 
 if (violations.length > 0) {

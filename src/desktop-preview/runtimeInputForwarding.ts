@@ -9,7 +9,7 @@ export function applyRuntimeInputForwarding(
   payload: DesignPreviewPayload,
 ): DesignPreviewPayload {
   const config = parseRecord(payload.configJson, "component config");
-  const runtime = parseRecord(payload.designPreviewJson ?? "{}", "component runtime payload");
+  const runtime = parseRecord(payload.designPreviewJson, "component runtime payload");
   apply(config, runtime, "");
   return {
     ...payload,

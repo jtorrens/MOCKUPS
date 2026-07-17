@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -9,13 +10,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private enum ComponentClassNavigationGroup
-    {
-        Components,
-        Atoms,
-        System,
-    }
-
     public List<ProjectTreeNode> LoadProjectTree()
     {
         using var connection = OpenConnection();
@@ -60,7 +54,7 @@ internal sealed partial class SpikeDatabase
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var renderPresetRootNodes = new Dictionary<string, ProjectTreeNode>();
-        var componentClassGroupNodes = new Dictionary<string, Dictionary<ComponentClassNavigationGroup, ProjectTreeNode>>();
+        var componentClassGroupNodes = new Dictionary<string, Dictionary<DesktopPreviewComponentCategory, ProjectTreeNode>>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
         var shotNodes = new Dictionary<string, ProjectTreeNode>();
@@ -343,7 +337,7 @@ internal sealed partial class SpikeDatabase
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
         {
             if (!componentClassGroupNodes.TryGetValue(componentClass.ProjectId, out var componentGroups)) continue;
-            var groupNode = componentGroups[ComponentClassNavigationGroupFor(componentClass.ComponentType)];
+            var groupNode = componentGroups[DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)];
 
             var componentNode = new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentClass,
@@ -417,17 +411,17 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    private static IReadOnlyList<ComponentClassNavigationGroup> ComponentClassNavigationGroups()
+    private static IReadOnlyList<DesktopPreviewComponentCategory> ComponentClassNavigationGroups()
     {
         return
         [
-            ComponentClassNavigationGroup.Components,
-            ComponentClassNavigationGroup.Atoms,
-            ComponentClassNavigationGroup.System,
+            DesktopPreviewComponentCategory.Component,
+            DesktopPreviewComponentCategory.Atom,
+            DesktopPreviewComponentCategory.System,
         ];
     }
 
-    private static Dictionary<ComponentClassNavigationGroup, ProjectTreeNode> CreateComponentClassGroupNodes(
+    private static Dictionary<DesktopPreviewComponentCategory, ProjectTreeNode> CreateComponentClassGroupNodes(
         string projectId,
         ProjectTreeNode root)
     {
@@ -443,45 +437,35 @@ internal sealed partial class SpikeDatabase
                     root));
     }
 
-    private static ComponentClassNavigationGroup ComponentClassNavigationGroupFor(string componentType)
-    {
-        return componentType switch
-        {
-            "status_bar" or "navigation_bar" or "keyboard" or "keypad" or "fingerprint" or "faceRecognition" or "drawPassword" or "password" or "textInputBar" => ComponentClassNavigationGroup.System,
-            "surface" or "cursor" or "textBox" or "iconRow" or "iconBar" or "componentStack" or "collectionStack" or "badge" or "codeIndicator" or "button" or "label" or "avatar" => ComponentClassNavigationGroup.Atoms,
-            _ => ComponentClassNavigationGroup.Components,
-        };
-    }
-
-    private static string ComponentClassNavigationGroupId(ComponentClassNavigationGroup group)
+    private static string ComponentClassNavigationGroupId(DesktopPreviewComponentCategory group)
     {
         return group switch
         {
-            ComponentClassNavigationGroup.Components => "components",
-            ComponentClassNavigationGroup.Atoms => "atoms",
-            ComponentClassNavigationGroup.System => "system",
+            DesktopPreviewComponentCategory.Component => "components",
+            DesktopPreviewComponentCategory.Atom => "atoms",
+            DesktopPreviewComponentCategory.System => "system",
             _ => throw new InvalidOperationException($"Unknown component class group {group}."),
         };
     }
 
-    private static string ComponentClassNavigationGroupTitle(ComponentClassNavigationGroup group)
+    private static string ComponentClassNavigationGroupTitle(DesktopPreviewComponentCategory group)
     {
         return group switch
         {
-            ComponentClassNavigationGroup.Components => "Components",
-            ComponentClassNavigationGroup.Atoms => "Atoms",
-            ComponentClassNavigationGroup.System => "System",
+            DesktopPreviewComponentCategory.Component => "Components",
+            DesktopPreviewComponentCategory.Atom => "Atoms",
+            DesktopPreviewComponentCategory.System => "System",
             _ => throw new InvalidOperationException($"Unknown component class group {group}."),
         };
     }
 
-    private static string ComponentClassNavigationGroupSubtitle(ComponentClassNavigationGroup group)
+    private static string ComponentClassNavigationGroupSubtitle(DesktopPreviewComponentCategory group)
     {
         return group switch
         {
-            ComponentClassNavigationGroup.Components => "Reusable composed component classes",
-            ComponentClassNavigationGroup.Atoms => "Primitive component building blocks",
-            ComponentClassNavigationGroup.System => "System UI component classes",
+            DesktopPreviewComponentCategory.Component => "Reusable composed component classes",
+            DesktopPreviewComponentCategory.Atom => "Primitive component building blocks",
+            DesktopPreviewComponentCategory.System => "System UI component classes",
             _ => throw new InvalidOperationException($"Unknown component class group {group}."),
         };
     }
@@ -646,33 +630,6 @@ internal sealed partial class SpikeDatabase
                 name,
                 "1x1 · 1 fps · mov",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPreset),
-                parent);
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.App)
-        {
-            var index = NextSortOrder(connection, "modules", "app_id", parent.Id);
-            var id = $"module_{Guid.NewGuid():N}";
-            Execute(
-                connection,
-                """
-                INSERT INTO modules (id, app_id, record_class_id, name, notes, sort_order, metadata_json)
-                VALUES ($id, $appId, $recordClassId, $name, $notes, $sortOrder, $metadataJson)
-                """,
-                ("$id", id),
-                ("$appId", parent.Id),
-                ("$recordClassId", "module.generic"),
-                ("$name", $"Module {index + 1}"),
-                ("$notes", "New module created in the desktop shell spike."),
-                ("$sortOrder", index),
-                ("$metadataJson", JsonSerializer.Serialize(new { note = "New module created in the desktop shell spike." })));
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.Module,
-                id,
-                $"Module {index + 1}",
-                "New module created in the desktop shell spike.",
-                "module.generic",
                 parent);
         }
 

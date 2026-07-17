@@ -351,7 +351,7 @@ internal static class RuntimeInputForwardingContract
             ["sourceInputId"] = input.Id,
             ["label"] = runtimeLabel,
             ["jsonKey"] = jsonKey,
-            ["kind"] = InputKind(input.ValueKind),
+            ["kind"] = RuntimeInputValueKindContract.InputKind(input.ValueKind),
             ["valueKind"] = input.ValueKind.ToString(),
             ["defaultValue"] = defaultValue,
             ["source"] = "runtime",
@@ -463,21 +463,6 @@ internal static class RuntimeInputForwardingContract
         });
         return labels;
     }
-
-    private static string InputKind(ValueKind valueKind) => valueKind switch
-    {
-        ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha => "number",
-        ValueKind.IntegerPair => "integerPair",
-        ValueKind.Boolean => "boolean",
-        ValueKind.OptionToken => "option",
-        ValueKind.RecordReference => "recordReference",
-        ValueKind.ComponentPreset => "componentPreset",
-        ValueKind.ThemeToken => "themeToken",
-        ValueKind.IconToken => "icon",
-        ValueKind.IconTokenList or ValueKind.IconSlots => "iconList",
-        ValueKind.StringMultiline => "multilineText",
-        _ => "text",
-    };
 
     private static string StorageText(JsonNode? node) => node switch
     {

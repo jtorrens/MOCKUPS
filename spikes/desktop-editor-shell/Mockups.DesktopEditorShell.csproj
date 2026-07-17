@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="../../src/desktop-preview/desktopPreviewManifest.json" LogicalName="Mockups.DesktopPreviewManifest.json" />
     <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs" Link="scripts/icon-themes/sync-icon-theme-token.cjs" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../dist/desktop-preview/**/*" Link="desktop-preview/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../assets/system/system_icons/**/*.svg" Link="assets/system/system_icons/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

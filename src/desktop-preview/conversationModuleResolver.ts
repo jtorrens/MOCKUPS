@@ -13,7 +13,7 @@ type JsonRecord = Record<string, unknown>;
 
 export function resolveConversationModuleFrame(payload: DesignPreviewPayload): JsonRecord {
   const preview = parseObject(payload.designPreviewJson);
-  const instance = parseObject(payload.instanceJson ?? "{}");
+  const instance = parseObject(payload.instanceJson);
   const animation = asRecord(instance.animation);
   const context = asRecord(instance.context);
   const screenFrame = Math.max(0, Math.floor(optionalNumber(context, "localFrame", 0)));

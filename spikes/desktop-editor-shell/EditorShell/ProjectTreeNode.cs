@@ -76,7 +76,6 @@ internal sealed class ProjectTreeNode
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
     public bool CanAddChild => Kind is ProjectTreeNodeKind.AppsRoot
-        or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.IconThemesRoot
         or ProjectTreeNodeKind.RenderPresetsRoot
@@ -159,7 +158,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.ProductionFontsRoot => "navigation.production_fonts",
             ProjectTreeNodeKind.EpisodesRoot => "navigation.episodes",
             ProjectTreeNodeKind.App => "app.generic",
-            ProjectTreeNodeKind.Module => "module.generic",
             ProjectTreeNodeKind.ModuleVariant => "module.variant",
             ProjectTreeNodeKind.Episode => "episode",
             ProjectTreeNodeKind.Shot => "shot",
