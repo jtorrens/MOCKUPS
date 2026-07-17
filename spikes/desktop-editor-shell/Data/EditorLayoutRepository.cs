@@ -1,6 +1,8 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -21,6 +23,12 @@ internal sealed class EditorLayoutRepository : IEditorLayoutRepository
         command.Parameters.AddWithValue("$recordClassId", recordClassId);
         var json = command.ExecuteScalar() as string
             ?? throw new InvalidOperationException($"Missing editor layout for record class '{recordClassId}'.");
+        var document = JsonPath.ParseRequiredObject(json, $"Editor layout '{recordClassId}' layout_json");
+        if (document.Count != 1 || document["cards"] is not JsonArray)
+        {
+            throw new InvalidOperationException(
+                $"Editor layout '{recordClassId}' must contain exactly one top-level cards array.");
+        }
 
         return JsonSerializer.Deserialize<EditorLayout>(json)
             ?? throw new InvalidOperationException($"Invalid editor layout JSON for record class '{recordClassId}'.");

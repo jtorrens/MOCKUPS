@@ -5,7 +5,6 @@ using Avalonia.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -71,8 +70,7 @@ internal sealed class EditorLayoutCardFactory
     public InstantEditorCard Create(
         ProjectTreeNode node,
         EditorLayoutCard layoutCard,
-        string editorStateKey,
-        EditorSimplifiedProjectionState? simplifiedProjection = null)
+        string editorStateKey)
     {
         var body = new StackPanel
         {
@@ -98,13 +96,10 @@ internal sealed class EditorLayoutCardFactory
 
             foreach (var layoutField in group.VisibleFields)
             {
-                var control = CreateDirectFieldControl(node, layoutField.Id, simplifiedProjection);
+                var control = CreateDirectFieldControl(node, layoutField.Id);
                 controls.Add(control);
                 groupControls.Add(control);
-                groupPanel.Children.Add(EditorSimplifiedPromotionControl.Wrap(
-                    control,
-                    simplifiedProjection,
-                    EditorSimplifiedFieldReference.Direct(control.FieldId)));
+                groupPanel.Children.Add(control);
             }
 
             if (groupPanel.Children.Count > 0)
@@ -163,8 +158,7 @@ internal sealed class EditorLayoutCardFactory
 
     public InstantEditorCard CreateEmbedded(
         EditorEmbeddedContext context,
-        EditorLayoutCard layoutCard,
-        EditorSimplifiedProjectionState? simplifiedProjection = null)
+        EditorLayoutCard layoutCard)
     {
         var body = new StackPanel
         {
@@ -190,23 +184,10 @@ internal sealed class EditorLayoutCardFactory
                          .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
                              && !field.Id.Equals("component.type", StringComparison.Ordinal)))
             {
-                var control = CreateEmbeddedFieldControl(context, layoutField.Id, simplifiedProjection);
+                var control = CreateEmbeddedFieldControl(context, layoutField.Id);
                 controls.Add(control);
                 groupControls.Add(control);
-                var groupPath = context.Slots
-                    .TakeLast(2)
-                    .Select((slot) => new EditorSimplifiedGroupIdentity(
-                        slot.FieldId,
-                        slot.Label,
-                        EditorIcons.Component))
-                    .ToList();
-                groupPanel.Children.Add(EditorSimplifiedPromotionControl.Wrap(
-                    control,
-                    simplifiedProjection,
-                    EditorSimplifiedFieldReference.Embedded(
-                        context.Slots.Select((slot) => slot.FieldId).ToList(),
-                        control.FieldId,
-                        groupPath)));
+                groupPanel.Children.Add(control);
             }
 
             if (groupPanel.Children.Count > 0)
@@ -255,217 +236,6 @@ internal sealed class EditorLayoutCardFactory
         return card;
     }
 
-    public InstantEditorCard CreateSimplified(
-        ProjectTreeNode node,
-        EditorSimplifiedProjectionState projection,
-        bool isExpanded,
-        string editorStateKey)
-    {
-        var groups = projection.Layout?.Groups
-            .OrderBy((group) => group.Order)
-            .ThenBy((group) => group.Label)
-            .Where(HasEnabledEntries)
-            .ToList() ?? [];
-        Control content;
-        if (groups.Count == 0)
-        {
-            content = new TextBlock
-            {
-                Text = "No controls selected. Switch to Complete to choose them.",
-                TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.72,
-            };
-        }
-        else
-        {
-            var sections = groups
-                .Select((group) => SimplifiedSection(node, projection, group, 0, group.Id))
-                .ToList();
-            content = CreateGroupLayoutHost(
-                $"{editorStateKey}:simplified:root",
-                sections,
-                EditorSubcardLayout.VerticalCards);
-        }
-
-        var icon = EditorIcons.CreateSemantic("Simplified", EditorIcons.General, 18);
-        var card = new InstantEditorCard(
-            EditorCardHeader.Create("General", "Selected controls", icon),
-            new Border
-            {
-                Padding = EditorUiDensity.CardThickness(10),
-                Child = content,
-            },
-            isExpanded)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "simplified:root",
-        };
-        EditorGroupBlock.ApplyContentSeparator(card);
-        return card;
-    }
-
-    private EditorInternalNavigationSection SimplifiedSection(
-        ProjectTreeNode node,
-        EditorSimplifiedProjectionState projection,
-        EditorSimplifiedGroup group,
-        int depth,
-        string statePath)
-    {
-        var stack = new StackPanel { Spacing = EditorUiDensity.Card(12) };
-        foreach (var entry in group.Entries
-                     .Where((entry) => entry.Enabled)
-                     .OrderBy((entry) => entry.Order)
-                     .ThenBy((entry) => entry.Id))
-        {
-            var control = CreateSimplifiedEntryControl(node, projection, entry);
-            if (control is not null)
-            {
-                stack.Children.Add(entry.Captured
-                    ? EditorSimplifiedPromotionControl.WrapCaptured(control)
-                    : control);
-            }
-        }
-
-        var children = group.Groups
-            .OrderBy((child) => child.Order)
-            .ThenBy((child) => child.Label)
-            .Where(HasEnabledEntries)
-            .ToList();
-        if (children.Count > 0)
-        {
-            var childSections = children
-                .Select((child) => SimplifiedSection(
-                    node,
-                    projection,
-                    child,
-                    depth + 1,
-                    $"{statePath}:{child.Id}"))
-                .ToList();
-            stack.Children.Add(CreateGroupLayoutHost(
-                $"{projection.RecordClassId}:simplified:{statePath}:children",
-                childSections,
-                depth == 0 ? EditorSubcardLayout.VerticalCards : EditorSubcardLayout.SeparatedSections));
-        }
-
-        return new EditorInternalNavigationSection(
-            group.Id,
-            group.Label,
-            "Simplified controls",
-            string.IsNullOrWhiteSpace(group.Icon) ? EditorIcons.Component : group.Icon,
-            stack,
-            ShowLabel: false);
-    }
-
-    private Control? CreateSimplifiedEntryControl(
-        ProjectTreeNode node,
-        EditorSimplifiedProjectionState projection,
-        EditorSimplifiedEntry entry)
-    {
-        return entry.Kind switch
-        {
-            "field" => CreateDirectFieldControl(node, entry.FieldId, projection),
-            "embeddedField" => CreateEmbeddedFieldControl(
-                new EditorEmbeddedContext(
-                    node,
-                    entry.SlotFieldIds.Select(EmbeddedComponentSlotCatalog.Get).ToList()),
-                entry.FieldId,
-                projection),
-            "collectionField" => CreateCollectionItemFieldControl(node, entry, projection),
-            _ => null,
-        };
-    }
-
-    private DictionaryFieldControl? CreateCollectionItemFieldControl(
-        ProjectTreeNode node,
-        EditorSimplifiedEntry entry,
-        EditorSimplifiedProjectionState projection)
-    {
-        var slots = entry.SlotFieldIds.Select(EmbeddedComponentSlotCatalog.Get).ToList();
-        var embeddedContext = slots.Count == 0 ? null : new EditorEmbeddedContext(node, slots);
-        var collectionValue = embeddedContext is null
-            ? _fieldValues.Create(node, entry.CollectionFieldId)
-            : _componentClassFieldValues.CreateEmbeddedFieldValue(embeddedContext, entry.CollectionFieldId);
-        var collection = collectionValue.Definition.StructuredCollection;
-        if (collection is null) return null;
-        var items = JsonNode.Parse(collectionValue.Value) as JsonArray ?? new JsonArray();
-        var item = items.OfType<JsonObject>().FirstOrDefault((candidate) =>
-            candidate["id"]?.GetValue<string>().Equals(entry.ItemId, StringComparison.Ordinal) == true);
-        var input = collection.Fields.FirstOrDefault((candidate) =>
-            candidate.Id.Equals(entry.ItemFieldId, StringComparison.Ordinal));
-        if (item is null || input is null) return null;
-
-        var enabled = CollectionFieldAvailability.IsEnabled(item, input, 0);
-        var definition = new FieldDefinition(
-            $"{entry.CollectionFieldId}.{entry.ItemId}.{input.Id}",
-            input.Label,
-            input.ValueKind,
-            IsEditable: enabled && collectionValue.Definition.IsEditable,
-            DefaultValue: input.DefaultValue,
-            Options: input.Options,
-            PairLabels: input.PairLabels,
-            Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
-                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
-                : null);
-        var services = _dictionaryFieldServices.ForNode(
-            node,
-            (id) => _activeFieldControls.ValueOrStored(id, (storedId) => _fieldValues.CurrentStoredValue(node, storedId)),
-            _openComponentPresetReference,
-            null,
-            null,
-            _openRuntimeComponentOverrides) with
-        {
-            SimplifiedProjection = projection,
-        };
-        var control = new DictionaryFieldControl(
-            new FieldValue(definition, DesignPreviewTestValues.CollectionValue(item, input)),
-            services);
-        _activeFieldControls.Register(control);
-        control.ValueCommitted += (_, next) =>
-        {
-            try
-            {
-                var previous = DesignPreviewTestValues.CollectionValue(item, input);
-                item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-                var nextCollection = items.ToJsonString();
-                _fieldCommitCoordinator.Commit(
-                    control,
-                    next,
-                    (draftValue) => draftValue,
-                    () => previous,
-                    (_) =>
-                    {
-                        if (embeddedContext is null)
-                        {
-                            _fieldValues.Commit(node, entry.CollectionFieldId, nextCollection);
-                        }
-                        else
-                        {
-                            _componentClassFieldValues.CommitEmbeddedFieldValue(
-                                embeddedContext,
-                                entry.CollectionFieldId,
-                                nextCollection);
-                        }
-                    });
-                _activeFieldControls.RefreshPreviews();
-                _refreshPreview();
-                if (collection.Fields.Any((candidate) =>
-                        candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
-                {
-                    _scheduleActiveEditorReload(node);
-                }
-            }
-            catch (Exception exception)
-            {
-                _messages.Error($"Simplified collection field {definition.Id}", exception);
-            }
-        };
-        return control;
-    }
-
-    private static bool HasEnabledEntries(EditorSimplifiedGroup group) =>
-        group.Entries.Any((entry) => entry.Enabled)
-        || group.Groups.Any(HasEnabledEntries);
-
     public static bool EmbeddedCardHasFields(EditorLayoutCard layoutCard)
     {
         return layoutCard.VisibleGroups
@@ -476,8 +246,7 @@ internal sealed class EditorLayoutCardFactory
 
     internal DictionaryFieldControl CreateDirectFieldControl(
         ProjectTreeNode node,
-        string fieldId,
-        EditorSimplifiedProjectionState? simplifiedProjection = null)
+        string fieldId)
     {
         var field = _fieldValues.Create(node, fieldId);
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
@@ -491,10 +260,7 @@ internal sealed class EditorLayoutCardFactory
             _openComponentPresetReference,
             supportsEmbeddedOverrides && hasEmbeddedSlot ? (id) => _openEmbeddedComponentEditor(node, id) : null,
             supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null,
-            _openRuntimeComponentOverrides) with
-        {
-            SimplifiedProjection = simplifiedProjection,
-        };
+            _openRuntimeComponentOverrides);
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
         control.ValueCommitted += (_, value) =>
@@ -522,8 +288,7 @@ internal sealed class EditorLayoutCardFactory
 
     internal DictionaryFieldControl CreateEmbeddedFieldControl(
         EditorEmbeddedContext context,
-        string fieldId,
-        EditorSimplifiedProjectionState? simplifiedProjection = null)
+        string fieldId)
     {
         var field = _componentClassFieldValues.CreateEmbeddedFieldValue(context, fieldId);
         var services = _dictionaryFieldServices.ForNode(
@@ -533,11 +298,7 @@ internal sealed class EditorLayoutCardFactory
             _openComponentPresetReference,
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
-            _openRuntimeComponentOverrides) with
-        {
-            SimplifiedProjection = simplifiedProjection,
-            SimplifiedSlotFieldIds = context.Slots.Select((slot) => slot.FieldId).ToList(),
-        };
+            _openRuntimeComponentOverrides);
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
         control.ValueCommitted += (_, value) =>

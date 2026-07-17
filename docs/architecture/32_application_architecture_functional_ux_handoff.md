@@ -51,8 +51,8 @@ Read this handoff first, then use these documents for the authoritative detail:
 7. `27_design_production_ux_separation.md` — workspace intent.
 8. `29_animation_parameter_timeline_contract.md` — v2 tracks, owner timelines,
    duration and editor behavior.
-9. `30_simplified_editor_projection_proposal.md` — experimental simplified
-   projection and its current limits.
+9. `66_simplified_editor_retirement_contract.md` — retirement of the
+   experimental projection and the current single-editor contract.
 10. `31_structural_stacks_slots_and_module_instances.md` — Stack, State,
     forwarding, Module Variant and Module Instance integration.
 11. `schema_v1_consolidation_manifest.md` — canonical SQLite boundary.
@@ -747,25 +747,24 @@ is complete.
 The next architecture/UX audit may identify requirements or integration risks,
 but must label them future Render work rather than current regressions.
 
-### Simplified Editor is an incomplete experiment
+### Simplified Editor has been retired
 
-The Simplified/Complete projection is a first implemented slice, not a finished
-authoring model. It reuses the same FieldDefinitions, dictionary controls and
-commit path; it must never become a parallel schema. Current work validates
-projection metadata, captured embedded defaults and session-only navigation on
-limited components. Coverage, naming, promotion workflow and overall UX still
-require evaluation.
+The Simplified/Complete projection was removed after the audit determined that
+maintaining a separately curated field subset did not justify its preparation
+cost. The complete metadata-driven editor is the sole authoring surface.
+Contract 66 removes projection/capture behavior and makes the retired layout
+metadata invalid current data.
 
-The audit should test whether the experiment genuinely reduces complexity,
-which fields/components should participate, and whether users understand that
-captured embedded defaults are snapshots rather than live inheritance.
+Future progressive disclosure may reorganize the complete editor, but it must
+be proposed independently and must not reintroduce copied fields, automatic
+capture or a parallel schema/commit route.
 
 ### Other known future areas
 
 - non-Cut transitions between Module Instances;
 - completed Production approval/versioning workflow;
 - final render/export and on-set package design;
-- broader Simplified projection coverage;
+- evidence-based progressive disclosure inside the complete editor, if needed;
 - performance work only where measurements justify it.
 
 ## 20. Suggested audit procedure for the next thread

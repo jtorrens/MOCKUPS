@@ -932,6 +932,87 @@ for (const forbiddenEditorPresentationContextDependency of [
   );
 }
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/66_simplified_editor_retirement_contract.md",
+  "AGENTS must require the Simplified Editor retirement contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "66_simplified_editor_retirement_contract.md",
+  "the architecture index must include contract 66",
+);
+const retiredSimplifiedEditorPath = "spikes/desktop-editor-shell/EditorShell/EditorSimplifiedProjection.cs";
+if (existsSync(path.join(root, retiredSimplifiedEditorPath))) {
+  addViolation(
+    retiredSimplifiedEditorPath,
+    "the retired Simplified Editor projection source must not return",
+  );
+}
+const activeEditorShellSources = walkFilesByExtension(
+  path.join(root, "spikes/desktop-editor-shell/EditorShell"),
+  [".cs"],
+);
+for (const retiredSimplifiedEditorTerm of [
+  "EditorSimplified",
+  "EditorPresentationMode",
+  "SimplifiedProjection",
+  "SimplifiedSlotFieldIds",
+  "CreateSimplified",
+  "Show in Simplified",
+]) {
+  assertFilesDoNotContain(
+    activeEditorShellSources,
+    retiredSimplifiedEditorTerm,
+    `the retired Simplified Editor route must not return (${retiredSimplifiedEditorTerm})`,
+  );
+}
+assertFilesDoNotContain(
+  activeEditorShellSources,
+  "SaveEditorLayout(",
+  "ordinary editor code must not persist layout metadata while opening or rebuilding an editor",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs",
+  "document.Count != 1 || document[\"cards\"] is not JsonArray",
+  "current editor layout reads must require the exact cards-only root",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "json_each.key <> 'cards'",
+  "startup validation must reject additional editor layout root properties",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "'simplified'",
+  "startup validation must reject the retired Simplified Editor metadata",
+);
+{
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (existsSync(databasePath)) {
+    const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+    try {
+      const invalidLayouts = database.prepare(`
+        SELECT record_class_id
+        FROM editor_layouts
+        WHERE COALESCE(json_type(layout_json, '$.cards'), '') <> 'array'
+           OR EXISTS (
+             SELECT 1
+             FROM json_each(editor_layouts.layout_json)
+             WHERE json_each.key <> 'cards'
+           )
+      `).all() as { record_class_id: string }[];
+      for (const layout of invalidLayouts) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `${layout.record_class_id} must use the current cards-only editor layout root`,
+        );
+      }
+    } finally {
+      database.close();
+    }
+  }
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",
@@ -4843,10 +4924,10 @@ assertDoesNotContain(
   "bool[]",
   "top-level editor card expansion must not be stored by array position",
 );
-assertContains(
+assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorContentController.cs",
-  'var presentationKey = $"editor:{layoutNode.RecordClassId}:presentation";',
-  "editor presentation mode must be shared by exact layout class within the session",
+  "presentationKey",
+  "the retired Simplified/Complete presentation mode must not create session state",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

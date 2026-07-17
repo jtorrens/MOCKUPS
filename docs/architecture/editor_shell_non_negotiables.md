@@ -210,15 +210,12 @@ Internal navigation is a shared control. It owns keyboard navigation,
 selection, responsive content placement, dividers and session state. Editors
 only provide sections and metadata.
 
-Simplified editing is also a shared metadata projection. Component editor
-layouts may declare promoted direct, embedded and structured-collection fields,
-but the Simplified surface must resolve them through their existing
-`FieldDefinition`, ValueKind, dictionary control and commit route. The selected
-Simplified/Complete mode is session-only. Embedded Simplified defaults are
-materialized as a parent-owned snapshot exactly once; they are never live UI
-inheritance. A provenance lock may identify a captured entry, but it must not
-make the underlying field read-only or couple later child changes back into the
-parent projection.
+The experimental Simplified projection is retired by contract 66. The complete
+metadata-driven editor is the only authoring surface. Do not add promotion
+controls, captured embedded presentation defaults, an alternate field subset or
+an open-time editor-layout write path. Any future progressive-disclosure design
+requires a separately approved contract and must keep the same dictionary and
+commit route without restoring the retired projection.
 
 While space permits, `verticalCards` is a two-panel surface with an always
 visible draggable vertical splitter. Its responsive threshold is derived from

@@ -13,10 +13,11 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
+    ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
-    ("editor layout saves omit derived projection properties", EditorLayoutSaveOmitsDerivedProperties),
+    ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
@@ -89,7 +90,6 @@ var tests = new (string Name, Action Run)[]
     ("Collection Stack exposes one runtime-owned Default Variant", CollectionStackSeedOpensAndRenders),
     ("Notifications composes Notification items through Collection Stack", NotificationsSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
-    ("Simplified editor captures Keypad defaults without live inheritance", SimplifiedEditorCapturesKeypadDefaults),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
@@ -184,6 +184,33 @@ static void RejectedDatabaseOpenIsReadOnly()
     {
         using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA user_version = 0";
+        command.ExecuteNonQuery();
+    });
+}
+
+static void CurrentEditorLayoutContractFailsReadOnly()
+{
+    AssertRejectedDatabaseIsReadOnly("retired-simplified-editor", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE editor_layouts
+            SET layout_json = json_set(
+                layout_json,
+                '$.simplified',
+                json_object('groups', json_array(), 'capturedSlots', json_array()))
+            WHERE record_class_id = 'component.keypad'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("editor-layout-without-cards", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE editor_layouts
+            SET layout_json = json_remove(layout_json, '$.cards')
+            WHERE record_class_id = 'component.keypad'
+            """;
         command.ExecuteNonQuery();
     });
 }
@@ -388,7 +415,7 @@ static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnec
     }
 }
 
-static void EditorLayoutSaveOmitsDerivedProperties()
+static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
 {
     var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-layout-serialization-{Guid.NewGuid():N}.sqlite");
@@ -406,6 +433,7 @@ static void EditorLayoutSaveOmitsDerivedProperties()
         True(!json.Contains("\"VisibleGroups\"", StringComparison.Ordinal));
         True(!json.Contains("\"VisibleFields\"", StringComparison.Ordinal));
         True(!json.Contains("\"Entries\"", StringComparison.Ordinal));
+        True(!json.Contains("\"simplified\"", StringComparison.Ordinal));
         Equal(layout.Cards.Count, JsonNode.Parse(json)?["cards"]?.AsArray().Count ?? -1);
     }
     finally
@@ -2165,66 +2193,6 @@ foreach (var (name, run) in tests)
 
 Console.WriteLine($"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
-
-static void SimplifiedEditorCapturesKeypadDefaults()
-{
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
-    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-simplified-{Guid.NewGuid():N}.sqlite");
-    File.Copy(source, temporary, overwrite: true);
-    try
-    {
-        var database = new SpikeDatabase(temporary);
-        var keypadLayout = database.LoadEditorLayout("component.keypad");
-        True(keypadLayout.Simplified is not null);
-        var enabledChildCount = keypadLayout.Simplified!.Entries.Count((entry) => entry.Enabled);
-        True(enabledChildCount >= 5);
-        True(keypadLayout.Simplified.Entries.Any((entry) =>
-            entry.FieldId == "component.keypad.sizingMode" && entry.Enabled));
-        True(keypadLayout.Simplified.Entries.Any((entry) =>
-            entry.CollectionFieldId == "component.keypad.keys"
-            && entry.ItemId == "key_star"
-            && entry.ItemFieldId == "kind"
-            && entry.Enabled));
-
-        var passwordLayout = database.LoadEditorLayout("component.password");
-        var passwordProjection = new EditorSimplifiedProjectionState(
-            database,
-            "component.password",
-            passwordLayout);
-        True(passwordProjection.IsAvailable);
-        var captured = passwordProjection.Layout!.Entries
-            .Where((entry) => entry.Captured
-                && entry.SlotFieldIds.FirstOrDefault() == "component.password.keypad.editor")
-            .ToList();
-        Equal(enabledChildCount, captured.Count);
-
-        keypadLayout.Simplified.Groups[0].Entries.Add(new EditorSimplifiedEntry
-        {
-            Id = "late-child-field",
-            Kind = "field",
-            FieldId = "component.keypad.columns",
-            Order = 999,
-            Enabled = true,
-        });
-        database.SaveEditorLayout("component.keypad", keypadLayout);
-
-        var reopenedPassword = database.LoadEditorLayout("component.password");
-        var reopenedProjection = new EditorSimplifiedProjectionState(
-            database,
-            "component.password",
-            reopenedPassword);
-        var recaptured = reopenedProjection.Layout!.Entries
-            .Where((entry) => entry.Captured
-                && entry.SlotFieldIds.FirstOrDefault() == "component.password.keypad.editor")
-            .ToList();
-        Equal(enabledChildCount, recaptured.Count);
-        True(recaptured.All((entry) => !entry.Id.EndsWith(":late-child-field", StringComparison.Ordinal)));
-    }
-    finally
-    {
-        File.Delete(temporary);
-    }
-}
 
 static void ForwardedChildInputsBecomeParentRuntimeInputs()
 {

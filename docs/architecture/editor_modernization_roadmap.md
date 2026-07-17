@@ -465,6 +465,13 @@ post-commit tree presentation now receive exact Project, Theme and Production
 Font values through one typed read source while retaining their filesystem and
 field-specific UI behavior outside persistence.
 
+Simplified Editor retirement is governed by
+`66_simplified_editor_retirement_contract.md`. The complete metadata-driven
+editor is again the only authoring surface; projection promotion, captured
+embedded defaults and open-time layout writes are removed. Current editor
+layout documents contain exactly one top-level `cards` array and reject the
+retired projection instead of ignoring it.
+
 ## Guardrails
 
 Reject new changes that add:

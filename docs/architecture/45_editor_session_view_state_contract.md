@@ -81,8 +81,8 @@ Automated enforcement verifies:
 - Component/Module Variants resolve to their parent layout identity;
 - expanded cards are captured and restored by explicit stable card id;
 - scroll offsets clamp to the current extent and viewport;
-- Simplified/Complete mode and relevant internal tabs use layout-class session
-  keys;
+- relevant internal tabs use layout-class session keys; the retired
+  Simplified/Complete mode creates no session key;
 - persisted session-history models contain no editor view snapshot;
 - a fresh session store contains no editor view state.
 

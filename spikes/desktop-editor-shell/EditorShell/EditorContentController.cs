@@ -15,7 +15,6 @@ internal sealed class EditorContentController
     private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
-    private readonly EditorSessionUiState _sessionUiState;
 
     public EditorContentController(
         SpikeDatabase database,
@@ -25,8 +24,7 @@ internal sealed class EditorContentController
         EditorActiveFieldControls activeFieldControls,
         IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
-        EditorCollectionCardFactory collectionCards,
-        EditorSessionUiState sessionUiState)
+        EditorCollectionCardFactory collectionCards)
     {
         _database = database;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
@@ -34,7 +32,6 @@ internal sealed class EditorContentController
         _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
         _collectionCards = collectionCards;
-        _sessionUiState = sessionUiState;
     }
 
     public IReadOnlyList<InstantEditorCard> Cards => _cardHost.Cards;
@@ -42,48 +39,18 @@ internal sealed class EditorContentController
     public void Build(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
     {
         var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
-        var projection = new EditorSimplifiedProjectionState(_database, layoutNode.RecordClassId, layout);
-        var presentationKey = $"editor:{layoutNode.RecordClassId}:presentation";
-        var mode = ParsePresentationMode(
-            _sessionUiState.Selection(presentationKey),
-            projection.IsAvailable ? EditorPresentationMode.Simplified : EditorPresentationMode.Complete);
         ResetRegistries();
-        var simplifiedMode = mode == EditorPresentationMode.Simplified && projection.IsAvailable;
-        List<InstantEditorCard> cards;
-        if (simplifiedMode)
-        {
-            var simplifiedCard = _layoutCards.CreateSimplified(
+        var cards = layout.Cards
+            .Where((card) => card.Visible)
+            .OrderBy((card) => card.Order)
+            .ThenBy((card) => card.Label)
+            .Select((layoutCard) => _layoutCards.Create(
                 dataNode,
-                projection,
-                _sessionUiState.IsExpanded($"{presentationKey}:card"),
-                layoutNode.RecordClassId);
-            simplifiedCard.ExpansionChanged += (expanded) =>
-                _sessionUiState.SetExpanded($"{presentationKey}:card", expanded);
-            cards = [simplifiedCard];
-        }
-        else
-        {
-            cards = layout.Cards
-                .Where((card) => card.Visible)
-                .OrderBy((card) => card.Order)
-                .ThenBy((card) => card.Label)
-                .Select((layoutCard) => _layoutCards.Create(
-                    dataNode,
-                    layoutCard,
-                    layoutNode.RecordClassId,
-                    projection))
-                .Concat(_collectionCards.Create(dataNode))
-                .ToList();
-        }
-        var selector = projection.IsAvailable
-            ? EditorPresentationModeSelector.Create(mode, (next) =>
-            {
-                if (next == mode) return;
-                _sessionUiState.Select(presentationKey, next.ToString());
-                Build(layoutNode, dataNode);
-            })
-            : null;
-        _cardHost.Replace(cards, selector, resetExpansion: !simplifiedMode);
+                layoutCard,
+                layoutNode.RecordClassId))
+            .Concat(_collectionCards.Create(dataNode))
+            .ToList();
+        _cardHost.Replace(cards);
     }
 
     public void BuildEmbedded(EditorEmbeddedContext context)
@@ -91,11 +58,6 @@ internal sealed class EditorContentController
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
         var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
-        var ownerLayout = _database.LoadEditorLayout(ownerLayoutRecordClassId);
-        var projection = new EditorSimplifiedProjectionState(
-            _database,
-            ownerLayoutRecordClassId,
-            ownerLayout);
 
         if (!context.IsRuntimeRoot
             && EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
@@ -122,7 +84,7 @@ internal sealed class EditorContentController
                             .ToList(),
                     },
                 ],
-            }, ownerLayoutRecordClassId, projection));
+            }, ownerLayoutRecordClassId));
         }
 
         var layout = _database.LoadEditorLayout(context.RecordClassId);
@@ -131,7 +93,7 @@ internal sealed class EditorContentController
                      .OrderBy((card) => card.Order)
                      .ThenBy((card) => card.Label))
         {
-            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard, projection));
+            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard));
         }
         _cardHost.Replace(cards);
     }
@@ -148,12 +110,4 @@ internal sealed class EditorContentController
         _inlinePreviews.Reset();
     }
 
-    private static EditorPresentationMode ParsePresentationMode(
-        string? stored,
-        EditorPresentationMode fallback)
-    {
-        return Enum.TryParse<EditorPresentationMode>(stored, ignoreCase: false, out var mode)
-            ? mode
-            : fallback;
-    }
 }

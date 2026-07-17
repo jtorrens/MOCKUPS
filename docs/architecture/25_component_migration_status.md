@@ -129,15 +129,10 @@ running and are keyed by editor node. They are not part of persisted window
 state. Embedded and runtime-root Override breadcrumbs restore that same return
 context, including the selected internal tab and navigation width.
 
-The editor shell also supports a generic Simplified projection declared in
-`editor_layouts`. Keypad is the first configured component: Sizing, Key size,
-the nested Label/Surface corner radius, and Key 10 Kind/Icon reuse the same
-dictionary controls in Simplified and Complete. Complete exposes promotion
-checkboxes. Embedded defaults are copied once into a parent-owned snapshot with
-lock provenance; Password is the automated non-live-inheritance validation
-case for its embedded Keypad. This first generic slice is implementation-complete
-and remains open only for broader use testing before more components declare
-their own projections.
+The experimental Simplified projection has been retired under contract 66.
+The complete metadata-driven editor is the only authoring surface. Keypad and
+Password retain their ordinary cards, embedded components, dictionary controls
+and runtime behavior; no projection metadata or capture workflow remains.
 
 Runtime Input Forwarding is active across nested component and collection
 boundaries. Each parent design may explicitly keep a child input Runtime or

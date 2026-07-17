@@ -122,6 +122,9 @@ this index wins.
 - `65_editor_presentation_context_data_boundary_contract.md`: typed Project
   media-root, Theme navigation and Production Font file reads for shared editor
   presentation services, separated from filesystem and field behavior.
+- `66_simplified_editor_retirement_contract.md`: one complete editor surface,
+  retirement of Simplified projection/capture UI and a strict cards-only
+  `editor_layouts` current root.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

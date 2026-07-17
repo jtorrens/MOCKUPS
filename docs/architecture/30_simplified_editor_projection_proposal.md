@@ -1,8 +1,14 @@
 # Simplified Editor Projection — implementation proposal
 
 Date: 2026-07-15  
-Status: first generic slice implementation-complete; Keypad is the first
-configured component and broader use testing remains pending
+Status: retired on 2026-07-17 by
+`66_simplified_editor_retirement_contract.md`; historical proposal only
+
+The implemented experiment was removed after product review determined that
+maintaining a separately curated field projection did not justify its authoring
+and architectural cost. The active application has one complete editor and
+rejects this proposal's persisted metadata. The remainder of this document is
+kept only as historical design evidence and is not an active contract.
 
 This remains an incomplete product experiment. Its place in the whole
 application and the questions for the next UX audit are summarized in

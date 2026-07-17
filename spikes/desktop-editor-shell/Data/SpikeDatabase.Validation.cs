@@ -321,13 +321,31 @@ internal sealed partial class SpikeDatabase
 
     private void ValidateCurrentEditorLayouts(SqliteConnection connection)
     {
-        var derivedProperties = ScalarLong(
+        var invalidRoots = ScalarLong(
             connection,
-            "SELECT COUNT(*) FROM editor_layouts, json_tree(editor_layouts.layout_json) WHERE json_tree.key IN ('VisibleGroups', 'VisibleFields', 'Entries')");
-        if (derivedProperties > 0)
+            """
+            SELECT COUNT(*)
+            FROM editor_layouts
+            WHERE COALESCE(json_type(layout_json, '$.cards'), '') <> 'array'
+               OR EXISTS (
+                   SELECT 1
+                   FROM json_each(editor_layouts.layout_json)
+                   WHERE json_each.key <> 'cards'
+               )
+            """);
+        if (invalidRoots > 0)
         {
             throw InvalidCurrentDatabase(
-                $"editor_layouts contains {derivedProperties} persisted projection properties instead of authored metadata");
+                $"editor_layouts has {invalidRoots} document(s) outside the current cards-only root contract");
+        }
+
+        var retiredOrDerivedProperties = ScalarLong(
+            connection,
+            "SELECT COUNT(*) FROM editor_layouts, json_tree(editor_layouts.layout_json) WHERE json_tree.key IN ('VisibleGroups', 'VisibleFields', 'Entries', 'simplified', 'capturedSlots')");
+        if (retiredOrDerivedProperties > 0)
+        {
+            throw InvalidCurrentDatabase(
+                $"editor_layouts contains {retiredOrDerivedProperties} retired or derived presentation properties instead of current authored card metadata");
         }
     }
 

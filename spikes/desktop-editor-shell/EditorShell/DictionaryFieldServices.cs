@@ -30,6 +30,4 @@ internal sealed record DictionaryFieldServices(
     Func<ComponentInputDefinition, string, DictionaryFieldControl, Control>? DecorateStructuredCollectionField = null,
     Action<IReadOnlyList<string>>? RemoveStructuredCollectionAnimationTargets = null,
     Action<IReadOnlyDictionary<string, string>>? DuplicateStructuredCollectionAnimationTargets = null,
-    EditorSessionUiState? StructuredCollectionUiState = null,
-    EditorSimplifiedProjectionState? SimplifiedProjection = null,
-    IReadOnlyList<string>? SimplifiedSlotFieldIds = null);
+    EditorSessionUiState? StructuredCollectionUiState = null);

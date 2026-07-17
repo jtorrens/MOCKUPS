@@ -226,8 +226,7 @@ public partial class MainWindow : SukiWindow
             _activeFieldControls,
             _inlinePreviews,
             _layoutCards,
-            _collectionCards,
-            _editorSessionUiState);
+            _collectionCards);
         UsageRefreshButton.Content = new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Horizontal,

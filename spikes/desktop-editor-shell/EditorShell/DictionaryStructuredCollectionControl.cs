@@ -294,30 +294,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             input,
             ItemId(item, itemIndex),
             control) ?? control;
-        return EditorSimplifiedPromotionControl.Wrap(
-            decorated,
-            _services.SimplifiedProjection,
-            EditorSimplifiedFieldReference.Collection(
-                _definition.Id,
-                ItemId(item, itemIndex),
-                input.Id,
-                [
-                    new EditorSimplifiedGroupIdentity(
-                        collection.Id,
-                        collection.Label,
-                        EditorIcons.Component),
-                    new EditorSimplifiedGroupIdentity(
-                        ItemId(item, itemIndex),
-                        RuntimeCollectionItemPresentation.Resolve(
-                            collection,
-                            item,
-                            itemIndex,
-                            $"{collection.ItemLabel} {itemIndex + 1}",
-                            $"Variant item {itemIndex + 1}",
-                            EditorIcons.Component).Title,
-                        EditorIcons.Component),
-                ],
-                _services.SimplifiedSlotFieldIds));
+        return decorated;
     }
 
     private void SetComponentInputs(
