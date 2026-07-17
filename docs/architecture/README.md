@@ -52,6 +52,9 @@ this index wins.
 - `42_production_font_persistence_contract.md`: focused ownership of
   `production_fonts` current rows while file import, asset lifecycle and
   Preview font-face interpretation remain outside persistence.
+- `43_icon_theme_persistence_and_asset_contract.md`: focused ownership of
+  `icon_themes` current rows, strict token file references and separation of
+  SQLite persistence from manifests, SVGs and generation scripts.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

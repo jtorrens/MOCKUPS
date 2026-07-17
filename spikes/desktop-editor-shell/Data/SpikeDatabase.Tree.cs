@@ -24,7 +24,7 @@ internal sealed partial class SpikeDatabase
         var actors = QueryActorRows(connection);
         var themes = _themeRepository.QueryAll(connection);
         var productionFonts = _productionFontRepository.QueryAll(connection);
-        var iconThemes = QueryIconThemeRows(connection);
+        var iconThemes = _iconThemeRepository.QueryAll(connection);
         var renderPresets = QueryRenderPresetRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
         var referenceUsageIndex = _referenceUsageService.BuildIndex(connection);
@@ -632,7 +632,12 @@ internal sealed partial class SpikeDatabase
         family = family is "ios" or "android" ? family : "custom";
         using var connection = OpenConnection();
         var project = ProjectAncestor(themesRoot);
-        var iconThemeId = FirstId(connection, "icon_themes", project.Id);
+        var iconThemeId = _iconThemeRepository.QueryAll(connection)
+            .Where((iconTheme) => iconTheme.ProjectId == project.Id)
+            .OrderBy((iconTheme) => iconTheme.Name)
+            .ThenBy((iconTheme) => iconTheme.Id)
+            .Select((iconTheme) => iconTheme.Id)
+            .FirstOrDefault() ?? "";
         var productionFonts = _productionFontRepository.QueryAll(connection)
             .Where((font) => font.ProjectId == project.Id)
             .ToList();
@@ -770,8 +775,7 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            var source = QueryIconThemeRows(connection).FirstOrDefault((row) => row.Id == node.Id)
-                ?? throw new InvalidOperationException($"Missing icon theme '{node.Id}'.");
+            var source = _iconThemeRepository.Get(connection, node.Id);
             var id = $"icon_theme_{Guid.NewGuid():N}";
             var duplicatedAssets = DuplicateIconThemeAssets(connection, source, $"{node.Name} copy");
             var name = duplicatedAssets.Name;
@@ -779,19 +783,13 @@ internal sealed partial class SpikeDatabase
             var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, source.ProjectId, assetRoot), name);
             try
             {
-                Execute(
+                _iconThemeRepository.CreateDuplicate(
                     connection,
-                    """
-                    INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
-                    SELECT $id, project_id, $name, $assetRoot, mapping_json, $metadataJson
-                    FROM icon_themes
-                    WHERE id = $sourceId
-                    """,
-                    ("$id", id),
-                    ("$name", name),
-                    ("$assetRoot", assetRoot),
-                    ("$metadataJson", metadata.ToJsonString()),
-                    ("$sourceId", node.Id));
+                    node.Id,
+                    id,
+                    name,
+                    assetRoot,
+                    metadata.ToJsonString());
             }
             catch
             {
@@ -841,10 +839,9 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ModuleInstance => "module_instances",
-            ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset or ProjectTreeNodeKind.Theme
                 or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor
-                or ProjectTreeNodeKind.ProductionFont => "",
+                or ProjectTreeNodeKind.ProductionFont or ProjectTreeNodeKind.IconTheme => "",
             _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
         };
 
@@ -858,6 +855,14 @@ internal sealed partial class SpikeDatabase
         {
             DeleteProductionFontFiles(connection, node.Id);
             _productionFontRepository.Delete(connection, node.Id);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.IconTheme)
+        {
+            var iconTheme = _iconThemeRepository.Get(connection, node.Id);
+            DeleteIconThemeAssetDirectory(connection, iconTheme.ProjectId, iconTheme.AssetRoot);
+            _iconThemeRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -966,7 +971,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.App => "apps",
             ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.IconTheme => "icon_themes",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
         };
@@ -975,17 +979,15 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == node.Id)
-                ?? throw new InvalidOperationException($"Missing icon theme '{node.Id}'.");
+            var row = _iconThemeRepository.Get(connection, node.Id);
             var renamedAssets = RenameIconThemeAssets(connection, row, node.Name);
             var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, row.ProjectId, renamedAssets.AssetRoot), renamedAssets.Name);
-            Execute(
+            _iconThemeRepository.UpdateIdentity(
                 connection,
-                "UPDATE icon_themes SET name = $name, asset_root = $assetRoot, metadata_json = $metadataJson WHERE id = $id",
-                ("$id", node.Id),
-                ("$name", renamedAssets.Name),
-                ("$assetRoot", renamedAssets.AssetRoot),
-                ("$metadataJson", metadata.ToJsonString()));
+                node.Id,
+                renamedAssets.Name,
+                renamedAssets.AssetRoot,
+                metadata.ToJsonString());
             return;
         }
 

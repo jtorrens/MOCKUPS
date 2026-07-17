@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRow source, string targetName)
+    private IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
         var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))
@@ -27,7 +27,7 @@ internal sealed partial class SpikeDatabase
             Path.GetFileName(targetDirectory));
     }
 
-    private IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRow source, string targetName)
+    private IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
         var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))

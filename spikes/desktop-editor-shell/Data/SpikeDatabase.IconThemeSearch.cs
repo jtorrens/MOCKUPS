@@ -52,7 +52,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var projectId = ProjectIdForIconTheme(connection, iconThemeId);
         var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
         if (rows.Count == 0)
         {
             throw new InvalidOperationException("Refresh icon sets before generating tokens.");
@@ -181,7 +181,7 @@ internal sealed partial class SpikeDatabase
         return value is JsonValue jsonValue && jsonValue.TryGetValue<int>(out var parsed) ? parsed : fallback;
     }
 
-    private static void UpdateIconThemeTokenMetadata(
+    private void UpdateIconThemeTokenMetadata(
         SqliteConnection connection,
         string projectId,
         string token,
@@ -190,7 +190,7 @@ internal sealed partial class SpikeDatabase
         string lucideSource,
         string materialSource)
     {
-        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
         foreach (var row in rows)
         {
             var mapping = ParseJsonObject(row.MappingJson);
@@ -206,11 +206,7 @@ internal sealed partial class SpikeDatabase
             };
             tokens[token] = tokenObject;
             mapping["tokens"] = tokens;
-            Execute(
-                connection,
-                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
-                ("$id", row.Id),
-                ("$mappingJson", mapping.ToJsonString()));
+            _iconThemeRepository.UpdateMapping(connection, row.Id, mapping.ToJsonString());
         }
     }
 }

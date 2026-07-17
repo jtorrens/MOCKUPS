@@ -13,14 +13,6 @@ internal static class SqliteCommandExecutor
             ("$parentId", parentId));
     }
 
-    public static string FirstId(SqliteConnection connection, string table, string projectId)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT id FROM {table} WHERE project_id = $projectId ORDER BY name, id LIMIT 1";
-        command.Parameters.AddWithValue("$projectId", projectId);
-        return command.ExecuteScalar() as string ?? "";
-    }
-
     public static string ReadString(SqliteDataReader reader, int index)
     {
         return reader.IsDBNull(index) ? "" : reader.GetString(index);

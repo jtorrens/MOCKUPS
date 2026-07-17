@@ -319,6 +319,12 @@ the complete current `production_fonts` row and its explicit writes, while
 filesystem import, asset deletion, font-face interpretation and tree/UI
 presentation remain outside persistence.
 
+Icon Theme persistence and asset separation are governed by
+`43_icon_theme_persistence_and_asset_contract.md`. `IconThemeRepository` owns
+current `icon_themes` rows and explicit writes; manifests, SVGs, provider
+scripts, safe asset paths and token interpretation remain outside persistence.
+Token reads require an explicit stored SVG filename and never repair mappings.
+
 ## Guardrails
 
 Reject new changes that add:

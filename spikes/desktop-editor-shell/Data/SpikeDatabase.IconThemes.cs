@@ -15,7 +15,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<FieldOption> GetIconThemeOptions(string projectId)
     {
         using var connection = OpenConnection();
-        var options = QueryIconThemeRows(connection)
+        var options = _iconThemeRepository.QueryAll(connection)
             .Where((theme) => theme.ProjectId == projectId)
             .OrderBy((theme) => theme.Name)
             .Select((theme) => new FieldOption(theme.Id, theme.Name))
@@ -26,21 +26,13 @@ internal sealed partial class SpikeDatabase
 
     public IconThemeSettings GetIconThemeSettings(string iconThemeId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT name, asset_root, mapping_json, metadata_json FROM icon_themes WHERE id = $id";
-        command.Parameters.AddWithValue("$id", iconThemeId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
-        }
+        var record = _iconThemeRepository.Get(iconThemeId);
 
         return new IconThemeSettings(
-            reader.GetString(0),
-            ReadString(reader, 1),
-            ReadString(reader, 2),
-            ReadString(reader, 3));
+            record.Name,
+            record.AssetRoot,
+            record.MappingJson,
+            record.MetadataJson);
     }
 
     public string GetIconThemeFieldValue(string iconThemeId, string fieldId)
@@ -64,7 +56,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<FieldOption> GetIconTokenOptions(string projectId, string? currentToken = null)
     {
         using var connection = OpenConnection();
-        var tokens = QueryIconThemeRows(connection)
+        var tokens = _iconThemeRepository.QueryAll(connection)
             .Where((row) => row.ProjectId == projectId)
             .SelectMany((row) => IconThemeTokens(row.MappingJson).Select((token) => token.Token))
             .ToHashSet(StringComparer.Ordinal);
@@ -117,7 +109,7 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         var projectId = ProjectIdForIconTheme(connection, iconThemeId);
-        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
         var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
         foreach (var row in rows)
         {
@@ -171,7 +163,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var projectId = ProjectIdForIconTheme(connection, iconThemeId);
         var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
         if (rows.Count == 0)
         {
             throw new InvalidOperationException("Refresh icon sets before saving tokens.");
@@ -211,26 +203,6 @@ internal sealed partial class SpikeDatabase
         return ReplaceIconThemeTokenSvg(iconThemeId, token, File.ReadAllText(sourcePath));
     }
 
-    private static List<IconThemeRow> QueryIconThemeRows(SqliteConnection connection)
-    {
-        var rows = new List<IconThemeRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, asset_root, mapping_json, metadata_json FROM icon_themes ORDER BY name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new IconThemeRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ReadString(reader, 3),
-                ReadString(reader, 4),
-                ReadString(reader, 5)));
-        }
-
-        return rows;
-    }
-
     private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection, string projectId)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
@@ -250,23 +222,16 @@ internal sealed partial class SpikeDatabase
             var id = $"icon_theme_{projectId}_{Slug(setName)}";
             var assetRoot = NormalizeRelativePath(Path.GetRelativePath(mediaRoot, directory));
             var metadata = IconThemeMetadata(directory, setName);
-            Execute(
+            _iconThemeRepository.UpsertDiscovered(
                 connection,
-                """
-                INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
-                VALUES ($id, $projectId, $name, $assetRoot, '{}', $metadataJson)
-                ON CONFLICT(project_id, name) DO UPDATE SET
-                  asset_root = excluded.asset_root,
-                  metadata_json = excluded.metadata_json
-                """,
-                ("$id", id),
-                ("$projectId", projectId),
-                ("$name", setName),
-                ("$assetRoot", assetRoot),
-                ("$metadataJson", metadata.ToJsonString()));
+                id,
+                projectId,
+                setName,
+                assetRoot,
+                metadata.ToJsonString());
         }
 
-        var rows = QueryIconThemeRows(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
         var tokensBySet = rows.ToDictionary(
             (row) => row.Id,
             (row) => IconTokenRules.SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
@@ -280,20 +245,15 @@ internal sealed partial class SpikeDatabase
         foreach (var row in rows)
         {
             var nextMapping = BuildIconThemeMapping(row.MappingJson, commonTokens);
-            Execute(
-                connection,
-                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
-                ("$id", row.Id),
-                ("$mappingJson", nextMapping.ToJsonString()));
+            _iconThemeRepository.UpdateMapping(connection, row.Id, nextMapping.ToJsonString());
         }
 
         return new IconThemeRefreshResult(rows.Count, commonTokens.Count, Math.Max(0, allTokens.Count - commonTokens.Count));
     }
 
-    private static (IconThemeRow Row, string File) IconThemeTokenFile(SqliteConnection connection, string iconThemeId, string token)
+    private (IconThemeRecord Row, string File) IconThemeTokenFile(SqliteConnection connection, string iconThemeId, string token)
     {
-        var row = QueryIconThemeRows(connection).FirstOrDefault((candidate) => candidate.Id == iconThemeId)
-            ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
+        var row = _iconThemeRepository.Get(connection, iconThemeId);
         if (!ValidIconTokenRegex().IsMatch(token))
         {
             throw new InvalidOperationException("Icon token must be lower_snake_case.");
@@ -306,22 +266,11 @@ internal sealed partial class SpikeDatabase
         var file = JsonString(tokenObject, ["file"]);
         if (string.IsNullOrWhiteSpace(file))
         {
-            file = $"{token}.svg";
-            tokenObject["file"] = file;
-            mapping["categories"] = tokens is null ? [] : IconThemeCategories(tokens);
+            throw new InvalidOperationException($"Icon token '{token}' has no explicit SVG file reference.");
         }
         if (!Path.GetExtension(file).Equals(".svg", StringComparison.OrdinalIgnoreCase) || Path.GetFileName(file) != file)
         {
             throw new InvalidOperationException($"Icon token '{token}' has an invalid SVG file reference.");
-        }
-
-        if (tokens is not null)
-        {
-            Execute(
-                connection,
-                "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
-                ("$id", iconThemeId),
-                ("$mappingJson", mapping.ToJsonString()));
         }
 
         return (row, file);
@@ -330,11 +279,6 @@ internal sealed partial class SpikeDatabase
     private static JsonObject BuildIconThemeMapping(string currentMappingJson, HashSet<string> commonTokens)
     {
         return IconTokenRules.BuildMapping(currentMappingJson, commonTokens);
-    }
-
-    private static JsonObject IconThemeCategories(JsonObject tokens)
-    {
-        return IconTokenRules.Categories(tokens);
     }
 
     private static IReadOnlyList<IconThemeToken> IconThemeTokens(string mappingJson)
@@ -354,13 +298,9 @@ internal sealed partial class SpikeDatabase
         return IconTokenRules.CategoryFromToken(token);
     }
 
-    private static string ProjectIdForIconTheme(SqliteConnection connection, string iconThemeId)
+    private string ProjectIdForIconTheme(SqliteConnection connection, string iconThemeId)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT project_id FROM icon_themes WHERE id = $id";
-        command.Parameters.AddWithValue("$id", iconThemeId);
-        return command.ExecuteScalar() as string
-            ?? throw new InvalidOperationException($"Missing icon theme '{iconThemeId}'.");
+        return _iconThemeRepository.Get(connection, iconThemeId).ProjectId;
     }
 
     private string ProjectIdForIconTheme(string iconThemeId)
@@ -392,12 +332,12 @@ internal sealed partial class SpikeDatabase
         return metadata;
     }
 
-    private static JsonObject IconSetDefinition(IconThemeRow row)
+    private static JsonObject IconSetDefinition(IconThemeRecord row)
     {
         var metadata = ParseJsonObject(row.MetadataJson);
         return metadata["iconSet"] is JsonObject iconSet
             ? (JsonObject)iconSet.DeepClone()
-            : IconSetDefinitionFromName(row.Name);
+            : throw new InvalidOperationException($"Icon Theme '{row.Id}' metadata has no explicit iconSet contract.");
     }
 
     private static JsonObject IconSetDefinition(JsonObject manifest, string fallbackName)

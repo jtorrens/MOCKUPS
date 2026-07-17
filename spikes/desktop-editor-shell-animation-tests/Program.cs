@@ -20,6 +20,7 @@ var tests = new (string Name, Action Run)[]
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
+    ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -716,6 +717,105 @@ static void ProductionFontRepositoryPreservesFacadeContract()
                 "{}"));
         }
         Throws<InvalidOperationException>(() => repository.UpdateField(fontNode.Id, "font.unknown", "value"));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void IconThemeRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-icon-theme-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IIconThemeRepository repository = new IconThemeRepository(context);
+        var tree = database.LoadProjectTree();
+        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var iconThemeNode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.IconTheme);
+        var settings = database.GetIconThemeSettings(iconThemeNode.Id);
+        var record = repository.Get(iconThemeNode.Id);
+
+        Equal(settings.Name, record.Name);
+        Equal(settings.AssetRoot, record.AssetRoot);
+        Equal(settings.MappingJson, record.MappingJson);
+        Equal(settings.MetadataJson, record.MetadataJson);
+        using (var connection = context.OpenConnection())
+        {
+            SequenceEqual(
+                database.GetIconThemeOptions(project.Id).Skip(1).Select((option) => option.Value),
+                repository.QueryAll(connection)
+                    .Where((iconTheme) => iconTheme.ProjectId == project.Id)
+                    .OrderBy((iconTheme) => iconTheme.Name)
+                    .Select((iconTheme) => iconTheme.Id));
+        }
+
+        var changedMapping = JsonPath.ParseRequiredObject(record.MappingJson, $"Icon Theme '{record.Id}' mapping_json");
+        changedMapping["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateMapping(connection, record.Id, changedMapping.ToJsonString());
+        }
+        Equal(changedMapping.ToJsonString(), database.GetIconThemeSettings(record.Id).MappingJson);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateMapping(connection, record.Id, record.MappingJson);
+        }
+
+        IconThemeRecord duplicated;
+        using (var connection = context.OpenConnection())
+        {
+            duplicated = repository.CreateDuplicate(
+                connection,
+                record.Id,
+                $"icon_theme_repository_{Guid.NewGuid():N}",
+                "Repository Icon Theme",
+                "icon-themes/repository-icon-theme",
+                record.MetadataJson);
+        }
+        Equal(record.MappingJson, repository.Get(duplicated.Id).MappingJson);
+        using (var connection = context.OpenConnection())
+        {
+            repository.Delete(connection, duplicated.Id);
+        }
+        Throws<InvalidOperationException>(() => repository.Get(duplicated.Id));
+
+        var token = database.GetIconThemeTokens(record.Id).First().Token;
+        var invalidMapping = JsonPath.ParseRequiredObject(record.MappingJson, $"Icon Theme '{record.Id}' mapping_json");
+        var tokenObject = (invalidMapping["tokens"] as JsonObject)?[token] as JsonObject
+            ?? throw new InvalidOperationException($"Missing test token '{token}'.");
+        tokenObject.Remove("file");
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateMapping(connection, record.Id, invalidMapping.ToJsonString());
+        }
+        var beforeStrictRead = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.ReadIconThemeTokenSvg(record.Id, token));
+        var afterStrictRead = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeStrictRead, afterStrictRead);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateMapping(connection, record.Id, record.MappingJson);
+        }
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() => repository.UpdateMapping(connection, record.Id, "[]"));
+            Throws<InvalidOperationException>(() => repository.UpsertDiscovered(
+                connection,
+                "invalid_icon_theme",
+                project.Id,
+                "Invalid Icon Theme",
+                "icon-themes/invalid",
+                "[]"));
+        }
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }

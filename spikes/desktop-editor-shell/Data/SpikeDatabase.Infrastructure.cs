@@ -24,11 +24,6 @@ internal sealed partial class SpikeDatabase
         return SqliteCommandExecutor.NextSortOrder(connection, table, parentColumn, parentId);
     }
 
-    private static string FirstId(SqliteConnection connection, string table, string projectId)
-    {
-        return SqliteCommandExecutor.FirstId(connection, table, projectId);
-    }
-
     private static string ReadString(SqliteDataReader reader, int index)
     {
         return SqliteCommandExecutor.ReadString(reader, index);

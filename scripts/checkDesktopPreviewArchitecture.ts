@@ -1916,6 +1916,7 @@ for (const [contractType, implementationType] of [
   ["IActorRepository", "ActorRepository"],
   ["IThemeRepository", "ThemeRepository"],
   ["IProductionFontRepository", "ProductionFontRepository"],
+  ["IIconThemeRepository", "IconThemeRepository"],
   ["IModuleInstanceThemeContextService", "ModuleInstanceThemeContextService"],
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
@@ -1939,6 +1940,8 @@ for (const facadePath of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemeSearch.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -1957,6 +1960,7 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
   ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "themes"],
   ["spikes/desktop-editor-shell/Data/ProductionFontRepository.cs", "production_fonts"],
+  ["spikes/desktop-editor-shell/Data/IconThemeRepository.cs", "icon_themes"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -1969,7 +1973,7 @@ assertDoesNotContain(
   "SqliteProjectContext",
   "MainWindow must not receive persistence infrastructure or repositories",
 );
-for (const ownedResourceTable of ["palette_colors", "devices", "actors", "production_fonts"]) {
+for (const ownedResourceTable of ["palette_colors", "devices", "actors", "production_fonts", "icon_themes"]) {
   for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
     assertDoesNotContain(
       "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
@@ -1991,6 +1995,7 @@ for (const resourceRepositoryPath of [
   "spikes/desktop-editor-shell/Data/ActorRepository.cs",
   "spikes/desktop-editor-shell/Data/ThemeRepository.cs",
   "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
+  "spikes/desktop-editor-shell/Data/IconThemeRepository.cs",
 ]) {
   assertDoesNotContain(
     resourceRepositoryPath,
@@ -2030,6 +2035,46 @@ assertContains(
   "docs/architecture/README.md",
   "42_production_font_persistence_contract.md",
   "the active architecture index must include the Production Font persistence contract",
+);
+for (const forbiddenIconThemeRepositoryConcern of [
+  "System.IO",
+  "File.",
+  "Directory.",
+  "Svg",
+  "Process",
+  "ProjectTreeNode",
+  "IconThemeToken",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/IconThemeRepository.cs",
+    forbiddenIconThemeRepositoryConcern,
+    `IconThemeRepository must not own asset, Preview or tree concern ${forbiddenIconThemeRepositoryConcern}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "has no explicit SVG file reference",
+  "Icon Theme token reads must fail when the current mapping has no explicit file",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "tokenObject[\"file\"] = file",
+  "Icon Theme token reads must not repair a missing file reference",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "metadata has no explicit iconSet contract",
+  "Icon Theme runtime generation must require explicit current iconSet metadata",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/43_icon_theme_persistence_and_asset_contract.md",
+  "AGENTS must require the Icon Theme persistence and asset contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "43_icon_theme_persistence_and_asset_contract.md",
+  "the active architecture index must include the Icon Theme persistence and asset contract",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
