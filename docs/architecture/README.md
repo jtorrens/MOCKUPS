@@ -68,6 +68,9 @@ this index wins.
   Screen/Module Instance rows and prepared writes while Variants, Runtime
   forwarding, structured collections, temporal ownership and Preview remain
   domain-owned.
+- `48_shot_persistence_contract.md`: focused ownership of complete Shot rows,
+  strict documents and lifecycle copies while Production context, Screen
+  timing, duration aggregation and Preview remain domain-owned.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

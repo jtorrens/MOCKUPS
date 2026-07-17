@@ -25,6 +25,7 @@ var tests = new (string Name, Action Run)[]
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
+    ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -410,7 +411,8 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         var database = new SpikeDatabase(temporary);
         var context = new SqliteProjectContext(temporary);
         IEditorLayoutRepository layoutRepository = new EditorLayoutRepository(context);
-        IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context);
+        IShotRepository shotRepository = new ShotRepository(context);
+        IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context, shotRepository);
         IRenderPresetRepository renderPresetRepository = new RenderPresetRepository(context);
 
         var tree = database.LoadProjectTree();
@@ -1204,6 +1206,124 @@ static void ModuleInstanceRepositoryPreservesFacadeContract()
                     Id = $"invalid_module_instance_{Guid.NewGuid():N}",
                     ContentJson = "[]",
                 }));
+        }
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ShotRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IShotRepository repository = new ShotRepository(context);
+        IProjectEpisodeRepository episodeRepository = new ProjectEpisodeRepository(context, repository);
+        var tree = database.LoadProjectTree();
+        var node = Descendants(tree).Single((candidate) => candidate.Id == "shot_001");
+        var original = repository.Get(node.Id);
+        var settings = database.GetShotSettings(node.Id);
+
+        Equal(original.ProjectId, settings.ProjectId);
+        Equal(original.Slug, settings.Slug);
+        Equal(original.Version, settings.Version);
+        Equal(original.DurationFrames, settings.DurationFrames);
+        Equal(original.OwnerActorId, settings.OwnerActorId);
+        Equal(original.CanvasJson, settings.CanvasJson);
+        Equal(original.MetadataJson, settings.MetadataJson);
+        using (var connection = context.OpenConnection())
+        {
+            True(repository.QueryAll(connection).Any((candidate) => candidate.Id == original.Id));
+            True(repository.QueryByEpisode(connection, original.EpisodeId)
+                .Any((candidate) => candidate.Id == original.Id));
+        }
+
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateField(connection, original.Id, "shot.slug", "repository-shot");
+        }
+        Equal("repository-shot", database.GetShotSettings(original.Id).Slug);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateField(connection, original.Id, "shot.slug", original.Slug);
+            repository.UpdateField(connection, original.Id, "shot.fps", "30");
+        }
+        Equal(30, database.GetShotSettings(original.Id).FpsOverride);
+        using (var connection = context.OpenConnection())
+        {
+            repository.ClearFpsOverride(connection, original.Id);
+            repository.UpdateDuration(connection, original.Id, original.DurationFrames + 1);
+        }
+        Equal(original.DurationFrames + 1, database.GetShotSettings(original.Id).DurationFrames);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateDuration(connection, original.Id, original.DurationFrames);
+        }
+
+        var originalName = node.Name;
+        node.Name = "Repository Shot";
+        database.UpdateNode(node);
+        Equal("Repository Shot", repository.Get(original.Id).Name);
+        node.Name = originalName;
+        database.UpdateNode(node);
+
+        var renderPreset = Descendants(tree)
+            .First((candidate) => candidate.Kind == ProjectTreeNodeKind.RenderPreset);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateField(
+                connection,
+                original.Id,
+                "shot.renderPresetId",
+                renderPreset.Id);
+            var duplicate = repository.Duplicate(
+                connection,
+                original.Id,
+                $"shot_repository_{Guid.NewGuid():N}",
+                $"{original.Name} repository copy");
+            Equal(renderPreset.Id, duplicate.RenderPresetId);
+            Equal(original.OwnerActorId, duplicate.OwnerActorId);
+            Equal(original.CanvasJson, duplicate.CanvasJson);
+            Equal(original.MetadataJson, duplicate.MetadataJson);
+            repository.Delete(connection, duplicate.Id);
+
+            var duplicatedEpisode = episodeRepository.DuplicateEpisode(
+                connection,
+                original.EpisodeId,
+                "Repository Episode");
+            var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id).Single();
+            Equal(renderPreset.Id, episodeShot.RenderPresetId);
+            Equal(original.OwnerActorId, episodeShot.OwnerActorId);
+            Equal(original.CanvasJson, episodeShot.CanvasJson);
+            Equal(original.MetadataJson, episodeShot.MetadataJson);
+            episodeRepository.DeleteEpisode(connection, duplicatedEpisode.Id);
+
+            repository.UpdateField(
+                connection,
+                original.Id,
+                "shot.renderPresetId",
+                original.RenderPresetId);
+        }
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() =>
+                repository.UpdateField(connection, original.Id, "shot.canvas", "[]"));
+            Throws<InvalidOperationException>(() =>
+                repository.UpdateField(connection, original.Id, "shot.metadata", "[]"));
+            Throws<InvalidOperationException>(() =>
+                repository.UpdateDuration(connection, original.Id, 0));
+            Throws<InvalidOperationException>(() =>
+                repository.UpdateField(connection, "missing_shot", "shot.slug", "missing"));
         }
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);

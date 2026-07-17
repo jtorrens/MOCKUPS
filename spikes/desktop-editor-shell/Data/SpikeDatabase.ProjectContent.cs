@@ -13,35 +13,22 @@ internal sealed partial class SpikeDatabase
     public ShotSettings GetShotSettings(string shotId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT s.slug, s.version, s.sort_order, p.default_fps, COALESCE(s.fps_override, p.default_fps), s.fps_override,
-                   s.duration_frames, s.owner_actor_id, s.render_preset_id, s.canvas_json, s.metadata_json, e.project_id
-            FROM shots s
-            JOIN episodes e ON e.id = s.episode_id
-            JOIN projects p ON p.id = e.project_id
-            WHERE s.id = $id
-            """;
-        command.Parameters.AddWithValue("$id", shotId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing shot '{shotId}'.");
-        }
+        var record = _shotRepository.Get(connection, shotId);
+        var project = _projectEpisodeRepository.GetProjectSettings(connection, record.ProjectId);
 
         return new ShotSettings(
-            ReadString(reader, 11),
-            ReadString(reader, 0),
-            reader.IsDBNull(1) ? 1 : reader.GetInt32(1),
-            reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
-            reader.IsDBNull(3) ? 25 : reader.GetInt32(3),
-            reader.IsDBNull(4) ? 25 : reader.GetInt32(4),
-            reader.IsDBNull(5) ? null : reader.GetInt32(5),
-            reader.IsDBNull(6) ? 240 : reader.GetInt32(6),
-            ReadString(reader, 7),
-            ReadString(reader, 8),
-            ReadString(reader, 9),
-            ReadString(reader, 10));
+            record.ProjectId,
+            record.Slug,
+            record.Version,
+            record.SortOrder,
+            project.DefaultFps,
+            record.FpsOverride ?? project.DefaultFps,
+            record.FpsOverride,
+            record.DurationFrames,
+            record.OwnerActorId,
+            record.RenderPresetId,
+            record.CanvasJson,
+            record.MetadataJson);
     }
 
     public void UpdateShotField(string shotId, string fieldId, string value)
@@ -49,7 +36,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         if (fieldId == "shot.fps" && value == "inherited")
         {
-            Execute(connection, "UPDATE shots SET fps_override = NULL WHERE id = $id", ("$id", shotId));
+            _shotRepository.ClearFpsOverride(connection, shotId);
             return;
         }
 
@@ -58,32 +45,7 @@ internal sealed partial class SpikeDatabase
             _moduleInstanceThemeContextService.RequireShotOwnerChange(connection, shotId, value);
         }
 
-        var column = fieldId switch
-        {
-            "shot.slug" => "slug",
-            "shot.version" => "version",
-            "shot.sortOrder" => "sort_order",
-            "shot.fps" => "fps_override",
-            "shot.durationFrames" => "duration_frames",
-            "shot.ownerActorId" => "owner_actor_id",
-            "shot.renderPresetId" => "render_preset_id",
-            "shot.canvas" => "canvas_json",
-            "shot.metadata" => "metadata_json",
-            _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
-        };
-        object nextValue = fieldId is "shot.version" or "shot.sortOrder" or "shot.fps" or "shot.durationFrames"
-            ? NumericText.Int32(value, 0)
-            : value;
-        if (fieldId is "shot.canvas" or "shot.metadata")
-        {
-            ParseJsonObject(value);
-        }
-
-        Execute(
-            connection,
-            $"UPDATE shots SET {column} = $value WHERE id = $id",
-            ("$id", shotId),
-            ("$value", nextValue));
+        _shotRepository.UpdateField(connection, shotId, fieldId, value);
         if (fieldId == "shot.ownerActorId")
         {
             SynchronizeTimelineDurations(connection, shotId);
@@ -93,41 +55,31 @@ internal sealed partial class SpikeDatabase
     public string GetShotRenderName(string shotId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT p.slug, p.name, e.slug, e.name, s.slug, s.name, s.version
-            FROM shots s
-            JOIN episodes e ON e.id = s.episode_id
-            JOIN projects p ON p.id = e.project_id
-            WHERE s.id = $id
-            """;
-        command.Parameters.AddWithValue("$id", shotId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing shot '{shotId}'.");
-        }
-
-        var projectSlug = SlugOrName(ReadString(reader, 0), reader.GetString(1), "project");
-        var episodeSlug = SlugOrName(ReadString(reader, 2), reader.GetString(3), "episode");
-        var shotSlug = SlugOrName(ReadString(reader, 4), reader.GetString(5), "shot");
-        var version = reader.IsDBNull(6) ? 1 : reader.GetInt32(6);
-        return $"{projectSlug}_{episodeSlug}_{shotSlug}_v{Math.Max(0, version):00}";
+        var shot = _shotRepository.Get(connection, shotId);
+        var episode = _projectEpisodeRepository.QueryEpisodes(connection)
+            .SingleOrDefault((candidate) => candidate.Id == shot.EpisodeId)
+            ?? throw new InvalidOperationException($"Missing episode '{shot.EpisodeId}'.");
+        var project = _projectEpisodeRepository.QueryProjects(connection)
+            .SingleOrDefault((candidate) => candidate.Id == shot.ProjectId)
+            ?? throw new InvalidOperationException($"Missing project '{shot.ProjectId}'.");
+        var projectSettings = _projectEpisodeRepository.GetProjectSettings(connection, project.Id);
+        var projectSlug = SlugOrName(projectSettings.Slug, project.Name, "project");
+        var episodeSlug = SlugOrName(episode.Slug, episode.Name, "episode");
+        var shotSlug = SlugOrName(shot.Slug, shot.Name, "shot");
+        return $"{projectSlug}_{episodeSlug}_{shotSlug}_v{Math.Max(0, shot.Version):00}";
     }
 
     public string GetShotOwnerDeviceName(string shotId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT d.name
-            FROM shots s
-            JOIN actors a ON a.id = s.owner_actor_id
-            JOIN devices d ON d.id = a.default_device_id
-            WHERE s.id = $id
-            """;
-        command.Parameters.AddWithValue("$id", shotId);
-        return command.ExecuteScalar() as string ?? "No default device";
+        var shot = _shotRepository.Get(connection, shotId);
+        var actor = _actorRepository.QueryAll(connection)
+            .SingleOrDefault((candidate) => candidate.Id == shot.OwnerActorId)
+            ?? throw new InvalidOperationException($"Missing Actor '{shot.OwnerActorId}'.");
+        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId)) return "No default device";
+        return _deviceRepository.QueryAll(connection)
+            .SingleOrDefault((candidate) => candidate.Id == actor.DefaultDeviceId)?.Name
+            ?? throw new InvalidOperationException($"Missing Device '{actor.DefaultDeviceId}'.");
     }
 
     public AppSettings GetAppSettings(string appId)
@@ -349,33 +301,6 @@ internal sealed partial class SpikeDatabase
         }
 
         _appModuleRepository.UpdateAppMetadata(connection, appId, metadata.ToJsonString());
-    }
-
-    private static List<ShotRow> QueryShotRows(SqliteConnection connection)
-    {
-        var rows = new List<ShotRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json FROM shots ORDER BY sort_order, name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ShotRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                ReadString(reader, 3),
-                reader.GetInt32(4),
-                ReadString(reader, 5),
-                reader.GetInt32(6),
-                reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                reader.GetInt32(8),
-                ReadString(reader, 9),
-                ReadString(reader, 10),
-                ReadString(reader, 11),
-                ReadString(reader, 12)));
-        }
-
-        return rows;
     }
 
     private void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)

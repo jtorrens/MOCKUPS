@@ -140,20 +140,5 @@ internal sealed partial class SpikeDatabase
         string? LightColorHex,
         string? DarkColorHex);
     private sealed record IconThemeAssetMoveResult(string AssetRoot, string Name);
-    private sealed record ShotRow(
-        string Id,
-        string EpisodeId,
-        string Name,
-        string Slug,
-        int Version,
-        string Notes,
-        int SortOrder,
-        int? FpsOverride,
-        int DurationFrames,
-        string OwnerActorId,
-        string RenderPresetId,
-        string CanvasJson,
-        string MetadataJson);
-
     private sealed record ComponentSeedRow(string ComponentType, string RecordClassId, string Name, string ConfigJson, string DesignPreviewJson, string MetadataJson);
 }

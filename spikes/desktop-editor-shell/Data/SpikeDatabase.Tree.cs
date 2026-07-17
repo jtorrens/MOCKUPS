@@ -15,7 +15,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var projects = QueryProjectRows(connection);
         var episodes = QueryEpisodeRows(connection);
-        var shots = QueryShotRows(connection);
+        var shots = _shotRepository.QueryAll(connection);
         var moduleInstances = _moduleInstanceRepository.QueryAll(connection);
         var apps = _appModuleRepository.QueryApps(connection);
         var modules = _appModuleRepository.QueryModules(connection);
@@ -576,29 +576,13 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         _moduleInstanceThemeContextService.RequireEpisodeActor(connection, episode.Id, actorId);
-        var index = NextSortOrder(connection, "shots", "episode_id", episode.Id);
-        var id = $"shot_{Guid.NewGuid():N}";
-        var name = $"Shot {index + 1:00}";
-        const string notes = "New shot created in the desktop shell spike.";
-        Execute(
-            connection,
-            """
-            INSERT INTO shots (id, episode_id, name, slug, notes, sort_order, duration_frames, owner_actor_id)
-            VALUES ($id, $episodeId, $name, $slug, $notes, $sortOrder, 240, $actorId)
-            """,
-            ("$id", id),
-            ("$episodeId", episode.Id),
-            ("$name", name),
-            ("$slug", $"shot-{index + 1:00}"),
-            ("$notes", notes),
-            ("$sortOrder", index),
-            ("$actorId", actorId));
+        var shot = _shotRepository.Create(connection, episode.Id, actorId);
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Shot,
-            id,
-            name,
-            notes,
+            shot.Id,
+            shot.Name,
+            shot.Notes,
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
             episode);
     }
@@ -696,21 +680,14 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.Shot)
         {
             var id = $"shot_{Guid.NewGuid():N}";
-            var sortOrder = NextSortOrder(connection, "shots", "episode_id", node.Parent!.Id);
-            Execute(
-                connection,
-                """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json)
-                SELECT $id, episode_id, $name, slug || '-copy', version, notes, $sortOrder, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json
-                FROM shots
-                WHERE id = $sourceId
-                """,
-                ("$id", id),
-                ("$name", $"{node.Name} copy"),
-                ("$sortOrder", sortOrder),
-                ("$sourceId", node.Id));
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.Shot, id, $"{node.Name} copy", node.Notes, node.RecordClassId, node.Parent);
+            var duplicate = _shotRepository.Duplicate(connection, node.Id, id, $"{node.Name} copy");
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.Shot,
+                duplicate.Id,
+                duplicate.Name,
+                duplicate.Notes,
+                node.RecordClassId,
+                node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
@@ -834,15 +811,20 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
-        var table = node.Kind switch
+        if (node.Kind is not (
+            ProjectTreeNodeKind.Shot
+            or ProjectTreeNodeKind.ModuleInstance
+            or ProjectTreeNodeKind.Episode
+            or ProjectTreeNodeKind.RenderPreset
+            or ProjectTreeNodeKind.Theme
+            or ProjectTreeNodeKind.PaletteColor
+            or ProjectTreeNodeKind.Device
+            or ProjectTreeNodeKind.Actor
+            or ProjectTreeNodeKind.ProductionFont
+            or ProjectTreeNodeKind.IconTheme))
         {
-            ProjectTreeNodeKind.Shot => "shots",
-            ProjectTreeNodeKind.ModuleInstance => "",
-            ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.RenderPreset or ProjectTreeNodeKind.Theme
-                or ProjectTreeNodeKind.PaletteColor or ProjectTreeNodeKind.Device or ProjectTreeNodeKind.Actor
-                or ProjectTreeNodeKind.ProductionFont or ProjectTreeNodeKind.IconTheme => "",
-            _ => throw new InvalidOperationException($"Cannot delete {node.Kind}."),
-        };
+            throw new InvalidOperationException($"Cannot delete {node.Kind}.");
+        }
 
         var usages = GetReferenceUsages(connection, node.Kind, node.Id);
         if (usages.Count > 0)
@@ -908,7 +890,11 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        Execute(connection, $"DELETE FROM {table} WHERE id = $id", ("$id", node.Id));
+        if (node.Kind == ProjectTreeNodeKind.Shot)
+        {
+            _shotRepository.Delete(connection, node.Id);
+            return;
+        }
     }
 
     public IReadOnlyList<string> GetReferenceUsages(ProjectTreeNode node)
@@ -986,13 +972,11 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        var table = node.Kind switch
+        if (node.Kind == ProjectTreeNodeKind.Shot)
         {
-            ProjectTreeNodeKind.Shot => "shots",
-            _ => "",
-        };
-
-        if (string.IsNullOrWhiteSpace(table)) return;
+            _shotRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
@@ -1007,13 +991,6 @@ internal sealed partial class SpikeDatabase
                 metadata.ToJsonString());
             return;
         }
-
-        Execute(
-            connection,
-            $"UPDATE {table} SET name = $name, notes = $notes WHERE id = $id",
-            ("$id", node.Id),
-            ("$name", node.Name),
-            ("$notes", node.Notes));
     }
 
     public ProjectTreeNode RenameDirectNode(ProjectTreeNode node, string name)

@@ -9,6 +9,7 @@ internal sealed partial class SpikeDatabase
     private static object WriteGate => SqliteProjectContext.WriteGate;
     private readonly SqliteProjectContext _context;
     private readonly IEditorLayoutRepository _editorLayoutRepository;
+    private readonly IShotRepository _shotRepository;
     private readonly IProjectEpisodeRepository _projectEpisodeRepository;
     private readonly IRenderPresetRepository _renderPresetRepository;
     private readonly IPaletteRepository _paletteRepository;
@@ -27,7 +28,8 @@ internal sealed partial class SpikeDatabase
     {
         _context = new SqliteProjectContext(databasePath);
         _editorLayoutRepository = new EditorLayoutRepository(_context);
-        _projectEpisodeRepository = new ProjectEpisodeRepository(_context);
+        _shotRepository = new ShotRepository(_context);
+        _projectEpisodeRepository = new ProjectEpisodeRepository(_context, _shotRepository);
         _renderPresetRepository = new RenderPresetRepository(_context);
         _paletteRepository = new PaletteRepository(_context);
         _deviceRepository = new DeviceRepository(_context);

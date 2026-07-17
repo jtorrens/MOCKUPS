@@ -31,6 +31,22 @@ internal sealed record EpisodeRecord(
     string Notes,
     int SortOrder);
 
+internal sealed record ShotRecord(
+    string Id,
+    string EpisodeId,
+    string ProjectId,
+    string Name,
+    string Slug,
+    int Version,
+    string Notes,
+    int SortOrder,
+    int? FpsOverride,
+    int DurationFrames,
+    string OwnerActorId,
+    string RenderPresetId,
+    string CanvasJson,
+    string MetadataJson);
+
 internal sealed record RenderPresetRecord(
     string Id,
     string ProjectId,
@@ -243,6 +259,36 @@ internal interface IProjectEpisodeRepository
     void UpdateProjectNode(SqliteConnection connection, string projectId, string name, string notes);
 
     void UpdateEpisodeNode(SqliteConnection connection, string episodeId, string name, string notes);
+}
+
+internal interface IShotRepository
+{
+    ShotRecord Get(string shotId);
+
+    ShotRecord Get(SqliteConnection connection, string shotId);
+
+    IReadOnlyList<ShotRecord> QueryAll(SqliteConnection connection);
+
+    IReadOnlyList<ShotRecord> QueryByEpisode(SqliteConnection connection, string episodeId);
+
+    ShotRecord Create(SqliteConnection connection, string episodeId, string actorId);
+
+    ShotRecord Duplicate(SqliteConnection connection, string sourceId, string id, string name);
+
+    void DuplicateForEpisode(
+        SqliteConnection connection,
+        string sourceEpisodeId,
+        string targetEpisodeId);
+
+    void ClearFpsOverride(SqliteConnection connection, string shotId);
+
+    void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
+
+    void UpdateDuration(SqliteConnection connection, string shotId, int durationFrames);
+
+    void UpdateNode(SqliteConnection connection, string shotId, string name, string notes);
+
+    void Delete(SqliteConnection connection, string shotId);
 }
 
 internal interface IRenderPresetRepository

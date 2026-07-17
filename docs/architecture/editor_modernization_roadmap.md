@@ -352,6 +352,13 @@ forwarding, Variant application, structured collection edits, owner-relative
 animation, duration calculation, Shot synchronization and Preview resolution
 remain in their existing domain coordinators.
 
+Shot persistence is governed by `48_shot_persistence_contract.md`.
+`ShotRepository` now owns complete current Production rows, strict documents,
+direct writes and complete Shot copies for Shot/Episode lifecycle operations.
+Exact Actor/Theme context, Module selection, Screen timing, duration
+aggregation, render identity and Preview context remain in their domain
+coordinators.
+
 ## Guardrails
 
 Reject new changes that add:

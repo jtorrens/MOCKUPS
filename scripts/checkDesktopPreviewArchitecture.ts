@@ -1910,6 +1910,7 @@ assertContains(
 for (const [contractType, implementationType] of [
   ["IEditorLayoutRepository", "EditorLayoutRepository"],
   ["IProjectEpisodeRepository", "ProjectEpisodeRepository"],
+  ["IShotRepository", "ShotRepository"],
   ["IRenderPresetRepository", "RenderPresetRepository"],
   ["IPaletteRepository", "PaletteRepository"],
   ["IDeviceRepository", "DeviceRepository"],
@@ -1928,7 +1929,9 @@ for (const [contractType, implementationType] of [
   );
   assertContains(
     "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
-    `new ${implementationType}(_context)`,
+    implementationType === "ProjectEpisodeRepository"
+      ? "new ProjectEpisodeRepository(_context, _shotRepository)"
+      : `new ${implementationType}(_context)`,
     `SpikeDatabase must delegate through ${implementationType}`,
   );
 }
@@ -1955,6 +1958,7 @@ for (const facadePath of [
 for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs", "editor_layouts"],
   ["spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs", "episodes"],
+  ["spikes/desktop-editor-shell/Data/ShotRepository.cs", "shots"],
   ["spikes/desktop-editor-shell/Data/RenderPresetRepository.cs", "render_presets"],
   ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "palette_colors"],
   ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
@@ -2247,6 +2251,63 @@ assertContains(
   "docs/architecture/README.md",
   "47_module_instance_persistence_contract.md",
   "the active architecture index must include the Module Instance persistence contract",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs",
+  "_shotRepository.DuplicateForEpisode(",
+  "Episode duplication must delegate complete child Shot rows to ShotRepository",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "_shotRepository.UpdateDuration(",
+  "Shot duration coordination must delegate its prepared positive duration",
+);
+for (const shotFacadePath of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs",
+] as const) {
+  for (const forbiddenShotSql of [
+    "FROM shots",
+    "JOIN shots",
+    "UPDATE shots",
+    "INSERT INTO shots",
+    "DELETE FROM shots",
+  ]) {
+    assertDoesNotContain(
+      shotFacadePath,
+      forbiddenShotSql,
+      shotFacadePath + " must delegate Shot persistence instead of retaining " + forbiddenShotSql,
+    );
+  }
+}
+for (const forbiddenShotRepositoryConcern of [
+  "MainWindow",
+  "ProjectTreeNode",
+  "ModuleInstance",
+  "RuntimeTimeline",
+  "RequireShotOwnerChange",
+  "Theme",
+  "Renderable",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/ShotRepository.cs",
+    forbiddenShotRepositoryConcern,
+    "ShotRepository must not own UI, Production context, timing or render concern "
+      + forbiddenShotRepositoryConcern,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/48_shot_persistence_contract.md",
+  "AGENTS must require the Shot persistence contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "48_shot_persistence_contract.md",
+  "the active architecture index must include the Shot persistence contract",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",

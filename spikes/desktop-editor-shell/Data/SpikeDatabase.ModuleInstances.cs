@@ -299,32 +299,25 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
     {
         using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT m.id, m.name, a.name, a.id, m.record_class_id
-            FROM modules m
-            JOIN apps a ON a.id = m.app_id
-            WHERE a.project_id = (
-              SELECT e.project_id
-              FROM shots s
-              JOIN episodes e ON e.id = s.episode_id
-              WHERE s.id = $shotId
-            )
-            ORDER BY a.sort_order, a.name, m.sort_order, m.name
-            """;
-        command.Parameters.AddWithValue("$shotId", shotId);
-        using var reader = command.ExecuteReader();
-        var choices = new List<ShotModuleChoice>();
-        while (reader.Read())
-        {
-            choices.Add(new ShotModuleChoice(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                reader.GetString(4)));
-        }
-        return choices;
+        var shot = _shotRepository.Get(connection, shotId);
+        var apps = _appModuleRepository.QueryApps(connection)
+            .Where((app) => app.ProjectId == shot.ProjectId)
+            .OrderBy((app) => app.SortOrder)
+            .ThenBy((app) => app.Name)
+            .ToDictionary((app) => app.Id, StringComparer.Ordinal);
+        return _appModuleRepository.QueryModules(connection)
+            .Where((module) => apps.ContainsKey(module.AppId))
+            .OrderBy((module) => apps[module.AppId].SortOrder)
+            .ThenBy((module) => apps[module.AppId].Name)
+            .ThenBy((module) => module.SortOrder)
+            .ThenBy((module) => module.Name)
+            .Select((module) => new ShotModuleChoice(
+                module.Id,
+                module.Name,
+                apps[module.AppId].Name,
+                module.AppId,
+                module.RecordClassId))
+            .ToList();
     }
 
     public ProjectTreeNode AddModuleInstance(ProjectTreeNode shot, ShotModuleInstanceDraft draft)

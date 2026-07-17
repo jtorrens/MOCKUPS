@@ -9,10 +9,12 @@ namespace Mockups.DesktopEditorShell.Data;
 internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
 {
     private readonly SqliteProjectContext _context;
+    private readonly IShotRepository _shotRepository;
 
-    public ProjectEpisodeRepository(SqliteProjectContext context)
+    public ProjectEpisodeRepository(SqliteProjectContext context, IShotRepository shotRepository)
     {
         _context = context;
+        _shotRepository = shotRepository;
     }
 
     public ProjectSettings GetProjectSettings(string projectId)
@@ -174,7 +176,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             ("$notes", source.Notes),
             ("$sortOrder", sortOrder));
 
-        DuplicateShots(connection, sourceEpisodeId, id);
+        _shotRepository.DuplicateForEpisode(connection, sourceEpisodeId, id);
         return new EpisodeRecord(id, source.ProjectId, copyName, slug, source.Notes, sortOrder);
     }
 
@@ -203,69 +205,4 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             ("$notes", notes));
     }
 
-    private static void DuplicateShots(SqliteConnection connection, string sourceEpisodeId, string targetEpisodeId)
-    {
-        var sourceShots = new List<EpisodeShotCopyRecord>();
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = """
-                SELECT name, slug, version, notes, sort_order, fps_override, duration_frames,
-                       owner_actor_id, canvas_json, metadata_json
-                FROM shots
-                WHERE episode_id = $episodeId
-                ORDER BY sort_order, name
-                """;
-            command.Parameters.AddWithValue("$episodeId", sourceEpisodeId);
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                sourceShots.Add(new EpisodeShotCopyRecord(
-                    reader.GetString(0),
-                    SqliteCommandExecutor.ReadString(reader, 1),
-                    reader.GetInt32(2),
-                    SqliteCommandExecutor.ReadString(reader, 3),
-                    reader.GetInt32(4),
-                    reader.IsDBNull(5) ? null : reader.GetInt32(5),
-                    reader.GetInt32(6),
-                    SqliteCommandExecutor.ReadString(reader, 7),
-                    SqliteCommandExecutor.ReadString(reader, 8),
-                    SqliteCommandExecutor.ReadString(reader, 9)));
-            }
-        }
-
-        for (var index = 0; index < sourceShots.Count; index++)
-        {
-            var shot = sourceShots[index];
-            SqliteCommandExecutor.Execute(
-                connection,
-                """
-                INSERT INTO shots (id, episode_id, name, slug, version, notes, sort_order, fps_override, duration_frames, owner_actor_id, canvas_json, metadata_json)
-                VALUES ($id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride, $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
-                """,
-                ("$id", $"shot_{Guid.NewGuid():N}"),
-                ("$episodeId", targetEpisodeId),
-                ("$name", shot.Name),
-                ("$slug", shot.Slug),
-                ("$version", shot.Version),
-                ("$notes", shot.Notes),
-                ("$sortOrder", index),
-                ("$fpsOverride", shot.FpsOverride),
-                ("$durationFrames", shot.DurationFrames),
-                ("$ownerActorId", shot.OwnerActorId),
-                ("$canvasJson", shot.CanvasJson),
-                ("$metadataJson", shot.MetadataJson));
-        }
-    }
-
-    private sealed record EpisodeShotCopyRecord(
-        string Name,
-        string Slug,
-        int Version,
-        string Notes,
-        int SortOrder,
-        int? FpsOverride,
-        int DurationFrames,
-        string OwnerActorId,
-        string CanvasJson,
-        string MetadataJson);
 }

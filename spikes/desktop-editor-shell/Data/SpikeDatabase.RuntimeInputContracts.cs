@@ -103,15 +103,11 @@ internal sealed partial class SpikeDatabase
                 (group) => group.Key,
                 (group) => Math.Max(1, group.Sum((instance) => instance.DurationFrames)),
                 StringComparer.Ordinal);
-        foreach (var shot in QueryShotRows(connection))
+        foreach (var shot in _shotRepository.QueryAll(connection))
         {
             var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
             if (duration == shot.DurationFrames) continue;
-            Execute(
-                connection,
-                "UPDATE shots SET duration_frames = $duration WHERE id = $id",
-                ("$duration", duration),
-                ("$id", shot.Id));
+            _shotRepository.UpdateDuration(connection, shot.Id, duration);
         }
     }
 

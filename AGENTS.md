@@ -21,6 +21,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/45_editor_session_view_state_contract.md`
 - `docs/architecture/46_component_class_definition_persistence_contract.md`
 - `docs/architecture/47_module_instance_persistence_contract.md`
+- `docs/architecture/48_shot_persistence_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -268,6 +269,13 @@ Module Instance persistence follows
 and prepared row writes. Variant selection, Runtime forwarding, structured
 collections, owner-relative animation, duration policy, Production Theme
 context, payload preparation and Preview remain outside persistence.
+
+Shot persistence follows `docs/architecture/48_shot_persistence_contract.md`.
+`ShotRepository` owns complete current Shot rows and prepared row writes.
+Exact Actor/Theme context, Module/Variant selection, Screen timing, Shot
+duration aggregation, effective Device, payload preparation and Preview remain
+outside persistence. Shot and Episode duplication must preserve every current
+Shot column and generate new stable ids.
 
 Theme persistence and Production Theme context additionally follow
 `docs/architecture/40_theme_persistence_and_context_contract.md`.
