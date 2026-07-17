@@ -169,6 +169,11 @@ Contract 55 establishes the Runtime Input options slice:
 Component preset options while generic factories retain `ValueKind` and
 declared dynamic-list interpretation.
 
+Contract 56 establishes the Preview visual-context slice:
+`PreviewVisualContextDataSource` supplies exact Device/Theme options, Project
+media root and common resolved Device metrics while the controller retains
+session selection/orientation and the web Preview remains database-independent.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

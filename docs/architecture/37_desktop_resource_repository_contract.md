@@ -132,6 +132,11 @@ source composes current facade/domain reads; Runtime Actor and inline avatar
 factories own interpretation and must not bypass that source or move visual
 rules into `ActorRepository`.
 
+Preview Device/Theme option and metrics reads additionally follow contract 56.
+`PreviewVisualContextDataSource` supplies the shell with current options,
+Project media root and common resolved metrics; `DeviceRepository` does not
+gain Preview geometry or selector policy.
+
 ## 8. Forbidden shortcuts
 
 - resolving Device or Actor visuals inside a repository;

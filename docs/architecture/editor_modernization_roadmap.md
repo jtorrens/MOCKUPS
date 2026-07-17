@@ -404,6 +404,12 @@ Component preset options now enter Runtime Input and animation dictionary
 definitions through one typed source, while `ValueKind` mapping and declared
 dynamic-list presentation remain in their generic factories.
 
+Preview visual-context data access is governed by
+`56_preview_visual_context_data_boundary_contract.md`. Device/Theme options,
+the Project media root and resolved Device frame metrics now enter the Preview
+controller through one typed source. The web Preview consumes a common metrics
+DTO and no longer references `SpikeDatabase`.
+
 ## Guardrails
 
 Reject new changes that add:

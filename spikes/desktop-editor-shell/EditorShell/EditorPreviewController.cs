@@ -31,6 +31,7 @@ internal sealed class EditorPreviewController
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly SpikeDatabase _database;
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
+    private readonly PreviewVisualContextDataSource _visualContextData;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
@@ -237,6 +238,7 @@ internal sealed class EditorPreviewController
     {
         _database = database;
         _previewPayloadData = new DesignPreviewPayloadDataSource(database);
+        _visualContextData = new PreviewVisualContextDataSource(database);
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
@@ -891,7 +893,7 @@ internal sealed class EditorPreviewController
         _isRefreshingOptions = true;
         try
         {
-            var deviceOptions = _database.GetDeviceOptions(project.Id);
+            var deviceOptions = _visualContextData.DeviceOptions(project.Id);
             _deviceComboBox.ItemsSource = deviceOptions;
             var selectedDevice = !string.IsNullOrWhiteSpace(SelectedDeviceId)
                 ? deviceOptions.FirstOrDefault((option) => option.Value == SelectedDeviceId)
@@ -900,7 +902,7 @@ internal sealed class EditorPreviewController
             _deviceComboBox.SelectedItem = selectedDevice;
             SelectedDeviceId = selectedDevice?.Value;
 
-            var themeOptions = _database.GetThemeOptions(project.Id);
+            var themeOptions = _visualContextData.ThemeOptions(project.Id);
             _themeComboBox.ItemsSource = themeOptions;
             var selectedTheme = !string.IsNullOrWhiteSpace(_selectedThemeId)
                 ? themeOptions.FirstOrDefault((option) => option.Value == _selectedThemeId)
@@ -1103,7 +1105,7 @@ internal sealed class EditorPreviewController
     private async Task BrowseReferenceAsync()
     {
         if (string.IsNullOrWhiteSpace(_projectId)) return;
-        var mediaRoot = _database.GetProjectSettings(_projectId).MediaRoot;
+        var mediaRoot = _visualContextData.ProjectMediaRoot(_projectId);
         var selected = await EditorPathBrowser.BrowseMediaFile(_owner.StorageProvider, _referenceSource, mediaRoot);
         if (string.IsNullOrWhiteSpace(selected)) return;
 
@@ -1143,7 +1145,7 @@ internal sealed class EditorPreviewController
         _referenceAngleSlider.Value,
         Math.Max(0, CurrentNavigationFrame() - _referenceStartPreviewFrame),
         _designInputsPanel.PlaybackFrameRate,
-        string.IsNullOrWhiteSpace(_projectId) ? "" : _database.GetProjectSettings(_projectId).MediaRoot);
+        string.IsNullOrWhiteSpace(_projectId) ? "" : _visualContextData.ProjectMediaRoot(_projectId));
 
     public void Refresh()
     {
@@ -1175,7 +1177,7 @@ internal sealed class EditorPreviewController
 
             var metrics = _showCanonicalFrame
                 ? CanonicalPreviewMetrics()
-                : ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
+                : ApplyPreviewOrientation(_visualContextData.DeviceMetrics(deviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
             designPayload = ProcessPreviewPayload(designPayload, "static");
             UpdateDesignContextChrome(designPayload);
@@ -1302,7 +1304,7 @@ internal sealed class EditorPreviewController
 
         var deviceId = PreviewDeviceId(designPayload);
         if (string.IsNullOrWhiteSpace(deviceId)) return true;
-        var metrics = ApplyPreviewOrientation(_database.GetDevicePreviewMetrics(deviceId));
+        var metrics = ApplyPreviewOrientation(_visualContextData.DeviceMetrics(deviceId));
         var payload = ProcessPreviewPayload(designPayload, "playback-prepare") ?? designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
@@ -1509,7 +1511,7 @@ internal sealed class EditorPreviewController
     }
 
     private async Task PreloadPlaybackFramesAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         DesignPreviewPayload ownerPayload,
         IReadOnlyList<DesignPreviewPayload> frames,
         CancellationToken cancellationToken,
@@ -1556,7 +1558,7 @@ internal sealed class EditorPreviewController
     }
 
     private void SchedulePlaybackAheadPreload(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         DesignPreviewPayload payload)
     {
         if (_isAheadPreloading || string.IsNullOrWhiteSpace(_projectId))
@@ -1649,7 +1651,7 @@ internal sealed class EditorPreviewController
     }
 
     private string RasterPlaybackSignature(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         DesignPreviewPayload payload,
         IReadOnlyList<DesignPreviewPayload> frames)
     {
@@ -2050,7 +2052,7 @@ internal sealed class EditorPreviewController
             : fallback;
     }
 
-    private SpikeDatabase.DevicePreviewMetrics ApplyPreviewOrientation(SpikeDatabase.DevicePreviewMetrics metrics)
+    private DevicePreviewMetrics ApplyPreviewOrientation(DevicePreviewMetrics metrics)
     {
         if (_selectedOrientation != "landscape")
         {
@@ -2071,9 +2073,9 @@ internal sealed class EditorPreviewController
         };
     }
 
-    private static SpikeDatabase.DevicePreviewMetrics CanonicalPreviewMetrics()
+    private static DevicePreviewMetrics CanonicalPreviewMetrics()
     {
-        return new SpikeDatabase.DevicePreviewMetrics(
+        return new DevicePreviewMetrics(
             "Canonical 360 × 800",
             360,
             800,
@@ -2818,13 +2820,13 @@ internal sealed class EditorPreviewController
             return;
         }
 
-        var deviceOptions = _database.GetDeviceOptions(_projectId);
+        var deviceOptions = _visualContextData.DeviceOptions(_projectId);
         var selectedDevice = !string.IsNullOrWhiteSpace(SelectedDeviceId)
             ? deviceOptions.FirstOrDefault((option) => option.Value == SelectedDeviceId)
             : null;
         selectedDevice ??= deviceOptions.FirstOrDefault();
 
-        var themeOptions = _database.GetThemeOptions(_projectId);
+        var themeOptions = _visualContextData.ThemeOptions(_projectId);
         var selectedTheme = !string.IsNullOrWhiteSpace(_selectedThemeId)
             ? themeOptions.FirstOrDefault((option) => option.Value == _selectedThemeId)
             : null;

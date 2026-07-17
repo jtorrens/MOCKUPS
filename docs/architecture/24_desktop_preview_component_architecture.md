@@ -132,6 +132,10 @@ The desktop `Preview` / `Design` surface is a WebView displaying HTML/CSS.
 That makes the web result the preview truth for component design, not an
 Avalonia approximation.
 
+Resolved Device frame geometry additionally follows contract 56.
+`DevicePreviewMetrics` is a common final Preview DTO rather than a nested
+database type; web Preview surfaces must not reference `SpikeDatabase`.
+
 The desktop editor has one web preview surface, not separate runtime and design
 renderers. The selected context determines its payload:
 

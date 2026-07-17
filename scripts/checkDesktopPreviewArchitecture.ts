@@ -415,6 +415,65 @@ for (const runtimeInputOptionConsumer of [
     "Runtime Input and animation editors must reuse one typed options data source",
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/56_preview_visual_context_data_boundary_contract.md",
+  "AGENTS must require the Preview visual context data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "56_preview_visual_context_data_boundary_contract.md",
+  "the architecture index must include contract 56",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/DevicePreviewMetrics.cs",
+  "internal sealed record DevicePreviewMetrics(",
+  "resolved Device Preview metrics must be a common top-level DTO",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Records.cs",
+  "record DevicePreviewMetrics",
+  "resolved Device Preview metrics must not be nested in the database facade",
+);
+for (const genericWebPreviewFile of [
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+]) {
+  assertDoesNotContain(
+    genericWebPreviewFile,
+    "SpikeDatabase",
+    "generic web Preview surfaces must consume common resolved metrics without database coupling",
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/PreviewVisualContextDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Preview visual context data source must own that route's database dependency",
+);
+for (const forbiddenPreviewVisualContextSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/PreviewVisualContextDataSource.cs",
+    forbiddenPreviewVisualContextSql,
+    `the Preview visual context data source must compose current services rather than owning SQL (${forbiddenPreviewVisualContextSql})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_visualContextData = new PreviewVisualContextDataSource(database)",
+  "the Preview controller must reuse one typed visual context data source",
+);
+for (const forbiddenPreviewControllerRead of [
+  "_database.GetDeviceOptions",
+  "_database.GetThemeOptions",
+  "_database.GetProjectSettings",
+  "_database.GetDevicePreviewMetrics",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    forbiddenPreviewControllerRead,
+    `the Preview controller must use its typed visual context boundary (${forbiddenPreviewControllerRead})`,
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",

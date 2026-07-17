@@ -92,6 +92,9 @@ this index wins.
 - `55_runtime_input_options_data_boundary_contract.md`: typed option lookup for
   Runtime Input dictionary definitions and declared dynamic lists, separated
   from `ValueKind` mapping and collection presentation.
+- `56_preview_visual_context_data_boundary_contract.md`: typed Device/Theme
+  options, Project media root and resolved common Device metrics for Preview,
+  separated from shell selection and generic web presentation.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

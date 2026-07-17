@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
@@ -29,7 +28,7 @@ internal static class WebDesignPreviewRenderer
     private static long _nextFrameCacheReservationId;
 
     public static async Task<string> RenderBodyAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
@@ -38,7 +37,7 @@ internal static class WebDesignPreviewRenderer
     }
 
     public static async Task<string> RenderPrewarmBodyAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
@@ -47,7 +46,7 @@ internal static class WebDesignPreviewRenderer
     }
 
     private static async Task<string> RenderBodyAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload,
@@ -95,7 +94,7 @@ internal static class WebDesignPreviewRenderer
     }
 
     public static async Task PrewarmBodyAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
@@ -146,7 +145,7 @@ internal static class WebDesignPreviewRenderer
     }
 
     private static object CreateRequest(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)

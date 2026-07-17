@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -562,7 +561,7 @@ internal abstract class WebPreviewPane : Grid
     }
 
     protected static string DeviceHtml(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         bool isDark,
         string themeName,
         string themeMode,
@@ -1685,7 +1684,7 @@ internal abstract class WebPreviewPane : Grid
     }
 
     protected static string RasterDocumentHtml(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string bodyContent,
         string fontStyleHtml)
     {
@@ -1808,7 +1807,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     }
 
     public async Task<string> BuildRasterHtmlAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         DesignPreviewPayload payload)
     {
@@ -1838,7 +1837,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     }
 
     public async Task<bool> PrewarmFrameAsync(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         string themeMode,
         bool showDesignMarks,
         DesignPreviewPayload payload)
@@ -1863,7 +1862,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     }
 
     public void Update(
-        SpikeDatabase.DevicePreviewMetrics metrics,
+        DevicePreviewMetrics metrics,
         bool isDark,
         string themeName,
         string themeMode,
@@ -2308,7 +2307,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     private sealed record DesignPreviewUpdate(
         long Sequence,
-        SpikeDatabase.DevicePreviewMetrics Metrics,
+        DevicePreviewMetrics Metrics,
         bool IsDark,
         string ThemeName,
         string ThemeMode,
