@@ -17,6 +17,7 @@ internal sealed class ModuleInstanceAnimationEditor
 {
     private readonly SpikeDatabase _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
+    private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
     private readonly EditorSessionUiState _sessionUiState;
@@ -37,6 +38,7 @@ internal sealed class ModuleInstanceAnimationEditor
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _sessionUiState = sessionUiState;
@@ -613,7 +615,7 @@ internal sealed class ModuleInstanceAnimationEditor
             ValueNode(target.Input.ValueKind, target.BaseValue),
             target.Input.ValueKind);
         var valueControl = new DictionaryFieldControl(
-            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, node, target.Input), displayedValue),
+            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, node, target.Input), displayedValue),
             _dictionaryServices.ForNode(node, (_) => ""));
         var animation = target.Input.Animation!;
         var selectedInterpolation = exact?.Interpolation ?? animation.Interpolations.First();
@@ -987,7 +989,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 {
                     var targetInput = string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
                         ? input
-                        : input with { Options = RuntimeInputDynamicOptions.Resolve(_database, input, item) };
+                        : input with { Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, item) };
                     result.Add(new AnimationTarget(
                         targetInput.Id,
                         targetId,

@@ -164,6 +164,11 @@ Contract 54 establishes the Production Shot context slice:
 Theme and mode route while `ProductionShotContextService` retains validity,
 error and navigation policy.
 
+Contract 55 establishes the Runtime Input options slice:
+`RuntimeInputOptionsDataSource` supplies exact Actor, Palette and complete
+Component preset options while generic factories retain `ValueKind` and
+declared dynamic-list interpretation.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class RuntimeInputDynamicOptions
 {
     public static IReadOnlyList<FieldOption>? Resolve(
-        SpikeDatabase database,
+        RuntimeInputOptionsDataSource optionsDataSource,
         ComponentInputDefinition? input,
         JsonObject values)
     {
@@ -26,7 +25,7 @@ internal static class RuntimeInputDynamicOptions
             if (input.OptionsSourceLabelJsonKey.Equals("presetId", StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(rawLabel))
             {
-                try { label = database.GetRuntimeComponentPresetName(rawLabel, new JsonObject(), []); }
+                try { label = optionsDataSource.RuntimeComponentPresetName(rawLabel); }
                 catch { label = rawLabel; }
             }
             if (input.OptionsSourceLabelJsonKey.Equals("name", StringComparison.Ordinal)

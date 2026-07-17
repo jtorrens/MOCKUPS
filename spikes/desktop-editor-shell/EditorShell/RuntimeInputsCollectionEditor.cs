@@ -15,6 +15,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RuntimeInputsCollectionEditor
 {
     private readonly SpikeDatabase _database;
+    private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
     private readonly Action<string, string?> _triggerAction;
@@ -59,6 +60,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
         _database = database;
+        _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;
@@ -434,7 +436,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var value = DesignPreviewTestValues.Value(preview, input);
         var control = new DictionaryFieldControl(
-            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input), value),
+            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input), value),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
@@ -861,7 +863,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var value = field.DefaultValue;
             if (field.ValueKind == ValueKind.ComponentPreset && string.IsNullOrWhiteSpace(value))
             {
-                var options = RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, field).Options ?? [];
+                var options = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, field).Options ?? [];
                 var componentId = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.GroupValue))?.GroupValue ?? "";
                 value = string.IsNullOrWhiteSpace(componentId)
                     ? ""
@@ -1019,10 +1021,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 : null,
         };
-        var definition = RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input);
+        var definition = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input);
         if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
         {
-            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(_database, input, item) };
+            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, item) };
         }
         var control = new DictionaryFieldControl(
             new FieldValue(
@@ -1114,7 +1116,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(_database, owner.Node, input),
+                RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input),
                 DesignPreviewTestValues.Value(componentInputs, input)),
             _dictionaryServices.ForNode(owner.Node, (_) => ""));
         void ApplyTransientValue(string next)
@@ -1342,7 +1344,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ? null
             : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
         var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
-            ? action.TargetOptions.Count > 0 ? action.TargetOptions : RuntimeInputDynamicOptions.Resolve(_database, targetInput, values)
+            ? action.TargetOptions.Count > 0 ? action.TargetOptions : RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, targetInput, values)
             : null;
         var currentTargetValue = targetInput is null
             ? ""

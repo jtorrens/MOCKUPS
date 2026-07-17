@@ -398,6 +398,12 @@ Shot-to-Actor-to-Device/Theme route now enters navigation and Preview through a
 typed source, while context validity, errors and navigation availability remain
 in `ProductionShotContextService`.
 
+Runtime Input option data access is governed by
+`55_runtime_input_options_data_boundary_contract.md`. Actor, Palette and full
+Component preset options now enter Runtime Input and animation dictionary
+definitions through one typed source, while `ValueKind` mapping and declared
+dynamic-list presentation remain in their generic factories.
+
 ## Guardrails
 
 Reject new changes that add:

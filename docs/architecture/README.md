@@ -89,6 +89,9 @@ this index wins.
 - `54_production_shot_context_data_boundary_contract.md`: typed read access for
   the explicit Shot owner Actor, Device, Theme and mode route, separated from
   context validity and navigation policy.
+- `55_runtime_input_options_data_boundary_contract.md`: typed option lookup for
+  Runtime Input dictionary definitions and declared dynamic lists, separated
+  from `ValueKind` mapping and collection presentation.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

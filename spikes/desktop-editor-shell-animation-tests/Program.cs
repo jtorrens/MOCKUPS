@@ -20,6 +20,7 @@ var tests = new (string Name, Action Run)[]
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
+    ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
@@ -698,6 +699,77 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
         True(JsonNode.DeepEquals(
             JsonPath.ParseRequiredObject(settings.MetadataJson, $"Actor '{actor.Id}' metadata_json")["wallpaper"],
             lightPayload["wallpaper"]));
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-options-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new RuntimeInputOptionsDataSource(database);
+        var project = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+
+        var actorInput = new ComponentInputDefinition(
+            "actor", "Actor", "actorId", ComponentInputKind.RecordReference,
+            ValueKind.RecordReference, "", TableId: "actors");
+        var actorDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, actorInput);
+        SequenceEqual(
+            database.GetActorOptions(project.Id).Select((option) => option.Value),
+            actorDefinition.Options!.Select((option) => option.Value));
+
+        var paletteInput = new ComponentInputDefinition(
+            "color", "Color", "color", ComponentInputKind.Option,
+            ValueKind.PaletteColorToken, "");
+        var paletteDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, paletteInput);
+        SequenceEqual(
+            database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
+            paletteDefinition.Options!.Select((option) => option.Value));
+
+        var presetInput = new ComponentInputDefinition(
+            "audio", "Audio", "presetId", ComponentInputKind.ComponentPreset,
+            ValueKind.ComponentPreset, "", ComponentType: "audio");
+        var presetDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, presetInput);
+        SequenceEqual(
+            database.GetComponentPresetReferenceOptions(project.Id, "audio", false).Select((option) => option.Value),
+            presetDefinition.Options!.Select((option) => option.Value));
+
+        var presetReference = presetDefinition.Options!.First().Value;
+        var dynamicInput = new ComponentInputDefinition(
+            "state", "State", "stateId", ComponentInputKind.Option,
+            ValueKind.OptionToken, "",
+            OptionsSourceCollectionJsonKey: "states",
+            OptionsSourceValueJsonKey: "id",
+            OptionsSourceLabelJsonKey: "presetId");
+        var values = new JsonObject
+        {
+            ["states"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "state_default",
+                    ["presetId"] = presetReference,
+                },
+            },
+        };
+        var dynamicOptions = RuntimeInputDynamicOptions.Resolve(dataSource, dynamicInput, values)!;
+        Equal(1, dynamicOptions.Count);
+        Equal("state_default", dynamicOptions[0].Value);
+        Equal(
+            database.GetRuntimeComponentPresetName(presetReference, new JsonObject(), []),
+            dynamicOptions[0].Label);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
@@ -2845,7 +2917,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(audioInputs["showBadge"] is JsonValue);
         Equal("icon", audioInputs["badgeContentMode"]?.GetValue<string>() ?? "");
         True(RuntimeInputFieldDefinitionFactory.Create(
-            database,
+            new RuntimeInputOptionsDataSource(database),
             defaultVariant,
             alternatives.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
         var runtimeItem = new JsonObject

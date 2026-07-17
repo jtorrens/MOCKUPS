@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Data;
 using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -6,17 +5,17 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class RuntimeInputFieldDefinitionFactory
 {
     public static FieldDefinition Create(
-        SpikeDatabase database,
+        RuntimeInputOptionsDataSource optionsDataSource,
         ProjectTreeNode node,
         ComponentInputDefinition input)
     {
         var projectId = ProjectAncestor(node).Id;
         var options = input.ValueKind switch
         {
-            ValueKind.RecordReference when input.TableId == "actors" => database.GetActorOptions(projectId),
+            ValueKind.RecordReference when input.TableId == "actors" => optionsDataSource.ActorOptions(projectId),
             ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                database.GetComponentPresetReferenceOptions(projectId, input.ComponentType, input.AllowEmptyComponentPreset),
-            ValueKind.PaletteColorToken => database.GetPaletteColorOptions(projectId),
+                optionsDataSource.ComponentPresetOptions(projectId, input.ComponentType, input.AllowEmptyComponentPreset),
+            ValueKind.PaletteColorToken => optionsDataSource.PaletteColorOptions(projectId),
             _ => input.Options,
         };
         return new FieldDefinition(

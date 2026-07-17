@@ -368,6 +368,53 @@ for (const productionContextConsumer of [
     "navigation and Preview must compose the typed Production Shot context boundary",
   );
 }
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/55_runtime_input_options_data_boundary_contract.md",
+  "AGENTS must require the Runtime Input options data boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "55_runtime_input_options_data_boundary_contract.md",
+  "the architecture index must include contract 55",
+);
+for (const runtimeInputOptionFactory of [
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+]) {
+  assertDoesNotContain(
+    runtimeInputOptionFactory,
+    "SpikeDatabase",
+    "Runtime Input option factories must consume only their typed options data source",
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+  "private readonly SpikeDatabase _database",
+  "the Runtime Input options data source must own the option route's database dependency",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+  "_actorDataSource = new ActorPreviewDataSource(database)",
+  "Runtime Input Actor options must reuse the typed Actor boundary",
+);
+for (const forbiddenRuntimeInputOptionSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+    forbiddenRuntimeInputOptionSql,
+    `the Runtime Input options data source must compose current services rather than owning SQL (${forbiddenRuntimeInputOptionSql})`,
+  );
+}
+for (const runtimeInputOptionConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+]) {
+  assertContains(
+    runtimeInputOptionConsumer,
+    "_runtimeInputOptions = new RuntimeInputOptionsDataSource(database)",
+    "Runtime Input and animation editors must reuse one typed options data source",
+  );
+}
 assertFilesDoNotContain(
   currentRepositoryFiles,
   "EnsurePresetArray",
