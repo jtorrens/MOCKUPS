@@ -4,12 +4,9 @@ export type NavigationBarItemZone = NavigationBarZone | "off";
 export interface NavigationBarItemContract {
   id: string;
   label: string;
-  kind: string;
-  value: string | number | boolean;
-  token: string;
+  kind: "generatedBack" | "generatedHome" | "generatedRecents";
   zone: NavigationBarItemZone;
   order: number;
-  charging: boolean;
 }
 
 export interface NavigationBarDesignContract {

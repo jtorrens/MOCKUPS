@@ -86,6 +86,11 @@ does not centralize component semantics or invent one global component-config
 schema. Component/module owners remain responsible for their own required and
 optional fields.
 
+Owner-specific semantic contracts are equally strict once declared. Contract
+67 requires complete Status Bar and Navigation Bar configs and fixed item
+arrays for both class parity data and every Variant snapshot; a root-valid
+object with missing item members is not accepted as current data.
+
 Explicit construction is different from fallback. A creation/scaffolding
 routine may build a declared new `JsonObject` or `JsonArray`. It may not parse
 missing persisted data as an empty container and then save the result.

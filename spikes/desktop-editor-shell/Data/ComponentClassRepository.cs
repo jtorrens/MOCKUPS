@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -101,8 +102,14 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         string configJson,
         string metadataJson)
     {
-        JsonPath.ParseRequiredObject(configJson, $"Component class '{componentClassId}' config_json");
-        ValidateMetadata(metadataJson, componentClassId);
+        var current = Get(connection, componentClassId);
+        var config = JsonPath.ParseRequiredObject(configJson, $"Component class '{componentClassId}' config_json");
+        var metadata = ValidateMetadata(metadataJson, componentClassId);
+        CurrentComponentConfigContract.Validate(
+            current.ComponentType,
+            config,
+            $"Component class '{componentClassId}' config_json");
+        ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
         SqliteCommandExecutor.Execute(
             connection,
             "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
@@ -113,7 +120,9 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
 
     public void UpdateMetadata(SqliteConnection connection, string componentClassId, string metadataJson)
     {
-        ValidateMetadata(metadataJson, componentClassId);
+        var current = Get(connection, componentClassId);
+        var metadata = ValidateMetadata(metadataJson, componentClassId);
+        ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
         SqliteCommandExecutor.Execute(
             connection,
             "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
@@ -152,13 +161,29 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             SqliteCommandExecutor.ReadString(reader, 6),
             SqliteCommandExecutor.ReadString(reader, 7),
             SqliteCommandExecutor.ReadString(reader, 8));
-        JsonPath.ParseRequiredObject(record.ConfigJson, $"Component class '{record.Id}' config_json");
+        var config = JsonPath.ParseRequiredObject(record.ConfigJson, $"Component class '{record.Id}' config_json");
         JsonPath.ParseRequiredObject(record.DesignPreviewJson, $"Component class '{record.Id}' design_preview_json");
-        ValidateMetadata(record.MetadataJson, record.Id);
+        var metadata = ValidateMetadata(record.MetadataJson, record.Id);
+        CurrentComponentConfigContract.Validate(
+            record.ComponentType,
+            config,
+            $"Component class '{record.Id}' config_json");
+        ValidateVariantConfigs(record.ComponentType, metadata, record.Id);
         return record;
     }
 
-    private static void ValidateMetadata(string metadataJson, string componentClassId)
+    private static void ValidateVariantConfigs(string componentType, JsonObject metadata, string componentClassId)
+    {
+        foreach (var variant in VariantEnvelopeContract.Read(metadata, "presets", $"Component class '{componentClassId}'"))
+        {
+            CurrentComponentConfigContract.Validate(
+                componentType,
+                variant.Config,
+                $"Component class '{componentClassId}' Variant '{variant.Id}' config");
+        }
+    }
+
+    private static JsonObject ValidateMetadata(string metadataJson, string componentClassId)
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Component class '{componentClassId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "presets", $"Component class '{componentClassId}'");
@@ -166,5 +191,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         {
             throw new InvalidOperationException($"Component class '{componentClassId}' has no explicit default Variant.");
         }
+
+        return metadata;
     }
 }

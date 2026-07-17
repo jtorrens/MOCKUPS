@@ -451,6 +451,81 @@ internal static class ComponentClassFieldCatalog
             "keypad",
             new Dictionary<string, string>()));
 
+    private static readonly RuntimeInputCollectionDefinition StatusBarItemsCollection = new(
+        "statusBarItems",
+        "Items",
+        "items",
+        "Status item",
+        [
+            new ComponentInputDefinition(
+                "label", "Label", "label", ComponentInputKind.Text, ValueKind.StringReadOnly, "",
+                ShowInEditor: false),
+            new ComponentInputDefinition(
+                "kind", "Kind", "kind", ComponentInputKind.Text, ValueKind.StringReadOnly, "",
+                ShowInEditor: false),
+            new ComponentInputDefinition(
+                "textValue", "Value", "value", ComponentInputKind.Text, ValueKind.StringSingleLine, "",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["text"]),
+            new ComponentInputDefinition(
+                "signalValue", "Signal", "value", ComponentInputKind.Number, ValueKind.Integer, "4",
+                Minimum: 0, Maximum: 4,
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["generatedSignal"]),
+            new ComponentInputDefinition(
+                "batteryValue", "Battery %", "value", ComponentInputKind.Number, ValueKind.Integer, "85",
+                Minimum: 0, Maximum: 100,
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["generatedBattery"]),
+            new ComponentInputDefinition(
+                "token", "Icon token", "token", ComponentInputKind.Icon, ValueKind.IconToken, "",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["iconToken"]),
+            new ComponentInputDefinition(
+                "charging", "Charging", "charging", ComponentInputKind.Boolean, ValueKind.Boolean, "false",
+                EnabledWhenItemJsonKey: "kind", EnabledWhenItemValues: ["generatedBattery"]),
+            new ComponentInputDefinition(
+                "zone", "Zone", "zone", ComponentInputKind.Option, ValueKind.OptionToken, "off",
+                [new("off", "Off"), new("left", "Left"), new("right", "Right")]),
+            new ComponentInputDefinition(
+                "order", "Order", "order", ComponentInputKind.Number, ValueKind.Integer, "0",
+                Minimum: 0, Maximum: 10000),
+        ],
+        ItemPresentation: new RuntimeInputCollectionItemPresentation(
+            "label",
+            "",
+            ["kind"],
+            72,
+            "",
+            EditorIcons.Status,
+            new Dictionary<string, string>()),
+        CanEditStructure: false);
+
+    private static readonly RuntimeInputCollectionDefinition NavigationBarItemsCollection = new(
+        "navigationBarItems",
+        "Button Items",
+        "items",
+        "Navigation item",
+        [
+            new ComponentInputDefinition(
+                "label", "Label", "label", ComponentInputKind.Text, ValueKind.StringReadOnly, "",
+                ShowInEditor: false),
+            new ComponentInputDefinition(
+                "kind", "Kind", "kind", ComponentInputKind.Text, ValueKind.StringReadOnly, "",
+                ShowInEditor: false),
+            new ComponentInputDefinition(
+                "zone", "Zone", "zone", ComponentInputKind.Option, ValueKind.OptionToken, "off",
+                [new("off", "Off"), new("left", "Left"), new("center", "Center"), new("right", "Right")]),
+            new ComponentInputDefinition(
+                "order", "Order", "order", ComponentInputKind.Number, ValueKind.Integer, "0",
+                Minimum: 0, Maximum: 10000),
+        ],
+        ItemPresentation: new RuntimeInputCollectionItemPresentation(
+            "label",
+            "",
+            ["kind"],
+            72,
+            "",
+            EditorIcons.Navigation,
+            new Dictionary<string, string>()),
+        CanEditStructure: false);
+
     private static readonly FieldOption[] KeyboardLanguageOptions =
     [
         new("es", "Spanish"),
@@ -853,6 +928,7 @@ internal static class ComponentClassFieldCatalog
         ["component.statusBar.layout.itemSize"] = new("component.statusBar.layout.itemSize", "Item size", ValueKind.Integer, ["layout", "itemSize"], "18"),
         ["component.statusBar.layout.gap"] = new("component.statusBar.layout.gap", "Gap", ValueKind.ThemeToken, ["layout", "gap"], "theme.spacing.m", Options: SpacingTokenOptions),
         ["component.statusBar.layout.sidePadding"] = new("component.statusBar.layout.sidePadding", "Side padding", ValueKind.ThemeToken, ["layout", "sidePadding"], "theme.spacing.xxl", Options: SpacingTokenOptions),
+        ["component.statusBar.items"] = new("component.statusBar.items", "Items", ValueKind.StructuredCollection, ["items"], "[]", StructuredCollection: StatusBarItemsCollection),
 
         ["component.navigationBar.foregroundColorToken"] = new("component.navigationBar.foregroundColorToken", "Foreground", ValueKind.ThemeToken, ["foregroundColorToken"], "theme.icons.primary", Options: ThemeColorOptions),
         ["component.navigationBar.backgroundColorToken"] = new("component.navigationBar.backgroundColorToken", "Background", ValueKind.ThemeToken, ["backgroundColorToken"], "theme.colors.background", Options: ThemeColorOptions),
@@ -867,6 +943,7 @@ internal static class ComponentClassFieldCatalog
         ["component.navigationBar.gesture.width"] = new("component.navigationBar.gesture.width", "Width", ValueKind.Integer, ["gesture", "width"], "134"),
         ["component.navigationBar.gesture.height"] = new("component.navigationBar.gesture.height", "Height", ValueKind.Integer, ["gesture", "height"], "5"),
         ["component.navigationBar.gesture.cornerRadius"] = new("component.navigationBar.gesture.cornerRadius", "Corner radius", ValueKind.Integer, ["gesture", "cornerRadius"], "999"),
+        ["component.navigationBar.items"] = new("component.navigationBar.items", "Button Items", ValueKind.StructuredCollection, ["items"], "[]", StructuredCollection: NavigationBarItemsCollection),
 
         ["component.media.surface.editor"] = new("component.media.surface.editor", "Surface", ValueKind.ComponentPreset, ["media", "surfaceSlot", "presetId"], "default"),
         ["component.media.controlBarHeight"] = new("component.media.controlBarHeight", "Control bar height", ValueKind.Integer, ["media", "controlBarHeight"], "56", Number: new NumberDefinition(1, 512, 1, 0)),

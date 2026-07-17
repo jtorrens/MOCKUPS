@@ -18,9 +18,12 @@ owns final screen placement and selected variant/configuration.
 
 ### Runtime inputs and configuration
 
-Runtime item values may be text, booleans/numbers, icons/tokens, order, zone
-and charging state. Variant/configuration defines foreground/background theme
-tokens, background alpha, height, item size, side padding and gap.
+The complete Variant config owns the fixed item definitions and their authored
+text, numeric, icon-token, order, zone and charging values. Runtime forwarding
+may later supply declared inputs through the same component contract; the
+editor does not treat persisted Variant items as Preview-only test state.
+Variant configuration also defines foreground/background theme tokens,
+background alpha, height, item size, side padding and gap.
 
 ### Layout, states and motion
 
@@ -43,10 +46,10 @@ It owns item filtering, left/center/right zones and its internal geometry.
 
 ### Runtime inputs and configuration
 
-Runtime item values supply zone/order/value/token/charging metadata.
-Variant/configuration supplies type, foreground/background theme tokens,
-background alpha, bar height, item size, side padding, stroke/corner/filled
-button style and gesture geometry.
+The complete Variant config owns the fixed generated-button items and their
+explicit zone/order values. Variant configuration also supplies type,
+foreground/background theme tokens, background alpha, bar height, item size,
+side padding, stroke/corner/filled button style and gesture geometry.
 
 ### Layout, states and motion
 
@@ -77,3 +80,12 @@ The one-time data migration removes the former seeded protection/lock from
 non-default system-bar Variants. It records completion on the component class
 so a later user lock is preserved and is not cleared again at application
 startup.
+
+## Item authoring
+
+Both components expose Items through the metadata-driven structured dictionary
+control defined by contract 67. The collections are structurally fixed:
+development/scaffolding owns their ids, labels and kinds; Variant authors edit
+only the declared values and explicit placement fields. Status Bar and
+Navigation Bar remain separate component contracts despite sharing generic
+editor mechanics.

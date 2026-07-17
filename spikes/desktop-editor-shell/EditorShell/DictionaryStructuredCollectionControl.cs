@@ -4,6 +4,7 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -149,7 +150,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     _items.RemoveAt(index);
                     Commit(runtimeContractChanged: true);
                 }),
-            _services.StructuredCollectionUiState ?? new EditorSessionUiState());
+            _services.StructuredCollectionUiState ?? new EditorSessionUiState(),
+            canEditStructure: _definition.IsEditable && collection.CanEditStructure);
         Child = editor.Create();
     }
 
@@ -161,6 +163,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var content = new StackPanel { Spacing = 8 };
         foreach (var input in collection.Fields)
         {
+            if (!input.ShowInEditor) continue;
             if (!CollectionFieldAvailability.IsEnabled(item, input, itemIndex)) continue;
             content.Children.Add(CreateItemField(collection, item, itemIndex, input));
         }
@@ -216,6 +219,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             $"{_definition.Id}.{ItemId(item, 0)}.{input.Id}",
             input.Label,
             input.ValueKind,
+            IsEditable: _definition.IsEditable,
             DefaultValue: input.DefaultValue,
             Options: options,
             PairLabels: input.PairLabels,
@@ -382,13 +386,19 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private static JsonArray Parse(string value)
     {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException("Structured collection value cannot be blank.");
+        }
+
         try
         {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) as JsonArray ?? new JsonArray();
+            return JsonNode.Parse(value) as JsonArray
+                ?? throw new InvalidOperationException("Structured collection value must be a JSON array.");
         }
-        catch
+        catch (JsonException exception)
         {
-            return new JsonArray();
+            throw new InvalidOperationException("Structured collection value contains invalid JSON.", exception);
         }
     }
 }

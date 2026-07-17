@@ -226,6 +226,20 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.statusBar.layout.sidePadding", "order": 40, "visible": true }
                 ] }
               ]
+            },
+            {
+              "id": "statusBarItems",
+              "label": "Items",
+              "subtitle": "Status item values and left/right placement",
+              "icon": "{{EditorIcons.Status}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "items", "label": "Items", "order": 10, "visible": true, "fields": [
+                  { "id": "component.statusBar.items", "order": 10, "visible": true }
+                ] }
+              ]
             }
             """,
             "component.navigation_bar" => $$"""
@@ -258,6 +272,20 @@ internal sealed partial class SpikeDatabase
                   { "id": "component.navigationBar.gesture.width", "order": 10, "visible": true },
                   { "id": "component.navigationBar.gesture.height", "order": 20, "visible": true },
                   { "id": "component.navigationBar.gesture.cornerRadius", "order": 30, "visible": true }
+                ] }
+              ]
+            },
+            {
+              "id": "navigationBarItems",
+              "label": "Button Items",
+              "subtitle": "Generated button placement inside the bar",
+              "icon": "{{EditorIcons.Navigation}}",
+              "order": 30,
+              "visible": true,
+              "defaultOpen": false,
+              "groups": [
+                { "id": "items", "label": "Button Items", "order": 10, "visible": true, "fields": [
+                  { "id": "component.navigationBar.items", "order": 10, "visible": true }
                 ] }
               ]
             }

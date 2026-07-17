@@ -199,6 +199,11 @@ Contract 61 establishes the Runtime Input instance document slice:
 collection and complete animation writes while the editor retains ids,
 mappings, interaction and document preparation without a database handle.
 
+Contract 67 removes the remaining bespoke Status/Navigation item persistence
+path. Both fixed item collections now use the generic Component Variant field
+write, preserve complete item objects and reject invalid owner documents before
+SQL. No index-based item facade API remains.
+
 Each slice must leave the app usable, keep the facade API stable until its
 callers are intentionally migrated, and add the relevant parity tests before
 the next owner is moved.

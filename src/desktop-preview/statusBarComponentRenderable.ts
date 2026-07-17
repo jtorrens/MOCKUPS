@@ -1,7 +1,6 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { selectedColor } from "./previewColorHelpers.js";
-import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { renderScale, previewScreenBox } from "./previewGeometryHelpers.js";
 import { numberToken } from "./componentRenderableCommon.js";
 import { iconTokenStyle } from "./previewIconHelpers.js";
@@ -69,12 +68,10 @@ function boxedStatusItems(
 
     return zoneItems.map((item, index) => {
       const width = widths[index] ?? itemSize;
-      const kind = item.kind || "text";
-      const id = item.id || item.label || `item_${index}`;
+      const id = item.id;
       const box = { x, y, width, height: itemSize };
       const node = statusBarItemNode(
         `status_bar:${zone}:${id}`,
-        kind,
         item,
         box,
         itemSize,
@@ -90,7 +87,6 @@ function boxedStatusItems(
 
 function statusBarItemNode(
   id: string,
-  kind: string,
   item: StatusBarItemContract,
   box: RenderableBox,
   itemSize: number,
@@ -98,18 +94,18 @@ function statusBarItemNode(
   payload: DesignPreviewPayload,
   fontFamilyId: "theme.system",
 ): RenderableNode {
-  if (kind === "generatedBattery") {
-    return generatedBatteryRenderable(id, box, foreground, numberValue(item.value, 0), item.charging);
+  if (item.kind === "generatedBattery") {
+    return generatedBatteryRenderable(id, box, foreground, item.value, item.charging);
   }
-  if (kind === "generatedSignal") {
-    return generatedSignalRenderable(id, box, foreground, numberValue(item.value, 0));
+  if (item.kind === "generatedSignal") {
+    return generatedSignalRenderable(id, box, foreground, item.value);
   }
-  if (kind === "iconToken") {
+  if (item.kind === "iconToken") {
     return {
       id,
       type: "icon",
       frame: 0,
-      text: item.token || item.label,
+      text: item.token,
       box,
       style: iconTokenStyle(payload, item.token, foreground),
     };
@@ -119,7 +115,7 @@ function statusBarItemNode(
     id,
     type: "text",
     frame: 0,
-    text: stringValue(item.value),
+    text: item.value,
     box,
     style: {
       color: foreground,
@@ -262,5 +258,5 @@ function statusItemWidth(item: StatusBarItemContract, itemSize: number) {
   if (item.kind === "generatedBattery") return itemSize * 1.55;
   if (item.kind === "generatedSignal") return itemSize * 1.08;
   if (item.kind === "iconToken") return itemSize;
-  return Math.max(itemSize, stringValue(item.value).length * itemSize * 0.58);
+  return Math.max(itemSize, item.value.length * itemSize * 0.58);
 }

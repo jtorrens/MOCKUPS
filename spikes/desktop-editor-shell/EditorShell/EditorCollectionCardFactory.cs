@@ -14,7 +14,6 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<string, string, Task> _showInfo;
     private readonly EditorDomainDialogService _domainDialogs;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<string, ValueKind, Task<string?>> _browsePath;
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action<string, string?> _triggerPreviewAction;
@@ -40,7 +39,6 @@ internal sealed class EditorCollectionCardFactory
         Func<string, string, Task> showInfo,
         EditorDomainDialogService domainDialogs,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<string, ValueKind, Task<string?>> browsePath,
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
         Action<string, string?> triggerPreviewAction,
@@ -65,7 +63,6 @@ internal sealed class EditorCollectionCardFactory
         _showInfo = showInfo;
         _domainDialogs = domainDialogs;
         _reloadAndSelect = reloadAndSelect;
-        _browsePath = browsePath;
         _onChanged = onChanged;
         _dictionaryServices = dictionaryServices;
         _triggerPreviewAction = triggerPreviewAction;
@@ -99,7 +96,7 @@ internal sealed class EditorCollectionCardFactory
                 _previewPlaybackState,
                 _toggleProductionPlayback)
             : null;
-        var cards = node.Kind switch
+        IReadOnlyList<InstantEditorCard> cards = node.Kind switch
         {
             ProjectTreeNodeKind.IconTheme =>
             [
@@ -112,8 +109,6 @@ internal sealed class EditorCollectionCardFactory
                     _domainDialogs.ShowIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
             ],
-            ProjectTreeNodeKind.ComponentClass =>
-                CreateComponentClassCollectionCards(node),
             ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.ModuleVariant =>
             [
                 CreateRuntimeInputsCard(node, animationEditor),
@@ -134,32 +129,6 @@ internal sealed class EditorCollectionCardFactory
         }
 
         return cards;
-    }
-
-    private IReadOnlyList<InstantEditorCard> CreateComponentClassCollectionCards(ProjectTreeNode node)
-    {
-        var settings = _database.GetComponentClassSettings(node.Id);
-        return settings.ComponentType switch
-        {
-            "status_bar" =>
-            [
-                new StatusBarItemsCollectionEditor(
-                    _database,
-                    _isDark(),
-                    _browsePath,
-                    _dictionaryServices,
-                    _onChanged).Create(node),
-            ],
-            "navigation_bar" =>
-            [
-                new NavigationBarItemsCollectionEditor(
-                    _database,
-                    _isDark(),
-                    _browsePath,
-                    _onChanged).Create(node),
-            ],
-            _ => [],
-        };
     }
 
     private InstantEditorCard CreateRuntimeInputsCard(

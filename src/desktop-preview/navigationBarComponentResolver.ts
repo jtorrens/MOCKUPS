@@ -2,54 +2,63 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type {
   NavigationBarDesignContract,
   NavigationBarItemContract,
+  NavigationBarItemZone,
   NavigationBarZone,
 } from "./navigationBarComponentContract.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
 import {
-  optionalNumber,
-  optionalString,
   requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredString,
 } from "./previewValueHelpers.js";
 
-function itemValue(value: unknown) {
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
-    return value;
-  }
-  return "";
-}
-
 function navigationBarItems(value: unknown): NavigationBarItemContract[] {
   if (!Array.isArray(value)) {
     throw new Error("Missing navigation bar items");
   }
 
+  const ids = new Set<string>();
   return value.map((raw, index) => {
     const item = asRecord(raw);
-    const zone = requiredString(item, "zone", `items.${index}.zone`);
-    if (zone !== "off" && zone !== "left" && zone !== "center" && zone !== "right") {
-      throw new Error(`Unsupported navigation bar zone ${zone}`);
+    const itemPath = `items.${index}`;
+    const id = requiredString(item, "id", `${itemPath}.id`);
+    if (ids.has(id)) {
+      throw new Error(`Duplicate navigation bar item id ${id}`);
     }
+    ids.add(id);
+    const kind = requiredString(item, "kind", `${itemPath}.kind`);
+    if (
+      kind !== "generatedBack" &&
+      kind !== "generatedHome" &&
+      kind !== "generatedRecents"
+    ) {
+      throw new Error(`Unsupported navigation bar item kind ${kind}`);
+    }
+    const zoneValue = requiredString(item, "zone", `items.${index}.zone`);
+    if (zoneValue !== "off" && zoneValue !== "left" && zoneValue !== "center" && zoneValue !== "right") {
+      throw new Error(`Unsupported navigation bar zone ${zoneValue}`);
+    }
+    const zone: NavigationBarItemZone = zoneValue;
 
     return {
-      id: requiredString(item, "id", `items.${index}.id`),
-      label: optionalString(item, "label"),
-      kind: requiredString(item, "kind", `items.${index}.kind`),
-      value: itemValue(item.value),
-      token: optionalString(item, "token"),
+      id,
+      label: requiredString(item, "label", `${itemPath}.label`),
+      kind,
       zone,
-      order: optionalNumber(item, "order", index * 10),
-      charging: item.charging === undefined
-        ? false
-        : requiredBoolean(item, "charging", `items.${index}.charging`),
+      order: requiredInteger(item, "order", `${itemPath}.order`),
     };
   });
+}
+
+function requiredInteger(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const number = requiredNumber(value, key, path);
+  if (!Number.isInteger(number)) throw new Error(`Missing integer value ${path}`);
+  return number;
 }
 
 function sortedNavigationBarItems(value: unknown): Record<
@@ -78,6 +87,9 @@ export function resolveNavigationBarComponent(
   payload: DesignPreviewPayload,
 ): NavigationBarDesignContract {
   const config = parseObject(payload.configJson);
+  if (requiredInteger(config, "schemaVersion", "navigationBar.schemaVersion") !== 1) {
+    throw new Error("Unsupported navigation bar schemaVersion");
+  }
   const layout = asRecord(config.layout);
   const gesture = asRecord(config.gesture);
   const type = requiredString(config, "type", "navigationBar.type");

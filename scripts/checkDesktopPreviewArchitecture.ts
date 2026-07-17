@@ -941,6 +941,135 @@ assertContains(
   "66_simplified_editor_retirement_contract.md",
   "the architecture index must include contract 66",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/67_system_bar_item_authoring_contract.md",
+  "AGENTS must require the system bar item authoring contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "67_system_bar_item_authoring_contract.md",
+  "the architecture index must include contract 67",
+);
+for (const retiredSystemBarItemEditorPath of [
+  "spikes/desktop-editor-shell/EditorShell/StatusBarItemsCollectionEditor.cs",
+  "spikes/desktop-editor-shell/EditorShell/NavigationBarItemsCollectionEditor.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.StatusNavigationComponents.cs",
+]) {
+  if (existsSync(path.join(root, retiredSystemBarItemEditorPath))) {
+    addViolation(
+      retiredSystemBarItemEditorPath,
+      "retired bespoke system-bar item persistence/editor source must not return",
+    );
+  }
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  '["component.statusBar.items"] = new',
+  "Status Bar Items must be a catalogued dictionary field",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  '["component.navigationBar.items"] = new',
+  "Navigation Bar Items must be a catalogued dictionary field",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  /StatusBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
+  "Status Bar Items must remain a fixed structured collection",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  /NavigationBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
+  "Navigation Bar Items must remain a fixed structured collection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "canEditStructure: _definition.IsEditable && collection.CanEditStructure",
+  "fixed collection structure and Variant locks must be declared through generic collection metadata",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "IsEditable: _definition.IsEditable",
+  "structured item dictionary fields must inherit the owner Variant lock",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "return new JsonArray();",
+  "structured collection parsing must reject invalid current values instead of returning an empty array",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  '"component.statusBar.items"',
+  "Status Bar layout must declare its Items dictionary field",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  '"component.navigationBar.items"',
+  "Navigation Bar layout must declare its Items dictionary field",
+);
+for (const [componentPath, contractName] of [
+  ["spikes/desktop-editor-shell/Data/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
+  ["spikes/desktop-editor-shell/Data/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
+] as const) {
+  assertContains(
+    componentPath,
+    "JsonPath.RequiredArray(config, \"items\"",
+    `${contractName} must require the persisted items array`,
+  );
+  assertContains(
+    componentPath,
+    "duplicate stable id",
+    `${contractName} must reject duplicate item ids`,
+  );
+}
+for (const systemBarResolverPath of [
+  "src/desktop-preview/statusBarComponentResolver.ts",
+  "src/desktop-preview/navigationBarComponentResolver.ts",
+]) {
+  for (const forbiddenSystemBarResolverFallback of ["optionalNumber", "optionalString", "itemValue("]) {
+    assertDoesNotContain(
+      systemBarResolverPath,
+      forbiddenSystemBarResolverFallback,
+      `system-bar resolver must not supply item fallbacks (${forbiddenSystemBarResolverFallback})`,
+    );
+  }
+}
+for (const [systemBarRenderablePath, forbiddenFallbacks] of [
+  ["src/desktop-preview/statusBarComponentRenderable.ts", ["item.id ||", "item.kind ||", "item.token ||", "numberValue(item.value", "stringValue(item.value"]],
+  ["src/desktop-preview/navigationBarComponentRenderable.ts", ["item.id ||", "item.kind ||"]],
+] as const) {
+  for (const forbiddenFallback of forbiddenFallbacks) {
+    assertDoesNotContain(
+      systemBarRenderablePath,
+      forbiddenFallback,
+      `system-bar renderable must consume complete resolved items (${forbiddenFallback})`,
+    );
+  }
+}
+{
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (existsSync(databasePath)) {
+    const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+    try {
+      for (const [recordClassId, fieldId] of [
+        ["component.status_bar", "component.statusBar.items"],
+        ["component.navigation_bar", "component.navigationBar.items"],
+      ] as const) {
+        const row = database.prepare("SELECT layout_json FROM editor_layouts WHERE record_class_id = ?").get(recordClassId) as { layout_json?: string } | undefined;
+        const layout = row?.layout_json ? JSON.parse(row.layout_json) as unknown : null;
+        if (!JSON.stringify(layout).includes(`\"${fieldId}\"`)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${recordClassId} must contain the migrated ${fieldId} layout field`,
+          );
+        }
+      }
+    } finally {
+      database.close();
+    }
+  }
+}
 const retiredSimplifiedEditorPath = "spikes/desktop-editor-shell/EditorShell/EditorSimplifiedProjection.cs";
 if (existsSync(path.join(root, retiredSimplifiedEditorPath))) {
   addViolation(
@@ -3806,25 +3935,6 @@ for (const forbiddenComponentInputControl of [
     `component inputs must use dictionary controls, not local ${forbiddenComponentInputControl}`,
   );
 }
-for (const collectionEditorPath of [
-  "spikes/desktop-editor-shell/EditorShell/StatusBarItemsCollectionEditor.cs",
-  "spikes/desktop-editor-shell/EditorShell/NavigationBarItemsCollectionEditor.cs",
-]) {
-  for (const forbiddenCollectionControl of [
-    "EditorInstantComboBox",
-    "new ComboBox",
-    "new TextBox",
-    "new CheckBox",
-    "new ToggleSwitch",
-    "new NumericUpDown",
-  ]) {
-    assertDoesNotContain(
-      collectionEditorPath,
-      forbiddenCollectionControl,
-      `${collectionEditorPath} item scalar fields must use dictionary controls, not local ${forbiddenCollectionControl}`,
-    );
-  }
-}
 for (const recordReferenceSpecializationPath of [
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -3933,9 +4043,13 @@ for (const forbiddenLegacySystemBarMethod of [
   "UpdateNavigationBarField",
   "UpdateNavigationBarItem",
   "QueryNavigationBarRows",
+  "GetStatusBarComponentItems",
+  "UpdateStatusBarComponentItem",
+  "GetNavigationBarComponentItems",
+  "UpdateNavigationBarComponentItem",
 ]) {
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.StatusNavigationComponents.cs",
+  assertFilesDoNotContain(
+    currentRepositoryFiles,
     forbiddenLegacySystemBarMethod,
     `legacy system bar database method ${forbiddenLegacySystemBarMethod} must not return; use component class presets`,
   );

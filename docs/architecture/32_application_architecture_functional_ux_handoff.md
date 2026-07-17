@@ -245,6 +245,11 @@ Theme Status Bar and Navigation Bar values are explicit component Variant
 references. Their component-owned colors and structure are not copied into
 Theme tokens.
 
+Status Bar and Navigation Bar item definitions are fixed, Variant-owned
+structured collections governed by contract 67. Their scalar values use the
+generic dictionary route on every Variant; item ids, labels and kinds remain
+development-owned and the editor exposes no add/delete/reorder actions.
+
 ### Symbolic until the correct boundary
 
 Component and module configs retain symbolic values:
@@ -683,6 +688,8 @@ The next audit should observe, not infer, these flows in the running app:
    return with tab and scroll restoration;
 4. empty/filled Forward triangle and read-only Variant field;
 5. structured collection add/duplicate/reorder/delete and nested navigation;
+   for the fixed Status/Navigation item collections, verify instead that those
+   structural actions are absent while values remain editable per Variant;
 6. Component Stack Slot/State naming and Replace/Overlay understanding;
 7. Runtime Test Values persistence during a session;
 8. action combo/switch with compact Play/Restore;

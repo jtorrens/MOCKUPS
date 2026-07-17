@@ -2032,7 +2032,8 @@ internal sealed record ComponentInputDefinition(
     string OptionsSourceCollectionJsonKey = "",
     string OptionsSourceValueJsonKey = "id",
     string OptionsSourceLabelJsonKey = "",
-    string OptionsSourceFirstItemBadge = "");
+    string OptionsSourceFirstItemBadge = "",
+    bool ShowInEditor = true);
 
 internal sealed record RuntimeInputCollectionDefinition(
     string Id,
@@ -2047,7 +2048,8 @@ internal sealed record RuntimeInputCollectionDefinition(
     string ItemRuntimeContractJsonKey = "",
     string UiParentCollectionJsonKey = "",
     string UiParentItemIdJsonKey = "",
-    string AnimationPresentation = "item");
+    string AnimationPresentation = "item",
+    bool CanEditStructure = true);
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string PresetJsonKey,

@@ -199,7 +199,6 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ShowInfoDialog,
             _domainDialogs,
             ReloadAndSelect,
-            _pathBrowser.BrowsePath,
             RefreshPreviewDevice,
             _dictionaryFieldServices,
             _previewController.TriggerDesignPreviewAction,

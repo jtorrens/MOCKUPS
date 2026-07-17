@@ -283,6 +283,12 @@ internal sealed partial class SpikeDatabase
         return GetComponentPresetReferenceOptions(projectId, componentType, includeNone);
     }
 
+    public IReadOnlyList<FieldOption> GetStatusBarComponentPresetOptions(string projectId) =>
+        GetComponentPresetReferenceOptionsByType(projectId, "status_bar", includeNone: true);
+
+    public IReadOnlyList<FieldOption> GetNavigationBarComponentPresetOptions(string projectId) =>
+        GetComponentPresetReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
+
     public IReadOnlyList<FieldOption> GetComponentPresetReferenceOptions(
         string projectId,
         string componentTypeSelector,

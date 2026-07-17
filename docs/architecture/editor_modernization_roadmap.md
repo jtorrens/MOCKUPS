@@ -472,6 +472,13 @@ embedded defaults and open-time layout writes are removed. Current editor
 layout documents contain exactly one top-level `cards` array and reject the
 retired projection instead of ignoring it.
 
+System-bar item authoring is governed by
+`67_system_bar_item_authoring_contract.md`. Status Bar and Navigation Bar Items
+are now fixed structured dictionary collections declared by their layouts and
+available on every active Variant. Their separate component contracts reject
+incomplete current documents, and bespoke index-based collection editors and
+Preview fallbacks are retired.
+
 ## Guardrails
 
 Reject new changes that add:

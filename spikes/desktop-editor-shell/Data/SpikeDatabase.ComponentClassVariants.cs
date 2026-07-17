@@ -295,6 +295,10 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var settings = GetComponentClassSettings(connection, componentClassId);
+            CurrentComponentConfigContract.Validate(
+                settings.ComponentType,
+                nextConfig,
+                $"Component class '{componentClassId}' Variant '{presetId}' config");
             var metadata = ParseJsonObject(settings.MetadataJson);
             var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{componentClassId}'");
             var preset = FindPreset(presets, presetId)

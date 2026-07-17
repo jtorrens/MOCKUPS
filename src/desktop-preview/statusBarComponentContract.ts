@@ -1,16 +1,31 @@
 export type StatusBarZone = "left" | "right";
 export type StatusBarItemZone = StatusBarZone | "off";
 
-export interface StatusBarItemContract {
+interface StatusBarItemBaseContract {
   id: string;
   label: string;
-  kind: string;
-  value: string | number | boolean;
-  token: string;
   zone: StatusBarItemZone;
   order: number;
-  charging: boolean;
 }
+
+export type StatusBarItemContract =
+  | StatusBarItemBaseContract & {
+      kind: "text";
+      value: string;
+    }
+  | StatusBarItemBaseContract & {
+      kind: "iconToken";
+      token: string;
+    }
+  | StatusBarItemBaseContract & {
+      kind: "generatedSignal";
+      value: number;
+    }
+  | StatusBarItemBaseContract & {
+      kind: "generatedBattery";
+      value: number;
+      charging: boolean;
+    };
 
 export interface StatusBarDesignContract {
   id: "statusBar";

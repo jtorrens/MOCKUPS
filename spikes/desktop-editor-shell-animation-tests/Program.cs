@@ -16,7 +16,9 @@ var tests = new (string Name, Action Run)[]
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
+    ("Status and Navigation Bar configs fail strictly read-only", SystemBarComponentContractsFailReadOnly),
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
+    ("system bar items use fixed dictionary collections on every Variant", SystemBarItemsUseFixedDictionaryCollections),
     ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
@@ -331,6 +333,158 @@ static void IncompleteVariantsFailReadOnly()
         command.CommandText = "UPDATE modules SET metadata_json = json_remove(metadata_json, '$.variants[0].protected') WHERE id = 'module_core_chat'";
         command.ExecuteNonQuery();
     });
+}
+
+static void SystemBarComponentContractsFailReadOnly()
+{
+    AssertRejectedDatabaseIsReadOnly("status-bar-missing-items", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_status_bar",
+            (config) => config.Remove("items"));
+    });
+    AssertRejectedDatabaseIsReadOnly("status-bar-duplicate-item-id", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_status_bar",
+            (config) =>
+            {
+                var items = config["items"]?.AsArray()
+                    ?? throw new InvalidOperationException("Missing fixture Status Bar items.");
+                items[1]!["id"] = items[0]!["id"]!.DeepClone();
+            });
+    });
+    AssertRejectedDatabaseIsReadOnly("navigation-bar-invalid-zone", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_navigation_bar",
+            (config) =>
+            {
+                var items = config["items"]?.AsArray()
+                    ?? throw new InvalidOperationException("Missing fixture Navigation Bar items.");
+                items[0]!["zone"] = "automatic";
+            });
+    });
+}
+
+static void SystemBarItemsUseFixedDictionaryCollections()
+{
+    var statusField = ComponentClassFieldCatalog.Get("component.statusBar.items");
+    var navigationField = ComponentClassFieldCatalog.Get("component.navigationBar.items");
+    Equal(ValueKind.StructuredCollection, statusField.ValueKind);
+    Equal(ValueKind.StructuredCollection, navigationField.ValueKind);
+    True(statusField.StructuredCollection is { CanEditStructure: false });
+    True(navigationField.StructuredCollection is { CanEditStructure: false });
+    SequenceEqual(
+        ["textValue", "signalValue", "batteryValue", "token", "charging", "zone", "order"],
+        statusField.StructuredCollection!.Fields.Where((field) => field.ShowInEditor).Select((field) => field.Id));
+    SequenceEqual(
+        ["zone", "order"],
+        navigationField.StructuredCollection!.Fields.Where((field) => field.ShowInEditor).Select((field) => field.Id));
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-system-bar-items-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
+        var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::preset::default");
+        True(!new ComponentClassFieldValueService(database)
+            .CreateFieldValue(statusDefault, statusField.Id)
+            .Definition.IsEditable);
+        var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::preset::lock_screen");
+        var classConfigBefore = database.GetComponentClassSettings(statusClass.Id).ConfigJson;
+        var statusConfig = JsonPath.ParseRequiredObject(
+            database.GetComponentPresetSettings(statusVariant).ConfigJson,
+            "Status Bar test Variant");
+        var statusItems = statusConfig["items"]?.AsArray().DeepClone().AsArray()
+            ?? throw new InvalidOperationException("Missing Status Bar items.");
+        statusItems[0]!["zone"] = "right";
+        database.UpdateComponentPresetField(statusVariant, statusField.Id, statusItems.ToJsonString());
+        var statusAfter = JsonPath.ParseRequiredObject(
+            database.GetComponentPresetSettings(statusVariant).ConfigJson,
+            "Updated Status Bar test Variant");
+        Equal("right", statusAfter["items"]?[0]?["zone"]?.GetValue<string>() ?? "");
+        Equal(
+            "theme.iconSizes.m",
+            statusAfter["items"]?[0]?["iconSizeToken"]?.GetValue<string>() ?? "");
+        Equal(classConfigBefore, database.GetComponentClassSettings(statusClass.Id).ConfigJson);
+
+        var navigationClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_navigation_bar");
+        var navigationVariant = nodes.Single((node) => node.Id == $"{navigationClass.Id}::preset::default_copy");
+        navigationVariant = database.ToggleComponentPresetLock(navigationVariant);
+        True(!navigationVariant.IsLocked);
+        var navigationConfig = JsonPath.ParseRequiredObject(
+            database.GetComponentPresetSettings(navigationVariant).ConfigJson,
+            "Navigation Bar test Variant");
+        var navigationItems = navigationConfig["items"]?.AsArray().DeepClone().AsArray()
+            ?? throw new InvalidOperationException("Missing Navigation Bar items.");
+        navigationItems[0]!["zone"] = "right";
+        navigationItems[0]!["order"] = 90;
+        database.UpdateComponentPresetField(navigationVariant, navigationField.Id, navigationItems.ToJsonString());
+        var navigationAfter = JsonPath.ParseRequiredObject(
+            database.GetComponentPresetSettings(navigationVariant).ConfigJson,
+            "Updated Navigation Bar test Variant");
+        Equal("right", navigationAfter["items"]?[0]?["zone"]?.GetValue<string>() ?? "");
+        Equal(90, navigationAfter["items"]?[0]?["order"]?.GetValue<int>() ?? -1);
+        Equal(
+            "theme.iconSizes.m",
+            navigationAfter["items"]?[0]?["iconSizeToken"]?.GetValue<string>() ?? "");
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        navigationItems[1]!["id"] = navigationItems[0]!["id"]!.DeepClone();
+        Throws<InvalidOperationException>(() =>
+            database.UpdateComponentPresetField(navigationVariant, navigationField.Id, navigationItems.ToJsonString()));
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+
+        foreach (var (recordClassId, fieldId) in new[]
+        {
+            ("component.status_bar", statusField.Id),
+            ("component.navigation_bar", navigationField.Id),
+        })
+        {
+            var layout = database.LoadEditorLayout(recordClassId);
+            True(layout.Cards.SelectMany((card) => card.Groups)
+                .SelectMany((group) => group.Fields)
+                .Any((field) => field.Id == fieldId && field.Visible));
+        }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void MutateComponentClassAndDefaultVariant(
+    SqliteConnection connection,
+    string componentClassId,
+    Action<JsonObject> mutate)
+{
+    using var select = connection.CreateCommand();
+    select.CommandText = "SELECT config_json, metadata_json FROM component_classes WHERE id = $id";
+    select.Parameters.AddWithValue("$id", componentClassId);
+    using var reader = select.ExecuteReader();
+    if (!reader.Read()) throw new InvalidOperationException($"Missing fixture Component class '{componentClassId}'.");
+    var config = JsonPath.ParseRequiredObject(reader.GetString(0), $"{componentClassId} config");
+    var metadata = JsonPath.ParseRequiredObject(reader.GetString(1), $"{componentClassId} metadata");
+    reader.Close();
+    var defaultVariant = VariantEnvelopeContract.Read(metadata, "presets", componentClassId)
+        .Single((variant) => variant.Id == "default");
+    mutate(config);
+    mutate(defaultVariant.Config);
+
+    using var update = connection.CreateCommand();
+    update.CommandText = "UPDATE component_classes SET config_json = $config, metadata_json = $metadata WHERE id = $id";
+    update.Parameters.AddWithValue("$config", config.ToJsonString());
+    update.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
+    update.Parameters.AddWithValue("$id", componentClassId);
+    update.ExecuteNonQuery();
 }
 
 static void VariantWritesDoNotRepairMissingArrays()

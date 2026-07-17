@@ -306,6 +306,10 @@ internal sealed partial class SpikeDatabase
             var config = ParseJsonObject(settings.ConfigJson);
             var metadata = ParseJsonObject(settings.MetadataJson);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            CurrentComponentConfigContract.Validate(
+                settings.ComponentType,
+                config,
+                $"Component class '{componentClassId}' config_json");
             SetDefaultComponentPresetConfig(metadata, config);
             _componentClassRepository.UpdateConfigAndMetadata(
                 connection,
@@ -681,6 +685,11 @@ internal sealed partial class SpikeDatabase
         JsonObject config,
         JsonObject metadata)
     {
+        var componentType = _componentClassRepository.Get(connection, componentClassId).ComponentType;
+        CurrentComponentConfigContract.Validate(
+            componentType,
+            config,
+            $"Component class '{componentClassId}' Default Variant config");
         SetDefaultComponentPresetConfig(metadata, config);
         _componentClassRepository.UpdateConfigAndMetadata(
             connection,
@@ -700,6 +709,11 @@ internal sealed partial class SpikeDatabase
         {
             throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
         }
+        var componentType = _componentClassRepository.Get(connection, componentClassId).ComponentType;
+        CurrentComponentConfigContract.Validate(
+            componentType,
+            config,
+            $"Component class '{componentClassId}' Variant '{presetId}' config");
         if (presetId.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
         {
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
@@ -778,8 +792,7 @@ internal sealed partial class SpikeDatabase
                 ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
             ValueKind.ComponentInputBindings => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)
                 ?? new JsonObject(),
-            ValueKind.StructuredCollection => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)
-                ?? new JsonArray(),
+            ValueKind.StructuredCollection => JsonPath.ParseRequiredArray(value, "Structured collection field value"),
             _ => JsonValue.Create(value)!,
         };
     }

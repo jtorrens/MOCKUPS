@@ -118,6 +118,12 @@ Complex dictionary controls occupy a full-width block below their label. Their
 internal `verticalCards` navigation has a session-only splitter, natural height
 and a content-minimum-driven horizontal fallback.
 
+Status Bar and Navigation Bar Items also use this dictionary route on every
+Variant, but declare `CanEditStructure: false`: their development-owned ids,
+labels and kinds stay fixed while explicit values, zones and order remain
+authorable. Their separate current-config contracts reject malformed items and
+the retired index-based collection editors cannot return.
+
 The same shared implementation is used by component classes, atom/system
 classes, Theme groups and Runtime Inputs. No layout mode is selected from a
 component name or editor type. New categories use reusable semantic SVG assets

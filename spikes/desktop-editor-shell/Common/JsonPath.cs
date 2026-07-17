@@ -45,6 +45,69 @@ internal static class JsonPath
         }
     }
 
+    public static JsonObject RequiredObject(JsonObject root, string key, string context)
+    {
+        return root[key] as JsonObject
+            ?? throw new InvalidOperationException($"{context} must contain an object '{key}'.");
+    }
+
+    public static JsonArray RequiredArray(JsonObject root, string key, string context)
+    {
+        return root[key] as JsonArray
+            ?? throw new InvalidOperationException($"{context} must contain an array '{key}'.");
+    }
+
+    public static string RequiredString(
+        JsonObject root,
+        string key,
+        string context,
+        bool allowEmpty = false)
+    {
+        if (root[key] is not JsonValue value
+            || !value.TryGetValue<string>(out var text)
+            || (!allowEmpty && string.IsNullOrWhiteSpace(text)))
+        {
+            var qualifier = allowEmpty ? "a string" : "a non-empty string";
+            throw new InvalidOperationException($"{context} must contain {qualifier} '{key}'.");
+        }
+
+        return text;
+    }
+
+    public static bool RequiredBoolean(JsonObject root, string key, string context)
+    {
+        if (root[key] is not JsonValue value || !value.TryGetValue<bool>(out var result))
+        {
+            throw new InvalidOperationException($"{context} must contain an explicit boolean '{key}'.");
+        }
+
+        return result;
+    }
+
+    public static double RequiredNumber(JsonObject root, string key, string context)
+    {
+        if (root[key] is not JsonValue value
+            || !value.TryGetValue<double>(out var result)
+            || double.IsNaN(result)
+            || double.IsInfinity(result))
+        {
+            throw new InvalidOperationException($"{context} must contain a finite number '{key}'.");
+        }
+
+        return result;
+    }
+
+    public static int RequiredInteger(JsonObject root, string key, string context)
+    {
+        var number = RequiredNumber(root, key, context);
+        if (number != Math.Truncate(number) || number < int.MinValue || number > int.MaxValue)
+        {
+            throw new InvalidOperationException($"{context} must contain an integer '{key}'.");
+        }
+
+        return (int)number;
+    }
+
     public static JsonNode? Get(JsonObject root, IReadOnlyList<string> path)
     {
         JsonNode? current = root;

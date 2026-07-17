@@ -105,8 +105,8 @@ function boxedNavigationItems(
         ? barBox.x + barBox.width - layout.sidePadding - totalWidth
         : barBox.x + (barBox.width - totalWidth) / 2;
     const y = barBox.y + (barBox.height - layout.itemSize) / 2;
-    return zoneItems.map((item, index) => {
-      const id = `navigation_bar:${zone}:${item.id || item.label || index}`;
+    return zoneItems.map((item) => {
+      const id = `navigation_bar:${zone}:${item.id}`;
       const box = { x, y, width: layout.itemSize, height: layout.itemSize };
       x += layout.itemSize + layout.sidePadding * 0.5;
       return navigationButtonNode(id, item, box, layout, foreground);
@@ -126,7 +126,7 @@ function navigationButtonNode(
   },
   foreground: string,
 ): RenderableNode {
-  const kind = item.kind || "generatedHome";
+  const kind = item.kind;
   if (kind === "generatedBack") {
     return {
       id,

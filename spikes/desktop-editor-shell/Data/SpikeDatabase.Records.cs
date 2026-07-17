@@ -87,21 +87,6 @@ internal sealed partial class SpikeDatabase
         IReadOnlyList<IconThemeSearchCandidate> Lucide,
         IReadOnlyList<IconThemeSearchCandidate> Material);
     public sealed record IconThemeGenerateResult(string Token, int WrittenFileCount, IconThemeRefreshResult RefreshResult);
-    public sealed record StatusBarItem(
-        string Id,
-        string Label,
-        string Kind,
-        string Value,
-        string Token,
-        bool Charging,
-        string Zone,
-        int Order);
-    public sealed record NavigationBarItem(
-        string Id,
-        string Label,
-        string Kind,
-        string Zone,
-        int Order);
     public sealed record ComponentClassSettings(
         string ProjectId,
         string ComponentType,
