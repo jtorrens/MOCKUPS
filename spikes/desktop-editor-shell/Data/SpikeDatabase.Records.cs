@@ -139,8 +139,6 @@ internal sealed partial class SpikeDatabase
         string Value,
         string? LightColorHex,
         string? DarkColorHex);
-    private sealed record AppRow(string Id, string ProjectId, string RecordClassId, string Name, string Notes, int SortOrder);
-    private sealed record ModuleRow(string Id, string AppId, string RecordClassId, string Name, string Notes, int SortOrder, string ConfigJson, string DesignPreviewJson, string MetadataJson);
     private sealed record ModuleInstanceRow(
         string Id,
         string ShotId,

@@ -325,6 +325,12 @@ current `icon_themes` rows and explicit writes; manifests, SVGs, provider
 scripts, safe asset paths and token interpretation remain outside persistence.
 Token reads require an explicit stored SVG filename and never repair mappings.
 
+App and Module definition persistence is governed by
+`44_app_module_definition_persistence_contract.md`. `AppModuleRepository` owns
+their current rows and document writes while App/Module field semantics,
+complete Module Variant authoring, Runtime forwarding, Module Instances and
+Preview resolution remain in their existing domain owners.
+
 ## Guardrails
 
 Reject new changes that add:

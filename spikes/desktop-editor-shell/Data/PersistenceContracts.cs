@@ -134,6 +134,30 @@ internal sealed record IconThemeRecord(
     string MappingJson,
     string MetadataJson);
 
+internal sealed record AppDefinitionRecord(
+    string Id,
+    string ProjectId,
+    string RecordClassId,
+    string Name,
+    string BundleKey,
+    string AppType,
+    string Notes,
+    int SortOrder,
+    string ConfigJson,
+    string MetadataJson);
+
+internal sealed record ModuleDefinitionRecord(
+    string Id,
+    string AppId,
+    string ProjectId,
+    string RecordClassId,
+    string Name,
+    string Notes,
+    int SortOrder,
+    string ConfigJson,
+    string DesignPreviewJson,
+    string MetadataJson);
+
 internal enum ReferenceUsageScope
 {
     Design,
@@ -368,6 +392,45 @@ internal interface IIconThemeRepository
         string metadataJson);
 
     void Delete(SqliteConnection connection, string iconThemeId);
+}
+
+internal interface IAppModuleRepository
+{
+    AppDefinitionRecord GetApp(string appId);
+
+    AppDefinitionRecord GetApp(SqliteConnection connection, string appId);
+
+    ModuleDefinitionRecord GetModule(string moduleId);
+
+    ModuleDefinitionRecord GetModule(SqliteConnection connection, string moduleId);
+
+    AppDefinitionRecord GetModuleApp(string moduleId);
+
+    IReadOnlyList<AppDefinitionRecord> QueryApps(SqliteConnection connection);
+
+    IReadOnlyList<ModuleDefinitionRecord> QueryModules(SqliteConnection connection);
+
+    void UpdateAppDirectField(SqliteConnection connection, string appId, string fieldId, string value);
+
+    void UpdateAppConfig(SqliteConnection connection, string appId, string configJson);
+
+    void UpdateAppMetadata(SqliteConnection connection, string appId, string metadataJson);
+
+    void UpdateModuleSortOrder(SqliteConnection connection, string moduleId, int sortOrder);
+
+    void UpdateModuleConfig(SqliteConnection connection, string moduleId, string configJson);
+
+    void UpdateModuleDesignPreview(string moduleId, string designPreviewJson);
+
+    void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson);
+
+    void RenameApp(SqliteConnection connection, string appId, string name);
+
+    void RenameModule(SqliteConnection connection, string moduleId, string name);
+
+    void UpdateAppNode(SqliteConnection connection, string appId, string name, string notes);
+
+    void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes);
 }
 
 internal interface IModuleInstanceThemeContextService

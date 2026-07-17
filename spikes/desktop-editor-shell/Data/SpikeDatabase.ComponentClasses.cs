@@ -623,8 +623,7 @@ internal sealed partial class SpikeDatabase
                 else
                     SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value));
                 if (ownerNode.Kind == ProjectTreeNodeKind.Module)
-                    Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id",
-                        ("$id", ownerNode.Id), ("$configJson", config.ToJsonString()));
+                    _appModuleRepository.UpdateModuleConfig(connection, ownerNode.Id, config.ToJsonString());
                 else
                     ReplaceModuleVariantConfig(ownerNode, config.ToJsonString());
             }

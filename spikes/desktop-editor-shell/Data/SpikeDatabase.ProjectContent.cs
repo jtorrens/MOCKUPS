@@ -132,84 +132,44 @@ internal sealed partial class SpikeDatabase
 
     public AppSettings GetAppSettings(string appId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT project_id, bundle_key, app_type, config_json, metadata_json FROM apps WHERE id = $id";
-        command.Parameters.AddWithValue("$id", appId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing app '{appId}'.");
-        }
+        var record = _appModuleRepository.GetApp(appId);
 
         return new AppSettings(
-            reader.GetString(0),
-            ReadString(reader, 1),
-            ReadString(reader, 2),
-            ReadString(reader, 3),
-            ReadString(reader, 4));
+            record.ProjectId,
+            record.BundleKey,
+            record.AppType,
+            record.ConfigJson,
+            record.MetadataJson);
     }
 
     public ModuleSettings GetModuleSettings(string moduleId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT a.project_id, m.record_class_id, m.sort_order, m.config_json, m.design_preview_json, m.metadata_json
-            FROM modules m
-            JOIN apps a ON a.id = m.app_id
-            WHERE m.id = $id
-            """;
-        command.Parameters.AddWithValue("$id", moduleId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing module '{moduleId}'.");
-        }
+        var record = _appModuleRepository.GetModule(moduleId);
 
         return new ModuleSettings(
-            reader.GetString(0),
-            reader.GetString(1),
-            reader.GetInt32(2),
-            ReadString(reader, 3),
-            ReadString(reader, 4),
-            ReadString(reader, 5));
+            record.ProjectId,
+            record.RecordClassId,
+            record.SortOrder,
+            record.ConfigJson,
+            record.DesignPreviewJson,
+            record.MetadataJson);
     }
 
     public void UpdateModuleDesignPreviewJson(string moduleId, string designPreviewJson)
     {
-        ParseJsonObject(designPreviewJson);
-        using var connection = OpenConnection();
-        Execute(
-            connection,
-            "UPDATE modules SET design_preview_json = $json WHERE id = $id",
-            ("$json", designPreviewJson),
-            ("$id", moduleId));
+        _appModuleRepository.UpdateModuleDesignPreview(moduleId, designPreviewJson);
     }
 
     public AppSettings GetModuleAppSettings(string moduleId)
     {
-        using var connection = OpenConnection();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT a.project_id, a.bundle_key, a.app_type, a.config_json, a.metadata_json
-            FROM modules m
-            JOIN apps a ON a.id = m.app_id
-            WHERE m.id = $id
-            """;
-        command.Parameters.AddWithValue("$id", moduleId);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            throw new InvalidOperationException($"Missing module '{moduleId}'.");
-        }
+        var record = _appModuleRepository.GetModuleApp(moduleId);
 
         return new AppSettings(
-            reader.GetString(0),
-            ReadString(reader, 1),
-            ReadString(reader, 2),
-            ReadString(reader, 3),
-            ReadString(reader, 4));
+            record.ProjectId,
+            record.BundleKey,
+            record.AppType,
+            record.ConfigJson,
+            record.MetadataJson);
     }
 
     public void UpdateModuleField(string moduleId, string fieldId, string value)
@@ -226,20 +186,12 @@ internal sealed partial class SpikeDatabase
         switch (fieldId)
         {
             case "module.sortOrder":
-                Execute(
-                    connection,
-                    "UPDATE modules SET sort_order = $value WHERE id = $id",
-                    ("$id", moduleId),
-                    ("$value", NumericText.Int32(value, 0)));
+                _appModuleRepository.UpdateModuleSortOrder(connection, moduleId, NumericText.Int32(value, 0));
                 return;
             case "module.metadata":
                 var metadata = ParseJsonObject(value);
                 VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-                Execute(
-                    connection,
-                    "UPDATE modules SET metadata_json = $value WHERE id = $id",
-                    ("$id", moduleId),
-                    ("$value", value));
+                _appModuleRepository.UpdateModuleMetadata(connection, moduleId, value);
                 return;
             case "module.recordClassId":
                 return;
@@ -295,7 +247,7 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         if (fieldId.StartsWith("app.wallpaper.", StringComparison.Ordinal))
         {
-            if (ScalarString(connection, "SELECT app_type FROM apps WHERE id = $id", ("$id", appId)) == "system")
+            if (_appModuleRepository.GetApp(connection, appId).AppType == "system")
             {
                 throw new InvalidOperationException("System apps inherit Actor wallpaper and cannot own wallpaper fields.");
             }
@@ -309,25 +261,7 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        var column = fieldId switch
-        {
-            "app.bundleKey" => "bundle_key",
-            "app.appType" => "app_type",
-            "app.config" => "config_json",
-            "app.metadata" => "metadata_json",
-            _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
-        };
-
-        if (fieldId is "app.config" or "app.metadata")
-        {
-            ParseJsonObject(value);
-        }
-
-        Execute(
-            connection,
-            $"UPDATE apps SET {column} = $value WHERE id = $id",
-            ("$id", appId),
-            ("$value", value));
+        _appModuleRepository.UpdateAppDirectField(connection, appId, fieldId, value);
     }
 
     public string GetAppConfigFieldValue(string appId, string fieldId)
@@ -361,11 +295,9 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static void UpdateAppConfigField(SqliteConnection connection, string appId, string fieldId, string value)
+    private void UpdateAppConfigField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var configJson = ScalarString(connection, "SELECT config_json FROM apps WHERE id = $id", ("$id", appId))
-            ?? throw new InvalidOperationException($"Missing app '{appId}'.");
-        var config = ParseJsonObject(configJson);
+        var config = ParseJsonObject(_appModuleRepository.GetApp(connection, appId).ConfigJson);
         switch (fieldId)
         {
             case "app.wallpaper.kind":
@@ -392,14 +324,12 @@ internal sealed partial class SpikeDatabase
                 throw new InvalidOperationException($"Unknown app config field '{fieldId}'.");
         }
 
-        Execute(connection, "UPDATE apps SET config_json = $configJson WHERE id = $id", ("$id", appId), ("$configJson", config.ToJsonString()));
+        _appModuleRepository.UpdateAppConfig(connection, appId, config.ToJsonString());
     }
 
-    private static void UpdateAppMetadataField(SqliteConnection connection, string appId, string fieldId, string value)
+    private void UpdateAppMetadataField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var metadataJson = ScalarString(connection, "SELECT metadata_json FROM apps WHERE id = $id", ("$id", appId))
-            ?? throw new InvalidOperationException($"Missing app '{appId}'.");
-        var metadata = ParseJsonObject(metadataJson);
+        var metadata = ParseJsonObject(_appModuleRepository.GetApp(connection, appId).MetadataJson);
         switch (fieldId)
         {
             case "app.note":
@@ -418,7 +348,7 @@ internal sealed partial class SpikeDatabase
                 throw new InvalidOperationException($"Unknown app metadata field '{fieldId}'.");
         }
 
-        Execute(connection, "UPDATE apps SET metadata_json = $metadataJson WHERE id = $id", ("$id", appId), ("$metadataJson", metadata.ToJsonString()));
+        _appModuleRepository.UpdateAppMetadata(connection, appId, metadata.ToJsonString());
     }
 
     private static List<ShotRow> QueryShotRows(SqliteConnection connection)
@@ -448,66 +378,13 @@ internal sealed partial class SpikeDatabase
         return rows;
     }
 
-    private static List<AppRow> QueryAppRows(SqliteConnection connection)
+    private void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
     {
-        var rows = new List<AppRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, record_class_id, name, notes, sort_order FROM apps ORDER BY sort_order, name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new AppRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                ReadString(reader, 4),
-                reader.GetInt32(5)));
-        }
+        var module = _appModuleRepository.GetModule(connection, moduleId);
+        var config = ParseJsonObject(module.ConfigJson);
 
-        return rows;
-    }
-
-    private static List<ModuleRow> QueryModuleRows(SqliteConnection connection)
-    {
-        var rows = new List<ModuleRow>();
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, app_id, record_class_id, name, notes, sort_order, config_json, design_preview_json, metadata_json FROM modules ORDER BY sort_order, name";
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(new ModuleRow(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetString(2),
-                reader.GetString(3),
-                ReadString(reader, 4),
-                reader.GetInt32(5),
-                ReadString(reader, 6),
-                ReadString(reader, 7),
-                ReadString(reader, 8)));
-        }
-
-        return rows;
-    }
-
-    private static void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
-    {
-        var configJson = ScalarString(connection, "SELECT config_json FROM modules WHERE id = $id", ("$id", moduleId))
-            ?? throw new InvalidOperationException($"Missing module '{moduleId}'.");
-        var config = ParseJsonObject(configJson);
-        var projectId = ScalarString(
-            connection,
-            """
-            SELECT a.project_id
-            FROM modules m
-            JOIN apps a ON a.id = m.app_id
-            WHERE m.id = $id
-            """,
-            ("$id", moduleId)) ?? "";
-
-        UpdateModuleConfigFieldValue(connection, projectId, config, fieldId, value);
-        Execute(connection, "UPDATE modules SET config_json = $configJson WHERE id = $id", ("$id", moduleId), ("$configJson", config.ToJsonString()));
+        UpdateModuleConfigFieldValue(connection, module.ProjectId, config, fieldId, value);
+        _appModuleRepository.UpdateModuleConfig(connection, moduleId, config.ToJsonString());
     }
 
     private static void UpdateModuleConfigFieldValue(

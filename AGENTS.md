@@ -17,6 +17,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/41_explicit_shot_production_context_contract.md`
 - `docs/architecture/42_production_font_persistence_contract.md`
 - `docs/architecture/43_icon_theme_persistence_and_asset_contract.md`
+- `docs/architecture/44_app_module_definition_persistence_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 

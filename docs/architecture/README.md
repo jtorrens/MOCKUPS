@@ -55,6 +55,9 @@ this index wins.
 - `43_icon_theme_persistence_and_asset_contract.md`: focused ownership of
   `icon_themes` current rows, strict token file references and separation of
   SQLite persistence from manifests, SVGs and generation scripts.
+- `44_app_module_definition_persistence_contract.md`: focused ownership of App
+  and Module definition rows/current documents while configuration, Variants,
+  Runtime forwarding and Module Instances remain in their domain owners.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

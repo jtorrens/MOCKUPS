@@ -1917,6 +1917,7 @@ for (const [contractType, implementationType] of [
   ["IThemeRepository", "ThemeRepository"],
   ["IProductionFontRepository", "ProductionFontRepository"],
   ["IIconThemeRepository", "IconThemeRepository"],
+  ["IAppModuleRepository", "AppModuleRepository"],
   ["IModuleInstanceThemeContextService", "ModuleInstanceThemeContextService"],
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
@@ -1961,6 +1962,7 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "themes"],
   ["spikes/desktop-editor-shell/Data/ProductionFontRepository.cs", "production_fonts"],
   ["spikes/desktop-editor-shell/Data/IconThemeRepository.cs", "icon_themes"],
+  ["spikes/desktop-editor-shell/Data/AppModuleRepository.cs", "apps"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -2060,6 +2062,55 @@ assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
   "tokenObject[\"file\"] = file",
   "Icon Theme token reads must not repair a missing file reference",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "modules",
+  "AppModuleRepository must own both App and Module definition tables",
+);
+for (const [definitionFacadePath, forbiddenDefinitionPersistence] of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "UPDATE apps"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "UPDATE modules"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "FROM apps"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "FROM modules"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "UPDATE modules"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs", "UPDATE modules"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "UPDATE apps"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "UPDATE modules"],
+] as const) {
+  assertDoesNotContain(
+    definitionFacadePath,
+    forbiddenDefinitionPersistence,
+    `${definitionFacadePath} must delegate App/Module definition persistence instead of retaining ${forbiddenDefinitionPersistence}`,
+  );
+}
+for (const forbiddenAppModuleRepositoryConcern of [
+  "MainWindow",
+  "ProjectTreeNode",
+  "RuntimeInputForwardingContract",
+  "ModuleInstance",
+  "Renderable",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+    forbiddenAppModuleRepositoryConcern,
+    `AppModuleRepository must not own UI, Runtime or render concern ${forbiddenAppModuleRepositoryConcern}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "has no explicit default Variant",
+  "Module definition persistence must reject metadata without the protected current default Variant id",
+);
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/44_app_module_definition_persistence_contract.md",
+  "AGENTS must require the App and Module definition persistence contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "44_app_module_definition_persistence_contract.md",
+  "the active architecture index must include the App and Module definition persistence contract",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",

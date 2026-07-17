@@ -17,8 +17,8 @@ internal sealed partial class SpikeDatabase
         var episodes = QueryEpisodeRows(connection);
         var shots = QueryShotRows(connection);
         var moduleInstances = QueryModuleInstanceRows(connection);
-        var apps = QueryAppRows(connection);
-        var modules = QueryModuleRows(connection);
+        var apps = _appModuleRepository.QueryApps(connection);
+        var modules = _appModuleRepository.QueryModules(connection);
         var paletteColors = QueryPaletteColorRows(connection);
         var devices = QueryDeviceRows(connection);
         var actors = QueryActorRows(connection);
@@ -966,10 +966,20 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
+        if (node.Kind == ProjectTreeNodeKind.App)
+        {
+            _appModuleRepository.UpdateAppNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Module)
+        {
+            _appModuleRepository.UpdateModuleNode(connection, node.Id, node.Name, node.Notes);
+            return;
+        }
+
         var table = node.Kind switch
         {
-            ProjectTreeNodeKind.App => "apps",
-            ProjectTreeNodeKind.Module => "modules",
             ProjectTreeNodeKind.Shot => "shots",
             ProjectTreeNodeKind.ComponentClass => "component_classes",
             _ => "",
@@ -1022,7 +1032,7 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
-        Execute(connection, "UPDATE apps SET name = $name WHERE id = $id", ("$name", nextName), ("$id", node.Id));
+        _appModuleRepository.RenameApp(connection, node.Id, nextName);
         return new ProjectTreeNode(ProjectTreeNodeKind.App, node.Id, nextName, node.Notes,
             node.RecordClassId, node.Parent, isUsed: node.IsUsed, isProtected: node.IsProtected, isLocked: node.IsLocked);
     }

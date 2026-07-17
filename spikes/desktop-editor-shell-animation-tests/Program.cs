@@ -21,6 +21,7 @@ var tests = new (string Name, Action Run)[]
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
+    ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
@@ -816,6 +817,100 @@ static void IconThemeRepositoryPreservesFacadeContract()
                 "icon-themes/invalid",
                 "[]"));
         }
+        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void AppModuleRepositoryPreservesFacadeContract()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-app-module-repository-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IAppModuleRepository repository = new AppModuleRepository(context);
+        var tree = database.LoadProjectTree();
+        var appNode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.App);
+        var moduleNode = appNode.Children.First((node) => node.Kind == ProjectTreeNodeKind.Module);
+        var appSettings = database.GetAppSettings(appNode.Id);
+        var moduleSettings = database.GetModuleSettings(moduleNode.Id);
+        var app = repository.GetApp(appNode.Id);
+        var module = repository.GetModule(moduleNode.Id);
+
+        Equal(appSettings.ProjectId, app.ProjectId);
+        Equal(appSettings.BundleKey, app.BundleKey);
+        Equal(appSettings.AppType, app.AppType);
+        Equal(appSettings.ConfigJson, app.ConfigJson);
+        Equal(appSettings.MetadataJson, app.MetadataJson);
+        Equal(moduleSettings.ProjectId, module.ProjectId);
+        Equal(moduleSettings.RecordClassId, module.RecordClassId);
+        Equal(moduleSettings.SortOrder, module.SortOrder);
+        Equal(moduleSettings.ConfigJson, module.ConfigJson);
+        Equal(moduleSettings.DesignPreviewJson, module.DesignPreviewJson);
+        Equal(moduleSettings.MetadataJson, module.MetadataJson);
+        Equal(app, repository.GetModuleApp(module.Id));
+        using (var connection = context.OpenConnection())
+        {
+            True(repository.QueryApps(connection).Any((candidate) => candidate.Id == app.Id));
+            True(repository.QueryModules(connection).Any((candidate) => candidate.Id == module.Id));
+        }
+
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateAppDirectField(connection, app.Id, "app.bundleKey", "repository.bundle");
+        }
+        Equal("repository.bundle", database.GetAppSettings(app.Id).BundleKey);
+        database.UpdateAppField(app.Id, "app.bundleKey", app.BundleKey);
+
+        var appConfig = JsonPath.ParseRequiredObject(app.ConfigJson, $"App '{app.Id}' config_json");
+        appConfig["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateAppConfig(connection, app.Id, appConfig.ToJsonString());
+        }
+        Equal(appConfig.ToJsonString(), database.GetAppSettings(app.Id).ConfigJson);
+        database.UpdateAppField(app.Id, "app.config", app.ConfigJson);
+
+        var moduleConfig = JsonPath.ParseRequiredObject(module.ConfigJson, $"Module '{module.Id}' config_json");
+        moduleConfig["repositoryTest"] = true;
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateModuleConfig(connection, module.Id, moduleConfig.ToJsonString());
+        }
+        Equal(moduleConfig.ToJsonString(), database.GetModuleSettings(module.Id).ConfigJson);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateModuleConfig(connection, module.Id, module.ConfigJson);
+        }
+
+        var preview = JsonPath.ParseRequiredObject(module.DesignPreviewJson, $"Module '{module.Id}' design_preview_json");
+        preview["repositoryTest"] = true;
+        repository.UpdateModuleDesignPreview(module.Id, preview.ToJsonString());
+        Equal(preview.ToJsonString(), database.GetModuleSettings(module.Id).DesignPreviewJson);
+        database.UpdateModuleDesignPreviewJson(module.Id, module.DesignPreviewJson);
+
+        var renamedApp = database.RenameDirectNode(appNode, "Repository App");
+        Equal("Repository App", repository.GetApp(app.Id).Name);
+        database.RenameDirectNode(renamedApp, app.Name);
+        var renamedModule = database.RenameDirectNode(moduleNode, "Repository Module");
+        Equal("Repository Module", repository.GetModule(module.Id).Name);
+        database.RenameDirectNode(renamedModule, module.Name);
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() => repository.UpdateAppConfig(connection, app.Id, "[]"));
+            Throws<InvalidOperationException>(() => repository.UpdateModuleConfig(connection, module.Id, "[]"));
+            Throws<InvalidOperationException>(() => repository.UpdateModuleMetadata(connection, module.Id, "{\"variants\":[]}"));
+        }
+        Throws<InvalidOperationException>(() => repository.UpdateModuleDesignPreview(module.Id, "[]"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }
