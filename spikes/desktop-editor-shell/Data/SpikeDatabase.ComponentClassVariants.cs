@@ -345,21 +345,22 @@ internal sealed partial class SpikeDatabase
                 usage.SourceName,
                 usage.FieldLabel,
                 usage.SourceNodeId,
-                usage.EmbeddedContext is null
-                    ? null
-                    : new EmbeddedComponentUsage(
-                        usage.EmbeddedContext.ParentComponentClassId,
-                        usage.EmbeddedContext.ParentComponentName,
-                        usage.EmbeddedContext.ParentComponentType,
-                        usage.EmbeddedContext.SlotFieldId,
-                        usage.EmbeddedContext.SlotLabel,
-                        usage.EmbeddedContext.HasOverrides,
-                        usage.EmbeddedContext.SourceNodeId)))
+                usage.EmbeddedContext is null ? null : ToEmbeddedComponentUsage(usage.EmbeddedContext)))
             .OrderBy((usage) => usage.SourceKind, StringComparer.OrdinalIgnoreCase)
             .ThenBy((usage) => usage.SourceName, StringComparer.OrdinalIgnoreCase)
             .ThenBy((usage) => usage.Detail, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private static EmbeddedComponentUsage ToEmbeddedComponentUsage(ReferenceEmbeddedContext context) =>
+        new(
+            context.ParentComponentClassId,
+            context.ParentComponentName,
+            context.ParentComponentType,
+            context.SlotFieldId,
+            context.SlotLabel,
+            context.HasOverrides,
+            context.SourceNodeId);
 
     private static JsonObject? FindPreset(JsonArray presets, string presetId) =>
         presets

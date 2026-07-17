@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -16,6 +15,7 @@ internal sealed class EditorNodeCommandController
     private readonly Action _loadProjectTree;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Action<ProjectTreeNode, EditorViewState?> _reloadAndSelectWithViewState;
+    private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
 
     public EditorNodeCommandController(
@@ -26,6 +26,7 @@ internal sealed class EditorNodeCommandController
         Action loadProjectTree,
         Action<ProjectTreeNode> reloadAndSelect,
         Action<ProjectTreeNode, EditorViewState?> reloadAndSelectWithViewState,
+        Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages)
     {
         _owner = owner;
@@ -35,6 +36,7 @@ internal sealed class EditorNodeCommandController
         _loadProjectTree = loadProjectTree;
         _reloadAndSelect = reloadAndSelect;
         _reloadAndSelectWithViewState = reloadAndSelectWithViewState;
+        _navigateToUsage = navigateToUsage;
         _messages = messages;
     }
 
@@ -183,12 +185,14 @@ internal sealed class EditorNodeCommandController
         node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
         if (node.Parent is null) return;
 
-        var usages = _database.GetReferenceUsages(node);
+        var usages = _database.GetReferenceUsageDetails(node);
         if (usages.Count > 0)
         {
-            await ShowInfoDialog(
-                "Cannot delete used item",
-                $"{node.Name} is still used in:\n\n{string.Join(Environment.NewLine, usages.Take(12))}\n\nClean these references first, then delete it.");
+            var selected = await new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages);
+            if (selected is not null)
+            {
+                await _navigateToUsage(selected);
+            }
             return;
         }
 

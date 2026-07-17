@@ -2036,15 +2036,54 @@ assertContains(
   "_referenceUsageService.BuildIndex(connection)",
   "tree Used state must consume the shared explicit Usage edge set",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
-  "usage.Scope == ReferenceUsageScope.Production",
-  "Usage scope must come from typed edge data",
-);
+for (const typedUsageDetail of ["ReferenceUsageScope Scope", "usage.Scope,"]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+    typedUsageDetail,
+    `Usage details must retain typed edge scope ${typedUsageDetail}`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
   "MainWindow",
   "the Usage service must not import or construct the desktop shell",
+);
+for (const contextualUsageNavigation of [
+  "ReferenceUsageScope.Design => EditorWorkspace.Design",
+  "ReferenceUsageScope.Production => EditorWorkspace.Production",
+  "usage.SourceNodeId",
+  "usage.EmbeddedUsage",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorReferenceUsageNavigator.cs",
+    contextualUsageNavigation,
+    `Usage navigation must retain typed context ${contextualUsageNavigation}`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "SelectReferenceNodeInWorkspace",
+  "the shell must provide generic workspace-aware Usage selection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "_navigationRenderer.BringNodeIntoView",
+  "Usage navigation must reveal its selected tree node",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorNodeCommandController.cs",
+  "new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages)",
+  "blocked deletion must preserve typed Usage links",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ReferenceUsageCollectionEditor.cs",
+  "EditorReferenceUsageLink.Create",
+  "the Usage card must use the shared contextual link surface",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorNodeCommandController.cs",
+  "GetReferenceUsages(node)",
+  "blocked deletion must not flatten typed Usage edges into prose",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",

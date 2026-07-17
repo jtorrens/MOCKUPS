@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using System;
@@ -87,6 +88,22 @@ internal sealed class EditorNavigationRenderer
         candidate.Children.Clear();
         target.Children.Clear();
         foreach (var child in replacement) target.Children.Add(child);
+    }
+
+    public void BringNodeIntoView(Control navigationRoot, string nodeId)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var target = navigationRoot.GetVisualDescendants()
+                .OfType<Control>()
+                .FirstOrDefault((control) => control.Tag switch
+                {
+                    string renderedNodeId => renderedNodeId.Equals(nodeId, StringComparison.Ordinal),
+                    EditorHierarchicalNavigationMetadata metadata => metadata.NodeId.Equals(nodeId, StringComparison.Ordinal),
+                    _ => false,
+                });
+            target?.BringIntoView();
+        }, DispatcherPriority.Background);
     }
 
     private void AddNavigationSection(StackPanel parent, ProjectTreeNode sectionRoot)
@@ -270,6 +287,7 @@ internal sealed class EditorNavigationRenderer
     {
         var row = new Border
         {
+            Tag = node.Id,
             Padding = new Thickness(6, 4),
             CornerRadius = new CornerRadius(8),
             Background = EditorNavigationVisuals.RowBackground(IsSelected(node), _isDark()),
@@ -315,6 +333,7 @@ internal sealed class EditorNavigationRenderer
     {
         var row = new Border
         {
+            Tag = node.Id,
             Padding = new Thickness(6, 4),
             CornerRadius = new CornerRadius(8),
             Background = EditorNavigationVisuals.RowBackground(IsSelected(node), _isDark()),

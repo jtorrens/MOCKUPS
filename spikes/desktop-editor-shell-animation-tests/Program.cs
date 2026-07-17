@@ -19,6 +19,7 @@ var tests = new (string Name, Action Run)[]
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
+    ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -933,14 +934,14 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
 
         var usedDevice = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed);
         var deviceUsages = database.GetReferenceUsageDetails(usedDevice);
-        True(deviceUsages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.Actor && !usage.IsProduction));
+        True(deviceUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Actor && !usage.IsProduction));
         Throws<InvalidOperationException>(() => database.Delete(usedDevice));
 
         var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor && node.IsUsed);
         var actorUsages = database.GetReferenceUsageDetails(actor);
-        True(actorUsages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.Shot && usage.IsProduction));
+        True(actorUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Shot && usage.IsProduction));
         True(actorUsages.Any((usage) =>
-            (usage.TargetKind is ProjectTreeNodeKind.ComponentClass
+            (usage.SourceKind is ProjectTreeNodeKind.ComponentClass
                 or ProjectTreeNodeKind.Module
                 or ProjectTreeNodeKind.ComponentPreset)
             && !usage.IsProduction));
@@ -948,14 +949,14 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         var usedComponentVariant = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset)
             .Select((node) => (Node: node, Usages: database.GetReferenceUsageDetails(node)))
-            .First((candidate) => candidate.Usages.Any((usage) => usage.TargetKind == ProjectTreeNodeKind.ComponentPreset));
+            .First((candidate) => candidate.Usages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.ComponentPreset));
         True(usedComponentVariant.Usages.Any((usage) =>
-            usage.TargetKind == ProjectTreeNodeKind.ComponentPreset
-            && usage.TargetNodeId.Contains("::preset::", StringComparison.Ordinal)));
+            usage.SourceKind == ProjectTreeNodeKind.ComponentPreset
+            && usage.SourceNodeId.Contains("::preset::", StringComparison.Ordinal)));
 
         var usedModuleVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsUsed);
         True(database.GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
-            usage.TargetKind == ProjectTreeNodeKind.ModuleInstance && usage.IsProduction));
+            usage.SourceKind == ProjectTreeNodeKind.ModuleInstance && usage.IsProduction));
 
         const string designActorId = "actor_usage_design_only";
         const string productionActorId = "actor_usage_production_only";
@@ -1006,7 +1007,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         }
         var blueUsages = database.GetReferenceUsageDetails(blue);
         True(blueUsages.Count > 0);
-        True(blueUsages.All((usage) => usage.TargetKind != ProjectTreeNodeKind.Project));
+        True(blueUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
 
         var unusedRenderPreset = nodes.First((node) => node.Kind == ProjectTreeNodeKind.RenderPreset && !node.IsUsed);
         using (var connection = context.OpenConnection())
@@ -1025,6 +1026,59 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
     {
         File.Delete(temporary);
     }
+}
+
+static void UsageNavigationPreservesTypedContext()
+{
+    var events = new List<string>();
+    var messages = new RecordingMessageSink();
+    var navigator = new EditorReferenceUsageNavigator(
+        (workspace, nodeId) =>
+        {
+            events.Add($"select:{workspace}:{nodeId}");
+            return true;
+        },
+        (embedded, nodeId) =>
+        {
+            events.Add($"embedded:{nodeId}:{embedded.SlotFieldId}");
+            return Task.CompletedTask;
+        },
+        messages);
+    var embeddedUsage = new SpikeDatabase.EmbeddedComponentUsage(
+        "component_parent",
+        "Parent",
+        "parent",
+        "parent.slot",
+        "Slot",
+        true,
+        "component_parent::preset::default");
+
+    navigator.Navigate(new SpikeDatabase.ReferenceUsageDetail(
+        "component_parent::preset::default",
+        ProjectTreeNodeKind.ComponentPreset,
+        "Component Variant",
+        "Parent · Default",
+        "Slot · overrides",
+        ReferenceUsageScope.Design,
+        embeddedUsage)).GetAwaiter().GetResult();
+    navigator.Navigate(new SpikeDatabase.ReferenceUsageDetail(
+        "screen_1",
+        ProjectTreeNodeKind.ModuleInstance,
+        "Screen",
+        "Screen 1",
+        "Actor",
+        ReferenceUsageScope.Production,
+        null)).GetAwaiter().GetResult();
+
+    SequenceEqual(
+        new[]
+        {
+            "select:Design:component_parent::preset::default",
+            "embedded:component_parent::preset::default:parent.slot",
+            "select:Production:screen_1",
+        },
+        events);
+    Equal(0, messages.Warnings.Count);
 }
 
 static void TrackActivationCreatesInitialKeyframe()
@@ -2965,4 +3019,22 @@ static void Throws<TException>(Action action) where TException : Exception
         return;
     }
     throw new Exception($"Expected {typeof(TException).Name}.");
+}
+
+internal sealed class RecordingMessageSink : IEditorShellMessageSink
+{
+    public List<string> Warnings { get; } = [];
+
+    public void Clear() { }
+
+    public void Info(string area, string message) { }
+
+    public void Warning(string area, string message)
+    {
+        Warnings.Add($"{area}: {message}");
+    }
+
+    public void Error(string area, Exception exception) { }
+
+    public void Error(string area, string message) { }
 }

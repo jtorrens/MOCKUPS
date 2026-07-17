@@ -9,6 +9,7 @@ using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell;
 
@@ -38,6 +39,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorContentController _editorContent;
     private readonly EditorEmbeddedEditorController _embeddedEditors;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
+    private readonly EditorReferenceUsageNavigator _referenceUsageNavigator;
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorTreeExpansionState _treeExpansion = new();
@@ -101,6 +103,7 @@ public partial class MainWindow : SukiWindow
             LoadProjectTree,
             ReloadAndSelect,
             ReloadAndSelect,
+            NavigateToReferenceUsage,
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
         _productionShotContext = new ProductionShotContextService(_database);
@@ -171,6 +174,10 @@ public partial class MainWindow : SukiWindow
             () => _selectedNode,
             _embeddedEditors.Open,
             _messages);
+        _referenceUsageNavigator = new EditorReferenceUsageNavigator(
+            SelectReferenceNodeInWorkspace,
+            _embeddedUsageNavigator.NavigateToEmbeddedUsage,
+            _messages);
         _editorHeader = new EditorHeaderController(
             EditorBreadcrumbPanel,
             EditorContextStripHost,
@@ -205,6 +212,7 @@ public partial class MainWindow : SukiWindow
             _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
             SelectNodeById,
+            NavigateToReferenceUsage,
             ShowEmbeddedContext,
             _previewController.ProductionShotFrame,
             _previewController.SetProductionShotFrame,
@@ -584,6 +592,51 @@ public partial class MainWindow : SukiWindow
         ShowNode(selectableNode, rebuildTree: true, source);
         _editorViewState.RestoreState(viewState, _editorContent.Cards);
         ApplyUiTextScale();
+        return true;
+    }
+
+    private Task NavigateToReferenceUsage(SpikeDatabase.ReferenceUsageDetail usage)
+    {
+        return _referenceUsageNavigator.Navigate(usage);
+    }
+
+    private bool SelectReferenceNodeInWorkspace(EditorWorkspace workspace, string nodeId)
+    {
+        var node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
+        if (node is null)
+        {
+            LoadProjectTree();
+            node = EditorNodeSelectionState.FindNodeById(_treeRoots, nodeId);
+        }
+        if (node is null || !EditorWorkspaceNavigation.Contains(workspace, node))
+        {
+            return false;
+        }
+
+        if (_selectedNode is not null)
+        {
+            _workspaceSelections[_workspace] = _selectedNode.Id;
+        }
+        if (_workspace != workspace)
+        {
+            _workspace = workspace;
+            _shellState.SetWorkspace(workspace);
+            _previewController.SetWorkspaceWithoutRefresh(workspace);
+            UpdateWorkspaceButtons();
+        }
+        if (workspace == EditorWorkspace.Production)
+        {
+            var project = node;
+            while (project.Parent is not null) project = project.Parent;
+            _selectedProductionId = project.Id;
+            _shellState.SetProductionId(_selectedProductionId);
+        }
+
+        if (!SelectNodeById(nodeId, null, "reference-usage"))
+        {
+            return false;
+        }
+        _navigationRenderer.BringNodeIntoView(NavigationCardsPanel, _selectedNode?.Id ?? nodeId);
         return true;
     }
 

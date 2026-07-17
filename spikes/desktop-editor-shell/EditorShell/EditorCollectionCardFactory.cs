@@ -27,6 +27,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
+    private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly Action<EditorEmbeddedContext> _openEmbeddedContext;
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
@@ -52,6 +53,7 @@ internal sealed class EditorCollectionCardFactory
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
+        Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage,
         Action<EditorEmbeddedContext> openEmbeddedContext,
         Func<int> shotFrame,
         Action<int> setShotFrame,
@@ -75,6 +77,7 @@ internal sealed class EditorCollectionCardFactory
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
+        _navigateToUsage = navigateToUsage;
         _openEmbeddedContext = openEmbeddedContext;
         _shotFrame = shotFrame;
         _setShotFrame = setShotFrame;
@@ -125,7 +128,7 @@ internal sealed class EditorCollectionCardFactory
 
         if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
         {
-            cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _navigateToNode).Create(node)];
+            cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _isDark(), _navigateToUsage).Create(node)];
         }
 
         return cards;

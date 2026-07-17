@@ -8,11 +8,18 @@ namespace Mockups.DesktopEditorShell.Data;
 internal sealed partial class SpikeDatabase
 {
     public sealed record ReferenceUsageDetail(
-        string TargetNodeId,
-        ProjectTreeNodeKind TargetKind,
-        string Label,
+        string SourceNodeId,
+        ProjectTreeNodeKind SourceKind,
+        string SourceTypeLabel,
+        string SourceName,
         string Field,
-        bool IsProduction);
+        ReferenceUsageScope Scope,
+        EmbeddedComponentUsage? EmbeddedUsage)
+    {
+        public string Label => $"{SourceTypeLabel}: {SourceName}";
+
+        public bool IsProduction => Scope == ReferenceUsageScope.Production;
+    }
 
     public IReadOnlyList<ReferenceUsageDetail> GetReferenceUsageDetails(ProjectTreeNode node)
     {
@@ -20,9 +27,11 @@ internal sealed partial class SpikeDatabase
             .Select((usage) => new ReferenceUsageDetail(
                 usage.SourceNodeId,
                 usage.SourceKind,
-                $"{usage.SourceTypeLabel}: {usage.SourceName}",
+                usage.SourceTypeLabel,
+                usage.SourceName,
                 usage.FieldLabel,
-                usage.Scope == ReferenceUsageScope.Production))
+                usage.Scope,
+                usage.EmbeddedContext is null ? null : ToEmbeddedComponentUsage(usage.EmbeddedContext)))
             .OrderBy((usage) => usage.IsProduction)
             .ThenBy((usage) => usage.Label, StringComparer.OrdinalIgnoreCase)
             .ThenBy((usage) => usage.Field, StringComparer.OrdinalIgnoreCase)

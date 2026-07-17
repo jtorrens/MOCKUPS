@@ -112,6 +112,17 @@ source, optional embedded context may open that slot's Override surface; nested
 or non-slot references may navigate to the exact owning node without inventing
 a path.
 
+Opening an edge is one contextual shell operation. It must first activate the
+edge's typed Design/Production scope, select the Production when applicable,
+expand every tree ancestor, select and reveal the exact source node, build its
+editor and then open declared embedded context when present. Opening an editor
+without changing the visible workspace/tree is incomplete navigation.
+
+The Usage card and deletion protection must call this same operation. A blocked
+deletion presents its typed Usage edges as links; activating one closes the
+modal before navigating. The modal must not flatten edges into prose that loses
+their scope, node kind, stable id or embedded context.
+
 No code may derive navigation kind, Production scope or owner type by testing
 words such as `Episode`, `Shot`, `Instance`, `Variant` or `Component` in a
 display label.
@@ -147,6 +158,7 @@ Disposable-database tests must cover:
 - exact JSON field/contract references;
 - Component and Module Variant references;
 - Design Test Values versus Production instance payloads;
+- contextual navigation preserving scope, exact node and embedded context;
 - substring and unrelated-text false positives;
 - identical evidence for Used, Usage and deletion;
 - byte-for-byte read-only startup and an unchanged committed database during
