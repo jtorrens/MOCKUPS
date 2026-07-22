@@ -43,6 +43,7 @@ var tests = new (string Name, Action Run)[]
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
+    ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -2290,6 +2291,51 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
             if (value is not null) command.Parameters.AddWithValue("$value", value);
             Equal(1, command.ExecuteNonQuery());
         }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionPayloadPreservesActorAndAnimation()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-payload-owner-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var screens = Descendants(database.LoadProjectTree())
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
+            .ToList();
+
+        foreach (var screen in screens)
+        {
+            var instance = database.GetModuleInstanceSettings(screen.Id);
+            var shot = database.GetShotSettings(instance.ShotId);
+            var runtime = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+            var runtimeActorId = runtime["actorId"]?.GetValue<string>();
+            var expectedActorId = string.IsNullOrWhiteSpace(runtimeActorId)
+                ? shot.OwnerActorId
+                : runtimeActorId;
+            var payload = Required(DesignPreviewPayloadFactory.Create(dataSource, screen, null));
+            var resolvedRuntime = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
+            var resolvedActor = resolvedRuntime["actor"] as JsonObject
+                ?? throw new InvalidOperationException($"Screen '{screen.Id}' has no resolved Actor.");
+            Equal(expectedActorId, resolvedActor["id"]?.GetValue<string>());
+            True(resolvedActor["id"]?.GetValue<string>() != "sample_actor");
+
+            var payloadInstance = DesignPreviewTestValues.Parse(payload.InstanceJson);
+            True(JsonNode.DeepEquals(
+                JsonPath.ParseRequiredObject(instance.AnimationJson, $"Screen '{screen.Id}' animation_json"),
+                payloadInstance["animation"]));
+        }
+
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
     }
     finally
     {

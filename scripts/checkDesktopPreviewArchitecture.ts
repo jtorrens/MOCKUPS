@@ -234,6 +234,16 @@ assertDoesNotContain(
   "SpikeDatabase",
   "the Preview payload factory must consume only its typed data source",
 );
+for (const forbiddenProductionPayloadRepair of [
+  "var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)",
+  "JsonNode.Parse(instance.AnimationJson) ?? new JsonObject()",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    forbiddenProductionPayloadRepair,
+    `Production payload preparation must not restore repaired owner/animation data (${forbiddenProductionPayloadRepair})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
   "private readonly SpikeDatabase _database",

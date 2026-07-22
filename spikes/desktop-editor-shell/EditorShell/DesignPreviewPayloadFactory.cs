@@ -88,10 +88,15 @@ internal static class DesignPreviewPayloadFactory
         }
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
         var ownerActorId = string.IsNullOrWhiteSpace(runtimeActorId) ? instance.OwnerActorId : runtimeActorId;
-        var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)
-            ? ActorPreviewInputFactory.CreateSample()
-            : dataSource.CreateActorPreview(ownerActorId, effectiveThemeMode, theme.PaletteColors);
-        runtimePreview["actor"] = ownerActor;
+        if (string.IsNullOrWhiteSpace(ownerActorId))
+        {
+            throw new InvalidOperationException(
+                $"Module Instance '{moduleInstanceId}' has no effective Production Actor.");
+        }
+        runtimePreview["actor"] = dataSource.CreateActorPreview(
+            ownerActorId,
+            effectiveThemeMode,
+            theme.PaletteColors);
         if (runtimePreview["messages"] is JsonArray messages)
         {
             foreach (var message in messages.OfType<JsonObject>())
@@ -104,7 +109,9 @@ internal static class DesignPreviewPayloadFactory
         }
         var instanceJson = new JsonObject
         {
-            ["animation"] = JsonNode.Parse(instance.AnimationJson) ?? new JsonObject(),
+            ["animation"] = JsonPath.ParseRequiredObject(
+                instance.AnimationJson,
+                $"Module Instance '{moduleInstanceId}' animation_json"),
             ["context"] = new JsonObject
             {
                 ["shotId"] = instance.ShotId,

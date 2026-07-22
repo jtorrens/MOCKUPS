@@ -19,6 +19,10 @@ validaciones a sus owners.
 | Comandos raíz `legacy:` | Referencia histórica deliberada | Mantener mientras los contratos 25 y 26 los declaren accesibles y fuera de la validación actual. |
 | Sustitución del Theme de Producción por el Theme seleccionado en Preview | Fallback semántico cerrado | Retirar en este slice. |
 | Device vacío cuando falta el contexto heredado del Shot | Fallback semántico cerrado | Retirar en este slice. |
+| Actor de muestra como Actor principal de un Screen de Producción | Fallback semántico cerrado | Retirado en el slice 0A.2; el Shot siempre aporta un owner Actor explícito. |
+| Actor de muestra en Diseño aislado | Fixture visual deliberado | Mantener: permite inspeccionar un Module o Component sin payload persistente. |
+| Actor de muestra para un mensaje de Producción sin `actorId` | Migración funcional aprobada y pendiente | Mantener solo hasta el slice 0A.3; el proyecto actual contiene mensajes que deben migrarse al contrato explícito por dirección. |
+| `animation_json` nulo reparado como `{}` durante la preparación del payload | Fallback de documento actual cerrado | Retirado en el slice 0A.2; el documento actual debe llegar completo. |
 | Placeholders visuales de iconos y media | Policy visual deliberada | Mantener; no equivalen a reparación de contexto. |
 | Defaults de sesión en selectores de Design Preview | Estado visual de sesión | Mantener; no pueden cruzar a Producción. |
 
@@ -76,3 +80,30 @@ Variants, Runtime Inputs, animación ni renderizado.
 - construir el inventario de validaciones antes de mover ninguna a sus owners.
 
 Cada candidato requiere un slice separado con evidencia, pruebas y enforcement.
+
+## Slice 0A.2 — Actor principal y animación exactos en Producción
+
+El Actor principal de un Screen se resuelve mediante el Runtime Actor explícito
+cuando existe y, en caso contrario, mediante el owner Actor exacto del Shot. Si
+ambos faltan, el payload falla; nunca fabrica `sample_actor`. La animación se
+consume como el objeto actual completo ya validado por el repository, sin
+convertir un documento nulo en `{}`.
+
+Se mantiene de forma deliberada:
+
+- `sample_actor` en Diseño aislado;
+- el sample visual de mensajes sin `actorId` únicamente hasta ejecutar la
+  migración aprobada del slice 0A.3.
+
+Condición exacta para retirar el segundo caso:
+
+1. documentar el contrato aprobado: incoming explícito, outgoing heredado del
+   Shot y system opcional;
+2. migrar los documentos actuales sin inferencias por nombre o posición;
+3. validar las referencias en el owner del Runtime payload;
+4. hacer que el formato incompleto falle y retirar el sample del mensaje en el
+   mismo cambio.
+
+La prueba de este slice recorre todos los Screens actuales, comprueba que su
+Actor resuelto nunca es el sample, compara la animación del payload con el
+documento persistido y demuestra que la lectura es byte a byte inmutable.
