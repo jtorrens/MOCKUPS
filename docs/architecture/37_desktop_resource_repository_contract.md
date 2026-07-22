@@ -62,6 +62,10 @@ avatar from a name, type, index or tree position.
 Device `metrics_json` and Actor `metadata_json` are required current JSON
 objects. Repository writes use the existing explicit field-to-path mapping and
 reject unknown field ids. They never synthesize a missing persisted document.
+Declared boolean fields require explicit boolean text and declared numeric
+fields require finite numeric text before any row/document write. Invalid text
+is rejected without changing the stored row; it must not be interpreted as
+false or zero.
 
 ## 4. Domain interpretation stays outside persistence
 
@@ -126,6 +130,10 @@ Disposable-database tests cover facade/repository read parity, explicit field
 writes, create/duplicate/rename/delete routing and rejection of invalid current
 JSON without a partial write. The committed database and assets remain
 byte-for-byte unchanged by this extraction.
+
+The same proof covers invalid Palette booleans and Device/Actor numeric or
+boolean field commits: each rejection leaves the disposable database byte-for-
+byte unchanged.
 
 Actor Preview reads additionally follow contract 53. The typed Preview data
 source composes current facade/domain reads; Runtime Actor and inline avatar

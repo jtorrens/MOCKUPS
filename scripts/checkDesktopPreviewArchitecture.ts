@@ -5072,6 +5072,43 @@ for (const strictEmbeddedDocumentMessage of [
   );
 }
 assertContains(
+  "spikes/desktop-editor-shell/Common/JsonPath.cs",
+  'return ParseRequiredNumberNode(value, "Numeric value");',
+  "record numeric writes must use the common required finite-number parser",
+);
+for (const retiredNumericWriteFallback of [
+  "? decimalValue : 0",
+  "? integerValue : 0",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/JsonPath.cs",
+    retiredNumericWriteFallback,
+    `numeric document writes must not coerce invalid text to zero (${retiredNumericWriteFallback})`,
+  );
+}
+for (const strictBooleanRepository of [
+  "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
+  "spikes/desktop-editor-shell/Data/ActorRepository.cs",
+]) {
+  assertContains(
+    strictBooleanRepository,
+    "BooleanText.ParseRequired(value, fieldId)",
+    `${strictBooleanRepository} must reject invalid persisted boolean text`,
+  );
+}
+for (const retiredBooleanWriteFallback of [
+  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "BooleanText.Parse(value) ? 1 : 0"],
+  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value))'],
+  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value))'],
+  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", 'JsonValue.Create(BooleanText.Parse(value))'],
+] as const) {
+  assertDoesNotContain(
+    retiredBooleanWriteFallback[0],
+    retiredBooleanWriteFallback[1],
+    `${retiredBooleanWriteFallback[0]} must not coerce invalid persisted boolean text to false`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",

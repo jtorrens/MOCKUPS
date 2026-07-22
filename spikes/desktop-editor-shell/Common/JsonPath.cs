@@ -290,9 +290,7 @@ internal static class JsonPath
 
     public static JsonNode NumberNode(string value)
     {
-        return value.Contains('.', StringComparison.Ordinal)
-            ? JsonValue.Create(double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalValue) ? decimalValue : 0)!
-            : JsonValue.Create(int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue) ? integerValue : 0)!;
+        return ParseRequiredNumberNode(value, "Numeric value");
     }
 
     public static JsonNode ParseRequiredNumberNode(string value, string context)

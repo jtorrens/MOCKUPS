@@ -55,6 +55,10 @@ The following remain in their owning domain/services:
 Those owners may prepare a complete current document and ask the repository to
 persist it. They must not retain direct definition-table SQL.
 
+App wallpaper/icon numeric fields are parsed strictly by their field domain
+before the complete prepared document is sent to the repository. Invalid or
+non-finite input is rejected and must not be converted to zero.
+
 Cross-domain Module Instance and validation queries may temporarily join the
 definition tables while their own repository/payload slices remain pending.
 They cannot mutate or repair App/Module definitions.

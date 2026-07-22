@@ -73,7 +73,10 @@ internal sealed class ActorRepository : IActorRepository
                 JsonPath.SetPair(metadata, value, ["avatar", "offsetX"], ["avatar", "offsetY"]);
                 break;
             case "actor.avatar.useInitials":
-                JsonPath.Set(metadata, ["avatar", "useInitials"], JsonValue.Create(BooleanText.Parse(value))!);
+                JsonPath.Set(
+                    metadata,
+                    ["avatar", "useInitials"],
+                    JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "actor.avatar.initialsPadding":
                 JsonPath.Set(metadata, ["avatar", "initialsPadding"], JsonPath.NumberNode(value));

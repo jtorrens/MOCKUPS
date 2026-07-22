@@ -46,6 +46,7 @@ var tests = new (string Name, Action Run)[]
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
     ("Component dictionary fields use exact ValueKind documents", ComponentDictionaryFieldsUseExactValueKinds),
+    ("record scalar writes reject invalid booleans and numbers", RecordScalarWritesRejectInvalidValues),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
@@ -293,6 +294,74 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
         var cursor = Component("component.cursor");
         database.UpdateComponentClassField(cursor.Id, "component.cursor.width", "3");
         Equal("3", database.CreateComponentClassFieldValue(cursor.Id, "component.cursor.width").Value);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RecordScalarWritesRejectInvalidValues()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-record-scalar-values-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var tree = Descendants(database.LoadProjectTree()).ToList();
+        var device = tree.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var actor = tree.First((node) => node.Kind == ProjectTreeNodeKind.Actor);
+        var palette = tree.First((node) => node.Kind == ProjectTreeNodeKind.PaletteColor);
+        var theme = tree.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var app = tree.First((node) => node.Kind == ProjectTreeNodeKind.App
+            && database.LoadEditorLayout(node.RecordClassId).Cards
+                .SelectMany((card) => card.VisibleGroups)
+                .SelectMany((group) => group.VisibleFields)
+                .Any((field) => field.Id == "app.wallpaper.opacity"));
+
+        var beforeRejectedWrites = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.UpdateDeviceField(
+            device.Id,
+            "device.metrics.scaleToPixels",
+            "not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdateDeviceField(
+            device.Id,
+            "device.metrics.screen.size",
+            "100|not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdateActorField(
+            actor.Id,
+            "actor.wallpaper.opacity",
+            "not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdateActorField(
+            actor.Id,
+            "actor.avatar.useInitials",
+            "perhaps"));
+        Throws<InvalidOperationException>(() => database.UpdateThemeField(
+            theme.Id,
+            "theme.neutralTint.saturation",
+            "not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdateAppField(
+            app.Id,
+            "app.wallpaper.opacity",
+            "not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdateAppField(
+            app.Id,
+            "app.icon.offset",
+            "1|not-a-number"));
+        Throws<InvalidOperationException>(() => database.UpdatePaletteColorField(
+            palette.Id,
+            "palette.isNeutral",
+            "perhaps"));
+        Throws<InvalidOperationException>(() => database.UpdatePaletteColorField(
+            palette.Id,
+            "palette.protected",
+            "perhaps"));
+        Throws<InvalidOperationException>(() => database.UpdatePaletteColorField(
+            palette.Id,
+            "palette.hiddenFromPickers",
+            "perhaps"));
+        SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
     }
     finally
     {

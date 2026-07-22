@@ -52,16 +52,16 @@ internal sealed class PaletteRepository : IPaletteRepository
                 SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", ColorValue.NormalizeHex(value)));
                 return;
             case "palette.isNeutral":
-                SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", BooleanText.Parse(value) ? 1 : 0));
+                SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", BooleanText.ParseRequired(value, fieldId) ? 1 : 0));
                 return;
             case "palette.source":
                 UpdateMetadata(connection, colorId, "source", value);
                 return;
             case "palette.protected":
-                UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value));
+                UpdateMetadata(connection, colorId, "protected", BooleanText.ParseRequired(value, fieldId));
                 return;
             case "palette.hiddenFromPickers":
-                UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value));
+                UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.ParseRequired(value, fieldId));
                 return;
             case "palette.note":
                 UpdateMetadata(connection, colorId, "note", value);

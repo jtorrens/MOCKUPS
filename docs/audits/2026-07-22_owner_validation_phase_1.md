@@ -214,3 +214,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | 108/108 escritorio: se leen todos los campos explícitos de cada Component Class y Variant; booleano, integer, objeto y colección inválidos se rechazan sin escritura; un decimal válido hace round-trip. |
 | Enforcement | Owner público de nodo requerido, lectura/escritura de Component fijada al owner y serializers/fallbacks permisivos concretos prohibidos. |
 | Riesgo | Bajo después de la migración. Los campos válidos, defaults realmente ausentes, ids, Variants completas, forwarding, Overrides explícitos y Preview no cambian. |
+
+## Slice 1.14 — Escrituras escalares de recursos
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El helper numérico común convertía cualquier texto inválido en `0`. Device, Actor, Theme y App lo usaban para escala, opacidad, geometría y tokens. Palette y Actor convertían además cualquier booleano desconocido en `false`. |
+| Owner | La ruta de campo declarada elige la forma; `JsonPath.ParseRequiredNumberNode` valida números finitos y `BooleanText.ParseRequired` valida booleanos explícitos antes de la escritura preparada. |
+| Cambio mínimo | Hacer estricta la única creación común de nodo numérico y usar el parser booleano requerido en las escrituras de Palette/Actor. Los controles, paths, repositorios y documentos resultantes no cambian. |
+| Rutas eliminadas | `TryParse ? valor : 0` para integer/decimal y `BooleanText.Parse` en los cuatro writes booleanos persistentes. |
+| Pruebas | 109/109 escritorio: Device scalar/pair, Actor scalar/boolean, Theme token, App scalar/pair y Palette boolean inválidos fallan; la copia SQLite conserva exactamente los mismos bytes. |
+| Enforcement | El helper numérico debe delegar al parser finito requerido; los repositorios de Palette/Actor deben usar booleanos requeridos; las coerciones retiradas quedan prohibidas. |
+| Datos | Sin migración. Los datos current ya eran válidos y la base permanece `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
+| Riesgo | Bajo. Las entradas válidas producen el mismo JSON; únicamente deja de convertirse una entrada inválida en un cambio real a falso/cero. |

@@ -155,6 +155,12 @@ local Overrides. An embedded slot or `overrides` member may be created only
 while explicitly authoring a new boundary; an existing member with a wrong root
 must fail without replacement.
 
+Record-resource scalar writes follow the same failure rule at their declared
+field boundary. Boolean text must be explicitly true or false and numeric text
+must be a finite number before a prepared Palette, Device, Actor, Theme or App
+document/row is written. Invalid input never means false or zero, and rejection
+must leave the stored row unchanged.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -222,6 +228,8 @@ Architecture enforcement must verify:
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.
+- record-resource boolean and numeric commits reject invalid text before
+  persistence rather than coercing it to false or zero.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

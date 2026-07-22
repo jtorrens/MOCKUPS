@@ -66,6 +66,10 @@ and common Theme catalogs continue to own:
 - typography, spacing, radii, shadow and icon-size field semantics;
 - palette-token presentation and final palette lookup.
 
+That interpretation validates editor numeric text before preparing a complete
+tokens document. Invalid or non-finite text is rejected; it is never persisted
+as zero.
+
 The repository stores the complete result of an explicit edit; it does not
 resolve palette colors, fonts, assets, Device pixels or Preview atoms.
 
