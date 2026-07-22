@@ -168,14 +168,8 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public int ModuleInstanceLocalFrame(string moduleInstanceId, int shotFrame)
     {
-        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
-        var startFrame = 0;
-        foreach (var slot in LoadShotSlots(instance.ShotId))
-        {
-            if (slot.Id == moduleInstanceId) return Math.Max(0, shotFrame - startFrame);
-            startFrame += slot.DurationFrames;
-        }
-        return 0;
+        var startFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId);
+        return Math.Max(0, shotFrame - startFrame);
     }
 
     public JsonObject CreateActorPreview(

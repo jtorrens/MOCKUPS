@@ -1242,6 +1242,21 @@ for (const sharedPayloadBuilder of ["FromComponentSource(", "FromModuleSource("]
     `Design Preview payload preparation must keep shared builder ${sharedPayloadBuilder}`,
   );
 }
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private int ModuleInstanceStartFrame(",
+  "Preview navigation must use the common timeline Screen origin",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId)",
+  "payload local-frame preparation must use the common timeline Screen origin",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "startFrame += slot.DurationFrames;",
+  "payload data source must not reconstruct Screen origin from slot duration",
+);
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
@@ -4926,7 +4941,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "return ScreenFrameRange(shotId, screen.Id);",
+  "return ScreenFrameRange(screen.Id);",
   "a selected Screen must present and play its own local range",
 );
 assertContains(
@@ -5016,7 +5031,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "? ScreenFrameRange(shotId, contextNode.Id)",
+  "? ScreenFrameRange(contextNode.Id)",
   "Screen context keyframe navigation must stay inside the selected Screen",
 );
 assertContains(

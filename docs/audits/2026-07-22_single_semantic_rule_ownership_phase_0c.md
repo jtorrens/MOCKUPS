@@ -113,3 +113,23 @@ y documentos distintos.
 | Pruebas | Suite de payload/render de definición, Variant, Module, forwarding y composición existente; enforcement prohíbe restaurar los cuatro constructores paralelos. |
 | Riesgo | Medio-bajo; cruza Preview pero es una extracción mecánica sin alterar documentos. |
 | Decisión | Consolidar. |
+
+### Familia 0C.5 — Origen absoluto de una Screen
+
+| Campo | Resultado |
+|---|---|
+| Regla | Sumar las duraciones de las Screens anteriores, en orden estable, para obtener el inicio absoluto de una Module Instance dentro del Shot. |
+| Rutas actuales | `ModuleInstanceTimeline.ScreenStartFrame` es el owner declarado; `EditorPreviewController` y `DesignPreviewPayloadDataSource` repiten el bucle. |
+| Paridad | Mismo Shot, mismos ids ordenados y mismas duraciones contract-owned producen el mismo inicio; una id ausente conserva el resultado actual `0`. |
+| Owner definitivo | `ModuleInstanceTimeline`, por contrato 52. |
+| Cambio mínimo | Los dos consumidores delegan el origen; el factory conserva la conversión al frame local y el controlador conserva presentación/log. |
+| Pruebas | Integración existente de Module Instance/Shot y enforcement contra el helper local y el bucle del data source. |
+| Riesgo | Bajo; no cambia duración, orden, playhead ni keyframes. |
+| Decisión | Consolidar. |
+
+La selección de la Screen activa para un frame de Shot queda diferida. El
+factory la posee para construir payload según contrato 51, mientras el
+controlador la usa para navegación de sesión. Antes de compartir una proyección
+hay que decidir si ambos contextos deben consumir un nuevo resultado temporal o
+si sus límites justifican operaciones distintas; no se crea esa abstracción en
+esta batida.
