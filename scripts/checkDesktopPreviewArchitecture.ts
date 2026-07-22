@@ -1157,6 +1157,16 @@ assertContains(
   "71_active_code_retirement_contract.md",
   "the architecture index must include contract 71",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/72_single_semantic_rule_ownership_contract.md",
+  "AGENTS must require the phase 0C semantic ownership contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "72_single_semantic_rule_ownership_contract.md",
+  "the architecture index must include contract 72",
+);
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",

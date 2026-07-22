@@ -140,6 +140,9 @@ this index wins.
 - `71_active_code_retirement_contract.md`: evidence required to retire active
   code without deleting validation, historical material or live duplicated
   responsibilities during cleanup phase 0B.
+- `72_single_semantic_rule_ownership_contract.md`: evidence, owner selection and
+  one-rule-at-a-time procedure for consolidating live semantic duplication in
+  cleanup phase 0C without changing behavior or moving later validations.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
