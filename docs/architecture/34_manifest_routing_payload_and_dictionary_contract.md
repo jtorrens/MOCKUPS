@@ -237,6 +237,12 @@ boolean, numeric, string, array or object shape. Animation keyframe authoring
 uses the same value serializer; it cannot turn invalid input into false or
 zero.
 
+Compound dictionary values use the same rule before controls render or commit.
+`ComponentInputBindings` requires an object and a valid explicit forwarding
+envelope. `StructuredCollection` and `IconSlots` require arrays of object items
+with unique non-empty stable ids. Blank, malformed, wrong-root or duplicate-id
+documents never become `{}`, `[]` or position-derived item identities.
+
 Runtime Input option lookup additionally follows contract 55. The typed data
 source supplies exact current Actor, Palette and complete Component variant
 options; generic factories retain the metadata-driven `ValueKind` and declared

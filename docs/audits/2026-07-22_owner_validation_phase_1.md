@@ -175,3 +175,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner requerido en startup y payload; fallbacks concretos prohibidos; comprobación explícita del envelope tanto en C# como en TypeScript. |
 | Datos | Sin migración. Todos los envelopes y proyecciones current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo. Forwarding válido conserva ids, referencias completas, valores y resultado; solo deja de publicarse un payload plausible a partir de documentos dañados. |
+
+## Slice 1.11 — Documentos compuestos de diccionario
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Component Input Bindings convertía blank, JSON malformado o raíz incorrecta en `{}`; Icon Slots hacía lo mismo con `[]` y filtraba items no objeto; la colección estructurada fabricaba inputs/Overrides vacíos y una identidad `item-{posición}` al encontrar documentos incompletos. |
+| Owner | `RuntimeInputValueKindContract` parsea el `ValueKind` compuesto; `RuntimeCollectionDocumentContract` valida items e ids; `RuntimeInputForwardingContract` valida el envelope reservado dentro de bindings. |
+| Cambio mínimo | Reutilizar esos owners en los tres controles, exigir inputs/Overrides de items existentes, clonar sin fallback y conservar objetos vacíos únicamente al crear explícitamente un item o cruzar una frontera aún sin Component seleccionado. |
+| Rutas eliminadas | Catch-all de Icon Slots/bindings, blank-to-empty, `OfType` que descartaba items, parse de inputs wrong-root a `{}`, clone fallback e id derivado de posición. |
+| Pruebas | 106/106 escritorio específicas: collections e Icon Slots sin id/duplicados, bindings wrong-root y forwarding interno wrong-root; build del editor correcto. |
+| Enforcement | Los tres controles deben consumir el owner compartido y no pueden recuperar los parsers/coerciones retirados. |
+| Datos | Sin migración. Los documentos current usados por estas superficies ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo. La creación explícita mantiene ids nuevos, Default/selección y Overrides vacíos intencionales; solo deja de mutarse silenciosamente un documento existente inválido. |

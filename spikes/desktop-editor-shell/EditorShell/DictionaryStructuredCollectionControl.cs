@@ -4,7 +4,6 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -105,7 +104,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 Duplicate: (index) =>
                 {
                     var source = items[index];
-                    var copy = source.DeepClone() as JsonObject ?? new JsonObject();
+                    var copy = source.DeepClone().AsObject();
                     var oldId = ItemId(source, index);
                     var newId = $"{collection.Id}_{Guid.NewGuid():N}";
                     copy["id"] = newId;
@@ -178,8 +177,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             if (bindings.Count > 0)
             {
                 var itemId = ItemId(item, itemIndex);
-                var inputs = item[componentItems.InputsJsonKey] as JsonObject ?? new JsonObject();
-                item[componentItems.InputsJsonKey] = inputs;
+                var inputs = item[componentItems.InputsJsonKey] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"{collection.ItemLabel} '{itemId}' requires object '{componentItems.InputsJsonKey}'.");
                 var field = new DictionaryFieldControl(
                     new FieldValue(
                         new FieldDefinition(
@@ -240,8 +240,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 {
                     var reference = JsonText(item[componentItems.VariantReferenceJsonKey]);
                     if (string.IsNullOrWhiteSpace(reference) || _services.OpenRuntimeComponentOverrides is null) return;
-                    var currentOverrides = item[componentItems.OverridesJsonKey] as JsonObject ?? new JsonObject();
-                    item[componentItems.OverridesJsonKey] = currentOverrides;
+                    var currentOverrides = item[componentItems.OverridesJsonKey] as JsonObject
+                        ?? throw new InvalidOperationException(
+                            $"{collection.ItemLabel} '{ItemId(item, itemIndex)}' requires object '{componentItems.OverridesJsonKey}'.");
                     await _services.OpenRuntimeComponentOverrides(reference, currentOverrides, (next) =>
                     {
                         item[componentItems.OverridesJsonKey] = next.DeepClone();
@@ -281,7 +282,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
                     ? new JsonObject()
-                    : _services.GetComponentVariantRuntimeValues?.Invoke(next) ?? new JsonObject();
+                    : _services.GetComponentVariantRuntimeValues?.Invoke(next)
+                      ?? throw new InvalidOperationException(
+                          $"Component Variant '{next}' has no Runtime values provider.");
             }
             Publish(commit: true);
             if (collection.Fields.Any((candidate) =>
@@ -307,7 +310,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         string value,
         bool commit)
     {
-        item[componentItems.InputsJsonKey] = JsonNode.Parse(value) as JsonObject ?? new JsonObject();
+        item[componentItems.InputsJsonKey] = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.ComponentInputBindings,
+            value,
+            $"Structured collection component inputs '{componentItems.InputsJsonKey}'").AsObject();
         Publish(commit);
     }
 
@@ -365,13 +371,13 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         item[componentItems.OverridesJsonKey] = new JsonObject();
         item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
             ? new JsonObject()
-            : _services.GetComponentVariantRuntimeValues?.Invoke(reference) ?? new JsonObject();
+            : _services.GetComponentVariantRuntimeValues?.Invoke(reference)
+              ?? throw new InvalidOperationException(
+                  $"Component Variant '{reference}' has no Runtime values provider.");
     }
 
     private static string ItemId(JsonObject item, int index) =>
-        item["id"] is JsonValue value && value.TryGetValue<string>(out var id) && !string.IsNullOrWhiteSpace(id)
-            ? id
-            : $"item-{index}";
+        JsonPath.RequiredString(item, "id", $"Structured collection item at index {index}");
 
     private static string JsonText(JsonNode? node) =>
         node is JsonValue value && value.TryGetValue<string>(out var text) ? text : "";
@@ -387,19 +393,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private static JsonArray Parse(string value)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException("Structured collection value cannot be blank.");
-        }
-
-        try
-        {
-            return JsonNode.Parse(value) as JsonArray
-                ?? throw new InvalidOperationException("Structured collection value must be a JSON array.");
-        }
-        catch (JsonException exception)
-        {
-            throw new InvalidOperationException("Structured collection value contains invalid JSON.", exception);
-        }
+        return RuntimeInputValueKindContract.ParseValue(
+            ValueKind.StructuredCollection,
+            value,
+            "Structured collection value").AsArray();
     }
 }

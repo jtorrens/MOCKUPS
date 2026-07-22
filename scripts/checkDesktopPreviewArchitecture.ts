@@ -4970,6 +4970,42 @@ assertContains(
   "forwarding !== undefined && !isRecord(forwarding)",
   "web payload forwarding must reject a present non-object envelope",
 );
+for (const compoundDictionaryControl of [
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+]) {
+  assertContains(
+    compoundDictionaryControl,
+    "RuntimeInputValueKindContract.ParseValue(",
+    `${compoundDictionaryControl} must consume the shared compound ValueKind parser`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "RuntimeCollectionDocumentContract.Validate(items, owner)",
+  "structured dictionary arrays must preserve stable item ids through the shared owner",
+);
+for (const retiredCompoundFallback of [
+  [
+    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)',
+  ],
+  [
+    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "JsonNode.Parse(value) as JsonObject ?? new JsonObject()",
+  ],
+  [
+    "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+    'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)',
+  ],
+] as const) {
+  assertDoesNotContain(
+    retiredCompoundFallback[0],
+    retiredCompoundFallback[1],
+    `${retiredCompoundFallback[0]} must not reconstruct an invalid compound document`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",

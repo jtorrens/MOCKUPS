@@ -132,6 +132,13 @@ input/collection/action lists and projection metadata keep their declared
 array roots; nested projected Runtime contracts are required objects. Invalid
 entries are not filtered and wrong roots are not replaced with empty documents.
 
+Dictionary compound controls consume these owners rather than reparsing JSON.
+Component Input Bindings use the strict object/forwarding contract;
+Structured Collection and Icon Slots use the stable Runtime collection
+document contract. A control may create explicit empty Overrides or Inputs only
+while creating a new boundary; opening or editing an existing wrong-root
+document must fail without replacing it.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -192,6 +199,8 @@ Architecture enforcement must verify:
   share exact `ValueKind` serialization and validation.
 - forwarding envelopes and projected child Runtime documents reject wrong
   roots before registry dispatch.
+- compound dictionary controls reuse the exact Runtime value and stable
+  collection owners without local empty-document parsers.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

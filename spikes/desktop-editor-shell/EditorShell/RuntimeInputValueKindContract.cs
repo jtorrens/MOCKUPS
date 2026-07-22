@@ -97,8 +97,10 @@ internal static class RuntimeInputValueKindContract
         ValueKind.Integer => JsonValue.Create(ParseInteger(value, owner))!,
         ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
             JsonValue.Create(ParseDecimal(value, owner))!,
-        ValueKind.IconTokenList or ValueKind.IconSlots or ValueKind.StructuredCollection =>
+        ValueKind.IconTokenList =>
             JsonPath.ParseRequiredArray(value, owner),
+        ValueKind.IconSlots or ValueKind.StructuredCollection =>
+            ParseCollection(value, owner),
         ValueKind.AlignmentPlacement => JsonPath.ParseRequiredObject(
             AlignmentPlacementValue.Parse(value).ToJsonString(),
             owner),
@@ -110,7 +112,7 @@ internal static class RuntimeInputValueKindContract
             owner),
         ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
             TypographyStyleValue.Parse(value),
-        ValueKind.ComponentInputBindings => JsonPath.ParseRequiredObject(value, owner),
+        ValueKind.ComponentInputBindings => ParseComponentInputBindings(value, owner),
         ValueKind.BehaviorTiming => JsonPath.ParseRequiredObject(
             BehaviorTimingValue.Parse(value).ToJson(),
             owner),
@@ -163,7 +165,7 @@ internal static class RuntimeInputValueKindContract
                 _ = TypographyStyleValue.Parse(RequireObject(value, owner));
                 return;
             case ValueKind.ComponentInputBindings:
-                _ = RequireObject(value, owner);
+                _ = RuntimeInputForwardingContract.Labels(RequireObject(value, owner));
                 return;
             case ValueKind.BehaviorTiming:
                 _ = BehaviorTimingValue.Parse(RequireObject(value, owner).ToJsonString());
@@ -181,6 +183,20 @@ internal static class RuntimeInputValueKindContract
             throw new InvalidOperationException($"{owner} defaultValue must be an integer.");
         }
         return parsed;
+    }
+
+    private static JsonArray ParseCollection(string value, string owner)
+    {
+        var items = JsonPath.ParseRequiredArray(value, owner);
+        RuntimeCollectionDocumentContract.Validate(items, owner);
+        return items;
+    }
+
+    private static JsonObject ParseComponentInputBindings(string value, string owner)
+    {
+        var bindings = JsonPath.ParseRequiredObject(value, owner);
+        _ = RuntimeInputForwardingContract.Labels(bindings);
+        return bindings;
     }
 
     private static decimal ParseDecimal(string value, string owner)

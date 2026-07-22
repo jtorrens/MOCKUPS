@@ -366,7 +366,11 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private void SetForwarding(ComponentInputBindingDefinition input, bool enabled)
     {
-        var forwards = _value[RuntimeInputForwardingContract.StorageKey] as JsonObject ?? new JsonObject();
+        var forwards = _value.TryGetPropertyValue(RuntimeInputForwardingContract.StorageKey, out var forwardingNode)
+            ? forwardingNode as JsonObject
+              ?? throw new InvalidOperationException(
+                  $"{RuntimeInputForwardingContract.StorageKey} must be an object when present.")
+            : new JsonObject();
         if (enabled)
         {
             _value[RuntimeInputForwardingContract.StorageKey] = forwards;
@@ -442,9 +446,14 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     private JsonObject ComponentVariantSlotNode(ComponentInputBindingDefinition input, string variantReference)
     {
         var existing = _value[input.JsonKey] as JsonObject;
-        var overrides = existing?["overrides"] is JsonObject existingOverrides
-            ? JsonNode.Parse(existingOverrides.ToJsonString()) as JsonObject ?? new JsonObject()
-            : new JsonObject();
+        var overrides = existing is null
+            ? new JsonObject()
+            : existing.TryGetPropertyValue("overrides", out var overridesNode)
+                ? overridesNode?.DeepClone() as JsonObject
+                  ?? throw new InvalidOperationException(
+                      $"Component Input '{input.Id}' overrides must be an object.")
+                : throw new InvalidOperationException(
+                    $"Component Input '{input.Id}' slot requires explicit overrides.");
         return new JsonObject
         {
             ["variantReference"] = variantReference,
@@ -454,14 +463,10 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private static JsonObject ParseValue(string value)
     {
-        try
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value) as JsonObject ?? new JsonObject();
-        }
-        catch
-        {
-            return new JsonObject();
-        }
+        return RuntimeInputValueKindContract.ParseValue(
+            ValueKind.ComponentInputBindings,
+            value,
+            "Component Input Bindings value").AsObject();
     }
 
     private static string StringValue(JsonNode? node, string fallback)

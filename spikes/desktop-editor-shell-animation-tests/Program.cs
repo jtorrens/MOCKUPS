@@ -296,6 +296,18 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         ValueKind.ComponentInputBindings,
         "[]",
         "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.ComponentInputBindings,
+        "{\"$forwardedInputs\":[]}",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.StructuredCollection,
+        "[{\"id\":\"item_1\"},{\"id\":\"item_1\"}]",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.IconSlots,
+        "[{\"contentMode\":\"icon\"}]",
+        "Test Runtime Input"));
 
     foreach (var invalid in new[]
     {

@@ -252,10 +252,13 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private static string String(JsonObject item, string key, string fallback) => item[key]?.GetValue<string>() ?? fallback;
     private static List<JsonObject> Parse(string value)
     {
-        try { return (JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) as JsonArray)?.OfType<JsonObject>().Select(Clone).ToList() ?? []; }
-        catch { return []; }
+        var items = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IconSlots,
+            value,
+            "Icon Slots value").AsArray();
+        return items.Select((item) => Clone(item!.AsObject())).ToList();
     }
-    private static JsonObject Clone(JsonObject value) => JsonNode.Parse(value.ToJsonString()) as JsonObject ?? new JsonObject();
+    private static JsonObject Clone(JsonObject value) => value.DeepClone().AsObject();
     private static string Normalize(string value) => Serialize(Parse(value));
     private static string Serialize(IEnumerable<JsonObject> items) => new JsonArray(items.Select((item) => (JsonNode?)Clone(item)).ToArray()).ToJsonString();
 }
