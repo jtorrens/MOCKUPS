@@ -32,7 +32,6 @@ export function textInputBarComponentToRenderable(
   const width = Math.max(1, barWidth - barPaddingX * 2);
   const leftIconRow = textInput.iconBar.rows.left;
   const rightIconRow = textInput.iconBar.rows.right;
-  const centerIconRow = textInput.iconBar.rows.center;
   const leftIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "left");
   const rightIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "right");
   const centerIconSize = measureIconBarZoneComponent(payload, textInput.iconBar, "center");

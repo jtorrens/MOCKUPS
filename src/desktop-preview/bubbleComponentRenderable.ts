@@ -132,16 +132,6 @@ export function bubbleComponentToRenderable(
         actorLabelPlacement,
       )
     : undefined;
-  const baseAvatarBox = bubble.avatarSlot.avatar
-    ? placeChild(
-        baseSurfaceBox,
-        {
-          width: bubble.avatarSlot.avatar.size * scale,
-          height: bubble.avatarSlot.avatar.size * scale,
-        },
-        scalePlacement(bubble.avatarSlot.placement, scale),
-      )
-    : undefined;
   const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
   const contentPadding = {
     left: paddingX,

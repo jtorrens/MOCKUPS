@@ -41,10 +41,6 @@ export function measureKeypadComponent(
   const width = keypad.sizingMode === "fill"
     ? Math.max(1, keypad.availableWidth * scale)
     : Math.max(1, naturalWidth);
-  const innerWidth = Math.max(1, width - paddingX * 2);
-  const keyWidth = keypad.sizingMode === "fill"
-    ? Math.max(1, (innerWidth - columnGap * Math.max(0, keypad.columns - 1)) / keypad.columns)
-    : keypad.keySize.width * scale;
   const height = Math.max(
     1,
     paddingY * 2 + keyHeight * rowCount + rowGap * Math.max(0, rowCount - 1),

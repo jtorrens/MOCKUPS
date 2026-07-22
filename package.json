@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
     "legacy:icon-theme:import": "tsx archive/react-legacy/src/icon-themes/importDevelopmentIconTheme.ts",
     "legacy:validate:examples": "tsx archive/react-legacy/src/domain/validation/validateExamples.ts",

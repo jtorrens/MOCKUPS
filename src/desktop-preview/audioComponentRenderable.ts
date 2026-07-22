@@ -76,7 +76,6 @@ export function audioComponentToRenderable(
     width: waveformWidth,
     height: waveformHeight,
   };
-  const playbackBoxLocal = unionBoxes([playBoxLocal, waveformBoxLocal]);
   const textBoxLocal = {
     x: waveformBoxLocal.x + waveformColumnWidth - durationWidth,
     y: waveformBoxLocal.y + waveformBoxLocal.height + verticalGap,

@@ -515,7 +515,6 @@ function visibleMessages(
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
     const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
-    const holdFrames = isOutgoingMessage ? message.postWriteOnHoldFrames : 0;
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
     const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
     const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;

@@ -1158,6 +1158,16 @@ assertContains(
   "the architecture index must include contract 70",
 );
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/71_active_code_retirement_contract.md",
+  "AGENTS must require the active code retirement contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "71_active_code_retirement_contract.md",
+  "the architecture index must include contract 71",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/ConversationMessageActorContract.cs",
   'public const string ConversationRecordClassId = "module.core.chat"',
   "the Module runtime-document registry must route Conversation by its exact stable record class",

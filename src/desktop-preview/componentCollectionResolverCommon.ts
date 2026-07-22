@@ -41,7 +41,6 @@ export function resolveComponentCollectionItem(
     const instance = parseObject(payload.instanceJson);
     const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
     const animation = asRecord(instance.animation);
-    const preview = parseObject(payload.designPreviewJson);
     const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);
     const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);

@@ -6,7 +6,6 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import { parseObject } from "./componentResolverCommon.js";
-import type { LockScreenModuleContract } from "./lockScreenModuleContract.js";
 import type { LockScreenComponentSlot } from "./lockScreenModuleContract.js";
 import { resolveLockScreenModuleFrame } from "./lockScreenModuleResolver.js";
 import { previewPayloadInBox, previewScreenBox } from "./componentRenderableCommon.js";

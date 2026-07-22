@@ -137,6 +137,9 @@ this index wins.
 - `70_conversation_message_actor_ownership_contract.md`: exact incoming,
   outgoing and system message Actor ownership, atomic direction transitions
   and Production-only projection of the Shot owner without sample fallbacks.
+- `71_active_code_retirement_contract.md`: evidence required to retire active
+  code without deleting validation, historical material or live duplicated
+  responsibilities during cleanup phase 0B.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

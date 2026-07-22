@@ -34,7 +34,7 @@ export function resolveCollectionStackComponent(payload: DesignPreviewPayload): 
   const allItems = resolveComponentCollectionItems(payload, preview, "collectionStack");
   const items = allItems.filter((item) => item.present || item.exitFrame !== undefined || item.presenceTransition);
   const reflow = resolveDistributionReflow(payload, preview, allItems, items)
-    ?? resolveReflow(payload, allItems, items);
+    ?? resolveReflow(payload, allItems);
   return {
     id: "collectionStack",
     distributionMode: distributionMode as CollectionStackDistributionMode,
@@ -76,7 +76,6 @@ function resolveDistributionReflow(
 function resolveReflow(
   payload: DesignPreviewPayload,
   allItems: CollectionStackDesignContract["items"],
-  items: CollectionStackDesignContract["items"],
 ) {
   const root = parseObject(payload.themeTokensJson);
   const motion = asRecord(root.motion);
