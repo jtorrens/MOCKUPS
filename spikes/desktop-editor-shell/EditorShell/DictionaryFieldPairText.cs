@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -23,10 +22,14 @@ internal static class DictionaryFieldPairText
         };
     }
 
-    public static (string First, string Second) Split(string value)
+    public static (string First, string Second) ParseRequired(
+        ValueKind valueKind,
+        string value,
+        string owner)
     {
-        var parts = value.Split('|', 2);
-        return (parts.ElementAtOrDefault(0) ?? "", parts.ElementAtOrDefault(1) ?? "");
+        var normalized = RuntimeInputValueKindContract.ParseValue(valueKind, value, owner).GetValue<string>();
+        var parts = normalized.Split('|', StringSplitOptions.None);
+        return (parts[0], parts[1]);
     }
 
     public static string Join(string first, string second)

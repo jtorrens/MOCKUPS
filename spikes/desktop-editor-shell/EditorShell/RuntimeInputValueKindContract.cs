@@ -96,7 +96,12 @@ internal static class RuntimeInputValueKindContract
         ValueKind.Boolean => JsonValue.Create(BooleanText.ParseRequired(value, owner))!,
         ValueKind.Integer => JsonValue.Create(ParseInteger(value, owner))!,
         ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
-            JsonValue.Create(ParseDecimal(value, owner))!,
+            JsonValue.Create(ParseBoundedDecimal(valueKind, value, owner))!,
+        ValueKind.IntegerPair => JsonValue.Create(ParseIntegerPair(value, owner))!,
+        ValueKind.ThemeTokenPair or ValueKind.PaletteColorPair =>
+            JsonValue.Create(ParseStringPair(value, owner))!,
+        ValueKind.PaletteColorAlphaPair => JsonValue.Create(
+            PaletteAlphaPair.NormalizeRequired(value, owner))!,
         ValueKind.IconTokenList => ParseStringArray(value, owner),
         ValueKind.IconSlots or ValueKind.StructuredCollection =>
             ParseCollection(value, owner),
@@ -142,9 +147,21 @@ internal static class RuntimeInputValueKindContract
                 RequireInteger(value, owner);
                 return;
             case ValueKind.Decimal:
+                RequireNumber(value, owner);
+                return;
             case ValueKind.HueDegrees:
             case ValueKind.Alpha:
-                RequireNumber(value, owner);
+                RequireBoundedNumber(valueKind, value, owner);
+                return;
+            case ValueKind.IntegerPair:
+                _ = ParseIntegerPair(RequireStringValue(value, owner), owner);
+                return;
+            case ValueKind.ThemeTokenPair:
+            case ValueKind.PaletteColorPair:
+                _ = ParseStringPair(RequireStringValue(value, owner), owner);
+                return;
+            case ValueKind.PaletteColorAlphaPair:
+                _ = PaletteAlphaPair.ParseRequired(RequireStringValue(value, owner), owner);
                 return;
             case ValueKind.IconTokenList:
                 RequireStringArray(value, owner);
@@ -189,6 +206,37 @@ internal static class RuntimeInputValueKindContract
         return parsed;
     }
 
+    private static string ParseIntegerPair(string value, string owner)
+    {
+        var parts = RequiredPair(value, owner);
+        if (!int.TryParse(parts.First, NumberStyles.Integer, CultureInfo.InvariantCulture, out var first)
+            || !int.TryParse(parts.Second, NumberStyles.Integer, CultureInfo.InvariantCulture, out var second))
+        {
+            throw new InvalidOperationException($"{owner} must contain exactly two integers.");
+        }
+
+        return $"{first.ToString(CultureInfo.InvariantCulture)}|{second.ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    private static string ParseStringPair(string value, string owner)
+    {
+        var parts = RequiredPair(value, owner);
+        return $"{parts.First}|{parts.Second}";
+    }
+
+    private static (string First, string Second) RequiredPair(string value, string owner)
+    {
+        var parts = value.Split('|', StringSplitOptions.None);
+        if (parts.Length != 2
+            || string.IsNullOrWhiteSpace(parts[0])
+            || string.IsNullOrWhiteSpace(parts[1]))
+        {
+            throw new InvalidOperationException($"{owner} must contain exactly two non-empty values.");
+        }
+
+        return (parts[0].Trim(), parts[1].Trim());
+    }
+
     private static JsonArray ParseCollection(string value, string owner)
     {
         var items = JsonPath.ParseRequiredArray(value, owner);
@@ -223,6 +271,20 @@ internal static class RuntimeInputValueKindContract
         return parsed;
     }
 
+    private static decimal ParseBoundedDecimal(ValueKind valueKind, string value, string owner)
+    {
+        var parsed = ParseDecimal(value, owner);
+        if (valueKind == ValueKind.Alpha && parsed is < 0 or > 1)
+        {
+            throw new InvalidOperationException($"{owner} must be from 0 to 1.");
+        }
+        if (valueKind == ValueKind.HueDegrees && parsed is < 0 or > 360)
+        {
+            throw new InvalidOperationException($"{owner} must be from 0 to 360.");
+        }
+        return parsed;
+    }
+
     private static void RequireBoolean(JsonNode value, string owner)
     {
         if (value is not JsonValue scalar || !scalar.TryGetValue<bool>(out _))
@@ -252,12 +314,32 @@ internal static class RuntimeInputValueKindContract
         return number;
     }
 
+    private static void RequireBoundedNumber(ValueKind valueKind, JsonNode value, string owner)
+    {
+        var number = RequireNumber(value, owner);
+        if (valueKind == ValueKind.Alpha && number is < 0 or > 1)
+        {
+            throw new InvalidOperationException($"{owner} value must be from 0 to 1.");
+        }
+        if (valueKind == ValueKind.HueDegrees && number is < 0 or > 360)
+        {
+            throw new InvalidOperationException($"{owner} value must be from 0 to 360.");
+        }
+    }
+
     private static void RequireString(JsonNode value, string owner)
     {
-        if (value is not JsonValue scalar || !scalar.TryGetValue<string>(out _))
+        _ = RequireStringValue(value, owner);
+    }
+
+    private static string RequireStringValue(JsonNode value, string owner)
+    {
+        if (value is not JsonValue scalar || !scalar.TryGetValue<string>(out var text))
         {
             throw new InvalidOperationException($"{owner} value must be a string.");
         }
+
+        return text;
     }
 
     private static void RequireStringArray(JsonNode value, string owner)

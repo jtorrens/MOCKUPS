@@ -21,7 +21,10 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Left;
 
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.PaletteColorPair,
+            value,
+            $"Field '{definition.Id}' value");
         var labels = DictionaryFieldPairText.Labels(definition);
         _labels = new PairFieldLabels(labels.First, labels.Second);
 
@@ -72,7 +75,10 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.PaletteColorPair,
+            value,
+            "Palette color pair value");
         _isUpdating = true;
         _firstControl.SetValue(pair.First);
         _secondControl.SetValue(pair.Second);

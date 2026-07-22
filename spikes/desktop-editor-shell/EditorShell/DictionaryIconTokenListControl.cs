@@ -7,7 +7,6 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -207,37 +206,22 @@ internal sealed class DictionaryIconTokenListControl : Grid, IDictionaryValueCon
 
     private IReadOnlyList<string> Tokens()
     {
-        try
-        {
-            var node = JsonNode.Parse(_value);
-            return node is JsonArray array
-                ? array
-                    .Select((item) => item?.GetValue<string>() ?? "")
-                    .Where((token) => !string.IsNullOrWhiteSpace(token))
-                    .ToList()
-                : [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
+        return Parse(_value)
+            .Select((item) => item!.GetValue<string>())
+            .ToList();
     }
 
     private static string Normalize(string value)
     {
-        try
-        {
-            var node = JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value);
-            return node is JsonArray array
-                ? Serialize(array
-                    .Select((item) => item?.GetValue<string>() ?? "")
-                    .Where((token) => !string.IsNullOrWhiteSpace(token)))
-                : "[]";
-        }
-        catch (JsonException)
-        {
-            return "[]";
-        }
+        return Parse(value).ToJsonString();
+    }
+
+    private static JsonArray Parse(string value)
+    {
+        return RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IconTokenList,
+            value,
+            "Icon token list dictionary value").AsArray();
     }
 
     private static string Serialize(IEnumerable<string> tokens)

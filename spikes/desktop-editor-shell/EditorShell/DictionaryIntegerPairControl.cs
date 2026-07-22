@@ -11,17 +11,22 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
     private readonly TextBlock _secondLabel;
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
+    private readonly FieldDefinition _definition;
     private bool _isUpdating;
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         ColumnSpacing = 8;
         RowSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Stretch;
         MinWidth = 0;
 
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.IntegerPair,
+            value,
+            $"Field '{definition.Id}' value");
         var labels = DictionaryFieldPairText.Labels(definition);
 
         _firstLabel = CreateLabel(labels.First);
@@ -48,7 +53,10 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.IntegerPair,
+            value,
+            $"Field '{_definition.Id}' value");
         _isUpdating = true;
         if (_firstTextBox.Text != pair.First)
         {

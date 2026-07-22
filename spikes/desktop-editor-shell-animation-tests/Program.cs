@@ -290,6 +290,22 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
             Component("component.keypad").Id,
             "component.keypad.keys",
             "[{\"id\":\"key_1\"},{\"id\":\"key_1\"}]"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.surface").Id,
+            "component.surface.tail.size",
+            "18|invalid"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.textBox").Id,
+            "component.textBox.padding",
+            "theme.spacing.m|"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.bubble").Id,
+            "component.bubble.incomingBackground",
+            "gray_080"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.surface").Id,
+            "component.surface.backgroundAlpha",
+            "1.5"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
         var cursor = Component("component.cursor");
@@ -547,6 +563,30 @@ static void RuntimeInputDefaultsUseValueKindOwner()
             ValueKind.AlignmentPlacement,
             "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
             "Test Runtime Input")["mode"]?.GetValue<string>());
+    Equal(
+        "10|20",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IntegerPair,
+            "10|20",
+            "Test Runtime Input").GetValue<string>());
+    Equal(
+        "theme.spacing.m|theme.spacing.s",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.ThemeTokenPair,
+            "theme.spacing.m|theme.spacing.s",
+            "Test Runtime Input").GetValue<string>());
+    Equal(
+        "gray_100|gray_000",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.PaletteColorPair,
+            "gray_100|gray_000",
+            "Test Runtime Input").GetValue<string>());
+    Equal(
+        "gray_100|gray_000||1|0.5",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.PaletteColorAlphaPair,
+            "gray_100|gray_000||1|0.5",
+            "Test Runtime Input").GetValue<string>());
 
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
         Definition("boolean", "Boolean", "perhaps"),
@@ -579,6 +619,30 @@ static void RuntimeInputDefaultsUseValueKindOwner()
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
         ValueKind.IconSlots,
         "[{\"contentMode\":\"icon\"}]",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.IntegerPair,
+        "10|1.5",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.ThemeTokenPair,
+        "theme.spacing.m|",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.PaletteColorPair,
+        "gray_100",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.PaletteColorAlphaPair,
+        "gray_100|gray_000||1|2",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.Alpha,
+        "1.01",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.HueDegrees,
+        "361",
         "Test Runtime Input"));
 
     foreach (var invalid in new[]

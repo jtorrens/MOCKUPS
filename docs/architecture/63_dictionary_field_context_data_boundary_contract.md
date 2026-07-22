@@ -89,6 +89,9 @@ service query persistence or interpret Icon Theme records.
   persisted instance payload.
 - Theme and Component documents are strict current JSON and are never repaired
   while read.
+- primitive and pair controls consume the exact shared `ValueKind` parser;
+  malformed pair members, boolean/icon-list documents and out-of-range
+  Alpha/Hue values are not converted into plausible control state.
 - Preview resolution still completes before the generic bridge and renderer.
 
 ## 5. Enforcement and tests

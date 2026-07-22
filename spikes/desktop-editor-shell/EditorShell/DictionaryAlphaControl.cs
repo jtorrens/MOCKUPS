@@ -20,7 +20,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
-        var alpha = PaletteAlphaPair.TryParseAlpha(value, out var parsed) ? parsed : 1;
+        var alpha = PaletteAlphaPair.ParseAlphaRequired(value, "Alpha dictionary value");
         _slider = CreateSlider(alpha, isEditable);
         _box = CreateAlphaBox(alpha, isEditable);
         SetColumn(_box, 1);
@@ -38,7 +38,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public void SetValue(string value)
     {
-        var alpha = PaletteAlphaPair.TryParseAlpha(value, out var parsed) ? parsed : 1;
+        var alpha = PaletteAlphaPair.ParseAlphaRequired(value, "Alpha dictionary value");
         _isUpdating = true;
         SetAlpha(_slider, _box, alpha);
         _isUpdating = false;

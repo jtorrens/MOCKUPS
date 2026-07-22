@@ -19,7 +19,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
     public HueDegreesControl(string value, bool isEditable)
     {
-        _value = NormalizeHue(value);
+        _value = NormalizeHueRequired(value);
         _lastCommittedValue = _value;
         var boxWidth = EditorUiDensity.TextAwareWidth(78);
         ColumnDefinitions = new ColumnDefinitions($"*,{boxWidth.ToString(CultureInfo.InvariantCulture)}");
@@ -89,9 +89,16 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
         {
             if (_isUpdating) return;
 
-            SetLocalValue(NormalizeHue(_textBox.Text ?? ""));
+            if (TryNormalizeHue(_textBox.Text ?? "", out var normalized))
+            {
+                SetLocalValue(normalized);
+            }
         };
-        _textBox.LostFocus += (_, _) => CommitValue();
+        _textBox.LostFocus += (_, _) =>
+        {
+            UpdateControls();
+            CommitValue();
+        };
         _textBox.KeyDown += (_, args) =>
         {
             if (args.Key != Key.Enter) return;
@@ -113,7 +120,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
     public void SetValue(string value)
     {
-        var normalized = NormalizeHue(value);
+        var normalized = NormalizeHueRequired(value);
         if (_value == normalized) return;
 
         _value = normalized;
@@ -122,10 +129,9 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
     private void SetLocalValue(string value)
     {
-        var normalized = NormalizeHue(value);
-        if (_value == normalized) return;
+        if (_value == value) return;
 
-        _value = normalized;
+        _value = value;
         UpdateControls();
         ValueChanged?.Invoke(this, _value);
     }
@@ -151,11 +157,31 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
     private static double HueNumber(string value)
     {
-        return NumericText.ClampedDouble(value, 0, 0, 360);
+        return double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
     }
 
-    private static string NormalizeHue(string value)
+    private static string NormalizeHueRequired(string value)
     {
-        return Math.Round(HueNumber(value)).ToString(CultureInfo.InvariantCulture);
+        if (!TryNormalizeHue(value, out var normalized))
+        {
+            throw new InvalidOperationException("Hue dictionary value must be a finite number from 0 to 360.");
+        }
+
+        return normalized;
+    }
+
+    private static bool TryNormalizeHue(string value, out string normalized)
+    {
+        if ((!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+                && !double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out parsed))
+            || !double.IsFinite(parsed)
+            || parsed is < 0 or > 360)
+        {
+            normalized = "";
+            return false;
+        }
+
+        normalized = Math.Round(parsed).ToString(CultureInfo.InvariantCulture);
+        return true;
     }
 }

@@ -43,7 +43,7 @@ internal sealed class DictionaryBooleanControl : Grid, IDictionaryValueControl
 
     private static bool StringToBool(string value)
     {
-        return BooleanText.Parse(value);
+        return BooleanText.ParseRequired(value, "Boolean dictionary value");
     }
 
     private static string BoolToString(bool value)

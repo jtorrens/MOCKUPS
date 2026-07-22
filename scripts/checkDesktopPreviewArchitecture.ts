@@ -5157,6 +5157,74 @@ for (const retiredResourceReadFallback of [
     `${retiredResourceReadFallback[0]} must not reconstruct an invalid current resource value (${retiredResourceReadFallback[1]})`,
   );
 }
+for (const strictPairValueKindCase of [
+  "ValueKind.IntegerPair => JsonValue.Create(ParseIntegerPair(value, owner))",
+  "ValueKind.ThemeTokenPair or ValueKind.PaletteColorPair =>",
+  "ValueKind.PaletteColorAlphaPair => JsonValue.Create(",
+  "ParseBoundedDecimal(valueKind, value, owner)",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+    strictPairValueKindCase,
+    `dictionary pair/range values must use their exact ValueKind owner (${strictPairValueKindCase})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Common/PaletteAlphaPair.cs",
+  "public static PaletteAlphaPair ParseRequired(string value, string context)",
+  "Palette color-alpha pairs must own their complete required envelope",
+);
+for (const retiredPaletteAlphaFallback of [
+  'parts.Length == 2 ? SplitPair(parts[1], "1", "1")',
+  "return TryParseAlpha(value, out var parsed) ? parsed : 1",
+  "SplitPair(string value, string firstFallback, string secondFallback)",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/PaletteAlphaPair.cs",
+    retiredPaletteAlphaFallback,
+    `Palette color-alpha current values must not reconstruct missing members (${retiredPaletteAlphaFallback})`,
+  );
+}
+for (const strictPairControl of [
+  "spikes/desktop-editor-shell/EditorShell/DictionaryIntegerPairControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryThemeTokenPairControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+]) {
+  assertContains(
+    strictPairControl,
+    "DictionaryFieldPairText.ParseRequired(",
+    `${strictPairControl} must consume the exact pair ValueKind owner`,
+  );
+  assertDoesNotContain(
+    strictPairControl,
+    "DictionaryFieldPairText.Split(",
+    `${strictPairControl} must not split an invalid current pair into empty members`,
+  );
+}
+for (const strictPrimitiveControl of [
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryBooleanControl.cs", "BooleanText.ParseRequired("],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs", "PaletteAlphaPair.ParseAlphaRequired("],
+  ["spikes/desktop-editor-shell/EditorShell/HueDegreesControl.cs", "NormalizeHueRequired("],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryIconTokenListControl.cs", "RuntimeInputValueKindContract.ParseValue("],
+] as const) {
+  assertContains(
+    strictPrimitiveControl[0],
+    strictPrimitiveControl[1],
+    `${strictPrimitiveControl[0]} must reject invalid assigned current values`,
+  );
+}
+for (const retiredPrimitiveControlFallback of [
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryBooleanControl.cs", "BooleanText.Parse(value)"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs", "TryParseAlpha(value, out var parsed) ? parsed : 1"],
+  ["spikes/desktop-editor-shell/EditorShell/HueDegreesControl.cs", "NumericText.ClampedDouble(value, 0, 0, 360)"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryIconTokenListControl.cs", 'string.IsNullOrWhiteSpace(value) ? "[]" : value'],
+] as const) {
+  assertDoesNotContain(
+    retiredPrimitiveControlFallback[0],
+    retiredPrimitiveControlFallback[1],
+    `${retiredPrimitiveControlFallback[0]} must not manufacture a plausible current control value`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",

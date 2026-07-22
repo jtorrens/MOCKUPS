@@ -28,7 +28,10 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
         HorizontalAlignment = HorizontalAlignment.Stretch;
         MinWidth = 0;
 
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.ThemeTokenPair,
+            value,
+            $"Field '{definition.Id}' value");
         var labels = DictionaryFieldPairText.Labels(definition);
         _firstValue = pair.First;
         _secondValue = pair.Second;
@@ -64,7 +67,10 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
 
     public void SetValue(string value)
     {
-        var pair = DictionaryFieldPairText.Split(value);
+        var pair = DictionaryFieldPairText.ParseRequired(
+            ValueKind.ThemeTokenPair,
+            value,
+            "Theme token pair value");
         _isUpdating = true;
         _firstValue = pair.First;
         _secondValue = pair.Second;

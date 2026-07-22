@@ -245,6 +245,13 @@ default applies only when its path is absent. Once a field path is present, its
 stored JSON scalar/object/array shape is current data and must validate exactly;
 readers and writers must not coerce it to false, zero, text, `{}`, `[]` or the
 descriptor default.
+
+String-backed compound kinds also have exact current grammars. `IntegerPair`
+contains two integers; Theme-token and Palette-color pairs contain two non-empty
+members; Palette-color-alpha pairs contain two colors plus two finite alpha
+values from zero to one. `Alpha` and `HueDegrees` keep their intrinsic ranges.
+Missing pair members or out-of-range values are invalid, not empty/default
+members for a control to reconstruct.
 `ComponentInputBindings` requires an object and a valid explicit forwarding
 envelope. `StructuredCollection` and `IconSlots` require arrays of object items
 with unique non-empty stable ids. Blank, malformed, wrong-root or duplicate-id

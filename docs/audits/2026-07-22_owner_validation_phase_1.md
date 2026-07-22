@@ -240,3 +240,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Helpers exactos requeridos, field mappers fijados a ellos y fallbacks concretos prohibidos; `DeviceMetricRules` no puede aceptar strings numéricos. |
 | Datos | Sin migración. Los documentos current cumplen; la ausencia de Dynamic Island ya era semántica válida. Base canónica sin cambios: `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
 | Riesgo | Bajo. No cambia ningún recurso válido ni la geometría resuelta. Los Devices sin isla siguen mostrando cero; un documento presente dañado deja de aparentar un valor válido. |
+
+## Slice 1.16 — Pairs y controles primitivos de diccionario
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `IntegerPair`, Theme/Palette pairs y Palette+Alpha eran solo strings para el owner común; podían faltar miembros o contener números inválidos. `PaletteAlphaPair` rellenaba colors/alpha y limitaba alpha inválido a 1. Controles de pair, boolean, Alpha, Hue e Icon Token List mantenían parsers que fabricaban vacío, falso, cero o uno ante current data inválida. |
+| Owner | `RuntimeInputValueKindContract` declara la gramática y rangos; `PaletteAlphaPair` valida su envelope; los controles consumen esos owners y solo gestionan el draft interactivo. |
+| Cambio mínimo | Validar dos enteros/tokens/colores, cuatro miembros Palette+Alpha, Alpha 0–1 y Hue 0–360; normalizar solo texto válido; sustituir `Split`/catch/fallbacks de asignación current por el owner compartido. |
+| Rutas eliminadas | Pair incompleto a miembro vacío, alpha inválido a 1, boolean inválido a false, Hue inválido a 0 e Icon List inválida a `[]`. |
+| Pruebas | 110/110 escritorio ampliadas: pairs y rangos válidos/incorrectos; writes de Component pair/Alpha inválidos rechazados byte-for-byte; lectura completa de todas las Classes/Variants current. |
+| Enforcement | Casos de `ValueKind`, parser Palette+Alpha y consumidores de controles requeridos; parsers/fallbacks locales retirados quedan prohibidos. |
+| Datos | Sin migración. Todos los pairs y rangos current cumplen; base canónica `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
+| Riesgo | Bajo. No cambian valores válidos ni sus ids/paths; solo deja de representarse o persistirse una cadena que contradice su `ValueKind`. |
