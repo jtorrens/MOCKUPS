@@ -1256,6 +1256,31 @@ assertDoesNotContain(
   "the web renderer must not recompute effective Theme mode",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Common/TypographyStyleValue.cs",
+  'JsonPath.ParseRequiredObject(value, "Typography Style value")',
+  "Typography Style must parse every non-sentinel value as a required object",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Common/TypographyStyleValue.cs",
+  "as JsonObject ?? []",
+  "Typography Style must not reinterpret a wrong JSON root as inherited",
+);
+for (const typographyOwnerConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+]) {
+  assertContains(
+    typographyOwnerConsumer,
+    "TypographyStyleValue.Parse(",
+    `${typographyOwnerConsumer} must consume the strict Typography Style owner`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "ValueKind.TypographyStyle => JsonNode.Parse(value)",
+  "Typography Style writes must not bypass the strict value owner",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",
   "external Node processes must share one platform executable resolver",

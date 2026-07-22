@@ -73,3 +73,15 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | `light` y `dark` explícitos sobre la sesión contraria; `inherit`; Component aislado; valor ausente, tipo incorrecto y valor desconocido; escritura rechazada sin modificar el documento. |
 | Enforcement | Owner común requerido en factory, data y controller; renderer sin parámetro de sesión ni recomposición; coerciones antiguas prohibidas. |
 | Riesgo | Bajo para current data, cuyos valores son válidos. Cambia únicamente la entrada inválida y corrige la precedencia de `light` explícito aprobada por el usuario. |
+
+## Slice 1.3 — Typography Style estricta
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El value object convertía una raíz array, número u otra raíz incorrecta en un objeto vacío; las escrituras de Component podían saltarse el value object y `TypographySystemStyle` se serializaba por la rama genérica. Usage repetía un parser permisivo. |
+| Owner | `TypographyStyleValue` para `TypographyStyle` y `TypographySystemStyle`, tanto en representación de texto como en nodo JSON. |
+| Cambio mínimo | Conservar únicamente blank e `inherited` como sentinels vacíos; exigir objeto para cualquier otro valor; usar el owner en lectura, escritura y descubrimiento de Usage. |
+| Rutas eliminadas | `as JsonObject ?? []`, parse directo de escritura y parser local de Usage. |
+| Pruebas | Sentinels, objeto válido, texto malformado, array y número; escritura `TypographySystemStyle` válida como objeto; rechazo sin modificar el documento. |
+| Enforcement | Parser requerido y consumidores de persistence/Usage fijados; fallbacks y bypass de escritura prohibidos. |
+| Riesgo | Bajo para current data; el Keyboard actual ya persiste un objeto. Las entradas que antes quedaban ocultas o podían guardar una raíz incorrecta ahora fallan. |

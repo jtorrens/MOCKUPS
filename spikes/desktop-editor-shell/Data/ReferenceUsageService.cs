@@ -765,12 +765,12 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
                 return;
             case ValueKind.TypographyStyle:
             case ValueKind.TypographySystemStyle:
-                var typography = ObjectValue(value);
+                var typography = TypographyStyleValue.Parse(value);
                 AddExact(
                     usages,
                     targets,
                     ProjectTreeNodeKind.ProductionFont,
-                    typography is null ? "" : JsonPath.String(typography, TypographyStyleValue.FontFamilyId, ""),
+                    JsonPath.String(typography, TypographyStyleValue.FontFamilyId, ""),
                     source,
                     fieldLabel);
                 return;
@@ -789,13 +789,6 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             return JsonNode.Parse(value);
         }
         return JsonValue.Create(value);
-    }
-
-    private static JsonObject? ObjectValue(JsonNode value)
-    {
-        if (value is JsonObject objectValue) return objectValue;
-        var text = StringValue(value);
-        return string.IsNullOrWhiteSpace(text) ? null : JsonNode.Parse(text) as JsonObject;
     }
 
     private static string StringValue(JsonNode value) =>

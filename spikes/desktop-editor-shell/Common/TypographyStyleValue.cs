@@ -36,7 +36,22 @@ internal static class TypographyStyleValue
             return [];
         }
 
-        return JsonNode.Parse(value) as JsonObject ?? [];
+        return JsonPath.ParseRequiredObject(value, "Typography Style value");
+    }
+
+    public static JsonObject Parse(JsonNode value)
+    {
+        if (value is JsonObject objectValue)
+        {
+            return objectValue;
+        }
+
+        if (value is JsonValue scalar && scalar.TryGetValue<string>(out var text))
+        {
+            return Parse(text);
+        }
+
+        throw new InvalidOperationException("Typography Style value must be a JSON object.");
     }
 
     public static bool IsEmpty(string value)

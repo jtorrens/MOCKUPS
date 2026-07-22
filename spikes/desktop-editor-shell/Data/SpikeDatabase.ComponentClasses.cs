@@ -753,9 +753,8 @@ internal sealed partial class SpikeDatabase
             ValueKind.Motion => node is JsonObject
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
-            ValueKind.TypographyStyle => node is JsonObject
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
+            ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
+                TypographyStyleValue.Parse(node).ToJsonString(),
             ValueKind.IconTokenList => node is JsonArray
                 ? node.ToJsonString()
                 : descriptor.DefaultValue,
@@ -784,8 +783,8 @@ internal sealed partial class SpikeDatabase
                 ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
             ValueKind.Motion => JsonNode.Parse(value)
                 ?? throw new InvalidOperationException("Motion value must be valid JSON."),
-            ValueKind.TypographyStyle => JsonNode.Parse(value)
-                ?? throw new InvalidOperationException("Typography style value must be valid JSON."),
+            ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
+                TypographyStyleValue.Parse(value),
             ValueKind.IconTokenList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)
                 ?? new JsonArray(),
             ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)

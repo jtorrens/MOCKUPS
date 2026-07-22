@@ -26,6 +26,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
+    ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
     ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
@@ -125,6 +126,58 @@ static void ActorPreviewSurfacesShareInitialsIdentity()
     Equal("JN", ActorIdentityText.Initials("", "  Jorge   Navarro  "));
     Equal("A", ActorIdentityText.Initials("Alex", "Ignored Name"));
     Equal("", ActorIdentityText.Initials("", ""));
+}
+
+static void TypographyStyleKeepsOnlyExplicitSentinels()
+{
+    Equal(0, TypographyStyleValue.Parse("").Count);
+    Equal(0, TypographyStyleValue.Parse("inherited").Count);
+    Equal(
+        "theme.typography.sizes.s",
+        TypographyStyleValue.String(
+            TypographyStyleValue.Parse(TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
+            TypographyStyleValue.SizeToken));
+    Throws<InvalidOperationException>(() => TypographyStyleValue.Parse("not-json"));
+    Throws<InvalidOperationException>(() => TypographyStyleValue.Parse("[]"));
+    Throws<InvalidOperationException>(() => TypographyStyleValue.Parse("4"));
+    Throws<InvalidOperationException>(() => TypographyStyleValue.Parse(JsonNode.Parse("[]")!));
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-typography-owner-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var keyboard = Descendants(database.LoadProjectTree()).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "keyboard");
+        var beforeRejectedWrite = database.GetComponentClassSettings(keyboard.Id).ConfigJson;
+
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            keyboard.Id,
+            "component.keyboard.typography",
+            "[]"));
+        Equal(beforeRejectedWrite, database.GetComponentClassSettings(keyboard.Id).ConfigJson);
+
+        var validStyle = TypographyStyleValue.CreateDefault(
+            "theme.typography.sizes.m",
+            "theme.system");
+        database.UpdateComponentClassField(
+            keyboard.Id,
+            "component.keyboard.typography",
+            validStyle);
+        var savedConfig = JsonPath.ParseRequiredObject(
+            database.GetComponentClassSettings(keyboard.Id).ConfigJson,
+            "Saved Keyboard Variant config");
+        True(savedConfig["keyboard"]?["typography"] is JsonObject);
+        Equal(
+            "theme.typography.sizes.m",
+            savedConfig["keyboard"]?["typography"]?[TypographyStyleValue.SizeToken]?.GetValue<string>());
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ComponentAndModuleVariantsShareReferenceGrammar()
