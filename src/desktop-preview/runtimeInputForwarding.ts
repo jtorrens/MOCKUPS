@@ -26,6 +26,9 @@ function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
   const ownerId = typeof node.id === "string" && node.id ? node.id : inheritedOwnerId;
 
   const forwarding = node[storageKey];
+  if (forwarding !== undefined && !isRecord(forwarding)) {
+    throw new Error(`${storageKey} must be an object when present`);
+  }
   if (isRecord(forwarding)) {
     const entries = Object.entries(forwarding).map(([targetKey, rawDefinition]) => {
       if (!isRecord(rawDefinition) || typeof rawDefinition.jsonKey !== "string") {
@@ -51,8 +54,12 @@ function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
       if (typeof rawDefinition.id !== "string" || !rawDefinition.id) {
         throw new Error(`Forwarded runtime input '${targetKey}' has no stable field id`);
       }
-      const runtimeFieldIds = isRecord(node[runtimeFieldIdsKey])
-        ? node[runtimeFieldIdsKey] as JsonRecord
+      const currentRuntimeFieldIds = node[runtimeFieldIdsKey];
+      if (currentRuntimeFieldIds !== undefined && !isRecord(currentRuntimeFieldIds)) {
+        throw new Error(`${runtimeFieldIdsKey} must be an object when present`);
+      }
+      const runtimeFieldIds = isRecord(currentRuntimeFieldIds)
+        ? currentRuntimeFieldIds as JsonRecord
         : {};
       runtimeFieldIds[targetKey] = rawDefinition.id;
       node[runtimeFieldIdsKey] = runtimeFieldIds;

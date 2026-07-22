@@ -4945,6 +4945,32 @@ assertDoesNotContain(
   "runtime input kind parsing must not silently fall back to text",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "obj.TryGetPropertyValue(RuntimeInputForwardingContract.StorageKey, out var forwardedNode)",
+  "startup must validate every present forwarding envelope instead of ignoring a wrong root",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+  "private static JsonObject? ForwardedDefinitions(JsonObject owner)",
+  "desktop payload preparation must own the strict forwarding envelope",
+);
+for (const forwardingFallback of [
+  "preview.DeepClone() as JsonObject ?? new JsonObject()",
+  "state[sourceRuntimeContractJsonKey] as JsonObject ?? new JsonObject()",
+  "definition.DeepClone() as JsonObject ?? new JsonObject()",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+    forwardingFallback,
+    `desktop forwarding must not manufacture a plausible document (${forwardingFallback})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/runtimeInputForwarding.ts",
+  "forwarding !== undefined && !isRecord(forwarding)",
+  "web payload forwarding must reject a present non-object envelope",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",

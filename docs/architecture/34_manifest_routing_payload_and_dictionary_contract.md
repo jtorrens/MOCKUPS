@@ -132,6 +132,14 @@ instance payload, invent missing values or select a Variant. Crossing a new
 component or module boundary still requires a complete concrete Variant
 reference and the explicit default Variant when the boundary is first created.
 
+The reserved `$forwardedInputs` envelope is optional, but when present it is a
+JSON object whose every entry is a complete object definition. Required
+Preview `inputs`, `collections` and present `actions` keep their declared array
+roots. A projected collection, nested Runtime contract, metadata-key list or
+forwarded value with the wrong root is invalid; payload preparation must not
+replace it with an empty object or array, skip malformed entries or manufacture
+a missing nested contract.
+
 Missing required forwarding metadata or a partially supplied forwarding group
 is an error. A registry, resolver, bridge or renderer must not repair it.
 
@@ -260,6 +268,8 @@ Read-only startup validation rejects:
 - Runtime Input definitions without stable id, label and JSON key;
 - unknown or non-canonical Runtime Input kinds/value kinds;
 - missing or malformed Runtime Input defaults for their current `ValueKind`;
+- a non-object forwarding envelope/definition or wrong-root forwarding
+  projection document;
 - missing, parent-owned or wrong-shape current Runtime values;
 - retired generic module layouts or records;
 - any other persistence violation defined by contract 33.

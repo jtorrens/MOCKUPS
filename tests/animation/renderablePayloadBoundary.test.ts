@@ -66,3 +66,33 @@ test("renderable payload allows an absent optional icon mapping", () => {
 test("renderable payload rejects an invalid present icon mapping", () => {
   assert.throws(() => resolveRenderablePayload({ ...payload, iconMappingJson: "[]" }));
 });
+
+test("renderable payload rejects a non-object forwarding envelope", () => {
+  assert.throws(() => resolveRenderablePayload({
+    ...payload,
+    configJson: JSON.stringify({ owner: { $forwardedInputs: [] } }),
+  }));
+});
+
+test("renderable payload rejects a non-object forwarded definition", () => {
+  assert.throws(() => resolveRenderablePayload({
+    ...payload,
+    configJson: JSON.stringify({ owner: { $forwardedInputs: { title: false } } }),
+  }));
+});
+
+test("renderable payload rejects invalid runtime field id metadata", () => {
+  assert.throws(() => resolveRenderablePayload({
+    ...payload,
+    configJson: JSON.stringify({
+      owner: {
+        id: "owner",
+        $forwardedInputs: {
+          title: { id: "forwarded.title", jsonKey: "titleValue" },
+        },
+        __runtimeFieldIds: [],
+      },
+    }),
+    designPreviewJson: JSON.stringify({ titleValue: "Title" }),
+  }));
+});

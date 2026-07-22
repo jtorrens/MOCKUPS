@@ -161,8 +161,11 @@ internal sealed partial class SpikeDatabase
         {
             ValidateRuntimeInputDefinitionArray(fields, owner, $"{path}.fields");
         }
-        if (obj[RuntimeInputForwardingContract.StorageKey] is JsonObject forwarded)
+        if (obj.TryGetPropertyValue(RuntimeInputForwardingContract.StorageKey, out var forwardedNode))
         {
+            var forwarded = forwardedNode as JsonObject
+                ?? throw InvalidCurrentDatabase(
+                    $"{owner} has a non-object forwarding envelope at {path}.{RuntimeInputForwardingContract.StorageKey}");
             foreach (var (key, definition) in forwarded)
             {
                 ValidateRuntimeInputDefinition(

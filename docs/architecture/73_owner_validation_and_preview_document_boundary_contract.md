@@ -125,6 +125,13 @@ owns both editor serialization and persisted shape validation. Parent-owned or
 undeclared keys do not become Runtime data, and invalid booleans, numbers,
 arrays or semantic objects do not become plausible values.
 
+Explicit forwarding keeps one strict envelope through persistence validation,
+desktop payload preparation and the web payload boundary. The optional
+`$forwardedInputs` member and every contained definition are objects; Preview
+input/collection/action lists and projection metadata keep their declared
+array roots; nested projected Runtime contracts are required objects. Invalid
+entries are not filtered and wrong roots are not replaced with empty documents.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -183,6 +190,8 @@ Architecture enforcement must verify:
   ownership, array roots and unique stable item ids.
 - persisted Runtime scalars, collection fields, Test Values and keyframe values
   share exact `ValueKind` serialization and validation.
+- forwarding envelopes and projected child Runtime documents reject wrong
+  roots before registry dispatch.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

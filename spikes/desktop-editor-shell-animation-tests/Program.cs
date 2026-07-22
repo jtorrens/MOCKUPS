@@ -28,6 +28,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
+    ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
@@ -3218,6 +3219,81 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
     {
         File.Delete(temporary);
     }
+}
+
+static void RuntimeInputForwardingEnvelopesAreStrict()
+{
+    Throws<InvalidOperationException>(() => RuntimeInputForwardingContract.EffectivePreview(
+        new JsonObject { ["inputs"] = new JsonObject() },
+        new JsonObject()));
+    Throws<InvalidOperationException>(() => RuntimeInputForwardingContract.EffectivePreview(
+        new JsonObject { ["collections"] = JsonValue.Create(false) },
+        new JsonObject()));
+    Throws<InvalidOperationException>(() => RuntimeInputForwardingContract.EffectivePreview(
+        new JsonObject(),
+        new JsonObject
+        {
+            ["owner"] = new JsonObject
+            {
+                [RuntimeInputForwardingContract.StorageKey] = new JsonArray(),
+            },
+        }));
+    Throws<InvalidOperationException>(() => RuntimeInputForwardingContract.EffectivePreview(
+        new JsonObject(),
+        new JsonObject
+        {
+            ["owner"] = new JsonObject
+            {
+                [RuntimeInputForwardingContract.StorageKey] = new JsonObject
+                {
+                    ["title"] = JsonValue.Create("invalid"),
+                },
+            },
+        }));
+
+    var owner = new FieldDefinition(
+        "component.test.inputs",
+        "Component inputs",
+        ValueKind.ComponentInputBindings);
+    var input = new ComponentInputBindingDefinition(
+        "enabled",
+        "Enabled",
+        "enabled",
+        ValueKind.Boolean,
+        ComponentInputBindingSource.Runtime,
+        "true");
+    var forwardingDefinition = RuntimeInputForwardingContract.Definition(
+        owner,
+        input,
+        "Enabled",
+        "true");
+    var forwardedJsonKey = forwardingDefinition["jsonKey"]?.GetValue<string>()
+        ?? throw new InvalidOperationException("Missing forwarded test jsonKey.");
+    var validConfig = new JsonObject
+    {
+        ["owner"] = new JsonObject
+        {
+            ["enabled"] = true,
+            [RuntimeInputForwardingContract.StorageKey] = new JsonObject
+            {
+                ["enabled"] = forwardingDefinition,
+            },
+        },
+    };
+    var effective = RuntimeInputForwardingContract.EffectivePreview(new JsonObject(), validConfig);
+    True(effective[forwardedJsonKey]?.GetValue<bool>() == true);
+    True(effective["inputs"] is JsonArray { Count: 1 });
+
+    AssertRejectedDatabaseIsReadOnly("forwarding-envelope-wrong-root", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET config_json = json_set(config_json, '$."$forwardedInputs"', json('[]'))
+            WHERE id = 'component_project_foqn_s2_label'
+            """;
+        command.ExecuteNonQuery();
+    });
 }
 
 static void ForwardedRuntimeCollectionsExposeSlotStateActions()

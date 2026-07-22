@@ -162,3 +162,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner con `ParseValue`/`ValidateRuntimeValue`, cuatro consumidores y validación startup obligatorios; serializadores permisivos concretos prohibidos. |
 | Datos | Sin migración. Todos los valores current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo. El payload válido no cambia; se elimina únicamente persistencia o presentación derivada de una entrada que contradice su contrato. |
+
+## Slice 1.10 — Envelope y proyección de Forwarding
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El envelope reservado de Forwarding se ignoraba si tenía otra raíz, las definiciones no objeto se filtraban y varias listas/proyecciones se sustituían por objetos o arrays vacíos. Un contrato Runtime de un hijo proyectado podía fabricarse como `{}`. El boundary web repetía parte de esa tolerancia. |
+| Owner | `RuntimeInputForwardingContract` prepara el Preview efectivo y recorre el envelope explícito; startup valida el documento current y el boundary web aplica el mismo contrato antes del registry. |
+| Cambio mínimo | Exigir objeto para `$forwardedInputs` y cada definición, arrays para listas Runtime presentes, objetos para contratos de hijo y keys explícitas para proyecciones; conservar únicamente la creación intencional de las listas top-level ausentes en un Preview nuevo. |
+| Rutas eliminadas | Clones `as JsonObject ?? {}`, listas wrong-root convertidas a `[]`, `OfType` que omitía entradas, nested Runtime contract ausente convertido a `{}` y forwarding web no objeto ignorado. |
+| Pruebas | 106/106 escritorio y 86/86 Preview: envelope/definición/root inválidos, metadata interna inválida, forwarding válido y corrupción de la base rechazada byte-for-byte read-only. |
+| Enforcement | Owner requerido en startup y payload; fallbacks concretos prohibidos; comprobación explícita del envelope tanto en C# como en TypeScript. |
+| Datos | Sin migración. Todos los envelopes y proyecciones current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo. Forwarding válido conserva ids, referencias completas, valores y resultado; solo deja de publicarse un payload plausible a partir de documentos dañados. |
