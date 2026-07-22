@@ -228,7 +228,7 @@ internal sealed partial class SpikeDatabase
             var module = GetModuleSettings(moduleId);
             var metadata = ParseJsonObject(module.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-            var variantId = UniqueModuleVariantId(variants, variantName);
+            var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
             variants.Add(new JsonObject
             {
                 ["id"] = variantId,
@@ -345,17 +345,7 @@ internal sealed partial class SpikeDatabase
         if (!VariantReferenceId.TryParse(nodeId, out var moduleId, out var variantId))
             throw new InvalidOperationException($"Invalid module variant '{nodeId}'.");
         var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-        return variants.OfType<JsonObject>().FirstOrDefault((variant) => JsonPath.String(variant, "id", "") == variantId)
+        return VariantEnvelopeContract.FindSource(variants, variantId)
             ?? throw new InvalidOperationException($"Missing module variant '{variantId}'.");
-    }
-
-    private static string UniqueModuleVariantId(JsonArray variants, string name)
-    {
-        var baseId = new string(name.Trim().ToLowerInvariant().Select((c) => char.IsLetterOrDigit(c) ? c : '_').ToArray()).Trim('_');
-        if (string.IsNullOrWhiteSpace(baseId)) baseId = "variant";
-        var ids = variants.OfType<JsonObject>().Select((variant) => JsonPath.String(variant, "id", "")).ToHashSet(StringComparer.Ordinal);
-        var candidate = baseId;
-        for (var suffix = 2; ids.Contains(candidate); suffix++) candidate = $"{baseId}_{suffix}";
-        return candidate;
     }
 }

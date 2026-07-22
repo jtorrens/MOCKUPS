@@ -53,6 +53,38 @@ internal static class VariantEnvelopeContract
         return array;
     }
 
+    public static JsonObject? FindSource(JsonArray variants, string variantId) =>
+        variants
+            .OfType<JsonObject>()
+            .FirstOrDefault((variant) =>
+                JsonPath.String(variant, "id", "").Equals(variantId, StringComparison.Ordinal));
+
+    public static string UniqueId(JsonArray variants, string name)
+    {
+        var baseId = new string(name
+                .Trim()
+                .ToLowerInvariant()
+                .Select((character) => char.IsLetterOrDigit(character) ? character : '_')
+                .ToArray())
+            .Trim('_');
+        if (string.IsNullOrWhiteSpace(baseId))
+        {
+            baseId = "variant";
+        }
+
+        var existing = variants
+            .OfType<JsonObject>()
+            .Select((variant) => JsonPath.String(variant, "id", ""))
+            .ToHashSet(StringComparer.Ordinal);
+        var candidate = baseId;
+        for (var suffix = 2; existing.Contains(candidate); suffix++)
+        {
+            candidate = $"{baseId}_{suffix}";
+        }
+
+        return candidate;
+    }
+
     private static CurrentVariantEnvelope ReadEntry(JsonNode? node, int index, string owner)
     {
         if (node is not JsonObject variant)

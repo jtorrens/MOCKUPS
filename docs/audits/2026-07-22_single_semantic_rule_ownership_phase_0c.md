@@ -133,3 +133,16 @@ controlador la usa para navegación de sesión. Antes de compartir una proyecci�
 hay que decidir si ambos contextos deben consumir un nuevo resultado temporal o
 si sus límites justifican operaciones distintas; no se crea esa abstracción en
 esta batida.
+
+### Familia 0C.6 — Localización e id nuevo dentro del envelope Variant
+
+| Campo | Resultado |
+|---|---|
+| Regla | Encontrar una entrada current por su id estable y generar un id nuevo no colisionante a partir de un nombre. |
+| Rutas actuales | Component y Module mantienen búsquedas equivalentes y generadores `lower_snake` con sufijos `_2`, `_3`, etc. |
+| Paridad | Mismo nombre y mismos ids existentes producen el mismo id; la búsqueda ordinal devuelve la misma entrada o ausencia. |
+| Owner definitivo | `VariantEnvelopeContract`, que ya valida y expone el array current común. |
+| Cambio mínimo | Añadir las dos operaciones al contrato, migrar ambos ciclos de vida y borrar helpers locales. |
+| Pruebas | Búsqueda, ausencia, normalización, fallback `variant` y colisiones; permanecen las pruebas de lifecycle de Component/Module. |
+| Riesgo | Bajo; no cambia documentos ni acciones permitidas. |
+| Decisión | Consolidar. |

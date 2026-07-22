@@ -51,6 +51,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
+    ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -131,6 +132,21 @@ static void ComponentAndModuleVariantsShareReferenceGrammar()
     {
         True(!VariantReferenceId.TryParse(malformed, out _, out _));
     }
+}
+
+static void ComponentAndModuleVariantsShareEnvelopeOperations()
+{
+    var variants = new JsonArray
+    {
+        new JsonObject { ["id"] = "default" },
+        new JsonObject { ["id"] = "new_variant" },
+        new JsonObject { ["id"] = "new_variant_2" },
+        new JsonObject { ["id"] = "variant" },
+    };
+    Equal("new_variant", VariantEnvelopeContract.FindSource(variants, "new_variant")?["id"]?.GetValue<string>());
+    True(VariantEnvelopeContract.FindSource(variants, "missing") is null);
+    Equal("new_variant_3", VariantEnvelopeContract.UniqueId(variants, "New Variant"));
+    Equal("variant_2", VariantEnvelopeContract.UniqueId(variants, "---"));
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()

@@ -40,7 +40,7 @@ internal sealed partial class SpikeDatabase
             "variants",
             $"Component class '{componentClassId}'");
 
-        var variant = FindVariant(variants, variantId)
+        var variant = VariantEnvelopeContract.FindSource(variants, variantId)
             ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
         if (variant["config"] is not JsonObject configObject)
         {
@@ -78,7 +78,7 @@ internal sealed partial class SpikeDatabase
             "variants",
             $"Component class '{componentClassId}'");
 
-        var variant = FindVariant(variants, variantId)
+        var variant = VariantEnvelopeContract.FindSource(variants, variantId)
             ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
         if (JsonBool(variant, ["locked"]))
         {
@@ -674,7 +674,7 @@ internal sealed partial class SpikeDatabase
     private static void SetDefaultComponentVariantConfig(JsonObject metadata, JsonObject config)
     {
         var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", "Component class metadata");
-        var defaultVariant = FindVariant(variants, DefaultComponentVariantId)
+        var defaultVariant = VariantEnvelopeContract.FindSource(variants, DefaultComponentVariantId)
             ?? throw new InvalidOperationException("Component class has no Default variant.");
         defaultVariant["config"] = config.DeepClone();
     }

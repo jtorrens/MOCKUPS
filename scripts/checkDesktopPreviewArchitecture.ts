@@ -1257,6 +1257,24 @@ assertDoesNotContain(
   "startFrame += slot.DurationFrames;",
   "payload data source must not reconstruct Screen origin from slot duration",
 );
+for (const retiredVariantEnvelopeHelper of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "private static JsonObject? FindVariant("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "private static string UniqueVariantId("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "private static string UniqueModuleVariantId("],
+] as const) {
+  assertDoesNotContain(
+    retiredVariantEnvelopeHelper[0],
+    retiredVariantEnvelopeHelper[1],
+    `${retiredVariantEnvelopeHelper[0]} must not restore parallel Variant envelope operation ${retiredVariantEnvelopeHelper[1]}`,
+  );
+}
+for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId("]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+    sharedVariantEnvelopeOperation,
+    `Variant envelope contract must own ${sharedVariantEnvelopeOperation}`,
+  );
+}
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",

@@ -75,11 +75,11 @@ internal sealed partial class SpikeDatabase
             var settings = GetComponentClassSettings(connection, componentClassId);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var source = FindVariant(variants, variantId)
+            var source = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
             var sourceName = JsonPath.String(source, "name", variantId);
             var copyName = $"{sourceName} copy";
-            var copyId = UniqueVariantId(variants, copyName);
+            var copyId = VariantEnvelopeContract.UniqueId(variants, copyName);
             variants.Add(new JsonObject
             {
                 ["id"] = copyId,
@@ -127,7 +127,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetComponentClassSettings(connection, componentClassId);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var variantId = UniqueVariantId(variants, variantName);
+            var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
             variants.Add(new JsonObject
             {
                 ["id"] = variantId,
@@ -213,7 +213,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetComponentClassSettings(connection, componentClassId);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var variant = FindVariant(variants, variantId)
+            var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
             variant["name"] = nextName;
             _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
@@ -244,7 +244,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetComponentClassSettings(connection, componentClassId);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var variant = FindVariant(variants, variantId)
+            var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
             var nextLocked = !JsonBool(variant, ["locked"]);
             variant["locked"] = nextLocked;
@@ -282,7 +282,7 @@ internal sealed partial class SpikeDatabase
                 $"Component class '{componentClassId}' Variant '{variantId}' config");
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var variant = FindVariant(variants, variantId)
+            var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
             if (JsonBool(variant, ["locked"]))
             {
@@ -318,39 +318,5 @@ internal sealed partial class SpikeDatabase
             context.SlotLabel,
             context.HasOverrides,
             context.SourceNodeId);
-
-    private static JsonObject? FindVariant(JsonArray variants, string variantId) =>
-        variants
-            .OfType<JsonObject>()
-            .FirstOrDefault((variant) => JsonPath.String(variant, "id", "").Equals(variantId, StringComparison.Ordinal));
-
-    private static string UniqueVariantId(JsonArray variants, string name)
-    {
-        var baseId = new string(name
-                .Trim()
-                .ToLowerInvariant()
-                .Select((character) => char.IsLetterOrDigit(character) ? character : '_')
-                .ToArray())
-            .Trim('_');
-        if (string.IsNullOrWhiteSpace(baseId))
-        {
-            baseId = "variant";
-        }
-
-        var existing = variants
-            .OfType<JsonObject>()
-            .Select((variant) => JsonPath.String(variant, "id", ""))
-            .ToHashSet(StringComparer.Ordinal);
-        var candidate = baseId;
-        var suffix = 2;
-        while (existing.Contains(candidate))
-        {
-            candidate = $"{baseId}_{suffix}";
-            suffix++;
-        }
-
-        return candidate;
-    }
-
 
 }
