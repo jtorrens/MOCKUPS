@@ -400,14 +400,25 @@ internal sealed partial class SpikeDatabase
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT id, config_json, design_preview_json, metadata_json FROM modules";
+            command.CommandText = "SELECT id, record_class_id, config_json, design_preview_json, metadata_json FROM modules";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
                 var id = reader.GetString(0);
-                documents.Add(($"module '{id}' config_json", ParseRequiredObject(reader.GetString(1), $"module '{id}' config_json")));
-                documents.Add(($"module '{id}' design_preview_json", ParseRequiredObject(reader.GetString(2), $"module '{id}' design_preview_json")));
-                documents.Add(($"module '{id}' metadata_json", ParseRequiredObject(reader.GetString(3), $"module '{id}' metadata_json")));
+                var recordClassId = reader.GetString(1);
+                var config = ParseRequiredObject(reader.GetString(2), $"module '{id}' config_json");
+                CurrentModuleConfigContract.Validate(recordClassId, config, $"Module '{id}' config_json");
+                documents.Add(($"module '{id}' config_json", config));
+                documents.Add(($"module '{id}' design_preview_json", ParseRequiredObject(reader.GetString(3), $"module '{id}' design_preview_json")));
+                var metadata = ParseRequiredObject(reader.GetString(4), $"module '{id}' metadata_json");
+                foreach (var variant in VariantEnvelopeContract.Read(metadata, "variants", $"Module '{id}'"))
+                {
+                    CurrentModuleConfigContract.Validate(
+                        recordClassId,
+                        variant.Config,
+                        $"Module Variant '{id}::{variant.Id}' config");
+                }
+                documents.Add(($"module '{id}' metadata_json", metadata));
             }
         }
 

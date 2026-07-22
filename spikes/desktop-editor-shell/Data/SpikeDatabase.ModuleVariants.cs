@@ -309,7 +309,7 @@ internal sealed partial class SpikeDatabase
             var variant = FindModuleVariant(metadata, node.Id);
             if (JsonBool(variant, ["locked"])) throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
             var config = variant["config"] as JsonObject ?? throw new InvalidOperationException("Module variant has no config.");
-            UpdateModuleConfigFieldValue(connection, module.ProjectId, config, fieldId, value);
+            UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
             variant["config"] = config;
             _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }

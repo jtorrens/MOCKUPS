@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -160,38 +161,56 @@ internal sealed partial class SpikeDatabase
     private static string ModuleConfigFieldValue(string configJson, string fieldId)
     {
         var config = ParseJsonObject(configJson);
+        var conversation = fieldId.StartsWith("module.conversation.", StringComparison.Ordinal)
+            ? JsonPath.RequiredObject(config, "conversation", "Module config")
+            : null;
+        var lockScreen = fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal)
+            ? JsonPath.RequiredObject(config, "lockScreen", "Module config")
+            : null;
         return fieldId switch
         {
             "module.appearanceMode" => ModuleAppearanceModeContract.Read(config, "Module Variant config"),
-            "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
-            "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
-            "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
-            "module.conversation.headerAvatarVariant" => JsonString(config, ["conversation", "headerAvatarVariant"]),
-            "module.conversation.headerAvatarAlignment" => JsonString(config, ["conversation", "headerAvatarAlignment"]) is { Length: > 0 } alignment ? alignment : "left",
-            "module.conversation.headerLeftIconRow.editor" => JsonString(config, ["conversation", "headerLeftIconRowSlot", "variantReference"]),
-            "module.conversation.headerLeftIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerLeftIconRowInputs"])?.ToJsonString() ?? "{}",
-            "module.conversation.headerRightIconRow.editor" => JsonString(config, ["conversation", "headerRightIconRowSlot", "variantReference"]),
-            "module.conversation.headerRightIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerRightIconRowInputs"])?.ToJsonString() ?? "{}",
-            "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
-            "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
-            "module.conversation.showTextInputBar" => JsonBoolString(config, ["conversation", "showTextInputBar"], defaultValue: true),
-            "module.conversation.textInputBarVariant" => JsonString(config, ["conversation", "textInputBarVariant"]),
-            "module.conversation.showKeyboard" => JsonBoolString(config, ["conversation", "showKeyboard"], defaultValue: true),
-            "module.conversation.keyboardVariant" => JsonString(config, ["conversation", "keyboardVariant"]),
-            "module.conversation.bubbleVariant" => JsonString(config, ["conversation", "bubbleVariant"]),
-            "module.conversation.bubbleMaxWidth" => JsonNumberString(config, ["conversation", "bubbleMaxWidth"], "66"),
-            "module.conversation.screenGutter" => JsonString(config, ["conversation", "screenGutter"]) is { Length: > 0 } gutter ? gutter : "theme.spacing.l|theme.spacing.l",
-            "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
-            "module.conversation.messageViewportMotion" => JsonPath.Get(config, ["conversation", "messageViewportMotion"])?.ToJsonString()
+            "module.conversation.showHeader" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "showHeader", "Module config.conversation")),
+            "module.conversation.useAppWallpaper" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "useAppWallpaper", "Module config.conversation")),
+            "module.conversation.headerHeight" => RequiredNumberString(conversation!, "headerHeight"),
+            "module.conversation.headerAvatarVariant" => JsonPath.RequiredString(conversation!, "headerAvatarVariant", "Module config.conversation"),
+            "module.conversation.headerAvatarAlignment" => JsonPath.RequiredString(conversation!, "headerAvatarAlignment", "Module config.conversation"),
+            "module.conversation.headerLeftIconRow.editor" => RequiredSlotReference(conversation!, "headerLeftIconRowSlot"),
+            "module.conversation.headerLeftIconRow.inputs" => JsonPath.RequiredObject(conversation!, "headerLeftIconRowInputs", "Module config.conversation").ToJsonString(),
+            "module.conversation.headerRightIconRow.editor" => RequiredSlotReference(conversation!, "headerRightIconRowSlot"),
+            "module.conversation.headerRightIconRow.inputs" => JsonPath.RequiredObject(conversation!, "headerRightIconRowInputs", "Module config.conversation").ToJsonString(),
+            "module.conversation.showStatusBar" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "showStatusBar", "Module config.conversation")),
+            "module.conversation.showNavigationBar" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "showNavigationBar", "Module config.conversation")),
+            "module.conversation.showTextInputBar" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "showTextInputBar", "Module config.conversation")),
+            "module.conversation.textInputBarVariant" => JsonPath.RequiredString(conversation!, "textInputBarVariant", "Module config.conversation"),
+            "module.conversation.showKeyboard" => BooleanText.Format(JsonPath.RequiredBoolean(conversation!, "showKeyboard", "Module config.conversation")),
+            "module.conversation.keyboardVariant" => JsonPath.RequiredString(conversation!, "keyboardVariant", "Module config.conversation"),
+            "module.conversation.bubbleVariant" => JsonPath.RequiredString(conversation!, "bubbleVariant", "Module config.conversation"),
+            "module.conversation.bubbleMaxWidth" => RequiredNumberString(conversation!, "bubbleMaxWidth"),
+            "module.conversation.screenGutter" => JsonPath.RequiredString(conversation!, "screenGutter", "Module config.conversation"),
+            "module.conversation.messageGap" => JsonPath.RequiredString(conversation!, "messageGap", "Module config.conversation"),
+            "module.conversation.messageViewportMotion" => conversation!["messageViewportMotion"]?.ToJsonString()
                 ?? (MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString(),
-            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarSlot", "variantReference"]),
-            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarSlot", "variantReference"]),
-            "module.lockScreen.stackVariant" => JsonString(config, ["lockScreen", "stackSlot", "variantReference"]),
-            "module.lockScreen.stackInputs" => JsonPath.Get(config, ["lockScreen", "stackInputs"])?.ToJsonString() ?? "{}",
-            "module.lockScreen.stackItems" => JsonPath.Get(config, ["lockScreen", "stackInputs", "items"])?.ToJsonString() ?? "[]",
+            "module.lockScreen.statusBarVariant" => RequiredSlotReference(lockScreen!, "statusBarSlot"),
+            "module.lockScreen.navigationBarVariant" => RequiredSlotReference(lockScreen!, "navigationBarSlot"),
+            "module.lockScreen.stackVariant" => RequiredSlotReference(lockScreen!, "stackSlot"),
+            "module.lockScreen.stackInputs" => JsonPath.RequiredObject(lockScreen!, "stackInputs", "Module config.lockScreen").ToJsonString(),
+            "module.lockScreen.stackItems" => JsonPath.RequiredArray(
+                JsonPath.RequiredObject(lockScreen!, "stackInputs", "Module config.lockScreen"),
+                "items",
+                "Module config.lockScreen.stackInputs").ToJsonString(),
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
         };
     }
+
+    private static string RequiredSlotReference(JsonObject owner, string key)
+    {
+        var slot = JsonPath.RequiredObject(owner, key, "Module config");
+        return JsonPath.RequiredString(slot, "variantReference", $"Module config.{key}");
+    }
+
+    private static string RequiredNumberString(JsonObject owner, string key) =>
+        JsonPath.RequiredNumber(owner, key, "Module config").ToString(CultureInfo.InvariantCulture);
 
     public void UpdateAppField(string appId, string fieldId, string value)
     {
@@ -307,13 +326,14 @@ internal sealed partial class SpikeDatabase
         var module = _appModuleRepository.GetModule(connection, moduleId);
         var config = ParseJsonObject(module.ConfigJson);
 
-        UpdateModuleConfigFieldValue(connection, module.ProjectId, config, fieldId, value);
+        UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
         _appModuleRepository.UpdateModuleConfig(connection, moduleId, config.ToJsonString());
     }
 
     private void UpdateModuleConfigFieldValue(
         SqliteConnection connection,
         string projectId,
+        string recordClassId,
         JsonObject config,
         string fieldId,
         string value)
@@ -327,46 +347,46 @@ internal sealed partial class SpikeDatabase
                     JsonValue.Create(ModuleAppearanceModeContract.Require(value, "Module Variant config"))!);
                 break;
             case "module.conversation.showHeader":
-                SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.useAppWallpaper":
-                SetJsonValue(config, ["conversation", "useAppWallpaper"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "useAppWallpaper"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.headerHeight":
-                SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
+                SetJsonValue(config, ["conversation", "headerHeight"], JsonPath.ParseRequiredNumberNode(value, fieldId));
                 break;
             case "module.conversation.headerAvatarVariant":
                 SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "avatar", value))!);
                 break;
             case "module.conversation.headerAvatarAlignment":
-                SetJsonValue(config, ["conversation", "headerAvatarAlignment"], JsonValue.Create(value is "center" or "right" ? value : "left")!);
+                SetJsonValue(config, ["conversation", "headerAvatarAlignment"], JsonValue.Create(value)!);
                 break;
             case "module.conversation.headerLeftIconRow.editor":
                 SetJsonValue(config, ["conversation", "headerLeftIconRowSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "iconRow", value))!);
                 break;
             case "module.conversation.headerLeftIconRow.inputs":
-                SetJsonValue(config, ["conversation", "headerLeftIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
+                SetJsonValue(config, ["conversation", "headerLeftIconRowInputs"], JsonPath.ParseRequiredObject(value, fieldId));
                 break;
             case "module.conversation.headerRightIconRow.editor":
                 SetJsonValue(config, ["conversation", "headerRightIconRowSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "iconRow", value))!);
                 break;
             case "module.conversation.headerRightIconRow.inputs":
-                SetJsonValue(config, ["conversation", "headerRightIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
+                SetJsonValue(config, ["conversation", "headerRightIconRowInputs"], JsonPath.ParseRequiredObject(value, fieldId));
                 break;
             case "module.conversation.showStatusBar":
-                SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "showStatusBar"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.showNavigationBar":
-                SetJsonValue(config, ["conversation", "showNavigationBar"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "showNavigationBar"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.showTextInputBar":
-                SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.textInputBarVariant":
                 SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "textInputBar", value))!);
                 break;
             case "module.conversation.showKeyboard":
-                SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
+                SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.keyboardVariant":
                 SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "keyboard", value))!);
@@ -375,7 +395,7 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "bubble", value))!);
                 break;
             case "module.conversation.bubbleMaxWidth":
-                SetJsonValue(config, ["conversation", "bubbleMaxWidth"], NumberNode(value));
+                SetJsonValue(config, ["conversation", "bubbleMaxWidth"], JsonPath.ParseRequiredNumberNode(value, fieldId));
                 break;
             case "module.conversation.screenGutter":
                 SetJsonValue(config, ["conversation", "screenGutter"], JsonValue.Create(value)!);
@@ -396,29 +416,17 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["lockScreen", "stackSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "componentStack", value))!);
                 break;
             case "module.lockScreen.stackInputs":
-                SetJsonValue(config, ["lockScreen", "stackInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
+                SetJsonValue(config, ["lockScreen", "stackInputs"], JsonPath.ParseRequiredObject(value, fieldId));
                 break;
             case "module.lockScreen.stackItems":
-                SetJsonValue(config, ["lockScreen", "stackInputs", "items"], JsonNode.Parse(value) as JsonArray ?? new JsonArray());
+                SetJsonValue(config, ["lockScreen", "stackInputs", "items"], JsonPath.ParseRequiredArray(value, fieldId));
                 break;
             default:
                 throw new InvalidOperationException($"Unknown module config field '{fieldId}'.");
         }
 
+        CurrentModuleConfigContract.Validate(recordClassId, config, "Edited Module config");
+
     }
 
-    private static string JsonBoolString(JsonObject owner, string[] path, bool defaultValue)
-    {
-        var node = JsonPath.Get(owner, path);
-        return node is JsonValue value && value.TryGetValue<bool>(out var result)
-            ? result ? "true" : "false"
-            : defaultValue ? "true" : "false";
-    }
-
-    private static bool BoolFromText(string value)
-    {
-        return value.Equals("true", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("1", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("yes", StringComparison.OrdinalIgnoreCase);
-    }
 }

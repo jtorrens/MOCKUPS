@@ -1231,6 +1231,45 @@ assertDoesNotContain(
   "function parseRecord(",
   "Runtime Input forwarding must use the shared strict Preview object parser",
 );
+for (const moduleConfigContract of [
+  "ConversationModuleConfigContract",
+  "LockScreenModuleConfigContract",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/CurrentModuleConfigContract.cs",
+    `${moduleConfigContract}.Validate(config, context)`,
+    `current Module config routing must delegate to ${moduleConfigContract}`,
+  );
+}
+for (const moduleConfigConsumer of [
+  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+]) {
+  assertContains(
+    moduleConfigConsumer,
+    "CurrentModuleConfigContract.Validate(",
+    `${moduleConfigConsumer} must consume the record-class-owned Module config contract`,
+  );
+}
+for (const retiredModuleConfigFallback of [
+  "JsonNode.Parse(value) as JsonObject ?? new JsonObject()",
+  "JsonNode.Parse(value) as JsonArray ?? new JsonArray()",
+  '?.ToJsonString() ?? "{}"',
+  '?.ToJsonString() ?? "[]"',
+  "JsonBoolString(",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+    retiredModuleConfigFallback,
+    `Module config editing must not retain a silent document fallback (${retiredModuleConfigFallback})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "variant.Config,\n                $\"Module Variant",
+  "the Module repository must validate every complete Variant config through its owner",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/ModuleAppearanceModeContract.cs",
   "public static string Resolve(JsonObject config, string inheritedMode, string owner)",

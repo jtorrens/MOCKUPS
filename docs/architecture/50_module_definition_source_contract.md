@@ -50,6 +50,9 @@ a data migration and must not change the database bytes.
   frame behavior;
 - `modules` owns current config, design-preview/runtime contract, metadata and
   complete Variant snapshots;
+- `CurrentModuleConfigContract` routes each exact `record_class_id` to its
+  semantic config owner; the definition and every complete Variant pass the
+  same owner on reads and writes;
 - `AppModuleRepository` owns strict persistence of prepared current documents;
 - Runtime Input forwarding, complete Variant application and local Overrides
   remain explicit at their established boundaries;
@@ -102,6 +105,8 @@ Architecture enforcement must:
 - validate current Module ids against the manifest and registry;
 - inspect committed Module documents for Runtime Input and animation contracts;
 - keep strict Variant-envelope, full-reference and JSON-root validation;
+- require owner validation for the current definition config and every
+  complete Module Variant config;
 - require this document from `AGENTS.md` and the architecture index.
 
 The full tests, desktop build, strict database validation and unchanged hash

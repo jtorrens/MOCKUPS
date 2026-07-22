@@ -154,7 +154,11 @@ internal sealed class AppModuleRepository : IAppModuleRepository
 
     public void UpdateModuleConfig(SqliteConnection connection, string moduleId, string configJson)
     {
-        JsonPath.ParseRequiredObject(configJson, $"Module '{moduleId}' config_json");
+        var module = GetModule(connection, moduleId);
+        CurrentModuleConfigContract.Validate(
+            module.RecordClassId,
+            JsonPath.ParseRequiredObject(configJson, $"Module '{moduleId}' config_json"),
+            $"Module '{moduleId}' config_json");
         SqliteCommandExecutor.Execute(
             connection,
             "UPDATE modules SET config_json = $configJson WHERE id = $id",
@@ -175,7 +179,8 @@ internal sealed class AppModuleRepository : IAppModuleRepository
 
     public void UpdateModuleMetadata(SqliteConnection connection, string moduleId, string metadataJson)
     {
-        ValidateModuleMetadata(metadataJson, moduleId);
+        var module = GetModule(connection, moduleId);
+        ValidateModuleMetadata(metadataJson, moduleId, module.RecordClassId);
         SqliteCommandExecutor.Execute(
             connection,
             "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
@@ -244,19 +249,30 @@ internal sealed class AppModuleRepository : IAppModuleRepository
             SqliteCommandExecutor.ReadString(reader, 7),
             SqliteCommandExecutor.ReadString(reader, 8),
             SqliteCommandExecutor.ReadString(reader, 9));
-        JsonPath.ParseRequiredObject(record.ConfigJson, $"Module '{record.Id}' config_json");
+        CurrentModuleConfigContract.Validate(
+            record.RecordClassId,
+            JsonPath.ParseRequiredObject(record.ConfigJson, $"Module '{record.Id}' config_json"),
+            $"Module '{record.Id}' config_json");
         JsonPath.ParseRequiredObject(record.DesignPreviewJson, $"Module '{record.Id}' design_preview_json");
-        ValidateModuleMetadata(record.MetadataJson, record.Id);
+        ValidateModuleMetadata(record.MetadataJson, record.Id, record.RecordClassId);
         return record;
     }
 
-    private static void ValidateModuleMetadata(string metadataJson, string moduleId)
+    private static void ValidateModuleMetadata(string metadataJson, string moduleId, string recordClassId)
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Module '{moduleId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Module '{moduleId}'");
         if (variants.All((variant) => variant.Id != VariantEnvelopeContract.DefaultId))
         {
             throw new InvalidOperationException($"Module '{moduleId}' has no explicit default Variant.");
+        }
+
+        foreach (var variant in variants)
+        {
+            CurrentModuleConfigContract.Validate(
+                recordClassId,
+                variant.Config,
+                $"Module Variant '{moduleId}::{variant.Id}' config");
         }
     }
 }

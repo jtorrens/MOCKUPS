@@ -17,6 +17,7 @@ var tests = new (string Name, Action Run)[]
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
     ("Status and Navigation Bar configs fail strictly read-only", SystemBarComponentContractsFailReadOnly),
+    ("Module definitions and Variants use owner config contracts", ModuleConfigsUseOwnerContracts),
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("system bar items use fixed dictionary collections on every Variant", SystemBarItemsUseFixedDictionaryCollections),
     ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
@@ -547,6 +548,73 @@ static void SystemBarComponentContractsFailReadOnly()
     });
 }
 
+static void ModuleConfigsUseOwnerContracts()
+{
+    AssertRejectedDatabaseIsReadOnly("conversation-module-input-root", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_core_chat",
+            (config) => config["conversation"]!["headerLeftIconRowInputs"] = new JsonArray());
+    });
+    AssertRejectedDatabaseIsReadOnly("lock-screen-module-items-root", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_project_foqn_s2_lock_screen",
+            (config) => config["lockScreen"]!["stackInputs"]!["items"] = new JsonObject());
+    });
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-config-owner-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var conversation = nodes.Single((node) => node.Id == "module_core_chat");
+        var conversationVariant = nodes.Single((node) => node.Id == "module_core_chat::variant::default");
+        var lockScreen = nodes.Single((node) => node.Id == "module_project_foqn_s2_lock_screen");
+        var beforeRejectedWrites = SHA256.HashData(File.ReadAllBytes(temporary));
+
+        Throws<InvalidOperationException>(() => database.UpdateModuleField(
+            conversation.Id,
+            "module.conversation.headerLeftIconRow.inputs",
+            "[]"));
+        Throws<InvalidOperationException>(() => database.UpdateModuleField(
+            conversation.Id,
+            "module.conversation.showHeader",
+            "perhaps"));
+        Throws<InvalidOperationException>(() => database.UpdateModuleField(
+            conversation.Id,
+            "module.conversation.headerHeight",
+            "many"));
+        Throws<InvalidOperationException>(() => database.UpdateModuleVariantField(
+            conversationVariant,
+            "module.conversation.headerAvatarAlignment",
+            "automatic"));
+        Throws<InvalidOperationException>(() => database.UpdateModuleField(
+            lockScreen.Id,
+            "module.lockScreen.stackItems",
+            "{}"));
+        SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        database.UpdateModuleVariantField(
+            conversationVariant,
+            "module.conversation.showHeader",
+            "false");
+        Equal(
+            "false",
+            database.GetModuleVariantConfigFieldValue(
+                conversationVariant,
+                "module.conversation.showHeader"));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void SystemBarItemsUseFixedDictionaryCollections()
 {
     var statusField = ComponentClassFieldCatalog.Get("component.statusBar.items");
@@ -661,6 +729,32 @@ static void MutateComponentClassAndDefaultVariant(
     update.Parameters.AddWithValue("$config", config.ToJsonString());
     update.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
     update.Parameters.AddWithValue("$id", componentClassId);
+    update.ExecuteNonQuery();
+}
+
+static void MutateModuleAndDefaultVariant(
+    SqliteConnection connection,
+    string moduleId,
+    Action<JsonObject> mutate)
+{
+    using var select = connection.CreateCommand();
+    select.CommandText = "SELECT config_json, metadata_json FROM modules WHERE id = $id";
+    select.Parameters.AddWithValue("$id", moduleId);
+    using var reader = select.ExecuteReader();
+    if (!reader.Read()) throw new InvalidOperationException($"Missing fixture Module '{moduleId}'.");
+    var config = JsonPath.ParseRequiredObject(reader.GetString(0), $"{moduleId} config");
+    var metadata = JsonPath.ParseRequiredObject(reader.GetString(1), $"{moduleId} metadata");
+    reader.Close();
+    var defaultVariant = VariantEnvelopeContract.Read(metadata, "variants", moduleId)
+        .Single((variant) => variant.Id == "default");
+    mutate(config);
+    mutate(defaultVariant.Config);
+
+    using var update = connection.CreateCommand();
+    update.CommandText = "UPDATE modules SET config_json = $config, metadata_json = $metadata WHERE id = $id";
+    update.Parameters.AddWithValue("$config", config.ToJsonString());
+    update.Parameters.AddWithValue("$metadata", metadata.ToJsonString());
+    update.Parameters.AddWithValue("$id", moduleId);
     update.ExecuteNonQuery();
 }
 

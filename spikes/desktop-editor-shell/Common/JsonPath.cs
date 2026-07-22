@@ -294,4 +294,21 @@ internal static class JsonPath
             ? JsonValue.Create(double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalValue) ? decimalValue : 0)!
             : JsonValue.Create(int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue) ? integerValue : 0)!;
     }
+
+    public static JsonNode ParseRequiredNumberNode(string value, string context)
+    {
+        if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+            || double.IsNaN(number)
+            || double.IsInfinity(number))
+        {
+            throw new InvalidOperationException($"{context} must be a finite number.");
+        }
+
+        return value.Contains('.', StringComparison.Ordinal)
+            || value.Contains('e', StringComparison.OrdinalIgnoreCase)
+            ? JsonValue.Create(number)!
+            : long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer)
+                ? JsonValue.Create(integer)!
+                : JsonValue.Create(number)!;
+    }
 }

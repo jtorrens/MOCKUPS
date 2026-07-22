@@ -94,6 +94,13 @@ Persisted C# object and array roots continue through
 wrappers may add an owner/path to the error, but must not add a second accepted
 shape.
 
+Current Module config is additionally routed by exact `record_class_id` to its
+owner contract. The committed Module definition config and every complete
+Module Variant config must satisfy the same owner before repository reads or
+writes succeed. Module field presentation and commits consume that validated
+document; they must not turn an invalid nested object, array, boolean, number
+or option into an empty value or an apparent default.
+
 Value objects may define explicit sentinels. In particular, blank typography
 and `inherited` mean that no local typography object is authored. Any other
 Typography Style value must be a valid JSON object; malformed or wrong-root
@@ -149,11 +156,15 @@ Architecture enforcement must verify:
 - the renderer does not parse `appearanceMode` or override explicit payload
   `ThemeMode`;
 - typography parsing keeps only its declared blank/`inherited` sentinel.
+- Module definitions and every complete Module Variant use the exact
+  record-class-owned config contract, with no empty object/array write fallback.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,
 explicit dark and inherited mode; strict typography object parsing; and the
-existing read-only database proof.
+existing read-only database proof. Module config tests cover both current
+Module classes, definition and Variant documents, invalid nested roots and
+rejected field commits without persistence changes.
 
 ## 9. Out of scope
 

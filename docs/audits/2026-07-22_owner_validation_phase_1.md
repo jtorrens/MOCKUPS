@@ -110,3 +110,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | Pares válidos de texto, media y colección; pares incompatibles y nombres desconocidos; validación read-only de todos los documentos current. |
 | Enforcement | Owner y consumidores requeridos, parsers/listas paralelos prohibidos y par exacto comprobado sobre la base canónica. |
 | Riesgo | Bajo: `ValueKind` ya seleccionaba los controles correctos. La migración alinea la metadata de forma que consume forwarding y evita futuras interpretaciones contradictorias. |
+
+## Slice 1.6 — Config current de Module y sus Variants
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El repositorio exigía únicamente raíz objeto. La presentación y la escritura de campos convertían objetos o arrays con raíz incorrecta en `{}`/`[]`, valores booleanos desconocidos en `false`, números inválidos en cero y un alignment desconocido en `left`. Las Variants completas tampoco pasaban por un contrato semántico de su clase. |
+| Owner | `CurrentModuleConfigContract` enruta por `record_class_id` exacto a los contratos de Conversation y Lock Screen. Definición y Variants usan el mismo owner. |
+| Cambio mínimo | Validar ambos documentos en startup, repository y commits; hacer estrictas las raíces anidadas, booleanos, números, options, slots y referencias completas requeridas; conservar `messageViewportMotion` ausente como optional declarado. |
+| Rutas eliminadas | `as JsonObject ?? new JsonObject`, `as JsonArray ?? new JsonArray`, lecturas `?? {}`/`?? []`, `JsonBoolString` y las coerciones de número/alignment en los campos de Module. |
+| Pruebas | 104/104 escritorio: ambos record classes válidos; config de definición y Default Variant dañada rechazada read-only; objetos/arrays, booleanos, números y options inválidos rechazados sin modificar la base; escritura válida de Variant verificada. |
+| Enforcement | Router y tres consumidores obligatorios; validación de cada `variant.Config`; fallbacks retirados prohibidos. |
+| Datos | Sin migración. La base ya cumplía los dos contratos; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo para current data. Solo deja de ocultarse entrada inválida; ids, referencias, forwarding, Overrides, payloads y resultado visual no cambian. |
