@@ -39,7 +39,8 @@ internal sealed class ProductionPreviewRuntimeResolver
                 recordId,
                 themeMode,
                 payload.PaletteColors,
-                input.Id);
+                input.Id,
+                input.AllowEmpty);
         }
 
         foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(preview, config))
@@ -57,7 +58,8 @@ internal sealed class ProductionPreviewRuntimeResolver
                         recordId,
                         themeMode,
                         payload.PaletteColors,
-                        input.Id);
+                        input.Id,
+                        CollectionFieldAvailability.AllowsEmpty(item, input));
                 }
             }
         }

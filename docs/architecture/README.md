@@ -134,6 +134,9 @@ this index wins.
 - `69_component_variant_storage_vocabulary_contract.md`: canonical Component
   Variant envelope, complete-reference grammar and retirement of Component
   Preset storage vocabulary while preserving Render Presets.
+- `70_conversation_message_actor_ownership_contract.md`: exact incoming,
+  outgoing and system message Actor ownership, atomic direction transitions
+  and Production-only projection of the Shot owner without sample fallbacks.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

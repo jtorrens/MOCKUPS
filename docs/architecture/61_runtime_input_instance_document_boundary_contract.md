@@ -35,6 +35,8 @@ for one stable Module Instance id:
 - move one explicit stable item by a requested relative offset;
 - delete one explicit stable item;
 - update one field of one explicit stable collection item;
+- update an explicit set of fields on one stable collection item as one atomic
+  prepared document write when declared interaction metadata requires it;
 - load the exact current animation document through
   `ModuleInstanceAnimationDocumentStore`;
 - save one complete prepared animation v2 document through that same store.
@@ -73,6 +75,11 @@ The existing facade/domain coordinator remains responsible for operations that
 must update content and animation together, such as duplicating or deleting an
 item with owned animation targets. The store passes explicit prepared items and
 target mappings unchanged.
+
+When a declared field transition changes more than one value in the same
+collection item, the editor prepares the complete explicit field set and the
+store delegates one atomic content write. It must not issue sequential writes
+that expose an invalid current document between values.
 
 The Module Instance repository owns SQL, current-root validation and synchronized
 complete document writes. Common temporal services own effective duration. No

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { resolveConversationModuleFrame } from "../../src/desktop-preview/conversationModuleResolver.js";
+import { conversationMessageActorIdentityVisible } from "../../src/desktop-preview/conversationModuleRenderable.js";
 
 function payload(
   localFrame: number,
@@ -59,6 +60,13 @@ function payload(
 function track(fieldId: string, targetId: string, keyframes: Array<Record<string, unknown>>) {
   return { id: `${fieldId}-${targetId || "screen"}`, fieldId, targetId, keyframes };
 }
+
+test("only group incoming messages expose per-message Actor identity", () => {
+  assert.equal(conversationMessageActorIdentityVisible("group", "incoming"), true);
+  assert.equal(conversationMessageActorIdentityVisible("group", "outgoing"), false);
+  assert.equal(conversationMessageActorIdentityVisible("group", "system"), false);
+  assert.equal(conversationMessageActorIdentityVisible("individual", "incoming"), false);
+});
 
 test("Screen-owned header animation uses the Screen frame", () => {
   const resolved = resolveConversationModuleFrame(payload(3, [

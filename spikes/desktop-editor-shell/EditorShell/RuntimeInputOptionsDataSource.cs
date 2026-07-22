@@ -15,9 +15,9 @@ internal sealed class RuntimeInputOptionsDataSource
         _actorDataSource = new ActorPreviewDataSource(database);
     }
 
-    public IReadOnlyList<FieldOption> ActorOptions(string projectId)
+    public IReadOnlyList<FieldOption> ActorOptions(string projectId, bool includeNone)
     {
-        return _actorDataSource.Options(projectId);
+        return _actorDataSource.Options(projectId, includeNone);
     }
 
     public IReadOnlyList<FieldOption> ComponentVariantOptions(

@@ -24,4 +24,19 @@ internal static class CollectionFieldAvailability
             : "";
         return input.EnabledWhenItemValues.Contains(current, StringComparer.Ordinal);
     }
+
+    public static bool AllowsEmpty(JsonObject item, ComponentInputDefinition input)
+    {
+        if (string.IsNullOrWhiteSpace(input.AllowEmptyWhenItemJsonKey)
+            || input.AllowEmptyWhenItemValues is not { Count: > 0 })
+        {
+            return input.AllowEmpty;
+        }
+
+        var current = item[input.AllowEmptyWhenItemJsonKey] is JsonValue value
+            && value.TryGetValue<string>(out var text)
+            ? text
+            : "";
+        return input.AllowEmptyWhenItemValues.Contains(current, StringComparer.Ordinal);
+    }
 }

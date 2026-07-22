@@ -25,9 +25,9 @@ embedded children.
 - Module/shot context: device, theme, color mode, orientation, screen frame,
   frame rate, owner actor and optional wallpaper.
 - Message collection: ordered message records with direction/state, text,
-  status, independent `actorId`, media data, timing and visibility settings.
-  A message actor never inherits the header/shot actor implicitly; this keeps
-  group conversations representable through the same payload contract.
+  status, direction-owned `actorId`, media data, timing and visibility
+  settings. Incoming references are explicit, outgoing ownership comes only
+  from the exact Shot owner in Production, and system references are optional.
 - Module timeline inputs: current frame and optional composer-transition
   trigger/time.
 - Header data: actor-derived identity, runtime subtitle and independent
@@ -51,33 +51,24 @@ embedded children.
 The module configuration chooses reusable variants; individual message content
 and actor/media values remain runtime data.
 
-## Planned participant identity model
+## Participant identity model
 
-Conversation must distinguish the Shot owner from the remote chat identity:
+Conversation distinguishes three exact message ownership cases:
 
-- `ownerActor` is parent/calculated production context. It owns the device and
-  theme and represents the local participant for outgoing messages.
-- `chatActor` is a Conversation runtime reference used by the header and by
-  incoming messages in an individual chat.
-- `message.actorId` remains an item runtime value for group conversations.
+- incoming messages persist their own explicit same-Project `actorId`;
+- outgoing messages persist an empty `actorId` and resolve the exact Shot owner
+  only while preparing the Production payload;
+- system messages persist an optional same-Project `actorId`.
 
-The planned `conversationType` runtime option starts with `individual` and
-`group`:
+The header Actor remains an independent runtime input. It is never used to
+infer a message Actor. `conversationType` controls only conversation-level
+presentation: group incoming messages may expose the resolved message Actor to
+Bubble, while individual incoming, outgoing and system messages suppress that
+per-message visual identity. The ephemeral child composition value never
+mutates or persists the selected Bubble Variant.
 
-- Individual forces incoming messages to `chatActor`, outgoing messages to
-  `ownerActor`, hides per-message actor selection and suppresses Bubble actor
-  name/avatar presentation.
-- Group allows an independent actor per message and keeps normal Bubble actor
-  presentation rules.
-
-These are participant/content rules, not Header layout. Their editor fields
-belong in a Conversation/Participants card; Header remains responsible only
-for visual composition and layout.
-
-The visibility portion is active now: Conversation passes an ephemeral child
-composition override to Bubble. `individual` forces both actor Label and Avatar
-off; `group` respects the Bubble Variant. The override never mutates or persists
-the selected Bubble configuration.
+These are participant/content rules, not Header layout. The Actor and direction
+fields remain declared members of the generic message collection editor.
 
 ### Interim group workflow
 
@@ -151,9 +142,10 @@ recreate their internal rules.
   state/direction, media playback state and status state. Per-message delay,
   write-on and hold remain part of the ordered sequence because they define the
   rhythm of each message.
-- A newly inserted incoming message defaults to 30 write-on frames so it
-  contributes a finite interval immediately; persistence recalculates its
-  Screen duration and the owning Shot duration in the same operation.
+- A newly inserted blank message starts as `system`, the only direction whose
+  Actor may be empty. Selecting an incoming Actor is explicit. Its default
+  write-on timing remains 30 frames; persistence recalculates Screen and Shot
+  duration in the same operation.
 - Video and audio attachments additionally expose `playbackMode` (`once` or
   `loop`) and `playDurationFrames`. `durationSeconds` remains the physical
   source duration; it is not the duration of the timeline event. Design action

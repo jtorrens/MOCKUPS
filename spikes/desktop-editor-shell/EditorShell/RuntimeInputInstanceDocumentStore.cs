@@ -94,6 +94,19 @@ internal sealed class RuntimeInputInstanceDocumentStore
             value);
     }
 
+    public void UpdateCollectionValues(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId,
+        IReadOnlyDictionary<string, JsonNode?> values)
+    {
+        _database.UpdateModuleInstanceRuntimeCollectionValues(
+            moduleInstanceId,
+            collectionJsonKey,
+            itemId,
+            values);
+    }
+
     public string AnimationJson(string moduleInstanceId)
     {
         return _animationDocuments.Load(moduleInstanceId).AnimationJson;

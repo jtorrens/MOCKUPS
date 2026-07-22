@@ -43,6 +43,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/67_system_bar_item_authoring_contract.md`
 - `docs/architecture/68_architecture_ux_cleanup_and_scaffolding_plan.md`
 - `docs/architecture/69_component_variant_storage_vocabulary_contract.md`
+- `docs/architecture/70_conversation_message_actor_ownership_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -352,6 +353,15 @@ Design/Production resource placement additionally follows
 Production exposes Episodes plus one Production Data card containing Actors,
 Devices, Production Fonts and Render Presets. Workspace changes must not move
 SQLite ownership, invent global records or introduce cross-Project fallback.
+
+Conversation message Actor ownership additionally follows
+`docs/architecture/70_conversation_message_actor_ownership_contract.md`.
+Incoming messages require an explicit same-Project Actor; outgoing messages
+persist no duplicated Actor and resolve the exact Shot owner only in the
+Production payload; system messages have an optional explicit same-Project
+Actor. Direction changes that clear an Actor must be one atomic prepared
+collection write. Sample Actors remain Design fixtures and must never repair a
+persisted Production message.
 
 ## Data migrations, not compatibility fallbacks
 

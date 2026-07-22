@@ -97,16 +97,11 @@ internal static class DesignPreviewPayloadFactory
             ownerActorId,
             effectiveThemeMode,
             theme.PaletteColors);
-        if (runtimePreview["messages"] is JsonArray messages)
-        {
-            foreach (var message in messages.OfType<JsonObject>())
-            {
-                var actorId = message["actorId"]?.GetValue<string>() ?? "";
-                message["actor"] = string.IsNullOrWhiteSpace(actorId)
-                    ? ActorPreviewInputFactory.CreateSample()
-                    : dataSource.CreateActorPreview(actorId, effectiveThemeMode, theme.PaletteColors);
-            }
-        }
+        ModuleRuntimeDocumentContracts.PrepareProduction(
+            instance.RecordClassId,
+            $"Module Instance '{moduleInstanceId}' Production payload",
+            runtimePreview,
+            instance.OwnerActorId);
         var instanceJson = new JsonObject
         {
             ["animation"] = JsonPath.ParseRequiredObject(

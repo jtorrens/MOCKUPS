@@ -70,7 +70,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                 recordId,
                 themeMode,
                 paletteColors,
-                input.Id);
+                input.Id,
+                CollectionFieldAvailability.AllowsEmpty(values, input));
         }
     }
 }

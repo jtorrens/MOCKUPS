@@ -7,14 +7,16 @@ internal static class RuntimeInputFieldDefinitionFactory
     public static FieldDefinition Create(
         RuntimeInputOptionsDataSource optionsDataSource,
         ProjectTreeNode node,
-        ComponentInputDefinition input)
+        ComponentInputDefinition input,
+        bool? allowEmpty = null)
     {
         var projectId = ProjectAncestor(node).Id;
+        var permitsEmpty = allowEmpty ?? input.AllowEmpty;
         var options = input.ValueKind switch
         {
-            ValueKind.RecordReference when input.TableId == "actors" => optionsDataSource.ActorOptions(projectId),
+            ValueKind.RecordReference when input.TableId == "actors" => optionsDataSource.ActorOptions(projectId, permitsEmpty),
             ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, input.AllowEmptyComponentVariant),
+                optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),
             ValueKind.PaletteColorToken => optionsDataSource.PaletteColorOptions(projectId),
             _ => input.Options,
         };

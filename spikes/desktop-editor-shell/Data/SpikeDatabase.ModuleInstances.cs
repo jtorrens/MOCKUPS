@@ -1,4 +1,3 @@
-using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
@@ -10,31 +9,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private sealed record ConversationMessage(
-        string Id,
-        string Type,
-        string Direction,
-        string ActorId,
-        string Text,
-        int DelayAfterPreviousFrames,
-        int WriteOnDurationFrames,
-        int PostWriteOnHoldFrames,
-        string StatusText,
-        string DeliveryStatus,
-        bool StatusVisible,
-        string MediaType,
-        string MediaSource,
-        string ViewportSize,
-        decimal MediaScale,
-        string MediaOffset,
-        bool IsPlaying,
-        decimal CurrentTimeSeconds,
-        decimal DurationSeconds,
-        bool IsFullScreen,
-        bool FullScreenTransition,
-        string FullframeOrientation,
-        int ControlsElapsedMs);
-
     public sealed record ModuleInstanceSlot(
         string Id,
         string Name,
@@ -105,11 +79,35 @@ internal sealed partial class SpikeDatabase
         string fieldJsonKey,
         JsonNode? value)
     {
+        UpdateModuleInstanceRuntimeCollectionValues(
+            moduleInstanceId,
+            collectionJsonKey,
+            itemId,
+            new Dictionary<string, JsonNode?> { [fieldJsonKey] = value });
+    }
+
+    public void UpdateModuleInstanceRuntimeCollectionValues(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId,
+        IReadOnlyDictionary<string, JsonNode?> values)
+    {
+        if (values.Count == 0)
+        {
+            throw new InvalidOperationException("A runtime collection update requires at least one explicit field.");
+        }
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
         var item = (content[collectionJsonKey] as JsonArray)?.OfType<JsonObject>()
             .FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        item[fieldJsonKey] = value?.DeepClone();
+        foreach (var (fieldJsonKey, value) in values)
+        {
+            if (string.IsNullOrWhiteSpace(fieldJsonKey))
+            {
+                throw new InvalidOperationException("Runtime collection field keys cannot be empty.");
+            }
+            item[fieldJsonKey] = value?.DeepClone();
+        }
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
 
@@ -185,6 +183,7 @@ internal sealed partial class SpikeDatabase
         }
 
         using var connection = OpenConnection();
+        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
@@ -214,6 +213,7 @@ internal sealed partial class SpikeDatabase
             }
         }
         using var connection = OpenConnection();
+        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
@@ -274,6 +274,7 @@ internal sealed partial class SpikeDatabase
     private void SaveModuleInstanceRuntimeContent(string moduleInstanceId, JsonObject content)
     {
         using var connection = OpenConnection();
+        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
@@ -431,176 +432,6 @@ internal sealed partial class SpikeDatabase
             default:
                 throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
         }
-    }
-
-    private void UpdateConversationBehaviorField(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string fieldId,
-        string value)
-    {
-        var settings = GetModuleInstanceSettings(moduleInstanceId);
-        if (GetModuleSettings(settings.ModuleId).RecordClassId != "module.core.chat")
-        {
-            throw new InvalidOperationException("Conversation timing fields are only supported by Conversation module instances.");
-        }
-
-        var behavior = ParseJsonObject(settings.ContentJson);
-        switch (fieldId)
-        {
-            case "moduleInstance.conversation.bubbleRevealMode":
-                behavior["bubbleRevealMode"] = value is "afterWriteOn" ? "afterWriteOn" : "duringWriteOn";
-                break;
-            case "moduleInstance.conversation.incomingRevealMode":
-                behavior["incomingRevealMode"] = value is "writeOn" or "typingIndicator" ? value : "instant";
-                break;
-            case "moduleInstance.conversation.textInputVisible":
-                behavior["textInputVisible"] = BooleanText.Parse(value);
-                break;
-            case "moduleInstance.conversation.keyboardVisible":
-                behavior["keyboardVisible"] = BooleanText.Parse(value);
-                break;
-            case "moduleInstance.conversation.typingIndicatorText":
-                behavior["typingIndicatorText"] = string.IsNullOrEmpty(value) ? "•••" : value;
-                break;
-            case "moduleInstance.conversation.typingIndicatorSizeToken":
-                behavior["typingIndicatorSizeToken"] = string.IsNullOrWhiteSpace(value) ? "theme.typography.sizes.m" : value;
-                break;
-            case "moduleInstance.conversation.typingIndicatorAnimation":
-                behavior["typingIndicatorAnimation"] = value is "none" or "wave" ? value : "pulsating";
-                break;
-        }
-
-        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, behavior.ToJsonString());
-    }
-
-    private IReadOnlyList<ConversationMessage> GetConversationMessages(string moduleInstanceId)
-    {
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var messages = content["messages"] as JsonArray ?? [];
-        return messages.OfType<JsonObject>().Select((message, index) => new ConversationMessage(
-            message["id"]?.GetValue<string>() ?? $"message_{index + 1:000}",
-            message["type"]?.GetValue<string>() ?? "text",
-            message["direction"]?.GetValue<string>() ?? "incoming",
-            message["actorId"]?.GetValue<string>() ?? "",
-            message["text"]?.GetValue<string>() ?? "",
-            message["delayAfterPreviousFrames"]?.GetValue<int>() ?? 0,
-            message["writeOnDurationFrames"]?.GetValue<int>() ?? (message["textReveal"] as JsonObject)?["durationFrames"]?.GetValue<int>() ?? 0,
-            message["postWriteOnHoldFrames"]?.GetValue<int>() ?? 0,
-            message["statusText"]?.GetValue<string>() ?? "",
-            message["statusState"]?.GetValue<string>() ?? "none",
-            message["statusVisible"]?.GetValue<bool>()
-                ?? DeliveryStatusVisible(message),
-            message["mediaType"]?.GetValue<string>() ?? "none",
-            message["mediaSource"]?.GetValue<string>() ?? "",
-            message["viewportSize"]?.GetValue<string>() ?? "240|160",
-            message["mediaScale"]?.GetValue<decimal>() ?? 1,
-            message["mediaOffset"]?.GetValue<string>() ?? "0|0",
-            message["isPlaying"]?.GetValue<bool>() ?? false,
-            message["currentTimeSeconds"]?.GetValue<decimal>() ?? 0,
-            message["durationSeconds"]?.GetValue<decimal>() ?? 12,
-            message["isFullScreen"]?.GetValue<bool>() ?? false,
-            message["fullScreenTransition"]?.GetValue<bool>() ?? false,
-            message["fullframeOrientation"]?.GetValue<string>() ?? "portrait",
-            message["controlsElapsedMs"]?.GetValue<int>() ?? 0)).ToList();
-    }
-
-    private void AddConversationMessage(string moduleInstanceId)
-    {
-        UpdateConversationContent(moduleInstanceId, (content) =>
-        {
-            var messages = content["messages"] as JsonArray ?? new JsonArray();
-            content["messages"] = messages;
-            messages.Add(new JsonObject
-            {
-                ["id"] = $"message_{Guid.NewGuid():N}",
-                ["type"] = "text",
-                ["direction"] = "incoming",
-                ["actorId"] = "",
-                ["text"] = "",
-                ["delayAfterPreviousFrames"] = 0,
-                ["writeOnDurationFrames"] = 0,
-                ["postWriteOnHoldFrames"] = 0,
-                ["statusVisible"] = false,
-                ["statusText"] = "",
-                ["statusState"] = "none",
-                ["mediaType"] = "none",
-                ["mediaSource"] = "",
-                ["viewportSize"] = "240|160",
-                ["mediaScale"] = 1,
-                ["mediaOffset"] = "0|0",
-                ["isPlaying"] = false,
-                ["currentTimeSeconds"] = 0,
-                ["durationSeconds"] = 12,
-                ["isFullScreen"] = false,
-                ["fullScreenTransition"] = false,
-                ["fullframeOrientation"] = "portrait",
-                ["controlsElapsedMs"] = 0,
-            });
-        });
-    }
-
-    private static bool DeliveryStatusVisible(JsonObject message)
-    {
-        return message["statusState"]?.GetValue<string>() is string status
-            && status != "none";
-    }
-
-    private void UpdateConversationMessage(string moduleInstanceId, string messageId, ConversationMessage next)
-    {
-        UpdateConversationContent(moduleInstanceId, (content) =>
-        {
-            var message = (content["messages"] as JsonArray)?.OfType<JsonObject>()
-                .FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == messageId)
-                ?? throw new InvalidOperationException($"Missing Conversation message '{messageId}'.");
-            message["type"] = next.Type;
-            message["direction"] = next.Direction;
-            message["actorId"] = next.ActorId;
-            message["text"] = next.Text;
-            message["delayAfterPreviousFrames"] = Math.Max(0, next.DelayAfterPreviousFrames);
-            message["writeOnDurationFrames"] = Math.Max(0, next.WriteOnDurationFrames);
-            message["postWriteOnHoldFrames"] = Math.Max(0, next.PostWriteOnHoldFrames);
-            message["statusVisible"] = next.StatusVisible;
-            message["mediaType"] = next.MediaType is "image" or "video" or "audio" ? next.MediaType : "none";
-            message["mediaSource"] = next.MediaSource;
-            message["viewportSize"] = next.ViewportSize;
-            message["mediaScale"] = Math.Max(0.01m, next.MediaScale);
-            message["mediaOffset"] = next.MediaOffset;
-            message["isPlaying"] = next.IsPlaying;
-            message["currentTimeSeconds"] = Math.Max(0, next.CurrentTimeSeconds);
-            message["durationSeconds"] = Math.Max(1, next.DurationSeconds);
-            message["isFullScreen"] = next.IsFullScreen;
-            message["fullScreenTransition"] = next.FullScreenTransition;
-            message["fullframeOrientation"] = next.FullframeOrientation is "landscape" ? "landscape" : "portrait";
-            message["controlsElapsedMs"] = Math.Max(0, next.ControlsElapsedMs);
-            message["statusText"] = next.StatusText;
-            message["statusState"] = next.DeliveryStatus;
-        });
-    }
-
-    private void DeleteConversationMessage(string moduleInstanceId, string messageId)
-    {
-        UpdateConversationContent(moduleInstanceId, (content) =>
-        {
-            var messages = content["messages"] as JsonArray
-                ?? throw new InvalidOperationException("Conversation content has no messages collection.");
-            var message = messages.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == messageId)
-                ?? throw new InvalidOperationException($"Missing Conversation message '{messageId}'.");
-            messages.Remove(message);
-        });
-    }
-
-    private void UpdateConversationContent(string moduleInstanceId, Action<JsonObject> update)
-    {
-        var settings = GetModuleInstanceSettings(moduleInstanceId);
-        if (GetModuleSettings(settings.ModuleId).RecordClassId != "module.core.chat")
-        {
-            throw new InvalidOperationException("Conversation messages are only supported by Conversation module instances.");
-        }
-        var content = ParseJsonObject(settings.ContentJson);
-        update(content);
-        using var connection = OpenConnection();
-        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
     }
 
     private static string DefaultModuleAnimationJson()

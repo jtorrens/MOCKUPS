@@ -339,7 +339,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private string DefaultValue(ComponentInputDefinition input)
     {
         if (input.ValueKind != ValueKind.ComponentVariant
-            || input.AllowEmptyComponentVariant
+            || input.AllowEmpty
             || !string.IsNullOrWhiteSpace(input.DefaultValue))
         {
             return input.DefaultValue;
@@ -351,7 +351,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input)
     {
         var options = (_services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? []).ToList();
-        if (input.AllowEmptyComponentVariant && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
+        if (input.AllowEmpty && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
         {
             options.Insert(0, new FieldOption("", "None"));
         }

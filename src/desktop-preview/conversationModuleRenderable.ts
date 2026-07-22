@@ -43,6 +43,13 @@ import { resolveConversationModuleFrame } from "./conversationModuleResolver.js"
 
 type JsonRecord = Record<string, unknown>;
 
+export function conversationMessageActorIdentityVisible(
+  conversationType: string,
+  direction: string,
+) {
+  return conversationType === "group" && direction === "incoming";
+}
+
 export function conversationModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const config = parseObject(payload.configJson);
   const preview = resolveConversationModuleFrame(payload);
@@ -272,7 +279,6 @@ function messageNodes(
   if (conversationType !== "individual" && conversationType !== "group") {
     throw new Error(`Unsupported Conversation type ${conversationType}`);
   }
-  const actorIdentityVisible = conversationType === "group";
   const bubbleNode = (message: ConversationPreviewMessage, writeOnTrigger: boolean) => childRenderable(
     payload,
     componentBaseConfigs,
@@ -282,7 +288,7 @@ function messageNodes(
       state: message.state,
       sampleText: message.text,
       actor: message.actor,
-      actorIdentityVisible,
+      actorIdentityVisible: conversationMessageActorIdentityVisible(conversationType, message.state),
       mediaType: message.mediaType,
       mediaSource: message.mediaSource,
       viewportSize: message.viewportSize,

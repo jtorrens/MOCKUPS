@@ -21,7 +21,7 @@ validaciones a sus owners.
 | Device vacío cuando falta el contexto heredado del Shot | Fallback semántico cerrado | Retirar en este slice. |
 | Actor de muestra como Actor principal de un Screen de Producción | Fallback semántico cerrado | Retirado en el slice 0A.2; el Shot siempre aporta un owner Actor explícito. |
 | Actor de muestra en Diseño aislado | Fixture visual deliberado | Mantener: permite inspeccionar un Module o Component sin payload persistente. |
-| Actor de muestra para un mensaje de Producción sin `actorId` | Migración funcional aprobada y pendiente | Mantener solo hasta el slice 0A.3; el proyecto actual contiene mensajes que deben migrarse al contrato explícito por dirección. |
+| Actor de muestra para un mensaje de Producción sin `actorId` | Fallback semántico cerrado | Retirado en el slice 0A.3 mediante el contrato explícito por dirección. |
 | `animation_json` nulo reparado como `{}` durante la preparación del payload | Fallback de documento actual cerrado | Retirado en el slice 0A.2; el documento actual debe llegar completo. |
 | Placeholders visuales de iconos y media | Policy visual deliberada | Mantener; no equivalen a reparación de contexto. |
 | Defaults de sesión en selectores de Design Preview | Estado visual de sesión | Mantener; no pueden cruzar a Producción. |
@@ -75,7 +75,6 @@ Variants, Runtime Inputs, animación ni renderizado.
 ## Siguientes candidatos, aún no ejecutados
 
 - terminar la clasificación de defaults semánticos en creación de Themes;
-- revisar valores de muestra de Actor dentro de payloads de Producción;
 - retirar código que quede huérfano después de cerrar todos los fallbacks;
 - construir el inventario de validaciones antes de mover ninguna a sus owners.
 
@@ -107,3 +106,28 @@ Condición exacta para retirar el segundo caso:
 La prueba de este slice recorre todos los Screens actuales, comprueba que su
 Actor resuelto nunca es el sample, compara la animación del payload con el
 documento persistido y demuestra que la lectura es byte a byte inmutable.
+
+## Slice 0A.3 — Propiedad explícita del Actor de cada mensaje
+
+Contrato aprobado:
+
+- incoming persiste un Actor explícito del mismo Project;
+- outgoing persiste `actorId` vacío y proyecta el owner Actor exacto del Shot
+  únicamente al preparar el payload de Producción;
+- system admite un Actor explícito opcional y nunca recibe un Actor de muestra
+  si está vacío.
+
+La regla reside en un único owner de dominio seleccionado por el record class
+estable del Module. La validación de apertura y todas las escrituras de content
+usan ese mismo owner. El editor solo ejecuta metadatos declarativos y guarda en
+una única operación los cambios de dirección que también limpian el Actor.
+
+La representación visual permanece separada de la propiedad semántica: solo
+un incoming de grupo puede mostrar identidad por mensaje; outgoing y system no
+la muestran aunque el payload resuelva o contenga un Actor.
+
+La migración canónica ha eliminado la referencia redundante del outgoing de
+prueba y conserva el incoming explícito. La selección `None` aparece únicamente
+para system; incoming exige Actor antes de persistirse. Quedan cubiertos el
+rechazo read-only de documentos inválidos, la escritura atómica, la proyección
+del Shot owner y la ausencia de `sample_actor` en Producción.

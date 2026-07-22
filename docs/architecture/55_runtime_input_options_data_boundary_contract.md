@@ -28,7 +28,8 @@ dynamic option list.
 
 `RuntimeInputOptionsDataSource` may supply only:
 
-- Actor options for one explicit Project through `ActorPreviewDataSource`;
+- required or optional Actor options for one explicit Project through
+  `ActorPreviewDataSource` and the declared `includeNone` policy;
 - Palette color-token options for one explicit Project;
 - complete Component variant reference options for explicit component types and
   the declared `includeNone` policy;
@@ -49,7 +50,10 @@ declared `ValueKind` and input metadata to generic `FieldDefinition`:
 
 - `RecordReference` with explicit `tableId: actors` requests Actor options;
 - `ComponentVariant` with explicit `componentType` requests complete Variant
-  references and preserves `AllowEmptyComponentVariant`;
+  references;
+- the generic `AllowEmpty` policy controls whether an empty option is exposed;
+  a collection may refine it through explicit sibling-key/value metadata, never
+  from a label, type or position;
 - `PaletteColorToken` requests exact Palette token options;
 - every other kind uses only its declared options.
 
@@ -97,16 +101,16 @@ Architecture enforcement must verify:
   instance per editor service;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
-A disposable-database test must compare Actor, Palette and Component variant
-options with their exact current facade values, resolve a declared dynamic
-Variant label and prove that the reads leave the database byte-for-byte
-unchanged.
+A disposable-database test must compare required and optional Actor, Palette
+and Component variant options with their exact current facade values, resolve a
+declared dynamic Variant label and prove that the reads leave the database
+byte-for-byte unchanged.
 
 ## 7. Out of scope
 
-This phase does not change option labels, collection presentation, dictionary
-controls, Runtime Input definitions, Test Values, payload preparation,
-forwarding, Overrides, tables, parity data, assets or animation behavior.
+This boundary does not choose semantic optionality, change option labels,
+redesign collection presentation or controls, alter Test Values, payload
+preparation, forwarding, Overrides, tables, assets or animation behavior.
 
 ## 8. Forbidden shortcuts
 

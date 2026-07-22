@@ -87,6 +87,7 @@ internal sealed partial class SpikeDatabase
         ValidateCurrentPreviewManifest(connection);
         ValidateCurrentRuntimeInputContracts(connection);
         ValidateCurrentReferences(connection);
+        ValidateCurrentModuleRuntimeDocuments(connection);
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);

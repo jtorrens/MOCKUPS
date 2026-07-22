@@ -237,6 +237,7 @@ assertDoesNotContain(
 for (const forbiddenProductionPayloadRepair of [
   "var ownerActor = string.IsNullOrWhiteSpace(ownerActorId)",
   "JsonNode.Parse(instance.AnimationJson) ?? new JsonObject()",
+  'message["actor"] = string.IsNullOrWhiteSpace(actorId)',
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
@@ -244,6 +245,11 @@ for (const forbiddenProductionPayloadRepair of [
     `Production payload preparation must not restore repaired owner/animation data (${forbiddenProductionPayloadRepair})`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "ModuleRuntimeDocumentContracts.PrepareProduction",
+  "Production payload preparation must route Module-owned document semantics before generic reference resolution",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
   "private readonly SpikeDatabase _database",
@@ -1141,6 +1147,31 @@ assertContains(
   "69_component_variant_storage_vocabulary_contract.md",
   "the architecture index must include contract 69",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/70_conversation_message_actor_ownership_contract.md",
+  "AGENTS must require the Conversation message Actor ownership contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "70_conversation_message_actor_ownership_contract.md",
+  "the architecture index must include contract 70",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/ConversationMessageActorContract.cs",
+  'public const string ConversationRecordClassId = "module.core.chat"',
+  "the Module runtime-document registry must route Conversation by its exact stable record class",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "ValidateCurrentModuleRuntimeDocuments(connection)",
+  "startup validation must enforce current Module runtime-document contracts read-only",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content)",
+  "Module Instance content writes must enforce their owning runtime-document contract",
+);
 for (const retiredSimplifiedEditorTerm of [
   "EditorSimplified",
   "EditorPresentationMode",
@@ -1255,7 +1286,7 @@ for (const requiredRuntimeInputInstanceOperation of [
   "_instanceDocuments.DuplicateCollectionItem",
   "_instanceDocuments.MoveCollectionItem",
   "_instanceDocuments.DeleteCollectionItem",
-  "_instanceDocuments.UpdateCollectionValue",
+  "_instanceDocuments.UpdateCollectionValues",
   "_instanceDocuments.AnimationJson",
   "_instanceDocuments.SaveAnimationJson",
 ]) {
@@ -5470,8 +5501,13 @@ assertDoesNotContain(
 );
 assertContains(
   "src/desktop-preview/conversationModuleRenderable.ts",
-  "actorIdentityVisible = conversationType === \"group\"",
-  "Individual Conversation must override Bubble actor identity presentation off",
+  "conversationMessageActorIdentityVisible(conversationType, message.state)",
+  "Conversation must expose per-message Actor identity only through its direction-owned composition rule",
+);
+assertContains(
+  "src/desktop-preview/conversationModuleRenderable.ts",
+  'return conversationType === "group" && direction === "incoming"',
+  "only group incoming messages may expose per-message Actor identity",
 );
 assertContains(
   "src/desktop-preview/conversationModuleRenderable.ts",
@@ -5851,6 +5887,89 @@ function assertModuleInstanceRuntimePayloadsMatchContracts() {
   }
 }
 
+function assertConversationMessageActorOwnership() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const actorProject = new Map(
+      (database.prepare("SELECT id, project_id FROM actors").all() as { id: string; project_id: string }[])
+        .map((actor) => [actor.id, actor.project_id]),
+    );
+    const modules = database.prepare(
+      "SELECT id, design_preview_json FROM modules WHERE record_class_id = 'module.core.chat'",
+    ).all() as { id: string; design_preview_json: string }[];
+    for (const module of modules) {
+      const preview = jsonRecord(jsonParse(module.design_preview_json));
+      const messages = jsonArray(preview.collections).map(jsonRecord)
+        .find((collection) => collection.id === "messages");
+      if (!messages) {
+        addViolation("data/desktop-editor-spike.sqlite", `Conversation Module ${module.id} has no messages collection contract`);
+        continue;
+      }
+      const fields = jsonArray(messages.fields).map(jsonRecord);
+      const actor = fields.find((field) => field.id === "actor");
+      const direction = fields.find((field) => field.id === "direction");
+      if (!actor
+          || actor.enabledWhenItemJsonKey !== "direction"
+          || !Array.isArray(actor.enabledWhenItemValues)
+          || !actor.enabledWhenItemValues.includes("incoming")
+          || !actor.enabledWhenItemValues.includes("system")
+          || actor.allowEmptyWhenItemJsonKey !== "direction"
+          || !Array.isArray(actor.allowEmptyWhenItemValues)
+          || !actor.allowEmptyWhenItemValues.includes("system")
+          || actor.allowEmpty === true) {
+        addViolation("data/desktop-editor-spike.sqlite", `Conversation Module ${module.id} has incomplete Actor availability metadata`);
+      }
+      const transition = jsonRecord(direction?.transition);
+      if (!direction
+          || direction.defaultValue !== "system"
+          || transition.targetInputId !== "actor"
+          || transition.replacementValue !== ""
+          || !jsonArray(transition.triggerValues).includes("outgoing")) {
+        addViolation("data/desktop-editor-spike.sqlite", `Conversation Module ${module.id} has incomplete atomic outgoing transition metadata`);
+      }
+    }
+
+    const instances = database.prepare(
+      `SELECT mi.id, mi.content_json, a.project_id
+       FROM module_instances mi
+       JOIN modules m ON m.id = mi.module_id
+       JOIN apps a ON a.id = m.app_id
+       WHERE m.record_class_id = 'module.core.chat'`,
+    ).all() as { id: string; content_json: string; project_id: string }[];
+    for (const instance of instances) {
+      const messages = jsonArray(jsonRecord(jsonParse(instance.content_json)).messages).map(jsonRecord);
+      for (const [index, message] of messages.entries()) {
+        const direction = typeof message.direction === "string" ? message.direction : "";
+        const actorId = typeof message.actorId === "string" ? message.actorId : undefined;
+        const context = `Conversation Screen ${instance.id} message ${String(message.id ?? index)}`;
+        if (actorId === undefined) {
+          addViolation("data/desktop-editor-spike.sqlite", `${context} has no current string actorId`);
+          continue;
+        }
+        if (direction === "incoming") {
+          if (!actorId || actorProject.get(actorId) !== instance.project_id) {
+            addViolation("data/desktop-editor-spike.sqlite", `${context} requires an explicit same-Project incoming Actor`);
+          }
+        } else if (direction === "outgoing") {
+          if (actorId) {
+            addViolation("data/desktop-editor-spike.sqlite", `${context} must not persist an outgoing Actor`);
+          }
+        } else if (direction === "system") {
+          if (actorId && actorProject.get(actorId) !== instance.project_id) {
+            addViolation("data/desktop-editor-spike.sqlite", `${context} has a missing or cross-Project system Actor`);
+          }
+        } else {
+          addViolation("data/desktop-editor-spike.sqlite", `${context} has unsupported direction ${direction}`);
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 
 assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();
@@ -5859,6 +5978,7 @@ assertDesktopDatabaseHasNoRetiredEditorLayouts();
 assertDesktopDatabaseHasCurrentDefinitionLifecycle();
 assertDesktopRuntimeInputValueKindsAreCanonical();
 assertModuleInstanceRuntimePayloadsMatchContracts();
+assertConversationMessageActorOwnership();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

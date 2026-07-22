@@ -485,7 +485,8 @@ internal sealed class ComponentPreviewInputSession
                 recordId,
                 themeMode,
                 paletteColors,
-                input.Id);
+                input.Id,
+                CollectionFieldAvailability.AllowsEmpty(values, input));
         }
     }
 
@@ -642,6 +643,7 @@ internal sealed class ComponentPreviewInputSession
 
         foreach (var input in recordInputs)
         {
+            if (input.AllowEmpty) continue;
             var key = StorageKey(input);
             if (!string.IsNullOrWhiteSpace(_values.GetValueOrDefault(key)))
             {
@@ -707,7 +709,8 @@ internal sealed class ComponentPreviewInputSession
             value,
             themeMode,
             paletteColors,
-            input.Id);
+            input.Id,
+            input.AllowEmpty);
     }
 
     private IReadOnlyList<FieldOption> RecordReferenceOptions(ComponentInputDefinition input, string projectId)
@@ -1534,6 +1537,9 @@ internal sealed class ComponentPreviewInputSession
                 EnabledWhenValue = JsonString(item, "enabledWhenValue"),
                 RefreshOnCommit = item["refreshOnCommit"]?.GetValue<bool>() == true,
                 ActionOnly = item["actionOnly"]?.GetValue<bool>() == true,
+                AllowEmpty = item["allowEmpty"]?.GetValue<bool>() == true,
+                AllowEmptyWhenItemJsonKey = JsonString(item, "allowEmptyWhenItemJsonKey"),
+                AllowEmptyWhenItemValues = JsonStringArray(item, "allowEmptyWhenItemValues"),
             };
             definitions.Add(definition with
             {
@@ -1624,8 +1630,11 @@ internal sealed class ComponentPreviewInputSession
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
                     StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
-                    AllowEmptyComponentVariant = field["allowEmpty"]?.GetValue<bool>() == true,
+                    AllowEmpty = field["allowEmpty"]?.GetValue<bool>() == true,
+                    AllowEmptyWhenItemJsonKey = JsonString(field, "allowEmptyWhenItemJsonKey"),
+                    AllowEmptyWhenItemValues = JsonStringArray(field, "allowEmptyWhenItemValues"),
                     ActionOnly = field["actionOnly"]?.GetValue<bool>() == true,
+                    Transition = ReadInputTransitionDefinition(field),
                     OptionsSourceCollectionJsonKey = JsonString(field, "optionsSourceCollectionJsonKey"),
                     OptionsSourceValueJsonKey = JsonString(field, "optionsSourceValueJsonKey", "id"),
                     OptionsSourceLabelJsonKey = JsonString(field, "optionsSourceLabelJsonKey"),
@@ -2027,7 +2036,9 @@ internal sealed record ComponentInputDefinition(
     string EnabledWhenValue = "",
     bool RefreshOnCommit = false,
     RuntimeInputCollectionDefinition? StructuredCollection = null,
-    bool AllowEmptyComponentVariant = false,
+    bool AllowEmpty = false,
+    string AllowEmptyWhenItemJsonKey = "",
+    IReadOnlyList<string>? AllowEmptyWhenItemValues = null,
     bool ActionOnly = false,
     string OptionsSourceCollectionJsonKey = "",
     string OptionsSourceValueJsonKey = "id",

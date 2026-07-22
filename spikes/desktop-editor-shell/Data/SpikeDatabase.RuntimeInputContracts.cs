@@ -61,6 +61,7 @@ internal sealed partial class SpikeDatabase
 
         var next = content.ToJsonString();
         if (next == original) return;
+        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, next);
     }
 

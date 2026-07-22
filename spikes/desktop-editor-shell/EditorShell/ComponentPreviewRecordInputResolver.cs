@@ -28,13 +28,16 @@ internal sealed class ComponentPreviewRecordInputResolver
         string recordId,
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors,
-        string inputId)
+        string inputId,
+        bool allowEmpty = false)
     {
         return tableId switch
         {
             "actors" => !string.IsNullOrWhiteSpace(recordId)
                 ? ActorPreviewInputFactory.Create(_actorDataSource, recordId, themeMode, paletteColors)
-                : ActorPreviewInputFactory.CreateSample(),
+                : allowEmpty
+                    ? new JsonObject()
+                    : ActorPreviewInputFactory.CreateSample(),
             _ => throw new InvalidOperationException(
                 $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
         };

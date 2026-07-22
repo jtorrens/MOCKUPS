@@ -44,6 +44,8 @@ var tests = new (string Name, Action Run)[]
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
+    ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -921,8 +923,15 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
             ValueKind.RecordReference, "", TableId: "actors");
         var actorDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, actorInput);
         SequenceEqual(
-            database.GetActorOptions(project.Id).Select((option) => option.Value),
+            database.GetRequiredActorOptions(project.Id).Select((option) => option.Value),
             actorDefinition.Options!.Select((option) => option.Value));
+        var optionalActorDefinition = RuntimeInputFieldDefinitionFactory.Create(
+            dataSource,
+            project,
+            actorInput with { AllowEmpty = true });
+        SequenceEqual(
+            database.GetActorOptions(project.Id).Select((option) => option.Value),
+            optionalActorDefinition.Options!.Select((option) => option.Value));
 
         var paletteInput = new ComponentInputDefinition(
             "color", "Color", "color", ComponentInputKind.Option,
@@ -2341,6 +2350,156 @@ static void ProductionPayloadPreservesActorAndAnimation()
     {
         File.Delete(temporary);
     }
+}
+
+static void ConversationMessageActorsFollowDirectionContract()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-conversation-message-actors-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var screen = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId
+                    == ModuleRuntimeDocumentContracts.ConversationRecordClassId);
+        var instance = database.GetModuleInstanceSettings(screen.Id);
+        var shotOwnerActorId = database.GetShotSettings(instance.ShotId).OwnerActorId;
+        var content = JsonPath.ParseRequiredObject(instance.ContentJson, $"Screen '{screen.Id}' content_json");
+        var messages = content["messages"]?.AsArray()
+            ?? throw new InvalidOperationException("Conversation instance has no messages.");
+        var incoming = messages.OfType<JsonObject>().Single((message) => message["direction"]?.GetValue<string>() == "incoming");
+        var incomingActorId = incoming["actorId"]?.GetValue<string>() ?? "";
+        True(!string.IsNullOrWhiteSpace(incomingActorId));
+        True(messages.OfType<JsonObject>()
+            .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
+            .All((message) => string.IsNullOrWhiteSpace(message["actorId"]?.GetValue<string>())));
+
+        var system = incoming.DeepClone().AsObject();
+        system["id"] = $"message_system_{Guid.NewGuid():N}";
+        system["direction"] = "system";
+        system["actorId"] = "";
+        database.AddModuleInstanceRuntimeCollectionItem(screen.Id, "messages", system);
+
+        var moduleVariant = database.GetModuleInstanceVariantSettings(screen.Id);
+        var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
+        var messageCollection = ComponentPreviewInputSession.ReadRuntimeCollections(
+            runtimePreview,
+            JsonPath.ParseRequiredObject(moduleVariant.ConfigJson, "Conversation Variant config"))
+            .Single((collection) => collection.Id == "messages");
+        var actorField = messageCollection.Fields.Single((field) => field.Id == "actor");
+        var optionsSource = new RuntimeInputOptionsDataSource(database);
+        var incomingActorOptions = RuntimeInputFieldDefinitionFactory.Create(
+            optionsSource,
+            screen,
+            actorField,
+            CollectionFieldAvailability.AllowsEmpty(incoming, actorField)).Options ?? [];
+        var systemActorOptions = RuntimeInputFieldDefinitionFactory.Create(
+            optionsSource,
+            screen,
+            actorField,
+            CollectionFieldAvailability.AllowsEmpty(system, actorField)).Options ?? [];
+        True(incomingActorOptions.All((option) => !string.IsNullOrWhiteSpace(option.Value)));
+        True(systemActorOptions.Any((option) => string.IsNullOrWhiteSpace(option.Value)));
+
+        var payload = Required(DesignPreviewPayloadFactory.Create(
+            new DesignPreviewPayloadDataSource(database),
+            screen,
+            null));
+        var preparedMessages = DesignPreviewTestValues.Parse(payload.DesignPreviewJson)["messages"]?.AsArray()
+            ?? throw new InvalidOperationException("Prepared Conversation payload has no messages.");
+        True(preparedMessages.OfType<JsonObject>()
+            .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
+            .All((message) => message["actorId"]?.GetValue<string>() == shotOwnerActorId));
+
+        var resolved = new ProductionPreviewRuntimeResolver(database).Resolve(payload, "light");
+        var resolvedMessages = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson)["messages"]?.AsArray()
+            ?? throw new InvalidOperationException("Resolved Conversation payload has no messages.");
+        Equal(
+            incomingActorId,
+            resolvedMessages.OfType<JsonObject>()
+                .Single((message) => message["direction"]?.GetValue<string>() == "incoming")["actor"]?["id"]?.GetValue<string>());
+        True(resolvedMessages.OfType<JsonObject>()
+            .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
+            .All((message) => message["actor"]?["id"]?.GetValue<string>() == shotOwnerActorId));
+        var resolvedSystemActor = resolvedMessages.OfType<JsonObject>()
+            .Single((message) => message["direction"]?.GetValue<string>() == "system")["actor"] as JsonObject
+            ?? throw new InvalidOperationException("System message Actor must resolve as an object.");
+        Equal(0, resolvedSystemActor.Count);
+        True(resolvedMessages.OfType<JsonObject>()
+            .All((message) => message["actor"]?["id"]?.GetValue<string>() != "sample_actor"));
+
+        var incomingId = incoming["id"]?.GetValue<string>() ?? "";
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.UpdateModuleInstanceRuntimeCollectionValue(
+            screen.Id,
+            "messages",
+            incomingId,
+            "direction",
+            JsonValue.Create("outgoing")));
+        SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        var store = new RuntimeInputInstanceDocumentStore(database);
+        store.UpdateCollectionValues(
+            screen.Id,
+            "messages",
+            incomingId,
+            new Dictionary<string, JsonNode?>
+            {
+                ["direction"] = JsonValue.Create("outgoing"),
+                ["actorId"] = JsonValue.Create(""),
+            });
+        var updated = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            $"Screen '{screen.Id}' updated content_json");
+        var updatedMessage = updated["messages"]?.AsArray().OfType<JsonObject>()
+            .Single((message) => message["id"]?.GetValue<string>() == incomingId)
+            ?? throw new InvalidOperationException("Missing atomically updated message.");
+        Equal("outgoing", updatedMessage["direction"]?.GetValue<string>());
+        Equal("", updatedMessage["actorId"]?.GetValue<string>());
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void InvalidConversationMessageActorsFailReadOnly()
+{
+    AssertRejectedDatabaseIsReadOnly("conversation-outgoing-actor", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.messages[0].actorId', 'actor_sam')
+            WHERE module_id = 'module_core_chat'
+            """;
+        Equal(1, command.ExecuteNonQuery());
+    });
+    AssertRejectedDatabaseIsReadOnly("conversation-incoming-without-actor", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.messages[2].actorId', '')
+            WHERE module_id = 'module_core_chat'
+            """;
+        Equal(1, command.ExecuteNonQuery());
+    });
+    AssertRejectedDatabaseIsReadOnly("conversation-system-missing-actor", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(
+                content_json,
+                '$.messages[0].direction', 'system',
+                '$.messages[0].actorId', 'missing_actor')
+            WHERE module_id = 'module_core_chat'
+            """;
+        Equal(1, command.ExecuteNonQuery());
+    });
 }
 
 static void ModuleVariantsAreExplicit()

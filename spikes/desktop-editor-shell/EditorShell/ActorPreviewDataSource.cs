@@ -60,9 +60,11 @@ internal sealed class ActorPreviewDataSource
             _database.GetActorFieldValue(actorId, "actor.avatar.initialsPadding"));
     }
 
-    public IReadOnlyList<FieldOption> Options(string projectId)
+    public IReadOnlyList<FieldOption> Options(string projectId, bool includeNone = true)
     {
-        return _database.GetActorOptions(projectId);
+        return includeNone
+            ? _database.GetActorOptions(projectId)
+            : _database.GetRequiredActorOptions(projectId);
     }
 
     public IReadOnlyList<FieldOption> PaletteColorOptions(string projectId)

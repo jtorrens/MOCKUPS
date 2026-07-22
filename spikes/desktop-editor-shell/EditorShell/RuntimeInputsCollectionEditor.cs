@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -1027,7 +1028,11 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 : null,
         };
-        var definition = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input);
+        var definition = RuntimeInputFieldDefinitionFactory.Create(
+            _runtimeInputOptions,
+            owner.Node,
+            input,
+            CollectionFieldAvailability.AllowsEmpty(item, input));
         if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
         {
             definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, item) };
@@ -1048,43 +1053,34 @@ internal sealed class RuntimeInputsCollectionEditor
                 : "";
             var nextNode = DesignPreviewTestValues.ValueNode(input, next);
             item[input.JsonKey] = nextNode?.DeepClone();
+            var updates = new Dictionary<string, JsonNode?>
+            {
+                [input.JsonKey] = nextNode,
+            };
+            var transitioned = ApplyCollectionTransition(collection, item, input, next, updates);
             if (selectsComponent && componentItems is not null)
             {
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
                     ? new JsonObject()
                     : _ownerDocuments.ComponentVariantRuntimeInputs(next);
+                updates[componentItems.OverridesJsonKey] = item[componentItems.OverridesJsonKey];
+                updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
             }
             if (owner.IsInstance)
             {
-                _instanceDocuments.UpdateCollectionValue(
+                _instanceDocuments.UpdateCollectionValues(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
-                    input.JsonKey,
-                    nextNode);
-                if (selectsComponent && componentItems is not null)
-                {
-                    _instanceDocuments.UpdateCollectionValue(
-                        owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId,
-                        componentItems.OverridesJsonKey,
-                        item[componentItems.OverridesJsonKey]);
-                    _instanceDocuments.UpdateCollectionValue(
-                        owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId,
-                        componentItems.InputsJsonKey,
-                        item[componentItems.InputsJsonKey]);
-                }
+                    updates);
                 _onChanged();
             }
             else
             {
                 DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
             }
-            if (selectsComponent)
+            if (selectsComponent || transitioned)
             {
                 var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
                 if (itemIndex >= 0 && itemIndex < current.Count)
@@ -1109,6 +1105,36 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         var targetId = item["id"]?.GetValue<string>() ?? "";
         return DecorateAnimationToggle(owner, input, targetId, control);
+    }
+
+    private static bool ApplyCollectionTransition(
+        RuntimeInputCollectionDefinition collection,
+        JsonObject item,
+        ComponentInputDefinition input,
+        string next,
+        IDictionary<string, JsonNode?> updates)
+    {
+        var transition = input.Transition;
+        if (transition is null
+            || transition.ForwardedTargetOnly
+            || !transition.TriggerValues.Contains(next, StringComparer.Ordinal))
+        {
+            return false;
+        }
+        var target = collection.Fields.FirstOrDefault((candidate) =>
+            candidate.Id.Equals(transition.TargetInputId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Collection input transition target '{transition.TargetInputId}' was not declared.");
+        var current = DesignPreviewTestValues.CollectionValue(item, target);
+        if (!string.IsNullOrWhiteSpace(transition.TargetValuePattern)
+            && Regex.IsMatch(current, transition.TargetValuePattern, RegexOptions.CultureInvariant))
+        {
+            return false;
+        }
+        var replacement = DesignPreviewTestValues.ValueNode(target, transition.ReplacementValue);
+        item[target.JsonKey] = replacement?.DeepClone();
+        updates[target.JsonKey] = replacement;
+        return true;
     }
 
     private Control CreateNestedComponentInputControl(

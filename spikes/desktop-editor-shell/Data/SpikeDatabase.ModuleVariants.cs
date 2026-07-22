@@ -159,6 +159,7 @@ internal sealed partial class SpikeDatabase
         var content = RuntimeContentForContract(ParseJsonObject(instance.ContentJson), contract);
         var animation = RemoveOrphanedAnimationTracks(ParseJsonObject(instance.AnimationJson), contract, content);
         using var connection = OpenConnection();
+        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _moduleInstanceRepository.UpdateVariantDocuments(
             connection,
             moduleInstanceId,
