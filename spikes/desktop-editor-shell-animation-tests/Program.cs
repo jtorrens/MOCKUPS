@@ -30,6 +30,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
+    ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
@@ -756,6 +757,109 @@ static void NumericDictionaryFieldsSeparateCurrentValuesFromDrafts()
     Equal(0.4m, decimalDraft);
     True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "draft", out _));
     True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "2", out _));
+}
+
+static void PreviewActionContractsAreStrict()
+{
+    static JsonObject Action() => new()
+    {
+        ["id"] = "play",
+        ["label"] = "Play",
+        ["playInputId"] = "isPlaying",
+        ["durationSeconds"] = 1,
+        ["timeJsonKey"] = "currentTimeSeconds",
+        ["timeUnit"] = "seconds",
+        ["prewarmFrames"] = false,
+        ["completionBehavior"] = "reset",
+    };
+
+    static JsonObject Preview(JsonNode? action) => new()
+    {
+        ["actions"] = new JsonArray(action),
+    };
+
+    var valid = Preview(Action());
+    var parsed = ComponentPreviewActions.Read(valid).Single();
+    Equal("play", parsed.Id);
+    Equal("Play", parsed.Label);
+    Equal(ComponentPreviewActionTimeUnit.Seconds, parsed.TimeUnit);
+
+    var missingId = Action();
+    missingId.Remove("id");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(missingId),
+        "Missing id"));
+    var missingLabel = Action();
+    missingLabel.Remove("label");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(missingLabel),
+        "Missing label"));
+    var missingDuration = Action();
+    missingDuration.Remove("durationSeconds");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(missingDuration),
+        "Missing duration"));
+    var invalidUnit = Action();
+    invalidUnit["timeUnit"] = "automatic";
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(invalidUnit),
+        "Invalid time unit"));
+    var invalidBoolean = Action();
+    invalidBoolean["prewarmFrames"] = "false";
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(invalidBoolean),
+        "Invalid boolean"));
+    var invalidList = Action();
+    invalidList["activateInputIds"] = new JsonArray("enabled", 4);
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(invalidList),
+        "Invalid string list"));
+    var invalidOptions = Action();
+    invalidOptions["targetInputId"] = "state";
+    invalidOptions["targetMode"] = "option";
+    invalidOptions["targetOptions"] = new JsonArray("invalid");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(invalidOptions),
+        "Invalid options"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        new JsonObject { ["actions"] = new JsonObject() },
+        "Wrong action root"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        new JsonObject { ["actions"] = new JsonArray(Action(), Action()) },
+        "Duplicate action"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        new JsonObject
+        {
+            ["collections"] = new JsonArray
+            {
+                new JsonObject { ["itemActions"] = new JsonObject() },
+            },
+        },
+        "Wrong item action root"));
+
+    var storedValues = new JsonObject { ["enabled"] = true, ["count"] = 2, ["progress"] = 0.5 };
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.SetStoredValue(
+        storedValues,
+        parsed,
+        "enabled",
+        "perhaps"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.SetStoredValue(
+        storedValues,
+        parsed,
+        "count",
+        "2.5"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.SetStoredValue(
+        storedValues,
+        parsed,
+        "progress",
+        "invalid"));
+
+    AssertRejectedDatabaseIsReadOnly("preview-action-id", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET design_preview_json = json_remove(design_preview_json, '$.actions[0].id') WHERE id = 'component_project_foqn_s2_audio'";
+        command.ExecuteNonQuery();
+    });
 }
 
 static void DesignTestValuesPreserveStrictDocuments()

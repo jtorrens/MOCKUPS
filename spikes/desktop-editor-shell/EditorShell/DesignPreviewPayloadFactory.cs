@@ -273,8 +273,11 @@ internal static class DesignPreviewPayloadFactory
 
         if (preview["actions"] is JsonArray actions)
         {
-            foreach (var action in actions.OfType<JsonObject>())
+            for (var index = 0; index < actions.Count; index++)
             {
+                var action = actions[index] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Design Preview action at index {index} must be an object.");
                 changed |= ResolveActionDuration(config, themeTokens, action);
             }
         }

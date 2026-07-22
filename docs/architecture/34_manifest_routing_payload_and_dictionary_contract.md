@@ -143,6 +143,15 @@ a missing nested contract.
 Missing required forwarding metadata or a partially supplied forwarding group
 is an error. A registry, resolver, bridge or renderer must not repair it.
 
+Declarative `actions` and collection `itemActions` are also strict current
+contracts. Every entry is an object with a unique stable id, explicit label,
+play input, time key/unit, completion behavior and finite duration source.
+Optional booleans, numbers, string lists, target options and paired target or
+visibility metadata keep their exact JSON types and completeness. Readers must
+not omit malformed actions, derive id from `playInputId`, supply `Play`, default
+an undeclared time unit, coerce numeric/boolean strings or filter malformed list
+members.
+
 ## 5. Runtime payload and temporal owner envelope
 
 `DesignPreviewPayload` carries two related but different views:

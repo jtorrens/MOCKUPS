@@ -5299,6 +5299,43 @@ assertContains(
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "ComponentPreviewActions.ValidateContract(",
+  "current Design Preview actions must be validated read-only at startup",
+);
+for (const strictPreviewActionOwner of [
+  "public static void ValidateContract(JsonObject preview, string owner)",
+  'RequiredString(action, "id"',
+  'RequiredString(action, "label"',
+  'RequiredString(action, "timeUnit"',
+  'RequiredString(action, "completionBehavior"',
+  "requires one explicit finite duration source",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    strictPreviewActionOwner,
+    `Design Preview actions must keep their explicit declarative owner (${strictPreviewActionOwner})`,
+  );
+}
+for (const retiredPreviewActionFallback of [
+  "id = playInputId",
+  'label = "Play"',
+  "BooleanText.Parse(text)",
+  'text.Replace(",", ".")',
+  "itemAction.DeepClone() as JsonObject ?? new JsonObject()",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    retiredPreviewActionFallback,
+    `Design Preview actions must not reconstruct malformed current metadata (${retiredPreviewActionFallback})`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "source.DeepClone() as JsonObject ?? new JsonObject()",
+  "Runtime collection clones must preserve their guaranteed object root",
+);
 assertNoTerms("spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs", [
   "DictionaryPathBrowseButton",
   "ValueKind.DirectoryPath",

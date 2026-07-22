@@ -950,7 +950,7 @@ internal sealed class RuntimeInputsCollectionEditor
     }
 
     private static JsonObject CloneObject(JsonObject source) =>
-        source.DeepClone() as JsonObject ?? new JsonObject();
+        source.DeepClone().AsObject();
 
     private void MoveTransientCollectionItem(
         JsonObject preview,

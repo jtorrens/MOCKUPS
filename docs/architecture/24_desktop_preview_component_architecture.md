@@ -690,6 +690,15 @@ The preview action contract lives under `designPreviewJson.actions`:
 Rules:
 
 - actions are generic and may not be switched by component type in the panel;
+- a present `actions` or `itemActions` property is an array of object
+  definitions with unique stable ids; wrong roots and non-object entries fail
+  instead of being ignored;
+- every action declares non-empty `id`, `label`, `playInputId`, `timeJsonKey`,
+  exact `timeUnit`, exact `completionBehavior` and at least one explicit finite
+  duration source; none is derived from another field or supplied as `Play`;
+- optional booleans, finite numbers, string lists and target options retain
+  their exact JSON shapes. Numeric/boolean strings, filtered list entries and
+  incomplete target/visibility groups are invalid current contracts;
 - one action maps to one `playInputId` and one `timeJsonKey`;
 - a component may expose multiple actions, and the panel must render one
   action button per action instead of binding every trigger to one global play

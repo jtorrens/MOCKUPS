@@ -136,6 +136,17 @@ internal sealed partial class SpikeDatabase
             {
                 var document = ParseRequiredObject(reader.GetString(column), $"{owner} runtime contract");
                 ValidateRuntimeInputDefinitions(document, owner, "$");
+                if (column == 3)
+                {
+                    try
+                    {
+                        ComponentPreviewActions.ValidateContract(document, $"{owner} Design Preview");
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        throw InvalidCurrentDatabase(exception.Message);
+                    }
+                }
             }
         }
     }

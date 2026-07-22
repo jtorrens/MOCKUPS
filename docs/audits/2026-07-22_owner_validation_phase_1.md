@@ -280,3 +280,17 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los tres controles deben usar el owner requerido; fallbacks numéricos a cero prohibidos y draft del slider explícito. |
 | Datos | Sin migración. La declaración se corrige para reflejar los datos y semántica existentes; la base permanece `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
 | Riesgo | Bajo. Los valores válidos conservan su serialización; una entrada provisional inválida ya no genera una escritura real inesperada. |
+
+## Slice 1.19 — Contrato declarativo de Preview Actions
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El reader filtraba acciones/miembros dañados, derivaba `id` desde `playInputId`, añadía `Play`, asumía segundos y aceptaba números/booleanos string. Arrays y opciones incorrectos podían convertirse en listas vacías; los clones mantenían fallbacks imposibles a `{}`. |
+| Owner | `ComponentPreviewActions` valida y materializa el contrato genérico; startup invoca el mismo owner sobre cada `design_preview_json`; el payload factory solo resuelve duraciones después de esta forma explícita. |
+| Cambio mínimo | Exigir arrays de objetos, ids únicos y todos los campos temporales; validar tipos opcionales y grupos target/visibility; conservar ausencia legítima de acciones y los defaults declarados del host (`prewarmFrames`) solo cuando el campo es realmente opcional. |
+| Migración explícita | Las acciones `play` de Audio, Media y Bubble dependían del default oculto `seconds`. Se añadió `timeUnit: seconds` por ids estables. Dos contratos embebidos en Component Stack se localizaron por los ids estables de item/State/action y recibieron el mismo unit; esos contratos y su acción `fullScreen` recibieron además `completionBehavior: reset`, que ya era su comportamiento current. No se usaron nombres ni posiciones como identidad. |
+| Rutas eliminadas | `OfType`/`Where` sobre action arrays, `id = playInputId`, label `Play`, timeUnit desconocido a segundos, numeric/boolean string, lista filtrada y clone a objeto vacío. |
+| Pruebas | 113/113 escritorio: contrato válido, roots/entries/ids/labels/duración/unit/boolean/list/options incorrectos, valores action tipados y corrupción SQLite rechazada read-only; todos los flujos Component/Module/Stack siguen pasando. |
+| Enforcement | Owner requerido en startup/reader; fallbacks concretos prohibidos; payload duration loop y clones mantienen objetos exactos. |
+| Datos | Migración solo de metadata declarativa en la base activa: `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793` → `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. El artefacto histórico schema-v1 no es autoridad current y permanece sin cambios. |
+| Riesgo | Bajo tras migrar. La reproducción, duración, resultado, ids y payload no cambian; únicamente deja de desaparecer o reconstruirse una acción incompleta. |

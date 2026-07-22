@@ -9,22 +9,36 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ComponentPreviewActions
 {
+    public static void ValidateContract(JsonObject preview, string owner)
+    {
+        ValidateContractNode(preview, owner, "$");
+    }
+
     public static IReadOnlyList<ComponentPreviewActionDefinition> ReadWithEmbedded(
         JsonObject preview,
         Func<string, JsonObject> componentVariantRuntimeContract)
     {
         var definitions = Read(preview).ToList();
         if (preview["collections"] is not JsonArray collections) return definitions;
-        foreach (var collection in collections.OfType<JsonObject>())
+        for (var collectionIndex = 0; collectionIndex < collections.Count; collectionIndex++)
         {
+            var collection = RequiredObject(
+                collections[collectionIndex],
+                $"Design Preview collection at index {collectionIndex}");
             var collectionJsonKey = JsonString(collection, "jsonKey");
             var itemRuntimeContractJsonKey = JsonString(collection, "itemRuntimeContractJsonKey");
             if (!string.IsNullOrWhiteSpace(collectionJsonKey)
                 && !string.IsNullOrWhiteSpace(itemRuntimeContractJsonKey)
                 && preview[collectionJsonKey] is JsonArray runtimeItems)
             {
-                foreach (var item in runtimeItems.OfType<JsonObject>())
+                RuntimeCollectionDocumentContract.Validate(
+                    runtimeItems,
+                    $"Design Preview collection '{collectionJsonKey}'");
+                for (var itemIndex = 0; itemIndex < runtimeItems.Count; itemIndex++)
                 {
+                    var item = RequiredObject(
+                        runtimeItems[itemIndex],
+                        $"Design Preview collection '{collectionJsonKey}' item at index {itemIndex}");
                     var itemId = JsonString(item, "id");
                     if (string.IsNullOrWhiteSpace(itemId)
                         || item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue;
@@ -45,8 +59,14 @@ internal static class ComponentPreviewActions
             var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
             if (string.IsNullOrWhiteSpace(variantReferenceJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
             if (preview[collectionJsonKey] is not JsonArray items) continue;
-            foreach (var item in items.OfType<JsonObject>())
+            RuntimeCollectionDocumentContract.Validate(
+                items,
+                $"Design Preview collection '{collectionJsonKey}'");
+            for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
             {
+                var item = RequiredObject(
+                    items[itemIndex],
+                    $"Design Preview collection '{collectionJsonKey}' item at index {itemIndex}");
                 var itemId = JsonString(item, "id");
                 var variantReference = JsonString(item, variantReferenceJsonKey);
                 if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(variantReference)) continue;
@@ -67,29 +87,39 @@ internal static class ComponentPreviewActions
 
     public static IReadOnlyList<ComponentPreviewActionDefinition> Read(JsonObject preview)
     {
+        ValidateContract(preview, "Design Preview action contract");
         var definitions = new List<ComponentPreviewActionDefinition>();
         if (preview["actions"] is JsonArray actions)
         {
             definitions.AddRange(actions
-                .OfType<JsonObject>()
-                .Select((action) => ParseAction(action))
-                .Where((action) => action is not null)
-                .Cast<ComponentPreviewActionDefinition>());
+                .Select((action, index) => RequiredObject(
+                    action,
+                    $"Design Preview action contract $.actions[{index}]"))
+                .Select((action) => ParseAction(action)));
         }
 
-        if (preview["collections"] is not JsonArray collections)
+        if (preview["collections"] is null)
         {
             return definitions;
         }
+        var collections = preview["collections"] as JsonArray
+            ?? throw new InvalidOperationException(
+                "Design Preview action contract collections must be an array when present.");
 
-        foreach (var collection in collections.OfType<JsonObject>())
+        for (var collectionIndex = 0; collectionIndex < collections.Count; collectionIndex++)
         {
+            var collection = RequiredObject(
+                collections[collectionIndex],
+                $"Design Preview action contract $.collections[{collectionIndex}]");
             var collectionJsonKey = JsonString(collection, "jsonKey");
             if (string.IsNullOrWhiteSpace(collectionJsonKey)
-                || collection["itemActions"] is not JsonArray itemActions)
+                || collection["itemActions"] is null)
             {
                 continue;
             }
+            var itemActions = collection["itemActions"] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Design Preview collection '{collectionJsonKey}' itemActions must be an array when present.");
 
             var items = DesignPreviewTestValues.CollectionItems(
                 preview,
@@ -110,20 +140,15 @@ internal static class ComponentPreviewActions
                     continue;
                 }
 
-                foreach (var itemAction in itemActions.OfType<JsonObject>())
+                for (var actionIndex = 0; actionIndex < itemActions.Count; actionIndex++)
                 {
-                    var action = itemAction.DeepClone() as JsonObject ?? new JsonObject();
-                    var baseId = JsonString(action, "id");
-                    if (string.IsNullOrWhiteSpace(baseId))
-                    {
-                        continue;
-                    }
+                    var itemAction = RequiredObject(
+                        itemActions[actionIndex],
+                        $"Design Preview collection '{collectionJsonKey}' itemActions[{actionIndex}]");
+                    var action = itemAction.DeepClone().AsObject();
+                    var baseId = RequiredString(action, "id", "Design Preview item action");
                     action["id"] = $"{baseId}:{itemId}";
-                    var parsed = ParseAction(action, collectionJsonKey, itemId);
-                    if (parsed is not null)
-                    {
-                        definitions.Add(parsed);
-                    }
+                    definitions.Add(ParseAction(action, collectionJsonKey, itemId));
                 }
             }
         }
@@ -162,11 +187,12 @@ internal static class ComponentPreviewActions
         if (target is null) return;
         target[key] = target[key] switch
         {
-            JsonValue existing when existing.TryGetValue<bool>(out _) => JsonValue.Create(BooleanText.Parse(value)),
-            JsonValue existing when existing.TryGetValue<int>(out _)
-                && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer) => JsonValue.Create(integer),
-            JsonValue existing when existing.TryGetValue<double>(out _)
-                && double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
+            JsonValue existing when existing.TryGetValue<bool>(out _) =>
+                JsonValue.Create(BooleanText.ParseRequired(value, $"Preview action value '{key}'")),
+            JsonValue existing when existing.TryGetValue<int>(out _) =>
+                JsonValue.Create(ParseStoredInteger(value, key)),
+            JsonValue existing when existing.TryGetValue<double>(out _) =>
+                JsonValue.Create(ParseStoredNumber(value, key)),
             _ => JsonValue.Create(value),
         };
     }
@@ -212,12 +238,21 @@ internal static class ComponentPreviewActions
             return preview;
         }
 
-        var item = preview[action.CollectionJsonKey] is JsonArray items
-            ? items.OfType<JsonObject>().FirstOrDefault((item) =>
-                item["id"] is JsonValue value
-                && value.TryGetValue<string>(out var id)
-                && id == action.CollectionItemId)
-            : null;
+        JsonObject? item = null;
+        if (preview[action.CollectionJsonKey] is JsonArray items)
+        {
+            RuntimeCollectionDocumentContract.Validate(
+                items,
+                $"Design Preview action collection '{action.CollectionJsonKey}'");
+            item = items
+                .Select((candidate, index) => RequiredObject(
+                    candidate,
+                    $"Design Preview action collection '{action.CollectionJsonKey}' item at index {index}"))
+                .FirstOrDefault((candidate) =>
+                    candidate["id"] is JsonValue value
+                    && value.TryGetValue<string>(out var id)
+                    && id == action.CollectionItemId);
+        }
         if (item is null || string.IsNullOrWhiteSpace(action.TargetJsonPath)) return item;
         JsonNode? target = item;
         foreach (var segment in action.TargetJsonPath.Split('.', StringSplitOptions.RemoveEmptyEntries))
@@ -227,11 +262,12 @@ internal static class ComponentPreviewActions
         return target as JsonObject;
     }
 
-    private static ComponentPreviewActionDefinition? ParseAction(
+    private static ComponentPreviewActionDefinition ParseAction(
         JsonObject action,
         string collectionJsonKey = "",
         string collectionItemId = "")
     {
+        ValidateActionDefinition(action, "Design Preview action");
         var playInputId = JsonString(action, "playInputId");
         var durationInputId = JsonString(action, "durationInputId");
         var durationBehaviorTimingInputId = JsonString(action, "durationBehaviorTimingInputId");
@@ -241,30 +277,8 @@ internal static class ComponentPreviewActions
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var timeJsonKey = JsonString(action, "timeJsonKey");
-        if (string.IsNullOrWhiteSpace(playInputId)
-            || (string.IsNullOrWhiteSpace(durationInputId)
-                && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
-                && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
-                && string.IsNullOrWhiteSpace(durationThemeToken)
-                && string.IsNullOrWhiteSpace(durationStateCollectionJsonKey)
-                && !durationOwnerTimeline
-                && durationSeconds <= 0)
-            || string.IsNullOrWhiteSpace(timeJsonKey))
-        {
-            return null;
-        }
-
-        var id = JsonString(action, "id");
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            id = playInputId;
-        }
-
-        var label = JsonString(action, "label");
-        if (string.IsNullOrWhiteSpace(label))
-        {
-            label = "Play";
-        }
+        var id = RequiredString(action, "id", "Design Preview action");
+        var label = RequiredString(action, "label", $"Design Preview action '{id}'");
 
         return new ComponentPreviewActionDefinition(
             id,
@@ -312,14 +326,22 @@ internal static class ComponentPreviewActions
         if (string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)) return 0;
         var target = Target(preview, action);
         if (target?[action.DurationStateCollectionJsonKey] is not JsonArray states) return 0;
+        RuntimeCollectionDocumentContract.Validate(
+            states,
+            $"Design Preview action state collection '{action.DurationStateCollectionJsonKey}'");
         var theme = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
         var stateIdKey = string.IsNullOrWhiteSpace(action.DurationStateIdJsonKey)
             ? "id"
             : action.DurationStateIdJsonKey;
         var targetId = JsonString(target, action.TargetInputId);
         var fromId = JsonString(target, action.TargetFromJsonKey);
-        var entering = states.OfType<JsonObject>().FirstOrDefault((state) => JsonString(state, stateIdKey) == targetId);
-        var outgoing = states.OfType<JsonObject>().FirstOrDefault((state) => JsonString(state, stateIdKey) == fromId);
+        var stateObjects = states
+            .Select((state, index) => RequiredObject(
+                state,
+                $"Design Preview action state at index {index}"))
+            .ToList();
+        var entering = stateObjects.FirstOrDefault((state) => JsonString(state, stateIdKey) == targetId);
+        var outgoing = stateObjects.FirstOrDefault((state) => JsonString(state, stateIdKey) == fromId);
         var duration = Math.Max(
             MotionDurationMilliseconds(theme, entering?[action.DurationEnterMotionJsonKey] as JsonObject),
             MotionDurationMilliseconds(theme, outgoing?[action.DurationExitMotionJsonKey] as JsonObject));
@@ -358,7 +380,7 @@ internal static class ComponentPreviewActions
 
     private static ComponentPreviewActionTargetMode ParseTargetMode(string value)
     {
-        return value.ToLowerInvariant() switch
+        return value switch
         {
             "" => ComponentPreviewActionTargetMode.None,
             "toggle" => ComponentPreviewActionTargetMode.Toggle,
@@ -370,32 +392,41 @@ internal static class ComponentPreviewActions
 
     private static IReadOnlyList<FieldOption> ParseTargetOptions(JsonObject action)
     {
-        return action["targetOptions"] is JsonArray options
-            ? options.OfType<JsonObject>()
-                .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
-                .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
-                .ToList()
-            : [];
+        if (action["targetOptions"] is null)
+        {
+            return [];
+        }
+        var options = action["targetOptions"] as JsonArray
+            ?? throw new InvalidOperationException("Design Preview action targetOptions must be an array when present.");
+        return options
+            .Select((option, index) => RequiredObject(
+                option,
+                $"Design Preview action targetOptions[{index}]"))
+            .Select((option, index) => new FieldOption(
+                RequiredString(option, "value", $"Design Preview action targetOptions[{index}]"),
+                RequiredString(option, "label", $"Design Preview action targetOptions[{index}]")))
+            .ToList();
     }
 
     private static ComponentPreviewActionTimeUnit ParseTimeUnit(string value)
     {
-        if (value.Equals("milliseconds", StringComparison.OrdinalIgnoreCase))
+        return value switch
         {
-            return ComponentPreviewActionTimeUnit.Milliseconds;
-        }
-        return value.Equals("frames", StringComparison.OrdinalIgnoreCase)
-            ? ComponentPreviewActionTimeUnit.Frames
-            : ComponentPreviewActionTimeUnit.Seconds;
+            "milliseconds" => ComponentPreviewActionTimeUnit.Milliseconds,
+            "frames" => ComponentPreviewActionTimeUnit.Frames,
+            "seconds" => ComponentPreviewActionTimeUnit.Seconds,
+            _ => throw new InvalidOperationException(
+                $"Missing or unknown component preview action timeUnit '{value}'."),
+        };
     }
 
     private static ComponentPreviewActionCompletionBehavior ParseCompletionBehavior(string value)
     {
-        if (value.Equals("reset", StringComparison.OrdinalIgnoreCase))
+        if (value.Equals("reset", StringComparison.Ordinal))
         {
             return ComponentPreviewActionCompletionBehavior.Reset;
         }
-        if (value.Equals("holdFinal", StringComparison.OrdinalIgnoreCase))
+        if (value.Equals("holdFinal", StringComparison.Ordinal))
         {
             return ComponentPreviewActionCompletionBehavior.HoldFinal;
         }
@@ -404,48 +435,66 @@ internal static class ComponentPreviewActions
 
     private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
     {
-        if (owner[key] is not JsonArray values)
+        if (owner[key] is null)
         {
             return [];
         }
+        var values = owner[key] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Design Preview action {key} must be an array when present.");
 
-        return values
-            .OfType<JsonValue>()
-            .Select((value) => value.TryGetValue<string>(out var text) ? text : "")
-            .Where((text) => !string.IsNullOrWhiteSpace(text))
+        return values.Select((value, index) => value is JsonValue item
+                && item.TryGetValue<string>(out var text)
+                && !string.IsNullOrWhiteSpace(text)
+                    ? text
+                    : throw new InvalidOperationException(
+                        $"Design Preview action {key}[{index}] must be a non-empty string."))
             .ToList();
     }
 
     private static string JsonString(JsonObject owner, string key)
     {
+        if (owner[key] is null)
+        {
+            return "";
+        }
         return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
             ? text
-            : "";
+            : throw new InvalidOperationException(
+                $"Design Preview action {key} must be a string when present.");
     }
 
     private static double JsonNumber(JsonObject owner, string key, double fallback)
     {
-        if (owner[key] is not JsonValue value)
+        if (owner[key] is null)
         {
             return fallback;
         }
+        if (owner[key] is not JsonValue value)
+        {
+            throw new InvalidOperationException(
+                $"Design Preview action {key} must be a finite number when present.");
+        }
 
-        if (value.TryGetValue<double>(out var number))
+        if (TryJsonNumber(value, out var number))
         {
             return number;
         }
 
-        return value.TryGetValue<string>(out var text)
-            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-                ? parsed
-                : fallback;
+        throw new InvalidOperationException(
+            $"Design Preview action {key} must be a finite JSON number when present.");
     }
 
     private static bool JsonBoolean(JsonObject owner, string key, bool fallback)
     {
-        if (owner[key] is not JsonValue value)
+        if (owner[key] is null)
         {
             return fallback;
+        }
+        if (owner[key] is not JsonValue value)
+        {
+            throw new InvalidOperationException(
+                $"Design Preview action {key} must be a boolean when present.");
         }
 
         if (value.TryGetValue<bool>(out var boolean))
@@ -453,9 +502,183 @@ internal static class ComponentPreviewActions
             return boolean;
         }
 
-        return value.TryGetValue<string>(out var text)
-            ? BooleanText.Parse(text)
-            : fallback;
+        throw new InvalidOperationException(
+            $"Design Preview action {key} must be a JSON boolean when present.");
+    }
+
+    private static bool TryJsonNumber(JsonValue value, out double number)
+    {
+        if (value.TryGetValue<double>(out number) && double.IsFinite(number))
+        {
+            return true;
+        }
+        if (value.TryGetValue<decimal>(out var decimalValue))
+        {
+            number = (double)decimalValue;
+            return double.IsFinite(number);
+        }
+        if (value.TryGetValue<long>(out var longValue))
+        {
+            number = longValue;
+            return true;
+        }
+        if (value.TryGetValue<int>(out var integerValue))
+        {
+            number = integerValue;
+            return true;
+        }
+        number = 0;
+        return false;
+    }
+
+    private static void ValidateContractNode(JsonNode? node, string owner, string path)
+    {
+        if (node is JsonArray array)
+        {
+            for (var index = 0; index < array.Count; index++)
+            {
+                ValidateContractNode(array[index], owner, $"{path}[{index}]");
+            }
+            return;
+        }
+        if (node is not JsonObject obj)
+        {
+            return;
+        }
+
+        ValidateActionArray(obj, "actions", owner, path);
+        ValidateActionArray(obj, "itemActions", owner, path);
+        foreach (var (key, child) in obj)
+        {
+            ValidateContractNode(child, owner, $"{path}.{key}");
+        }
+    }
+
+    private static void ValidateActionArray(
+        JsonObject ownerDocument,
+        string key,
+        string owner,
+        string path)
+    {
+        if (ownerDocument[key] is null)
+        {
+            return;
+        }
+        var actions = ownerDocument[key] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"{owner} {path}.{key} must be an array when present.");
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < actions.Count; index++)
+        {
+            var actionOwner = $"{owner} {path}.{key}[{index}]";
+            var action = RequiredObject(actions[index], actionOwner);
+            ValidateActionDefinition(action, actionOwner);
+            var id = RequiredString(action, "id", actionOwner);
+            if (!ids.Add(id))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} {path}.{key} has duplicate action id '{id}'.");
+            }
+        }
+    }
+
+    private static void ValidateActionDefinition(JsonObject action, string owner)
+    {
+        _ = RequiredString(action, "id", owner);
+        _ = RequiredString(action, "label", owner);
+        _ = RequiredString(action, "playInputId", owner);
+        _ = RequiredString(action, "timeJsonKey", owner);
+        _ = ParseTimeUnit(RequiredString(action, "timeUnit", owner));
+        _ = ParseCompletionBehavior(RequiredString(action, "completionBehavior", owner));
+
+        var durationInputId = JsonString(action, "durationInputId");
+        var durationBehaviorTimingInputId = JsonString(action, "durationBehaviorTimingInputId");
+        var durationCollectionJsonKey = JsonString(action, "durationCollectionJsonKey");
+        var durationThemeToken = JsonString(action, "durationThemeToken");
+        var durationStateCollectionJsonKey = JsonString(action, "durationStateCollectionJsonKey");
+        var durationMotionConfigPath = JsonString(action, "durationMotionConfigPath");
+        var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
+        var durationSeconds = JsonNumber(action, "durationSeconds", 0);
+        var durationBaseFrames = JsonNumber(action, "durationBaseFrames", 0);
+        if (string.IsNullOrWhiteSpace(durationInputId)
+            && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
+            && string.IsNullOrWhiteSpace(durationCollectionJsonKey)
+            && string.IsNullOrWhiteSpace(durationThemeToken)
+            && string.IsNullOrWhiteSpace(durationStateCollectionJsonKey)
+            && string.IsNullOrWhiteSpace(durationMotionConfigPath)
+            && !durationOwnerTimeline
+            && durationSeconds <= 0
+            && durationBaseFrames <= 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner} requires one explicit finite duration source.");
+        }
+        if (action["durationSeconds"] is not null && durationSeconds <= 0)
+        {
+            throw new InvalidOperationException($"{owner} durationSeconds must be positive when present.");
+        }
+        if (action["durationBaseFrames"] is not null && durationBaseFrames < 0)
+        {
+            throw new InvalidOperationException($"{owner} durationBaseFrames must not be negative.");
+        }
+
+        _ = JsonBoolean(action, "prewarmFrames", true);
+        _ = JsonBoolean(action, "definesModuleDuration", false);
+        _ = JsonBoolean(action, "extendsModuleDuration", false);
+        _ = JsonStringArray(action, "durationAdditionalThemeTokens");
+        _ = JsonStringArray(action, "durationItemNumberKeys");
+        _ = JsonStringArray(action, "durationCollectionMultiplierNumberKeys");
+        _ = JsonStringArray(action, "activateInputIds");
+        _ = JsonStringArray(action, "deactivateInputIds");
+        _ = ParseTargetOptions(action);
+
+        var targetInputId = JsonString(action, "targetInputId");
+        var targetMode = ParseTargetMode(JsonString(action, "targetMode"));
+        if ((targetMode == ComponentPreviewActionTargetMode.None) != string.IsNullOrWhiteSpace(targetInputId))
+        {
+            throw new InvalidOperationException(
+                $"{owner} targetInputId and targetMode must be declared together.");
+        }
+        var visibleKey = JsonString(action, "visibleWhenItemJsonKey");
+        var visibleValues = JsonStringArray(action, "visibleWhenItemValues");
+        if (string.IsNullOrWhiteSpace(visibleKey) != (visibleValues.Count == 0))
+        {
+            throw new InvalidOperationException(
+                $"{owner} visibleWhenItemJsonKey and visibleWhenItemValues must be declared together.");
+        }
+    }
+
+    private static JsonObject RequiredObject(JsonNode? node, string owner)
+    {
+        return node as JsonObject
+            ?? throw new InvalidOperationException($"{owner} must be an object.");
+    }
+
+    private static string RequiredString(JsonObject ownerDocument, string key, string owner)
+    {
+        var value = JsonString(ownerDocument, key);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"{owner} requires non-empty string '{key}'.");
+        }
+        return value;
+    }
+
+    private static int ParseStoredInteger(string value, string key)
+    {
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw new InvalidOperationException(
+                $"Preview action value '{key}' must be an integer.");
+    }
+
+    private static double ParseStoredNumber(string value, string key)
+    {
+        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            && double.IsFinite(parsed)
+                ? parsed
+                : throw new InvalidOperationException(
+                    $"Preview action value '{key}' must be a finite number.");
     }
 }
 

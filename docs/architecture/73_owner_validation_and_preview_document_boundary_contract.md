@@ -193,6 +193,13 @@ declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
 animation document.
 
+Design Preview actions are strict declarative documents. `actions` and
+`itemActions` preserve array/object roots, unique stable ids, explicit labels,
+time unit, completion and finite duration ownership. Present optional scalar,
+list, target and visibility metadata keeps its exact type and complete group;
+the editor does not omit an invalid action or invent id, label, time unit,
+boolean, number or list members.
+
 ## 6. Failure and diagnostics
 
 The current application uses fail-fast exceptions at internal payload and
@@ -266,6 +273,8 @@ Architecture enforcement must verify:
   not convert an invalid interactive draft into zero or a clamped commit.
 - pair controls and Runtime definitions require explicit labels without
   identifier- or position-based inference.
+- Design Preview actions are validated at startup and by their shared reader;
+  incomplete entries, wrong roots and scalar/list coercions are rejected.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,
