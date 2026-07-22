@@ -1031,13 +1031,8 @@ internal sealed class ModuleInstanceAnimationEditor
         return result;
     }
 
-    private static JsonNode ValueNode(ValueKind kind, string value) => kind switch
-    {
-        ValueKind.Boolean => JsonValue.Create(bool.TryParse(value, out var boolean) && boolean)!,
-        ValueKind.Integer => JsonValue.Create(int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integer) ? integer : 0)!,
-        ValueKind.Decimal => JsonValue.Create(decimal.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : 0)!,
-        _ => JsonValue.Create(value)!,
-    };
+    private static JsonNode ValueNode(ValueKind kind, string value) =>
+        RuntimeInputValueKindContract.ParseValue(kind, value, "Animation keyframe value");
 
     private static string InterpolationLabel(string interpolation) => interpolation switch
     {

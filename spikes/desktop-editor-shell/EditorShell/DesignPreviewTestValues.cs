@@ -308,27 +308,9 @@ internal static class DesignPreviewTestValues
 
     internal static JsonNode? ValueNode(ComponentInputDefinition input, string value)
     {
-        if (input.ValueKind == ValueKind.BehaviorTiming)
-        {
-            return JsonNode.Parse(BehaviorTimingValue.Parse(value).ToJson());
-        }
-        if (input.ValueKind is ValueKind.StructuredCollection or ValueKind.Motion)
-        {
-            return JsonNode.Parse(string.IsNullOrWhiteSpace(value)
-                ? input.ValueKind == ValueKind.StructuredCollection ? "[]" : "{}"
-                : value);
-        }
-        if (input.ValueKind == ValueKind.AlignmentPlacement)
-        {
-            return JsonNode.Parse(value)
-                ?? throw new InvalidOperationException("Alignment placement value must be valid JSON.");
-        }
-        return input.Kind switch
-        {
-            ComponentInputKind.Number when double.TryParse(value.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) => JsonValue.Create(number),
-            ComponentInputKind.Boolean => JsonValue.Create(BooleanText.Parse(value)),
-            ComponentInputKind.IconList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
-            _ => JsonValue.Create(value),
-        };
+        return RuntimeInputValueKindContract.ParseValue(
+            input.ValueKind,
+            value,
+            $"Runtime Input '{input.Id}' value");
     }
 }

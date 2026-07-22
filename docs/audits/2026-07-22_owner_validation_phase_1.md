@@ -149,3 +149,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner común y consumidores obligatorios; startup owner requerido; creación implícita y append ambiguo prohibidos. |
 | Datos | Sin migración. Todas las colecciones current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo. Se conserva la creación explícita de colección al reconciliar una nueva frontera; solo dejan de aceptarse documento o intención inválidos. |
+
+## Slice 1.9 — Valores Runtime declarados y serialización de editor
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La escritura escalar aceptaba cualquier key/nodo y las celdas de colección cualquier field. Test Values, bindings embebidos y keyframes mantenían serializadores paralelos que convertían booleanos o números inválidos en `false`/cero y algunos documentos en objetos/arrays vacíos. Startup comprobaba presencia, pero no forma por `ValueKind`. |
+| Owner | El contrato Runtime efectivo resuelve la definición exacta; `RuntimeInputValueKindContract` serializa el texto del editor y valida el nodo persistido por `ValueKind`. |
+| Cambio mínimo | Validar top-level inputs y fields current, rechazar source no Runtime persistido, exigir definición única en cada write y reutilizar `ParseValue` en Test Values, bindings y keyframes. Se añadieron formas objeto explícitas para Motion, Placement, Motion Timing, Typography y bindings. |
+| Rutas eliminadas | Writes por key libre, serializers por `ComponentInputKind`, `BooleanText.Parse` permisivo, `TryParse ? value : 0` y parseos vacíos de arrays/objetos en estas rutas. |
+| Pruebas | 105/105 escritorio: scalar/field válido real; key/field no declarados y tipos incorrectos rechazados sin escritura; dos corrupciones de valor current rechazadas read-only; formas Motion/Placement y roots inválidos comprobados. |
+| Enforcement | Owner con `ParseValue`/`ValidateRuntimeValue`, cuatro consumidores y validación startup obligatorios; serializadores permisivos concretos prohibidos. |
+| Datos | Sin migración. Todos los valores current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo. El payload válido no cambia; se elimina únicamente persistencia o presentación derivada de una entrada que contradice su contrato. |

@@ -57,8 +57,8 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleInstanceRuntimeValue(string moduleInstanceId, string jsonKey, JsonNode? value)
     {
-        if (string.IsNullOrWhiteSpace(jsonKey)) throw new InvalidOperationException("Runtime input key cannot be empty.");
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
+        _ = RequireDeclaredRuntimeInput(moduleInstanceId, jsonKey, value);
         content[jsonKey] = value?.DeepClone();
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
@@ -108,6 +108,11 @@ internal sealed partial class SpikeDatabase
             {
                 throw new InvalidOperationException("Runtime collection field keys cannot be empty.");
             }
+            RequireDeclaredRuntimeCollectionField(
+                moduleInstanceId,
+                collectionJsonKey,
+                fieldJsonKey,
+                value);
             item[fieldJsonKey] = value?.DeepClone();
         }
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);

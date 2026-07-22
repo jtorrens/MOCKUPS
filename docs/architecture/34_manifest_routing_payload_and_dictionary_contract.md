@@ -221,6 +221,14 @@ scalar `defaultValue`. Every other current Runtime Input definition requires an
 explicit string default, including an explicitly empty string where empty is
 meaningful.
 
+Persisted Runtime values and editor-authored Test Values use the same
+`ValueKind` serialization owner. Top-level Runtime Inputs and structured
+collection fields must be declared exactly once in the effective contract,
+must persist only when their source is `runtime`, and must match their declared
+boolean, numeric, string, array or object shape. Animation keyframe authoring
+uses the same value serializer; it cannot turn invalid input into false or
+zero.
+
 Runtime Input option lookup additionally follows contract 55. The typed data
 source supplies exact current Actor, Palette and complete Component variant
 options; generic factories retain the metadata-driven `ValueKind` and declared
@@ -233,6 +241,8 @@ The following are invalid current data:
 - a `kind`/`valueKind` pair that does not match the canonical shared mapping;
 - a missing or malformed default for its declared `ValueKind`;
 - a malformed `BehaviorTiming` object or unsupported timing mode;
+- an undeclared persisted Runtime key or collection field;
+- a persisted or Test Value whose JSON shape contradicts its `ValueKind`;
 - a dictionary registry miss;
 - a silent generic text control;
 - an incomplete id, label or JSON key;
@@ -250,6 +260,7 @@ Read-only startup validation rejects:
 - Runtime Input definitions without stable id, label and JSON key;
 - unknown or non-canonical Runtime Input kinds/value kinds;
 - missing or malformed Runtime Input defaults for their current `ValueKind`;
+- missing, parent-owned or wrong-shape current Runtime values;
 - retired generic module layouts or records;
 - any other persistence violation defined by contract 33.
 
@@ -269,6 +280,7 @@ defaults, module routes or repaired JSON.
 - exhaustive dictionary registry coverage;
 - strict Runtime Input kind/value-kind parsing;
 - strict Runtime Input default parsing through that same owner;
+- exact Runtime value serialization and current-value validation;
 - manifest and Runtime Input parity in the committed database;
 - absence of retired generic App/Module creation and layout paths;
 - rename-only App/Module definition permissions and repository enforcement.

@@ -4826,6 +4826,16 @@ assertContains(
   "public static JsonNode CreateDefaultValue(JsonObject definition, string owner)",
   "runtime input defaults must be parsed by the same exact ValueKind owner",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static JsonNode ParseValue(ValueKind valueKind, string value, string owner)",
+  "runtime editor values must serialize through the exact ValueKind owner",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static void ValidateRuntimeValue(JsonObject definition, JsonNode? value, string owner)",
+  "persisted Runtime values must validate through the exact definition owner",
+);
 for (const runtimeInputKindConsumer of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -4857,6 +4867,33 @@ for (const runtimeCollectionConsumer of [
     `${runtimeCollectionConsumer} must consume the stable Runtime collection document owner`,
   );
 }
+for (const runtimeValueConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+]) {
+  assertContains(
+    runtimeValueConsumer,
+    "RuntimeInputValueKindContract.",
+    `${runtimeValueConsumer} must consume the exact Runtime value owner`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "ValidateCurrentRuntimeValues(",
+  "startup and Runtime writes must validate current scalar and collection-field values",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "ComponentInputKind.Number when double.TryParse",
+  "Design Test Values must not retain a second permissive Runtime value serializer",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "bool.TryParse(value, out var boolean) && boolean",
+  "keyframe authoring must not coerce an invalid boolean to false",
+);
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
   "RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)",

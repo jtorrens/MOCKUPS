@@ -119,6 +119,12 @@ non-empty ids. Variant reconciliation may create a newly declared empty array,
 but neither reconciliation nor ordinary editor writes may replace a present
 wrong root or silently redirect an insert with a missing anchor.
 
+Current top-level Runtime values and structured collection fields are resolved
+from the effective contract by exact JSON key. `RuntimeInputValueKindContract`
+owns both editor serialization and persisted shape validation. Parent-owned or
+undeclared keys do not become Runtime data, and invalid booleans, numbers,
+arrays or semantic objects do not become plausible values.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -175,6 +181,8 @@ Architecture enforcement must verify:
   `ValueKind` owner; no parallel reconciliation parser remains.
 - current Runtime collections and every mutation preserve declared storage
   ownership, array roots and unique stable item ids.
+- persisted Runtime scalars, collection fields, Test Values and keyframe values
+  share exact `ValueKind` serialization and validation.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

@@ -28,6 +28,10 @@ internal sealed partial class SpikeDatabase
             contract,
             content,
             $"Module Instance '{moduleInstanceId}' content_json");
+        ValidateCurrentRuntimeValues(
+            contract,
+            content,
+            $"Module Instance '{moduleInstanceId}' content_json");
         ModuleRuntimeDocumentContracts.ValidateCurrent(
             module.RecordClassId,
             $"Module Instance '{moduleInstanceId}' content_json",
@@ -65,6 +69,10 @@ internal sealed partial class SpikeDatabase
                     instance.MetadataJson,
                     module.DesignPreviewJson);
                 ValidateCurrentRuntimeCollections(
+                    contract,
+                    content,
+                    $"Module Instance '{instance.Id}' content_json");
+                ValidateCurrentRuntimeValues(
                     contract,
                     content,
                     $"Module Instance '{instance.Id}' content_json");

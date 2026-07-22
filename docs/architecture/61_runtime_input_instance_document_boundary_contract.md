@@ -31,6 +31,12 @@ the referenced stable id to exist. A missing, undeclared or wrong-root
 collection is an error, never an instruction to create an empty collection or
 append somewhere plausible.
 
+Scalar and collection-field writes also resolve one exact current definition
+by stored JSON key. Only `source: runtime` values may persist, and the supplied
+JSON value must match that definition's canonical `ValueKind` shape. Test Value,
+embedded binding and animation-keyframe authoring serialize through the same
+owner; they do not keep separate boolean, number or object coercions.
+
 ## 2. Instance-store ownership
 
 `RuntimeInputInstanceDocumentStore` may delegate only these explicit operations
@@ -105,6 +111,8 @@ derived origins or a calculated duration outside that established coordinator.
   indices.
 - Stored collection items are objects with unique non-empty stable ids and the
   storage key comes from the effective Runtime contract.
+- Persisted scalars and item fields are exact declared Runtime values with the
+  JSON shape owned by their `ValueKind`.
 - Full Component Variant references remain stored values; labels are display
   only.
 - Forwarding and local Overrides remain explicit.
@@ -136,7 +144,8 @@ read-only, exercise explicit scalar, add, insert, duplicate, field update, move
 and delete operations, verify stable item order/content, and round-trip one
 complete current animation v2 document. It must also reject undeclared or
 wrong-root collections, missing/duplicate ids and a missing insert anchor
-without changing persistence.
+without changing persistence. Undeclared keys and fields, nulls and wrong-shape
+values must likewise fail without changing persistence.
 
 ## 7. Out of scope
 
@@ -152,5 +161,7 @@ or JSON, migrate data, add Render Mode/export or modify parity assets.
 - treating Test Values as persisted instance content;
 - creating ids or choosing Variants inside the store;
 - creating a missing collection root or appending after a missing stable id;
+- accepting an undeclared Runtime key or coercing an invalid value to a
+  plausible false, zero, string, object or array;
 - adding duration formulas or timeline synchronization to the editor/store;
 - bypassing owning repositories with local SQL.

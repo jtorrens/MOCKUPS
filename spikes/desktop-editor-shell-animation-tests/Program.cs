@@ -262,6 +262,18 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("collection", "StructuredCollection", "[{\"id\":\"item_1\"}]"),
             "Test Runtime Input").AsArray().Count);
+    Equal(
+        "slide",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.Motion,
+            "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false}",
+            "Test Runtime Input")["transition"]?.GetValue<string>());
+    Equal(
+        "center",
+        RuntimeInputValueKindContract.ParseValue(
+            ValueKind.AlignmentPlacement,
+            "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
+            "Test Runtime Input")["mode"]?.GetValue<string>());
 
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
         Definition("boolean", "Boolean", "perhaps"),
@@ -274,6 +286,14 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         "Test Runtime Input"));
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
         Definition("collection", "StructuredCollection", null),
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.Motion,
+        "{}",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+        ValueKind.ComponentInputBindings,
+        "[]",
         "Test Runtime Input"));
 
     foreach (var invalid in new[]
@@ -1692,6 +1712,14 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
 
         const string collectionKey = "messages";
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => store.UpdateRuntimeValue(
+            screen.Id,
+            "undeclared_scalar",
+            JsonValue.Create("value")));
+        Throws<InvalidOperationException>(() => store.UpdateRuntimeValue(
+            screen.Id,
+            "headerSubtitle",
+            JsonValue.Create(42)));
         Throws<InvalidOperationException>(() => store.AddCollectionItem(
             screen.Id,
             "undeclared_items",
@@ -1728,11 +1756,25 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             "test_a",
             TestMessage("test_c", "C"),
             new Dictionary<string, string>());
+        var beforeRejectedField = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => store.UpdateCollectionValue(
+            screen.Id,
+            collectionKey,
+            "test_b",
+            "undeclared_field",
+            JsonValue.Create("value")));
+        Throws<InvalidOperationException>(() => store.UpdateCollectionValue(
+            screen.Id,
+            collectionKey,
+            "test_b",
+            "text",
+            JsonValue.Create(42)));
+        SequenceEqual(beforeRejectedField, SHA256.HashData(File.ReadAllBytes(temporary)));
         store.UpdateCollectionValue(
             screen.Id,
             collectionKey,
             "test_b",
-            "name",
+            "text",
             JsonValue.Create("B2"));
         store.MoveCollectionItem(screen.Id, collectionKey, "test_c", 1);
         store.DeleteCollectionItem(screen.Id, collectionKey, "test_a");
@@ -1749,7 +1791,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 .Select((item) => item?["id"]?.GetValue<string>() ?? ""));
         Equal(
             "B2",
-            items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["name"]?.GetValue<string>() ?? "");
+            items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["text"]?.GetValue<string>() ?? "");
 
         Equal(animationJson, store.SaveAnimationJson(screen.Id, animationJson));
         Equal(animationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
@@ -1776,6 +1818,26 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             UPDATE module_instances
             SET content_json = json_set(content_json, '$.forwarded_module_lockScreen_stackStates', json('{}'))
             WHERE module_id = 'module_project_foqn_s2_lock_screen'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-scalar-wrong-type", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.headerSubtitle', 42)
+            WHERE module_id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-collection-field-wrong-type", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.messages[0].text', json('false'))
+            WHERE module_id = 'module_core_chat'
             """;
         command.ExecuteNonQuery();
     });
@@ -3040,7 +3102,14 @@ static void ModuleVariantsAreExplicit()
             defaultVariant.Id,
             defaultVariant.Name,
             $"{module.Name} · {defaultVariant.Name}"));
-        database.UpdateModuleInstanceRuntimeValue(screen.Id, "orphan", JsonValue.Create("remove me"));
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "UPDATE module_instances SET content_json = json_set(content_json, '$.orphan', 'remove me') WHERE id = $id";
+            command.Parameters.AddWithValue("$id", screen.Id);
+            Equal(1, command.ExecuteNonQuery());
+        }
         database.UpdateModuleInstanceAnimationJson(screen.Id,
             "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
         database.UpdateModuleInstanceVariant(screen.Id, android.Id);

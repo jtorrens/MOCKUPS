@@ -300,7 +300,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     {
         _value[input.JsonKey] = input.ValueKind == ValueKind.ComponentVariant && !string.IsNullOrWhiteSpace(input.ComponentType)
             ? ComponentVariantSlotNode(input, next)
-            : ToJsonValue(input.ValueKind, next);
+            : ToJsonValue(input.ValueKind, next, $"Component Input '{input.Id}' value");
         if (Forwarding(input) is { } forwarding)
         {
             forwarding["defaultValue"] = next;
@@ -345,7 +345,10 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             return false;
         }
-        _value[target.JsonKey] = ToJsonValue(target.ValueKind, transition.ReplacementValue);
+        _value[target.JsonKey] = ToJsonValue(
+            target.ValueKind,
+            transition.ReplacementValue,
+            $"Component Input '{target.Id}' transition value");
         if (targetForwarding is not null)
         {
             targetForwarding["defaultValue"] = transition.ReplacementValue;
@@ -481,28 +484,8 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             : fallback;
     }
 
-    private static JsonNode ToJsonValue(ValueKind kind, string value)
-    {
-        return kind switch
-        {
-            ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha => NumberNode(value),
-            ValueKind.Boolean => JsonValue.Create(BooleanText.Parse(value))!,
-            ValueKind.IconTokenList or ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
-            _ => JsonValue.Create(value)!,
-        };
-    }
-
-    private static JsonNode NumberNode(string value)
-    {
-        var normalized = value.Replace(",", ".");
-        return decimal.TryParse(
-            normalized,
-            System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out var number)
-            ? JsonValue.Create(number)!
-            : JsonValue.Create(0)!;
-    }
+    private static JsonNode ToJsonValue(ValueKind kind, string value, string owner) =>
+        RuntimeInputValueKindContract.ParseValue(kind, value, owner);
 
     private sealed class CompactInputCard : Border
     {

@@ -174,13 +174,7 @@ internal sealed partial class SpikeDatabase
         {
             throw new InvalidOperationException("Runtime collection key cannot be empty.");
         }
-        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
-        var module = _appModuleRepository.GetModule(instance.ModuleId);
-        var contract = EffectiveModuleInstanceContract(
-            module.Id,
-            module.MetadataJson,
-            instance.MetadataJson,
-            module.DesignPreviewJson);
+        var contract = ModuleInstanceRuntimeContract(moduleInstanceId);
         var matches = (contract["collections"] as JsonArray)?.OfType<JsonObject>()
             .Count((collection) => RuntimeCollectionStorageKey(collection) == collectionJsonKey) ?? 0;
         if (matches != 1)
@@ -197,6 +191,105 @@ internal sealed partial class SpikeDatabase
             items,
             $"Module Instance '{moduleInstanceId}' runtime collection '{collectionJsonKey}'");
         return items;
+    }
+
+    private JsonObject RequireDeclaredRuntimeInput(
+        string moduleInstanceId,
+        string jsonKey,
+        JsonNode? value)
+    {
+        if (string.IsNullOrWhiteSpace(jsonKey))
+        {
+            throw new InvalidOperationException("Runtime input key cannot be empty.");
+        }
+        var contract = ModuleInstanceRuntimeContract(moduleInstanceId);
+        var matches = (contract["inputs"] as JsonArray)?.OfType<JsonObject>()
+            .Where(RuntimeInputDefinition)
+            .Where((input) => input["jsonKey"]?.GetValue<string>() == jsonKey)
+            .ToList() ?? [];
+        if (matches.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Module Instance '{moduleInstanceId}' has no unique declared runtime input '{jsonKey}'.");
+        }
+        RuntimeInputValueKindContract.ValidateRuntimeValue(
+            matches[0],
+            value,
+            $"Module Instance '{moduleInstanceId}' runtime input '{jsonKey}'");
+        return matches[0];
+    }
+
+    private void RequireDeclaredRuntimeCollectionField(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string fieldJsonKey,
+        JsonNode? value)
+    {
+        var contract = ModuleInstanceRuntimeContract(moduleInstanceId);
+        var collectionMatches = (contract["collections"] as JsonArray)?.OfType<JsonObject>()
+            .Where((collection) => RuntimeCollectionStorageKey(collection) == collectionJsonKey)
+            .ToList() ?? [];
+        if (collectionMatches.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Module Instance '{moduleInstanceId}' has no unique declared runtime collection '{collectionJsonKey}'.");
+        }
+        var fieldMatches = (collectionMatches[0]["fields"] as JsonArray)?.OfType<JsonObject>()
+            .Where(RuntimeInputDefinition)
+            .Where((field) => field["jsonKey"]?.GetValue<string>() == fieldJsonKey)
+            .ToList() ?? [];
+        if (fieldMatches.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Runtime collection '{collectionJsonKey}' has no unique declared runtime field '{fieldJsonKey}'.");
+        }
+        RuntimeInputValueKindContract.ValidateRuntimeValue(
+            fieldMatches[0],
+            value,
+            $"Module Instance '{moduleInstanceId}' runtime collection '{collectionJsonKey}' field '{fieldJsonKey}'");
+    }
+
+    private JsonObject ModuleInstanceRuntimeContract(string moduleInstanceId)
+    {
+        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
+        var module = _appModuleRepository.GetModule(instance.ModuleId);
+        return EffectiveModuleInstanceContract(
+            module.Id,
+            module.MetadataJson,
+            instance.MetadataJson,
+            module.DesignPreviewJson);
+    }
+
+    private static void ValidateCurrentRuntimeValues(
+        JsonObject contract,
+        JsonObject content,
+        string owner)
+    {
+        if (contract["inputs"] is null) return;
+        var inputs = contract["inputs"] as JsonArray
+            ?? throw new InvalidOperationException($"{owner} effective Runtime contract inputs must be an array.");
+        for (var index = 0; index < inputs.Count; index++)
+        {
+            var input = inputs[index] as JsonObject
+                ?? throw new InvalidOperationException($"{owner} Runtime Input at index {index} must be an object.");
+            var jsonKey = JsonPath.RequiredString(input, "jsonKey", $"{owner} Runtime Input at index {index}");
+            if (RuntimeInputDefinition(input))
+            {
+                if (!content.TryGetPropertyValue(jsonKey, out var value))
+                {
+                    throw new InvalidOperationException($"{owner} requires runtime input '{jsonKey}'.");
+                }
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
+                    input,
+                    value,
+                    $"{owner} runtime input '{jsonKey}'");
+            }
+            else if (content.ContainsKey(jsonKey))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} must not persist parent-owned input '{jsonKey}'.");
+            }
+        }
     }
 
     private static void ValidateCurrentRuntimeCollections(
@@ -220,6 +313,41 @@ internal sealed partial class SpikeDatabase
             }
             var items = RequiredRuntimeCollection(content, storageKey, owner);
             RuntimeCollectionDocumentContract.Validate(items, $"{owner} runtime collection '{storageKey}'");
+            if (collection["fields"] is null) continue;
+            var fields = collection["fields"] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"{owner} runtime collection '{storageKey}' fields must be an array.");
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                var itemId = item["id"]!.GetValue<string>();
+                for (var fieldIndex = 0; fieldIndex < fields.Count; fieldIndex++)
+                {
+                    var field = fields[fieldIndex] as JsonObject
+                        ?? throw new InvalidOperationException(
+                            $"{owner} runtime collection '{storageKey}' field at index {fieldIndex} must be an object.");
+                    var fieldKey = JsonPath.RequiredString(
+                        field,
+                        "jsonKey",
+                        $"{owner} runtime collection '{storageKey}' field at index {fieldIndex}");
+                    if (RuntimeInputDefinition(field))
+                    {
+                        if (!item.TryGetPropertyValue(fieldKey, out var value))
+                        {
+                            throw new InvalidOperationException(
+                                $"{owner} runtime collection '{storageKey}' item '{itemId}' requires field '{fieldKey}'.");
+                        }
+                        RuntimeInputValueKindContract.ValidateRuntimeValue(
+                            field,
+                            value,
+                            $"{owner} runtime collection '{storageKey}' item '{itemId}' field '{fieldKey}'");
+                    }
+                    else if (item.ContainsKey(fieldKey))
+                    {
+                        throw new InvalidOperationException(
+                            $"{owner} runtime collection '{storageKey}' item '{itemId}' must not persist parent-owned field '{fieldKey}'.");
+                    }
+                }
+            }
         }
     }
 
