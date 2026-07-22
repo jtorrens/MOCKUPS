@@ -38,22 +38,21 @@ internal static class RuntimeInputValueKindContract
         _ => throw new InvalidOperationException($"Runtime input kind is not declared for dictionary value kind '{valueKind}'."),
     };
 
-    public static ValueKind DefaultValueKind(string kind) => kind.Trim() switch
+    public static ValueKind RequireCompatible(string kind, string valueKind, string owner)
     {
-        "text" => ValueKind.StringSingleLine,
-        "number" => ValueKind.Decimal,
-        "integerPair" => ValueKind.IntegerPair,
-        "mediaFilePath" => ValueKind.MediaFilePath,
-        "boolean" => ValueKind.Boolean,
-        "option" => ValueKind.OptionToken,
-        "recordReference" => ValueKind.RecordReference,
-        "componentVariant" => ValueKind.ComponentVariant,
-        "themeToken" => ValueKind.ThemeToken,
-        "icon" => ValueKind.IconToken,
-        "iconList" => ValueKind.IconTokenList,
-        "multilineText" => ValueKind.StringMultiline,
-        "collection" => ValueKind.StructuredCollection,
-        "behaviorTiming" => ValueKind.BehaviorTiming,
-        _ => throw new InvalidOperationException($"Runtime input kind '{kind}' has no declared dictionary value kind."),
-    };
+        if (!Enum.TryParse<ValueKind>(valueKind, ignoreCase: false, out var parsed)
+            || !parsed.ToString().Equals(valueKind, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{owner} has unsupported or missing valueKind '{valueKind}'.");
+        }
+
+        var expectedKind = InputKind(parsed);
+        if (!kind.Equals(expectedKind, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{owner} kind '{kind}' does not match valueKind '{valueKind}' (expected '{expectedKind}').");
+        }
+        return parsed;
+    }
 }

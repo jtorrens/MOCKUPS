@@ -23,24 +23,6 @@ internal sealed partial class SpikeDatabase
         "textInputBarVariant",
     };
 
-    private static readonly HashSet<string> CurrentRuntimeInputKinds = new(StringComparer.Ordinal)
-    {
-        "text",
-        "number",
-        "integerPair",
-        "boolean",
-        "option",
-        "recordReference",
-        "componentVariant",
-        "themeToken",
-        "icon",
-        "iconList",
-        "multilineText",
-        "mediaFilePath",
-        "behaviorTiming",
-        "collection",
-    };
-
     private static readonly (string Table, string Column, string RootKind)[] CurrentJsonColumns =
     [
         ("projects", "metadata_json", "object"),
@@ -230,15 +212,16 @@ internal sealed partial class SpikeDatabase
         {
             throw InvalidCurrentDatabase($"{owner} has an incomplete runtime field at {path}");
         }
-        if (!CurrentRuntimeInputKinds.Contains(kind))
+        try
         {
-            throw InvalidCurrentDatabase($"{owner} runtime field '{id}' has unsupported kind '{kind}' at {path}");
+            _ = RuntimeInputValueKindContract.RequireCompatible(
+                kind,
+                valueKind,
+                $"{owner} runtime field '{id}' at {path}");
         }
-        if (!Enum.TryParse<ValueKind>(valueKind, ignoreCase: false, out var parsedValueKind)
-            || !parsedValueKind.ToString().Equals(valueKind, StringComparison.Ordinal))
+        catch (InvalidOperationException exception)
         {
-            throw InvalidCurrentDatabase(
-                $"{owner} runtime field '{id}' has unsupported or missing valueKind '{valueKind}' at {path}");
+            throw InvalidCurrentDatabase(exception.Message);
         }
     }
 

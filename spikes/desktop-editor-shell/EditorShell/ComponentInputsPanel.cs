@@ -743,8 +743,11 @@ internal sealed class ComponentPreviewInputSession
         string uiParentGroupId,
         string unit)
     {
+        var normalizedValueKind = RuntimeInputValueKindContract.RequireCompatible(
+            kind,
+            valueKind,
+            $"Runtime Input '{id}'");
         var normalizedKind = ParseKind(kind);
-        var normalizedValueKind = ParseValueKind(valueKind);
         return new ComponentInputDefinition(
             id,
             label,
@@ -1850,16 +1853,6 @@ internal sealed class ComponentPreviewInputSession
             "mediafilepath" or "behaviortiming" or "collection" => ComponentInputKind.Text,
             _ => throw new InvalidOperationException($"Unsupported runtime input kind '{kind}'."),
         };
-    }
-
-    private static ValueKind ParseValueKind(string valueKind)
-    {
-        if (Enum.TryParse<ValueKind>(valueKind, ignoreCase: false, out var parsed)
-            && parsed.ToString().Equals(valueKind, StringComparison.Ordinal))
-        {
-            return parsed;
-        }
-        throw new InvalidOperationException($"Unsupported or missing runtime input valueKind '{valueKind}'.");
     }
 
     private static ComponentInputSource ParseInputSource(string source)

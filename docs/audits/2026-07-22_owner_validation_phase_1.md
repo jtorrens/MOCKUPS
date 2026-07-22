@@ -98,3 +98,15 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | Raíces, entradas no objeto, propiedades obligatorias, duplicados, frames negativos, orden, retime, KF0, persistencia exacta del store y apertura read-only de la base migrada. |
 | Enforcement | Owner común requerido en startup/writes/editor, validador paralelo prohibido y orden current de la base comprobado. |
 | Riesgo | Bajo: la migración solo materializa el orden que el resolver ya aplicaba, pero elimina una tolerancia contraria al contrato y evita que vuelva a persistirse. |
+
+## Slice 1.5 — Correspondencia Runtime Input `kind`/`ValueKind`
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Startup comprobaba dos vocabularios permitidos por separado, el panel volvía a parsear `ValueKind` y ninguna ruta exigía que ambos campos describieran la misma forma. Había dos pares current incoherentes. |
+| Owner | `RuntimeInputValueKindContract` mantiene la única correspondencia exhaustiva y valida el par exacto sin derivar ni reparar un campo desde el otro. |
+| Cambio mínimo | Startup y presentación consumen `RequireCompatible`; se retiran la lista y el parser paralelos. La construcción de Forward sigue usando el mismo `InputKind(ValueKind)`. |
+| Migración explícita | Por ids estables se cambió `component_project_foqn_s2_componentStack / alternatives` de `text` a `collection`, y `module_core_chat / mediaSource` de `text` a `mediaFilePath`. No cambió ningún `ValueKind`, id, default, forwarding ni payload. El script temporal se eliminó. SHA-1 anterior `0a5f67db62f4969cec8e3ef67c4ed39dff0b00a9`; posterior `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Pruebas | Pares válidos de texto, media y colección; pares incompatibles y nombres desconocidos; validación read-only de todos los documentos current. |
+| Enforcement | Owner y consumidores requeridos, parsers/listas paralelos prohibidos y par exacto comprobado sobre la base canónica. |
+| Riesgo | Bajo: `ValueKind` ya seleccionaba los controles correctos. La migración alinea la metadata de forma que consume forwarding y evita futuras interpretaciones contradictorias. |

@@ -25,6 +25,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
+    ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
@@ -179,6 +180,36 @@ static void TypographyStyleKeepsOnlyExplicitSentinels()
     {
         File.Delete(temporary);
     }
+}
+
+static void RuntimeInputKindAndValueKindShareOneContract()
+{
+    Equal(
+        ValueKind.StringSingleLine,
+        RuntimeInputValueKindContract.RequireCompatible(
+            "text",
+            "StringSingleLine",
+            "Test Runtime Input"));
+    Equal(
+        ValueKind.MediaFilePath,
+        RuntimeInputValueKindContract.RequireCompatible(
+            "mediaFilePath",
+            "MediaFilePath",
+            "Test Runtime Input"));
+    Equal(
+        ValueKind.StructuredCollection,
+        RuntimeInputValueKindContract.RequireCompatible(
+            "collection",
+            "StructuredCollection",
+            "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.RequireCompatible(
+        "text",
+        "MediaFilePath",
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.RequireCompatible(
+        "collection",
+        "UnknownValueKind",
+        "Test Runtime Input"));
 }
 
 static void ComponentAndModuleVariantsShareReferenceGrammar()

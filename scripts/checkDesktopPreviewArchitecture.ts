@@ -2084,6 +2084,38 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
     "behaviorTiming",
     "collection",
   ]);
+  const kindForValueKind = new Map<string, string>();
+  for (const valueKind of ["Integer", "Decimal", "HueDegrees", "Alpha"]) kindForValueKind.set(valueKind, "number");
+  kindForValueKind.set("IntegerPair", "integerPair");
+  kindForValueKind.set("Boolean", "boolean");
+  kindForValueKind.set("OptionToken", "option");
+  kindForValueKind.set("RecordReference", "recordReference");
+  kindForValueKind.set("ComponentVariant", "componentVariant");
+  kindForValueKind.set("ThemeToken", "themeToken");
+  kindForValueKind.set("IconToken", "icon");
+  for (const valueKind of ["IconTokenList", "IconSlots"]) kindForValueKind.set(valueKind, "iconList");
+  kindForValueKind.set("StringMultiline", "multilineText");
+  kindForValueKind.set("MediaFilePath", "mediaFilePath");
+  kindForValueKind.set("StructuredCollection", "collection");
+  kindForValueKind.set("BehaviorTiming", "behaviorTiming");
+  for (const valueKind of [
+    "StringSingleLine",
+    "StringReadOnly",
+    "DirectoryPath",
+    "ImageFilePath",
+    "ThemeTokenPair",
+    "TypographyStyle",
+    "TypographySystemStyle",
+    "HexColor",
+    "PaletteColorToken",
+    "PaletteColorPair",
+    "PaletteColorAlphaPair",
+    "EmbeddedComponent",
+    "ComponentInputBindings",
+    "AlignmentPlacement",
+    "Motion",
+    "MotionTiming",
+  ]) kindForValueKind.set(valueKind, "text");
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
     const rows = database.prepare(`
@@ -2119,6 +2151,11 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
           addViolation(
             "data/desktop-editor-spike.sqlite",
             `${owner}.${pathLabel} uses missing or non-canonical valueKind "${String(definition.valueKind ?? "")}"`,
+          );
+        } else if (kindForValueKind.get(definition.valueKind) !== definition.kind) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner}.${pathLabel} kind "${definition.kind}" does not match valueKind "${definition.valueKind}"`,
           );
         }
       }
@@ -4741,9 +4778,29 @@ assertContains(
   "dictionary registry must report an unregistered ValueKind visibly",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static ValueKind RequireCompatible(string kind, string valueKind, string owner)",
+  "runtime input kind and valueKind must share one exact semantic owner",
+);
+for (const runtimeInputKindConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "ignoreCase: false",
-  "runtime input valueKind parsing must accept only the current canonical enum spelling",
+]) {
+  assertContains(
+    runtimeInputKindConsumer,
+    "RuntimeInputValueKindContract.RequireCompatible(",
+    `${runtimeInputKindConsumer} must consume the exact Runtime Input kind/valueKind owner`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "CurrentRuntimeInputKinds",
+  "startup validation must not retain a parallel Runtime Input kind vocabulary",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "ParseValueKind(",
+  "Runtime Input presentation must not retain a parallel valueKind parser",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",

@@ -207,8 +207,10 @@ their declared text kinds; they are not a fallback for unknown kinds.
 Runtime Input definitions also persist an explicit canonical `valueKind`.
 Their `kind` describes the runtime input shape; `valueKind` selects the editor
 and serialization contract. The shared mapping between both vocabularies must
-be exhaustive and may be used only when constructing new current definitions.
-Normal reads never derive a missing `valueKind` from `kind`.
+be exhaustive. A current definition's stored `kind` must exactly match the
+canonical shape declared for its stored `valueKind`. The mapping constructs new
+definitions and validates current ones; normal reads never derive or replace a
+missing/mismatched value from the other field.
 
 Runtime Input option lookup additionally follows contract 55. The typed data
 source supplies exact current Actor, Palette and complete Component variant
@@ -219,6 +221,7 @@ The following are invalid current data:
 
 - missing or case-insensitive `valueKind` names;
 - an unknown Runtime Input `kind`;
+- a `kind`/`valueKind` pair that does not match the canonical shared mapping;
 - a dictionary registry miss;
 - a silent generic text control;
 - an incomplete id, label or JSON key;
