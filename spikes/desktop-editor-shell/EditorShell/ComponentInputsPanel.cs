@@ -70,7 +70,6 @@ internal sealed class ComponentPreviewInputSession
             {
                 CompletePlayback(activeAction);
             }
-            UpdateActionButtons();
             _refreshPreview();
             return;
         }
@@ -238,12 +237,10 @@ internal sealed class ComponentPreviewInputSession
             {
                 _values.Remove(key);
             }
-            SyncBooleanInput(key);
         }
         _playbackSecondsByActionId.Remove(action.Id);
         if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
         if (_activeActionId == action.Id) _activeActionId = "";
-        UpdateActionButtons();
         _refreshPreview();
         return true;
     }
@@ -354,7 +351,6 @@ internal sealed class ComponentPreviewInputSession
             _actionSnapshots.Remove(key);
             removed = true;
         }
-        UpdateActionButtons();
         if (removed) _refreshPreview();
         return removed;
     }
@@ -787,7 +783,6 @@ internal sealed class ComponentPreviewInputSession
         if (!SupportsPlayback())
         {
             StopPlayback();
-            UpdateActionButtons();
             return;
         }
 
@@ -797,25 +792,21 @@ internal sealed class ComponentPreviewInputSession
             if (_heldFinalActionId == activeAction.Id)
             {
                 if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
-                UpdateActionButtons();
                 return;
             }
             if (_awaitingPlaybackPresentation)
             {
                 if (_playbackTimer.IsEnabled) _playbackTimer.Stop();
-                UpdateActionButtons();
                 return;
             }
             if (!_playbackTimer.IsEnabled)
             {
                 _playbackTimer.Start();
             }
-            UpdateActionButtons();
             return;
         }
 
         StopPlayback();
-        UpdateActionButtons();
     }
 
     private void ApplyProjectFrameRate(string projectId)
@@ -856,7 +847,6 @@ internal sealed class ComponentPreviewInputSession
 
     private void TogglePlayback(ComponentPreviewActionDefinition action)
     {
-        var stateKey = ActionStateKey(action);
         var startsPlayback = !IsPlaying(action) || _heldFinalActionId == action.Id;
         PreviewDebugLog.Write(
             "preview.playback.toggle",
@@ -875,12 +865,9 @@ internal sealed class ComponentPreviewInputSession
         }
 
         SetPlaybackState(action, false);
-        SyncBooleanInput(stateKey);
         SyncPlaybackTimer();
         _refreshPreview();
     }
-
-    private static void UpdateActionButtons() { }
 
     private async Task StartPlaybackAsync(ComponentPreviewActionDefinition action)
     {
@@ -891,7 +878,6 @@ internal sealed class ComponentPreviewInputSession
         if (_preparePlaybackFrames is not null)
         {
             _preparingActionId = action.Id;
-            UpdateActionButtons();
             var stopwatch = Stopwatch.StartNew();
             PreviewDebugLog.Write(
                 "preview.playback.prepare.start",
@@ -922,8 +908,6 @@ internal sealed class ComponentPreviewInputSession
             if (!prepared)
             {
                 SetPlaybackState(action, false);
-                SyncBooleanInput(ActionStateKey(action));
-                UpdateActionButtons();
                 PlaybackBusyChanged?.Invoke(false);
                 return;
             }
@@ -940,15 +924,12 @@ internal sealed class ComponentPreviewInputSession
 
         if (!SupportsPlayback())
         {
-            UpdateActionButtons();
             PlaybackBusyChanged?.Invoke(false);
             return;
         }
 
         SetPlaybackState(action, true);
         _heldFinalActionId = "";
-        SyncBooleanInput(ActionStateKey(action));
-        SyncActivatedPlaybackInputs(action);
         SyncDeactivatedPlaybackInputs(action);
         _values[ActionTimeKey(action)] = "0";
         _playbackStartedAtSeconds = 0;
@@ -965,7 +946,6 @@ internal sealed class ComponentPreviewInputSession
             ("timeUnit", action.TimeUnit));
         PlaybackStarted?.Invoke(new PlaybackRunInfo(DurationFrames(action) + 1, _playbackFrameRate));
         SyncPlaybackTimer();
-        UpdateActionButtons();
         _refreshPreview();
     }
 
@@ -1062,7 +1042,6 @@ internal sealed class ComponentPreviewInputSession
                 return;
             }
             CompletePlayback(activeAction);
-            UpdateActionButtons();
             _refreshPreview();
         }
     }
@@ -1079,7 +1058,6 @@ internal sealed class ComponentPreviewInputSession
 
         _heldFinalActionId = "";
         _values[ActionStateKey(action)] = "false";
-        SyncBooleanInput(ActionStateKey(action));
         StopPlayback();
         PlaybackBusyChanged?.Invoke(false);
     }
@@ -1281,7 +1259,6 @@ internal sealed class ComponentPreviewInputSession
                 }
 
                 _values[ActionStateKey(otherAction)] = "false";
-                SyncBooleanInput(ActionStateKey(otherAction));
             }
 
             _activeActionId = action.Id;
@@ -1412,20 +1389,11 @@ internal sealed class ComponentPreviewInputSession
             ? $"{_scopeKey}:action:{action.Id}:target-value"
             : $"{_scopeKey}:{action.TargetInputId}";
 
-    private void SyncActivatedPlaybackInputs(ComponentPreviewActionDefinition action)
-    {
-        foreach (var key in ActivatedPlaybackInputKeys(action))
-        {
-            SyncBooleanInput(key);
-        }
-    }
-
     private void SyncDeactivatedPlaybackInputs(ComponentPreviewActionDefinition action)
     {
         foreach (var key in DeactivatedPlaybackInputKeys(action))
         {
             _values[key] = "false";
-            SyncBooleanInput(key);
         }
     }
 
@@ -1440,8 +1408,6 @@ internal sealed class ComponentPreviewInputSession
     {
         return _inputDefaults.GetValueOrDefault(key, defaultValue);
     }
-
-    private static void SyncBooleanInput(string key) { }
 
     private readonly record struct ActionValueSnapshot(bool Exists, string Value);
 

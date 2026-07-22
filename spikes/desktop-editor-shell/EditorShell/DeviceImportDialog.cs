@@ -41,7 +41,7 @@ internal sealed class DeviceImportDialog
     {
         var dialog = CreateDialog();
 
-        _searchButton.Click += async (_, _) => await Search(dialog);
+        _searchButton.Click += async (_, _) => await Search();
         _importButton.Click += (_, _) =>
         {
             if (_selectedDetails is null) return;
@@ -134,7 +134,7 @@ internal sealed class DeviceImportDialog
         return dialog;
     }
 
-    private async Task Search(Window dialog)
+    private async Task Search()
     {
         _searchCancellation?.Cancel();
         _searchCancellation = new CancellationTokenSource();

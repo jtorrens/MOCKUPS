@@ -1325,7 +1325,7 @@ internal sealed class EditorPreviewController
         if (_selectedPlaybackRoute != "raster")
         {
             var prewarmStopwatch = Stopwatch.StartNew();
-            ShowPreviewLoading($"Preparing HTML 0 / {frames.Count} frames…", () => { });
+            ShowPreviewLoading($"Preparing HTML 0 / {frames.Count} frames…");
             try
             {
                 var imageSources = new HashSet<string>(StringComparer.Ordinal);
@@ -1413,17 +1413,7 @@ internal sealed class EditorPreviewController
             ("marks", _showDesignMarks));
         if (frames.Count > LoadingPreviewFrameThreshold)
         {
-            ShowPreviewLoading(
-                $"Rasterizing {frames.Count} frames for playback...",
-                () =>
-                {
-                    PreviewDebugLog.Write(
-                        "preview.playback.frames.cancel.request",
-                        ("component", payload.ComponentType),
-                        ("name", payload.Name),
-                        ("frames", frames.Count));
-                    cancellation.Cancel();
-                });
+            ShowPreviewLoading($"Rasterizing {frames.Count} frames for playback...");
             await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
         }
 
@@ -1589,7 +1579,7 @@ internal sealed class EditorPreviewController
             .ContinueWith((_) => _isAheadPreloading = false, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
-    private void ShowPreviewLoading(string message, Action cancel)
+    private void ShowPreviewLoading(string message)
     {
         _designPreviewPane.SetRasterLoading(true, message);
         SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
@@ -1646,7 +1636,7 @@ internal sealed class EditorPreviewController
         if (_selectedPlaybackRoute == "raster"
             && _rasterPlaybackOrder.Count > 0)
         {
-            _designPreviewPane.PlayRasterFrames(_rasterPlaybackOrder, run.TargetFps);
+            _designPreviewPane.PlayRasterFrames(_rasterPlaybackOrder);
         }
     }
 

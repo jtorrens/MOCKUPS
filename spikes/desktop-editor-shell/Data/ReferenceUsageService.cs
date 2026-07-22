@@ -463,16 +463,14 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             "Left icon row",
             source,
             targets,
-            usages,
-            componentsByReference);
+            usages);
         ScanBindings(
             JsonPath.Get(config, ["conversation", "headerRightIconRowInputs"]),
             ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow"),
             "Right icon row",
             source,
             targets,
-            usages,
-            componentsByReference);
+            usages);
 
         var stackReference = "";
         var stackSlot = JsonPath.Get(config, ["lockScreen", "stackSlot"]) as JsonObject;
@@ -567,7 +565,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         }
         if (descriptor.ValueKind == ValueKind.ComponentInputBindings)
         {
-            ScanBindings(value, descriptor.ComponentInputBindings ?? [], fieldLabel, source, targets, usages, componentsByReference);
+            ScanBindings(value, descriptor.ComponentInputBindings ?? [], fieldLabel, source, targets, usages);
             return;
         }
         if (descriptor.ValueKind == ValueKind.StructuredCollection && descriptor.StructuredCollection is not null)
@@ -727,8 +725,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         string fieldLabel,
         SourceContext source,
         TargetCatalog targets,
-        ICollection<ReferenceUsageRecord> usages,
-        IReadOnlyDictionary<string, ComponentVariantOwner> componentsByReference)
+        ICollection<ReferenceUsageRecord> usages)
     {
         if (value is not JsonObject values) return;
         foreach (var binding in bindings)

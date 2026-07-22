@@ -84,7 +84,7 @@ internal abstract class WebPreviewPane : Grid
         WebView.IsVisible = true;
     }
 
-    public void PlayRasterFrames(IReadOnlyList<string> rasterIds, int framesPerSecond)
+    public void PlayRasterFrames(IReadOnlyList<string> rasterIds)
     {
         if (rasterIds.Count == 0) return;
         ShowRasterFrame(rasterIds[0]);

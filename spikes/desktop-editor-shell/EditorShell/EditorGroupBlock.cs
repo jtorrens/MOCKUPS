@@ -96,7 +96,7 @@ internal static class EditorGroupBlock
 
         var header = new Grid
         {
-            ColumnDefinitions = DictionaryFieldLayoutRules.Columns(ValueKind.PaletteColorPair),
+            ColumnDefinitions = DictionaryFieldLayoutRules.Columns(),
             ColumnSpacing = 12,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };

@@ -54,7 +54,7 @@ internal sealed class DictionaryFieldControl : Grid
             ? new ColumnDefinitions("*")
             : _blockLayout
                 ? new ColumnDefinitions("*,Auto")
-            : DictionaryFieldLayoutRules.Columns(_definition.ValueKind, compact);
+            : DictionaryFieldLayoutRules.Columns(compact);
         if (_separatedComplexLayout)
         {
             RowDefinitions = new RowDefinitions(valueOnly ? "Auto,Auto" : "Auto,Auto,Auto");
@@ -108,7 +108,7 @@ internal sealed class DictionaryFieldControl : Grid
         EditorAccessibility.Describe(
             _restoreButton,
             $"Restore {_definition.DisplayLabel} to its inherited value");
-        SetColumn(_restoreButton, _blockLayout ? 1 : DictionaryFieldLayoutRules.RestoreButtonColumn(_definition.ValueKind));
+        SetColumn(_restoreButton, _blockLayout ? 1 : DictionaryFieldLayoutRules.RestoreButtonColumn());
         if (_blockLayout) SetRow(_restoreButton, 1);
 
         if (_separatedComplexLayout)

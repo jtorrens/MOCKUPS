@@ -103,7 +103,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var valuesTab = new TabItem
         {
             Header = owner.IsInstance ? "Runtime Values" : "Test Values",
-            Content = CreateTestValuesTab(owner, preview, persistedPreview, inputs, collections, actions),
+            Content = CreateTestValuesTab(owner, preview, inputs, collections, actions),
         };
         var apiTab = new TabItem
         {
@@ -188,7 +188,6 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateTestValuesTab(
         RuntimeInputOwner owner,
         JsonObject preview,
-        JsonObject persistedPreview,
         IReadOnlyList<ComponentInputDefinition> inputs,
         IReadOnlyList<RuntimeInputCollectionDefinition> collections,
         IReadOnlyList<ComponentPreviewActionDefinition> actions)

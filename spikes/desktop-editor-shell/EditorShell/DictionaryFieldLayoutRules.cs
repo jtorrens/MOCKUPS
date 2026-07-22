@@ -37,7 +37,7 @@ internal static class DictionaryFieldLayoutRules
                 + (columnGapCount * columnSpacing);
     }
 
-    public static ColumnDefinitions Columns(ValueKind valueKind, bool compact = false)
+    public static ColumnDefinitions Columns(bool compact = false)
     {
         return new ColumnDefinitions($"{MaximumLabelWidth(compact)},*,Auto");
     }
@@ -79,5 +79,5 @@ internal static class DictionaryFieldLayoutRules
             : VerticalAlignment.Center;
     }
 
-    public static int RestoreButtonColumn(ValueKind valueKind) => 2;
+    public static int RestoreButtonColumn() => 2;
 }

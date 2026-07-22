@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
+    "check:unused:desktop": "dotnet format spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj style --verify-no-changes --severity info --diagnostics IDE0060 --no-restore",
     "check:architecture": "tsx scripts/checkDesktopPreviewArchitecture.ts",
     "legacy:icon-theme:import": "tsx archive/react-legacy/src/icon-themes/importDevelopmentIconTheme.ts",
     "legacy:validate:examples": "tsx archive/react-legacy/src/domain/validation/validateExamples.ts",
@@ -30,7 +31,7 @@
     "animation:test:preview": "tsx --test tests/animation/*.test.ts",
     "animation:test:desktop": "dotnet run --project spikes/desktop-editor-shell-animation-tests/Mockups.DesktopEditorShell.AnimationTests.csproj",
     "animation:test": "npm run animation:test:preview && npm run animation:test:desktop",
-    "test": "npm run desktop-preview:build && npm run typecheck && npm run animation:test && npm run check:architecture && npm run desktop:build"
+    "test": "npm run desktop-preview:build && npm run typecheck && npm run check:unused:desktop && npm run animation:test && npm run check:architecture && npm run desktop:build"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",

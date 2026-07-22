@@ -86,8 +86,10 @@ duplication as dead code.
 
 The active TypeScript typecheck enables unused-local and unused-parameter
 diagnostics. Current desktop Preview source must therefore contain no confirmed
-unused binding. C# and XAML candidates still require explicit cross-reference
-evidence because the standard build does not prove their absence by itself.
+unused binding. The desktop check also rejects C# `IDE0060` unused parameters.
+No-op methods, C# members and XAML candidates still require explicit
+cross-reference evidence because those checks do not prove their absence by
+themselves.
 
 Architecture enforcement must keep this contract in `AGENTS.md` and the
 architecture index. Additional negative checks should be added only for

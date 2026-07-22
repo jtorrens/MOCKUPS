@@ -137,7 +137,6 @@ internal sealed class ModuleInstanceAnimationEditor
         var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
         var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
         List<AnimationTarget> ReadScopeTargets(JsonObject currentAnimation) => ReadTargets(
-                node,
                 preview,
                 config,
                 currentAnimation,
@@ -962,7 +961,6 @@ internal sealed class ModuleInstanceAnimationEditor
     }
 
     private IReadOnlyList<AnimationTarget> ReadTargets(
-        ProjectTreeNode node,
         JsonObject preview,
         JsonObject config,
         JsonObject animation,
