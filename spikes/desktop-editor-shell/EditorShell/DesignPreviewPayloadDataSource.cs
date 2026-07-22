@@ -74,15 +74,7 @@ internal sealed class DesignPreviewPayloadDataSource
         var themeId = ResolveThemeId(node, selectedThemeId);
         if (string.IsNullOrWhiteSpace(themeId)) return null;
 
-        SpikeDatabase.ThemeSettings theme;
-        try
-        {
-            theme = _database.GetThemeSettings(themeId);
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
+        var theme = _database.GetThemeSettings(themeId);
 
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
             ? _database.GetIconThemeSettings(theme.IconThemeId)
@@ -107,13 +99,15 @@ internal sealed class DesignPreviewPayloadDataSource
             return selectedThemeId;
         }
 
-        var shot = ShotFor(node);
-        if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return selectedThemeId;
+        var actor = RequiredProductionActorContext(node);
+        if (string.IsNullOrWhiteSpace(actor.DefaultThemeId))
+        {
+            throw new InvalidOperationException(
+                $"Actor '{actor.DisplayName}' has no explicit default Theme for Production Preview.");
+        }
 
-        var actor = _actorDataSource.LoadContext(shot.OwnerActorId);
-        return string.IsNullOrWhiteSpace(actor.DefaultThemeId)
-            ? selectedThemeId
-            : actor.DefaultThemeId;
+        _database.GetThemeSettings(actor.DefaultThemeId);
+        return actor.DefaultThemeId;
     }
 
     public DesignPreviewComponentSource LoadComponentClass(ProjectTreeNode node)
@@ -221,15 +215,32 @@ internal sealed class DesignPreviewPayloadDataSource
     private string ResolveDeviceId(ProjectTreeNode node)
     {
         if (node.Kind is not ProjectTreeNodeKind.ModuleInstance and not ProjectTreeNodeKind.Shot) return "";
-        var shot = ShotFor(node);
-        if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return "";
-        return _actorDataSource.LoadContext(shot.OwnerActorId).DefaultDeviceId;
+        var actor = RequiredProductionActorContext(node);
+        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId))
+        {
+            throw new InvalidOperationException(
+                $"Actor '{actor.DisplayName}' has no explicit default Device for Production Preview.");
+        }
+
+        _database.GetDeviceSettings(actor.DefaultDeviceId);
+        return actor.DefaultDeviceId;
     }
 
-    private SpikeDatabase.ShotSettings ShotFor(ProjectTreeNode node)
+    private ActorPreviewContextSource RequiredProductionActorContext(ProjectTreeNode node)
     {
-        return node.Kind == ProjectTreeNodeKind.Shot
-            ? _database.GetShotSettings(node.Id)
-            : _database.GetShotSettings(_database.GetModuleInstanceSettings(node.Id).ShotId);
+        var shotId = ShotIdFor(node);
+        var shot = _database.GetShotSettings(shotId);
+        if (string.IsNullOrWhiteSpace(shot.OwnerActorId))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{shotId}' has no explicit owner Actor for Production Preview.");
+        }
+
+        return _actorDataSource.LoadContext(shot.OwnerActorId);
     }
+
+    private string ShotIdFor(ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.Shot
+            ? node.Id
+            : _database.GetModuleInstanceSettings(node.Id).ShotId;
 }

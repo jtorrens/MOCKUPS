@@ -42,6 +42,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
+    ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
@@ -2229,6 +2230,66 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void PreviewPayloadRejectsIncompleteProductionContext()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-preview-production-context-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var component = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
+        var shotId = database.GetModuleInstanceSettings(screen.Id).ShotId;
+        var shot = database.GetShotSettings(shotId);
+        var actorId = shot.OwnerActorId;
+        var actor = database.GetActorSettings(actorId);
+
+        Equal(actor.DefaultThemeId, dataSource.ResolveThemeId(component, actor.DefaultThemeId));
+        Equal(actor.DefaultThemeId, dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+        True(dataSource.LoadThemeContext(screen, actor.DefaultThemeId) is not null);
+
+        UpdateProductionContext("UPDATE shots SET owner_actor_id = '' WHERE id = $id", shotId);
+        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+
+        UpdateProductionContext("UPDATE shots SET owner_actor_id = $value WHERE id = $id", shotId, actorId);
+        UpdateProductionContext("UPDATE actors SET default_theme_id = '' WHERE id = $id", actorId);
+        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+
+        UpdateProductionContext("UPDATE actors SET default_theme_id = $value WHERE id = $id", actorId, "missing_theme");
+        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+
+        UpdateProductionContext("UPDATE actors SET default_theme_id = $value WHERE id = $id", actorId, actor.DefaultThemeId);
+        UpdateProductionContext("UPDATE actors SET default_device_id = '' WHERE id = $id", actorId);
+        Throws<InvalidOperationException>(() => dataSource.LoadThemeContext(screen, actor.DefaultThemeId));
+
+        UpdateProductionContext("UPDATE actors SET default_device_id = $value WHERE id = $id", actorId, "missing_device");
+        Throws<InvalidOperationException>(() => dataSource.LoadThemeContext(screen, actor.DefaultThemeId));
+
+        void UpdateProductionContext(string sql, string id, string? value = null)
+        {
+            using var connection = new SqliteConnection($"Data Source={temporary}");
+            connection.Open();
+            using (var foreignKeys = connection.CreateCommand())
+            {
+                foreignKeys.CommandText = "PRAGMA foreign_keys = OFF";
+                foreignKeys.ExecuteNonQuery();
+            }
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.Parameters.AddWithValue("$id", id);
+            if (value is not null) command.Parameters.AddWithValue("$value", value);
+            Equal(1, command.ExecuteNonQuery());
+        }
     }
     finally
     {

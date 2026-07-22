@@ -368,6 +368,23 @@ for (const productionContextConsumer of [
     "navigation and Preview must compose the typed Production Shot context boundary",
   );
 }
+for (const forbiddenProductionPayloadFallback of [
+  "if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return selectedThemeId;",
+  "? selectedThemeId\n            : actor.DefaultThemeId",
+  "if (string.IsNullOrWhiteSpace(shot.OwnerActorId)) return \"\";",
+  "catch (InvalidOperationException)",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+    forbiddenProductionPayloadFallback,
+    `Preview payload Production context must not restore a selector or empty-value fallback (${forbiddenProductionPayloadFallback})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "RequiredProductionActorContext(node)",
+  "Preview payload Production context must require the exact Shot owner Actor route",
+);
 assertContains(
   "AGENTS.md",
   "docs/architecture/55_runtime_input_options_data_boundary_contract.md",
