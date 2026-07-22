@@ -52,10 +52,8 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var themes = _themeRepository.QueryAll(connection);
         var theme = themes
-            .Where((row) => row.ProjectId == projectId)
-            .FirstOrDefault((row) => row.Id == themeId)
-            ?? themes.FirstOrDefault((row) => row.ProjectId == projectId)
-            ?? throw new InvalidOperationException($"No themes available for project '{projectId}'.");
+            .SingleOrDefault((row) => row.ProjectId == projectId && row.Id == themeId)
+            ?? throw new InvalidOperationException($"Missing Theme '{themeId}' in Project '{projectId}'.");
         var tokens = ParseJsonObject(theme.TokensJson);
         var palette = _paletteRepository.GetColorMap(projectId);
 

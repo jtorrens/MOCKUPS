@@ -25,6 +25,9 @@ validaciones a sus owners.
 | `animation_json` nulo reparado como `{}` durante la preparación del payload | Fallback de documento actual cerrado | Retirado en el slice 0A.2; el documento actual debe llegar completo. |
 | Placeholders visuales de iconos y media | Policy visual deliberada | Mantener; no equivalen a reparación de contexto. |
 | Defaults de sesión en selectores de Design Preview | Estado visual de sesión | Mantener; no pueden cruzar a Producción. |
+| Theme solicitado inexistente sustituido por el primer Theme del Project al inspeccionar tokens | Fallback semántico cerrado | Retirado en el slice 0A.4; la selección exacta debe existir. |
+| Valores de tokens de `iOS/Android starting point` al crear un Theme | Construcción explícita de documento nuevo | Mantener mientras no se rediseñe el flujo de creación. |
+| Primer Icon Theme y primeras fuentes elegidos al crear un Theme | Automatismo semántico pendiente | No tocar sin aprobar un flujo de selección explícita; no es un fallback de lectura. |
 
 ## Slice 0A.1 — Contexto exacto del payload de Producción
 
@@ -74,7 +77,6 @@ Variants, Runtime Inputs, animación ni renderizado.
 
 ## Siguientes candidatos, aún no ejecutados
 
-- terminar la clasificación de defaults semánticos en creación de Themes;
 - retirar código que quede huérfano después de cerrar todos los fallbacks;
 - construir el inventario de validaciones antes de mover ninguna a sus owners.
 
@@ -131,3 +133,22 @@ prueba y conserva el incoming explícito. La selección `None` aparece únicamen
 para system; incoming exige Actor antes de persistirse. Quedan cubiertos el
 rechazo read-only de documentos inválidos, la escritura atómica, la proyección
 del Shot owner y la ausencia de `sample_actor` en Producción.
+
+## Slice 0A.4 — Selección exacta al inspeccionar tokens de Theme
+
+El selector visual puede iniciar una sesión mostrando el primer Theme de su
+lista, pero una vez elegido un id la consulta exige ese Theme exacto dentro del
+Project exacto. Un id ausente o perteneciente a otro Project falla y no muestra
+silenciosamente los tokens de otro Theme.
+
+La creación queda clasificada, no rediseñada:
+
+- los documentos base iOS/Android son construcción explícita de una entidad
+  nueva y no reparación de datos existentes;
+- la elección automática del primer Icon Theme y las primeras fuentes es un
+  automatismo semántico pendiente de retirar;
+- sustituirlo requiere aprobar antes las elecciones y presentación del diálogo
+  de creación, por lo que no se mezcla con este slice sin cambio de UX válida.
+
+La regresión prueba el rechazo del Theme inexistente y el enforcement impide
+reintroducir la sustitución por el primero del Project.

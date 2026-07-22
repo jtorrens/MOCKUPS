@@ -69,6 +69,11 @@ and common Theme catalogs continue to own:
 The repository stores the complete result of an explicit edit; it does not
 resolve palette colors, fonts, assets, Device pixels or Preview atoms.
 
+Theme-token inspection also requires the exact selected Theme id in the exact
+Project. An absent or cross-Project selection fails explicitly; it must not
+show the first Project Theme as a plausible substitute. A picker may choose an
+initial Theme as session-only UI state before making this exact request.
+
 ## 4. Explicit lifecycle
 
 Theme creation constructs a complete current tokens document before insertion.

@@ -1497,6 +1497,7 @@ static void ThemeRepositoryPreservesFacadeContract()
         Equal(settings.NavigationBarId, record.NavigationBarId);
         Equal(settings.TokensJson, record.TokensJson);
         Equal(settings.MetadataJson, record.MetadataJson);
+        Throws<InvalidOperationException>(() => database.GetThemeTokenOptions(project.Id, "missing_theme"));
         using (var connection = context.OpenConnection())
         {
             SequenceEqual(

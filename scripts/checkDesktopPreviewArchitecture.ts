@@ -3222,6 +3222,11 @@ for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
     "tree orchestration must delegate Theme lifecycle writes to ThemeRepository",
   );
 }
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
+  "?? themes.FirstOrDefault((row) => row.ProjectId == projectId)",
+  "Theme token inspection must require the exact selected Theme instead of falling back to the first Project Theme",
+);
 for (const resourceRepositoryPath of [
   "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
   "spikes/desktop-editor-shell/Data/DeviceRepository.cs",
