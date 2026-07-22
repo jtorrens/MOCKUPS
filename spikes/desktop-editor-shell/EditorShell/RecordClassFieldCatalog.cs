@@ -26,6 +26,11 @@ internal static class RecordClassFieldCatalog
 {
     private static readonly FieldOption[] SpacingTokenOptions = ComponentClassFieldCatalog.SpacingTokenOptions;
     private static readonly FieldOption[] TypographySizeOptions = ComponentClassFieldCatalog.TypographySizeOptions;
+    private static readonly PairFieldLabels WidthHeightPairLabels = new("W", "H");
+    private static readonly PairFieldLabels PositionPairLabels = new("X", "Y");
+    private static readonly PairFieldLabels VerticalInsetPairLabels = new("Top", "Bottom");
+    private static readonly PairFieldLabels HorizontalInsetPairLabels = new("Left", "Right");
+    private static readonly PairFieldLabels LightDarkPairLabels = new("Light", "Dark");
 
     private static readonly FieldOption[] TypingIndicatorAnimationOptions =
     [
@@ -83,7 +88,7 @@ internal static class RecordClassFieldCatalog
             "Opacity",
             ValueKind.Decimal,
             Number: new NumberDefinition(0, 1, 0.05m, 2)),
-        ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
+        ["app.wallpaper.color"] = new("app.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["app.wallpaper.images.light.filePath"] = new(
             "app.wallpaper.images.light.filePath",
             "Light image",
@@ -109,7 +114,7 @@ internal static class RecordClassFieldCatalog
             "Icon scale",
             ValueKind.Decimal,
             Number: new NumberDefinition(0.01m, 8, 0.05m, 2)),
-        ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
+        ["app.icon.offset"] = new("app.icon.offset", "Icon offset", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
 
         ["module.recordClassId"] = new(
             "module.recordClassId",
@@ -178,7 +183,7 @@ internal static class RecordClassFieldCatalog
             "module.conversation.screenGutter",
             "Screen gutter",
             ValueKind.ThemeTokenPair,
-            PairLabels: new("X", "Y"),
+            PairLabels: PositionPairLabels,
             Options: SpacingTokenOptions),
         ["module.conversation.messageGap"] = new(
             "module.conversation.messageGap",
@@ -243,8 +248,8 @@ internal static class RecordClassFieldCatalog
         ["device.manufacturer"] = new("device.manufacturer", "Manufacturer", ValueKind.StringSingleLine),
         ["device.model"] = new("device.model", "Model", ValueKind.StringSingleLine),
         ["device.osFamily"] = new("device.osFamily", "OS Family", ValueKind.StringSingleLine),
-        ["device.metrics.designSpace.size"] = new("device.metrics.designSpace.size", "Design space", ValueKind.IntegerPair),
-        ["device.metrics.renderSize"] = new("device.metrics.renderSize", "Render size", ValueKind.IntegerPair),
+        ["device.metrics.designSpace.size"] = new("device.metrics.designSpace.size", "Design space", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
+        ["device.metrics.renderSize"] = new("device.metrics.renderSize", "Render size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
         ["device.metrics.scaleToPixels"] = new(
             "device.metrics.scaleToPixels",
             "Scale to pixels",
@@ -260,18 +265,18 @@ internal static class RecordClassFieldCatalog
             "Default screen scale",
             ValueKind.Decimal,
             Number: new NumberDefinition(0.1m, 10, 0.1m, 2)),
-        ["device.metrics.canvas.size"] = new("device.metrics.canvas.size", "Canvas size", ValueKind.IntegerPair),
-        ["device.metrics.screen.position"] = new("device.metrics.screen.position", "Screen position", ValueKind.IntegerPair),
-        ["device.metrics.screen.size"] = new("device.metrics.screen.size", "Screen size", ValueKind.IntegerPair),
+        ["device.metrics.canvas.size"] = new("device.metrics.canvas.size", "Canvas size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
+        ["device.metrics.screen.position"] = new("device.metrics.screen.position", "Screen position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
+        ["device.metrics.screen.size"] = new("device.metrics.screen.size", "Screen size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
         ["device.metrics.cornerRadius"] = new("device.metrics.cornerRadius", "Corner radius", ValueKind.Integer),
-        ["device.metrics.viewport.position"] = new("device.metrics.viewport.position", "Viewport position", ValueKind.IntegerPair),
-        ["device.metrics.viewport.size"] = new("device.metrics.viewport.size", "Viewport size", ValueKind.IntegerPair),
-        ["device.metrics.safeArea.vertical"] = new("device.metrics.safeArea.vertical", "Safe vertical", ValueKind.IntegerPair),
-        ["device.metrics.safeArea.horizontal"] = new("device.metrics.safeArea.horizontal", "Safe horizontal", ValueKind.IntegerPair),
-        ["device.metrics.statusBar.position"] = new("device.metrics.statusBar.position", "Status bar position", ValueKind.IntegerPair),
-        ["device.metrics.statusBar.size"] = new("device.metrics.statusBar.size", "Status bar size", ValueKind.IntegerPair),
-        ["device.metrics.dynamicIsland.position"] = new("device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair),
-        ["device.metrics.dynamicIsland.size"] = new("device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair),
+        ["device.metrics.viewport.position"] = new("device.metrics.viewport.position", "Viewport position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
+        ["device.metrics.viewport.size"] = new("device.metrics.viewport.size", "Viewport size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
+        ["device.metrics.safeArea.vertical"] = new("device.metrics.safeArea.vertical", "Safe vertical", ValueKind.IntegerPair, PairLabels: VerticalInsetPairLabels),
+        ["device.metrics.safeArea.horizontal"] = new("device.metrics.safeArea.horizontal", "Safe horizontal", ValueKind.IntegerPair, PairLabels: HorizontalInsetPairLabels),
+        ["device.metrics.statusBar.position"] = new("device.metrics.statusBar.position", "Status bar position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
+        ["device.metrics.statusBar.size"] = new("device.metrics.statusBar.size", "Status bar size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
+        ["device.metrics.dynamicIsland.position"] = new("device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
+        ["device.metrics.dynamicIsland.size"] = new("device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
 
         ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken),
         ["theme.iconThemeId"] = new(
@@ -296,33 +301,33 @@ internal static class RecordClassFieldCatalog
             "Saturation",
             ValueKind.Decimal,
             Number: new NumberDefinition(0, 1, 0.05m, 2, UseSlider: true)),
-        ["theme.colors.background"] = new("theme.colors.background", "Background", ValueKind.PaletteColorPair),
-        ["theme.colors.surface"] = new("theme.colors.surface", "Surface", ValueKind.PaletteColorPair),
-        ["theme.colors.card"] = new("theme.colors.card", "Card", ValueKind.PaletteColorPair),
-        ["theme.colors.label"] = new("theme.colors.label", "Label", ValueKind.PaletteColorPair),
-        ["theme.colors.text"] = new("theme.colors.text", "Text", ValueKind.PaletteColorPair),
-        ["theme.colors.textPrimary"] = new("theme.colors.textPrimary", "Text primary", ValueKind.PaletteColorPair),
-        ["theme.colors.textSecondary"] = new("theme.colors.textSecondary", "Text secondary", ValueKind.PaletteColorPair),
-        ["theme.colors.icon"] = new("theme.colors.icon", "Icon", ValueKind.PaletteColorPair),
-        ["theme.colors.button"] = new("theme.colors.button", "Button", ValueKind.PaletteColorPair),
-        ["theme.colors.field"] = new("theme.colors.field", "Field", ValueKind.PaletteColorPair),
-        ["theme.colors.checkbox"] = new("theme.colors.checkbox", "Checkbox", ValueKind.PaletteColorPair),
-        ["theme.colors.radio"] = new("theme.colors.radio", "Radio", ValueKind.PaletteColorPair),
-        ["theme.colors.switch"] = new("theme.colors.switch", "Switch", ValueKind.PaletteColorPair),
-        ["theme.colors.tab"] = new("theme.colors.tab", "Tab", ValueKind.PaletteColorPair),
-        ["theme.colors.menuItem"] = new("theme.colors.menuItem", "Menu item", ValueKind.PaletteColorPair),
-        ["theme.colors.badge"] = new("theme.colors.badge", "Badge", ValueKind.PaletteColorPair),
-        ["theme.colors.toast"] = new("theme.colors.toast", "Toast", ValueKind.PaletteColorPair),
-        ["theme.colors.divider"] = new("theme.colors.divider", "Divider", ValueKind.PaletteColorPair),
-        ["theme.colors.accent"] = new("theme.colors.accent", "Accent", ValueKind.PaletteColorPair),
-        ["theme.icons.primary"] = new("theme.icons.primary", "Icon primary", ValueKind.PaletteColorPair),
-        ["theme.icons.secondary"] = new("theme.icons.secondary", "Icon secondary", ValueKind.PaletteColorPair),
-        ["theme.icons.alternate"] = new("theme.icons.alternate", "Icon alternate", ValueKind.PaletteColorPair),
-        ["theme.icons.accent"] = new("theme.icons.accent", "Icon accent", ValueKind.PaletteColorPair),
-        ["theme.borders.primary"] = new("theme.borders.primary", "Border primary", ValueKind.PaletteColorPair),
-        ["theme.borders.secondary"] = new("theme.borders.secondary", "Border secondary", ValueKind.PaletteColorPair),
-        ["theme.borders.alternate"] = new("theme.borders.alternate", "Border alternate", ValueKind.PaletteColorPair),
-        ["theme.cursor.color"] = new("theme.cursor.color", "Cursor color", ValueKind.PaletteColorPair),
+        ["theme.colors.background"] = new("theme.colors.background", "Background", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.surface"] = new("theme.colors.surface", "Surface", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.card"] = new("theme.colors.card", "Card", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.label"] = new("theme.colors.label", "Label", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.text"] = new("theme.colors.text", "Text", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.textPrimary"] = new("theme.colors.textPrimary", "Text primary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.textSecondary"] = new("theme.colors.textSecondary", "Text secondary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.icon"] = new("theme.colors.icon", "Icon", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.button"] = new("theme.colors.button", "Button", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.field"] = new("theme.colors.field", "Field", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.checkbox"] = new("theme.colors.checkbox", "Checkbox", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.radio"] = new("theme.colors.radio", "Radio", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.switch"] = new("theme.colors.switch", "Switch", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.tab"] = new("theme.colors.tab", "Tab", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.menuItem"] = new("theme.colors.menuItem", "Menu item", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.badge"] = new("theme.colors.badge", "Badge", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.toast"] = new("theme.colors.toast", "Toast", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.divider"] = new("theme.colors.divider", "Divider", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.colors.accent"] = new("theme.colors.accent", "Accent", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.icons.primary"] = new("theme.icons.primary", "Icon primary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.icons.secondary"] = new("theme.icons.secondary", "Icon secondary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.icons.alternate"] = new("theme.icons.alternate", "Icon alternate", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.icons.accent"] = new("theme.icons.accent", "Icon accent", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.borders.primary"] = new("theme.borders.primary", "Border primary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.borders.secondary"] = new("theme.borders.secondary", "Border secondary", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.borders.alternate"] = new("theme.borders.alternate", "Border alternate", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.cursor.color"] = new("theme.cursor.color", "Cursor color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["theme.cursor.width"] = new("theme.cursor.width", "Cursor width", ValueKind.Integer),
         ["theme.cursor.blinkDurationMs"] = new("theme.cursor.blinkDurationMs", "Blink duration", ValueKind.Integer, Unit: "ms"),
         ["theme.shadows.default.color"] = new("theme.shadows.default.color", "Color", ValueKind.PaletteColorToken),
@@ -333,12 +338,12 @@ internal static class RecordClassFieldCatalog
         ["theme.keyboard.height"] = new("theme.keyboard.height", "Height", ValueKind.Integer),
         ["theme.keyboard.keyGap"] = new("theme.keyboard.keyGap", "Key gap", ValueKind.Integer),
         ["theme.keyboard.rowGap"] = new("theme.keyboard.rowGap", "Row gap", ValueKind.Integer),
-        ["theme.keyboard.background"] = new("theme.keyboard.background", "Background", ValueKind.PaletteColorPair),
-        ["theme.keyboard.keyBackground"] = new("theme.keyboard.keyBackground", "Key background", ValueKind.PaletteColorPair),
-        ["theme.keyboard.specialKeyBackground"] = new("theme.keyboard.specialKeyBackground", "Special key background", ValueKind.PaletteColorPair),
-        ["theme.keyboard.pressedKeyBackground"] = new("theme.keyboard.pressedKeyBackground", "Pressed key background", ValueKind.PaletteColorPair),
-        ["theme.keyboard.keyBorder"] = new("theme.keyboard.keyBorder", "Key border", ValueKind.PaletteColorPair),
-        ["theme.keyboard.text"] = new("theme.keyboard.text", "Text", ValueKind.PaletteColorPair),
+        ["theme.keyboard.background"] = new("theme.keyboard.background", "Background", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.keyboard.keyBackground"] = new("theme.keyboard.keyBackground", "Key background", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.keyboard.specialKeyBackground"] = new("theme.keyboard.specialKeyBackground", "Special key background", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.keyboard.pressedKeyBackground"] = new("theme.keyboard.pressedKeyBackground", "Pressed key background", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.keyboard.keyBorder"] = new("theme.keyboard.keyBorder", "Key border", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["theme.keyboard.text"] = new("theme.keyboard.text", "Text", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["theme.motion.fade"] = new("theme.motion.fade", "Fade", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.slide"] = new("theme.motion.slide", "Slide", ValueKind.MotionTiming, Options: MotionEasingOptions),
         ["theme.motion.swipe"] = new("theme.motion.swipe", "Swipe", ValueKind.MotionTiming, Options: MotionEasingOptions),
@@ -414,11 +419,11 @@ internal static class RecordClassFieldCatalog
             "Default theme",
             ValueKind.RecordReference,
             RecordReference: new RecordReferenceDefinition("themes")),
-        ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair),
-        ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair),
+        ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
+        ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["actor.wallpaper.kind"] = new("actor.wallpaper.kind", "Kind", ValueKind.OptionToken),
         ["actor.wallpaper.opacity"] = new("actor.wallpaper.opacity", "Opacity", ValueKind.Decimal, Number: new NumberDefinition(0, 1, 0.05m, 2)),
-        ["actor.wallpaper.color"] = new("actor.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: new("Light", "Dark")),
+        ["actor.wallpaper.color"] = new("actor.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["actor.wallpaper.images.light.filePath"] = new(
             "actor.wallpaper.images.light.filePath",
             "Light image",
@@ -443,7 +448,7 @@ internal static class RecordClassFieldCatalog
             "Avatar scale",
             ValueKind.Decimal,
             Number: new NumberDefinition(0.01m, 8, 0.05m, 2)),
-        ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair, PairLabels: new("X", "Y")),
+        ["actor.avatar.offset"] = new("actor.avatar.offset", "Avatar offset", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
         ["actor.avatar.useInitials"] = new("actor.avatar.useInitials", "Use initials", ValueKind.Boolean),
         ["actor.avatar.initialsPadding"] = new("actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
 
@@ -457,6 +462,8 @@ internal static class RecordClassFieldCatalog
         ["iconTheme.metadata"] = new("iconTheme.metadata", "Metadata", ValueKind.StringMultiline, IsEditable: false),
 
     };
+
+    internal static IReadOnlyCollection<RecordClassFieldDescriptor> All => Fields.Values;
 
     public static RecordClassFieldDescriptor Get(string fieldId)
     {

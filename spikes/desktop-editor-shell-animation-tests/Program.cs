@@ -28,6 +28,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
+    ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
@@ -669,6 +670,47 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].defaultValue', '{}') WHERE id = 'module_core_chat'";
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("runtime-pair-label", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET design_preview_json = json_remove(design_preview_json, '$.collections[0].fields[11].pairFirstLabel') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+}
+
+static void PairFieldsRequireExplicitLabels()
+{
+    static void AssertExplicit(ValueKind valueKind, PairFieldLabels? labels, string owner)
+    {
+        if (!PairFieldLabelsContract.IsPair(valueKind))
+        {
+            return;
+        }
+
+        var required = PairFieldLabelsContract.Require(labels, owner);
+        True(!string.IsNullOrWhiteSpace(required.First));
+        True(!string.IsNullOrWhiteSpace(required.Second));
+    }
+
+    foreach (var field in RecordClassFieldCatalog.All)
+    {
+        AssertExplicit(field.ValueKind, field.PairLabels, $"Record field '{field.Id}'");
+    }
+
+    foreach (var field in ComponentClassFieldCatalog.All())
+    {
+        AssertExplicit(field.ValueKind, field.PairLabels, $"Component field '{field.Id}'");
+    }
+
+    var labels = PairFieldLabelsContract.Require(new PairFieldLabels("X", "Y"), "Test pair");
+    Equal("X", labels.First);
+    Equal("Y", labels.Second);
+    Throws<InvalidOperationException>(() => PairFieldLabelsContract.Require(null, "Missing pair"));
+    Throws<InvalidOperationException>(() => PairFieldLabelsContract.Require(new PairFieldLabels("", "Y"), "Incomplete pair"));
+    Throws<InvalidOperationException>(() => DictionaryFieldPairText.Labels(new FieldDefinition(
+        "looks.like.size",
+        "Size",
+        ValueKind.IntegerPair)));
 }
 
 static void DesignTestValuesPreserveStrictDocuments()

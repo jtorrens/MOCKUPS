@@ -64,6 +64,7 @@ internal static class RuntimeInputValueKindContract
         var kind = JsonPath.RequiredString(definition, "kind", owner);
         var valueKindName = JsonPath.RequiredString(definition, "valueKind", owner);
         var valueKind = RequireCompatible(kind, valueKindName, owner);
+        _ = ReadPairLabels(definition, valueKind, owner);
         var defaultValue = definition["defaultValue"] is JsonValue defaultNode
             && defaultNode.TryGetValue<string>(out var text)
                 ? text
@@ -89,6 +90,23 @@ internal static class RuntimeInputValueKindContract
         }
 
         return ParseValue(valueKind, defaultValue, $"{owner} defaultValue");
+    }
+
+    public static PairFieldLabels? ReadPairLabels(
+        JsonObject definition,
+        ValueKind valueKind,
+        string owner)
+    {
+        if (!PairFieldLabelsContract.IsPair(valueKind))
+        {
+            return null;
+        }
+
+        return PairFieldLabelsContract.Require(
+            new PairFieldLabels(
+                JsonPath.RequiredString(definition, "pairFirstLabel", owner),
+                JsonPath.RequiredString(definition, "pairSecondLabel", owner)),
+            owner);
     }
 
     public static JsonNode ParseValue(ValueKind valueKind, string value, string owner) => valueKind switch

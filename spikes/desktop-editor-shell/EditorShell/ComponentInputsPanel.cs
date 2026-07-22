@@ -741,7 +741,7 @@ internal sealed class ComponentPreviewInputSession
         string resolvedJsonKey,
         string componentType,
         ComponentInputSource source,
-        PairFieldLabels pairLabels,
+        PairFieldLabels? pairLabels,
         ComponentInputUiOrigin uiOrigin,
         string uiGroupId,
         string uiGroupLabel,
@@ -753,6 +753,10 @@ internal sealed class ComponentPreviewInputSession
             valueKind,
             $"Runtime Input '{id}'");
         var normalizedKind = ParseKind(kind);
+        var normalizedPairLabels = PairFieldLabelsContract.ForField(
+            normalizedValueKind,
+            pairLabels,
+            $"Runtime Input '{id}'");
         return new ComponentInputDefinition(
             id,
             label,
@@ -768,7 +772,7 @@ internal sealed class ComponentPreviewInputSession
             resolvedJsonKey,
             componentType,
             source,
-            pairLabels,
+            normalizedPairLabels,
             uiOrigin,
             uiGroupId,
             uiGroupLabel,
@@ -1488,9 +1492,7 @@ internal sealed class ComponentPreviewInputSession
                 JsonString(item, "resolvedJsonKey"),
                 JsonString(item, "componentType"),
                 source,
-                new PairFieldLabels(
-                    JsonString(item, "pairFirstLabel", "W"),
-                    JsonString(item, "pairSecondLabel", "H")),
+                ReadPairLabels(item),
                 ParseInputUiOrigin(JsonString(item, "uiOrigin")),
                 JsonString(item, "uiGroupId"),
                 JsonString(item, "uiGroupLabel"),
@@ -1574,9 +1576,7 @@ internal sealed class ComponentPreviewInputSession
                     JsonString(field, "resolvedJsonKey"),
                     JsonString(field, "componentType"),
                     ComponentInputSource.Runtime,
-                    new PairFieldLabels(
-                        JsonString(field, "pairFirstLabel", "W"),
-                        JsonString(field, "pairSecondLabel", "H")),
+                    ReadPairLabels(field),
                     string.IsNullOrWhiteSpace(JsonString(field, "uiGroupId"))
                         ? ComponentInputUiOrigin.Self
                         : ComponentInputUiOrigin.Embedded,
@@ -1757,8 +1757,8 @@ internal sealed class ComponentPreviewInputSession
             input.Kind,
             input.ValueKind,
             input.DefaultValue,
-            input.PairLabels.First,
-            input.PairLabels.Second,
+            input.PairLabels?.First ?? "",
+            input.PairLabels?.Second ?? "",
             input.Minimum.ToString(CultureInfo.InvariantCulture),
             input.Maximum.ToString(CultureInfo.InvariantCulture),
             input.Increment.ToString(CultureInfo.InvariantCulture),
@@ -1884,6 +1884,18 @@ internal sealed class ComponentPreviewInputSession
         return JsonString(owner, key, "");
     }
 
+    private static PairFieldLabels? ReadPairLabels(JsonObject owner)
+    {
+        var first = JsonString(owner, "pairFirstLabel");
+        var second = JsonString(owner, "pairSecondLabel");
+        if (string.IsNullOrWhiteSpace(first) && string.IsNullOrWhiteSpace(second))
+        {
+            return null;
+        }
+
+        return new PairFieldLabels(first, second);
+    }
+
     private static string JsonString(JsonObject owner, string key, string fallback)
     {
         return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
@@ -1947,7 +1959,7 @@ internal sealed record ComponentInputDefinition(
     string ResolvedJsonKey = "",
     string ComponentType = "",
     ComponentInputSource Source = ComponentInputSource.Runtime,
-    PairFieldLabels PairLabels = null!,
+    PairFieldLabels? PairLabels = null,
     ComponentInputUiOrigin UiOrigin = ComponentInputUiOrigin.Self,
     string UiGroupId = "",
     string UiGroupLabel = "",

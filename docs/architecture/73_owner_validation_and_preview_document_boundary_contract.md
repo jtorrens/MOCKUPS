@@ -177,6 +177,12 @@ intrinsic ranges. Pair, boolean, alpha, hue and icon-list controls consume these
 owners on current value assignment and do not catch invalid current data to
 manufacture an empty or default presentation.
 
+Pair presentation labels are also required owner metadata. Every pair field
+declares both non-empty labels; current Runtime definitions without them fail.
+The dictionary must not infer labels from field ids, JSON keys, type, hierarchy
+or position, and must not provide generic `W`/`H`, `X`/`Y`, `Light`/`Dark` or
+`A`/`B` fallbacks.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -251,6 +257,8 @@ Architecture enforcement must verify:
   zero geometry.
 - primitive/compound dictionary controls reuse exact pair, range, boolean and
   icon-list owners instead of local fallback parsers.
+- pair controls and Runtime definitions require explicit labels without
+  identifier- or position-based inference.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

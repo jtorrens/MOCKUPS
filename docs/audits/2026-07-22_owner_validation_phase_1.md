@@ -253,3 +253,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Casos de `ValueKind`, parser Palette+Alpha y consumidores de controles requeridos; parsers/fallbacks locales retirados quedan prohibidos. |
 | Datos | Sin migración. Todos los pairs y rangos current cumplen; base canónica `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
 | Riesgo | Bajo. No cambian valores válidos ni sus ids/paths; solo deja de representarse o persistirse una cadena que contradice su `ValueKind`. |
+
+## Slice 1.17 — Etiquetas explícitas de pairs
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Los controles deducían `W/H`, `X/Y`, `Top/Bottom` o `Light/Dark` a partir del id del campo y usaban `A/B` como salida genérica. El lector de contratos Runtime añadía además `W/H` cuando las etiquetas no existían. |
+| Owner | `PairFieldLabelsContract` exige el metadata completo; los catálogos y cada definición Runtime declaran las dos etiquetas de presentación. `ValueKind` sigue siendo el único owner del valor almacenado. |
+| Cambio mínimo | Declarar etiquetas en todos los pairs de Record/Component, validar las definiciones Runtime current y retirar la inferencia por nombre y los defaults del parser. Las etiquetas visibles actuales se conservan exactamente. |
+| Rutas eliminadas | Sufijos `.size`, `.position`, `.vertical`, `.horizontal`, `.modes`, prefijo `theme.` y fallbacks `A/B` o `W/H`. |
+| Pruebas | 111/111 escritorio: todos los descriptores pair tienen metadata completo; una definición Runtime sin etiqueta falla y la copia SQLite permanece byte-for-byte intacta. |
+| Enforcement | Owner requerido en controles y Runtime; inferencias por id y defaults concretos prohibidos. |
+| Datos | Sin migración. Los contratos Runtime persistidos ya tenían etiquetas completas y los catálogos solo hacen explícita la presentación existente; base canónica `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
+| Riesgo | Bajo. No cambia ningún valor, id, referencia, payload ni etiqueta visible; solo falla metadata incompleto que antes se reconstruía por convención. |

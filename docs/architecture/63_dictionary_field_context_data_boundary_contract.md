@@ -92,6 +92,8 @@ service query persistence or interpret Icon Theme records.
 - primitive and pair controls consume the exact shared `ValueKind` parser;
   malformed pair members, boolean/icon-list documents and out-of-range
   Alpha/Hue values are not converted into plausible control state.
+- pair labels are explicit `FieldDefinition`/Runtime contract metadata and are
+  never inferred from field ids, JSON keys, kinds, hierarchy or position.
 - Preview resolution still completes before the generic bridge and renderer.
 
 ## 5. Enforcement and tests

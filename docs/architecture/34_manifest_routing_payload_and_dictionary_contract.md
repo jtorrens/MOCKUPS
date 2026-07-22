@@ -252,6 +252,11 @@ members; Palette-color-alpha pairs contain two colors plus two finite alpha
 values from zero to one. `Alpha` and `HueDegrees` keep their intrinsic ranges.
 Missing pair members or out-of-range values are invalid, not empty/default
 members for a control to reconstruct.
+Every pair field also declares two non-empty presentation labels explicitly.
+Labels are metadata only and do not change the stored value, but they may not be
+derived from a field id, JSON key, type, hierarchy or position. A Runtime Input
+pair without both current label fields is an invalid definition; generic
+readers and controls must not supply `W`/`H`, `X`/`Y`, `Light`/`Dark` or `A`/`B`.
 `ComponentInputBindings` requires an object and a valid explicit forwarding
 envelope. `StructuredCollection` and `IconSlots` require arrays of object items
 with unique non-empty stable ids. Blank, malformed, wrong-root or duplicate-id
@@ -268,6 +273,7 @@ The following are invalid current data:
 - an unknown Runtime Input `kind`;
 - a `kind`/`valueKind` pair that does not match the canonical shared mapping;
 - a missing or malformed default for its declared `ValueKind`;
+- a pair definition without two explicit non-empty presentation labels;
 - a malformed `BehaviorTiming` object or unsupported timing mode;
 - an undeclared persisted Runtime key or collection field;
 - a persisted or Test Value whose JSON shape contradicts its `ValueKind`;

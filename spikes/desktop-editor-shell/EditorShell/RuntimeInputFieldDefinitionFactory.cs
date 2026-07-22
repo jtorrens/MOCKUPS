@@ -26,7 +26,10 @@ internal static class RuntimeInputFieldDefinitionFactory
             input.ValueKind,
             DefaultValue: input.DefaultValue,
             Options: options,
-            PairLabels: input.ValueKind == ValueKind.IntegerPair ? input.PairLabels : null,
+            PairLabels: PairFieldLabelsContract.ForField(
+                input.ValueKind,
+                input.PairLabels,
+                $"Runtime Input '{input.Id}'"),
             Number: input.ValueKind is ValueKind.Decimal or ValueKind.Integer or ValueKind.Alpha
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,

@@ -5201,6 +5201,42 @@ for (const strictPairControl of [
     `${strictPairControl} must not split an invalid current pair into empty members`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldPairText.cs",
+  "PairFieldLabelsContract.Require(",
+  "pair controls must require explicit presentation labels",
+);
+for (const retiredPairLabelInference of [
+  'EndsWith(".size"',
+  'EndsWith(".position"',
+  'EndsWith(".vertical"',
+  'EndsWith(".horizontal"',
+  'EndsWith(".modes"',
+  'StartsWith("theme."',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldPairText.cs",
+    retiredPairLabelInference,
+    `pair labels must not be inferred from a field id (${retiredPairLabelInference})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static PairFieldLabels? ReadPairLabels(",
+  "Runtime Input pair labels must be validated by the shared current-definition owner",
+);
+for (const retiredRuntimePairLabelFallback of [
+  'JsonString(item, "pairFirstLabel", "W")',
+  'JsonString(item, "pairSecondLabel", "H")',
+  'JsonString(field, "pairFirstLabel", "W")',
+  'JsonString(field, "pairSecondLabel", "H")',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    retiredRuntimePairLabelFallback,
+    `Runtime Input pair labels must remain explicit (${retiredRuntimePairLabelFallback})`,
+  );
+}
 for (const strictPrimitiveControl of [
   ["spikes/desktop-editor-shell/EditorShell/DictionaryBooleanControl.cs", "BooleanText.ParseRequired("],
   ["spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs", "PaletteAlphaPair.ParseAlphaRequired("],
