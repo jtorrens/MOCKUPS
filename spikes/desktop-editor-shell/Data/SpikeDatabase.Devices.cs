@@ -44,27 +44,52 @@ internal sealed partial class SpikeDatabase
     public string GetDeviceMetricFieldValue(string deviceId, string fieldId)
     {
         var settings = GetDeviceSettings(deviceId);
+        var metrics = ParseJsonObject(settings.MetricsJson);
+        var context = $"Device '{deviceId}' metrics_json";
         return fieldId switch
         {
-            "device.metrics.designSpace.size" => MetricPair(settings.MetricsJson, ["designSpace", "width"], ["designSpace", "height"]),
-            "device.metrics.renderSize" => MetricPair(settings.MetricsJson, ["renderSize", "width"], ["renderSize", "height"]),
-            "device.metrics.canvas.size" => MetricPair(settings.MetricsJson, ["canvas", "width"], ["canvas", "height"]),
-            "device.metrics.screen.position" => MetricPair(settings.MetricsJson, ["screen", "x"], ["screen", "y"]),
-            "device.metrics.screen.size" => MetricPair(settings.MetricsJson, ["screen", "width"], ["screen", "height"]),
-            "device.metrics.viewport.position" => MetricPair(settings.MetricsJson, ["viewport", "x"], ["viewport", "y"]),
-            "device.metrics.viewport.size" => MetricPair(settings.MetricsJson, ["viewport", "width"], ["viewport", "height"]),
-            "device.metrics.safeArea.vertical" => MetricPair(settings.MetricsJson, ["safeArea", "top"], ["safeArea", "bottom"]),
-            "device.metrics.safeArea.horizontal" => MetricPair(settings.MetricsJson, ["safeArea", "left"], ["safeArea", "right"]),
-            "device.metrics.statusBar.position" => MetricPair(settings.MetricsJson, ["statusBar", "x"], ["statusBar", "y"]),
-            "device.metrics.statusBar.size" => MetricPair(settings.MetricsJson, ["statusBar", "width"], ["statusBar", "height"]),
-            "device.metrics.dynamicIsland.position" => MetricPair(settings.MetricsJson, ["dynamicIsland", "x"], ["dynamicIsland", "y"]),
-            "device.metrics.dynamicIsland.size" => MetricPair(settings.MetricsJson, ["dynamicIsland", "width"], ["dynamicIsland", "height"]),
-            "device.metrics.scaleToPixels" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["scaleToPixels"]),
-            "device.metrics.pixelRatio" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["pixelRatio"]),
-            "device.metrics.defaultScreenScale" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["defaultScreenScale"]),
-            "device.metrics.cornerRadius" => JsonNumberString(ParseJsonObject(settings.MetricsJson), ["cornerRadius"]),
+            "device.metrics.designSpace.size" => JsonPath.RequiredNumberPair(metrics, ["designSpace", "width"], ["designSpace", "height"], context),
+            "device.metrics.renderSize" => JsonPath.RequiredNumberPair(metrics, ["renderSize", "width"], ["renderSize", "height"], context),
+            "device.metrics.canvas.size" => JsonPath.RequiredNumberPair(metrics, ["canvas", "width"], ["canvas", "height"], context),
+            "device.metrics.screen.position" => JsonPath.RequiredNumberPair(metrics, ["screen", "x"], ["screen", "y"], context),
+            "device.metrics.screen.size" => JsonPath.RequiredNumberPair(metrics, ["screen", "width"], ["screen", "height"], context),
+            "device.metrics.viewport.position" => JsonPath.RequiredNumberPair(metrics, ["viewport", "x"], ["viewport", "y"], context),
+            "device.metrics.viewport.size" => JsonPath.RequiredNumberPair(metrics, ["viewport", "width"], ["viewport", "height"], context),
+            "device.metrics.safeArea.vertical" => JsonPath.RequiredNumberPair(metrics, ["safeArea", "top"], ["safeArea", "bottom"], context),
+            "device.metrics.safeArea.horizontal" => JsonPath.RequiredNumberPair(metrics, ["safeArea", "left"], ["safeArea", "right"], context),
+            "device.metrics.statusBar.position" => JsonPath.RequiredNumberPair(metrics, ["statusBar", "x"], ["statusBar", "y"], context),
+            "device.metrics.statusBar.size" => JsonPath.RequiredNumberPair(metrics, ["statusBar", "width"], ["statusBar", "height"], context),
+            "device.metrics.dynamicIsland.position" => OptionalDynamicIslandPair(metrics, "x", "y", context),
+            "device.metrics.dynamicIsland.size" => OptionalDynamicIslandPair(metrics, "width", "height", context),
+            "device.metrics.scaleToPixels" => JsonPath.RequiredNumberString(metrics, ["scaleToPixels"], context),
+            "device.metrics.pixelRatio" => JsonPath.RequiredNumberString(metrics, ["pixelRatio"], context),
+            "device.metrics.defaultScreenScale" => JsonPath.RequiredNumberString(metrics, ["defaultScreenScale"], context),
+            "device.metrics.cornerRadius" => JsonPath.RequiredNumberString(metrics, ["cornerRadius"], context),
             _ => throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'."),
         };
+    }
+
+    private static string OptionalDynamicIslandPair(
+        System.Text.Json.Nodes.JsonObject metrics,
+        string firstKey,
+        string secondKey,
+        string context)
+    {
+        if (!metrics.TryGetPropertyValue("dynamicIsland", out var dynamicIslandNode))
+        {
+            return "0|0";
+        }
+
+        if (dynamicIslandNode is not System.Text.Json.Nodes.JsonObject)
+        {
+            throw new InvalidOperationException($"{context} optional path 'dynamicIsland' must contain an object when present.");
+        }
+
+        return JsonPath.RequiredNumberPair(
+            metrics,
+            ["dynamicIsland", firstKey],
+            ["dynamicIsland", secondKey],
+            context);
     }
 
     public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId)

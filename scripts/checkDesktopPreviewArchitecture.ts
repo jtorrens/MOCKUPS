@@ -5108,6 +5108,55 @@ for (const retiredBooleanWriteFallback of [
     `${retiredBooleanWriteFallback[0]} must not coerce invalid persisted boolean text to false`,
   );
 }
+for (const requiredResourceScalarHelper of [
+  "public static string RequiredStringAt(",
+  "public static string RequiredNumberString(",
+  "public static string RequiredBooleanString(",
+  "public static string RequiredNumberPair(",
+  "public static string RequiredStringPair(",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/JsonPath.cs",
+    requiredResourceScalarHelper,
+    `current resource fields must use exact JSON scalar helpers (${requiredResourceScalarHelper})`,
+  );
+}
+for (const strictResourceReader of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs", "JsonPath.RequiredNumberString("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonPath.RequiredBooleanString("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "JsonPath.RequiredNumberString("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredStringAt("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredNumberString("],
+] as const) {
+  assertContains(
+    strictResourceReader[0],
+    strictResourceReader[1],
+    `${strictResourceReader[0]} must consume exact current resource scalar shapes`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
+  "OptionalDynamicIslandPair(",
+  "Device Dynamic Island absence must remain an explicit optional contract",
+);
+for (const retiredResourceReadFallback of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Infrastructure.cs", "MetricPair("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs", "JsonNumberString("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonBool("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonNumberString("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", 'JsonNumberString(metadata, ["icon", "scale"], "1")'],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "{}"'],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "light"'],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "normal"'],
+  ["spikes/desktop-editor-shell/Common/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
+  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
+] as const) {
+  assertDoesNotContain(
+    retiredResourceReadFallback[0],
+    retiredResourceReadFallback[1],
+    `${retiredResourceReadFallback[0]} must not reconstruct an invalid current resource value (${retiredResourceReadFallback[1]})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",

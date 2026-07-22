@@ -107,39 +107,47 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetThemeSettings(themeId);
         var tokens = ParseJsonObject(settings.TokensJson);
+        var context = $"Theme '{themeId}' tokens_json";
         if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
         {
-            var colors = $"{JsonString(tokens, colorPairPaths.Light)}|{JsonString(tokens, colorPairPaths.Dark)}";
+            var colors = JsonPath.RequiredStringPair(
+                tokens,
+                colorPairPaths.Light,
+                colorPairPaths.Dark,
+                context);
             if (!ThemeAlphaPairPaths.TryGetValue(fieldId, out var alphaPairPaths))
             {
                 return colors;
             }
 
-            var lightAlpha = JsonNumberString(tokens, alphaPairPaths.Light, "1");
-            var darkAlpha = JsonNumberString(tokens, alphaPairPaths.Dark, "1");
+            var lightAlpha = JsonPath.RequiredNumberString(tokens, alphaPairPaths.Light, context);
+            var darkAlpha = JsonPath.RequiredNumberString(tokens, alphaPairPaths.Dark, context);
             return $"{colors}||{lightAlpha}|{darkAlpha}";
         }
 
         if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
         {
-            return JsonNumberString(tokens, numericToken.Path.ToArray());
+            return JsonPath.RequiredNumberString(tokens, numericToken.Path.ToArray(), context);
         }
         if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
         {
             return GetJsonValue(tokens, timingPath) is JsonObject timing
                 ? timing.ToJsonString()
-                : "{}";
+                : throw new InvalidOperationException(
+                    $"{context} path '{string.Join(".", timingPath)}' must contain an object.");
         }
         if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
         {
-            return JsonString(tokens, easingPath);
+            return JsonPath.RequiredStringAt(tokens, easingPath, context);
         }
         if (fieldId == "theme.motion.reflow")
         {
+            _ = JsonPath.RequiredNumberString(tokens, ["motion", "reflowDurationMs"], context);
+            _ = JsonPath.RequiredStringAt(tokens, ["motion", "reflowEasing"], context);
             return new JsonObject
             {
-                ["durationMs"] = JsonPath.Get(tokens, ["motion", "reflowDurationMs"])?.DeepClone(),
-                ["easing"] = JsonPath.Get(tokens, ["motion", "reflowEasing"])?.DeepClone(),
+                ["durationMs"] = JsonPath.Get(tokens, ["motion", "reflowDurationMs"])!.DeepClone(),
+                ["easing"] = JsonPath.Get(tokens, ["motion", "reflowEasing"])!.DeepClone(),
             }.ToJsonString();
         }
 
@@ -149,14 +157,14 @@ internal sealed partial class SpikeDatabase
             "theme.iconThemeId" => settings.IconThemeId,
             "theme.statusBarId" => settings.StatusBarId,
             "theme.navigationBarId" => settings.NavigationBarId,
-            "theme.defaultMode" => JsonString(tokens, ["defaultMode"]) is { Length: > 0 } mode ? mode : "light",
-            "theme.neutralTint.hueDeg" => JsonNumberString(tokens, ["neutralTint", "hueDeg"]),
-            "theme.neutralTint.saturation" => JsonNumberString(tokens, ["neutralTint", "saturation"]),
-            "theme.shadows.default.color" => JsonString(tokens, ["shadows", "default", "color", "color"]),
-            "theme.typography.fontFamilyId" => JsonString(tokens, ["typography", "fontFamilyId"]),
-            "theme.typography.systemFontFamilyId" => JsonString(tokens, ["typography", "systemFontFamilyId"]),
-            "theme.typography.emojiFontFamilyId" => JsonString(tokens, ["typography", "emojiFontFamilyId"]),
-            "theme.typography.style" => JsonString(tokens, ["typography", "style"]) is { Length: > 0 } style ? style : "normal",
+            "theme.defaultMode" => JsonPath.RequiredStringAt(tokens, ["defaultMode"], context),
+            "theme.neutralTint.hueDeg" => JsonPath.RequiredNumberString(tokens, ["neutralTint", "hueDeg"], context),
+            "theme.neutralTint.saturation" => JsonPath.RequiredNumberString(tokens, ["neutralTint", "saturation"], context),
+            "theme.shadows.default.color" => JsonPath.RequiredStringAt(tokens, ["shadows", "default", "color", "color"], context),
+            "theme.typography.fontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "fontFamilyId"], context),
+            "theme.typography.systemFontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "systemFontFamilyId"], context),
+            "theme.typography.emojiFontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "emojiFontFamilyId"], context),
+            "theme.typography.style" => JsonPath.RequiredStringAt(tokens, ["typography", "style"], context),
             _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
         };
     }
@@ -196,7 +204,10 @@ internal sealed partial class SpikeDatabase
                 token.Id,
                 token.Id.Replace("theme.", "", StringComparison.Ordinal),
                 "number",
-                JsonNumberString(tokens, token.Path.ToArray(), "—"),
+                JsonPath.RequiredNumberString(
+                    tokens,
+                    token.Path.ToArray(),
+                    $"Theme token '{token.Id}'"),
                 null,
                 null);
         }

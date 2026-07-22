@@ -234,13 +234,6 @@ internal static class DeviceMetricRules
             {
                 return number;
             }
-
-            if (value.TryGetValue<string>(out var text)
-                && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
-                && double.IsFinite(parsed))
-            {
-                return parsed;
-            }
         }
 
         throw new InvalidOperationException(
@@ -255,25 +248,21 @@ internal static class DeviceMetricRules
     private static double? OptionalNonNegativeNumber(JsonObject metrics, IReadOnlyList<string> path)
     {
         var node = JsonPath.Get(metrics, path);
-        if (node is not JsonValue value)
+        if (node is null)
         {
             return null;
         }
 
-        if (value.TryGetValue<double>(out var number) && double.IsFinite(number) && number >= 0)
+        if (node is JsonValue value
+            && value.TryGetValue<double>(out var number)
+            && double.IsFinite(number)
+            && number >= 0)
         {
             return number;
         }
 
-        if (value.TryGetValue<string>(out var text)
-            && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
-            && double.IsFinite(parsed)
-            && parsed >= 0)
-        {
-            return parsed;
-        }
-
-        return null;
+        throw new InvalidOperationException(
+            $"Device metrics optional path '{PathLabel(path)}' must be a non-negative JSON number when present.");
     }
 
     private static int StatusBarHeight(int height)

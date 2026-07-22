@@ -161,6 +161,15 @@ must be a finite number before a prepared Palette, Device, Actor, Theme or App
 document/row is written. Invalid input never means false or zero, and rejection
 must leave the stored row unchanged.
 
+Their current reads preserve the same exact JSON scalar shapes. A present
+numeric path is a finite JSON number, a present boolean path is a JSON boolean,
+and a required text path is a string. Numeric strings, integer substitutes for
+booleans and wrong-root nested documents are invalid. Optionality is declared
+per exact path: Device `dynamicIsland` may be absent and then exposes zero
+editor geometry without modifying persistence; when present, it must be a
+complete numeric object. Theme defaults are not reconstructed from missing or
+wrong-root current token paths.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -230,6 +239,9 @@ Architecture enforcement must verify:
   are never repaired during an edit.
 - record-resource boolean and numeric commits reject invalid text before
   persistence rather than coercing it to false or zero.
+- resource field and Preview reads reject wrong current scalar/nested shapes;
+  only the declared absent Device `dynamicIsland` keeps explicit optional
+  zero geometry.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

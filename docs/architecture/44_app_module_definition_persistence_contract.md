@@ -59,6 +59,10 @@ App wallpaper/icon numeric fields are parsed strictly by their field domain
 before the complete prepared document is sent to the repository. Invalid or
 non-finite input is rejected and must not be converted to zero.
 
+When those fields belong to the App's declared editor layout, their persisted
+paths are required JSON numbers on read. Defaults for an App class that does
+not expose those fields must not make a present malformed path look valid.
+
 Cross-domain Module Instance and validation queries may temporarily join the
 definition tables while their own repository/payload slices remain pending.
 They cannot mutate or repair App/Module definitions.

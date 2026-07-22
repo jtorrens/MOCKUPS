@@ -222,7 +222,7 @@ internal sealed class PaletteRepository : IPaletteRepository
             return boolean;
         }
 
-        if (value.TryGetValue<string>(out var text)) return BooleanText.Parse(text);
-        return value.TryGetValue<int>(out var number) && number != 0;
+        throw new InvalidOperationException(
+            $"Palette metadata_json '{key}' must be an explicit JSON boolean when present.");
     }
 }

@@ -70,6 +70,11 @@ That interpretation validates editor numeric text before preparing a complete
 tokens document. Invalid or non-finite text is rejected; it is never persisted
 as zero.
 
+The inverse field read requires the current stored shape: numeric token paths
+are finite JSON numbers, color/easing/mode/typography paths are non-empty
+strings and motion timing paths are objects. Missing or wrong-root fields do
+not become `1`, `light`, `normal`, `{}` or a display placeholder.
+
 The repository stores the complete result of an explicit edit; it does not
 resolve palette colors, fonts, assets, Device pixels or Preview atoms.
 

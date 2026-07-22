@@ -238,12 +238,13 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetAppSettings(appId);
         var config = ParseJsonObject(settings.ConfigJson);
+        var context = $"App '{appId}' config_json";
         var lightWallpaperColor = JsonString(config, ["modes", "light", "wallpaper", "color"]);
         var darkWallpaperColor = JsonString(config, ["modes", "dark", "wallpaper", "color"]);
         return fieldId switch
         {
             "app.wallpaper.kind" => JsonString(config, ["wallpaper", "kind"]),
-            "app.wallpaper.opacity" => JsonNumberString(config, ["wallpaper", "opacity"]),
+            "app.wallpaper.opacity" => JsonPath.RequiredNumberString(config, ["wallpaper", "opacity"], context),
             "app.wallpaper.color" => $"{lightWallpaperColor}|{darkWallpaperColor}",
             "app.wallpaper.images.light.filePath" => JsonString(config, ["wallpaper", "images", "light", "filePath"]),
             "app.wallpaper.images.dark.filePath" => JsonString(config, ["wallpaper", "images", "dark", "filePath"]),
@@ -255,12 +256,13 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetAppSettings(appId);
         var metadata = ParseJsonObject(settings.MetadataJson);
+        var context = $"App '{appId}' metadata_json";
         return fieldId switch
         {
             "app.note" => JsonString(metadata, ["note"]),
             "app.icon.filePath" => JsonString(metadata, ["icon", "filePath"]),
-            "app.icon.scale" => JsonNumberString(metadata, ["icon", "scale"], "1"),
-            "app.icon.offset" => $"{JsonNumberString(metadata, ["icon", "offsetX"], "0")}|{JsonNumberString(metadata, ["icon", "offsetY"], "0")}",
+            "app.icon.scale" => JsonPath.RequiredNumberString(metadata, ["icon", "scale"], context),
+            "app.icon.offset" => JsonPath.RequiredNumberPair(metadata, ["icon", "offsetX"], ["icon", "offsetY"], context),
             _ => throw new InvalidOperationException($"Unknown app metadata field '{fieldId}'."),
         };
     }

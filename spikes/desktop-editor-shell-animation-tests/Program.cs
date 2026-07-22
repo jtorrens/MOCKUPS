@@ -47,6 +47,7 @@ var tests = new (string Name, Action Run)[]
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
     ("Component dictionary fields use exact ValueKind documents", ComponentDictionaryFieldsUseExactValueKinds),
     ("record scalar writes reject invalid booleans and numbers", RecordScalarWritesRejectInvalidValues),
+    ("resource scalar reads reject wrong current JSON shapes", ResourceScalarReadsRejectWrongShapes),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
@@ -362,6 +363,123 @@ static void RecordScalarWritesRejectInvalidValues()
             "palette.hiddenFromPickers",
             "perhaps"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ResourceScalarReadsRejectWrongShapes()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-resource-scalar-reads-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var context = new SqliteProjectContext(temporary);
+        var fields = new RecordClassFieldValueService(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var checkedKinds = new HashSet<ProjectTreeNodeKind>
+        {
+            ProjectTreeNodeKind.App,
+            ProjectTreeNodeKind.Device,
+            ProjectTreeNodeKind.Actor,
+            ProjectTreeNodeKind.Theme,
+            ProjectTreeNodeKind.PaletteColor,
+        };
+        var beforeValidReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        foreach (var node in nodes.Where((candidate) => checkedKinds.Contains(candidate.Kind)))
+        {
+            foreach (var fieldId in database.LoadEditorLayout(node.RecordClassId).Cards
+                         .SelectMany((card) => card.VisibleGroups)
+                         .SelectMany((group) => group.VisibleFields)
+                         .Select((field) => field.Id)
+                         .Distinct(StringComparer.Ordinal))
+            {
+                if (fields.CanHandle(node.Kind, fieldId))
+                {
+                    _ = fields.CreateFieldValue(node, fieldId);
+                }
+            }
+        }
+        SequenceEqual(beforeValidReads, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        void ReplaceJson(string table, string column, string id, string json)
+        {
+            using var connection = context.OpenConnection();
+            SqliteCommandExecutor.Execute(
+                connection,
+                $"UPDATE {table} SET {column} = $json WHERE id = $id",
+                ("$json", json),
+                ("$id", id));
+        }
+
+        void RejectsReadWithoutMutation(Action read)
+        {
+            var before = SHA256.HashData(File.ReadAllBytes(temporary));
+            Throws<InvalidOperationException>(read);
+            SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+        }
+
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var deviceMetricsJson = database.GetDeviceSettings(device.Id).MetricsJson;
+        var invalidDeviceMetrics = JsonPath.ParseRequiredObject(deviceMetricsJson, "Device test metrics");
+        invalidDeviceMetrics["scaleToPixels"] = "3";
+        ReplaceJson("devices", "metrics_json", device.Id, invalidDeviceMetrics.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetDeviceMetricFieldValue(device.Id, "device.metrics.scaleToPixels"));
+        RejectsReadWithoutMutation(() => database.GetDevicePreviewMetrics(device.Id));
+        ReplaceJson("devices", "metrics_json", device.Id, deviceMetricsJson);
+        var invalidDynamicIsland = JsonPath.ParseRequiredObject(deviceMetricsJson, "Device Dynamic Island test metrics");
+        invalidDynamicIsland["dynamicIsland"] = "present-but-invalid";
+        ReplaceJson("devices", "metrics_json", device.Id, invalidDynamicIsland.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetDeviceMetricFieldValue(device.Id, "device.metrics.dynamicIsland.position"));
+        ReplaceJson("devices", "metrics_json", device.Id, deviceMetricsJson);
+
+        var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor);
+        var actorMetadataJson = database.GetActorSettings(actor.Id).MetadataJson;
+        var invalidActorMetadata = JsonPath.ParseRequiredObject(actorMetadataJson, "Actor test metadata");
+        invalidActorMetadata["avatar"]!.AsObject()["useInitials"] = "false";
+        ReplaceJson("actors", "metadata_json", actor.Id, invalidActorMetadata.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetActorFieldValue(actor.Id, "actor.avatar.useInitials"));
+        ReplaceJson("actors", "metadata_json", actor.Id, actorMetadataJson);
+
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var themeTokensJson = database.GetThemeSettings(theme.Id).TokensJson;
+        var invalidThemeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme test tokens");
+        invalidThemeTokens["defaultMode"] = 1;
+        ReplaceJson("themes", "tokens_json", theme.Id, invalidThemeTokens.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetThemeFieldValue(theme.Id, "theme.defaultMode"));
+        ReplaceJson("themes", "tokens_json", theme.Id, themeTokensJson);
+
+        var app = nodes.First((node) => node.Kind == ProjectTreeNodeKind.App
+            && database.LoadEditorLayout(node.RecordClassId).Cards
+                .SelectMany((card) => card.VisibleGroups)
+                .SelectMany((group) => group.VisibleFields)
+                .Any((field) => field.Id == "app.wallpaper.opacity"));
+        var appConfigJson = database.GetAppSettings(app.Id).ConfigJson;
+        var invalidAppConfig = JsonPath.ParseRequiredObject(appConfigJson, "App test config");
+        invalidAppConfig["wallpaper"]!.AsObject()["opacity"] = "1";
+        ReplaceJson("apps", "config_json", app.Id, invalidAppConfig.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetAppConfigFieldValue(app.Id, "app.wallpaper.opacity"));
+        ReplaceJson("apps", "config_json", app.Id, appConfigJson);
+
+        var palette = nodes.First((node) => node.Kind == ProjectTreeNodeKind.PaletteColor
+            && database.GetPaletteColorSettings(node.Id).IsProtected);
+        string paletteMetadataJson;
+        using (var connection = context.OpenConnection())
+        {
+            paletteMetadataJson = SqliteCommandExecutor.ScalarString(
+                connection,
+                "SELECT metadata_json FROM palette_colors WHERE id = $id",
+                ("$id", palette.Id)) ?? throw new InvalidOperationException("Missing Palette test metadata.");
+        }
+        var invalidPaletteMetadata = JsonPath.ParseRequiredObject(paletteMetadataJson, "Palette test metadata");
+        invalidPaletteMetadata["protected"] = "true";
+        ReplaceJson("palette_colors", "metadata_json", palette.Id, invalidPaletteMetadata.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetPaletteColorSettings(palette.Id));
+        ReplaceJson("palette_colors", "metadata_json", palette.Id, paletteMetadataJson);
     }
     finally
     {

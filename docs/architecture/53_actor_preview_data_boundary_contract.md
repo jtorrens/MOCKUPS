@@ -40,6 +40,11 @@ initials, media file, crop, wallpaper or final payload; return a database
 handle; execute SQL; repair current JSON; or select any record by name, type,
 position or index.
 
+The established field route requires JSON numbers for avatar/wallpaper numeric
+paths, a JSON boolean for `useInitials` and strings for palette/media paths. It
+does not translate numeric strings or wrong boolean types before the source
+reaches either Preview factory.
+
 ## 3. Interpretation ownership
 
 `ActorPreviewInputFactory` owns the Runtime Actor value consumed by Component

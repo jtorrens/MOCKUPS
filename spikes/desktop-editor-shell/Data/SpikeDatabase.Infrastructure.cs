@@ -87,9 +87,22 @@ internal sealed partial class SpikeDatabase
         return JsonPath.ParseRequiredObject(json, "Current persisted JSON object");
     }
 
-    private static string MetricPair(string metricsJson, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
+    private static string RequiredNumberPair(
+        string json,
+        IReadOnlyList<string> firstPath,
+        IReadOnlyList<string> secondPath,
+        string context)
     {
-        return JsonPath.Pair(ParseJsonObject(metricsJson), firstPath, secondPath);
+        return JsonPath.RequiredNumberPair(ParseJsonObject(json), firstPath, secondPath, context);
+    }
+
+    private static string RequiredStringPair(
+        string json,
+        IReadOnlyList<string> firstPath,
+        IReadOnlyList<string> secondPath,
+        string context)
+    {
+        return JsonPath.RequiredStringPair(ParseJsonObject(json), firstPath, secondPath, context);
     }
 
     private static string JsonNumberString(JsonObject root, IReadOnlyList<string> path)

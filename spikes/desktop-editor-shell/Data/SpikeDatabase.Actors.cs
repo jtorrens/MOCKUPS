@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -27,23 +28,24 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetActorSettings(actorId);
         var metadata = ParseJsonObject(settings.MetadataJson);
+        var context = $"Actor '{actorId}' metadata_json";
         return fieldId switch
         {
             "actor.shortName" => settings.ShortName,
             "actor.defaultDeviceId" => settings.DefaultDeviceId,
             "actor.defaultThemeId" => settings.DefaultThemeId,
-            "actor.color.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "color"], ["modes", "dark", "color"]),
-            "actor.avatarTextColor.modes" => MetricPair(settings.MetadataJson, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"]),
+            "actor.color.modes" => RequiredStringPair(settings.MetadataJson, ["modes", "light", "color"], ["modes", "dark", "color"], context),
+            "actor.avatarTextColor.modes" => RequiredStringPair(settings.MetadataJson, ["modes", "light", "avatarTextColor"], ["modes", "dark", "avatarTextColor"], context),
             "actor.wallpaper.images.light.filePath" => JsonString(metadata, ["wallpaper", "images", "light", "filePath"]),
             "actor.wallpaper.images.dark.filePath" => JsonString(metadata, ["wallpaper", "images", "dark", "filePath"]),
             "actor.wallpaper.kind" => JsonString(metadata, ["wallpaper", "kind"]),
-            "actor.wallpaper.opacity" => JsonNumberString(metadata, ["wallpaper", "opacity"]),
-            "actor.wallpaper.color" => MetricPair(settings.MetadataJson, ["modes", "light", "wallpaper", "color"], ["modes", "dark", "wallpaper", "color"]),
+            "actor.wallpaper.opacity" => JsonPath.RequiredNumberString(metadata, ["wallpaper", "opacity"], context),
+            "actor.wallpaper.color" => RequiredStringPair(settings.MetadataJson, ["modes", "light", "wallpaper", "color"], ["modes", "dark", "wallpaper", "color"], context),
             "actor.avatar.filePath" => JsonString(metadata, ["avatar", "filePath"]),
-            "actor.avatar.scale" => JsonNumberString(metadata, ["avatar", "scale"]),
-            "actor.avatar.offset" => MetricPair(settings.MetadataJson, ["avatar", "offsetX"], ["avatar", "offsetY"]),
-            "actor.avatar.useInitials" => BoolToString(JsonBool(metadata, ["avatar", "useInitials"])),
-            "actor.avatar.initialsPadding" => JsonNumberString(metadata, ["avatar", "initialsPadding"]),
+            "actor.avatar.scale" => JsonPath.RequiredNumberString(metadata, ["avatar", "scale"], context),
+            "actor.avatar.offset" => RequiredNumberPair(settings.MetadataJson, ["avatar", "offsetX"], ["avatar", "offsetY"], context),
+            "actor.avatar.useInitials" => JsonPath.RequiredBooleanString(metadata, ["avatar", "useInitials"], context),
+            "actor.avatar.initialsPadding" => JsonPath.RequiredNumberString(metadata, ["avatar", "initialsPadding"], context),
             _ => throw new InvalidOperationException($"Unknown actor field '{fieldId}'."),
         };
     }

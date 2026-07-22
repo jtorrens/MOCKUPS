@@ -227,3 +227,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El helper numérico debe delegar al parser finito requerido; los repositorios de Palette/Actor deben usar booleanos requeridos; las coerciones retiradas quedan prohibidas. |
 | Datos | Sin migración. Los datos current ya eran válidos y la base permanece `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
 | Riesgo | Bajo. Las entradas válidas producen el mismo JSON; únicamente deja de convertirse una entrada inválida en un cambio real a falso/cero. |
+
+## Slice 1.15 — Lecturas current de recursos
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Los readers de Device, Actor, App y Theme aceptaban números almacenados como texto o devolvían cero ante ausencia; Actor/Palette convertían tipos booleanos incorrectos a falso. Theme reconstruía además alpha, modo, estilo y motion ausentes como `1`, `light`, `normal` o `{}`. `DeviceMetricRules` aceptaba números string y omitía coeficientes opcionales presentes pero inválidos. |
+| Owner | `JsonPath` valida el scalar del path exacto; el field mapper declara paths required; `DeviceMetricRules` interpreta métricas Preview. Solo `dynamicIsland` es nested opcional declarado por el Device. |
+| Cambio mínimo | Añadir readers exactos de string/número/boolean/pairs; usarlos en Device, Actor, App y Theme; hacer estrictos los números de Preview y los booleanos Palette presentes; conservar ausencia de Dynamic Island como `0|0` de edición sin persistir nada. |
+| Rutas eliminadas | Numeric-string-to-number, wrong-boolean-to-false, `JsonNumberString` fallbacks en campos current y los defaults `1`/`light`/`normal`/`{}` de Theme. |
+| Pruebas | 110/110 escritorio: se recorren todos los campos visibles de cada App, Device, Actor, Theme y Palette current; corrupciones representativas de número, booleano, Theme, App y Dynamic Island fallan sin mutar la copia SQLite. |
+| Enforcement | Helpers exactos requeridos, field mappers fijados a ellos y fallbacks concretos prohibidos; `DeviceMetricRules` no puede aceptar strings numéricos. |
+| Datos | Sin migración. Los documentos current cumplen; la ausencia de Dynamic Island ya era semántica válida. Base canónica sin cambios: `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
+| Riesgo | Bajo. No cambia ningún recurso válido ni la geometría resuelta. Los Devices sin isla siguen mostrando cero; un documento presente dañado deja de aparentar un valor válido. |

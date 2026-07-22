@@ -67,6 +67,13 @@ fields require finite numeric text before any row/document write. Invalid text
 is rejected without changing the stored row; it must not be interpreted as
 false or zero.
 
+Current field reads are equally strict: stored numeric paths are JSON numbers
+and stored boolean paths are JSON booleans. Device `dynamicIsland` is the
+declared optional nested metric. Its absence means the Device has no island and
+projects as `0|0` in the editor without a write; a present value must be an
+object whose requested coordinates are JSON numbers. No other wrong scalar or
+nested shape becomes zero, false or an empty object.
+
 ## 4. Domain interpretation stays outside persistence
 
 The following do not belong to a repository:

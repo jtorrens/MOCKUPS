@@ -66,6 +66,12 @@ Device settings with `DeviceMetricRules` during the facade transition, but the
 web renderer receives only the common DTO. `WebDesignPreviewRenderer` and
 `WebPreviewPanes` must not reference `SpikeDatabase`.
 
+Required Device metric paths are finite JSON numbers; numeric strings are not
+another current representation. Optional frame/design-guide coefficients may
+be absent but fail when present with the wrong shape. The optional
+`dynamicIsland` editor group follows contract 37 and is not a renderer
+fallback.
+
 ## 5. Preserved boundaries
 
 - Device settings remain stored and written by `DeviceRepository`.

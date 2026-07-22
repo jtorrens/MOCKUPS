@@ -108,6 +108,75 @@ internal static class JsonPath
         return (int)number;
     }
 
+    public static string RequiredStringAt(
+        JsonObject root,
+        IReadOnlyList<string> path,
+        string context,
+        bool allowEmpty = false)
+    {
+        var node = Get(root, path);
+        if (node is not JsonValue value
+            || !value.TryGetValue<string>(out var text)
+            || (!allowEmpty && string.IsNullOrWhiteSpace(text)))
+        {
+            var qualifier = allowEmpty ? "a string" : "a non-empty string";
+            throw new InvalidOperationException(
+                $"{context} path '{string.Join(".", path)}' must contain {qualifier}.");
+        }
+
+        return text;
+    }
+
+    public static string RequiredNumberString(
+        JsonObject root,
+        IReadOnlyList<string> path,
+        string context)
+    {
+        var node = Get(root, path);
+        if (node is not JsonValue value
+            || !value.TryGetValue<double>(out var number)
+            || !double.IsFinite(number))
+        {
+            throw new InvalidOperationException(
+                $"{context} path '{string.Join(".", path)}' must contain a finite JSON number.");
+        }
+
+        return node.ToJsonString();
+    }
+
+    public static string RequiredBooleanString(
+        JsonObject root,
+        IReadOnlyList<string> path,
+        string context)
+    {
+        var node = Get(root, path);
+        if (node is not JsonValue value || !value.TryGetValue<bool>(out var boolean))
+        {
+            throw new InvalidOperationException(
+                $"{context} path '{string.Join(".", path)}' must contain an explicit JSON boolean.");
+        }
+
+        return BooleanText.Format(boolean);
+    }
+
+    public static string RequiredNumberPair(
+        JsonObject root,
+        IReadOnlyList<string> firstPath,
+        IReadOnlyList<string> secondPath,
+        string context)
+    {
+        return $"{RequiredNumberString(root, firstPath, context)}|{RequiredNumberString(root, secondPath, context)}";
+    }
+
+    public static string RequiredStringPair(
+        JsonObject root,
+        IReadOnlyList<string> firstPath,
+        IReadOnlyList<string> secondPath,
+        string context)
+    {
+        return $"{RequiredStringAt(root, firstPath, context)}|{RequiredStringAt(root, secondPath, context)}";
+    }
+
     public static JsonNode? Get(JsonObject root, IReadOnlyList<string> path)
     {
         JsonNode? current = root;
@@ -178,11 +247,6 @@ internal static class JsonPath
         var second = parts.ElementAtOrDefault(1) ?? "";
         Set(root, firstPath, asNumber ? NumberNode(first) : JsonValue.Create(first)!);
         Set(root, secondPath, asNumber ? NumberNode(second) : JsonValue.Create(second)!);
-    }
-
-    public static string Pair(JsonObject root, IReadOnlyList<string> firstPath, IReadOnlyList<string> secondPath)
-    {
-        return $"{NumberString(root, firstPath)}|{NumberString(root, secondPath)}";
     }
 
     public static string NumberString(JsonObject root, IReadOnlyList<string> path)
