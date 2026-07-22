@@ -335,7 +335,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
                 ScanComponentConfig(variant.Config, source, targets, usages, componentsByReference, depth: 0);
             }
 
-            var defaultVariant = component.Variants.Single((variant) => variant.Id.Equals("default", StringComparison.Ordinal));
+            var defaultVariant = component.Variants.Single((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal));
             var previewSource = new SourceContext(
                 component.Id,
                 ProjectTreeNodeKind.ComponentClass,
@@ -377,7 +377,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
                 ScanModuleConfig(variant.Config, source, targets, usages, componentsByReference);
             }
 
-            var defaultVariant = module.Variants.Single((variant) => variant.Id.Equals("default", StringComparison.Ordinal));
+            var defaultVariant = module.Variants.Single((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal));
             var previewSource = new SourceContext(module.Id, ProjectTreeNodeKind.Module, "Module", module.Name, ReferenceUsageScope.Design, module.ProjectId);
             AddRuntimeDocumentReferences(
                 module.DesignPreview,

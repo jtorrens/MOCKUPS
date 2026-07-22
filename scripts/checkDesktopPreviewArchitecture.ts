@@ -1275,6 +1275,21 @@ for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId(", "Creat
     `Variant envelope contract must own ${sharedVariantEnvelopeOperation}`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  'public const string DefaultId = "default";',
+  "Component and Module Variants must share one stable Default Variant id",
+);
+for (const retiredDefaultVariantConstant of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "DefaultComponentVariantId"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "DefaultModuleVariantId"],
+] as const) {
+  assertDoesNotContain(
+    retiredDefaultVariantConstant[0],
+    retiredDefaultVariantConstant[1],
+    `${retiredDefaultVariantConstant[0]} must not restore a local Default Variant id`,
+  );
+}
 for (const variantCreationOwner of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
@@ -1542,7 +1557,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
-  "must contain the stable Default Variant id 'default'",
+  "must contain the stable Default Variant id '{DefaultId}'",
   "the shared Variant envelope must require the stable Default id",
 );
 assertDoesNotContain(
@@ -4708,7 +4723,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
-  'VariantReferenceId.HasVariantId(child.Id, "default")',
+  "VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId)",
   "first component class selection must prefer the protected Default Variant",
 );
 assertContains(

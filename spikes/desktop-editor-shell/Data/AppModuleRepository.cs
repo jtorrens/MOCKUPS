@@ -254,7 +254,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Module '{moduleId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Module '{moduleId}'");
-        if (variants.All((variant) => variant.Id != "default"))
+        if (variants.All((variant) => variant.Id != VariantEnvelopeContract.DefaultId))
         {
             throw new InvalidOperationException($"Module '{moduleId}' has no explicit default Variant.");
         }

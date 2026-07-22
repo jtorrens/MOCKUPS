@@ -187,7 +187,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Component class '{componentClassId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Component class '{componentClassId}'");
-        if (variants.All((variant) => variant.Id != "default"))
+        if (variants.All((variant) => variant.Id != VariantEnvelopeContract.DefaultId))
         {
             throw new InvalidOperationException($"Component class '{componentClassId}' has no explicit default Variant.");
         }

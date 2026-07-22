@@ -10,8 +10,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private const string DefaultModuleVariantId = "default";
-
     public sealed record ModuleVariant(
         string Id,
         string Name,

@@ -459,7 +459,7 @@ internal sealed partial class SpikeDatabase
                 var moduleId = reader.GetString(0);
                 var variants = ModuleVariants(reader.GetString(1), $"Module '{moduleId}'");
                 var ids = variants.Select((variant) => variant.Id).ToHashSet(StringComparer.Ordinal);
-                if (ids.Count != variants.Count || !ids.Contains(DefaultModuleVariantId))
+                if (ids.Count != variants.Count || !ids.Contains(VariantEnvelopeContract.DefaultId))
                 {
                     throw InvalidCurrentDatabase($"module '{moduleId}' must have unique explicit Variants including Default");
                 }

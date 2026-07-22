@@ -35,7 +35,7 @@ internal sealed class EditorNodeSelectionState
 
         return componentClassNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ComponentVariant
-                && VariantReferenceId.HasVariantId(child.Id, "default"))
+                && VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId))
             ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant)
             ?? componentClassNode;
     }
@@ -61,7 +61,7 @@ internal sealed class EditorNodeSelectionState
             return remembered;
         return moduleNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ModuleVariant
-                && VariantReferenceId.HasVariantId(child.Id, "default"))
+                && VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId))
             ?? moduleNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant)
             ?? moduleNode;
     }

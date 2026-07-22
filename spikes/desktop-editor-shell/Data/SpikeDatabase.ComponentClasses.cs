@@ -659,7 +659,7 @@ internal sealed partial class SpikeDatabase
                 variant.IsProtected,
                 variant.IsLocked,
                 variant.Config.ToJsonString()))
-            .OrderBy((variant) => variant.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal) ? 0 : 1)
+            .OrderBy((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal) ? 0 : 1)
             .ThenBy((variant) => variant.Name, StringComparer.Ordinal)
             .ToList();
     }
@@ -667,14 +667,14 @@ internal sealed partial class SpikeDatabase
     private static string DefaultComponentVariantConfigJson(string metadataJson, string owner)
     {
         return ComponentClassVariants(metadataJson, owner)
-            .Single((variant) => variant.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
+            .Single((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
             .ConfigJson;
     }
 
     private static void SetDefaultComponentVariantConfig(JsonObject metadata, JsonObject config)
     {
         var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", "Component class metadata");
-        var defaultVariant = VariantEnvelopeContract.FindSource(variants, DefaultComponentVariantId)
+        var defaultVariant = VariantEnvelopeContract.FindSource(variants, VariantEnvelopeContract.DefaultId)
             ?? throw new InvalidOperationException("Component class has no Default variant.");
         defaultVariant["config"] = config.DeepClone();
     }
@@ -714,7 +714,7 @@ internal sealed partial class SpikeDatabase
             componentType,
             config,
             $"Component class '{componentClassId}' Variant '{variantId}' config");
-        if (variantId.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
+        if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
         {
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
             return;

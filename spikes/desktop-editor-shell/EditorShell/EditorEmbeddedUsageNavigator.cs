@@ -101,7 +101,7 @@ internal sealed class EditorEmbeddedUsageNavigator
             ? selected
             : componentClassNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ComponentVariant
-                && VariantReferenceId.HasVariantId(child.Id, "default"))
+                && VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId))
               ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant);
     }
 

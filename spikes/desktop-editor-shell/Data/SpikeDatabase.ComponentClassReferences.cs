@@ -491,7 +491,7 @@ internal sealed partial class SpikeDatabase
             ?? throw new InvalidOperationException(
                 $"Project '{projectId}' has no {componentType} component class.");
         var variant = RequiredComponentClassVariants(componentClass)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
+            .FirstOrDefault((candidate) => candidate.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Component class '{componentClass.Id}' has no protected default variant.");
         return VariantReferenceId.Format(componentClass.Id, variant.Id);

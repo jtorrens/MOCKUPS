@@ -136,6 +136,7 @@ static void ComponentAndModuleVariantsShareReferenceGrammar()
 
 static void ComponentAndModuleVariantsShareEnvelopeOperations()
 {
+    Equal("default", VariantEnvelopeContract.DefaultId);
     var variants = new JsonArray
     {
         new JsonObject { ["id"] = "default" },

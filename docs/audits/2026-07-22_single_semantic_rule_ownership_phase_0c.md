@@ -159,3 +159,16 @@ esta batida.
 | Pruebas | Forma exacta del objeto y mantenimiento de los tests de lifecycle. |
 | Riesgo | Bajo. |
 | Decisión | Consolidar. |
+
+### Familia 0C.8 — Identificador estable de la Default Variant
+
+| Campo | Resultado |
+|---|---|
+| Regla | La Variant protegida que existe por defecto en todo owner actual usa el id estable `default`. |
+| Rutas actuales | Component y Module declaran constantes locales distintas; validación, Usage, repositorios y selección repiten además el literal. |
+| Paridad | Component y Module deben validar, localizar y preferir exactamente el mismo id sin inferirlo del nombre, orden o tipo. |
+| Owner definitivo | `VariantEnvelopeContract`, propietario del envelope current compartido. |
+| Cambio mínimo | Una constante común; migrar comparaciones activas y retirar las dos constantes locales. |
+| Pruebas | Valor estable directo, suites de lifecycle y enforcement contra la reaparición de constantes por owner. |
+| Riesgo | Bajo; no cambia ids, referencias, documentos ni selección. |
+| Decisión | Consolidar. |

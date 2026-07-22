@@ -191,7 +191,7 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
             ? ""
             : _references.SingleOrDefault((option) =>
                 option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                && option.Value.Equals(VariantReferenceId.Format(componentId, "default"), StringComparison.Ordinal))?.Value
+                && option.Value.Equals(VariantReferenceId.Format(componentId, VariantEnvelopeContract.DefaultId), StringComparison.Ordinal))?.Value
               ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
         SetVariantOptions(componentId, defaultReference);
         _isUpdating = false;

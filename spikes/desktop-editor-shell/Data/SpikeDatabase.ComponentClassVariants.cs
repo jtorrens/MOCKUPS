@@ -11,8 +11,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    private const string DefaultComponentVariantId = "default";
-
     public sealed record EmbeddedComponentUsage(
         string ParentComponentClassId,
         string ParentComponentName,

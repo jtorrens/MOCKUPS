@@ -15,6 +15,8 @@ internal sealed record CurrentVariantEnvelope(
 
 internal static class VariantEnvelopeContract
 {
+    public const string DefaultId = "default";
+
     public static IReadOnlyList<CurrentVariantEnvelope> Read(
         JsonObject metadata,
         string storageKey,
@@ -43,8 +45,8 @@ internal static class VariantEnvelopeContract
             throw new InvalidOperationException($"{owner} contains duplicate Variant id '{duplicate.Key}'.");
         }
 
-        var defaultVariant = variants.SingleOrDefault((variant) => variant.Id.Equals("default", StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"{owner} must contain the stable Default Variant id 'default'.");
+        var defaultVariant = variants.SingleOrDefault((variant) => variant.Id.Equals(DefaultId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"{owner} must contain the stable Default Variant id '{DefaultId}'.");
         if (!defaultVariant.IsProtected)
         {
             throw new InvalidOperationException($"{owner} Default Variant must be protected.");
