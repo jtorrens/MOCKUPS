@@ -111,7 +111,6 @@ internal sealed partial class SpikeDatabase
         var scriptCandidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
             Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "scripts", "icon-themes", "sync-icon-theme-token.cjs"),
         }
             .Select(Path.GetFullPath)

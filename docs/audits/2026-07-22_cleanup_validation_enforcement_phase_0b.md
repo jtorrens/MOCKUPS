@@ -1,7 +1,7 @@
 # Limpieza, validación y enforcement — Fase 0B
 
 Fecha: 2026-07-22
-Estado: en curso, por slices cerrados.
+Estado: cerrada.
 
 ## Objetivo
 
@@ -29,6 +29,9 @@ Norma de ejecución: contrato 71.
 | Helpers privados aislados | Varias declaraciones sin ninguna llamada; una segunda pasada descubre helpers agrupadores adicionales | Retirar en 0B.3 y repetir hasta cero candidatos. |
 | Aproximaciones exportadas de tamaño multilínea/wrapped | Solo aparece su declaración; el checker usa únicamente width y line wrapping | Retirar en 0B.3. |
 | `planRasterFrame` | Sin caller runtime actual, pero protegido como contrato genérico de planificación Raster por enforcement | Mantener mientras se decida Render Mode; no confundir incompleto con huérfano. |
+| Copia local de `sync-icon-theme-token.cjs` | Idéntica byte a byte a la fuente raíz; el proyecto ya empaqueta expresamente esa fuente canónica | Retirar la copia y su ruta alternativa en 0B.4. |
+| Scripts manuales de descarga/generación, empaquetado y SVG | Entradas explícitas de desarrollo, mantenimiento o publicación | Mantener; una entrada manual no es código huérfano. |
+| Alias `app`, `app:check` y `app:build` | Superficie pública documentada para ejecución y paridad entre equipos | Mantener aunque deleguen en el mismo build de escritorio. |
 
 ## Slice 0B.1 — Bindings TypeScript sin consumidor
 
@@ -88,10 +91,33 @@ consumidor. Se conserva `planRasterFrame`: no está conectado al runtime actual,
 pero define el plan genérico `full/hold/tiles` protegido por el checker; su
 destino pertenece a la decisión futura de Render Mode.
 
-## Siguientes pasadas
+## Slice 0B.4 — Entradas de desarrollo y copia de Icon Themes
 
-- comprobar métodos y tipos C# con una única aparición aparente;
-- cruzar cada candidato con XAML, reflection, manifests y serialización;
-- revisar scripts activos y entradas de packaging sin tocar archivos
-  históricos;
-- repetir la detección tras cada slice hasta que no queden candidatos claros.
+Se revisan los scripts activos, comandos de paquete, publicación, generación de
+SVG e importadores manuales. Se mantienen sus entradas explícitas: que una
+herramienta se invoque a demanda no la convierte en código inactivo, y los
+alias `app:*` siguen siendo parte de la documentación de paridad.
+
+La única duplicación inactiva confirmada es la copia local de
+`sync-icon-theme-token.cjs` bajo el proyecto de escritorio. Era idéntica byte a
+byte a la fuente raíz que el proyecto ya incluye en el resultado compilado. Se
+retira esa copia y la ruta que solo la buscaba; quedan la copia empaquetada para
+la aplicación y la fuente raíz para ejecución desde desarrollo.
+
+## Cierre de fase
+
+La detección final no encuentra clases, tipos ni métodos privados C# con una
+única aparición. Tampoco quedan bindings TypeScript que incumplan los checks de
+unused; el único export sin consumidor runtime es el plan Raster retenido de
+forma explícita. Todos los nombres XAML tienen consumidor y no existen
+converters pendientes.
+
+Los scripts activos han quedado clasificados entre entradas automáticas,
+manuales, de publicación e históricas. No aparece otra eliminación clara que
+pueda justificarse como código inactivo sin entrar en consolidación de owners,
+que corresponde a 0C.
+
+La validación completa cierra con 52/52 pruebas de Preview, 93/93 pruebas de
+escritorio, typecheck estricto, comprobación de arquitectura y build sin
+warnings ni errores. La base canónica y los assets no se modifican en esta
+fase.

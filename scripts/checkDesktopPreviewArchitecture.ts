@@ -1160,11 +1160,12 @@ assertContains(
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
+  "spikes/desktop-editor-shell/scripts/icon-themes/sync-icon-theme-token.cjs",
 ]) {
   if (existsSync(path.join(root, retiredInactiveSource))) {
     addViolation(
       retiredInactiveSource,
-      "retired dormant layout/default source must not return to active desktop runtime",
+      "retired inactive source or duplicate must not return to active desktop runtime",
     );
   }
 }
