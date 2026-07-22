@@ -1210,6 +1210,52 @@ assertDoesNotContain(
   "Runtime Input forwarding must use the shared strict Preview object parser",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Common/ModuleAppearanceModeContract.cs",
+  "public static string Resolve(JsonObject config, string inheritedMode, string owner)",
+  "Module appearance mode validation and inheritance must have one common owner",
+);
+for (const appearanceModeConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+]) {
+  assertContains(
+    appearanceModeConsumer,
+    "ModuleAppearanceModeContract.",
+    `${appearanceModeConsumer} must consume the common Module appearance mode contract`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  'value is "light" or "dark" ? value : "inherit"',
+  "Module appearance writes must reject unknown values instead of coercing them to inherit",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'config["appearanceMode"]?.GetValue<string>() ?? "inherit"',
+  "the Preview controller must not reconstruct the Module appearance mode fallback",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "string ThemeMode,\n    string ComponentBaseConfigsJson",
+  "every prepared Design Preview payload must require an explicit resolved Theme mode",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "themeMode = payload.ThemeMode",
+  "the web renderer request must transport the effective payload Theme mode unchanged",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "string themeMode,",
+  "the web renderer must not accept a second session Theme mode beside the prepared payload",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  'payload.ThemeMode is "dark"',
+  "the web renderer must not recompute effective Theme mode",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",
   "external Node processes must share one platform executable resolver",
@@ -4824,7 +4870,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), theme)",
+  "ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), themeMode, theme)",
   "design preview must route selected Component Variant nodes",
 );
 assertContains(

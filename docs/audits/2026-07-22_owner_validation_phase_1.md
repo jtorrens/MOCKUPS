@@ -61,3 +61,15 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | Documento completo; ausencia, blank, JSON malformado y raíz array para cada campo; icon mapping ausente y presente inválido. |
 | Enforcement | Lista explícita de campos en el boundary y prohibición de las dos coerciones retiradas. |
 | Riesgo | Bajo para current data; las entradas inválidas ahora fallan antes de routing. No cambia payload válido, forwarding ni renderables. |
+
+## Slice 1.2 — Autoridad del modo de Theme efectivo
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La factory respetaba `light`/`dark` explícitos, pero el renderer volvía a combinar payload y sesión: una sesión oscura anulaba un `light` explícito. La lectura y la escritura del módulo también convertían valores ausentes o desconocidos en `inherit`. |
+| Owner | `ModuleAppearanceModeContract` valida el valor del documento; `DesignPreviewPayloadFactory` resuelve `inherit` y prepara un `ThemeMode` final. |
+| Cambio mínimo | Los payloads de Component, Module y Screen llevan siempre `light` o `dark`; el renderer transporta solo ese valor; lectura, escritura y presentación consumen el mismo contrato estricto. |
+| Rutas eliminadas | Segunda combinación en `WebDesignPreviewRenderer`, fallback del controller, fallback de lectura y coerción de escritura a `inherit`. |
+| Pruebas | `light` y `dark` explícitos sobre la sesión contraria; `inherit`; Component aislado; valor ausente, tipo incorrecto y valor desconocido; escritura rechazada sin modificar el documento. |
+| Enforcement | Owner común requerido en factory, data y controller; renderer sin parámetro de sesión ni recomposición; coerciones antiguas prohibidas. |
+| Riesgo | Bajo para current data, cuyos valores son válidos. Cambia únicamente la entrada inválida y corrige la precedencia de `light` explícito aprobada por el usuario. |

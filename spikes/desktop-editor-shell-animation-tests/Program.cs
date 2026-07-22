@@ -45,6 +45,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
@@ -2440,6 +2441,95 @@ static void ProductionPayloadPreservesActorAndAnimation()
     }
 }
 
+static void PreviewThemeModeHasOneStrictPayloadOwner()
+{
+    Equal(
+        "light",
+        ModuleAppearanceModeContract.Resolve(
+            Object("{\"appearanceMode\":\"light\"}"),
+            "dark",
+            "Test Module Variant"));
+    Equal(
+        "dark",
+        ModuleAppearanceModeContract.Resolve(
+            Object("{\"appearanceMode\":\"dark\"}"),
+            "light",
+            "Test Module Variant"));
+    Equal(
+        "dark",
+        ModuleAppearanceModeContract.Resolve(
+            Object("{\"appearanceMode\":\"inherit\"}"),
+            "dark",
+            "Test Module Variant"));
+    Throws<InvalidOperationException>(() =>
+        ModuleAppearanceModeContract.Read(Object("{}"), "Test Module Variant"));
+    Throws<InvalidOperationException>(() =>
+        ModuleAppearanceModeContract.Read(Object("{\"appearanceMode\":4}"), "Test Module Variant"));
+    Throws<InvalidOperationException>(() =>
+        ModuleAppearanceModeContract.Read(Object("{\"appearanceMode\":\"sepia\"}"), "Test Module Variant"));
+    Throws<InvalidOperationException>(() =>
+        ModuleAppearanceModeContract.RequireResolved("inherit", "Test resolved mode"));
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-mode-owner-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var componentVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
+        var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
+        var defaultVariant = module.Children.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsProtected);
+
+        Equal(
+            "dark",
+            Required(DesignPreviewPayloadFactory.Create(
+                dataSource,
+                componentVariant,
+                theme.Id,
+                themeMode: "dark")).ThemeMode);
+        Equal(
+            "dark",
+            Required(DesignPreviewPayloadFactory.Create(
+                dataSource,
+                defaultVariant,
+                theme.Id,
+                themeMode: "dark")).ThemeMode);
+
+        var lightVariant = database.SaveModuleVariant(defaultVariant, "Forced Light");
+        database.UpdateModuleVariantField(lightVariant, "module.appearanceMode", "light");
+        Equal(
+            "light",
+            Required(DesignPreviewPayloadFactory.Create(
+                dataSource,
+                lightVariant,
+                theme.Id,
+                themeMode: "dark")).ThemeMode);
+
+        var darkVariant = database.SaveModuleVariant(defaultVariant, "Forced Dark");
+        database.UpdateModuleVariantField(darkVariant, "module.appearanceMode", "dark");
+        Equal(
+            "dark",
+            Required(DesignPreviewPayloadFactory.Create(
+                dataSource,
+                darkVariant,
+                theme.Id,
+                themeMode: "light")).ThemeMode);
+
+        var beforeRejectedWrite = database.GetModuleVariantSettings(defaultVariant).ConfigJson;
+        Throws<InvalidOperationException>(() =>
+            database.UpdateModuleVariantField(defaultVariant, "module.appearanceMode", "sepia"));
+        Equal(beforeRejectedWrite, database.GetModuleVariantSettings(defaultVariant).ConfigJson);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void ConversationMessageActorsFollowDirectionContract()
 {
     var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
@@ -3904,7 +3994,6 @@ static void ComponentStackSeedOpensAndRenders()
         True(resolvedPreview["items"]?[1]?["alternatives"]?[0]?["inputs"]?["showBadge"]?.GetValue<bool>() == true);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
@@ -3956,7 +4045,6 @@ static void ComponentStackSeedOpensAndRenders()
         Equal(1, (transientPreview["items"] as JsonArray)?.Count ?? -1);
         var transientHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             transientPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(transientHtml));
@@ -4070,7 +4158,6 @@ static void ComponentStackSeedOpensAndRenders()
         True(populatedPreview["items"]?[0]?["alternatives"]?[0]?["inputs"]?["showBadge"] is JsonValue);
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             populatedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(populatedHtml));
@@ -4135,7 +4222,6 @@ static void CollectionStackSeedOpensAndRenders()
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             inputSession.ApplyInputs(payload, "light", settings.ProjectId)).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
@@ -4246,7 +4332,7 @@ static void NotificationsSeedOpensAndRenders()
             var inputSession = new ComponentPreviewInputSession(database, () => { });
             inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
             var html = WebDesignPreviewRenderer.RenderBodyAsync(
-                database.GetDevicePreviewMetrics(device.Id), "light", false,
+                database.GetDevicePreviewMetrics(device.Id), false,
                 inputSession.ApplyInputs(payload, "light", database.GetComponentClassSettings(variant.Parent.Id).ProjectId)).GetAwaiter().GetResult();
             True(!html.Contains("preview-error", StringComparison.Ordinal));
         }
@@ -4298,7 +4384,7 @@ static void NotificationsSeedOpensAndRenders()
         var wrappingSession = new ComponentPreviewInputSession(database, () => { });
         wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
         var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
-            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            database.GetDevicePreviewMetrics(device.Id), false,
             wrappingSession.ApplyInputs(wrappingPayload, "light", wrappingSettings.ProjectId)).GetAwaiter().GetResult();
         True(wrappingHtml.Contains("component.notification.label.text.1", StringComparison.Ordinal));
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingSettings.DesignPreviewJson);
@@ -4359,7 +4445,7 @@ static void NotificationsSeedOpensAndRenders()
         Equal("summary", targetedItems[1]?["displayMode"]?.GetValue<string>() ?? "");
         True(populatedSession.RestoreAction(firstDisplayAction.Id));
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
-            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            database.GetDevicePreviewMetrics(device.Id), false,
             populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
         if (populatedHtml.Contains("preview-error", StringComparison.Ordinal))
             throw new InvalidOperationException("Stacked Notifications preview failed.");
@@ -4367,7 +4453,7 @@ static void NotificationsSeedOpensAndRenders()
             throw new InvalidOperationException("Stacked Notifications preview omitted its Badge.");
         populatedSession.SetExternalInputValue("distributionMode", "flow");
         var flowHtml = WebDesignPreviewRenderer.RenderBodyAsync(
-            database.GetDevicePreviewMetrics(device.Id), "light", false,
+            database.GetDevicePreviewMetrics(device.Id), false,
             populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
         if (flowHtml.Contains("preview-error", StringComparison.Ordinal))
             throw new InvalidOperationException("Flow Notifications preview failed.");
@@ -4437,7 +4523,6 @@ static void KeypadSeedOpensAndRenders()
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
@@ -4539,7 +4624,6 @@ static void PasswordSeedOpensAndRenders()
         Equal(16, finalPreview["entryFrame"]?.GetValue<int>() ?? -1);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             resolvedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
@@ -4566,7 +4650,6 @@ static void PasswordSeedOpensAndRenders()
             var componentPayload = Required(CreatePreviewPayload(database, componentVariant, theme.Id));
             var componentHtml = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
-                "light",
                 false,
                 componentPayload).GetAwaiter().GetResult();
             True(!componentHtml.Contains("preview-error", StringComparison.Ordinal));
@@ -4583,7 +4666,6 @@ static void PasswordSeedOpensAndRenders()
             modePayload = modePayload with { DesignPreviewJson = modePreview.ToJsonString() };
             var modeHtml = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
-                "light",
                 false,
                 modePayload).GetAwaiter().GetResult();
             True(!modeHtml.Contains("preview-error", StringComparison.Ordinal));
@@ -4760,7 +4842,6 @@ static void LockScreenComposesRuntimeStack()
             timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id) + 30));
         var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             passwordFramePayload).GetAwaiter().GetResult();
         if (passwordFrameHtml.Contains("preview-error", StringComparison.Ordinal))
@@ -4779,7 +4860,6 @@ static void LockScreenComposesRuntimeStack()
             timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database), lockScreenInstance.Id) + 40));
         var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             completedPasswordPayload).GetAwaiter().GetResult();
         if (completedPasswordHtml.Contains("preview-error", StringComparison.Ordinal))
@@ -4803,7 +4883,6 @@ static void LockScreenComposesRuntimeStack()
         Equal(1d, resolvedPreview["actor"]?["wallpaper"]?["opacity"]?.GetValue<double>() ?? -1);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             resolved).GetAwaiter().GetResult();
         True(!html.Contains("preview-error", StringComparison.Ordinal));
@@ -4872,7 +4951,6 @@ static void LockScreenComposesRuntimeStack()
         var populated = populatedSession.ApplyInputs(populatedPayload, "light", settings.ProjectId);
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
-            "light",
             false,
             populated).GetAwaiter().GetResult();
         True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));

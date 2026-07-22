@@ -29,32 +29,29 @@ internal static class WebDesignPreviewRenderer
 
     public static async Task<string> RenderBodyAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        return await RenderBodyAsync(metrics, themeMode, showMarks, payload, PersistentRenderer, "interactive");
+        return await RenderBodyAsync(metrics, showMarks, payload, PersistentRenderer, "interactive");
     }
 
     public static async Task<string> RenderPrewarmBodyAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        return await RenderBodyAsync(metrics, themeMode, showMarks, payload, PrewarmPersistentRenderer, "prewarm");
+        return await RenderBodyAsync(metrics, showMarks, payload, PrewarmPersistentRenderer, "prewarm");
     }
 
     private static async Task<string> RenderBodyAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showMarks,
         DesignPreviewPayload payload,
         PersistentPreviewRenderer persistentRenderer,
         string lane)
     {
         var stopwatch = Stopwatch.StartNew();
-        var request = CreateRequest(metrics, themeMode, showMarks, payload);
+        var request = CreateRequest(metrics, showMarks, payload);
         var requestJson = JsonSerializer.Serialize(request);
         var renderer = ResolveRendererCommand();
         var requestHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(requestJson)));
@@ -67,7 +64,7 @@ internal static class WebDesignPreviewRenderer
                 ("lane", lane),
                 ("component", payload.ComponentType),
                 ("name", payload.Name),
-                ("themeMode", themeMode),
+                ("themeMode", payload.ThemeMode),
                 ("showMarks", showMarks),
                 ("ms", stopwatch.Elapsed.TotalMilliseconds),
                 ("htmlChars", cachedHtml.Length),
@@ -84,7 +81,7 @@ internal static class WebDesignPreviewRenderer
             ("lane", lane),
             ("component", payload.ComponentType),
             ("name", payload.Name),
-            ("themeMode", themeMode),
+            ("themeMode", payload.ThemeMode),
             ("showMarks", showMarks),
             ("ms", stopwatch.Elapsed.TotalMilliseconds),
             ("htmlChars", html.Length),
@@ -95,11 +92,10 @@ internal static class WebDesignPreviewRenderer
 
     public static async Task PrewarmBodyAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        _ = await RenderPrewarmBodyAsync(metrics, themeMode, showMarks, payload);
+        _ = await RenderPrewarmBodyAsync(metrics, showMarks, payload);
     }
 
     public static IDisposable ReserveFrameCacheCapacity(int frameCount)
@@ -146,7 +142,6 @@ internal static class WebDesignPreviewRenderer
 
     private static object CreateRequest(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showMarks,
         DesignPreviewPayload payload)
     {
@@ -158,7 +153,7 @@ internal static class WebDesignPreviewRenderer
             designPreviewJson = payload.DesignPreviewJson,
             runtimeContractJson = payload.RuntimeContractJson,
             showMarks,
-            themeMode = payload.ThemeMode is "dark" ? "dark" : themeMode is "dark" ? "dark" : "light",
+            themeMode = payload.ThemeMode,
             themeTokensJson = payload.ThemeTokensJson,
             themeStatusBarVariantReference = payload.ThemeStatusBarVariantReference,
             themeNavigationBarVariantReference = payload.ThemeNavigationBarVariantReference,

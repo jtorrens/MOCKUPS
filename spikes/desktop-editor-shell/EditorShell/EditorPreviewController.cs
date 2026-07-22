@@ -1325,7 +1325,6 @@ internal sealed class EditorPreviewController
                 {
                     var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
                         metrics,
-                        _selectedMode,
                         _showDesignMarks,
                         frames[frameIndex]);
                     foreach (var source in DesignWebPreviewPane.ImageSourcesForPreload(bodyContent))
@@ -1426,7 +1425,7 @@ internal sealed class EditorPreviewController
                 UpdateRasterProgress(frameIndex, frames.Count);
                 _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
                 cancellation.Token.ThrowIfCancellationRequested();
-                var rasterHtml = await _designPreviewPane.BuildRasterHtmlAsync(metrics, _selectedMode, frame);
+                var rasterHtml = await _designPreviewPane.BuildRasterHtmlAsync(metrics, frame);
                 var rasterPath = Path.Combine(_rasterCacheDirectory, $"frame-{frameIndex:D6}.webp");
                 await _chromiumRasterizer.RasterizeAsync(
                     rasterHtml,
@@ -1509,7 +1508,6 @@ internal sealed class EditorPreviewController
             var frame = frames[index];
             var bodyContent = await WebDesignPreviewRenderer.RenderPrewarmBodyAsync(
                 metrics,
-                _selectedMode,
                 _showDesignMarks,
                 frame);
             foreach (var source in DesignWebPreviewPane.ImageSourcesForPreload(bodyContent))
@@ -2771,7 +2769,9 @@ internal sealed class EditorPreviewController
         }
         if (string.IsNullOrWhiteSpace(instanceId)) return "inherit";
         var config = DesignPreviewTestValues.Parse(_productionPreviewData.ModuleInstanceVariantConfigJson(instanceId));
-        return config["appearanceMode"]?.GetValue<string>() ?? "inherit";
+        return ModuleAppearanceModeContract.Read(
+            config,
+            $"Module Instance '{instanceId}' Variant config");
     }
 
     private void EnsureSelectedOptionsExist()

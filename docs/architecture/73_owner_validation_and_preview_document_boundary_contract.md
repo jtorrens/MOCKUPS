@@ -81,10 +81,11 @@ a second policy that can accept data rejected by the boundary.
 - isolated Component payloads without a Module appearance choice use the
   session mode.
 
-Once `DesignPreviewPayload.ThemeMode` contains `light` or `dark`, that value is
-authoritative. `WebDesignPreviewRenderer` normalizes only the absence of an
-explicit payload mode; it must not let session `dark` override explicit payload
-`light`, nor inspect Module config itself.
+Every prepared `DesignPreviewPayload.ThemeMode` is an explicit `light` or
+`dark`, and that value is authoritative. `WebDesignPreviewRenderer` transports
+it unchanged; it must not accept a second session mode, supply a fallback, let
+session `dark` override explicit payload `light`, or inspect Module config
+itself.
 
 ## 5. Current JSON and value objects
 

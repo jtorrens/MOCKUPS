@@ -162,7 +162,7 @@ internal sealed partial class SpikeDatabase
         var config = ParseJsonObject(configJson);
         return fieldId switch
         {
-            "module.appearanceMode" => JsonString(config, ["appearanceMode"]) is "light" or "dark" ? JsonString(config, ["appearanceMode"]) : "inherit",
+            "module.appearanceMode" => ModuleAppearanceModeContract.Read(config, "Module Variant config"),
             "module.conversation.showHeader" => JsonBoolString(config, ["conversation", "showHeader"], defaultValue: true),
             "module.conversation.useAppWallpaper" => JsonBoolString(config, ["conversation", "useAppWallpaper"], defaultValue: true),
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
@@ -321,7 +321,10 @@ internal sealed partial class SpikeDatabase
         switch (fieldId)
         {
             case "module.appearanceMode":
-                SetJsonValue(config, ["appearanceMode"], JsonValue.Create(value is "light" or "dark" ? value : "inherit")!);
+                SetJsonValue(
+                    config,
+                    ["appearanceMode"],
+                    JsonValue.Create(ModuleAppearanceModeContract.Require(value, "Module Variant config"))!);
                 break;
             case "module.conversation.showHeader":
                 SetJsonValue(config, ["conversation", "showHeader"], JsonValue.Create(BoolFromText(value))!);

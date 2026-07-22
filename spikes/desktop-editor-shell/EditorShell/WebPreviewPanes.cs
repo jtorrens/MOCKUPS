@@ -1808,12 +1808,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     public async Task<string> BuildRasterHtmlAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         DesignPreviewPayload payload)
     {
         var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
             metrics,
-            themeMode,
             showMarks: false,
             payload);
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
@@ -1838,14 +1836,12 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     public async Task<bool> PrewarmFrameAsync(
         DevicePreviewMetrics metrics,
-        string themeMode,
         bool showDesignMarks,
         DesignPreviewPayload payload)
     {
         var stopwatch = Stopwatch.StartNew();
         var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
             metrics,
-            themeMode,
             showDesignMarks,
             payload);
         var htmlParts = PreviewHtmlParts.Split(bodyContent);
@@ -2008,7 +2004,6 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         {
             bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
                 update.Metrics,
-                update.ThemeMode,
                 update.ShowDesignMarks,
                 update.Payload);
         }
