@@ -136,3 +136,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Método owner y tres consumidores obligatorios; parser paralelo y catch de timing prohibidos. |
 | Datos | Sin migración. Todos los defaults current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo. Solo cambia la entrada inválida y la reconciliación futura de contratos dañados; payload current y UI válida no cambian. |
+
+## Slice 1.8 — Colecciones Runtime persistidas
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Add e Insert creaban un array cuando la colección faltaba o tenía otra raíz; Insert añadía al final cuando no encontraba el id de referencia. Las demás operaciones comprobaban el array pero no que su key estuviera declarada. La reconciliación proyectada filtraba items no objeto o sin id. |
+| Owner | El contrato Runtime efectivo declara la storage key; `RuntimeCollectionDocumentContract` valida array, objetos e ids estables únicos; el coordinador de instancia conserva la escritura completa y la sincronización temporal. |
+| Cambio mínimo | Exigir una declaración exacta en todas las mutaciones, rechazar roots e ids inválidos, hacer explícito el único caso que crea array vacío al cruzar a una Variant que declara una colección nueva y validar startup/read-write con el mismo owner. |
+| Rutas eliminadas | `as JsonArray ?? new JsonArray`, append ante anchor ausente y filtros `OfType` que descartaban silenciosamente items actuales inválidos. |
+| Pruebas | 105/105 escritorio: operaciones completas sobre `messages` real; key no declarada, item sin id, id duplicado y anchor ausente rechazados sin escritura; corrupción de id duplicado y root Lock Screen incorrecta rechazadas read-only. |
+| Enforcement | Owner común y consumidores obligatorios; startup owner requerido; creación implícita y append ambiguo prohibidos. |
+| Datos | Sin migración. Todas las colecciones current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo. Se conserva la creación explícita de colección al reconciliar una nueva frontera; solo dejan de aceptarse documento o intención inválidos. |

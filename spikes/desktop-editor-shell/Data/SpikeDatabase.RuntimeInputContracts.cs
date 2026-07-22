@@ -47,9 +47,13 @@ internal sealed partial class SpikeDatabase
             var projected = collection["storageCollectionJsonKey"] is JsonValue;
             var items = projected
                 ? ReconcileProjectedRuntimeCollection(
-                    content[storageKey] as JsonArray,
-                    contract[collection["jsonKey"]?.GetValue<string>() ?? ""] as JsonArray)
-                : content[storageKey] as JsonArray ?? new JsonArray();
+                    OptionalRuntimeCollection(content, storageKey, $"Module Instance '{moduleInstanceId}' content_json"),
+                    OptionalRuntimeCollection(
+                        contract,
+                        collection["jsonKey"]?.GetValue<string>() ?? "",
+                        $"Module Instance '{moduleInstanceId}' effective Runtime contract"))
+                : OptionalRuntimeCollection(content, storageKey, $"Module Instance '{moduleInstanceId}' content_json")
+                    ?? new JsonArray();
             content[storageKey] = items;
             foreach (var (item, index) in items.OfType<JsonObject>().Select((item, index) => (item, index)))
             {
@@ -135,14 +139,18 @@ internal sealed partial class SpikeDatabase
     {
         if (defaults is null)
             throw new InvalidOperationException("Projected runtime collection has no contract defaults.");
+        RuntimeCollectionDocumentContract.Validate(defaults, "Projected runtime collection defaults");
+        if (current is not null)
+        {
+            RuntimeCollectionDocumentContract.Validate(current, "Projected runtime collection content");
+        }
         var currentById = (current ?? [])
             .OfType<JsonObject>()
-            .Where((item) => item["id"]?.GetValue<string>() is { Length: > 0 })
             .ToDictionary((item) => item["id"]!.GetValue<string>(), StringComparer.Ordinal);
         var result = new JsonArray();
-        foreach (var defaultItem in defaults.OfType<JsonObject>())
+        foreach (var defaultItem in defaults)
         {
-            var next = defaultItem.DeepClone().AsObject();
+            var next = defaultItem!.DeepClone().AsObject();
             var id = next["id"]?.GetValue<string>()
                 ?? throw new InvalidOperationException("Projected runtime collection item has no stable id.");
             if (currentById.TryGetValue(id, out var currentItem))
@@ -156,5 +164,78 @@ internal sealed partial class SpikeDatabase
         }
         return result;
     }
+
+    private JsonArray RequireDeclaredRuntimeCollection(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        JsonObject content)
+    {
+        if (string.IsNullOrWhiteSpace(collectionJsonKey))
+        {
+            throw new InvalidOperationException("Runtime collection key cannot be empty.");
+        }
+        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
+        var module = _appModuleRepository.GetModule(instance.ModuleId);
+        var contract = EffectiveModuleInstanceContract(
+            module.Id,
+            module.MetadataJson,
+            instance.MetadataJson,
+            module.DesignPreviewJson);
+        var matches = (contract["collections"] as JsonArray)?.OfType<JsonObject>()
+            .Count((collection) => RuntimeCollectionStorageKey(collection) == collectionJsonKey) ?? 0;
+        if (matches != 1)
+        {
+            throw new InvalidOperationException(
+                $"Module Instance '{moduleInstanceId}' has no unique declared runtime collection '{collectionJsonKey}'.");
+        }
+
+        var items = RequiredRuntimeCollection(
+            content,
+            collectionJsonKey,
+            $"Module Instance '{moduleInstanceId}' content_json");
+        RuntimeCollectionDocumentContract.Validate(
+            items,
+            $"Module Instance '{moduleInstanceId}' runtime collection '{collectionJsonKey}'");
+        return items;
+    }
+
+    private static void ValidateCurrentRuntimeCollections(
+        JsonObject contract,
+        JsonObject content,
+        string owner)
+    {
+        if (contract["collections"] is null) return;
+        var collections = contract["collections"] as JsonArray
+            ?? throw new InvalidOperationException($"{owner} effective Runtime contract collections must be an array.");
+        var storageKeys = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < collections.Count; index++)
+        {
+            var collection = collections[index] as JsonObject
+                ?? throw new InvalidOperationException($"{owner} Runtime collection at index {index} must be an object.");
+            var storageKey = RuntimeCollectionStorageKey(collection);
+            if (string.IsNullOrWhiteSpace(storageKey) || !storageKeys.Add(storageKey))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} has a missing or duplicate Runtime collection storage key '{storageKey}'.");
+            }
+            var items = RequiredRuntimeCollection(content, storageKey, owner);
+            RuntimeCollectionDocumentContract.Validate(items, $"{owner} runtime collection '{storageKey}'");
+        }
+    }
+
+    private static JsonArray? OptionalRuntimeCollection(JsonObject owner, string key, string context)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidOperationException($"{context} has an empty runtime collection key.");
+        }
+        if (owner[key] is null) return null;
+        return owner[key] as JsonArray
+            ?? throw new InvalidOperationException($"{context} '{key}' must be an array.");
+    }
+
+    private static JsonArray RequiredRuntimeCollection(JsonObject owner, string key, string context) =>
+        OptionalRuntimeCollection(owner, key, context)
+        ?? throw new InvalidOperationException($"{context} requires runtime collection '{key}'.");
 
 }

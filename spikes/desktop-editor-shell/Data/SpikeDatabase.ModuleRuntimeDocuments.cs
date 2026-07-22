@@ -19,6 +19,15 @@ internal sealed partial class SpikeDatabase
             .Where((actor) => actor.ProjectId.Equals(module.ProjectId, StringComparison.Ordinal))
             .Select((actor) => actor.Id)
             .ToHashSet(StringComparer.Ordinal);
+        var contract = EffectiveModuleInstanceContract(
+            module.Id,
+            module.MetadataJson,
+            instance.MetadataJson,
+            module.DesignPreviewJson);
+        ValidateCurrentRuntimeCollections(
+            contract,
+            content,
+            $"Module Instance '{moduleInstanceId}' content_json");
         ModuleRuntimeDocumentContracts.ValidateCurrent(
             module.RecordClassId,
             $"Module Instance '{moduleInstanceId}' content_json",
@@ -47,10 +56,22 @@ internal sealed partial class SpikeDatabase
                 : new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
             try
             {
+                var content = ParseRequiredObject(
+                    instance.ContentJson,
+                    $"Module Instance '{instance.Id}' content_json");
+                var contract = EffectiveModuleInstanceContract(
+                    module.Id,
+                    module.MetadataJson,
+                    instance.MetadataJson,
+                    module.DesignPreviewJson);
+                ValidateCurrentRuntimeCollections(
+                    contract,
+                    content,
+                    $"Module Instance '{instance.Id}' content_json");
                 ModuleRuntimeDocumentContracts.ValidateCurrent(
                     module.RecordClassId,
                     $"Module Instance '{instance.Id}' content_json",
-                    ParseRequiredObject(instance.ContentJson, $"Module Instance '{instance.Id}' content_json"),
+                    content,
                     projectActorIds);
             }
             catch (InvalidOperationException exception)

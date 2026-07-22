@@ -23,6 +23,14 @@ The editor supplies stable ids and already prepared values/documents. The store
 is a narrow delegation boundary. Existing facade coordinators preserve atomic
 content/animation updates and the repository remains the SQL owner.
 
+Every collection mutation resolves one exact declared storage key from the
+effective Runtime contract before touching content. Its persisted value must
+already be an array of object items with unique non-empty stable ids. Add,
+insert and duplicate require a new explicit stable id; insert-after requires
+the referenced stable id to exist. A missing, undeclared or wrong-root
+collection is an error, never an instruction to create an empty collection or
+append somewhere plausible.
+
 ## 2. Instance-store ownership
 
 `RuntimeInputInstanceDocumentStore` may delegate only these explicit operations
@@ -45,6 +53,11 @@ It must not create ids; find a collection from a label or field type; parse
 Runtime Input contracts; choose a Component Variant; manufacture Overrides;
 infer target mappings; calculate duration or frame origins; create UI; execute
 SQL; repair current data; or accept a partial animation patch.
+
+Explicit reconciliation after a Module Variant change may create an empty
+array for a newly declared collection. It must still reject a present
+wrong-root collection and malformed or duplicate item ids; normal editor
+mutations are not reconciliation and never create the collection root.
 
 The store composes current facade/domain operations and contract 59. It is not a
 repository and does not replace the coordinated content/animation operations
@@ -90,6 +103,8 @@ derived origins or a calculated duration outside that established coordinator.
 
 - Stored collection and animation ownership binds through stable ids, never
   indices.
+- Stored collection items are objects with unique non-empty stable ids and the
+  storage key comes from the effective Runtime contract.
 - Full Component Variant references remain stored values; labels are display
   only.
 - Forwarding and local Overrides remain explicit.
@@ -119,7 +134,9 @@ Architecture enforcement must verify:
 A disposable-database test must prove animation reads are byte-for-byte
 read-only, exercise explicit scalar, add, insert, duplicate, field update, move
 and delete operations, verify stable item order/content, and round-trip one
-complete current animation v2 document.
+complete current animation v2 document. It must also reject undeclared or
+wrong-root collections, missing/duplicate ids and a missing insert anchor
+without changing persistence.
 
 ## 7. Out of scope
 
@@ -134,5 +151,6 @@ or JSON, migrate data, add Render Mode/export or modify parity assets.
 - saving a partial animation track or absolute Shot frame;
 - treating Test Values as persisted instance content;
 - creating ids or choosing Variants inside the store;
+- creating a missing collection root or appending after a missing stable id;
 - adding duration formulas or timeline synchronization to the editor/store;
 - bypassing owning repositories with local SQL.

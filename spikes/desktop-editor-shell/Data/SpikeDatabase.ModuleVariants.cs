@@ -171,9 +171,13 @@ internal sealed partial class SpikeDatabase
             if (string.IsNullOrWhiteSpace(storageKey)) continue;
             next[storageKey] = collection["storageCollectionJsonKey"] is JsonValue
                 ? ReconcileProjectedRuntimeCollection(
-                    current[storageKey] as JsonArray,
-                    contract[collection["jsonKey"]?.GetValue<string>() ?? ""] as JsonArray)
-                : current[storageKey]?.DeepClone() ?? new JsonArray();
+                    OptionalRuntimeCollection(current, storageKey, "Current Module Instance content"),
+                    OptionalRuntimeCollection(
+                        contract,
+                        collection["jsonKey"]?.GetValue<string>() ?? "",
+                        "Effective Module Runtime contract"))
+                : (OptionalRuntimeCollection(current, storageKey, "Current Module Instance content")
+                    ?? new JsonArray()).DeepClone();
         }
         return next;
     }

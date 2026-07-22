@@ -98,7 +98,8 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException("A runtime collection update requires at least one explicit field.");
         }
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var item = (content[collectionJsonKey] as JsonArray)?.OfType<JsonObject>()
+        var item = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)
+            .OfType<JsonObject>()
             .FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
         foreach (var (fieldJsonKey, value) in values)
@@ -115,8 +116,8 @@ internal sealed partial class SpikeDatabase
     public void AddModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, JsonObject item)
     {
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = content[collectionJsonKey] as JsonArray ?? new JsonArray();
-        content[collectionJsonKey] = items;
+        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
+        RuntimeCollectionDocumentContract.RequireNewItem(items, item, $"runtime collection '{collectionJsonKey}'");
         items.Add(item.DeepClone());
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
@@ -128,8 +129,8 @@ internal sealed partial class SpikeDatabase
         JsonObject item)
     {
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = content[collectionJsonKey] as JsonArray ?? new JsonArray();
-        content[collectionJsonKey] = items;
+        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
+        RuntimeCollectionDocumentContract.RequireNewItem(items, item, $"runtime collection '{collectionJsonKey}'");
         var currentIndex = -1;
         for (var index = 0; index < items.Count; index++)
         {
@@ -137,7 +138,11 @@ internal sealed partial class SpikeDatabase
             currentIndex = index;
             break;
         }
-        items.Insert(currentIndex < 0 ? items.Count : currentIndex + 1, item.DeepClone());
+        if (currentIndex < 0)
+        {
+            throw new InvalidOperationException($"Missing runtime collection item '{afterItemId}'.");
+        }
+        items.Insert(currentIndex + 1, item.DeepClone());
         SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
     }
 
@@ -150,8 +155,8 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
         var content = ParseJsonObject(settings.ContentJson);
-        var items = content[collectionJsonKey] as JsonArray
-            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
+        RuntimeCollectionDocumentContract.RequireNewItem(items, duplicate, $"runtime collection '{collectionJsonKey}'");
         var currentIndex = -1;
         JsonObject? source = null;
         for (var index = 0; index < items.Count; index++)
@@ -200,8 +205,7 @@ internal sealed partial class SpikeDatabase
     {
         var settings = GetModuleInstanceSettings(moduleInstanceId);
         var content = ParseJsonObject(settings.ContentJson);
-        var items = content[collectionJsonKey] as JsonArray
-            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
         var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
             ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
         items.Remove(item);
@@ -261,8 +265,7 @@ internal sealed partial class SpikeDatabase
     {
         if (offset == 0) return;
         var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = content[collectionJsonKey] as JsonArray
-            ?? throw new InvalidOperationException($"Missing runtime collection '{collectionJsonKey}'.");
+        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
         var currentIndex = -1;
         for (var index = 0; index < items.Count; index++)
         {
@@ -270,8 +273,12 @@ internal sealed partial class SpikeDatabase
             currentIndex = index;
             break;
         }
+        if (currentIndex < 0)
+        {
+            throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
+        }
         var targetIndex = currentIndex + offset;
-        if (currentIndex < 0 || targetIndex < 0 || targetIndex >= items.Count) return;
+        if (targetIndex < 0 || targetIndex >= items.Count) return;
         var item = items[currentIndex];
         items.RemoveAt(currentIndex);
         items.Insert(targetIndex, item);

@@ -112,6 +112,13 @@ explicit supported mode, non-negative fixed frames and pace token. Invalid
 defaults never become a plausible false, zero, empty collection or fixed-zero
 timing value.
 
+Persisted Runtime collections use `RuntimeCollectionDocumentContract` for the
+stable item envelope. The effective Runtime contract owns the exact storage
+key; current content owns an existing array of object items with unique
+non-empty ids. Variant reconciliation may create a newly declared empty array,
+but neither reconciliation nor ordinary editor writes may replace a present
+wrong root or silently redirect an insert with a missing anchor.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -166,6 +173,8 @@ Architecture enforcement must verify:
   record-class-owned config contract, with no empty object/array write fallback.
 - Runtime Input defaults are validated and materialized by the exact
   `ValueKind` owner; no parallel reconciliation parser remains.
+- current Runtime collections and every mutation preserve declared storage
+  ownership, array roots and unique stable item ids.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

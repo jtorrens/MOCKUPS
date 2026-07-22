@@ -4847,6 +4847,36 @@ for (const runtimeDefaultConsumer of [
     `${runtimeDefaultConsumer} must consume the exact Runtime Input default owner`,
   );
 }
+for (const runtimeCollectionConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+]) {
+  assertContains(
+    runtimeCollectionConsumer,
+    "RuntimeCollectionDocumentContract.",
+    `${runtimeCollectionConsumer} must consume the stable Runtime collection document owner`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)",
+  "every persisted collection mutation must require the exact declared collection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "ValidateCurrentRuntimeCollections(",
+  "startup and Runtime writes must validate declared collection documents",
+);
+for (const runtimeCollectionWriteFallback of [
+  "content[collectionJsonKey] as JsonArray ?? new JsonArray()",
+  "currentIndex < 0 ? items.Count",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+    runtimeCollectionWriteFallback,
+    `Runtime collection writes must not repair or redirect invalid intent (${runtimeCollectionWriteFallback})`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "RuntimeDefaultValue(",

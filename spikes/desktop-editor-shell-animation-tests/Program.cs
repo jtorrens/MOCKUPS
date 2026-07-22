@@ -1669,34 +1669,64 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var database = new SpikeDatabase(temporary);
         var store = new RuntimeInputInstanceDocumentStore(database);
         var screen = Descendants(database.LoadProjectTree())
-            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
         var animationJson = database.GetModuleInstanceSettings(screen.Id).AnimationJson;
+        var messagePrototype = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            "Conversation test content")["messages"]?[0]?.DeepClone().AsObject()
+            ?? throw new InvalidOperationException("Missing Conversation test message.");
+        JsonObject TestMessage(string id, string name)
+        {
+            var message = messagePrototype.DeepClone().AsObject();
+            message["id"] = id;
+            message["name"] = name;
+            message["direction"] = "system";
+            message["actorId"] = "";
+            return message;
+        }
 
         Equal(animationJson, store.AnimationJson(screen.Id));
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        const string collectionKey = "test_runtime_items";
-        store.UpdateRuntimeValue(screen.Id, "test_runtime_scalar", JsonValue.Create("value"));
-        store.AddCollectionItem(screen.Id, collectionKey, new JsonObject
-        {
-            ["id"] = "test_a",
-            ["name"] = "A",
-        });
-        store.InsertCollectionItemAfter(screen.Id, collectionKey, "test_a", new JsonObject
-        {
-            ["id"] = "test_b",
-            ["name"] = "B",
-        });
+        const string collectionKey = "messages";
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+            screen.Id,
+            "undeclared_items",
+            TestMessage("undeclared", "Undeclared")));
+        var missingId = TestMessage("missing", "Missing");
+        missingId.Remove("id");
+        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+            screen.Id,
+            collectionKey,
+            missingId));
+        SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        store.UpdateRuntimeValue(screen.Id, "headerSubtitle", JsonValue.Create("value"));
+        store.AddCollectionItem(screen.Id, collectionKey, TestMessage("test_a", "A"));
+        var afterFirstItem = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+            screen.Id,
+            collectionKey,
+            TestMessage("test_a", "Duplicate")));
+        Throws<InvalidOperationException>(() => store.InsertCollectionItemAfter(
+            screen.Id,
+            collectionKey,
+            "missing_item",
+            TestMessage("test_missing_anchor", "Missing anchor")));
+        SequenceEqual(afterFirstItem, SHA256.HashData(File.ReadAllBytes(temporary)));
+        store.InsertCollectionItemAfter(
+            screen.Id,
+            collectionKey,
+            "test_a",
+            TestMessage("test_b", "B"));
         store.DuplicateCollectionItem(
             screen.Id,
             collectionKey,
             "test_a",
-            new JsonObject
-            {
-                ["id"] = "test_c",
-                ["name"] = "C",
-            },
+            TestMessage("test_c", "C"),
             new Dictionary<string, string>());
         store.UpdateCollectionValue(
             screen.Id,
@@ -1710,13 +1740,16 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var content = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             $"Module Instance '{screen.Id}' content");
-        Equal("value", content["test_runtime_scalar"]?.GetValue<string>() ?? "");
+        Equal("value", content["headerSubtitle"]?.GetValue<string>() ?? "");
         var items = content[collectionKey]?.AsArray()
             ?? throw new InvalidOperationException("Missing test runtime collection.");
         SequenceEqual(
             new[] { "test_b", "test_c" },
-            items.Select((item) => item?["id"]?.GetValue<string>() ?? ""));
-        Equal("B2", items[0]?["name"]?.GetValue<string>() ?? "");
+            items.Where((item) => item?["id"]?.GetValue<string>()?.StartsWith("test_", StringComparison.Ordinal) == true)
+                .Select((item) => item?["id"]?.GetValue<string>() ?? ""));
+        Equal(
+            "B2",
+            items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["name"]?.GetValue<string>() ?? "");
 
         Equal(animationJson, store.SaveAnimationJson(screen.Id, animationJson));
         Equal(animationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
@@ -1725,6 +1758,27 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
     {
         File.Delete(temporary);
     }
+
+    AssertRejectedDatabaseIsReadOnly("runtime-collection-duplicate-id", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_insert(content_json, '$.messages[#]', json_extract(content_json, '$.messages[0]'))
+            WHERE module_id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-collection-wrong-root", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.forwarded_module_lockScreen_stackStates', json('{}'))
+            WHERE module_id = 'module_project_foqn_s2_lock_screen'
+            """;
+        command.ExecuteNonQuery();
+    });
 }
 
 static void PreviewVisualContextBoundaryPreservesResolvedResources()
