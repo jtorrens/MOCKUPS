@@ -5261,6 +5261,39 @@ for (const retiredPrimitiveControlFallback of [
     `${retiredPrimitiveControlFallback[0]} must not manufacture a plausible current control value`,
   );
 }
+for (const strictNumericControl of [
+  "spikes/desktop-editor-shell/EditorShell/DictionaryIntegerControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryDecimalControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
+]) {
+  assertContains(
+    strictNumericControl,
+    "DictionaryNumericValueContract.ParseRequired(",
+    `${strictNumericControl} must validate assigned current values and declared ranges`,
+  );
+}
+for (const retiredNumericControlFallback of [
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryIntegerControl.cs", "NumericText.Integer(value, fallback)"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryDecimalControl.cs", "NumericText.Decimal(value, fallback)"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Integer(value, 0)"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Decimal(value, 0)"],
+] as const) {
+  assertDoesNotContain(
+    retiredNumericControlFallback[0],
+    retiredNumericControlFallback[1],
+    `${retiredNumericControlFallback[0]} must not coerce invalid assigned numeric text to zero`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
+  "DictionaryNumericValueContract.TryParseDraft(",
+  "the numeric slider must keep invalid interactive drafts separate from current state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  '"device.metrics.cornerRadius",\n            "Corner radius",\n            ValueKind.Decimal',
+  "Device corner radius must preserve its declared fractional design-unit values",
+);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",

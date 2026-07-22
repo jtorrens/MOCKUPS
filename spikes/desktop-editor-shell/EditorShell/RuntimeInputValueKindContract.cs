@@ -112,9 +112,9 @@ internal static class RuntimeInputValueKindContract
     public static JsonNode ParseValue(ValueKind valueKind, string value, string owner) => valueKind switch
     {
         ValueKind.Boolean => JsonValue.Create(BooleanText.ParseRequired(value, owner))!,
-        ValueKind.Integer => JsonValue.Create(ParseInteger(value, owner))!,
+        ValueKind.Integer => JsonValue.Create((int)ParseNumber(ValueKind.Integer, value, owner))!,
         ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
-            JsonValue.Create(ParseBoundedDecimal(valueKind, value, owner))!,
+            JsonValue.Create(ParseNumber(valueKind, value, owner))!,
         ValueKind.IntegerPair => JsonValue.Create(ParseIntegerPair(value, owner))!,
         ValueKind.ThemeTokenPair or ValueKind.PaletteColorPair =>
             JsonValue.Create(ParseStringPair(value, owner))!,
@@ -139,6 +139,15 @@ internal static class RuntimeInputValueKindContract
             BehaviorTimingValue.Parse(value).ToJson(),
             owner),
         _ => JsonValue.Create(value)!,
+    };
+
+    public static decimal ParseNumber(ValueKind valueKind, string value, string owner) => valueKind switch
+    {
+        ValueKind.Integer => ParseInteger(value, owner),
+        ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
+            ParseBoundedDecimal(valueKind, value, owner),
+        _ => throw new InvalidOperationException(
+            $"{owner} has non-numeric ValueKind '{valueKind}'."),
     };
 
     public static void ValidateRuntimeValue(JsonObject definition, JsonNode? value, string owner)

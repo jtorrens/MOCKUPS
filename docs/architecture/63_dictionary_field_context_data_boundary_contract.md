@@ -92,6 +92,9 @@ service query persistence or interpret Icon Theme records.
 - primitive and pair controls consume the exact shared `ValueKind` parser;
   malformed pair members, boolean/icon-list documents and out-of-range
   Alpha/Hue values are not converted into plausible control state.
+- Integer/Decimal controls validate assigned current values and declared ranges;
+  invalid or incomplete interactive text remains a draft and is never committed
+  as zero or a clamped boundary value.
 - pair labels are explicit `FieldDefinition`/Runtime contract metadata and are
   never inferred from field ids, JSON keys, kinds, hierarchy or position.
 - Preview resolution still completes before the generic bridge and renderer.

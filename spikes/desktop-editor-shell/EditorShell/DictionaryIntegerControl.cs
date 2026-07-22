@@ -2,12 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Mockups.DesktopEditorShell.Common;
 using System;
-using System.Globalization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
 {
+    private readonly FieldDefinition _definition;
     private readonly NumericUpDown _numeric;
     private bool _isUpdating;
     private string _value;
@@ -15,6 +15,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
 
     public DictionaryIntegerControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         _value = Normalize(value);
         _lastCommittedValue = _value;
         _numeric = EditorNumericUpDownBehavior.Configure(new NumericUpDown
@@ -25,7 +26,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
             IsEnabled = definition.IsEditable,
             Increment = definition.Number?.Increment ?? 1,
             FormatString = "0",
-            Value = ParseInteger(_value, 0),
+            Value = ParseRequired(_value),
         });
 
         if (definition.Number?.Minimum is { } minimum)
@@ -42,7 +43,9 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         {
             if (change.Property != NumericUpDown.ValueProperty || _isUpdating) return;
 
-            SetLocalValue(Format(_numeric.Value ?? 0));
+            if (_numeric.Value is not { } numericValue) return;
+
+            SetLocalValue(Format(numericValue));
             CommitValue();
         };
         Children.Add(_numeric);
@@ -60,7 +63,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         _value = normalized;
         _lastCommittedValue = normalized;
         _isUpdating = true;
-        _numeric.Value = ParseInteger(_value, 0);
+        _numeric.Value = ParseRequired(_value);
         _isUpdating = false;
     }
 
@@ -81,9 +84,9 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         ValueCommitted?.Invoke(this, _value);
     }
 
-    private static string Normalize(string value)
+    private string Normalize(string value)
     {
-        return Format(ParseInteger(value, 0));
+        return Format(ParseRequired(value));
     }
 
     private static string Format(decimal value)
@@ -91,8 +94,7 @@ internal sealed class DictionaryIntegerControl : Grid, IDictionaryValueControl
         return NumericText.IntegerString(value);
     }
 
-    private static decimal ParseInteger(string value, decimal fallback)
-    {
-        return NumericText.Integer(value, fallback);
-    }
+    private decimal ParseRequired(string value) => DictionaryNumericValueContract.ParseRequired(
+        _definition,
+        value);
 }

@@ -252,6 +252,10 @@ members; Palette-color-alpha pairs contain two colors plus two finite alpha
 values from zero to one. `Alpha` and `HueDegrees` keep their intrinsic ranges.
 Missing pair members or out-of-range values are invalid, not empty/default
 members for a control to reconstruct.
+Integer and Decimal controls likewise require an exact finite current value and
+enforce any declared `NumberDefinition` minimum/maximum. A temporary text draft
+may be incomplete while the user types, but it must not change or commit the
+current value until it parses exactly and falls inside the declared range.
 Every pair field also declares two non-empty presentation labels explicitly.
 Labels are metadata only and do not change the stored value, but they may not be
 derived from a field id, JSON key, type, hierarchy or position. A Runtime Input

@@ -37,7 +37,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
         {
             Minimum = (double)number.Minimum.Value,
             Maximum = (double)number.Maximum.Value,
-            Value = (double)Parse(_value),
+            Value = (double)ParseRequired(_value),
             TickFrequency = (double)number.Increment,
             SmallChange = (double)number.Increment,
             LargeChange = (double)Math.Max(number.Increment, number.Increment * 2),
@@ -93,7 +93,10 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
                 return;
             }
 
-            var parsed = Parse(_box.Text ?? _value);
+            if (!DictionaryNumericValueContract.TryParseDraft(_definition, _box.Text, out var parsed))
+            {
+                return;
+            }
             var normalized = Format(parsed);
             if (_value == normalized)
             {
@@ -146,7 +149,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
     private void UpdateControls()
     {
         _isUpdating = true;
-        _slider.Value = (double)Clamp(Parse(_value));
+        _slider.Value = (double)ParseRequired(_value);
         if (_box.Text != _value)
         {
             _box.Text = _value;
@@ -156,15 +159,12 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
     private string Normalize(string value)
     {
-        return Format(Clamp(Parse(value)));
+        return Format(ParseRequired(value));
     }
 
-    private decimal Parse(string value)
-    {
-        return _definition.ValueKind == ValueKind.Integer
-            ? NumericText.Integer(value, 0)
-            : NumericText.Decimal(value, 0);
-    }
+    private decimal ParseRequired(string value) => DictionaryNumericValueContract.ParseRequired(
+        _definition,
+        value);
 
     private decimal Clamp(decimal value)
     {

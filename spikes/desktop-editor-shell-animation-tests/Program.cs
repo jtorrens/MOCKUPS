@@ -29,6 +29,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
+    ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
@@ -251,9 +252,15 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
                 {
                     try
                     {
-                        _ = owner.Kind == ProjectTreeNodeKind.ComponentClass
+                        var fieldValue = owner.Kind == ProjectTreeNodeKind.ComponentClass
                             ? database.CreateComponentClassFieldValue(owner.Id, fieldId)
                             : database.CreateComponentVariantFieldValue(owner, fieldId);
+                        if (fieldValue.Definition.ValueKind is ValueKind.Integer or ValueKind.Decimal)
+                        {
+                            _ = DictionaryNumericValueContract.ParseRequired(
+                                fieldValue.Definition,
+                                fieldValue.Value);
+                        }
                     }
                     catch (InvalidOperationException exception)
                     {
@@ -417,7 +424,13 @@ static void ResourceScalarReadsRejectWrongShapes()
             {
                 if (fields.CanHandle(node.Kind, fieldId))
                 {
-                    _ = fields.CreateFieldValue(node, fieldId);
+                    var fieldValue = fields.CreateFieldValue(node, fieldId);
+                    if (fieldValue.Definition.ValueKind is ValueKind.Integer or ValueKind.Decimal)
+                    {
+                        _ = DictionaryNumericValueContract.ParseRequired(
+                            fieldValue.Definition,
+                            fieldValue.Value);
+                    }
                 }
             }
         }
@@ -711,6 +724,38 @@ static void PairFieldsRequireExplicitLabels()
         "looks.like.size",
         "Size",
         ValueKind.IntegerPair)));
+}
+
+static void NumericDictionaryFieldsSeparateCurrentValuesFromDrafts()
+{
+    var integer = new FieldDefinition(
+        "test.integer",
+        "Integer",
+        ValueKind.Integer,
+        Number: new NumberDefinition(0, 10, 1, 0));
+    var decimalField = new FieldDefinition(
+        "test.decimal",
+        "Decimal",
+        ValueKind.Decimal,
+        Number: new NumberDefinition(0, 1, 0.05m, 2));
+
+    Equal(5m, DictionaryNumericValueContract.ParseRequired(integer, "5"));
+    Equal(0.35m, DictionaryNumericValueContract.ParseRequired(decimalField, "0.35"));
+    Throws<InvalidOperationException>(() => DictionaryNumericValueContract.ParseRequired(integer, "1.5"));
+    Throws<InvalidOperationException>(() => DictionaryNumericValueContract.ParseRequired(integer, "invalid"));
+    Throws<InvalidOperationException>(() => DictionaryNumericValueContract.ParseRequired(integer, "11"));
+    Throws<InvalidOperationException>(() => DictionaryNumericValueContract.ParseRequired(decimalField, ""));
+    Throws<InvalidOperationException>(() => DictionaryNumericValueContract.ParseRequired(decimalField, "1.01"));
+
+    True(DictionaryNumericValueContract.TryParseDraft(integer, "6", out var integerDraft));
+    Equal(6m, integerDraft);
+    True(!DictionaryNumericValueContract.TryParseDraft(integer, "6.5", out _));
+    True(!DictionaryNumericValueContract.TryParseDraft(integer, "", out _));
+    True(!DictionaryNumericValueContract.TryParseDraft(integer, "12", out _));
+    True(DictionaryNumericValueContract.TryParseDraft(decimalField, "0.4", out var decimalDraft));
+    Equal(0.4m, decimalDraft);
+    True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "draft", out _));
+    True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "2", out _));
 }
 
 static void DesignTestValuesPreserveStrictDocuments()

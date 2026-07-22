@@ -266,3 +266,17 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner requerido en controles y Runtime; inferencias por id y defaults concretos prohibidos. |
 | Datos | Sin migración. Los contratos Runtime persistidos ya tenían etiquetas completas y los catálogos solo hacen explícita la presentación existente; base canónica `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
 | Riesgo | Bajo. No cambia ningún valor, id, referencia, payload ni etiqueta visible; solo falla metadata incompleto que antes se reconstruía por convención. |
+
+## Slice 1.18 — Valores current y drafts numéricos
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Los controles Integer/Decimal convertían un valor asignado inválido en cero. El slider hacía lo mismo con texto provisional y recortaba silenciosamente valores current fuera del rango declarado. |
+| Owner | `RuntimeInputValueKindContract` conserva la gramática numérica; `DictionaryNumericValueContract` añade el rango explícito de `NumberDefinition` y separa current data de draft interactivo. |
+| Cambio mínimo | Validar toda asignación/actualización current, ignorar drafts incompletos o fuera de rango hasta que sean válidos y restaurar el último valor válido al cerrar la edición. |
+| Rutas eliminadas | `NumericText.Integer/Decimal(..., 0)`, integer decimal redondeado a entero, `NumericUpDown null → 0` y clamp silencioso del valor current del slider. |
+| Inconsistencia resuelta | `device.metrics.cornerRadius` estaba declarado Integer aunque los Devices current incluyen valores legítimos fraccionales (`37.8` y `54.234`) que Preview ya consumía como números. El descriptor pasa a Decimal con tres posiciones y conserva esos valores; no se redondea ni se modifica la base. |
+| Pruebas | 112/112 escritorio: contrato específico para Integer/Decimal válido, malformado, fraccional, fuera de rango y drafts; además se validan contra sus límites todos los campos numéricos visibles de Components, Variants y recursos current. |
+| Enforcement | Los tres controles deben usar el owner requerido; fallbacks numéricos a cero prohibidos y draft del slider explícito. |
+| Datos | Sin migración. La declaración se corrige para reflejar los datos y semántica existentes; la base permanece `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. |
+| Riesgo | Bajo. Los valores válidos conservan su serialización; una entrada provisional inválida ya no genera una escritura real inesperada. |

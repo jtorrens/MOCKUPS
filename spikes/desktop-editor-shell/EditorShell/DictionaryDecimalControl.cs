@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Globalization;
 
@@ -26,7 +25,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
             HorizontalAlignment = HorizontalAlignment.Left,
             IsEnabled = definition.IsEditable,
             Increment = definition.Number?.Increment ?? 0.1m,
-            Value = ParseDecimal(_value, 0),
+            Value = ParseRequired(_value),
         });
 
         if (definition.Number?.Minimum is { } minimum)
@@ -43,7 +42,9 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
         {
             if (change.Property != NumericUpDown.ValueProperty || _isUpdating) return;
 
-            SetLocalValue(Format(_numeric.Value ?? 0));
+            if (_numeric.Value is not { } numericValue) return;
+
+            SetLocalValue(Format(numericValue));
             CommitValue();
         };
         Children.Add(_numeric);
@@ -61,7 +62,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
         _value = normalized;
         _lastCommittedValue = normalized;
         _isUpdating = true;
-        _numeric.Value = ParseDecimal(_value, 0);
+        _numeric.Value = ParseRequired(_value);
         _isUpdating = false;
     }
 
@@ -84,7 +85,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
 
     private string Normalize(string value)
     {
-        return Format(ParseDecimal(value, 0));
+        return Format(ParseRequired(value));
     }
 
     private string Format(decimal value)
@@ -93,8 +94,7 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
         return value.ToString(decimalPlaces == 0 ? "0" : $"0.{new string('#', decimalPlaces)}", CultureInfo.InvariantCulture);
     }
 
-    private static decimal ParseDecimal(string value, decimal fallback)
-    {
-        return NumericText.Decimal(value, fallback);
-    }
+    private decimal ParseRequired(string value) => DictionaryNumericValueContract.ParseRequired(
+        _definition,
+        value);
 }

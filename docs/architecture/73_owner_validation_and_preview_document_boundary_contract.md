@@ -177,6 +177,11 @@ intrinsic ranges. Pair, boolean, alpha, hue and icon-list controls consume these
 owners on current value assignment and do not catch invalid current data to
 manufacture an empty or default presentation.
 
+Integer and Decimal dictionary controls validate assigned current values with
+the shared `ValueKind` owner and the field's declared numeric range. Invalid or
+incomplete interactive text may remain visible only as a transient draft; it
+does not replace, clamp or commit the last valid value.
+
 Pair presentation labels are also required owner metadata. Every pair field
 declares both non-empty labels; current Runtime definitions without them fail.
 The dictionary must not infer labels from field ids, JSON keys, type, hierarchy
@@ -257,6 +262,8 @@ Architecture enforcement must verify:
   zero geometry.
 - primitive/compound dictionary controls reuse exact pair, range, boolean and
   icon-list owners instead of local fallback parsers.
+- Integer/Decimal controls reject invalid or out-of-range current values and do
+  not convert an invalid interactive draft into zero or a clamped commit.
 - pair controls and Runtime definitions require explicit labels without
   identifier- or position-based inference.
 

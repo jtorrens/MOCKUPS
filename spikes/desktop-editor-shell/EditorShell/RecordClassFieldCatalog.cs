@@ -268,7 +268,11 @@ internal static class RecordClassFieldCatalog
         ["device.metrics.canvas.size"] = new("device.metrics.canvas.size", "Canvas size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
         ["device.metrics.screen.position"] = new("device.metrics.screen.position", "Screen position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
         ["device.metrics.screen.size"] = new("device.metrics.screen.size", "Screen size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
-        ["device.metrics.cornerRadius"] = new("device.metrics.cornerRadius", "Corner radius", ValueKind.Integer),
+        ["device.metrics.cornerRadius"] = new(
+            "device.metrics.cornerRadius",
+            "Corner radius",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0, 9999, 0.1m, 3)),
         ["device.metrics.viewport.position"] = new("device.metrics.viewport.position", "Viewport position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
         ["device.metrics.viewport.size"] = new("device.metrics.viewport.size", "Viewport size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
         ["device.metrics.safeArea.vertical"] = new("device.metrics.safeArea.vertical", "Safe vertical", ValueKind.IntegerPair, PairLabels: VerticalInsetPairLabels),
