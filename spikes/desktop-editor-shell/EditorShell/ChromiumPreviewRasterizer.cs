@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -101,7 +100,9 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
         if (_process is not null && !_process.HasExited) return;
         var script = ResolveScript();
         var workingDirectory = ResolveRepositoryRoot(script);
-        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(ResolveNodeExecutable(), workingDirectory);
+        var startInfo = DesktopChildProcess.CreateHiddenStartInfo(
+            DesktopChildProcess.ResolveNodeExecutable(),
+            workingDirectory);
         startInfo.ArgumentList.Add(script);
         startInfo.RedirectStandardInput = true;
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start Chromium raster worker.");
@@ -135,14 +136,6 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
             directory = directory.Parent;
         }
         return Directory.GetCurrentDirectory();
-    }
-
-    private static string ResolveNodeExecutable()
-    {
-        var candidates = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? new[] { Path.Combine(AppContext.BaseDirectory, "node", "node.exe"), "node.exe" }
-            : new[] { Path.Combine(AppContext.BaseDirectory, "node", "bin", "node"), "/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node", "node" };
-        return candidates.FirstOrDefault(File.Exists) ?? candidates[^1];
     }
 
     private void Restart()

@@ -262,7 +262,7 @@ internal static class WebDesignPreviewRenderer
         if (File.Exists(packagedRenderer))
         {
             return new RendererCommand(
-                ResolveNodeExecutable(),
+                DesktopChildProcess.ResolveNodeExecutable(),
                 AppContext.BaseDirectory,
                 packagedRenderer,
                 File.Exists(packagedServer) ? packagedServer : "",
@@ -511,29 +511,6 @@ internal static class WebDesignPreviewRenderer
     private sealed record RendererAsset(
         [property: JsonPropertyName("key")] string Key,
         [property: JsonPropertyName("uri")] string Uri);
-
-    private static string ResolveNodeExecutable()
-    {
-        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "node.exe"
-            : "node";
-        var candidates = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? new[]
-            {
-                Path.Combine(AppContext.BaseDirectory, "node", executableName),
-                executableName,
-            }
-            : new[]
-            {
-                Path.Combine(AppContext.BaseDirectory, "node", "bin", executableName),
-                "/opt/homebrew/bin/node",
-                "/usr/local/bin/node",
-                "/usr/bin/node",
-                executableName,
-            };
-
-        return candidates.FirstOrDefault(File.Exists) ?? executableName;
-    }
 
     private static string FindRepositoryRoot()
     {

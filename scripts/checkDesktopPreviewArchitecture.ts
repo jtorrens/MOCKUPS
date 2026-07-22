@@ -1167,6 +1167,26 @@ assertContains(
   "72_single_semantic_rule_ownership_contract.md",
   "the architecture index must include contract 72",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
+  "public static string ResolveNodeExecutable()",
+  "external Node processes must share one platform executable resolver",
+);
+for (const nodeProcessConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "spikes/desktop-editor-shell/EditorShell/ChromiumPreviewRasterizer.cs",
+]) {
+  assertContains(
+    nodeProcessConsumer,
+    "DesktopChildProcess.ResolveNodeExecutable()",
+    `${nodeProcessConsumer} must use the common Node executable resolver`,
+  );
+  assertDoesNotContain(
+    nodeProcessConsumer,
+    "private static string ResolveNodeExecutable()",
+    `${nodeProcessConsumer} must not restore a parallel Node executable resolver`,
+  );
+}
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",

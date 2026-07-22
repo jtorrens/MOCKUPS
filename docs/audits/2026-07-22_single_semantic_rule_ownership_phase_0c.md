@@ -52,4 +52,21 @@ La primera batida cubrirá como mínimo:
 
 ## Resultado de la batida
 
-Pendiente de completar antes del primer cambio funcional de 0C.
+### Familia 0C.1 — Resolución del ejecutable Node
+
+| Campo | Resultado |
+|---|---|
+| Regla | Localizar el mismo ejecutable Node empaquetado o disponible en el sistema para los procesos externos de Preview. |
+| Rutas actuales | `WebDesignPreviewRenderer` y `ChromiumPreviewRasterizer` mantienen listas locales equivalentes para Mac y Windows. |
+| Paridad | Mismo orden de candidatos, misma comprobación de existencia y mismo fallback final `node`/`node.exe`. |
+| Owner definitivo | `DesktopChildProcess`, soporte común ya usado por ambos procesos para construir su arranque oculto. |
+| Cambio mínimo | Exponer allí la resolución existente, migrar dos llamadas y borrar los dos métodos locales. |
+| Pruebas | Test directo de resolución por plataforma y enforcement que exige ambos consumidores comunes y prohíbe las copias locales. |
+| Riesgo | Bajo; no cambia argumentos, working directory, ciclo de vida, timeout, renderer ni Raster. |
+| Decisión | Consolidar como primer slice. |
+
+Las búsquedas de raíz de repositorio se mantienen separadas: parten de lugares
+distintos y aplican criterios distintos, por lo que su parecido no demuestra
+una única regla. Los ciclos de vida de los procesos persistentes, one-shot y
+FFmpeg también quedan fuera de este slice hasta comparar sus contratos de
+cancelación, timeout y errores.

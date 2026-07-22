@@ -49,6 +49,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
+    ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -104,6 +105,13 @@ var tests = new (string Name, Action Run)[]
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ExternalNodeProcessesShareExecutableResolution()
+{
+    var executable = DesktopChildProcess.ResolveNodeExecutable();
+    True(!string.IsNullOrWhiteSpace(executable));
+    Equal(OperatingSystem.IsWindows() ? "node.exe" : "node", Path.GetFileName(executable));
+}
 
 static void EditorViewStateFollowsRecordClass()
 {
