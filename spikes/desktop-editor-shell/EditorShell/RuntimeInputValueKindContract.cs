@@ -97,8 +97,7 @@ internal static class RuntimeInputValueKindContract
         ValueKind.Integer => JsonValue.Create(ParseInteger(value, owner))!,
         ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
             JsonValue.Create(ParseDecimal(value, owner))!,
-        ValueKind.IconTokenList =>
-            JsonPath.ParseRequiredArray(value, owner),
+        ValueKind.IconTokenList => ParseStringArray(value, owner),
         ValueKind.IconSlots or ValueKind.StructuredCollection =>
             ParseCollection(value, owner),
         ValueKind.AlignmentPlacement => JsonPath.ParseRequiredObject(
@@ -129,6 +128,11 @@ internal static class RuntimeInputValueKindContract
             throw new InvalidOperationException($"{owner} value cannot be null.");
         }
 
+        ValidateValue(valueKind, value, owner);
+    }
+
+    public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)
+    {
         switch (valueKind)
         {
             case ValueKind.Boolean:
@@ -189,6 +193,13 @@ internal static class RuntimeInputValueKindContract
     {
         var items = JsonPath.ParseRequiredArray(value, owner);
         RuntimeCollectionDocumentContract.Validate(items, owner);
+        return items;
+    }
+
+    private static JsonArray ParseStringArray(string value, string owner)
+    {
+        var items = JsonPath.ParseRequiredArray(value, owner);
+        RequireStringArray(items, owner);
         return items;
     }
 

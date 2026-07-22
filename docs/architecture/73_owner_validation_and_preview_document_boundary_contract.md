@@ -146,6 +146,15 @@ override array only as the direct result of an explicit Test Value edit. It
 must not repair a present wrong root, filter malformed items or derive an id
 from collection position.
 
+Component Class and Component Variant dictionary fields also use the exact
+`ValueKind` owner for both editor serialization and current-node validation. A
+field that is absent may still expose its explicitly declared descriptor
+default; a field that is present with a wrong scalar, object or array shape is
+invalid and must not be presented as that default. The same rule applies to
+local Overrides. An embedded slot or `overrides` member may be created only
+while explicitly authoring a new boundary; an existing member with a wrong root
+must fail without replacement.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -210,6 +219,9 @@ Architecture enforcement must verify:
   collection owners without local empty-document parsers.
 - transient Test Values preserve strict roots and stable collection ids without
   becoming persisted Production payload.
+- Component Class, Component Variant and local Override field reads/writes use
+  their exact dictionary `ValueKind`, and existing embedded slot/Override roots
+  are never repaired during an edit.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

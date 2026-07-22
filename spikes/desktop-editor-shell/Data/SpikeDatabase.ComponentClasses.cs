@@ -263,7 +263,7 @@ internal sealed partial class SpikeDatabase
             RemoveJsonValue(overrides, descriptor.JsonPath);
             return;
         }
-        SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+        SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
     }
 
     public void UpdateRuntimeComponentOverride(
@@ -288,7 +288,7 @@ internal sealed partial class SpikeDatabase
             RemoveJsonValue(localOverrides, descriptor.JsonPath);
             return;
         }
-        SetJsonValue(localOverrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+        SetJsonValue(localOverrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
     }
 
     public void UpdateComponentClassField(string componentClassId, string fieldId, string value)
@@ -305,7 +305,7 @@ internal sealed partial class SpikeDatabase
             var settings = GetComponentClassSettings(connection, componentClassId);
             var config = ParseJsonObject(settings.ConfigJson);
             var metadata = ParseJsonObject(settings.MetadataJson);
-            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
             CurrentComponentConfigContract.Validate(
                 settings.ComponentType,
                 config,
@@ -331,7 +331,7 @@ internal sealed partial class SpikeDatabase
         {
             using var connection = OpenConnection();
             var config = ComponentVariantConfigForUpdate(connection, variantNode, out var componentClassId, out var metadata);
-            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
             PersistComponentVariantUpdate(connection, variantNode, componentClassId, config, metadata);
         }
     }
@@ -535,7 +535,7 @@ internal sealed partial class SpikeDatabase
             }
             else
             {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
             }
 
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
@@ -570,7 +570,7 @@ internal sealed partial class SpikeDatabase
             }
             else
             {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
             }
 
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
@@ -606,7 +606,7 @@ internal sealed partial class SpikeDatabase
                     || moduleDescriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
                     RemoveJsonValue(overrides, moduleDescriptor.JsonPath);
                 else
-                    SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value));
+                    SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value, moduleDescriptor.Id));
                 if (ownerNode.Kind == ProjectTreeNodeKind.Module)
                     _appModuleRepository.UpdateModuleConfig(connection, ownerNode.Id, config.ToJsonString());
                 else
@@ -640,7 +640,7 @@ internal sealed partial class SpikeDatabase
             }
             else
             {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
+                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
             }
 
             PersistComponentVariantUpdate(connection, ownerNode, componentClassId, config, metadata);
@@ -738,83 +738,63 @@ internal sealed partial class SpikeDatabase
             return descriptor.DefaultValue;
         }
 
+        var owner = $"Component field '{descriptor.Id}'";
+        RuntimeInputValueKindContract.ValidateValue(descriptor.ValueKind, node, owner);
         return descriptor.ValueKind switch
         {
-            ValueKind.Boolean => BoolToString(node is JsonValue value && value.TryGetValue<bool>(out var boolean) && boolean),
-            ValueKind.Integer => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
-            ValueKind.Decimal => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
-            ValueKind.Alpha => JsonNumberString(config, descriptor.JsonPath, descriptor.DefaultValue),
-            ValueKind.IntegerPair => node is JsonValue pairValue && pairValue.TryGetValue<string>(out var pairText)
-                ? pairText
-                : descriptor.DefaultValue,
-            ValueKind.AlignmentPlacement => node is JsonObject
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
-            ValueKind.Motion => node is JsonObject
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
+            ValueKind.Boolean => BoolToString(node.GetValue<bool>()),
+            ValueKind.Integer or ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
+                node.ToJsonString(),
             ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
                 TypographyStyleValue.Parse(node).ToJsonString(),
-            ValueKind.IconTokenList => node is JsonArray
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
-            ValueKind.IconSlots => node.ToJsonString(),
-            ValueKind.ComponentInputBindings => node is JsonObject
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
-            ValueKind.StructuredCollection => node is JsonArray
-                ? node.ToJsonString()
-                : descriptor.DefaultValue,
-            _ => node is JsonValue stringValue && stringValue.TryGetValue<string>(out var text)
-                ? text
-                : node.ToJsonString().Trim('"'),
+            ValueKind.AlignmentPlacement
+                or ValueKind.Motion
+                or ValueKind.MotionTiming
+                or ValueKind.IconTokenList
+                or ValueKind.IconSlots
+                or ValueKind.ComponentInputBindings
+                or ValueKind.StructuredCollection
+                or ValueKind.BehaviorTiming => node.ToJsonString(),
+            _ => node.GetValue<string>(),
         };
     }
 
-    private static JsonNode ComponentConfigJsonValue(ValueKind valueKind, string value)
+    private static JsonNode ComponentConfigJsonValue(ValueKind valueKind, string value, string fieldId)
     {
-        return valueKind switch
-        {
-            ValueKind.Boolean => JsonValue.Create(StringToBool(value))!,
-            ValueKind.Integer => NumberNode(value),
-            ValueKind.Decimal => NumberNode(value),
-            ValueKind.Alpha => NumberNode(value),
-            ValueKind.AlignmentPlacement => JsonNode.Parse(value)
-                ?? throw new InvalidOperationException("Alignment placement value must be valid JSON."),
-            ValueKind.Motion => JsonNode.Parse(value)
-                ?? throw new InvalidOperationException("Motion value must be valid JSON."),
-            ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
-                TypographyStyleValue.Parse(value),
-            ValueKind.IconTokenList => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)
-                ?? new JsonArray(),
-            ValueKind.IconSlots => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? ComponentClassFieldCatalog.EmptyIconSlots : value)
-                ?? JsonNode.Parse(ComponentClassFieldCatalog.EmptyIconSlots)!,
-            ValueKind.ComponentInputBindings => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)
-                ?? new JsonObject(),
-            ValueKind.StructuredCollection => JsonPath.ParseRequiredArray(value, "Structured collection field value"),
-            _ => JsonValue.Create(value)!,
-        };
+        return RuntimeInputValueKindContract.ParseValue(
+            valueKind,
+            value,
+            $"Component field '{fieldId}' value");
     }
 
     private static JsonObject? EmbeddedOverrides(JsonObject config, EmbeddedComponentSlotDefinition slot, bool createIfMissing)
     {
-        var slotNode = JsonPath.Get(config, slot.SlotPath) as JsonObject;
-        if (slotNode is null)
+        var slotValue = JsonPath.Get(config, slot.SlotPath);
+        JsonObject slotNode;
+        if (slotValue is null)
         {
             if (!createIfMissing) return null;
 
             slotNode = [];
             JsonPath.Set(config, slot.SlotPath, slotNode);
         }
-
-        if (slotNode["overrides"] is JsonObject overrides)
+        else
         {
-            return overrides;
+            slotNode = slotValue as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' must be an object.");
+        }
+
+        if (slotNode.TryGetPropertyValue("overrides", out var overridesNode))
+        {
+            return overridesNode as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' overrides must be an object.");
         }
 
         if (!createIfMissing) return null;
 
-        overrides = [];
+        var overrides = new JsonObject();
         slotNode["overrides"] = overrides;
         return overrides;
     }

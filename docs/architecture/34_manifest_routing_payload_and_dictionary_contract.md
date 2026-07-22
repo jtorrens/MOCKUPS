@@ -238,6 +238,13 @@ uses the same value serializer; it cannot turn invalid input into false or
 zero.
 
 Compound dictionary values use the same rule before controls render or commit.
+
+Component Class config, every complete Component Variant config and explicit
+local Overrides use that same dictionary `ValueKind` owner. A descriptor
+default applies only when its path is absent. Once a field path is present, its
+stored JSON scalar/object/array shape is current data and must validate exactly;
+readers and writers must not coerce it to false, zero, text, `{}`, `[]` or the
+descriptor default.
 `ComponentInputBindings` requires an object and a valid explicit forwarding
 envelope. `StructuredCollection` and `IconSlots` require arrays of object items
 with unique non-empty stable ids. Blank, malformed, wrong-root or duplicate-id

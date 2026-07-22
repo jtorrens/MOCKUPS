@@ -45,6 +45,14 @@ Variant snapshot are updated explicitly together. The repository validates and
 persists the prepared documents; it does not derive, merge or synchronize one
 from the other.
 
+Before a prepared Component field document reaches persistence, the Component
+field domain validates every present field node against the exact `ValueKind`
+declared by its `FieldDefinition`. Editor text is serialized by that same
+owner. A missing field may use the descriptor's explicit default for
+presentation, but a present boolean, number, string, object or array with the
+wrong current shape is rejected; it is never converted into a plausible
+default. This semantic validation remains outside the repository.
+
 ## 3. Component behavior stays outside persistence
 
 The following remain in their existing domain owners:
@@ -87,6 +95,8 @@ Automated enforcement verifies:
 - design-preview, coordinated config/metadata and Rename writes round-trip on a
   disposable database copy;
 - malformed roots and incomplete Variant envelopes fail before mutation;
+- current Component Class/Variant fields and prepared field writes preserve
+  their exact dictionary `ValueKind` shape;
 - startup remains byte-for-byte read-only;
 - the committed database remains unchanged by the extraction.
 

@@ -201,3 +201,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner y stable collection contract requeridos; fallbacks y el id por posición retirados quedan prohibidos. |
 | Datos | Sin migración: Test Values permanecen de sesión y la base canónica no cambia (`ca53a71d8a51f6fc56ae1699ceb669eb49f02653`). |
 | Riesgo | Bajo. No cambia el payload de una sesión válida ni la separación Design/Production; únicamente se deja de ocultar estado transitorio corrupto. |
+
+## Slice 1.13 — Campos current de Component y Overrides
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La lectura de campos Component convertía booleanos, números, objetos y arrays con forma incorrecta en `false`, el default del descriptor o texto aparente. La escritura conservaba otro serializador que aceptaba booleanos/números permisivos y fabricaba `{}`/`[]` para documentos compuestos. Los slots y Overrides embebidos existentes con raíz incorrecta podían ser reemplazados durante un edit. |
+| Owner | El descriptor declara el `ValueKind`; `RuntimeInputValueKindContract` valida el nodo current y serializa el texto de editor. El dominio de Component conserva la ruta exacta, la coordinación Default/Variant y la creación explícita de una nueva frontera embebida. |
+| Cambio mínimo | Reutilizar el owner en lecturas y en todos los writes de Class, Variant y Override; distinguir campo ausente de campo presente inválido; exigir objetos existentes para slot y Overrides. |
+| Rutas eliminadas | `StringToBool`, `NumberNode`, blank-to-`{}`/`[]` y los fallbacks de lectura a default para un nodo presente con otra forma. |
+| Migración explícita | `component.keyboard.emojiScale`, declarado Decimal, estaba guardado como texto en la config de clase y en las Variants estables `default` y `default_copy`. Se convirtió únicamente ese valor a número, sin cambiar ids, referencias ni contenido. También se actualizó el mismo valor en la base schema-v1 versionada, que conserva su envelope histórico `presets`. Los scripts temporales se eliminaron. Base current: `ca53a71d8a51f6fc56ae1699ceb669eb49f02653` → `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793`. Base schema-v1: `6b6b5b13a7fedfcd7dbe76ce2acadb4f13963211` → `a733943a65615aaaf10d8781ea9f0564cade5ada`. |
+| Pruebas | 108/108 escritorio: se leen todos los campos explícitos de cada Component Class y Variant; booleano, integer, objeto y colección inválidos se rechazan sin escritura; un decimal válido hace round-trip. |
+| Enforcement | Owner público de nodo requerido, lectura/escritura de Component fijada al owner y serializers/fallbacks permisivos concretos prohibidos. |
+| Riesgo | Bajo después de la migración. Los campos válidos, defaults realmente ausentes, ids, Variants completas, forwarding, Overrides explícitos y Preview no cambian. |

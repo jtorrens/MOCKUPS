@@ -45,6 +45,7 @@ var tests = new (string Name, Action Run)[]
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
+    ("Component dictionary fields use exact ValueKind documents", ComponentDictionaryFieldsUseExactValueKinds),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
@@ -214,6 +215,89 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         "collection",
         "UnknownValueKind",
         "Test Runtime Input"));
+}
+
+static void ComponentDictionaryFieldsUseExactValueKinds()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-value-kinds-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var components = Descendants(database.LoadProjectTree())
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
+            .ToList();
+        var componentFieldIds = ComponentClassFieldCatalog.All()
+            .Select((field) => field.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var beforeReads = SHA256.HashData(File.ReadAllBytes(temporary));
+        var invalidFields = new List<string>();
+        foreach (var component in components)
+        {
+            var fields = database.LoadEditorLayout(component.RecordClassId).Cards
+                .SelectMany((card) => card.VisibleGroups)
+                .SelectMany((group) => group.VisibleFields)
+                .Select((field) => field.Id)
+                .Where(componentFieldIds.Contains)
+                .Distinct(StringComparer.Ordinal);
+            foreach (var owner in new[] { component }.Concat(
+                         component.Children.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)))
+            {
+                foreach (var fieldId in fields)
+                {
+                    try
+                    {
+                        _ = owner.Kind == ProjectTreeNodeKind.ComponentClass
+                            ? database.CreateComponentClassFieldValue(owner.Id, fieldId)
+                            : database.CreateComponentVariantFieldValue(owner, fieldId);
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        invalidFields.Add($"{owner.Id} / {fieldId}: {exception.Message}");
+                    }
+                }
+            }
+        }
+        if (invalidFields.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(Environment.NewLine, invalidFields));
+        }
+        SequenceEqual(beforeReads, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        ProjectTreeNode Component(string recordClassId) => components.Single((node) =>
+            node.RecordClassId.Equals(recordClassId, StringComparison.Ordinal));
+        var beforeRejectedWrites = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.avatar").Id,
+            "component.avatar.label.showLabel",
+            "perhaps"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.cursor").Id,
+            "component.cursor.width",
+            "1.5"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.notification").Id,
+            "component.notification.avatarPlacement",
+            "[]"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.notification").Id,
+            "component.notification.avatar.inputs",
+            "[]"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.keypad").Id,
+            "component.keypad.keys",
+            "[{\"id\":\"key_1\"},{\"id\":\"key_1\"}]"));
+        SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        var cursor = Component("component.cursor");
+        database.UpdateComponentClassField(cursor.Id, "component.cursor.width", "3");
+        Equal("3", database.CreateComponentClassFieldValue(cursor.Id, "component.cursor.width").Value);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void RuntimeInputDefaultsUseValueKindOwner()

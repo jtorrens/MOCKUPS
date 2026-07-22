@@ -4836,6 +4836,11 @@ assertContains(
   "public static void ValidateRuntimeValue(JsonObject definition, JsonNode? value, string owner)",
   "persisted Runtime values must validate through the exact definition owner",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)",
+  "current dictionary nodes must validate through the exact ValueKind owner",
+);
 for (const runtimeInputKindConsumer of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -5033,6 +5038,39 @@ assertDoesNotContain(
   "testValues[collectionJsonKey] as JsonArray ?? new JsonArray()",
   "the Preview input session must reject a present wrong-root transient collection",
 );
+for (const componentValueOwnerCall of [
+  "RuntimeInputValueKindContract.ValidateValue(descriptor.ValueKind, node, owner)",
+  "RuntimeInputValueKindContract.ParseValue(",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    componentValueOwnerCall,
+    `Component fields must consume their exact dictionary ValueKind owner (${componentValueOwnerCall})`,
+  );
+}
+for (const retiredComponentFieldFallback of [
+  "ValueKind.Boolean => JsonValue.Create(StringToBool(value))",
+  "ValueKind.Integer => NumberNode(value)",
+  'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)',
+  'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)',
+  "node is JsonObject\n                ? node.ToJsonString()\n                : descriptor.DefaultValue",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    retiredComponentFieldFallback,
+    `Component field reads/writes must not reconstruct invalid current data (${retiredComponentFieldFallback})`,
+  );
+}
+for (const strictEmbeddedDocumentMessage of [
+  "must be an object.",
+  "overrides must be an object.",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    strictEmbeddedDocumentMessage,
+    `embedded Component documents must reject present wrong roots (${strictEmbeddedDocumentMessage})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",

@@ -82,6 +82,9 @@ call the general database facade.
 - Inheritance reads the selected concrete Variant, not mutable class config.
 - Local Overrides remain explicit leaves and survive coincidental equality.
 - Restore removes the local Override rather than copying an inferred value.
+- A missing slot/Overrides object may be created only by the explicit authoring
+  action that crosses or edits that boundary; a present wrong-root slot or
+  Overrides document fails without repair.
 - Runtime Test Values and Production payload ownership do not change.
 - Forwarding remains explicit and Preview resolves fully before the generic
   bridge and renderer.
