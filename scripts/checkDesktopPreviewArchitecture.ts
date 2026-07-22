@@ -643,6 +643,28 @@ assertContains(
   "_database.UpdateModuleInstanceAnimationJson(moduleInstanceId, animationJson)",
   "the animation document store must delegate one explicit complete document write",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Common/ModuleInstanceAnimationDocumentContract.cs",
+  "keyframes must be stored in ascending frame order",
+  "the common animation document owner must require persisted owner-local keyframe order",
+);
+for (const animationDocumentConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocument.cs",
+]) {
+  assertContains(
+    animationDocumentConsumer,
+    "ModuleInstanceAnimationDocumentContract.",
+    `${animationDocumentConsumer} must consume the common current animation document owner`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "ValidateAnimationJson",
+  "the data facade must not retain a parallel animation document validator",
+);
 for (const forbiddenAnimationDocumentStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
@@ -1519,6 +1541,25 @@ assertContains(
           "data/desktop-editor-spike.sqlite",
           `${layout.record_class_id} must use the current cards-only editor layout root`,
         );
+      }
+      const animationRows = database.prepare(
+        "SELECT id, animation_json FROM module_instances ORDER BY id",
+      ).all() as { id: string; animation_json: string }[];
+      for (const row of animationRows) {
+        const animation = JSON.parse(row.animation_json) as {
+          tracks?: Array<{ id?: unknown; keyframes?: Array<{ frame?: unknown }> }>;
+        };
+        for (const track of animation.tracks ?? []) {
+          const frames = (track.keyframes ?? []).map((keyframe) => keyframe.frame);
+          if (frames.some((frame, index) =>
+            typeof frame !== "number"
+            || index > 0 && frame < (frames[index - 1] as number))) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `Module Instance '${row.id}' track '${String(track.id ?? "")}' keyframes must remain in persisted ascending frame order`,
+            );
+          }
+        }
       }
     } finally {
       database.close();

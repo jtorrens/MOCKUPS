@@ -85,3 +85,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Pruebas | Sentinels, objeto válido, texto malformado, array y número; escritura `TypographySystemStyle` válida como objeto; rechazo sin modificar el documento. |
 | Enforcement | Parser requerido y consumidores de persistence/Usage fijados; fallbacks y bypass de escritura prohibidos. |
 | Riesgo | Bajo para current data; el Keyboard actual ya persiste un objeto. Las entradas que antes quedaban ocultas o podían guardar una raíz incorrecta ahora fallan. |
+
+## Slice 1.4 — Documento de animación v2
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Persistence mantenía un validador privado mientras el documento del editor validaba solo raíz y versión. Ambos ignoraban entradas de array que no fueran objetos. Los writes combinados de colección/animación no revalidaban el documento completo. Un track current conservaba físicamente KF28 antes de KF0 y el resolver lo ordenaba en memoria. |
+| Owner | `ModuleInstanceAnimationDocumentContract` para la forma current v2; timeline y resolvers conservan por separado los cálculos temporales y la interpretación de valores. |
+| Cambio mínimo | Unificar startup, writes, cambio de Variant y editor; exigir entradas explícitas, ids, interpolation/enabled, retime positivo, KF0 y orden persistido; validar también los writes combinados. |
+| Ruta eliminada | `SpikeDatabase.ValidateAnimationJson` privado y la validación parcial del constructor del editor. |
+| Migración explícita | Se ordenó por frame/id un único track de `module_instance_900f1616432d4f63a97f2a74dd647e08`; 1 fila y 1 track. Se restituyó después la codificación escapada de Unicode que usa el escritor C# para conservar el round-trip textual exacto. No cambiaron ids, frames, valores, targets ni interpolaciones. Ambos scripts temporales se eliminaron en la misma entrega. SHA-1 anterior `9b0eae03ff952821162687e61c34b72afb88093a`; posterior `0a5f67db62f4969cec8e3ef67c4ed39dff0b00a9`. |
+| Pruebas | Raíces, entradas no objeto, propiedades obligatorias, duplicados, frames negativos, orden, retime, KF0, persistencia exacta del store y apertura read-only de la base migrada. |
+| Enforcement | Owner común requerido en startup/writes/editor, validador paralelo prohibido y orden current de la base comprobado. |
+| Riesgo | Bajo: la migración solo materializa el orden que el resolver ya aplicaba, pero elimina una tolerancia contraria al contrato y evita que vuelva a persistirse. |

@@ -84,6 +84,7 @@ var tests = new (string Name, Action Run)[]
     ("non-extending fields overlap later collection items", NonExtendingFieldsOverlapLaterItems),
     ("strict validation rejects duplicate targets", StrictValidationRejectsDuplicateTargets),
     ("strict validation rejects duplicate and negative frames", StrictValidationRejectsInvalidFrames),
+    ("strict validation rejects malformed entries and unsorted keyframes", StrictValidationRejectsMalformedEntriesAndOrder),
     ("strict validation rejects invalid target durations", StrictValidationRejectsInvalidTargetDurations),
     ("strict validation rejects tracks without an origin keyframe", StrictValidationRejectsMissingOrigin),
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
@@ -1599,6 +1600,17 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         Equal(database.GetModuleInstanceRuntimePreviewJson(screen.Id), source.RuntimePreviewJson);
         Equal(database.GetModuleInstanceThemeTokensJson(screen.Id), source.ThemeTokensJson);
         Equal(database.GetModuleInstanceEffectiveContractJson(screen.Id), source.EffectiveContractJson);
+        var currentAnimation = ModuleInstanceAnimationDocumentContract.Parse(
+            source.AnimationJson,
+            $"Module Instance '{screen.Id}' animation_json");
+        foreach (var track in currentAnimation["tracks"]!.AsArray().OfType<JsonObject>())
+        {
+            var frames = track["keyframes"]!.AsArray()
+                .OfType<JsonObject>()
+                .Select((keyframe) => keyframe["frame"]!.GetValue<int>())
+                .ToList();
+            SequenceEqual(frames.OrderBy((frame) => frame), frames);
+        }
 
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
@@ -2762,7 +2774,7 @@ static void ModuleVariantsAreExplicit()
             $"{module.Name} · {defaultVariant.Name}"));
         database.UpdateModuleInstanceRuntimeValue(screen.Id, "orphan", JsonValue.Create("remove me"));
         database.UpdateModuleInstanceAnimationJson(screen.Id,
-            "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"targetId\":\"\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
+            "{\"schemaVersion\":2,\"tracks\":[{\"id\":\"orphan-track\",\"fieldId\":\"orphan\",\"keyframes\":[{\"id\":\"orphan-kf\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\",\"enabled\":true}]}]}");
         database.UpdateModuleInstanceVariant(screen.Id, android.Id);
         Equal(android.Id, database.GetModuleInstanceVariantReference(screen.Id));
         Equal("dark", JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)?["appearanceMode"]?.GetValue<string>());
@@ -3007,6 +3019,11 @@ static void RejectsMalformedDocuments()
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{}"));
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":1,\"tracks\":[]}"));
     Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2}"));
+    Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[4]}"));
+    Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[{\"id\":\"t\",\"fieldId\":\"f\",\"keyframes\":[4]}]}"));
+    Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[{\"id\":\"t\",\"fieldId\":\"f\",\"keyframes\":[{\"id\":\"k\",\"frame\":0,\"value\":true,\"enabled\":true}]}]}"));
+    Throws<InvalidOperationException>(() => new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[{\"id\":\"t\",\"fieldId\":\"f\",\"keyframes\":[{\"id\":\"k\",\"frame\":0,\"value\":true,\"interpolation\":\"hold\"}]}]}"));
+    _ = new ModuleInstanceAnimationDocument("{\"schemaVersion\":2,\"tracks\":[]}");
 }
 
 static void ExplicitReferenceUsageIsExactTypedAndShared()
@@ -3672,27 +3689,50 @@ static void StrictValidationRejectsDuplicateTargets()
 {
     var animation = Object("""
         {"schemaVersion":2,"tracks":[
-          {"id":"a","fieldId":"text","targetId":"m1","keyframes":[]},
-          {"id":"b","fieldId":"text","targetId":"m1","keyframes":[]}
+          {"id":"a","fieldId":"text","targetId":"m1","keyframes":[{"id":"a0","frame":0,"value":"a","interpolation":"hold","enabled":true}]},
+          {"id":"b","fieldId":"text","targetId":"m1","keyframes":[{"id":"b0","frame":0,"value":"b","interpolation":"hold","enabled":true}]}
         ]}
         """);
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", animation, "instance"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }
 
 static void StrictValidationRejectsInvalidFrames()
 {
     var duplicate = Object("""
         {"schemaVersion":2,"tracks":[{"id":"a","fieldId":"text","keyframes":[
-          {"id":"k0","frame":0,"value":"a"},{"id":"k1","frame":0,"value":"b"}
+          {"id":"k0","frame":0,"value":"a","interpolation":"hold","enabled":true},{"id":"k1","frame":0,"value":"b","interpolation":"hold","enabled":true}
         ]}]}
         """);
     var negative = Object("""
         {"schemaVersion":2,"tracks":[{"id":"a","fieldId":"text","keyframes":[
-          {"id":"k0","frame":-1,"value":"a"}
+          {"id":"k0","frame":-1,"value":"a","interpolation":"hold","enabled":true}
         ]}]}
         """);
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", duplicate, "instance"));
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", negative, "instance"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(duplicate, "Test animation_json"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(negative, "Test animation_json"));
+}
+
+static void StrictValidationRejectsMalformedEntriesAndOrder()
+{
+    var malformedTrack = Object("""{"schemaVersion":2,"tracks":[4]}""");
+    var malformedKeyframe = Object("""
+        {"schemaVersion":2,"tracks":[{"id":"t","fieldId":"text","keyframes":[4]}]}
+        """);
+    var unsorted = Object("""
+        {"schemaVersion":2,"tracks":[{"id":"t","fieldId":"text","keyframes":[
+          {"id":"k2","frame":2,"value":"b","interpolation":"hold","enabled":true},
+          {"id":"k0","frame":0,"value":"a","interpolation":"hold","enabled":true}
+        ]}]}
+        """);
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(malformedTrack, "Test animation_json"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(malformedKeyframe, "Test animation_json"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(unsorted, "Test animation_json"));
 }
 
 static void StrictValidationRejectsInvalidTargetDurations()
@@ -3700,13 +3740,15 @@ static void StrictValidationRejectsInvalidTargetDurations()
     var animation = Object("""
         {"schemaVersion":2,"retime":{"targetDurationFrames":0},"tracks":[]}
         """);
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", animation, "instance"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }
 
 static void StrictValidationRejectsMissingOrigin()
 {
     var animation = Object("""{"schemaVersion":2,"tracks":[{"id":"track","fieldId":"text","targetId":"m1","keyframes":[]}]}""");
-    Throws<InvalidOperationException>(() => InvokeDatabaseStatic("ValidateAnimationJson", animation, "instance"));
+    Throws<InvalidOperationException>(() =>
+        ModuleInstanceAnimationDocumentContract.Validate(animation, "Test animation_json"));
 }
 
 static void LegacyAnimationRequiresExplicitMigration()
@@ -5141,20 +5183,6 @@ static JsonObject SequenceContract(bool withMediaAction = false) => Object($$$$"
     """);
 
 static JsonObject Object(string json) => JsonNode.Parse(json)!.AsObject();
-
-static object? InvokeDatabaseStatic(string name, params object?[] arguments)
-{
-    var method = typeof(SpikeDatabase).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
-        ?? throw new InvalidOperationException($"Missing SpikeDatabase.{name}.");
-    try
-    {
-        return method.Invoke(null, arguments);
-    }
-    catch (TargetInvocationException exception) when (exception.InnerException is not null)
-    {
-        throw exception.InnerException;
-    }
-}
 
 static T Required<T>(T? value) where T : class => value ?? throw new Exception("Expected a value.");
 static DesignPreviewPayload? CreatePreviewPayload(

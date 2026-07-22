@@ -63,6 +63,15 @@ The editor may receive `SpikeDatabase` only as a construction/composition
 parameter while it creates the shared timeline source and document store. It
 must not retain a database field or call database methods directly.
 
+`ModuleInstanceAnimationDocumentContract` is the single structural owner of
+current `animation_json` v2. Startup validation, prepared writes and the editor
+document must all consume it. It requires object entries, stable non-empty
+track/keyframe ids, explicit interpolation and enabled state, unique
+`fieldId`/`targetId` targets, positive retime durations, mandatory enabled KF0
+and persisted keyframes in ascending owner-local frame order. It does not own
+field discovery, `ValueKind` semantics, frame origins, duration formulas or
+Preview resolution.
+
 ## 4. Temporal ownership remains common
 
 `ModuleInstanceTimeline`, `RuntimeAnimationFrameOrigin` and declared runtime
@@ -101,6 +110,8 @@ Architecture enforcement must verify:
   direct database call;
 - the editor still uses the shared timeline and owner-frame utilities;
 - the store delegates only a complete animation document write;
+- startup, writes and the animation editor use the one common v2 document
+  contract;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare every loaded document with the exact

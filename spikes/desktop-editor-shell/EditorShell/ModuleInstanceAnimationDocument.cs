@@ -13,11 +13,8 @@ internal sealed class ModuleInstanceAnimationDocument
 
     public ModuleInstanceAnimationDocument(string json)
     {
-        _root = JsonPath.ParseRequiredObject(json, "animation_json");
-        if (_root["schemaVersion"]?.GetValue<int>() != 2)
-            throw new InvalidOperationException("Animation editor requires animation_json schemaVersion 2.");
-        _tracks = _root["tracks"] as JsonArray
-            ?? throw new InvalidOperationException("animation_json v2 requires tracks.");
+        _root = ModuleInstanceAnimationDocumentContract.Parse(json, "Animation editor animation_json");
+        _tracks = (JsonArray)_root["tracks"]!;
     }
 
     public IReadOnlyList<AnimationTrackView> Tracks => _tracks.OfType<JsonObject>()

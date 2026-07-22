@@ -485,8 +485,9 @@ internal sealed partial class SpikeDatabase
                 throw InvalidCurrentDatabase($"module instance '{instanceId}' has invalid explicit Variant reference '{reference}'");
             }
 
-            var animation = ParseRequiredObject(instanceReader.GetString(3), $"module instance '{instanceId}' animation_json");
-            ValidateAnimationJson(animation, instanceId);
+            ModuleInstanceAnimationDocumentContract.Parse(
+                instanceReader.GetString(3),
+                $"Module Instance '{instanceId}' animation_json");
         }
     }
 

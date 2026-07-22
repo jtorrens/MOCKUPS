@@ -65,8 +65,9 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleInstanceAnimationJson(string moduleInstanceId, string animationJson)
     {
-        var animation = ParseJsonObject(animationJson);
-        ValidateAnimationJson(animation, moduleInstanceId);
+        var animation = ModuleInstanceAnimationDocumentContract.Parse(
+            animationJson,
+            $"Module Instance '{moduleInstanceId}' animation_json");
         using var connection = OpenConnection();
         _moduleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
@@ -184,6 +185,9 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
+        ModuleInstanceAnimationDocumentContract.Validate(
+            animation,
+            $"Module Instance '{moduleInstanceId}' animation_json");
         _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
@@ -214,6 +218,9 @@ internal sealed partial class SpikeDatabase
         }
         using var connection = OpenConnection();
         ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
+        ModuleInstanceAnimationDocumentContract.Validate(
+            animation,
+            $"Module Instance '{moduleInstanceId}' animation_json");
         _moduleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
