@@ -61,6 +61,7 @@ internal static class ThemeNumericTokenCatalog
         Token("theme.motion.scale.durationMs", ["motion", "transitions", "scale", "durationMs"]),
         Token("theme.motion.scale.delayMs", ["motion", "transitions", "scale", "delayMs"]),
         Token("theme.motion.buttonPushedDurationMs", ["motion", "buttonPushedDurationMs"]),
+        Token("theme.motion.reflowDurationMs", ["motion", "reflowDurationMs"]),
         Token("theme.motion.naturalPace.verySlow", ["motion", "naturalPace", "verySlow"]),
         Token("theme.motion.naturalPace.slow", ["motion", "naturalPace", "slow"]),
         Token("theme.motion.naturalPace.normal", ["motion", "naturalPace", "normal"]),

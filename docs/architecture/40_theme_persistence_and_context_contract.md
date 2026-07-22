@@ -75,6 +75,14 @@ are finite JSON numbers, color/easing/mode/typography paths are non-empty
 strings and motion timing paths are objects. Missing or wrong-root fields do
 not become `1`, `light`, `normal`, `{}` or a display placeholder.
 
+Runtime duration consumers use the same common numeric Theme-token catalog and
+exact declared path as the dictionary. Declarative Preview actions and
+`BehaviorTiming` must not walk arbitrary token strings or supply zero/default
+values. Action durations and natural-pace multipliers are positive; explicit
+Motion delay and duration members are non-negative. An unknown token, absent
+path, numeric string, non-finite value or invalid range is a Theme/contract
+failure before Preview presentation, not a timing fallback.
+
 The repository stores the complete result of an explicit edit; it does not
 resolve palette colors, fonts, assets, Device pixels or Preview atoms.
 
@@ -142,6 +150,8 @@ Architecture enforcement verifies:
 - Module Instance Theme lookup cannot return `{}` for missing context;
 - creation and edits preserve explicit Shot owner Theme context;
 - this contract is required by `AGENTS.md` and the architecture index.
+- numeric Theme duration consumers share the catalog/path owner and cannot
+  translate missing or malformed values to zero/default timing.
 
 Disposable-database tests compare facade/repository reads, exercise direct and
 token writes, create/duplicate/rename/delete routing, reject invalid current

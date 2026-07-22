@@ -5007,6 +5007,56 @@ assertContains(
   "NATURAL_PACE_TOKENS.has(paceToken)",
   "web Behavior Timing must require one exact declared natural pace token even in Fixed mode",
 );
+for (const themeNumericDurationConsumer of [
+  "spikes/desktop-editor-shell/Common/BehaviorTimingResolver.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+]) {
+  assertContains(
+    themeNumericDurationConsumer,
+    "ThemeNumericTokenValue.RequirePositive(",
+    `${themeNumericDurationConsumer} must use the shared strict numeric Theme-token owner`,
+  );
+}
+for (const requiredThemeNumericOwnerTerm of [
+  "ThemeNumericTokenCatalog.TryGet(",
+  "JsonPath.Get(themeTokens, definition.Path)",
+  "TryFiniteNumber(",
+  "must not be negative",
+  "must be positive",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/ThemeNumericTokenValue.cs",
+    requiredThemeNumericOwnerTerm,
+    `numeric Theme values must keep strict owner rule '${requiredThemeNumericOwnerTerm}'`,
+  );
+}
+for (const retiredThemeDurationFallback of [
+  ["spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs", "ThemeTokenNumber("],
+  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "ThemeTokenNumber("],
+] as const) {
+  assertDoesNotContain(
+    retiredThemeDurationFallback[0],
+    retiredThemeDurationFallback[1],
+    `${retiredThemeDurationFallback[0]} must not convert a missing Theme duration into zero/default`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "durationThemeToken '{durationThemeToken}' is not declared",
+  "Design Preview actions must reject undeclared primary Theme duration tokens",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "durationAdditionalThemeToken '{token}' is not declared",
+  "Design Preview actions must reject undeclared additional Theme duration tokens",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/ThemeNumericTokenCatalog.cs",
+  'Token("theme.motion.reflowDurationMs",',
+  "generic State/Reflow action timing must use the declared numeric Theme-token catalog",
+);
 for (const forbiddenDesktopBehaviorTimingFallback of [
   "? Math.Max(0, frames) : 0",
   "catch\n            {\n                return null;",

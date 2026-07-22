@@ -320,3 +320,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner y consumidores de startup/presentación requeridos; fallbacks concretos prohibidos en escritorio y web. |
 | Datos | Sin migración. Los contratos, Themes y valores current cumplen; `fixedFrames: 0` se conserva como intención explícita. Base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo para datos válidos. Natural/Fix producen las mismas duraciones; solo deja de ocultarse un contrato temporal roto. |
+
+## Slice 1.22 — Duraciones numéricas de Theme y State actions
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Tres hosts de Preview recorrían strings de token por su cuenta y convertían un path ausente o tipo incorrecto en cero/uno. Las State actions omitían silenciosamente colecciones, States o Motion dañados; `reflowDurationMs` se usaba sin estar declarado en el catálogo numérico común. |
+| Owner | `ThemeNumericTokenCatalog` declara id/path y `ThemeNumericTokenValue` valida el número/rango. `ComponentPreviewActions` valida metadata declarativa, States exactos y Motion; el panel y el controlador solo consumen el owner compartido. |
+| Cambio mínimo | Declarar Reflow, exigir tokens conocidos y valores finitos positivos para acciones/pace, no negativos para delay/duration, y exigir State/Motion exactos cuando la transición ya tiene ids de sesión. La ausencia transitoria de source/destination antes de ejecutar la acción sigue significando que ese lado aún no aporta Motion. |
+| Rutas eliminadas | Theme path ausente → 0/1, token adicional desconocido, Motion ausente → 0, transición desconocida interpretada parcialmente y State id presente pero inexistente ignorado. |
+| Pruebas | 114/114 escritorio: catálogo/valor/rangos, metadata action incompleta, tokens desconocidos, Theme sin Reflow, timing string, State inexistente y corrupción SQLite read-only; los flujos Lock Screen/forwarding siguen resolviendo la misma duración válida. |
+| Enforcement | Los cuatro consumidores temporales deben usar el owner común; Reflow pertenece al catálogo; los walkers/fallbacks locales y tokens action no declarados quedan prohibidos. |
+| Datos | Sin migración. Themes, acciones, States y Motion current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. La duración válida no cambia. Solo se diferencia la ausencia legítima de selección de sesión de un id/documento temporal current realmente inválido. |

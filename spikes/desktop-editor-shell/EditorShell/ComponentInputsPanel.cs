@@ -1107,7 +1107,10 @@ internal sealed class ComponentPreviewInputSession
         }
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
-            var value = ThemeTokenNumber(action.DurationThemeToken, 1);
+            var value = ThemeNumericTokenValue.RequirePositive(
+                _themeTokens,
+                action.DurationThemeToken,
+                $"Design Preview action '{action.Id}' duration");
             return action.TimeUnit switch
             {
                 ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
@@ -1148,7 +1151,12 @@ internal sealed class ComponentPreviewInputSession
 
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
-            return Math.Max(1, (int)Math.Round(ThemeTokenNumber(action.DurationThemeToken, 1), MidpointRounding.AwayFromZero));
+            return Math.Max(1, (int)Math.Round(
+                ThemeNumericTokenValue.RequirePositive(
+                    _themeTokens,
+                    action.DurationThemeToken,
+                    $"Design Preview action '{action.Id}' duration"),
+                MidpointRounding.AwayFromZero));
         }
 
         if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
@@ -1169,16 +1177,6 @@ internal sealed class ComponentPreviewInputSession
         }
 
         return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action, 1), MidpointRounding.AwayFromZero));
-    }
-
-    private double ThemeTokenNumber(string token, double fallback)
-    {
-        JsonNode? current = _themeTokens;
-        foreach (var segment in token.Split('.', StringSplitOptions.RemoveEmptyEntries).SkipWhile((segment) => segment == "theme"))
-        {
-            current = current is JsonObject owner ? owner[segment] : null;
-        }
-        return JsonNodeNumber(current, fallback);
     }
 
     private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)

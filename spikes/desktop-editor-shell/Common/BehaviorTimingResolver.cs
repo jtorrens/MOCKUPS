@@ -77,31 +77,14 @@ internal static class BehaviorTimingResolver
         if (!ThemeNumericTokenCatalog.TryGet(paceToken, out var token)
             || !paceToken.StartsWith("theme.motion.naturalPace.", StringComparison.Ordinal))
             throw new InvalidOperationException($"Behavior timing pace token '{paceToken}' is invalid.");
-        var multiplier = RequiredNumber(
-            Path(themeTokens, token.Path),
-            $"Behavior timing pace token '{paceToken}'");
-        if (multiplier <= 0) throw new InvalidOperationException($"Behavior timing pace token '{paceToken}' must be positive.");
+        var multiplier = ThemeNumericTokenValue.RequirePositive(
+            themeTokens,
+            token.Id,
+            "Behavior timing");
         return Math.Max(0, (int)Math.Round(units * baseFramesPerUnit * multiplier, MidpointRounding.AwayFromZero));
-    }
-
-    private static JsonNode? Path(JsonObject root, IReadOnlyList<string> path)
-    {
-        JsonNode? current = root;
-        foreach (var segment in path) current = (current as JsonObject)?[segment];
-        return current;
     }
 
     private static string JsonString(JsonObject owner, string key, string context) =>
         JsonPath.RequiredString(owner, key, context);
 
-    private static double RequiredNumber(JsonNode? value, string context)
-    {
-        if (value is not JsonValue scalar
-            || !scalar.TryGetValue<double>(out var number)
-            || !double.IsFinite(number))
-        {
-            throw new InvalidOperationException($"{context} must resolve to a finite number.");
-        }
-        return number;
-    }
 }

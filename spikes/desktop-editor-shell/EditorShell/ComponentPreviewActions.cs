@@ -324,15 +324,17 @@ internal static class ComponentPreviewActions
         string themeTokensJson)
     {
         if (string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)) return 0;
-        var target = Target(preview, action);
-        if (target?[action.DurationStateCollectionJsonKey] is not JsonArray states) return 0;
+        var target = Target(preview, action)
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' has no target owner.");
+        var states = target[action.DurationStateCollectionJsonKey] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' requires state collection '{action.DurationStateCollectionJsonKey}'.");
         RuntimeCollectionDocumentContract.Validate(
             states,
             $"Design Preview action state collection '{action.DurationStateCollectionJsonKey}'");
         var theme = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
-        var stateIdKey = string.IsNullOrWhiteSpace(action.DurationStateIdJsonKey)
-            ? "id"
-            : action.DurationStateIdJsonKey;
+        var stateIdKey = action.DurationStateIdJsonKey;
         var targetId = JsonString(target, action.TargetInputId);
         var fromId = JsonString(target, action.TargetFromJsonKey);
         var stateObjects = states
@@ -340,42 +342,73 @@ internal static class ComponentPreviewActions
                 state,
                 $"Design Preview action state at index {index}"))
             .ToList();
-        var entering = stateObjects.FirstOrDefault((state) => JsonString(state, stateIdKey) == targetId);
-        var outgoing = stateObjects.FirstOrDefault((state) => JsonString(state, stateIdKey) == fromId);
         var duration = Math.Max(
-            MotionDurationMilliseconds(theme, entering?[action.DurationEnterMotionJsonKey] as JsonObject),
-            MotionDurationMilliseconds(theme, outgoing?[action.DurationExitMotionJsonKey] as JsonObject));
+            StateMotionDurationMilliseconds(
+                theme,
+                stateObjects,
+                stateIdKey,
+                targetId,
+                action.DurationEnterMotionJsonKey,
+                action.Id,
+                "target"),
+            StateMotionDurationMilliseconds(
+                theme,
+                stateObjects,
+                stateIdKey,
+                fromId,
+                action.DurationExitMotionJsonKey,
+                action.Id,
+                "source"));
         foreach (var token in action.DurationAdditionalThemeTokens)
         {
-            duration = Math.Max(duration, ThemeTokenNumber(theme, token));
+            duration = Math.Max(
+                duration,
+                ThemeNumericTokenValue.RequirePositive(
+                    theme,
+                    token,
+                    $"Design Preview action '{action.Id}' duration"));
         }
-        return Math.Max(0, duration);
+        return duration;
     }
 
-    private static double MotionDurationMilliseconds(JsonObject theme, JsonObject? motion)
+    private static double StateMotionDurationMilliseconds(
+        JsonObject theme,
+        IReadOnlyList<JsonObject> states,
+        string stateIdKey,
+        string stateId,
+        string motionKey,
+        string actionId,
+        string role)
     {
-        if (motion is null) return 0;
-        var transition = JsonString(motion, "transition");
-        var fade = motion["fade"] is JsonValue fadeValue
-            && fadeValue.TryGetValue<bool>(out var enabled)
-            && enabled;
+        // State selections are session values and do not exist before an action has a
+        // concrete transition. Once present, they must resolve to an exact authored State.
+        if (string.IsNullOrWhiteSpace(stateId)) return 0;
+        var state = states.SingleOrDefault((candidate) => JsonString(candidate, stateIdKey) == stateId)
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{actionId}' {role} State '{stateId}' does not exist.");
+        return MotionDurationMilliseconds(
+            theme,
+            JsonPath.RequiredObject(
+                state,
+                motionKey,
+                $"Design Preview action '{actionId}' {role} State '{stateId}'"));
+    }
+
+    private static double MotionDurationMilliseconds(JsonObject theme, JsonObject motion)
+    {
+        var value = MotionVariantValue.Parse(motion.ToJsonString());
+        var transition = value.Transition;
+        var fade = value.Fade;
         if (transition == "none" && !fade) return 0;
         var timingKey = transition == "none" ? "fade" : transition;
-        var timing = theme["motion"]?["transitions"]?[timingKey] as JsonObject;
-        return timing is null
-            ? 0
-            : Math.Max(0, JsonNumber(timing, "delayMs", 0) + JsonNumber(timing, "durationMs", 0));
-    }
-
-    private static double ThemeTokenNumber(JsonObject theme, string token)
-    {
-        JsonNode? current = theme;
-        foreach (var segment in token.Split('.', StringSplitOptions.RemoveEmptyEntries)
-                     .SkipWhile((segment) => segment == "theme"))
-        {
-            current = current is JsonObject owner ? owner[segment] : null;
-        }
-        return current is JsonValue value && value.TryGetValue<double>(out var number) ? number : 0;
+        return ThemeNumericTokenValue.RequireNonNegative(
+                   theme,
+                   $"theme.motion.{timingKey}.delayMs",
+                   $"Theme {timingKey} motion")
+               + ThemeNumericTokenValue.RequireNonNegative(
+                   theme,
+                   $"theme.motion.{timingKey}.durationMs",
+                   $"Theme {timingKey} motion");
     }
 
     private static ComponentPreviewActionTargetMode ParseTargetMode(string value)
@@ -597,6 +630,7 @@ internal static class ComponentPreviewActions
         var durationThemeToken = JsonString(action, "durationThemeToken");
         var durationStateCollectionJsonKey = JsonString(action, "durationStateCollectionJsonKey");
         var durationMotionConfigPath = JsonString(action, "durationMotionConfigPath");
+        var targetInputId = JsonString(action, "targetInputId");
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var durationBaseFrames = JsonNumber(action, "durationBaseFrames", 0);
@@ -625,14 +659,47 @@ internal static class ComponentPreviewActions
         _ = JsonBoolean(action, "prewarmFrames", true);
         _ = JsonBoolean(action, "definesModuleDuration", false);
         _ = JsonBoolean(action, "extendsModuleDuration", false);
-        _ = JsonStringArray(action, "durationAdditionalThemeTokens");
+        if (!string.IsNullOrWhiteSpace(durationThemeToken)
+            && !ThemeNumericTokenCatalog.TryGet(durationThemeToken, out _))
+        {
+            throw new InvalidOperationException(
+                $"{owner} durationThemeToken '{durationThemeToken}' is not declared.");
+        }
+        var durationAdditionalThemeTokens = JsonStringArray(action, "durationAdditionalThemeTokens");
+        foreach (var token in durationAdditionalThemeTokens)
+        {
+            if (!ThemeNumericTokenCatalog.TryGet(token, out _))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} durationAdditionalThemeToken '{token}' is not declared.");
+            }
+        }
+        var hasStateDuration = !string.IsNullOrWhiteSpace(durationStateCollectionJsonKey);
+        foreach (var (key, value) in new[]
+                 {
+                     ("durationStateIdJsonKey", JsonString(action, "durationStateIdJsonKey")),
+                     ("durationEnterMotionJsonKey", JsonString(action, "durationEnterMotionJsonKey")),
+                     ("durationExitMotionJsonKey", JsonString(action, "durationExitMotionJsonKey")),
+                     ("targetFromJsonKey", JsonString(action, "targetFromJsonKey")),
+                 })
+        {
+            if (hasStateDuration && string.IsNullOrWhiteSpace(value))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} {key} is required by durationStateCollectionJsonKey.");
+            }
+        }
+        if (hasStateDuration && string.IsNullOrWhiteSpace(targetInputId))
+        {
+            throw new InvalidOperationException(
+                $"{owner} state duration requires targetInputId.");
+        }
         _ = JsonStringArray(action, "durationItemNumberKeys");
         _ = JsonStringArray(action, "durationCollectionMultiplierNumberKeys");
         _ = JsonStringArray(action, "activateInputIds");
         _ = JsonStringArray(action, "deactivateInputIds");
         _ = ParseTargetOptions(action);
 
-        var targetInputId = JsonString(action, "targetInputId");
         var targetMode = ParseTargetMode(JsonString(action, "targetMode"));
         if ((targetMode == ComponentPreviewActionTargetMode.None) != string.IsNullOrWhiteSpace(targetInputId))
         {

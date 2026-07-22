@@ -360,6 +360,15 @@ outgoing child content holds its final internal state, and the resolver emits
 only the complete requested-frame result. Design Test Values option actions are
 transient fixtures for this same resolution contract, not persisted animation.
 
+The declarative action contract names every primary or additional Theme timing
+by an exact id in the common numeric Theme-token catalog. Resolution requires a
+finite value at that token's declared path; finite action durations are positive
+and Motion delays/durations are non-negative. Missing paths, numeric strings,
+unknown tokens and negative timing do not become zero. Before a transient State
+action has selected a concrete source or destination, that absent session side
+contributes no Motion; once its stable State id is present, it must resolve to
+one exact State and its declared Enter/Exit Motion must be complete.
+
 The structural ownership and Module Instance mapping are specified in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
 

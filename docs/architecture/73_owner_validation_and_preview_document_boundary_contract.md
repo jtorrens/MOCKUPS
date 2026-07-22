@@ -200,6 +200,15 @@ list, target and visibility metadata keeps its exact type and complete group;
 the editor does not omit an invalid action or invent id, label, time unit,
 boolean, number or list members.
 
+Their Theme duration ids are exact entries in the common numeric token catalog.
+The shared numeric Theme-value owner resolves the catalog path and requires a
+finite number with the range declared by the consumer: positive action/pace
+duration or non-negative Motion delay/duration. Missing paths, numeric strings,
+unknown tokens and invalid ranges never become zero or a one-frame action.
+State-action source and destination ids are transient session values and may be
+absent before a concrete transition; once present, each must resolve to one
+exact authored State whose referenced Motion document remains strict.
+
 Production Font file lists are also current typed documents. Every entry keeps
 its required file name, normalized safe relative path, explicit normal/italic
 style and integer CSS weight. Startup, repository access, editor summaries and
@@ -291,6 +300,9 @@ Architecture enforcement must verify:
   identifier- or position-based inference.
 - Design Preview actions are validated at startup and by their shared reader;
   incomplete entries, wrong roots and scalar/list coercions are rejected.
+- declarative action Theme durations and Behavior Timing pace use one strict
+  catalog/path value owner; undeclared, absent, wrong-type or invalid-range
+  timing cannot be interpreted as zero/default.
 - Production Font file entries share one startup/read/projection contract;
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.

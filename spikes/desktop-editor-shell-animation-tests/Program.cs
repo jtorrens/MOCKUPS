@@ -842,6 +842,13 @@ static void PreviewActionContractsAreStrict()
     Equal("Play", parsed.Label);
     Equal(ComponentPreviewActionTimeUnit.Seconds, parsed.TimeUnit);
 
+    var validThemeDuration = Action();
+    validThemeDuration.Remove("durationSeconds");
+    validThemeDuration["durationThemeToken"] = "theme.motion.buttonPushedDurationMs";
+    Equal(
+        "theme.motion.buttonPushedDurationMs",
+        ComponentPreviewActions.Read(Preview(validThemeDuration)).Single().DurationThemeToken);
+
     var missingId = Action();
     missingId.Remove("id");
     Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
@@ -879,6 +886,22 @@ static void PreviewActionContractsAreStrict()
     Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
         Preview(invalidOptions),
         "Invalid options"));
+    var unknownThemeDuration = Action();
+    unknownThemeDuration.Remove("durationSeconds");
+    unknownThemeDuration["durationThemeToken"] = "theme.motion.missing";
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(unknownThemeDuration),
+        "Unknown Theme duration"));
+    var unknownAdditionalThemeDuration = Action();
+    unknownAdditionalThemeDuration["durationAdditionalThemeTokens"] = new JsonArray("theme.motion.missing");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(unknownAdditionalThemeDuration),
+        "Unknown additional Theme duration"));
+    var incompleteStateDuration = Action();
+    incompleteStateDuration["durationStateCollectionJsonKey"] = "states";
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        Preview(incompleteStateDuration),
+        "Incomplete State duration"));
     Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
         new JsonObject { ["actions"] = new JsonObject() },
         "Wrong action root"));
@@ -916,6 +939,12 @@ static void PreviewActionContractsAreStrict()
     {
         using var command = connection.CreateCommand();
         command.CommandText = "UPDATE component_classes SET design_preview_json = json_remove(design_preview_json, '$.actions[0].id') WHERE id = 'component_project_foqn_s2_audio'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("preview-action-theme-token", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE component_classes SET design_preview_json = json_set(design_preview_json, '$.actions[0].durationThemeToken', 'theme.motion.missing') WHERE id = 'component_project_foqn_s2_button'";
         command.ExecuteNonQuery();
     });
 }
@@ -4115,6 +4144,28 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
                 stateAction,
                 payload.ThemeTokensJson));
 
+        var missingReflowTheme = themeTokens.DeepClone().AsObject();
+        (missingReflowTheme["motion"] as JsonObject)?.Remove("reflowDurationMs");
+        Throws<InvalidOperationException>(() =>
+            ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                selectedPreview,
+                stateAction,
+                missingReflowTheme.ToJsonString()));
+        var invalidSlideTheme = themeTokens.DeepClone().AsObject();
+        invalidSlideTheme["motion"]!["transitions"]!["slide"]!["durationMs"] = "260";
+        Throws<InvalidOperationException>(() =>
+            ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                selectedPreview,
+                stateAction,
+                invalidSlideTheme.ToJsonString()));
+        var missingStatePreview = selectedPreview.DeepClone().AsObject();
+        missingStatePreview[slots.JsonKey]![0]!["runtimeStateId"] = "state_missing";
+        Throws<InvalidOperationException>(() =>
+            ComponentPreviewActions.MotionStateTransitionDurationMilliseconds(
+                missingStatePreview,
+                stateAction,
+                payload.ThemeTokensJson));
+
         var stackItems = config["lockScreen"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
@@ -6245,6 +6296,38 @@ static void NaturalBehaviorTimingUsesGraphemesAndThemePace()
         7,
         "theme.motion.naturalPace.slow",
         Object("""{"motion":{"naturalPace":{"slow":"1.5"}}}""")));
+
+    var numericTheme = Object("""
+        {"motion":{"naturalPace":{"slow":1.5},"transitions":{"fade":{"delayMs":0,"durationMs":180}},"buttonPushedDurationMs":120}}
+        """);
+    Equal(1.5, ThemeNumericTokenValue.RequirePositive(
+        numericTheme,
+        "theme.motion.naturalPace.slow",
+        "Natural pace"));
+    Equal(0d, ThemeNumericTokenValue.RequireNonNegative(
+        numericTheme,
+        "theme.motion.fade.delayMs",
+        "Fade delay"));
+    Throws<InvalidOperationException>(() => ThemeNumericTokenValue.Require(
+        numericTheme,
+        "theme.motion.missing",
+        "Unknown token"));
+    Throws<InvalidOperationException>(() => ThemeNumericTokenValue.RequirePositive(
+        numericTheme,
+        "theme.motion.reflowDurationMs",
+        "Missing token value"));
+    Throws<InvalidOperationException>(() => ThemeNumericTokenValue.RequirePositive(
+        Object("""{"motion":{"buttonPushedDurationMs":"120"}}"""),
+        "theme.motion.buttonPushedDurationMs",
+        "Wrong token type"));
+    Throws<InvalidOperationException>(() => ThemeNumericTokenValue.RequirePositive(
+        Object("""{"motion":{"buttonPushedDurationMs":0}}"""),
+        "theme.motion.buttonPushedDurationMs",
+        "Zero duration"));
+    Throws<InvalidOperationException>(() => ThemeNumericTokenValue.RequireNonNegative(
+        Object("""{"motion":{"transitions":{"fade":{"delayMs":-1}}}}"""),
+        "theme.motion.fade.delayMs",
+        "Negative delay"));
 }
 
 static void TimelineReferenceBandsUseContractDurations()

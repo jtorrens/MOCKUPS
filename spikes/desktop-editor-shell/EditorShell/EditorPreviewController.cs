@@ -1883,13 +1883,10 @@ internal sealed class EditorPreviewController
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
         {
             var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
-            JsonNode? current = themeTokens;
-            foreach (var segment in action.DurationThemeToken.Split('.', StringSplitOptions.RemoveEmptyEntries)
-                         .SkipWhile((segment) => segment == "theme"))
-            {
-                current = current is JsonObject owner ? owner[segment] : null;
-            }
-            var value = current is JsonValue tokenValue && tokenValue.TryGetValue<double>(out var number) ? number : 0;
+            var value = ThemeNumericTokenValue.RequirePositive(
+                themeTokens,
+                action.DurationThemeToken,
+                $"Design Preview action '{action.Id}' duration");
             var seconds = action.TimeUnit switch
             {
                 ComponentPreviewActionTimeUnit.Milliseconds => value / 1000.0,
