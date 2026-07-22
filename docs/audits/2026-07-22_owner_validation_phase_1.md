@@ -294,3 +294,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner requerido en startup/reader; fallbacks concretos prohibidos; payload duration loop y clones mantienen objetos exactos. |
 | Datos | Migración solo de metadata declarativa en la base activa: `5ce6a2a01d7e585ae30dae9bcea9af4b40ce2793` → `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. El artefacto histórico schema-v1 no es autoridad current y permanece sin cambios. |
 | Riesgo | Bajo tras migrar. La reproducción, duración, resultado, ids y payload no cambian; únicamente deja de desaparecer o reconstruirse una acción incompleta. |
+
+## Slice 1.20 — Documento de archivos de Production Font
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El array tenía raíz estricta, pero sus entradas se filtraban con `OfType`; una ruta vacía se omitía, un peso inválido se convertía en 400 y cualquier estilo distinto de `italic` se presentaba como `normal`. El resumen podía mostrar valores JSON aparentes sin validar su tipo. |
+| Owner | `ProductionFontFilesContract` define cada entrada current; persistencia conserva las filas y el facade conserva importación, resumen y construcción de `ProductionFontFace`. La existencia física del asset sigue perteneciendo al boundary de recursos/Preview. |
+| Cambio mínimo | Exigir objeto con nombre final, ruta relativa normalizada y segura, estilo `normal`/`italic`, peso integer 1–1000 y rutas únicas; usar el mismo owner en startup, repository, summary y Preview-face projection. |
+| Rutas eliminadas | Filtro de entradas no objeto, skip de ruta vacía, `TryParse → 400`, estilo desconocido → normal y stringify aparente de scalars incorrectos. |
+| Pruebas | 114/114 escritorio: documento válido y vacío declarado, entrada nula/incompleta, peso string, estilo desconocido, traversal, nombre discordante y path duplicado; tres corrupciones SQLite se rechazan byte-for-byte read-only. |
+| Enforcement | Owner común y sus tres consumidores obligatorios; fallbacks/filtros concretos prohibidos en el facade. |
+| Datos | Sin migración. Las cuatro familias y sus 22 archivos current ya cumplen; base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia ningún font face, asset ni salida válida; un documento dañado deja de producir una familia parcial o tipografía aparentemente válida. |

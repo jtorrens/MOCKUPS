@@ -64,6 +64,7 @@ internal sealed partial class SpikeDatabase
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentProductionFontFiles(connection);
         ValidateCurrentEditorLayouts(connection);
         ValidateCurrentDefinitionLifecycle(connection);
         ValidateCurrentPreviewManifest(connection);
@@ -73,6 +74,27 @@ internal sealed partial class SpikeDatabase
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentProductionFontFiles(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, files_json FROM production_fonts ORDER BY id";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var id = reader.GetString(0);
+            try
+            {
+                ProductionFontFilesContract.ParseRequired(
+                    reader.GetString(1),
+                    $"Production Font '{id}' files_json");
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(exception.Message);
+            }
+        }
     }
 
     private void ValidateCurrentPreviewManifest(SqliteConnection connection)

@@ -200,6 +200,14 @@ list, target and visibility metadata keeps its exact type and complete group;
 the editor does not omit an invalid action or invent id, label, time unit,
 boolean, number or list members.
 
+Production Font file lists are also current typed documents. Every entry keeps
+its required file name, normalized safe relative path, explicit normal/italic
+style and integer CSS weight. Startup, repository access, editor summaries and
+Preview-face preparation share one document owner; none may filter a malformed
+entry, skip a missing path or infer style/weight defaults. Physical asset
+existence remains a separate Preview/resource diagnostic and is never repaired
+while reading persistence.
+
 ## 6. Failure and diagnostics
 
 The current application uses fail-fast exceptions at internal payload and
@@ -275,6 +283,9 @@ Architecture enforcement must verify:
   identifier- or position-based inference.
 - Design Preview actions are validated at startup and by their shared reader;
   incomplete entries, wrong roots and scalar/list coercions are rejected.
+- Production Font file entries share one startup/read/projection contract;
+  malformed entries, unsafe/duplicate paths and inferred style/weight defaults
+  are rejected.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

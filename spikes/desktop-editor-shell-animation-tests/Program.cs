@@ -45,6 +45,7 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
+    ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
@@ -2640,6 +2641,9 @@ static void ProductionFontRepositoryPreservesFacadeContract()
         Equal(settings.SourceDirectory, record.SourceDirectory);
         Equal(settings.FilesJson, record.FilesJson);
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Production Font '{record.Id}' metadata_json");
+        ProductionFontFilesContract.ParseRequired(
+            record.FilesJson,
+            $"Production Font '{record.Id}' files_json");
         using (var connection = context.OpenConnection())
         {
             SequenceEqual(
@@ -2684,6 +2688,13 @@ static void ProductionFontRepositoryPreservesFacadeContract()
                 "text",
                 "fonts/invalid-repository-font",
                 "{}"));
+            Throws<InvalidOperationException>(() => repository.UpsertImported(
+                connection,
+                project.Id,
+                "Incomplete Repository Font",
+                "text",
+                "fonts/incomplete-repository-font",
+                "[{}]"));
         }
         Throws<InvalidOperationException>(() => repository.UpdateField(fontNode.Id, "font.unknown", "value"));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -2693,6 +2704,58 @@ static void ProductionFontRepositoryPreservesFacadeContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void ProductionFontFileDocumentsAreStrict()
+{
+    var valid = ProductionFontFilesContract.ParseRequired(
+        """
+        [{"fileName":"Family-Regular.ttf","relativePath":"fonts/family/Family-Regular.ttf","style":"normal","weight":400}]
+        """,
+        "test Production Font files");
+    Equal(1, valid.Count);
+    Equal("Family-Regular.ttf", valid[0].FileName);
+    Equal("fonts/family/Family-Regular.ttf", valid[0].RelativePath);
+    Equal("normal", valid[0].Style);
+    Equal(400, valid[0].Weight);
+    Equal(0, ProductionFontFilesContract.ParseRequired("[]", "empty Production Font files").Count);
+
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired("[null]", "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired("[{}]", "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired(
+        "[{\"fileName\":\"A.ttf\",\"relativePath\":\"fonts/A.ttf\",\"style\":\"normal\",\"weight\":\"400\"}]",
+        "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired(
+        "[{\"fileName\":\"A.ttf\",\"relativePath\":\"fonts/A.ttf\",\"style\":\"oblique\",\"weight\":400}]",
+        "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired(
+        "[{\"fileName\":\"A.ttf\",\"relativePath\":\"../A.ttf\",\"style\":\"normal\",\"weight\":400}]",
+        "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired(
+        "[{\"fileName\":\"B.ttf\",\"relativePath\":\"fonts/A.ttf\",\"style\":\"normal\",\"weight\":400}]",
+        "test files"));
+    Throws<InvalidOperationException>(() => ProductionFontFilesContract.ParseRequired(
+        "[{\"fileName\":\"A.ttf\",\"relativePath\":\"fonts/A.ttf\",\"style\":\"normal\",\"weight\":400},{\"fileName\":\"A.ttf\",\"relativePath\":\"fonts/A.ttf\",\"style\":\"normal\",\"weight\":400}]",
+        "test files"));
+
+    AssertRejectedDatabaseIsReadOnly("production-font-non-object-file", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE production_fonts SET files_json = '[null]' WHERE id = (SELECT id FROM production_fonts ORDER BY id LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("production-font-string-weight", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE production_fonts SET files_json = json_set(files_json, '$[0].weight', '400') WHERE id = (SELECT id FROM production_fonts ORDER BY id LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("production-font-unknown-style", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE production_fonts SET files_json = json_set(files_json, '$[0].style', 'oblique') WHERE id = (SELECT id FROM production_fonts ORDER BY id LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
 }
 
 static void IconThemeRepositoryPreservesFacadeContract()

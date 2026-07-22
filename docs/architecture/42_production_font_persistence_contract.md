@@ -34,6 +34,16 @@ category, source directory, required array `files_json` and required object
 complete files array before the first database mutation and never replace an
 invalid document with `[]`, `{}` or a generated fallback.
 
+Every current `files_json` entry is an object with a non-empty final
+`fileName`, a normalized safe `relativePath` ending in that exact file name,
+an explicit `style` of `normal` or `italic`, and an integer `weight` from 1
+through 1000. Relative paths are unique within the family. Entries with the
+wrong shape are invalid current data: readers must not filter them, skip a
+missing path, infer normal style or substitute weight 400. The shared
+`ProductionFontFilesContract` owns this document grammar and is used by
+startup validation, repository reads/prepared writes and the facade's summary
+and Preview-face projection.
+
 An imported row is selected for update only by the existing exact
 `project_id + family_name` persistence key used by the importer. A new row gets
 a generated stable id and an explicit current metadata object. The repository
@@ -77,6 +87,8 @@ Automated enforcement verifies:
 - Production Font facade and tree code contain no `production_fonts` SQL;
 - filesystem and Preview types do not move into the repository;
 - malformed imported `files_json` fails without a partial write;
+- malformed file entries, unsafe or duplicate relative paths, unknown styles
+  and non-integer/out-of-range weights fail read-only;
 - facade and repository reads and lifecycle writes agree on a disposable copy;
 - opening and testing the committed database leave it byte-for-byte unchanged.
 
@@ -87,6 +99,8 @@ Automated enforcement verifies:
   repository;
 - inferring a stable reference from family name, category, filename or order;
 - accepting blank, malformed or wrong-root current JSON;
+- filtering malformed file entries or inferring a missing path, style or
+  weight;
 - repairing a font record while reading it;
 - changing schema, parity rows or assets as an incidental extraction step;
 - using startup or Preview resolution as an import or migration path.

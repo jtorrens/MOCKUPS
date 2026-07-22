@@ -3634,6 +3634,43 @@ for (const forbiddenProductionFontRepositoryConcern of [
     `ProductionFontRepository must not own filesystem, Preview or tree concern ${forbiddenProductionFontRepositoryConcern}`,
   );
 }
+for (const productionFontDocumentConsumer of [
+  "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+]) {
+  assertContains(
+    productionFontDocumentConsumer,
+    "ProductionFontFilesContract.ParseRequired",
+    `${productionFontDocumentConsumer} must consume the shared current Production Font file document`,
+  );
+}
+for (const forbiddenProductionFontDocumentFallback of [
+  ".OfType<JsonObject>()",
+  "int.TryParse(weightText",
+  "? weight : 400",
+  "== \"italic\" ? \"italic\" : \"normal\"",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
+    forbiddenProductionFontDocumentFallback,
+    `Production Font readers must not filter or infer current file member '${forbiddenProductionFontDocumentFallback}'`,
+  );
+}
+for (const requiredProductionFontDocumentTerm of [
+  "JsonPath.RequiredString(file, \"fileName\"",
+  "JsonPath.RequiredString(file, \"relativePath\"",
+  "JsonPath.RequiredString(file, \"style\"",
+  "JsonPath.RequiredInteger(file, \"weight\"",
+  "duplicate relativePath",
+  "normalized safe relative path",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/ProductionFontFilesContract.cs",
+    requiredProductionFontDocumentTerm,
+    `Production Font file documents must require ${requiredProductionFontDocumentTerm}`,
+  );
+}
 assertContains(
   "AGENTS.md",
   "docs/architecture/42_production_font_persistence_contract.md",

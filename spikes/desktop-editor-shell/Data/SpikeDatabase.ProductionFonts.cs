@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -126,56 +125,35 @@ internal sealed partial class SpikeDatabase
 
     private static int ProductionFontFileCount(string filesJson)
     {
-        return JsonPath.ParseRequiredArray(filesJson, "Production Font files").Count;
+        return ProductionFontFilesContract.ParseRequired(filesJson, "Production Font files").Count;
     }
 
     private static string ProductionFontFilesSummary(string filesJson)
     {
-        var files = JsonPath.ParseRequiredArray(filesJson, "Production Font files");
+        var files = ProductionFontFilesContract.ParseRequired(filesJson, "Production Font files");
         if (files.Count == 0) return "No copied font files.";
 
         return string.Join(
             Environment.NewLine,
-            files
-                .OfType<JsonObject>()
-                .Select((file) =>
-                {
-                    var name = JsonNodeString(file, "fileName");
-                    var style = JsonNodeString(file, "style");
-                    var weight = JsonNodeString(file, "weight");
-                    var relativePath = JsonNodeString(file, "relativePath");
-                    return $"{name} · {style} · {weight} · {relativePath}";
-                }));
-    }
-
-    private static string JsonNodeString(JsonObject node, string key)
-    {
-        if (!node.TryGetPropertyValue(key, out var value) || value is null) return "";
-        return value.GetValueKind() == JsonValueKind.String
-            ? value.GetValue<string>()
-            : value.ToJsonString();
+            files.Select((file) =>
+                $"{file.FileName} · {file.Style} · {file.Weight} · {file.RelativePath}"));
     }
 
     private static IEnumerable<ProductionFontFace> FontFaces(ProductionFontRecord font)
     {
-        var files = JsonPath.ParseRequiredArray(font.FilesJson, $"Production Font '{font.Id}' files");
+        var files = ProductionFontFilesContract.ParseRequired(
+            font.FilesJson,
+            $"Production Font '{font.Id}' files");
 
-        foreach (var file in files.OfType<JsonObject>())
+        foreach (var file in files)
         {
-            var relativePath = JsonNodeString(file, "relativePath");
-            if (string.IsNullOrWhiteSpace(relativePath))
-            {
-                continue;
-            }
-
-            var weightText = JsonNodeString(file, "weight");
             yield return new ProductionFontFace(
                 font.Id,
                 font.FamilyName,
                 font.Category,
-                NormalizeRelativePath(relativePath),
-                int.TryParse(weightText, out var weight) ? weight : 400,
-                JsonNodeString(file, "style") == "italic" ? "italic" : "normal");
+                file.RelativePath,
+                file.Weight,
+                file.Style);
         }
     }
 

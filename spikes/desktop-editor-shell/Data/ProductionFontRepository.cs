@@ -72,7 +72,9 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         string sourceDirectory,
         string filesJson)
     {
-        JsonPath.ParseRequiredArray(filesJson, $"Production Font '{familyName}' files_json");
+        ProductionFontFilesContract.ParseRequired(
+            filesJson,
+            $"Production Font '{familyName}' files_json");
         using var existing = connection.CreateCommand();
         existing.CommandText = "SELECT id FROM production_fonts WHERE project_id = $projectId AND family_name = $familyName";
         existing.Parameters.AddWithValue("$projectId", projectId);
@@ -138,7 +140,9 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
             SqliteCommandExecutor.ReadString(reader, 4),
             SqliteCommandExecutor.ReadString(reader, 5),
             SqliteCommandExecutor.ReadString(reader, 6));
-        JsonPath.ParseRequiredArray(record.FilesJson, $"Production Font '{record.Id}' files_json");
+        ProductionFontFilesContract.ParseRequired(
+            record.FilesJson,
+            $"Production Font '{record.Id}' files_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Production Font '{record.Id}' metadata_json");
         return record;
     }
