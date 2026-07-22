@@ -23,6 +23,7 @@ var tests = new (string Name, Action Run)[]
     ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
+    ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
@@ -115,6 +116,14 @@ static void ExternalNodeProcessesShareExecutableResolution()
     var executable = DesktopChildProcess.ResolveNodeExecutable();
     True(!string.IsNullOrWhiteSpace(executable));
     Equal(OperatingSystem.IsWindows() ? "node.exe" : "node", Path.GetFileName(executable));
+}
+
+static void ActorPreviewSurfacesShareInitialsIdentity()
+{
+    Equal("AT", ActorIdentityText.Initials("Alex Torrens", "Ignored Name"));
+    Equal("JN", ActorIdentityText.Initials("", "  Jorge   Navarro  "));
+    Equal("A", ActorIdentityText.Initials("Alex", "Ignored Name"));
+    Equal("", ActorIdentityText.Initials("", ""));
 }
 
 static void ComponentAndModuleVariantsShareReferenceGrammar()

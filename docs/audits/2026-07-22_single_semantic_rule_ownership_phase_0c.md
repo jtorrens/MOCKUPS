@@ -185,3 +185,16 @@ esta batida.
 | Pruebas | Ruta relativa, ruta absoluta y enforcement contra la reaparición del resolver local. |
 | Riesgo | Bajo; no cambia URI, caché, lectura, vídeo, FFmpeg ni persistencia. |
 | Decisión | Consolidar. |
+
+### Familia 0C.10 — Texto de iniciales del Actor
+
+| Campo | Resultado |
+|---|---|
+| Regla | Un Actor se representa con las iniciales de las dos primeras palabras de `shortName`, o de `displayName` cuando el primero está vacío, en mayúsculas. |
+| Rutas actuales | El payload Runtime y la inspección inline mantienen implementaciones literales independientes. |
+| Paridad | El mismo Actor debe mostrar exactamente las mismas iniciales en ambas superficies; solo el tamaño y la presentación permanecen locales. |
+| Owner definitivo | `ActorIdentityText`, helper común de identidad; cada factory conserva su payload o control visual según contrato 53. |
+| Cambio mínimo | Dos consumidores comunes y retirada de los dos métodos locales. |
+| Pruebas | Nombre corto, fallback a nombre visible, una palabra, vacío y enforcement de ambos consumidores. |
+| Riesgo | Bajo; no cambia datos, payload, campos, colores, crop ni persistencia. |
+| Decisión | Consolidar. |

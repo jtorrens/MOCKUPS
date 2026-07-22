@@ -51,6 +51,12 @@ and Module Preview:
 - initials, media URI, scale and offset resolution;
 - the stable resolved Actor JSON shape.
 
+The exact initials text is shared with the inline inspection through
+`ActorIdentityText`; both surfaces must represent the same Actor identity with
+the same two-word uppercase rule. The input factory still owns including that
+resolved text in the Runtime Actor payload, while the avatar factory owns its
+inline sizing and presentation.
+
 `ActorAvatarPreviewFactory` owns only the editor's inline avatar inspection:
 
 - overlaying unsaved dictionary draft values for immediate feedback;

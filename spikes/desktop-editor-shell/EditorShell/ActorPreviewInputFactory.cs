@@ -52,7 +52,7 @@ internal static class ActorPreviewInputFactory
             ["id"] = actorId,
             ["displayName"] = source.DisplayName,
             ["shortName"] = source.ShortName,
-            ["initials"] = Initials(source.ShortName, source.DisplayName),
+            ["initials"] = ActorIdentityText.Initials(source.ShortName, source.DisplayName),
             ["wallpaper"] = metadata["wallpaper"]?.DeepClone(),
             ["modes"] = metadata["modes"]?.DeepClone(),
             ["avatar"] = new JsonObject
@@ -110,10 +110,4 @@ internal static class ActorPreviewInputFactory
         return (parts.ElementAtOrDefault(0) ?? "", parts.ElementAtOrDefault(1) ?? "");
     }
 
-    private static string Initials(string shortName, string displayName)
-    {
-        var source = string.IsNullOrWhiteSpace(shortName) ? displayName : shortName;
-        var parts = source.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return string.Concat(parts.Take(2).Select((part) => part[0])).ToUpperInvariant();
-    }
 }

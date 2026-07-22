@@ -84,7 +84,7 @@ internal sealed class ActorAvatarPreviewFactory
         var initialsFontSize = Math.Max(12, (160 - previewPadding * 2) * 0.46);
         viewport.Child = new TextBlock
         {
-            Text = Initials(source.ShortName, source.DisplayName),
+            Text = ActorIdentityText.Initials(source.ShortName, source.DisplayName),
             Foreground = foreground,
             FontSize = initialsFontSize,
             FontWeight = FontWeight.Bold,
@@ -137,13 +137,6 @@ internal sealed class ActorAvatarPreviewFactory
     private static IBrush SafeColorBrush(string? hex, string fallback)
     {
         return ColorValue.SafeBrush(hex, fallback);
-    }
-
-    private static string Initials(string shortName, string displayName)
-    {
-        var source = string.IsNullOrWhiteSpace(shortName) ? displayName : shortName;
-        var parts = source.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return string.Concat(parts.Take(2).Select((part) => part[0])).ToUpperInvariant();
     }
 
     private static double ParseDouble(string value, double fallback)

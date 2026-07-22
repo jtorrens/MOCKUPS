@@ -1300,6 +1300,21 @@ assertDoesNotContain(
   "private static string ResolvePath(",
   "Preview reference overlay must not restore a parallel Project media path resolver",
 );
+for (const actorPreviewFactory of [
+  "spikes/desktop-editor-shell/EditorShell/ActorPreviewInputFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/ActorAvatarPreviewFactory.cs",
+]) {
+  assertContains(
+    actorPreviewFactory,
+    "ActorIdentityText.Initials(",
+    `${actorPreviewFactory} must use the common Actor initials identity rule`,
+  );
+  assertDoesNotContain(
+    actorPreviewFactory,
+    "private static string Initials(",
+    `${actorPreviewFactory} must not restore a local Actor initials rule`,
+  );
+}
 for (const variantCreationOwner of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
