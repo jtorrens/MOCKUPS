@@ -1,7 +1,7 @@
 # Propiedad única de reglas semánticas — Fase 0C
 
 Fecha: 2026-07-22
-Estado: inventario en curso.
+Estado: cerrada.
 
 ## Objetivo
 
@@ -198,3 +198,100 @@ esta batida.
 | Pruebas | Nombre corto, fallback a nombre visible, una palabra, vacío y enforcement de ambos consumidores. |
 | Riesgo | Bajo; no cambia datos, payload, campos, colores, crop ni persistencia. |
 | Decisión | Consolidar. |
+
+## Familias mantenidas o diferidas
+
+### Runtime Inputs y forwarding
+
+La declaración, edición y proyección del contrato efectivo en C# y la
+aplicación de valores ya preparados en TypeScript son etapas consecutivas. La
+primera conserva ids, labels, acciones y metadata de los inputs expuestos por
+el owner; la segunda materializa sus valores en el payload antes de resolver.
+Unificarlas cruzaría la frontera de payload y no eliminaría una implementación
+alternativa. Se mantienen separadas.
+
+### Usage y protección destructiva
+
+Árbol, estado `Used`, detalle, eliminación y navegación consumen el mismo edge
+set tipado producido por `ReferenceUsageService`. Las capas restantes solo
+proyectan labels, diálogos o destinos de navegación. No aparece un segundo
+escaneo por texto, substring, nombre o JSON arbitrario. Familia descartada como
+duplicación viva; el owner actual ya es único.
+
+### JSON current y parsing de payload
+
+Los documentos persistidos C# ya convergen en `JsonPath.ParseRequiredObject` y
+`ParseRequiredArray`; los wrappers de la fachada solo aportan contexto de
+error. Los parsers de mensajes entre procesos y el runtime web operan en otras
+fronteras y no pueden compartir una implementación C#.
+
+La batida sí localiza una responsabilidad de validación pendiente:
+`previewJsonHelpers.parseObject` convierte un valor ausente o una raíz no
+objeto en `{}` y es consumido por numerosos resolvers, mientras
+`renderablePayloadBoundary` solo exige actualmente la raíz de
+`runtimeContractJson`. `TypographyStyleValue.Parse` también conserva un
+fallback de edición que debe clasificarse contra la semántica explícita
+`inherited`. No se corrigen aquí: decidir qué documentos son requeridos u
+opcionales y mover la validación a su boundary pertenece expresamente a fase 1.
+
+### Rutas, URI y recursos entre runtimes
+
+La resolución local de rutas C# queda centralizada por 0C.9. La materialización
+de SVG, vídeo, fuentes, iconos y data URI en TypeScript ocurre después, dentro
+del runtime que puede leer y resolver el asset final. Sus catálogos MIME y
+fallos tampoco son equivalentes: por ejemplo, el avatar admite SVG y el overlay
+de referencia solo formatos raster. Se mantienen separados.
+
+### Procesos externos y raíces de ejecución
+
+La localización de Node queda unificada por 0C.1. Los procesos restantes tienen
+ciclos distintos: renderer persistente, worker Raster persistente, búsqueda de
+iconos cancelable, render one-shot y extracción FFmpeg con timeout. Sus raíces
+también parten de artefactos distintos y aplican criterios diferentes. Se
+difiere cualquier wrapper de ciclo de vida hasta definir primero contratos de
+cancelación, timeout, stderr y cierre para cada categoría; compartir solo
+`Process.Start` no justifica una abstracción.
+
+### Selección de Screen activa
+
+El factory elige una Screen para construir el payload del Shot y el controlador
+elige una Screen para navegación de sesión. Comparten hoy la suma temporal,
+pero los contratos 51 y 57 les asignan salidas distintas. La pregunta pendiente
+es si `ModuleInstanceTimeline` debe publicar una proyección tipada de Screen
+activa consumible por ambas capas o si la selección de payload y la navegación
+deben permanecer como operaciones separadas. Se difiere sin crear otro helper.
+
+### Modo visual efectivo
+
+Se detecta una divergencia observable. `DesignPreviewPayloadFactory` trata
+`appearanceMode` `light` o `dark` como explícito y produce `ThemeMode` efectivo;
+`WebDesignPreviewRenderer` vuelve a combinarlo con el modo de sesión, pero solo
+prioriza el `dark` del payload. Por ello, un Module explícitamente `light` puede
+renderizarse `dark` cuando la sesión estaba en ese modo, mientras un Module
+explícitamente `dark` sí se impone.
+
+Los contratos 51, 56 y 57 indican que el payload resuelto debe ser autoritativo
+y que la Variant explícita gobierna la presentación, pero corregir esta
+divergencia cambia el resultado visual actual. Se difiere para aprobación
+explícita: confirmar que tanto `light` como `dark` deben imponerse y que solo
+`inherit` debe usar el modo de sesión.
+
+### Duraciones de acciones y Motion
+
+La duración expuesta por una acción de Design Preview y la duración visual de
+Enter/Exit Motion consumen metadatos, clocks y fallos distintos. La primera
+prepara un action envelope; la segunda calcula presentación de controles Play
+y Restore. No son dos owners del mismo resultado. Se mantienen separadas.
+
+## Cierre
+
+La batida consolidó diez reglas vivas sin modificar ids, referencias, datos,
+payloads persistidos, UX ni output deliberado. Las familias restantes quedan
+clasificadas como owners ya únicos, fronteras intencionadamente distintas o
+decisiones concretas diferidas; no queda otra duplicación semántica clara que
+pueda eliminarse sin entrar en validación de fase 1 o cambiar comportamiento.
+
+La validación final cierra con 52/52 pruebas de Preview, 99/99 pruebas de
+escritorio, typecheck estricto, control arquitectónico y compilación sin avisos
+ni errores. La base canónica conserva el SHA-1
+`9b0eae03ff952821162687e61c34b72afb88093a`; los assets no se modificaron.
