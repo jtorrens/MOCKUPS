@@ -344,18 +344,18 @@ internal sealed partial class SpikeDatabase
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
             groupNode.AddChild(componentNode);
 
-            foreach (var preset in ComponentClassPresets(componentClass.MetadataJson))
+            foreach (var variant in ComponentClassVariants(componentClass.MetadataJson))
             {
                 componentNode.AddChild(new ProjectTreeNode(
-                    ProjectTreeNodeKind.ComponentPreset,
-                    ComponentPresetNodeId(componentClass.Id, preset.Id),
-                    preset.Name,
-                    preset.IsProtected ? "Protected component variant" : "Component variant",
-                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentPreset),
+                    ProjectTreeNodeKind.ComponentVariant,
+                    ComponentVariantNodeId(componentClass.Id, variant.Id),
+                    variant.Name,
+                    variant.IsProtected ? "Protected component variant" : "Component variant",
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
                     componentNode,
-                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentPreset, ComponentPresetNodeId(componentClass.Id, preset.Id)),
-                    isProtected: preset.IsProtected,
-                    isLocked: preset.IsLocked));
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, ComponentVariantNodeId(componentClass.Id, variant.Id)),
+                    isProtected: variant.IsProtected,
+                    isLocked: variant.IsLocked));
             }
         }
 
@@ -645,8 +645,8 @@ internal sealed partial class SpikeDatabase
             .ThenBy((font) => font.Id)
             .Select((font) => font.Id)
             .FirstOrDefault() ?? "";
-        var statusBarId = DefaultComponentPresetReference(connection, project.Id, "status_bar");
-        var navigationBarId = DefaultComponentPresetReference(connection, project.Id, "navigation_bar");
+        var statusBarId = DefaultComponentVariantReference(connection, project.Id, "status_bar");
+        var navigationBarId = DefaultComponentVariantReference(connection, project.Id, "navigation_bar");
         var created = _themeRepository.Create(
             connection,
             project.Id,
@@ -655,7 +655,7 @@ internal sealed partial class SpikeDatabase
             statusBarId,
             navigationBarId,
             DefaultThemeTokensJson(family, textFontId, emojiFontId),
-            JsonSerializer.Serialize(new { note = $"{family} preset production theme." }));
+            JsonSerializer.Serialize(new { note = $"{family} production theme." }));
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Theme,
@@ -783,9 +783,9 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.RenderPreset, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
         {
-            return DuplicateComponentPreset(node);
+            return DuplicateComponentVariant(node);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
@@ -798,9 +798,9 @@ internal sealed partial class SpikeDatabase
 
     public void Delete(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
+        if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
         {
-            DeleteComponentPreset(node);
+            DeleteComponentVariant(node);
             return;
         }
 
@@ -999,7 +999,7 @@ internal sealed partial class SpikeDatabase
         {
             ProjectTreeNodeKind.App => RenameApp(node, name),
             ProjectTreeNodeKind.ComponentClass => RenameComponentClass(node, name),
-            ProjectTreeNodeKind.ComponentPreset => RenameComponentPreset(node, name),
+            ProjectTreeNodeKind.ComponentVariant => RenameComponentVariant(node, name),
             ProjectTreeNodeKind.Module => RenameModuleClass(node, name),
             ProjectTreeNodeKind.ModuleVariant => RenameModuleVariant(node, name),
             ProjectTreeNodeKind.ModuleInstance => RenameModuleInstance(node, name),

@@ -39,6 +39,6 @@ export interface DesignPreviewPayload {
   showMarks?: boolean;
   themeMode: string;
   themeTokensJson: string;
-  themeStatusBarPresetId?: string;
-  themeNavigationBarPresetId?: string;
+  themeStatusBarVariantReference?: string;
+  themeNavigationBarVariantReference?: string;
 }

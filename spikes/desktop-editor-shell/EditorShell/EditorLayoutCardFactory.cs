@@ -22,7 +22,7 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> _openEmbeddedComponentSlotEditor;
     private readonly Func<EditorEmbeddedContext, string, Task> _openNestedEmbeddedComponentEditor;
     private readonly Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> _openNestedEmbeddedComponentSlotEditor;
-    private readonly Func<string, Task> _openComponentPresetReference;
+    private readonly Func<string, Task> _openComponentVariantReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action<EditorEmbeddedContext> _openRuntimeComponentOverrides;
     private readonly Action<ProjectTreeNode> _scheduleActiveEditorReload;
@@ -41,7 +41,7 @@ internal sealed class EditorLayoutCardFactory
         Func<ProjectTreeNode, EmbeddedComponentSlotDefinition, Task> openEmbeddedComponentSlotEditor,
         Func<EditorEmbeddedContext, string, Task> openNestedEmbeddedComponentEditor,
         Func<EditorEmbeddedContext, EmbeddedComponentSlotDefinition, Task> openNestedEmbeddedComponentSlotEditor,
-        Func<string, Task> openComponentPresetReference,
+        Func<string, Task> openComponentVariantReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Action<EditorEmbeddedContext> openRuntimeComponentOverrides,
         Action<ProjectTreeNode> scheduleActiveEditorReload,
@@ -59,7 +59,7 @@ internal sealed class EditorLayoutCardFactory
         _openEmbeddedComponentSlotEditor = openEmbeddedComponentSlotEditor;
         _openNestedEmbeddedComponentEditor = openNestedEmbeddedComponentEditor;
         _openNestedEmbeddedComponentSlotEditor = openNestedEmbeddedComponentSlotEditor;
-        _openComponentPresetReference = openComponentPresetReference;
+        _openComponentVariantReference = openComponentVariantReference;
         _toggleVariantLock = toggleVariantLock;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
         _scheduleActiveEditorReload = scheduleActiveEditorReload;
@@ -250,14 +250,14 @@ internal sealed class EditorLayoutCardFactory
     {
         var field = _fieldValues.Create(node, fieldId);
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
-            or ProjectTreeNodeKind.ComponentPreset
+            or ProjectTreeNodeKind.ComponentVariant
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.ModuleVariant;
         var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
         var services = _dictionaryFieldServices.ForNode(
             node,
             (id) => _activeFieldControls.ValueOrStored(id, (storedId) => _fieldValues.CurrentStoredValue(node, storedId)),
-            _openComponentPresetReference,
+            _openComponentVariantReference,
             supportsEmbeddedOverrides && hasEmbeddedSlot ? (id) => _openEmbeddedComponentEditor(node, id) : null,
             supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null,
             _openRuntimeComponentOverrides);
@@ -295,7 +295,7 @@ internal sealed class EditorLayoutCardFactory
             context.OwnerNode,
             (id) => _activeFieldControls.ValueOrStored(id, (storedId) =>
                 _componentClassFieldValues.CreateEmbeddedFieldValue(context, storedId).Value),
-            _openComponentPresetReference,
+            _openComponentVariantReference,
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
             _openRuntimeComponentOverrides);
@@ -357,7 +357,7 @@ internal sealed class EditorLayoutCardFactory
 
     private Button? VariantLockButton(ProjectTreeNode node, EditorLayoutCard layoutCard)
     {
-        if (node.Kind != ProjectTreeNodeKind.ComponentPreset
+        if (node.Kind != ProjectTreeNodeKind.ComponentVariant
             || !layoutCard.Id.Equals("general", StringComparison.Ordinal))
         {
             return null;

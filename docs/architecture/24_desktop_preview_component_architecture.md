@@ -574,7 +574,7 @@ base layer outside the variant contract.
 Variant references stored inside component config are full references:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
 Short references such as `default` are migration input only. New stored config,
@@ -1106,7 +1106,7 @@ Tests:
 - parent merges only direct owned child overrides;
 - parent cannot skip child owner and merge grandchild overrides directly.
 
-### `check:component-preset-semantics`
+### `check:component-variant-semantics`
 
 Purpose: protect component variants as the effective base layer for component
 editing and preview.
@@ -1126,15 +1126,14 @@ Checks:
   mutable class config;
 - saving a variant is only accepted from a selected variant and copies that
   variant config;
-- persisted embedded variant references use `componentClassId::preset::presetId`,
-  not short local preset ids;
+- persisted embedded Variant references use `componentClassId::variant::variantId`,
+  not short local Variant ids;
 - embedded restore/inherit uses the selected variant as base;
 - deleting a variant is blocked while any component class slot or any component
   variant slot references it.
 
-The check name and persisted reference spelling still use `preset` because the
-storage contract has not yet been renamed. User-facing terminology and new
-architecture prose should say `variant`.
+The check name, persisted reference spelling and product language all use
+Variant vocabulary.
 
 ### `check:component-migration-completeness`
 

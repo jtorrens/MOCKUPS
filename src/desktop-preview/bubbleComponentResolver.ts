@@ -1,5 +1,5 @@
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -76,18 +76,18 @@ export function resolveBubbleComponent(
     : true;
 
   const surfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "surface",
-      requiredString(surfaceSlot, "presetId", "component.bubble.surfaceSlot.presetId"),
+      requiredString(surfaceSlot, "variantReference", "component.bubble.surfaceSlot.variantReference"),
     ),
     asRecord(surfaceSlot.overrides),
   );
   const textBoxBaseConfig = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "textBox",
-      requiredString(textBoxSlot, "presetId", "component.bubble.textBoxSlot.presetId"),
+      requiredString(textBoxSlot, "variantReference", "component.bubble.textBoxSlot.variantReference"),
     ),
     asRecord(textBoxSlot.overrides),
   );
@@ -105,13 +105,13 @@ export function resolveBubbleComponent(
   );
   const imageMediaConfig = mediaType === "image"
     ? mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           componentBaseConfigs,
           "media",
           requiredString(
             imageMediaSlot,
-            "presetId",
-            "component.bubble.imageMediaSlot.presetId",
+            "variantReference",
+            "component.bubble.imageMediaSlot.variantReference",
           ),
         ),
         asRecord(imageMediaSlot.overrides),
@@ -119,13 +119,13 @@ export function resolveBubbleComponent(
     : undefined;
   const videoMediaConfig = mediaType === "video"
     ? mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           componentBaseConfigs,
           "media",
           requiredString(
             videoMediaSlot,
-            "presetId",
-            "component.bubble.videoMediaSlot.presetId",
+            "variantReference",
+            "component.bubble.videoMediaSlot.variantReference",
           ),
         ),
         asRecord(videoMediaSlot.overrides),
@@ -133,10 +133,10 @@ export function resolveBubbleComponent(
     : undefined;
   let audioConfig = mediaType === "audio"
     ? mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           componentBaseConfigs,
           "audio",
-          requiredString(audioSlot, "presetId", "component.bubble.audioSlot.presetId"),
+          requiredString(audioSlot, "variantReference", "component.bubble.audioSlot.variantReference"),
         ),
         asRecord(audioSlot.overrides),
       )
@@ -183,13 +183,13 @@ export function resolveBubbleComponent(
   );
   const actorLabelConfig = actorLabelVisible
     ? mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           componentBaseConfigs,
           "label",
           requiredString(
             actorLabelSlot,
-            "presetId",
-            "component.bubble.actorLabel.presetId",
+            "variantReference",
+            "component.bubble.actorLabel.variantReference",
           ),
         ),
         asRecord(actorLabelSlot.overrides),
@@ -204,13 +204,13 @@ export function resolveBubbleComponent(
     );
   const avatarConfig = avatarVisible
     ? mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           componentBaseConfigs,
           "avatar",
           requiredString(
             avatarSlot,
-            "presetId",
-            "component.bubble.avatar.presetId",
+            "variantReference",
+            "component.bubble.avatar.variantReference",
           ),
         ),
         asRecord(avatarSlot.overrides),

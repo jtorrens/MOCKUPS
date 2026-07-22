@@ -32,12 +32,12 @@ internal sealed class EditorVariantHistoryService
             return;
         }
 
-        if (previousNode?.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
+        if (previousNode?.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
             Leave(previousNode, VariantConfig(previousNode));
         }
 
-        if (nextNode.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
+        if (nextNode.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
             Enter(nextNode, VariantConfig(nextNode));
         }
@@ -45,7 +45,7 @@ internal sealed class EditorVariantHistoryService
 
     private void Enter(ProjectTreeNode node, string configJson)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -55,7 +55,7 @@ internal sealed class EditorVariantHistoryService
 
     private void Leave(ProjectTreeNode? node, string configJson)
     {
-        if (node?.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
+        if (node?.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -73,7 +73,7 @@ internal sealed class EditorVariantHistoryService
 
     public IReadOnlyList<EditorVariantHistorySnapshot> Snapshots(ProjectTreeNode node)
     {
-        return node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant
+        return node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant
             && _snapshotsByVariant.TryGetValue(node.Id, out var snapshots)
                 ? snapshots
                 : [];
@@ -81,7 +81,7 @@ internal sealed class EditorVariantHistoryService
 
     private string VariantConfig(ProjectTreeNode node) => node.Kind switch
     {
-        ProjectTreeNodeKind.ComponentPreset => _database.GetComponentPresetSettings(node).ConfigJson,
+        ProjectTreeNodeKind.ComponentVariant => _database.GetComponentVariantSettings(node).ConfigJson,
         ProjectTreeNodeKind.ModuleVariant => _database.GetModuleVariantSettings(node).ConfigJson,
         _ => throw new InvalidOperationException($"'{node.Kind}' is not a variant."),
     };

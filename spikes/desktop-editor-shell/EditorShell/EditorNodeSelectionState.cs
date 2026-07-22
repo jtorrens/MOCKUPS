@@ -6,45 +6,45 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorNodeSelectionState
 {
-    private readonly Dictionary<string, string> _lastComponentPresetNodeIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _lastComponentVariantNodeIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _lastModuleVariantNodeIds = new(StringComparer.Ordinal);
 
     public static bool CanSelectTreeNode(ProjectTreeNode node)
     {
-        return node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant;
+        return node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant;
     }
 
     public ProjectTreeNode ResolveSelectionNode(ProjectTreeNode node)
     {
         return node.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => PreferredPresetNode(node),
+            ProjectTreeNodeKind.ComponentClass => PreferredVariantNode(node),
             ProjectTreeNodeKind.Module => PreferredModuleVariantNode(node),
             _ => node,
         };
     }
 
-    public ProjectTreeNode PreferredPresetNode(ProjectTreeNode componentClassNode)
+    public ProjectTreeNode PreferredVariantNode(ProjectTreeNode componentClassNode)
     {
-        if (_lastComponentPresetNodeIds.TryGetValue(componentClassNode.Id, out var presetNodeId)
-            && componentClassNode.Children.FirstOrDefault((child) => child.Id.Equals(presetNodeId, StringComparison.Ordinal)) is { } rememberedPreset)
+        if (_lastComponentVariantNodeIds.TryGetValue(componentClassNode.Id, out var variantNodeId)
+            && componentClassNode.Children.FirstOrDefault((child) => child.Id.Equals(variantNodeId, StringComparison.Ordinal)) is { } rememberedVariant)
         {
-            return rememberedPreset;
+            return rememberedVariant;
         }
 
         return componentClassNode.Children.FirstOrDefault((child) =>
-                child.Kind == ProjectTreeNodeKind.ComponentPreset
-                && child.Id.EndsWith("::preset::default", StringComparison.Ordinal))
-            ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentPreset)
+                child.Kind == ProjectTreeNodeKind.ComponentVariant
+                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+            ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant)
             ?? componentClassNode;
     }
 
-    public void RememberComponentPresetSelection(ProjectTreeNode node)
+    public void RememberComponentVariantSelection(ProjectTreeNode node)
     {
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset
+        if (node.Kind == ProjectTreeNodeKind.ComponentVariant
             && node.Parent?.Kind == ProjectTreeNodeKind.ComponentClass)
         {
-            _lastComponentPresetNodeIds[node.Parent.Id] = node.Id;
+            _lastComponentVariantNodeIds[node.Parent.Id] = node.Id;
         }
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant
             && node.Parent?.Kind == ProjectTreeNodeKind.Module)
@@ -65,34 +65,34 @@ internal sealed class EditorNodeSelectionState
             ?? moduleNode;
     }
 
-    public IReadOnlyDictionary<string, string> ExportComponentPresetSelections()
+    public IReadOnlyDictionary<string, string> ExportComponentVariantSelections()
     {
-        return new Dictionary<string, string>(_lastComponentPresetNodeIds, StringComparer.Ordinal);
+        return new Dictionary<string, string>(_lastComponentVariantNodeIds, StringComparer.Ordinal);
     }
 
-    public void RestoreComponentPresetSelections(IReadOnlyDictionary<string, string>? selections)
+    public void RestoreComponentVariantSelections(IReadOnlyDictionary<string, string>? selections)
     {
-        _lastComponentPresetNodeIds.Clear();
+        _lastComponentVariantNodeIds.Clear();
         if (selections is null)
         {
             return;
         }
 
-        foreach (var (componentClassId, presetNodeId) in selections)
+        foreach (var (componentClassId, variantNodeId) in selections)
         {
             if (string.IsNullOrWhiteSpace(componentClassId)
-                || string.IsNullOrWhiteSpace(presetNodeId))
+                || string.IsNullOrWhiteSpace(variantNodeId))
             {
                 continue;
             }
 
-            _lastComponentPresetNodeIds[componentClassId] = presetNodeId;
+            _lastComponentVariantNodeIds[componentClassId] = variantNodeId;
         }
     }
 
     public static ProjectTreeNode EditorNodeForSelection(ProjectTreeNode node)
     {
-        return (node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null
+        return (node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null
             ? node.Parent
             : node;
     }

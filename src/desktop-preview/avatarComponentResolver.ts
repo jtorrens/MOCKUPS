@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -70,7 +70,7 @@ export function resolveAvatarComponentFromRecords(
   );
   const overrides = asRecord(labelSlot.overrides);
   const embeddedLabelConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "label", labelSlot.variantReference),
     overrides,
   );
   const actor = resolveActorPreview(preview);
@@ -106,7 +106,7 @@ export function resolveAvatarComponentFromRecords(
     badge: showBadge ? {
       ...resolveBadgeComponentFromRecords(
         mergeComponentDefaults(
-          componentPresetConfig(componentBaseConfigs, "badge", requiredString(badgeSlot, "presetId", "component.avatar.badgeSlot.presetId")),
+          componentVariantConfig(componentBaseConfigs, "badge", requiredString(badgeSlot, "variantReference", "component.avatar.badgeSlot.variantReference")),
           asRecord(badgeSlot.overrides),
         ),
         {

@@ -15,8 +15,8 @@ internal sealed record DesignPreviewThemeContext(
     string IconAssetRoot,
     string IconMappingJson,
     IReadOnlyList<ProductionFontFace> FontFaces,
-    string StatusBarPresetId,
-    string NavigationBarPresetId,
+    string StatusBarVariantReference,
+    string NavigationBarVariantReference,
     string DeviceId);
 
 internal sealed record DesignPreviewComponentSource(
@@ -124,7 +124,7 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public DesignPreviewComponentSource LoadComponentVariant(ProjectTreeNode node)
     {
-        var settings = _database.GetComponentPresetSettings(node);
+        var settings = _database.GetComponentVariantSettings(node);
         return ComponentSource(settings);
     }
 
@@ -198,7 +198,7 @@ internal sealed class DesignPreviewPayloadDataSource
             settings.Name,
             settings.ProjectId,
             settings.ComponentType,
-            _database.ValidateComponentPresetReferencesForPreview(settings.ProjectId, settings.ConfigJson),
+            _database.ValidateComponentVariantReferencesForPreview(settings.ProjectId, settings.ConfigJson),
             settings.DesignPreviewJson,
             _database.GetComponentClassBaseConfigsJson(settings.ProjectId));
     }

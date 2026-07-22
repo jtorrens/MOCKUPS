@@ -49,8 +49,8 @@ internal sealed class EditorAddChildWorkflow
 
         if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
         {
-            var preset = await ChooseThemePreset();
-            return preset is null ? null : _database.AddTheme(parent, preset);
+            var startingPoint = await ChooseThemeStartingPoint();
+            return startingPoint is null ? null : _database.AddTheme(parent, startingPoint);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
@@ -103,7 +103,7 @@ internal sealed class EditorAddChildWorkflow
         }
     }
 
-    private async Task<string?> ChooseThemePreset()
+    private async Task<string?> ChooseThemeStartingPoint()
     {
         var dialog = new SukiWindow
         {
@@ -123,9 +123,9 @@ internal sealed class EditorAddChildWorkflow
 
         var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
         cancelButton.Click += (_, _) => dialog.Close(null);
-        var iosButton = new Button { Content = "iOS preset", MinWidth = 110 };
+        var iosButton = new Button { Content = "iOS starting point", MinWidth = 130 };
         iosButton.Click += (_, _) => dialog.Close("ios");
-        var androidButton = new Button { Content = "Android preset", MinWidth = 130 };
+        var androidButton = new Button { Content = "Android starting point", MinWidth = 150 };
         androidButton.Click += (_, _) => dialog.Close("android");
 
         var actions = new StackPanel
@@ -157,7 +157,7 @@ internal sealed class EditorAddChildWorkflow
                         {
                             new TextBlock
                             {
-                                Text = "Choose a starting preset for the new theme.",
+                                Text = "Choose a starting point for the new theme.",
                                 TextWrapping = TextWrapping.Wrap,
                             },
                             new TextBlock

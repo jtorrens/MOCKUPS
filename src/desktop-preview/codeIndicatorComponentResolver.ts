@@ -1,5 +1,5 @@
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -70,10 +70,10 @@ function resolveGlyphSurface(
 ) {
   const slot = asRecord(state[slotKey]);
   const config = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       bases,
       "surface",
-      requiredString(slot, "presetId", `${id}.presetId`),
+      requiredString(slot, "variantReference", `${id}.variantReference`),
     ),
     asRecord(slot.overrides),
   );

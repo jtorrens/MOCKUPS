@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -160,10 +160,10 @@ function resolveKeyStateStyle(
     ),
     label: resolveLabelComponentFromRecords(
       mergeComponentDefaults(
-        componentPresetConfig(
+        componentVariantConfig(
           bases,
           "label",
-          requiredString(labelSlot, "presetId", "component.keypad.labelSlot.presetId"),
+          requiredString(labelSlot, "variantReference", "component.keypad.labelSlot.variantReference"),
         ),
         asRecord(labelSlot.overrides),
       ),

@@ -116,7 +116,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.DuplicateNode,
             _nodeCommands.RenameNode,
             _nodeCommands.DeleteNode,
-            _nodeCommands.ToggleComponentPresetLock,
+            _nodeCommands.ToggleVariantLock,
             _productionShotContext.CanExposeChildren,
             _productionShotContext.IsNavigationNodeEnabled);
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
@@ -159,8 +159,8 @@ public partial class MainWindow : SukiWindow
             _embeddedEditors.OpenSlot,
             _embeddedEditors.OpenNested,
             _embeddedEditors.OpenNestedSlot,
-            OpenComponentPresetReference,
-            _nodeCommands.ToggleComponentPresetLock,
+            OpenComponentVariantReference,
+            _nodeCommands.ToggleVariantLock,
             ShowEmbeddedContext,
             ScheduleActiveEditorReload,
             RefreshPreviewDevice,
@@ -189,9 +189,9 @@ public partial class MainWindow : SukiWindow
             ShowNode,
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
-            _nodeCommands.SaveCurrentComponentPreset,
+            _nodeCommands.SaveCurrentVariant,
             _variantHistory.Snapshots,
-            _nodeCommands.RestoreComponentPresetSnapshot,
+            _nodeCommands.RestoreVariantSnapshot,
             _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
             _database,
@@ -263,7 +263,7 @@ public partial class MainWindow : SukiWindow
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
         _previewController.RestoreProductionHistoryState(_shellState.SessionHistory.ProductionPreviewHistory);
         _previewController.SetWorkspaceWithoutRefresh(_workspace);
-        _nodeSelection.RestoreComponentPresetSelections(_shellState.SessionHistory.LastComponentVariantSelections);
+        _nodeSelection.RestoreComponentVariantSelections(_shellState.SessionHistory.LastComponentVariantSelections);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
         Closing += (_, _) => _shellState.Save(CreateSessionHistoryState());
@@ -437,7 +437,7 @@ public partial class MainWindow : SukiWindow
         }
         _selectedNode = node;
         _workspaceSelections[_workspace] = node.Id;
-        _nodeSelection.RememberComponentPresetSelection(node);
+        _nodeSelection.RememberComponentVariantSelection(node);
         _treeExpansion.ExpandAncestors(node);
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         transaction.Checkpoint("before-editor-candidate");
@@ -622,11 +622,11 @@ public partial class MainWindow : SukiWindow
         return true;
     }
 
-    private System.Threading.Tasks.Task OpenComponentPresetReference(string presetReference)
+    private System.Threading.Tasks.Task OpenComponentVariantReference(string variantReference)
     {
-        if (!SelectNodeById(presetReference))
+        if (!SelectNodeById(variantReference))
         {
-            _messages.Warning("Open component variant", $"Could not find variant '{presetReference}'.");
+            _messages.Warning("Open component variant", $"Could not find variant '{variantReference}'.");
         }
 
         return System.Threading.Tasks.Task.CompletedTask;
@@ -771,7 +771,7 @@ public partial class MainWindow : SukiWindow
             VariantHistory = _variantHistory.ExportState(),
             DesignPreviewHistory = _previewController.ExportDesignHistoryState().ToList(),
             ProductionPreviewHistory = _previewController.ExportProductionHistoryState().ToList(),
-            LastComponentVariantSelections = _nodeSelection.ExportComponentPresetSelections().ToDictionary(
+            LastComponentVariantSelections = _nodeSelection.ExportComponentVariantSelections().ToDictionary(
                 (entry) => entry.Key,
                 (entry) => entry.Value,
                 StringComparer.Ordinal),

@@ -37,26 +37,26 @@ internal sealed class EditorNodeCommandController
         _messages = messages;
     }
 
-    public async Task SaveCurrentComponentPreset(ProjectTreeNode node)
+    public async Task SaveCurrentVariant(ProjectTreeNode node)
     {
-        var presetName = await Dialogs().PromptText(
+        var variantName = await Dialogs().PromptText(
             "Save variant",
             "Variant name",
             $"{node.Name} variant");
-        if (string.IsNullOrWhiteSpace(presetName))
+        if (string.IsNullOrWhiteSpace(variantName))
         {
             return;
         }
 
         try
         {
-            var preset = node.Kind switch
+            var variant = node.Kind switch
             {
-                ProjectTreeNodeKind.ComponentPreset => _database.SaveComponentPreset(node, presetName),
-                ProjectTreeNodeKind.ModuleVariant => _database.SaveModuleVariant(node, presetName),
+                ProjectTreeNodeKind.ComponentVariant => _database.SaveComponentVariant(node, variantName),
+                ProjectTreeNodeKind.ModuleVariant => _database.SaveModuleVariant(node, variantName),
                 _ => throw new InvalidOperationException("Variants can only be saved from a selected variant."),
             };
-            _reloadAndSelect(preset);
+            _reloadAndSelect(variant);
         }
         catch (Exception exception)
         {
@@ -64,9 +64,9 @@ internal sealed class EditorNodeCommandController
         }
     }
 
-    public async Task RestoreComponentPresetSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
+    public async Task RestoreVariantSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return;
         }
@@ -89,8 +89,8 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            if (node.Kind == ProjectTreeNodeKind.ComponentPreset)
-                _database.ReplaceComponentPresetConfig(node, snapshot.ConfigJson);
+            if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
+                _database.ReplaceComponentVariantConfig(node, snapshot.ConfigJson);
             else
                 _database.ReplaceModuleVariantConfig(node, snapshot.ConfigJson);
             _reloadAndSelect(node);
@@ -151,17 +151,17 @@ internal sealed class EditorNodeCommandController
         }
     }
 
-    public Task ToggleComponentPresetLock(ProjectTreeNode node)
+    public Task ToggleVariantLock(ProjectTreeNode node)
     {
-        if (node.Kind is not ProjectTreeNodeKind.ComponentPreset and not ProjectTreeNodeKind.ModuleVariant)
+        if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
             return Task.CompletedTask;
         }
 
         try
         {
-            var toggled = node.Kind == ProjectTreeNodeKind.ComponentPreset
-                ? _database.ToggleComponentPresetLock(node)
+            var toggled = node.Kind == ProjectTreeNodeKind.ComponentVariant
+                ? _database.ToggleComponentVariantLock(node)
                 : _database.ToggleModuleVariantLock(node);
             _reloadAndSelect(toggled);
         }

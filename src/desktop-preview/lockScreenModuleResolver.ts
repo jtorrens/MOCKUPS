@@ -20,15 +20,15 @@ export function resolveLockScreenModuleFrame(
   return {
     id: "lockScreen",
     statusBarSlot: {
-      presetId: requiredString(statusBarSlot, "presetId", "module.lockScreen.statusBarSlot.presetId"),
+      variantReference: requiredString(statusBarSlot, "variantReference", "module.lockScreen.statusBarSlot.variantReference"),
       overrides: requiredRecord(statusBarSlot, "overrides", "module.lockScreen.statusBarSlot.overrides"),
     },
     navigationBarSlot: {
-      presetId: requiredString(navigationBarSlot, "presetId", "module.lockScreen.navigationBarSlot.presetId"),
+      variantReference: requiredString(navigationBarSlot, "variantReference", "module.lockScreen.navigationBarSlot.variantReference"),
       overrides: requiredRecord(navigationBarSlot, "overrides", "module.lockScreen.navigationBarSlot.overrides"),
     },
     stackSlot: {
-      presetId: requiredString(stackSlot, "presetId", "module.lockScreen.stackSlot.presetId"),
+      variantReference: requiredString(stackSlot, "variantReference", "module.lockScreen.stackSlot.variantReference"),
       overrides: requiredRecord(stackSlot, "overrides", "module.lockScreen.stackSlot.overrides"),
     },
     stackInputs,

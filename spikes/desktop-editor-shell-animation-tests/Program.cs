@@ -117,11 +117,11 @@ static void EditorViewStateFollowsRecordClass()
         "",
         "component.label");
     var componentVariant = new ProjectTreeNode(
-        ProjectTreeNodeKind.ComponentPreset,
-        "component-a::preset::default",
+        ProjectTreeNodeKind.ComponentVariant,
+        "component-a::variant::default",
         "Default",
         "",
-        "component.preset",
+        "component.variant",
         componentClass);
     Equal("component.label", EditorViewStateController.StateKey(componentVariant));
 }
@@ -255,7 +255,7 @@ static void IncompleteVariantsFailReadOnly()
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE component_classes
-            SET metadata_json = json_remove(metadata_json, '$.presets[0].locked')
+            SET metadata_json = json_remove(metadata_json, '$.variants[0].locked')
             WHERE id = 'component_project_foqn_s2_label'
             """;
         command.ExecuteNonQuery();
@@ -265,7 +265,7 @@ static void IncompleteVariantsFailReadOnly()
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE component_classes
-            SET metadata_json = json_remove(metadata_json, '$.presets[0].config')
+            SET metadata_json = json_remove(metadata_json, '$.variants[0].config')
             WHERE id = 'component_project_foqn_s2_label'
             """;
         command.ExecuteNonQuery();
@@ -273,25 +273,25 @@ static void IncompleteVariantsFailReadOnly()
     AssertRejectedDatabaseIsReadOnly("component-variant-name", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.presets[0].name') WHERE id = 'component_project_foqn_s2_label'";
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.variants[0].name') WHERE id = 'component_project_foqn_s2_label'";
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("component-variant-protected", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.presets[0].protected') WHERE id = 'component_project_foqn_s2_label'";
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_remove(metadata_json, '$.variants[0].protected') WHERE id = 'component_project_foqn_s2_label'";
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("component-variant-duplicate-id", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE component_classes SET metadata_json = json_insert(metadata_json, '$.presets[#]', json_extract(metadata_json, '$.presets[0]')) WHERE id = 'component_project_foqn_s2_label'";
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_insert(metadata_json, '$.variants[#]', json_extract(metadata_json, '$.variants[0]')) WHERE id = 'component_project_foqn_s2_label'";
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("component-default-unprotected", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE component_classes SET metadata_json = json_set(metadata_json, '$.presets[0].protected', json('false')) WHERE id = 'component_project_foqn_s2_label'";
+        command.CommandText = "UPDATE component_classes SET metadata_json = json_set(metadata_json, '$.variants[0].protected', json('false')) WHERE id = 'component_project_foqn_s2_label'";
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("module-variant-locked", (connection) =>
@@ -393,21 +393,21 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         var database = new SpikeDatabase(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
-        var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::preset::default");
+        var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
         True(!new ComponentClassFieldValueService(database)
             .CreateFieldValue(statusDefault, statusField.Id)
             .Definition.IsEditable);
-        var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::preset::lock_screen");
+        var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::lock_screen");
         var classConfigBefore = database.GetComponentClassSettings(statusClass.Id).ConfigJson;
         var statusConfig = JsonPath.ParseRequiredObject(
-            database.GetComponentPresetSettings(statusVariant).ConfigJson,
+            database.GetComponentVariantSettings(statusVariant).ConfigJson,
             "Status Bar test Variant");
         var statusItems = statusConfig["items"]?.AsArray().DeepClone().AsArray()
             ?? throw new InvalidOperationException("Missing Status Bar items.");
         statusItems[0]!["zone"] = "right";
-        database.UpdateComponentPresetField(statusVariant, statusField.Id, statusItems.ToJsonString());
+        database.UpdateComponentVariantField(statusVariant, statusField.Id, statusItems.ToJsonString());
         var statusAfter = JsonPath.ParseRequiredObject(
-            database.GetComponentPresetSettings(statusVariant).ConfigJson,
+            database.GetComponentVariantSettings(statusVariant).ConfigJson,
             "Updated Status Bar test Variant");
         Equal("right", statusAfter["items"]?[0]?["zone"]?.GetValue<string>() ?? "");
         Equal(
@@ -416,19 +416,19 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         Equal(classConfigBefore, database.GetComponentClassSettings(statusClass.Id).ConfigJson);
 
         var navigationClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_navigation_bar");
-        var navigationVariant = nodes.Single((node) => node.Id == $"{navigationClass.Id}::preset::default_copy");
-        navigationVariant = database.ToggleComponentPresetLock(navigationVariant);
+        var navigationVariant = nodes.Single((node) => node.Id == $"{navigationClass.Id}::variant::default_copy");
+        navigationVariant = database.ToggleComponentVariantLock(navigationVariant);
         True(!navigationVariant.IsLocked);
         var navigationConfig = JsonPath.ParseRequiredObject(
-            database.GetComponentPresetSettings(navigationVariant).ConfigJson,
+            database.GetComponentVariantSettings(navigationVariant).ConfigJson,
             "Navigation Bar test Variant");
         var navigationItems = navigationConfig["items"]?.AsArray().DeepClone().AsArray()
             ?? throw new InvalidOperationException("Missing Navigation Bar items.");
         navigationItems[0]!["zone"] = "right";
         navigationItems[0]!["order"] = 90;
-        database.UpdateComponentPresetField(navigationVariant, navigationField.Id, navigationItems.ToJsonString());
+        database.UpdateComponentVariantField(navigationVariant, navigationField.Id, navigationItems.ToJsonString());
         var navigationAfter = JsonPath.ParseRequiredObject(
-            database.GetComponentPresetSettings(navigationVariant).ConfigJson,
+            database.GetComponentVariantSettings(navigationVariant).ConfigJson,
             "Updated Navigation Bar test Variant");
         Equal("right", navigationAfter["items"]?[0]?["zone"]?.GetValue<string>() ?? "");
         Equal(90, navigationAfter["items"]?[0]?["order"]?.GetValue<int>() ?? -1);
@@ -439,7 +439,7 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         navigationItems[1]!["id"] = navigationItems[0]!["id"]!.DeepClone();
         Throws<InvalidOperationException>(() =>
-            database.UpdateComponentPresetField(navigationVariant, navigationField.Id, navigationItems.ToJsonString()));
+            database.UpdateComponentVariantField(navigationVariant, navigationField.Id, navigationItems.ToJsonString()));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
 
@@ -474,7 +474,7 @@ static void MutateComponentClassAndDefaultVariant(
     var config = JsonPath.ParseRequiredObject(reader.GetString(0), $"{componentClassId} config");
     var metadata = JsonPath.ParseRequiredObject(reader.GetString(1), $"{componentClassId} metadata");
     reader.Close();
-    var defaultVariant = VariantEnvelopeContract.Read(metadata, "presets", componentClassId)
+    var defaultVariant = VariantEnvelopeContract.Read(metadata, "variants", componentClassId)
         .Single((variant) => variant.Id == "default");
     mutate(config);
     mutate(defaultVariant.Config);
@@ -496,21 +496,21 @@ static void VariantWritesDoNotRepairMissingArrays()
     {
         var database = new SpikeDatabase(temporary);
         var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
-            node.Id == "component_project_foqn_s2_label::preset::default");
+            node.Id == "component_project_foqn_s2_label::variant::default");
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
             connection.Open();
             using var command = connection.CreateCommand();
             command.CommandText = """
                 UPDATE component_classes
-                SET metadata_json = json_remove(metadata_json, '$.presets')
+                SET metadata_json = json_remove(metadata_json, '$.variants')
                 WHERE id = 'component_project_foqn_s2_label'
                 """;
             command.ExecuteNonQuery();
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => database.SaveComponentPreset(defaultVariant, "Must fail"));
+        Throws<InvalidOperationException>(() => database.SaveComponentVariant(defaultVariant, "Must fail"));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -930,21 +930,21 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
             database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
             paletteDefinition.Options!.Select((option) => option.Value));
 
-        var presetInput = new ComponentInputDefinition(
-            "audio", "Audio", "presetId", ComponentInputKind.ComponentPreset,
-            ValueKind.ComponentPreset, "", ComponentType: "audio");
-        var presetDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, presetInput);
+        var variantInput = new ComponentInputDefinition(
+            "audio", "Audio", "variantReference", ComponentInputKind.ComponentVariant,
+            ValueKind.ComponentVariant, "", ComponentType: "audio");
+        var variantDefinition = RuntimeInputFieldDefinitionFactory.Create(dataSource, project, variantInput);
         SequenceEqual(
-            database.GetComponentPresetReferenceOptions(project.Id, "audio", false).Select((option) => option.Value),
-            presetDefinition.Options!.Select((option) => option.Value));
+            database.GetComponentVariantReferenceOptions(project.Id, "audio", false).Select((option) => option.Value),
+            variantDefinition.Options!.Select((option) => option.Value));
 
-        var presetReference = presetDefinition.Options!.First().Value;
+        var variantReference = variantDefinition.Options!.First().Value;
         var dynamicInput = new ComponentInputDefinition(
             "state", "State", "stateId", ComponentInputKind.Option,
             ValueKind.OptionToken, "",
             OptionsSourceCollectionJsonKey: "states",
             OptionsSourceValueJsonKey: "id",
-            OptionsSourceLabelJsonKey: "presetId");
+            OptionsSourceLabelJsonKey: "variantReference");
         var values = new JsonObject
         {
             ["states"] = new JsonArray
@@ -952,7 +952,7 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
                 new JsonObject
                 {
                     ["id"] = "state_default",
-                    ["presetId"] = presetReference,
+                    ["variantReference"] = variantReference,
                 },
             },
         };
@@ -960,7 +960,7 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         Equal(1, dynamicOptions.Count);
         Equal("state_default", dynamicOptions[0].Value);
         Equal(
-            database.GetRuntimeComponentPresetName(presetReference, new JsonObject(), []),
+            database.GetRuntimeComponentVariantName(variantReference, new JsonObject(), []),
             dynamicOptions[0].Label);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -986,7 +986,7 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
-        var preset = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var variant = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var componentSettings = database.GetComponentClassSettings(componentClass.Id);
         var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var theme = nodes
@@ -994,10 +994,10 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
             .First((node) => !string.IsNullOrWhiteSpace(database.GetThemeSettings(node.Id).IconThemeId));
         var themeSettings = database.GetThemeSettings(theme.Id);
 
-        Equal(themeSettings.IconThemeId, dataSource.IconThemeId(preset, theme.Id));
+        Equal(themeSettings.IconThemeId, dataSource.IconThemeId(variant, theme.Id));
         True(JsonNode.DeepEquals(
             DesignPreviewTestValues.Parse(themeSettings.TokensJson),
-            dataSource.ThemeTokens(preset, theme.Id)));
+            dataSource.ThemeTokens(variant, theme.Id)));
 
         var productionThemeId = payloadData.ResolveThemeId(screen, null)
             ?? throw new InvalidOperationException("Production Screen did not resolve its explicit Theme.");
@@ -1012,29 +1012,29 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
             database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
             dataSource.PaletteColorOptions(project.Id).Select((option) => option.Value));
         SequenceEqual(
-            database.GetComponentPresetReferenceOptionsByType(
+            database.GetComponentVariantReferenceOptionsByType(
                 project.Id,
                 componentSettings.ComponentType).Select((option) => option.Value),
-            dataSource.ComponentPresetOptions(
+            dataSource.ComponentVariantOptions(
                 project.Id,
                 componentSettings.ComponentType).Select((option) => option.Value));
 
         SequenceEqual(
-            database.GetComponentPresetRuntimeInputBindings(preset.Id)
+            database.GetComponentVariantRuntimeInputBindings(variant.Id)
                 .Select((input) => $"{input.Id}\u001f{input.JsonKey}\u001f{input.ValueKind}"),
-            dataSource.ComponentPresetRuntimeInputBindings(preset.Id)
+            dataSource.ComponentVariantRuntimeInputBindings(variant.Id)
                 .Select((input) => $"{input.Id}\u001f{input.JsonKey}\u001f{input.ValueKind}"));
         Equal(
-            database.GetComponentPresetRuntimeInputs(preset.Id).ToJsonString(),
-            dataSource.ComponentPresetRuntimeValues(preset.Id).ToJsonString());
+            database.GetComponentVariantRuntimeInputs(variant.Id).ToJsonString(),
+            dataSource.ComponentVariantRuntimeValues(variant.Id).ToJsonString());
         SequenceEqual(
-            database.GetComponentPresetRuntimeCollections(preset.Id)
+            database.GetComponentVariantRuntimeCollections(variant.Id)
                 .Select((collection) => $"{collection.Id}\u001f{collection.JsonKey}\u001f{collection.Fields.Count}"),
-            dataSource.ComponentPresetRuntimeCollections(preset.Id)
+            dataSource.ComponentVariantRuntimeCollections(variant.Id)
                 .Select((collection) => $"{collection.Id}\u001f{collection.JsonKey}\u001f{collection.Fields.Count}"));
 
-        var expectedSelection = database.GetComponentPresetSelectionSettings(preset.Id);
-        var selection = dataSource.ComponentPresetSelection(preset.Id);
+        var expectedSelection = database.GetComponentVariantSelectionSettings(variant.Id);
+        var selection = dataSource.ComponentVariantSelection(variant.Id);
         Equal(expectedSelection.ProjectId, selection.ProjectId);
         Equal(expectedSelection.ComponentType, selection.ComponentType);
         Equal(expectedSelection.RecordClassId, selection.RecordClassId);
@@ -1069,7 +1069,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
             .First((node) => database.GetComponentClassSettings(node.Id).ComponentType == "audio");
         var audioVariant = audioClass.Children
-            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
         var designContext = new EditorEmbeddedContext(audioVariant, [surfaceSlot]);
         var embeddedFieldId = database.LoadEditorLayout(surfaceSlot.RecordClassId).Cards
@@ -1080,8 +1080,8 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
 
         Equal(
-            database.GetEmbeddedComponentPresetName(audioVariant, [surfaceSlot]),
-            store.ActivePresetName(designContext));
+            database.GetEmbeddedComponentVariantName(audioVariant, [surfaceSlot]),
+            store.ActiveVariantName(designContext));
         var expectedField = database.CreateEmbeddedComponentFieldValue(
             audioVariant,
             [surfaceSlot],
@@ -1093,7 +1093,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var editableVariant = database.SaveComponentPreset(audioVariant, "Embedded boundary test");
+        var editableVariant = database.SaveComponentVariant(audioVariant, "Embedded boundary test");
         var editableContext = new EditorEmbeddedContext(editableVariant, [surfaceSlot]);
         var editableField = store.CreateFieldValue(editableContext, embeddedFieldId);
         store.CommitFieldValue(editableContext, embeddedFieldId, editableField.Value);
@@ -1104,7 +1104,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
                 [surfaceSlot],
                 embeddedFieldId).Value);
 
-        var selection = database.GetComponentPresetSelectionSettings(audioVariant.Id);
+        var selection = database.GetComponentVariantSelectionSettings(audioVariant.Id);
         var overrides = new JsonObject();
         var overrideChanges = 0;
         var runtimeContext = new EditorEmbeddedContext(
@@ -1119,8 +1119,8 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
                 overrides,
                 (_) => overrideChanges++));
         Equal(
-            database.GetRuntimeComponentPresetName(audioVariant.Id, overrides, []),
-            store.ActivePresetName(runtimeContext));
+            database.GetRuntimeComponentVariantName(audioVariant.Id, overrides, []),
+            store.ActiveVariantName(runtimeContext));
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
 
         var beforeRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -1189,28 +1189,28 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
         var dataSource = new ComponentPreviewInputDataSource(database);
         var componentClass = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
-        var preset = componentClass.Children
-            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var variant = componentClass.Children
+            .First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var settings = database.GetComponentClassSettings(componentClass.Id);
 
         Equal(
             database.GetProjectSettings(settings.ProjectId).DefaultFps,
             dataSource.ProjectDefaultFrameRate(settings.ProjectId));
         Equal(
-            database.GetComponentPresetConfig(preset.Id).ToJsonString(),
-            dataSource.ComponentPresetConfig(preset.Id).ToJsonString());
+            database.GetComponentVariantConfig(variant.Id).ToJsonString(),
+            dataSource.ComponentVariantConfig(variant.Id).ToJsonString());
         Equal(
-            database.GetComponentPresetRuntimeContract(preset.Id).ToJsonString(),
-            dataSource.ComponentPresetRuntimeContract(preset.Id).ToJsonString());
+            database.GetComponentVariantRuntimeContract(variant.Id).ToJsonString(),
+            dataSource.ComponentVariantRuntimeContract(variant.Id).ToJsonString());
         Equal(
-            database.ValidateComponentPresetReferenceValue(
+            database.ValidateComponentVariantReferenceValue(
                 settings.ProjectId,
                 settings.ComponentType,
-                preset.Id),
-            dataSource.ValidateComponentPresetReference(
+                variant.Id),
+            dataSource.ValidateComponentVariantReference(
                 settings.ProjectId,
                 settings.ComponentType,
-                preset.Id));
+                variant.Id));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
@@ -1235,7 +1235,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
         var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);
         var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
-        var componentPreset = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var componentVariant = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
 
         var moduleSettings = database.GetModuleSettings(module.Id);
@@ -1251,8 +1251,8 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         Equal(moduleVariantSettings.DesignPreviewJson, moduleVariantSource.RuntimePreviewJson);
         Equal(module.Id, moduleVariantSource.DesignPreviewOwnerId);
 
-        var componentSettings = database.GetComponentPresetSettings(componentPreset);
-        var componentSource = store.Load(componentPreset);
+        var componentSettings = database.GetComponentVariantSettings(componentVariant);
+        var componentSource = store.Load(componentVariant);
         Equal(componentSettings.ConfigJson, componentSource.ConfigJson);
         Equal(componentSettings.DesignPreviewJson, componentSource.RuntimePreviewJson);
         Equal(RuntimeInputDesignPreviewOwnerKind.ComponentClass, componentSource.DesignPreviewOwnerKind);
@@ -1265,15 +1265,15 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         True(instanceSource.IsInstance);
         Equal(RuntimeInputDesignPreviewOwnerKind.None, instanceSource.DesignPreviewOwnerKind);
 
-        var selection = database.GetComponentPresetSelectionSettings(componentPreset.Id);
-        var selectionSource = store.ComponentPresetSelection(componentPreset.Id);
+        var selection = database.GetComponentVariantSelectionSettings(componentVariant.Id);
+        var selectionSource = store.ComponentVariantSelection(componentVariant.Id);
         Equal(selection.ProjectId, selectionSource.ProjectId);
         Equal(selection.ComponentType, selectionSource.ComponentType);
         Equal(selection.RecordClassId, selectionSource.RecordClassId);
         Equal(selection.ConfigJson, selectionSource.ConfigJson);
         Equal(
-            database.GetComponentPresetRuntimeInputs(componentPreset.Id).ToJsonString(),
-            store.ComponentPresetRuntimeInputs(componentPreset.Id).ToJsonString());
+            database.GetComponentVariantRuntimeInputs(componentVariant.Id).ToJsonString(),
+            store.ComponentVariantRuntimeInputs(componentVariant.Id).ToJsonString());
 
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
@@ -1840,10 +1840,10 @@ static void ComponentClassRepositoryPreservesFacadeContract()
         var config = JsonPath.ParseRequiredObject(original.ConfigJson, $"Component class '{original.Id}' config_json");
         config["repositoryTest"] = true;
         var metadata = JsonPath.ParseRequiredObject(original.MetadataJson, $"Component class '{original.Id}' metadata_json");
-        var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", $"Component class '{original.Id}'");
-        var defaultPreset = presets.OfType<JsonObject>()
-            .Single((preset) => JsonPath.String(preset, "id", "") == "default");
-        defaultPreset["config"] = config.DeepClone();
+        var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{original.Id}'");
+        var defaultVariant = variants.OfType<JsonObject>()
+            .Single((variant) => JsonPath.String(variant, "id", "") == "default");
+        defaultVariant["config"] = config.DeepClone();
         using (var connection = context.OpenConnection())
         {
             repository.UpdateConfigAndMetadata(
@@ -2428,7 +2428,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var stateItems = DesignPreviewTestValues.CollectionItems(effective, stateInputs);
         True(stateItems.All((item) => !string.IsNullOrWhiteSpace(item["name"]?.GetValue<string>())));
         var passwordState = stateItems.Single((item) =>
-            item["presetId"]?.GetValue<string>()?.Contains("_password::preset::", StringComparison.Ordinal) == true);
+            item["variantReference"]?.GetValue<string>()?.Contains("_password::variant::", StringComparison.Ordinal) == true);
         var passwordContract = passwordState["inputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing projected Password State runtime contract.");
         var passwordInputs = ComponentPreviewInputSession.ReadRuntimeInputs(passwordContract, new JsonObject());
@@ -2441,7 +2441,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
         var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(
                 effective,
-                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
+                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
             .Single((action) => action.Label == "Enter password");
         Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
         Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
@@ -2533,7 +2533,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
                          or ProjectTreeNodeKind.ProductionFont
                          or ProjectTreeNodeKind.IconTheme
                          or ProjectTreeNodeKind.RenderPreset
-                         or ProjectTreeNodeKind.ComponentPreset
+                         or ProjectTreeNodeKind.ComponentVariant
                          or ProjectTreeNodeKind.ModuleVariant))
             {
                 Equal(node.IsUsed, index.ContainsKey(new ReferenceTarget(node.Kind, node.Id)));
@@ -2551,16 +2551,16 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         True(actorUsages.Any((usage) =>
             (usage.SourceKind is ProjectTreeNodeKind.ComponentClass
                 or ProjectTreeNodeKind.Module
-                or ProjectTreeNodeKind.ComponentPreset)
+                or ProjectTreeNodeKind.ComponentVariant)
             && !usage.IsProduction));
 
         var usedComponentVariant = nodes
-            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset)
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
             .Select((node) => (Node: node, Usages: database.GetReferenceUsageDetails(node)))
-            .First((candidate) => candidate.Usages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.ComponentPreset));
+            .First((candidate) => candidate.Usages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.ComponentVariant));
         True(usedComponentVariant.Usages.Any((usage) =>
-            usage.SourceKind == ProjectTreeNodeKind.ComponentPreset
-            && usage.SourceNodeId.Contains("::preset::", StringComparison.Ordinal)));
+            usage.SourceKind == ProjectTreeNodeKind.ComponentVariant
+            && usage.SourceNodeId.Contains("::variant::", StringComparison.Ordinal)));
 
         var usedModuleVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsUsed);
         True(database.GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
@@ -2659,11 +2659,11 @@ static void UsageNavigationPreservesTypedContext()
         "parent.slot",
         "Slot",
         true,
-        "component_parent::preset::default");
+        "component_parent::variant::default");
 
     navigator.Navigate(new SpikeDatabase.ReferenceUsageDetail(
-        "component_parent::preset::default",
-        ProjectTreeNodeKind.ComponentPreset,
+        "component_parent::variant::default",
+        ProjectTreeNodeKind.ComponentVariant,
         "Component Variant",
         "Parent · Default",
         "Slot · overrides",
@@ -2681,8 +2681,8 @@ static void UsageNavigationPreservesTypedContext()
     SequenceEqual(
         new[]
         {
-            "select:Design:component_parent::preset::default",
-            "embedded:component_parent::preset::default:parent.slot",
+            "select:Design:component_parent::variant::default",
+            "embedded:component_parent::variant::default:parent.slot",
             "select:Production:screen_1",
         },
         events);
@@ -3353,7 +3353,7 @@ static void ActiveVariantExposesParentClassActions()
     var componentClass = new ProjectTreeNode(
         ProjectTreeNodeKind.ComponentClass, "component", "Component", "", "component.audio");
     var variant = new ProjectTreeNode(
-        ProjectTreeNodeKind.ComponentPreset, "variant", "Default", "", "component.audio", componentClass);
+        ProjectTreeNodeKind.ComponentVariant, "variant", "Default", "", "component.audio", componentClass);
     var otherComponentClass = new ProjectTreeNode(
         ProjectTreeNodeKind.ComponentClass, "other", "Other", "", "component.avatar");
     True(EditorNavigationRenderer.ShowsActions(componentClass, variant));
@@ -3452,7 +3452,7 @@ static void ModuleParentsFollowComponentVariantSelection()
 
     var selection = new EditorNodeSelectionState();
     Equal(defaultVariant.Id, selection.ResolveSelectionNode(module).Id);
-    selection.RememberComponentPresetSelection(androidVariant);
+    selection.RememberComponentVariantSelection(androidVariant);
     Equal(androidVariant.Id, selection.ResolveSelectionNode(module).Id);
     True(module.CanRenameDirectly);
     True(EditorNavigationRenderer.ShowsActions(module, androidVariant));
@@ -3472,7 +3472,7 @@ static void OnlyDefaultSystemBarVariantsAreProtected()
             var componentClass = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
                 && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
             var variants = componentClass.Children
-                .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset)
+                .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
                 .ToList();
             var defaultVariant = variants.Single((node) => node.Name == "Default");
             True(defaultVariant.IsProtected);
@@ -3497,7 +3497,7 @@ static void ComponentStackSeedOpensAndRenders()
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "componentStack");
         Equal("Atoms", stack.Parent?.Name ?? "");
-        var defaultVariant = stack.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsLocked);
+        var defaultVariant = stack.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsLocked);
         var settings = database.GetComponentClassSettings(stack.Id);
         var config = JsonNode.Parse(settings.ConfigJson) as JsonObject ?? throw new InvalidOperationException("Missing Component Stack config.");
         var stackConfig = config["componentStack"] as JsonObject ?? throw new InvalidOperationException("Missing Component Stack contract.");
@@ -3533,11 +3533,11 @@ static void ComponentStackSeedOpensAndRenders()
         var reflowGapItem = new JsonObject { ["gapBeforeMode"] = "reflow" };
         True(!CollectionFieldAvailability.IsEnabled(reflowGapItem, fixedGapField, 1));
         True(CollectionFieldAvailability.IsEnabled(reflowGapItem, reflowWeightField, 1));
-        var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-componentStack");
-        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
+        var componentOptions = database.GetComponentVariantReferenceOptions(settings.ProjectId, "*,-componentStack");
+        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::variant::", StringComparison.Ordinal)));
         True(componentOptions.All((option) => !string.IsNullOrWhiteSpace(option.GroupValue)));
         True(componentOptions.GroupBy((option) => option.GroupValue)
-            .All((group) => group.Any((option) => option.Value == $"{group.Key}::preset::default")));
+            .All((group) => group.Any((option) => option.Value == $"{group.Key}::variant::default")));
         _ = database.GetReferenceUsageDetails(stack);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -3556,14 +3556,14 @@ static void ComponentStackSeedOpensAndRenders()
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
-        var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "audio").First().Value;
-        var audioInputs = database.GetComponentPresetRuntimeInputs(childVariant);
+        var childVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "audio").First().Value;
+        var audioInputs = database.GetComponentVariantRuntimeInputs(childVariant);
         True(audioInputs["showBadge"] is JsonValue);
         Equal("icon", audioInputs["badgeContentMode"]?.GetValue<string>() ?? "");
         True(RuntimeInputFieldDefinitionFactory.Create(
             new RuntimeInputOptionsDataSource(database),
             defaultVariant,
-            alternatives.Fields.Single((field) => field.Id == "presetId")).SelectComponentClass);
+            alternatives.Fields.Single((field) => field.Id == "variantReference")).SelectComponentClass);
         var runtimeItem = new JsonObject
         {
             ["id"] = "test_button",
@@ -3572,7 +3572,7 @@ static void ComponentStackSeedOpensAndRenders()
                 new JsonObject
                 {
                     ["id"] = "test_button_default",
-                    ["presetId"] = childVariant,
+                    ["variantReference"] = childVariant,
                     ["overrides"] = new JsonObject(),
                     ["inputs"] = audioInputs,
                     ["active"] = false,
@@ -3589,7 +3589,7 @@ static void ComponentStackSeedOpensAndRenders()
         inputSession.SetExternalCollectionItems("items", [runtimeItem]);
         Equal(1, refreshCount);
         var childVariantNode = nodes.Single((node) => node.Id == childVariant);
-        True(!database.CreateComponentPresetFieldValue(
+        True(!database.CreateComponentVariantFieldValue(
             childVariantNode,
             "component.audio.surface.editor").Definition.SelectComponentClass);
         var otherPayload = Required(CreatePreviewPayload(database, childVariantNode, theme.Id));
@@ -3608,7 +3608,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(!string.IsNullOrWhiteSpace(transientHtml));
         True(!transientHtml.Contains("preview-error", StringComparison.Ordinal));
 
-        var selectedComponent = database.GetComponentPresetSelectionSettings(childVariant);
+        var selectedComponent = database.GetComponentVariantSelectionSettings(childVariant);
         var overrides = new JsonObject();
         var runtimeOverrideChanges = 0;
         var embeddedDocuments = new EmbeddedComponentDocumentStore(database);
@@ -3645,8 +3645,8 @@ static void ComponentStackSeedOpensAndRenders()
             .Select((field) => field.Id)
             .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
         _ = embeddedDocuments.CreateFieldValue(nestedRuntimeContext, nestedFieldId);
-        var avatarVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "avatar").First().Value;
-        var avatarSelection = database.GetComponentPresetSelectionSettings(avatarVariant);
+        var avatarVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "avatar").First().Value;
+        var avatarSelection = database.GetComponentVariantSelectionSettings(avatarVariant);
         var avatarContext = new EditorEmbeddedContext(
             defaultVariant,
             [],
@@ -3744,7 +3744,7 @@ static void CollectionStackSeedOpensAndRenders()
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "collectionStack");
         Equal("Atoms", stack.Parent?.Name ?? "");
-        var variants = stack.Children.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset).ToList();
+        var variants = stack.Children.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant).ToList();
         Equal(1, variants.Count);
         Equal("Default", variants[0].Name);
         True(variants[0].IsLocked);
@@ -3768,10 +3768,10 @@ static void CollectionStackSeedOpensAndRenders()
         Equal("content", preview["sizingMode"]?.GetValue<string>() ?? "");
         var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
         Equal("items", collection.JsonKey);
-        Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "presetId").ComponentType);
+        Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "variantReference").ComponentType);
 
-        var componentOptions = database.GetComponentPresetReferenceOptions(settings.ProjectId, "*,-collectionStack");
-        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::preset::", StringComparison.Ordinal)));
+        var componentOptions = database.GetComponentVariantReferenceOptions(settings.ProjectId, "*,-collectionStack");
+        True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::variant::", StringComparison.Ordinal)));
         True(componentOptions.Any((option) => option.GroupValue.EndsWith("componentStack", StringComparison.Ordinal)));
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
@@ -3825,8 +3825,8 @@ static void NotificationsSeedOpensAndRenders()
                 .OrderBy((field) => field.Order)
                 .Select((field) => field.Id)
                 .ToList());
-        var notificationVariant = notification.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
-        var notificationsVariant = notifications.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset);
+        var notificationVariant = notification.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
+        var notificationsVariant = notifications.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var notificationLayout = database.LoadEditorLayout("component.notification");
         Equal("component.notification", EditorContentController.OwnerLayoutRecordClassId(notificationVariant));
         SequenceEqual(["general", "layout", "avatar", "summaryLabel", "detailLabel"],
@@ -3879,7 +3879,7 @@ static void NotificationsSeedOpensAndRenders()
             .ToHashSet(StringComparer.Ordinal)
             ?? throw new InvalidOperationException("Missing Notifications collection fields.");
         True(notificationsCollectionFields.Contains("present"));
-        True(!notificationsCollectionFields.Overlaps(["presetId", "presenceMotion", "alignment", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight"]));
+        True(!notificationsCollectionFields.Overlaps(["variantReference", "presenceMotion", "alignment", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight"]));
         var notificationsLayout = database.LoadEditorLayout("component.notifications");
         SequenceEqual(["general", "layout"], notificationsLayout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
         SequenceEqual(
@@ -3902,7 +3902,7 @@ static void NotificationsSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Notification transition preview.");
         var transitionAction = ComponentPreviewActions.ReadWithEmbedded(
                 transitionPreview,
-                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
+                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
             .Single((action) => action.Id == "changeDisplayMode");
         var transitionSession = new ComponentPreviewInputSession(database, () => { });
         var transitionBusy = false;
@@ -3953,7 +3953,7 @@ static void NotificationsSeedOpensAndRenders()
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Notifications preview.");
         var reference = notificationVariant.Id;
-        var notificationInputs = database.GetComponentPresetRuntimeInputs(reference);
+        var notificationInputs = database.GetComponentVariantRuntimeInputs(reference);
         Equal(90, notificationInputs["maxWidth"]?.GetValue<int>() ?? 0);
         True(notificationInputs["availableWidth"] is null);
         True(notificationInputs["displayMode"] is JsonValue);
@@ -3991,7 +3991,7 @@ static void NotificationsSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
         var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(
                 populatedContract,
-                new ComponentPreviewInputDataSource(database).ComponentPresetRuntimeContract)
+                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
             .Where((action) => action.TargetInputId == "displayMode")
             .ToList();
         Equal(2, embeddedActions.Count);
@@ -4038,7 +4038,7 @@ static void KeypadSeedOpensAndRenders()
         var keypad = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "keypad");
         Equal("System", keypad.Parent?.Name ?? "");
-        var defaultVariant = keypad.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+        var defaultVariant = keypad.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
         var settings = database.GetComponentClassSettings(keypad.Id);
         var layout = database.LoadEditorLayout("component.keypad");
         SequenceEqual(["general", "layout", "keys", "states"],
@@ -4054,7 +4054,7 @@ static void KeypadSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Keypad contract.");
         Equal(3, keypadConfig["columns"]?.GetValue<int>() ?? -1);
         Equal(12, (keypadConfig["keys"] as JsonArray)?.Count ?? -1);
-        var keysField = database.CreateComponentPresetFieldValue(defaultVariant, "component.keypad.keys");
+        var keysField = database.CreateComponentVariantFieldValue(defaultVariant, "component.keypad.keys");
         True(keysField.Definition.StructuredCollection is not null);
         Equal(6, keysField.Definition.StructuredCollection?.Fields.Count ?? -1);
         var iconField = keysField.Definition.StructuredCollection!.Fields.Single((field) => field.Id == "iconToken");
@@ -4110,7 +4110,7 @@ static void PasswordSeedOpensAndRenders()
         var password = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "password");
         Equal("System", password.Parent?.Name ?? "");
-        var defaultVariant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+        var defaultVariant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
         var settings = database.GetComponentClassSettings(password.Id);
         var layout = database.LoadEditorLayout("component.password");
         SequenceEqual(["general", "layout", "labels", "indicator", "modes", "iconBar"],
@@ -4208,7 +4208,7 @@ static void PasswordSeedOpensAndRenders()
             var component = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
                 && database.GetComponentClassSettings(node.Id).ComponentType == componentType);
             Equal("System", component.Parent?.Name ?? "");
-            var componentVariant = component.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.IsProtected);
+            var componentVariant = component.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
             var componentPayload = Required(CreatePreviewPayload(database, componentVariant, theme.Id));
             var componentHtml = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
@@ -4220,7 +4220,7 @@ static void PasswordSeedOpensAndRenders()
 
         foreach (var mode in new[] { "fingerprint", "faceRecognition", "drawPassword" })
         {
-            var variant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Id.EndsWith($"::preset::{mode}", StringComparison.Ordinal));
+            var variant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.Id.EndsWith($"::variant::{mode}", StringComparison.Ordinal));
             var modePayload = Required(CreatePreviewPayload(database, variant, theme.Id));
             var modePreview = JsonNode.Parse(modePayload.DesignPreviewJson)?.AsObject()
                 ?? throw new InvalidOperationException($"Missing {mode} Password preview.");
@@ -4282,7 +4282,7 @@ static void LockScreenComposesRuntimeStack()
             ?? throw new InvalidOperationException("Missing Lock Screen Stack slot.");
         True(lockScreen["statusBarSlot"] is JsonObject);
         True(lockScreen["navigationBarSlot"] is JsonObject);
-        True((stackSlot["presetId"]?.GetValue<string>() ?? "").Contains("::preset::default", StringComparison.Ordinal));
+        True((stackSlot["variantReference"]?.GetValue<string>() ?? "").Contains("::variant::default", StringComparison.Ordinal));
         True(stackSlot["overrides"] is JsonObject);
         True(lockScreen["stackVariant"] is null);
         True(lockScreen["statusBarVariant"] is null);
@@ -4356,8 +4356,8 @@ static void LockScreenComposesRuntimeStack()
         var passwordState = configuredStackSlots.OfType<JsonObject>()
             .SelectMany((slot) => slot["alternatives"]?.AsArray().OfType<JsonObject>()
                 .Select((state) => (Slot: slot, State: state)) ?? [])
-            .Single((candidate) => (candidate.State["presetId"]?.GetValue<string>() ?? "")
-                .Contains("_password::preset::", StringComparison.Ordinal));
+            .Single((candidate) => (candidate.State["variantReference"]?.GetValue<string>() ?? "")
+                .Contains("_password::variant::", StringComparison.Ordinal));
         var passwordSlotId = passwordState.Slot["id"]?.GetValue<string>() ?? "";
         var passwordStateId = passwordState.State["id"]?.GetValue<string>() ?? "";
         var instancePreview = DesignPreviewTestValues.Parse(
@@ -4454,9 +4454,9 @@ static void LockScreenComposesRuntimeStack()
             resolved).GetAwaiter().GetResult();
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
-        var childVariant = database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, "label").First().Value;
-        var childInputs = database.GetComponentPresetRuntimeInputs(childVariant);
-        var subtitleBinding = database.GetComponentPresetRuntimeInputBindings(childVariant)
+        var childVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "label").First().Value;
+        var childInputs = database.GetComponentVariantRuntimeInputs(childVariant);
+        var subtitleBinding = database.GetComponentVariantRuntimeInputBindings(childVariant)
             .Single((input) => input.Id == "sampleSubtext");
         childInputs[RuntimeInputForwardingContract.StorageKey] = new JsonObject
         {
@@ -4481,7 +4481,7 @@ static void LockScreenComposesRuntimeStack()
                     {
                         ["id"] = "lock_screen_label_default",
                         ["name"] = "Clock",
-                        ["presetId"] = childVariant,
+                        ["variantReference"] = childVariant,
                         ["overrides"] = new JsonObject(),
                         ["inputs"] = childInputs,
                         ["active"] = false,

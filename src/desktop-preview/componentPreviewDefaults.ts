@@ -2,24 +2,24 @@ import { asRecord } from "./previewJsonHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
-export function componentPresetConfig(
+export function componentVariantConfig(
   componentBaseConfigs: JsonRecord,
   componentType: string,
-  presetReference: unknown,
+  variantReference: unknown,
 ): JsonRecord {
-  const reference = typeof presetReference === "string" ? presetReference.trim() : "";
+  const reference = typeof variantReference === "string" ? variantReference.trim() : "";
   if (!reference) {
-    throw new Error(`Missing component preset reference for ${componentType}`);
+    throw new Error(`Missing component variant reference for ${componentType}`);
   }
 
-  if (!reference.includes("::preset::")) {
-    throw new Error(`Unsupported component preset reference ${reference}`);
+  if (!/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(reference)) {
+    throw new Error(`Unsupported component variant reference ${reference}`);
   }
 
-  const presets = asRecord(componentBaseConfigs.presets);
-  const config = presets[reference];
+  const variants = asRecord(componentBaseConfigs.variants);
+  const config = variants[reference];
   if (config === undefined) {
-    throw new Error(`Missing component preset config ${reference}`);
+    throw new Error(`Missing component variant config ${reference}`);
   }
 
   return asRecord(config);

@@ -1,6 +1,6 @@
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -168,7 +168,7 @@ function embeddedConfig(
   path: string,
 ) {
   return mergeComponentDefaults(
-    componentPresetConfig(bases, componentType, requiredString(slot, "presetId", `${path}.presetId`)),
+    componentVariantConfig(bases, componentType, requiredString(slot, "variantReference", `${path}.variantReference`)),
     asRecord(slot.overrides),
   );
 }

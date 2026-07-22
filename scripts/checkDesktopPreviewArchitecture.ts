@@ -189,7 +189,7 @@ for (const retiredComponentFactoryTerm of [
 for (const retiredModuleFactoryTerm of [
   "DefaultConversationConfigJson",
   "DefaultConversationDesignPreviewJson",
-  "SeededComponentPresetReference",
+  "SeededComponentVariantReference",
   "ConversationPreviewMessageFields",
   "ApplyConversationRuntimeGroups",
 ]) {
@@ -565,7 +565,7 @@ assertDoesNotContain(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
-  "Func<string, JsonObject> componentPresetRuntimeContract",
+  "Func<string, JsonObject> componentVariantRuntimeContract",
   "the action interpreter must receive exact embedded contracts without persistence coupling",
 );
 for (const forbiddenActionPersistenceDependency of ["SpikeDatabase", "Mockups.DesktopEditorShell.Data"]) {
@@ -581,7 +581,7 @@ for (const componentPreviewActionConsumer of [
 ]) {
   assertContains(
     componentPreviewActionConsumer,
-    "_previewInputData.ComponentPresetRuntimeContract",
+    "_previewInputData.ComponentVariantRuntimeContract",
     "Preview action consumers must use the typed embedded Component contract boundary",
   );
 }
@@ -696,18 +696,18 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  "_previewInputData.ComponentPresetConfig(componentPresetReference)",
+  "_previewInputData.ComponentVariantConfig(componentVariantReference)",
   "the Runtime Inputs editor must reuse the Component Preview config boundary",
 );
 for (const forbiddenRuntimeInputOwnerRead of [
   "_database.GetModuleSettings",
   "_database.GetModuleVariantSettings",
-  "_database.GetComponentPresetSettings",
+  "_database.GetComponentVariantSettings",
   "_database.GetModuleInstanceVariantSettings",
   "_database.GetModuleInstanceRuntimePreviewJson",
-  "_database.GetComponentPresetConfig",
-  "_database.GetComponentPresetRuntimeInputs",
-  "_database.GetComponentPresetSelectionSettings",
+  "_database.GetComponentVariantConfig",
+  "_database.GetComponentVariantRuntimeInputs",
+  "_database.GetComponentVariantSelectionSettings",
   "_database.UpdateModuleDesignPreviewJson",
   "_database.UpdateComponentClassDesignPreviewJson",
 ]) {
@@ -825,7 +825,7 @@ assertContains(
 for (const forbiddenEmbeddedContextDependency of [
   "Mockups.DesktopEditorShell.Data",
   "SpikeDatabase",
-  "ActivePresetName(",
+  "ActiveVariantName(",
   "CreateFieldValue(",
   "CommitFieldValue(",
 ]) {
@@ -1081,6 +1081,39 @@ const activeEditorShellSources = walkFilesByExtension(
   path.join(root, "spikes/desktop-editor-shell/EditorShell"),
   [".cs"],
 );
+const activeComponentVariantSources = [
+  ...walkFilesByExtension(path.join(root, "src/desktop-preview"), [".ts", ".tsx"]),
+  ...walkFilesByExtension(path.join(root, "spikes/desktop-editor-shell/Data"), [".cs"]),
+  ...activeEditorShellSources,
+  path.join(root, "spikes/desktop-editor-shell/MainWindow.axaml.cs"),
+];
+for (const retiredComponentVariantTerm of [
+  "ComponentPreset",
+  "componentPreset",
+  "::preset::",
+  "presetId",
+  "buttonPresetId",
+  "presetJsonKey",
+  "component.preset",
+  "metadata_json.presets",
+  '"presets"',
+]) {
+  assertFilesDoNotContain(
+    activeComponentVariantSources,
+    retiredComponentVariantTerm,
+    `active Component Variant code must not contain retired vocabulary (${retiredComponentVariantTerm})`,
+  );
+}
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/69_component_variant_storage_vocabulary_contract.md",
+  "AGENTS must require the Component Variant storage vocabulary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "69_component_variant_storage_vocabulary_contract.md",
+  "the architecture index must include contract 69",
+);
 for (const retiredSimplifiedEditorTerm of [
   "EditorSimplified",
   "EditorPresentationMode",
@@ -1207,12 +1240,12 @@ for (const requiredRuntimeInputInstanceOperation of [
 }
 assertFilesDoNotContain(
   currentRepositoryFiles,
-  "EnsurePresetArray",
+  "EnsureVariantArray",
   "current Component Variants must never synthesize a missing Variant array",
 );
 assertFilesDoNotContain(
   currentRepositoryFiles,
-  "ComponentPresetIsLocked",
+  "ComponentVariantIsLocked",
   "current Component Variants must not infer lock state from an id",
 );
 assertFilesDoNotContain(
@@ -1222,7 +1255,7 @@ assertFilesDoNotContain(
 );
 assertFilesDoNotContain(
   currentRepositoryFiles,
-  "preset.ConfigJson == \"{}\"",
+  "variant.ConfigJson == \"{}\"",
   "a selected Component Variant config must not fall back to class config",
 );
 assertContains(
@@ -1465,7 +1498,7 @@ function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
   }
 }
 
-function assertDesktopComponentPresetReferencesAreCanonical() {
+function assertDesktopComponentVariantReferencesAreCanonical() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
 
@@ -1481,11 +1514,19 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
         metadata_json: string;
       }[];
     const rowsById = new Map(rows.map((row) => [row.id, row]));
+    const componentVariantReferenceKeys = new Set([
+      "variantReference",
+      "buttonVariantReference",
+      "bubbleVariant",
+      "headerAvatarVariant",
+      "keyboardVariant",
+      "textInputBarVariant",
+    ]);
     const variantsByClassId = new Map<string, Set<string>>();
     const variantsByClassIdAndMetadata = new Map<string, Record<string, unknown>[]>();
     for (const row of rows) {
       const metadata = parseRequiredJsonObject(row.metadata_json, `component ${row.id}.metadata_json`);
-      const variants = completeVariantEnvelopes(metadata.presets, `component ${row.id}.metadata_json.presets`);
+      const variants = completeVariantEnvelopes(metadata.variants, `component ${row.id}.metadata_json.variants`);
       variantsByClassIdAndMetadata.set(row.id, variants);
       variantsByClassId.set(row.id, new Set(variants.map((variant) => variant.id as string)));
     }
@@ -1499,12 +1540,12 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
 
       for (const [key, child] of Object.entries(value)) {
         const childPath = pathLabel ? `${pathLabel}.${key}` : key;
-        if (key === "presetId" && typeof child === "string") {
-          const match = /^(?<classId>.+)::preset::(?<presetId>.+)$/.exec(child);
+        if (componentVariantReferenceKeys.has(key) && typeof child === "string" && child.trim()) {
+          const match = /^(?<classId>[A-Za-z0-9_.-]+)::variant::(?<variantId>[A-Za-z0-9_.-]+)$/.exec(child);
           const targetClassId = match?.groups?.classId ?? "";
-          const presetId = match?.groups?.presetId ?? "";
+          const variantId = match?.groups?.variantId ?? "";
           const target = rowsById.get(targetClassId);
-          if (!match || !target || target.project_id !== owner.project_id || !variantsByClassId.get(targetClassId)?.has(presetId)) {
+          if (!match || !target || target.project_id !== owner.project_id || !variantsByClassId.get(targetClassId)?.has(variantId)) {
             addViolation(
               "data/desktop-editor-spike.sqlite",
               `component ${owner.id} has invalid full variant reference at ${childPath}: ${child}`,
@@ -1519,9 +1560,9 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
       const classConfig = parseRequiredJsonObject(row.config_json, `component ${row.id}.config_json`);
       validateValue(row, classConfig, "config");
       const variants = variantsByClassIdAndMetadata.get(row.id) ?? [];
-      variants.forEach((variant, index) => validateValue(row, variant, `metadata.presets[${index}]`));
-      const defaultPreset = variants.find((variant) => variant.id === "default");
-      if (!defaultPreset || JSON.stringify(defaultPreset.config) !== JSON.stringify(classConfig)) {
+      variants.forEach((variant, index) => validateValue(row, variant, `metadata.variants[${index}]`));
+      const defaultVariant = variants.find((variant) => variant.id === "default");
+      if (!defaultVariant || JSON.stringify(defaultVariant.config) !== JSON.stringify(classConfig)) {
         addViolation(
           "data/desktop-editor-spike.sqlite",
           `component ${row.id} config_json must mirror its canonical Default variant`,
@@ -1533,7 +1574,7 @@ function assertDesktopComponentPresetReferencesAreCanonical() {
   }
 }
 
-assertDesktopComponentPresetReferencesAreCanonical();
+assertDesktopComponentVariantReferencesAreCanonical();
 
 function jsonParse(value: string): unknown {
   return JSON.parse(value) as unknown;
@@ -1642,7 +1683,7 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
     "boolean",
     "option",
     "recordReference",
-    "componentPreset",
+    "componentVariant",
     "themeToken",
     "icon",
     "iconList",
@@ -1742,14 +1783,35 @@ function assertDesktopDatabaseDoesNotContainRetiredTokens() {
     "popoverBackgroundColorToken",
     "specialKeyTextScale",
   ]);
+  const retiredComponentVariantKeys = new Set([
+    "presetId",
+    "buttonPresetId",
+    "presetJsonKey",
+  ]);
+  const retiredComponentVariantValues = new Set([
+    "ComponentPreset",
+    "componentPreset",
+    "component.preset",
+  ]);
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
     const componentRows = database
-      .prepare("SELECT id, component_type, config_json, metadata_json FROM component_classes")
-      .all() as { id: string; component_type: string; config_json: string; metadata_json: string }[];
+      .prepare("SELECT id, component_type, config_json, design_preview_json, metadata_json FROM component_classes")
+      .all() as { id: string; component_type: string; config_json: string; design_preview_json: string; metadata_json: string }[];
     for (const row of componentRows) {
-      for (const [column, json] of [["config_json", row.config_json], ["metadata_json", row.metadata_json]] as const) {
+      const metadata = jsonRecord(jsonParse(row.metadata_json));
+      if ("presets" in metadata) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `${row.id}.metadata_json still contains the retired Component presets root`,
+        );
+      }
+      for (const [column, json] of [
+        ["config_json", row.config_json],
+        ["design_preview_json", row.design_preview_json],
+        ["metadata_json", row.metadata_json],
+      ] as const) {
         if (json.includes("theme.typography.fontFamily")) {
           addViolation(
             "data/desktop-editor-spike.sqlite",
@@ -1757,6 +1819,20 @@ function assertDesktopDatabaseDoesNotContainRetiredTokens() {
           );
         }
         walkJson(jsonParse(json), (value, pathLabel) => {
+          const key = pathLabel.split(".").pop()?.replace(/\[\d+\]$/, "") ?? "";
+          if (retiredComponentVariantKeys.has(key)) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.${column}.${pathLabel} still uses retired Component Variant key "${key}"`,
+            );
+          }
+          if (typeof value === "string"
+            && (retiredComponentVariantValues.has(value) || value.includes("::preset::"))) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.${column}.${pathLabel} still uses retired Component Variant value "${value}"`,
+            );
+          }
           if (typeof value === "string" && retiredRadiusTokens.has(value)) {
             addViolation(
               "data/desktop-editor-spike.sqlite",
@@ -1784,6 +1860,54 @@ function assertDesktopDatabaseDoesNotContainRetiredTokens() {
             );
           }
         });
+      }
+    }
+
+    const crossDomainDocuments = database.prepare(`
+      SELECT 'module ' || id || '.config_json' AS owner, config_json AS document FROM modules
+      UNION ALL SELECT 'module ' || id || '.design_preview_json', design_preview_json FROM modules
+      UNION ALL SELECT 'module ' || id || '.metadata_json', metadata_json FROM modules
+      UNION ALL SELECT 'module instance ' || id || '.transition_json', transition_json FROM module_instances
+      UNION ALL SELECT 'module instance ' || id || '.content_json', content_json FROM module_instances
+      UNION ALL SELECT 'module instance ' || id || '.behavior_json', behavior_json FROM module_instances
+      UNION ALL SELECT 'module instance ' || id || '.animation_json', animation_json FROM module_instances
+      UNION ALL SELECT 'module instance ' || id || '.metadata_json', metadata_json FROM module_instances
+      UNION ALL SELECT 'theme ' || id || '.tokens_json', tokens_json FROM themes
+      UNION ALL SELECT 'theme ' || id || '.metadata_json', metadata_json FROM themes
+    `).all() as { owner: string; document: string }[];
+    for (const row of crossDomainDocuments) {
+      walkJson(jsonParse(row.document), (value, pathLabel) => {
+        const key = pathLabel.split(".").pop()?.replace(/\[\d+\]$/, "") ?? "";
+        if (retiredComponentVariantKeys.has(key)) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.owner}.${pathLabel} still uses retired Component Variant key "${key}"`,
+          );
+        }
+        if (typeof value === "string"
+          && (retiredComponentVariantValues.has(value) || value.includes("::preset::"))) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${row.owner}.${pathLabel} still uses retired Component Variant value "${value}"`,
+          );
+        }
+      });
+    }
+
+    const themeComponentReferences = database
+      .prepare("SELECT id, status_bar_id, navigation_bar_id FROM themes")
+      .all() as { id: string; status_bar_id: string; navigation_bar_id: string }[];
+    for (const row of themeComponentReferences) {
+      for (const [column, reference] of [
+        ["status_bar_id", row.status_bar_id],
+        ["navigation_bar_id", row.navigation_bar_id],
+      ] as const) {
+        if (reference.includes("::preset::")) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `theme ${row.id}.${column} still uses a retired Component Variant reference`,
+          );
+        }
       }
     }
 
@@ -3706,7 +3830,7 @@ for (const row of currentComponentClassRows) {
 
   if (componentClass === "bubble") {
     const metadata = jsonRecord(jsonParse(row.metadata_json));
-    const configs = [jsonParse(row.config_json), ...jsonArray(metadata.presets).map((preset) => jsonRecord(preset).config)];
+    const configs = [jsonParse(row.config_json), ...jsonArray(metadata.variants).map((variant) => jsonRecord(variant).config)];
     configs.forEach((config, index) => {
       const gapToken = jsonRecord(jsonRecord(jsonRecord(config).bubble).status).gapToken;
       if (typeof gapToken !== "string" || !gapToken.startsWith("theme.spacing.")) {
@@ -3787,7 +3911,7 @@ assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.StatusBarsRoot",
-  "legacy status bar root must not expose Add; system bars are component presets",
+  "legacy status bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockContainsKind(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
@@ -3820,25 +3944,25 @@ assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.NavigationBarsRoot",
-  "legacy navigation bar root must not expose Add; system bars are component presets",
+  "legacy navigation bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.ComponentClass",
-  "parent component classes must not expose Duplicate; use presets instead",
+  "parent component classes must not expose Duplicate; use Variants instead",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.StatusBar",
-  "legacy status bars must not expose Duplicate; use component presets instead",
+  "legacy status bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.NavigationBar",
-  "legacy navigation bars must not expose Duplicate; use component presets instead",
+  "legacy navigation bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
@@ -3850,13 +3974,13 @@ assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.StatusBar",
-  "legacy status bars must not expose Delete; use component presets instead",
+  "legacy status bars must not expose Delete; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.NavigationBar",
-  "legacy navigation bars must not expose Delete; use component presets instead",
+  "legacy navigation bars must not expose Delete; use Component Variants instead",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
@@ -3881,12 +4005,12 @@ assertDoesNotContain(
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)",
-  "legacy status bar add workflow must not remain; use component presets instead",
+  "legacy status bar add workflow must not remain; use Component Variants instead",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)",
-  "legacy navigation bar add workflow must not remain; use component presets instead",
+  "legacy navigation bar add workflow must not remain; use Component Variants instead",
 );
 for (const forbiddenLegacyTreeTerm of [
   "StatusBarsRoot",
@@ -3897,7 +4021,7 @@ for (const forbiddenLegacyTreeTerm of [
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
     forbiddenLegacyTreeTerm,
-    `legacy system bar tree term ${forbiddenLegacyTreeTerm} must not return; use component presets`,
+    `legacy system bar tree term ${forbiddenLegacyTreeTerm} must not return; use Component Variants`,
   );
 }
 for (const forbiddenLegacyLayoutTerm of [
@@ -3911,16 +4035,6 @@ for (const forbiddenLegacyLayoutTerm of [
     );
   }
 }
-assertMatches(
-  "archive/react-legacy/src/domain/fields/themeFields.ts",
-  /statusBarId:[\s\S]*?tableId:\s*"component_presets"/,
-  "theme status bar field must reference component presets, not legacy status_bars",
-);
-assertMatches(
-  "archive/react-legacy/src/domain/fields/themeFields.ts",
-  /navigationBarId:[\s\S]*?tableId:\s*"component_presets"/,
-  "theme navigation bar field must reference component presets, not legacy navigation_bars",
-);
 for (const forbiddenComponentInputControl of [
   "EditorInstantComboBox",
   "new ComboBox",
@@ -3974,12 +4088,12 @@ assertDoesNotContain(
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "SeedStatusBarsIfEmpty",
-  "desktop database initialization must not seed legacy status_bars rows; use status_bar component presets",
+  "desktop database initialization must not seed legacy status_bars rows; use status_bar Component Variants",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "SeedNavigationBarsIfEmpty",
-  "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar component presets",
+  "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar Component Variants",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
@@ -4022,7 +4136,7 @@ for (const legacyTextBoxComponentInput of [
     "data/desktop-editor-spike.sqlite",
     componentContractSource,
     legacyTextBoxComponentInput,
-    "current text box embedded component inputs must use preset slots, not legacy preset id fields",
+    "current text box embedded component inputs must use Variant slots, not legacy Variant id fields",
   );
 }
 assertDoesNotContain(
@@ -4051,7 +4165,7 @@ for (const forbiddenLegacySystemBarMethod of [
   assertFilesDoNotContain(
     currentRepositoryFiles,
     forbiddenLegacySystemBarMethod,
-    `legacy system bar database method ${forbiddenLegacySystemBarMethod} must not return; use component class presets`,
+    `legacy system bar database method ${forbiddenLegacySystemBarMethod} must not return; use Component Class Variants`,
   );
 }
 assertDoesNotContain(
@@ -4219,13 +4333,13 @@ for (const legacyComponentRecordClassId of [
 }
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
-  "ComponentPreset",
-  "embedded component preset selection must have a dedicated dictionary value kind",
+  "ComponentVariant",
+  "embedded Component Variant selection must have a dedicated dictionary value kind",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
-  "ValueKind.ComponentPreset",
-  "component preset fields must use their dedicated dictionary control",
+  "ValueKind.ComponentVariant",
+  "Component Variant fields must use their dedicated dictionary control",
 );
 {
   const fieldDefinitionSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
@@ -4350,22 +4464,22 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
   "index < slots.Count - 1 && overrides is not null",
-  "embedded inherited values must apply ancestor overrides only, so reset restores the selected child preset",
+  "embedded inherited values must apply ancestor overrides only, so reset restores the selected child Variant",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
-  "return GetComponentPresetReferenceOptionsByType(projectId, componentType);",
-  "embedded component preset selectors must store full component preset references, not short preset ids",
+  "return GetComponentVariantReferenceOptionsByType(projectId, componentType);",
+  "embedded Component Variant selectors must store full Component Variant references, not short Variant ids",
 );
 assertContains(
   "src/desktop-preview/componentPreviewDefaults.ts",
-  "componentPresetConfig",
-  "desktop preview resolvers must resolve embedded child presets through the shared preset helper",
+  "componentVariantConfig",
+  "desktop preview resolvers must resolve embedded child Variants through the shared Variant helper",
 );
 assertContains(
   "src/desktop-preview/audioComponentResolver.ts",
-  "componentPresetConfig(componentBaseConfigs, \"badge\", badgeSlot.presetId)",
-  "audio badge preview must resolve the selected Badge preset",
+  "componentVariantConfig(componentBaseConfigs, \"badge\", badgeSlot.variantReference)",
+  "audio badge preview must resolve the selected Badge Variant",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
@@ -4389,56 +4503,56 @@ assertDoesNotContain(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
-  "ValidateComponentPresetReferencesForPreview",
-  "the Preview data boundary must validate full embedded preset references before payload construction",
+  "ValidateComponentVariantReferencesForPreview",
+  "the Preview data boundary must validate full embedded Variant references before payload construction",
 );
-for (const embeddedPresetField of [
-  "component.avatar.label.presetId",
-  "component.audio.avatar.presetId",
+for (const embeddedVariantField of [
+  "component.avatar.label.variantReference",
+  "component.audio.avatar.variantReference",
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-    `{ "id": "${embeddedPresetField}"`,
-    `embedded preset field "${embeddedPresetField}" must not be shown as a separate layout row`,
+    `{ "id": "${embeddedVariantField}"`,
+    `embedded Variant field "${embeddedVariantField}" must not be shown as a separate layout row`,
   );
   assertMatches(
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
-    new RegExp(`\\["${embeddedPresetField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
-    `embedded preset field "${embeddedPresetField}" must keep the slot preset route, not generic recordReference`,
+    new RegExp(`\\["${embeddedVariantField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
+    `embedded Variant field "${embeddedVariantField}" must keep the slot Variant route, not generic recordReference`,
   );
 }
 
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
-  "private readonly Dictionary<string, string> _lastComponentPresetNodeIds",
-  "component preset navigation must remember the last selected preset per component class",
+  "private readonly Dictionary<string, string> _lastComponentVariantNodeIds",
+  "Component Variant navigation must remember the last selected Variant per component class",
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
   "ResolveSelectionNode",
-  "component class navigation must resolve to a concrete preset selection",
+  "component class navigation must resolve to a concrete Variant selection",
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
   "_editorContent.Build(editorNode, node)",
-  "component editor layout node and data node must stay separated so presets edit preset config",
+  "component editor layout node and data node must stay separated so Variants edit Variant config",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
-  "presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset",
-  "Save preset must only be offered for a concrete selected component preset",
+  "variantSourceNode.Kind != ProjectTreeNodeKind.ComponentVariant",
+  "Save Variant must only be offered for a concrete selected Component Variant",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
-  "EndsWith(\"::preset::default\", StringComparison.Ordinal)",
-  "first component class selection must prefer the protected Default preset",
+  "EndsWith(\"::variant::default\", StringComparison.Ordinal)",
+  "first component class selection must prefer the protected Default Variant",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
   "Component variants can only be saved from an active selected variant.",
   "component variant saving must reject ambiguous parent component class configs",
 );
-for (const kind of ["ComponentClass", "ComponentPreset"]) {
+for (const kind of ["ComponentClass", "ComponentVariant"]) {
   assertPropertyBlockContainsKind(
     "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
     "CanRenameDirectly",
@@ -4449,64 +4563,71 @@ for (const kind of ["ComponentClass", "ComponentPreset"]) {
 }
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected)",
-  "component preset rename must not be coupled to delete protection",
+  "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected)",
+  "Component Variant rename must not be coupled to delete protection",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
   "EditorIcons.Create(EditorIcons.Edit, 14)",
-  "component preset rename must use the standard editor rename icon",
+  "Component Variant rename must use the standard editor rename icon",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected",
-  "protected component presets must not be deletable",
+  "Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected",
+  "protected Component Variants must not be deletable",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "ProjectTreeNodeKind.ComponentPreset => FromComponentPreset",
-  "design preview must route selected component preset nodes",
+  "ProjectTreeNodeKind.ComponentVariant => FromComponentVariant",
+  "design preview must route selected Component Variant nodes",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
-  "_database.GetComponentPresetSettings(node)",
+  "_database.GetComponentVariantSettings(node)",
   "the Preview data boundary must load selected Component Variant config",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
-  "ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset",
-  "component field service must support component presets as editable data contexts",
+  "ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentVariant",
+  "component field service must support Component Variants as editable data contexts",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "CreateComponentPresetFieldValue",
-  "component preset fields must read from preset config",
+  "CreateComponentVariantFieldValue",
+  "Component Variant fields must read from Variant config",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "UpdateComponentPresetField",
-  "component preset fields must write to preset config",
+  "UpdateComponentVariantField",
+  "Component Variant fields must write to Variant config",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
-  "ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 3)",
+  "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 3)",
   "theme status bar references must target concrete Component Variants",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
-  "ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 4)",
+  "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 4)",
   "theme navigation bar references must target concrete Component Variants",
 );
 assertAnyContains(
   desktopPersistenceDataPaths,
-  "GetComponentPresetReferenceOptionsByType(projectId, \"status_bar\"",
-  "theme status bar selector must list component presets",
+  "GetComponentVariantReferenceOptionsByType(projectId, \"status_bar\"",
+  "theme status bar selector must list Component Variants",
 );
 assertAnyContains(
   desktopPersistenceDataPaths,
-  "GetComponentPresetReferenceOptionsByType(projectId, \"navigation_bar\"",
-  "theme navigation bar selector must list component presets",
+  "GetComponentVariantReferenceOptionsByType(projectId, \"navigation_bar\"",
+  "theme navigation bar selector must list Component Variants",
 );
+for (const themeVariantField of ["theme.statusBarId", "theme.navigationBarId"]) {
+  assertMatches(
+    "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+    new RegExp(`\\[\"${themeVariantField.replaceAll(".", "\\.")}\"\\][\\s\\S]*?ValueKind\\.ComponentVariant`),
+    `${themeVariantField} must use the typed Component Variant dictionary control`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/MotionVariantValue.cs",
   "legacyKey",
@@ -4571,7 +4692,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
-  "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance",
+  "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance",
   "module instances must use the same declarative runtime-input editor as module Test Values",
 );
 assertContains(
@@ -4980,8 +5101,8 @@ assertContains(
 assertSourceDoesNotContain(
   "data/desktop-editor-spike.sqlite",
   componentContractSource,
-  '"iconRow::preset::default"',
-  "current component input contracts must store concrete component preset references",
+  '"iconRow::variant::default"',
+  "current component input contracts must store concrete Component Variant references",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorTreeExpansionState.cs",
@@ -5360,7 +5481,7 @@ assertContains(
 );
 for (const dictionaryControl of [
   "spikes/desktop-editor-shell/EditorShell/DictionaryEmbeddedComponentControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentPresetControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantControl.cs",
 ]) {
   assertDoesNotContain(
     dictionaryControl,
@@ -5380,7 +5501,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
-  "new EditorContextIdentity(\"Variant\", activePresetName)",
+  "new EditorContextIdentity(\"Variant\", activeVariantName)",
   "embedded context metadata must identify the concrete variant",
 );
 assertContains(
@@ -5557,12 +5678,12 @@ function assertDesktopSystemTypographyData() {
           `Keyboard ${keyboard.id} config must use theme.system`,
         );
       }
-      const presets = jsonArray(jsonRecord(jsonParse(keyboard.metadata_json)).presets).map(jsonRecord);
-      for (const [index, preset] of presets.entries()) {
-        const presetFont = jsonRecord(
-          jsonRecord(jsonRecord(jsonRecord(preset.config).keyboard).typography),
+      const variants = jsonArray(jsonRecord(jsonParse(keyboard.metadata_json)).variants).map(jsonRecord);
+      for (const [index, variant] of variants.entries()) {
+        const variantFont = jsonRecord(
+          jsonRecord(jsonRecord(jsonRecord(variant.config).keyboard).typography),
         ).fontFamilyId;
-        if (presetFont !== "theme.system") {
+        if (variantFont !== "theme.system") {
           addViolation(
             "data/desktop-editor-spike.sqlite",
             `Keyboard ${keyboard.id} variant ${index} must use theme.system`,

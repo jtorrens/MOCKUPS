@@ -109,7 +109,7 @@ internal sealed class EditorCollectionCardFactory
                     _domainDialogs.ShowIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
             ],
-            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.ModuleVariant =>
+            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.ModuleVariant =>
             [
                 CreateRuntimeInputsCard(node, animationEditor),
             ],
@@ -123,7 +123,7 @@ internal sealed class EditorCollectionCardFactory
             _ => [],
         };
 
-        if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant)
+        if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
             cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _isDark(), _navigateToUsage).Create(node)];
         }

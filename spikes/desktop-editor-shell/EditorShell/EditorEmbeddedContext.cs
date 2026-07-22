@@ -36,7 +36,7 @@ internal sealed record EditorEmbeddedContext(
 
 internal sealed record RuntimeComponentOverrideSource(
     string ProjectId,
-    string PresetReference,
+    string VariantReference,
     string ComponentType,
     string RecordClassId,
     string BaseConfigJson,

@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -90,7 +90,7 @@ export function resolveLabelComponentFromRecords(
   const label = asRecord(config.label);
   const surfaceSlot = asRecord(label.surfaceSlot);
   const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
     asRecord(surfaceSlot.overrides),
   );
   const size = requiredPair(label, "size", "component.label.size");

@@ -5,7 +5,7 @@ import {
 } from "../shared/keyboard/standardKeyboardLayout.js";
 import type { KeyboardDesignContract, KeyboardMode } from "./keyboardComponentContract.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -58,10 +58,10 @@ export function resolveKeyboardComponent(
   }
   const iconBarSlot = asRecord(keyboard.iconBarSlot);
   const embeddedIconBarConfig = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "iconBar",
-      requiredString(iconBarSlot, "presetId", "component.keyboard.iconBarSlot.presetId"),
+      requiredString(iconBarSlot, "variantReference", "component.keyboard.iconBarSlot.variantReference"),
     ),
     asRecord(iconBarSlot.overrides),
   );

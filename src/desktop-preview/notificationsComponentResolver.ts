@@ -1,5 +1,5 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
@@ -22,23 +22,23 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   const distributionMotion = requiredMotionContract(notifications, "distributionMotion", "component.notifications.distributionMotion");
   const distribution = resolveDistribution(payload, preview, distributionMotion);
   const stackConfig = mergeComponentDefaults(
-    componentPresetConfig(bases, "collectionStack", requiredString(slot, "presetId", "component.notifications.collectionStackSlot.presetId")),
+    componentVariantConfig(bases, "collectionStack", requiredString(slot, "variantReference", "component.notifications.collectionStackSlot.variantReference")),
     asRecord(slot.overrides),
   );
-  const notificationPresetReference = requiredString(
+  const notificationVariantReference = requiredString(
     notificationSlot,
-    "presetId",
-    "component.notifications.notificationSlot.presetId",
+    "variantReference",
+    "component.notifications.notificationSlot.variantReference",
   );
   const notificationConfig = mergeComponentDefaults(
-    componentPresetConfig(bases, "notification", notificationPresetReference),
+    componentVariantConfig(bases, "notification", notificationVariantReference),
     asRecord(notificationSlot.overrides),
   );
   if (!Array.isArray(preview.items)) throw new Error("Missing component.notifications runtime items");
   const stackItems = preview.items.map((rawItem, index) => notificationStackItem(
     asRecord(rawItem),
     index,
-    notificationPresetReference,
+    notificationVariantReference,
     notificationConfig,
     notificationInputs,
     notifications,
@@ -91,7 +91,7 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
     : undefined;
   const showBadge = requiredBoolean(notifications, "showBadge", "component.notifications.showBadge");
   const badgeConfig = mergeComponentDefaults(
-    componentPresetConfig(bases, "badge", requiredString(badgeSlot, "presetId", "component.notifications.badgeSlot.presetId")),
+    componentVariantConfig(bases, "badge", requiredString(badgeSlot, "variantReference", "component.notifications.badgeSlot.variantReference")),
     asRecord(badgeSlot.overrides),
   );
   return {
@@ -128,7 +128,7 @@ const notificationItemKeys = new Set([
 function notificationStackItem(
   item: Record<string, unknown>,
   index: number,
-  presetReference: string,
+  variantReference: string,
   notificationConfig: Record<string, unknown>,
   baseInputs: Record<string, unknown>,
   notificationsConfig: Record<string, unknown>,
@@ -140,7 +140,7 @@ function notificationStackItem(
   }
   return {
     id: requiredString(item, "id", `${path}.id`),
-    presetId: presetReference,
+    variantReference: variantReference,
     overrides: notificationConfig,
     inputs: {
       ...baseInputs,

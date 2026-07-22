@@ -1,6 +1,6 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
@@ -46,9 +46,9 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
   };
   const stackPayload = previewPayloadInBox(
     {
-      ...componentPayload(payload, componentBaseConfigs, "componentStack", contract.stackSlot.presetId),
+      ...componentPayload(payload, componentBaseConfigs, "componentStack", contract.stackSlot.variantReference),
       configJson: JSON.stringify(mergeComponentDefaults(
-        componentPresetConfig(componentBaseConfigs, "componentStack", contract.stackSlot.presetId),
+        componentVariantConfig(componentBaseConfigs, "componentStack", contract.stackSlot.variantReference),
         contract.stackSlot.overrides,
       )),
       designPreviewJson: JSON.stringify(contract.stackInputs),
@@ -75,9 +75,9 @@ function componentSlotPayload(
   slot: LockScreenComponentSlot,
 ): DesignPreviewPayload {
   return {
-    ...componentPayload(payload, componentBaseConfigs, componentType, slot.presetId),
+    ...componentPayload(payload, componentBaseConfigs, componentType, slot.variantReference),
     configJson: JSON.stringify(mergeComponentDefaults(
-      componentPresetConfig(componentBaseConfigs, componentType, slot.presetId),
+      componentVariantConfig(componentBaseConfigs, componentType, slot.variantReference),
       slot.overrides,
     )),
   };
@@ -92,6 +92,6 @@ function componentPayload(
   return {
     ...payload,
     componentType,
-    configJson: JSON.stringify(componentPresetConfig(componentBaseConfigs, componentType, variant)),
+    configJson: JSON.stringify(componentVariantConfig(componentBaseConfigs, componentType, variant)),
   };
 }

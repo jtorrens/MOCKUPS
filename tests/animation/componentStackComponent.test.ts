@@ -3,7 +3,21 @@ import test from "node:test";
 
 import { resolveComponentStackComponent } from "../../src/desktop-preview/componentStackComponentResolver.js";
 import { componentStackComponentToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
+import { componentVariantConfig } from "../../src/desktop-preview/componentPreviewDefaults.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+
+test("Component Variant references require the exact stable full-reference grammar", () => {
+  const bases = { variants: { "stub::variant::default": {} } };
+  assert.deepEqual(componentVariantConfig(bases, "stub", "stub::variant::default"), {});
+  for (const malformed of [
+    "default",
+    "stub::preset::default",
+    "stub::variant::default::variant::extra",
+    "stub with spaces::variant::default",
+  ]) {
+    assert.throws(() => componentVariantConfig(bases, "stub", malformed));
+  }
+});
 
 const motion = {
   transition: "slide",
@@ -14,10 +28,10 @@ const motion = {
   scale: false,
 };
 
-function alternative(id: string, presetId: string, active: boolean, behavior = "replace") {
+function alternative(id: string, variantReference: string, active: boolean, behavior = "replace") {
   return {
     id,
-    presetId,
+    variantReference,
     overrides: {},
     inputs: { id },
     active,
@@ -30,14 +44,14 @@ function alternative(id: string, presetId: string, active: boolean, behavior = "
 
 function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPreviewPayload {
   const references = alternatives
-    .map((item) => item.presetId)
+    .map((item) => item.variantReference)
     .filter((value): value is string => typeof value === "string" && value.length > 0);
   return {
     kind: "moduleInstance",
     componentType: "componentStack",
     componentBaseConfigsJson: JSON.stringify({
-      presetTypes: Object.fromEntries(references.map((reference) => [reference, "stub"])),
-      presets: Object.fromEntries(references.map((reference) => [reference, {}])),
+      variantTypes: Object.fromEntries(references.map((reference) => [reference, "stub"])),
+      variants: Object.fromEntries(references.map((reference) => [reference, {}])),
     }),
     instanceJson: JSON.stringify({ context: { localFrame: frame }, animation: { tracks: [] } }),
     frameRate: 25,
@@ -78,16 +92,16 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
 
 test("Component Stack resolves ordered Replace and Overlay states deterministically", () => {
   const resolved = resolveComponentStackComponent(payload([
-    alternative("clock", "stub::preset::clock", false),
-    alternative("password", "stub::preset::password", true),
-    alternative("notification", "stub::preset::notification", true, "overlay"),
+    alternative("clock", "stub::variant::clock", false),
+    alternative("password", "stub::variant::password", true),
+    alternative("notification", "stub::variant::notification", true, "overlay"),
   ]));
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "notification"]);
 });
 
 test("an explicit empty Replace state clears the slot", () => {
   const resolved = resolveComponentStackComponent(payload([
-    alternative("clock", "stub::preset::clock", false),
+    alternative("clock", "stub::variant::clock", false),
     alternative("empty", "", true),
   ]));
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["empty"]);
@@ -96,8 +110,8 @@ test("an explicit empty Replace state clears the slot", () => {
 
 test("Component Stack active tracks use each state stable id", () => {
   const source = payload([
-    alternative("clock", "stub::preset::clock", false),
-    alternative("password", "stub::preset::password", false),
+    alternative("clock", "stub::variant::clock", false),
+    alternative("password", "stub::variant::password", false),
   ], 12);
   source.instanceJson = JSON.stringify({
     context: { localFrame: 12 },
@@ -117,8 +131,8 @@ test("Component Stack active tracks use each state stable id", () => {
 
 test("Component Stack runtime transition frames use explicit action time when owner frame is static", () => {
   const source = payload([
-    alternative("clock", "stub::preset::clock", false),
-    alternative("password", "stub::preset::password", false),
+    alternative("clock", "stub::variant::clock", false),
+    alternative("password", "stub::variant::password", false),
   ]);
   const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
   Object.assign(preview.items[0]!, {
@@ -147,8 +161,8 @@ test("Component Stack runtime transition frames use explicit action time when ow
 
 test("Component Stack runtime state actions resolve the selected state and transition frame", () => {
   const source = payload([
-    alternative("clock", "stub::preset::clock", false),
-    alternative("password", "stub::preset::password", false),
+    alternative("clock", "stub::variant::clock", false),
+    alternative("password", "stub::variant::password", false),
   ], 12);
   const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
   Object.assign(preview.items[0]!, {
@@ -169,8 +183,8 @@ test("Component Stack runtime state actions resolve the selected state and trans
 
 test("Component Stack animatable State keyframes derive the outgoing state and transition clock", () => {
   const source = payload([
-    alternative("clock", "stub::preset::clock", false),
-    alternative("password", "stub::preset::password", false),
+    alternative("clock", "stub::variant::clock", false),
+    alternative("password", "stub::variant::password", false),
   ], 12);
   source.instanceJson = JSON.stringify({
     context: { localFrame: 12 },
@@ -194,9 +208,9 @@ test("Component Stack animatable State keyframes derive the outgoing state and t
 
 test("each Component Stack state resolves its own placement inside the assigned slot", () => {
   const states = [
-    alternative("clock", "stub::preset::clock", false),
+    alternative("clock", "stub::variant::clock", false),
     {
-      ...alternative("widget", "stub::preset::widget", true, "overlay"),
+      ...alternative("widget", "stub::variant::widget", true, "overlay"),
       placement: { mode: "insideEdge", alignX: 1, alignY: 0.5, offsetX: 0, offsetY: 0 },
     },
   ];
@@ -217,13 +231,13 @@ test("each Component Stack state resolves its own placement inside the assigned 
 });
 
 test("independent slots keep their occupied flow space when a later slot changes state", () => {
-  const source = payload([alternative("clock", "stub::preset::clock", false)]);
+  const source = payload([alternative("clock", "stub::variant::clock", false)]);
   const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
   preview.items = [
     {
       ...preview.items[0],
       id: "clock-slot",
-      alternatives: [alternative("clock", "stub::preset::clock", false)],
+      alternatives: [alternative("clock", "stub::variant::clock", false)],
     },
     {
       id: "password-slot",
@@ -233,19 +247,19 @@ test("independent slots keep their occupied flow space when a later slot changes
       runtimeStateId: "password",
       alternatives: [
         alternative("empty", "", false),
-        alternative("password", "stub::preset::password", false),
+        alternative("password", "stub::variant::password", false),
       ],
     },
   ];
   source.designPreviewJson = JSON.stringify(preview);
   source.componentBaseConfigsJson = JSON.stringify({
-    presetTypes: {
-      "stub::preset::clock": "stub",
-      "stub::preset::password": "stub",
+    variantTypes: {
+      "stub::variant::clock": "stub",
+      "stub::variant::password": "stub",
     },
-    presets: {
-      "stub::preset::clock": {},
-      "stub::preset::password": {},
+    variants: {
+      "stub::variant::clock": {},
+      "stub::variant::password": {},
     },
   });
   source.themeTokensJson = JSON.stringify({

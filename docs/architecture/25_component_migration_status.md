@@ -153,16 +153,16 @@ catalog, layout, default tokens and committed themes. Typography uses only
 `theme.typography.sizes.*`, split into Font families, Text sizes and Style and
 line heights vertical groups.
 
-Component preset references in runtime input contracts use full references:
+Component variant references in runtime input contracts use full references:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
 Contract-signature changes invalidate stale session-only Test Values for that
 scope instead of coercing legacy short references.
 
-The dictionary `ComponentPreset` control presents these references in two
+The dictionary `ComponentVariant` control presents these references in two
 levels: Component first, then only the Variants owned by that component. The
 compound control still commits one full reference and does not persist its
 intermediate Component selection separately. Compound selectors reserve fixed

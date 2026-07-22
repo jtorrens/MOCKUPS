@@ -166,7 +166,7 @@ error and navigation policy.
 
 Contract 55 establishes the Runtime Input options slice:
 `RuntimeInputOptionsDataSource` supplies exact Actor, Palette and complete
-Component preset options while generic factories retain `ValueKind` and
+Component variant options while generic factories retain `ValueKind` and
 declared dynamic-list interpretation.
 
 Contract 56 establishes the Preview visual-context slice:

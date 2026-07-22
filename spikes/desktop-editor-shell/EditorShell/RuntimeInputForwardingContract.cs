@@ -111,7 +111,7 @@ internal static class RuntimeInputForwardingContract
         var childJsonKey = Text(child["jsonKey"]);
         var sourceCollectionJsonKey = Text(child["sourceCollectionJsonKey"]);
         var parentItemIdJsonKey = Text(child["parentItemIdJsonKey"]);
-        var presetJsonKey = Text(child["presetJsonKey"]);
+        var variantReferenceJsonKey = Text(child["variantReferenceJsonKey"]);
         var runtimeContractJsonKey = Text(child["runtimeContractJsonKey"]);
         var sourceRuntimeContractJsonKey = Text(child["sourceRuntimeContractJsonKey"]);
         var metadataKeys = MetadataKeys(child);
@@ -143,7 +143,7 @@ internal static class RuntimeInputForwardingContract
                 {
                     ["id"] = stateId,
                     [parentItemIdJsonKey] = parentId,
-                    [presetJsonKey] = state[presetJsonKey]?.DeepClone(),
+                    [variantReferenceJsonKey] = state[variantReferenceJsonKey]?.DeepClone(),
                     [runtimeContractJsonKey] = EffectivePreview(new JsonObject(), sourceContract),
                 };
                 foreach (var metadataKey in metadataKeys)
@@ -160,7 +160,7 @@ internal static class RuntimeInputForwardingContract
         var runtimeCollection = child.DeepClone() as JsonObject ?? new JsonObject();
         foreach (var projectionOnlyKey in new[]
                  {
-                     "sourceCollectionJsonKey", "parentItemIdJsonKey", "presetJsonKey",
+                     "sourceCollectionJsonKey", "parentItemIdJsonKey", "variantReferenceJsonKey",
                      "runtimeContractJsonKey", "sourceRuntimeContractJsonKey", "itemMetadataJsonKeys",
                  })
         {

@@ -46,7 +46,7 @@ Runtime collection contains stable slots. Each slot contains:
 Each state has a stable id and contains:
 
 - an editable presentation name;
-- a full `componentClassId::preset::presetId` reference, or explicit None;
+- a full `componentClassId::variant::variantId` reference, or explicit None;
 - local Overrides and the selected child Variant's Runtime Inputs;
 - `active`: animatable boolean for states after the first;
 - `behavior`: Replace or Overlay for states after the first;

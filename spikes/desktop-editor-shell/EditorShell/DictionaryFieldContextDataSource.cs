@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record DictionaryComponentPresetSelectionSource(
+internal sealed record DictionaryComponentVariantSelectionSource(
     string ProjectId,
     string ComponentType,
     string RecordClassId,
@@ -57,32 +57,32 @@ internal sealed class DictionaryFieldContextDataSource
         return _database.GetPaletteColorOptions(projectId);
     }
 
-    public IReadOnlyList<FieldOption> ComponentPresetOptions(string projectId, string componentType)
+    public IReadOnlyList<FieldOption> ComponentVariantOptions(string projectId, string componentType)
     {
-        return _database.GetComponentPresetReferenceOptionsByType(projectId, componentType);
+        return _database.GetComponentVariantReferenceOptionsByType(projectId, componentType);
     }
 
-    public IReadOnlyList<ComponentInputBindingDefinition> ComponentPresetRuntimeInputBindings(
-        string presetReference)
+    public IReadOnlyList<ComponentInputBindingDefinition> ComponentVariantRuntimeInputBindings(
+        string variantReference)
     {
-        return _database.GetComponentPresetRuntimeInputBindings(presetReference);
+        return _database.GetComponentVariantRuntimeInputBindings(variantReference);
     }
 
-    public JsonObject ComponentPresetRuntimeValues(string presetReference)
+    public JsonObject ComponentVariantRuntimeValues(string variantReference)
     {
-        return _database.GetComponentPresetRuntimeInputs(presetReference);
+        return _database.GetComponentVariantRuntimeInputs(variantReference);
     }
 
-    public IReadOnlyList<RuntimeInputCollectionDefinition> ComponentPresetRuntimeCollections(
-        string presetReference)
+    public IReadOnlyList<RuntimeInputCollectionDefinition> ComponentVariantRuntimeCollections(
+        string variantReference)
     {
-        return _database.GetComponentPresetRuntimeCollections(presetReference);
+        return _database.GetComponentVariantRuntimeCollections(variantReference);
     }
 
-    public DictionaryComponentPresetSelectionSource ComponentPresetSelection(string presetReference)
+    public DictionaryComponentVariantSelectionSource ComponentVariantSelection(string variantReference)
     {
-        var selected = _database.GetComponentPresetSelectionSettings(presetReference);
-        return new DictionaryComponentPresetSelectionSource(
+        var selected = _database.GetComponentVariantSelectionSettings(variantReference);
+        return new DictionaryComponentVariantSelectionSource(
             selected.ProjectId,
             selected.ComponentType,
             selected.RecordClassId,

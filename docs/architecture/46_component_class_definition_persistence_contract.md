@@ -30,7 +30,7 @@ Preview payloads.
 ## 2. Current documents and Variants
 
 `config_json`, `design_preview_json` and `metadata_json` are required current
-objects. `metadata_json.presets` is the complete current Component Variant
+objects. `metadata_json.variants` is the complete current Component Variant
 array governed by contract 35 and must contain an explicit `default` Variant.
 
 Repository reads validate every root and the complete Variant envelope without
@@ -52,7 +52,7 @@ The following remain in their existing domain owners:
 - `FieldDefinition`, `ValueKind`, dictionary controls and field JSON paths;
 - component type, manifest route, contract, resolver and renderable identity;
 - Component Variant creation, duplication, rename, lock and protected deletion;
-- full `componentClassId::preset::presetId` parsing and reference validation;
+- full `componentClassId::variant::variantId` parsing and reference validation;
 - embedded slots, concrete child Variants and local Overrides;
 - explicit Runtime Input definitions, forwarding and test values;
 - structured component collections, States and animation contracts;

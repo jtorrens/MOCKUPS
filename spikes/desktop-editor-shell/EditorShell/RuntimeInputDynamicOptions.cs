@@ -22,10 +22,10 @@ internal static class RuntimeInputDynamicOptions
                 ? ""
                 : item[input.OptionsSourceLabelJsonKey]?.GetValue<string>() ?? "";
             var label = rawLabel;
-            if (input.OptionsSourceLabelJsonKey.Equals("presetId", StringComparison.Ordinal)
+            if (input.OptionsSourceLabelJsonKey.Equals("variantReference", StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(rawLabel))
             {
-                try { label = optionsDataSource.RuntimeComponentPresetName(rawLabel); }
+                try { label = optionsDataSource.RuntimeComponentVariantName(rawLabel); }
                 catch { label = rawLabel; }
             }
             if (input.OptionsSourceLabelJsonKey.Equals("name", StringComparison.Ordinal)

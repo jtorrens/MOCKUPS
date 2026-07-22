@@ -42,6 +42,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/66_simplified_editor_retirement_contract.md`
 - `docs/architecture/67_system_bar_item_authoring_contract.md`
 - `docs/architecture/68_architecture_ux_cleanup_and_scaffolding_plan.md`
+- `docs/architecture/69_component_variant_storage_vocabulary_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -217,7 +218,7 @@ horizon remains session-only in both policies.
 
 Component inputs are runtime component inputs, not preview-only controls. The preview panel may provide sample values for isolated inspection, but screens/modules must later supply real values through the same declared input contract. Do not add component-specific input catalogs or animation behavior to the preview shell.
 
-Component composition must reference concrete component presets, not parent component classes. Parent classes own schema, resolver identity and preset lists; reusable visual instances store full preset references in the form `componentClassId::preset::presetId`. Short preset ids are legacy migration input only. Saving a new preset must clone the active selected preset config, never ambiguous "current class values".
+Component composition must reference concrete Component Variants, not parent Component Classes. Parent classes own schema, resolver identity and Variant lists; reusable visual instances store full Variant references in the form `componentClassId::variant::variantId`. Short Variant ids and retired Component Preset spellings are invalid current data. Saving a new Variant must clone the active selected Variant config, never ambiguous "current class values". `Preset` remains a distinct term used by Render Presets and reserved for future non-Variant reusable recipes.
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
 

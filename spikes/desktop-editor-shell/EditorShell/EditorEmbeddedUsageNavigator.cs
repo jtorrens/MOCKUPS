@@ -48,16 +48,16 @@ internal sealed class EditorEmbeddedUsageNavigator
 
             var settings = _database.GetComponentClassSettings(node.Id);
             var usages = _database.GetEmbeddedComponentUsages(settings.ProjectId, settings.ComponentType, node.Id);
-            var presetNode = ActivePresetNodeFor(node);
-            var presetUsages = presetNode is null
+            var variantNode = ActiveVariantNodeFor(node);
+            var variantUsages = variantNode is null
                 ? []
-                : _database.GetComponentPresetReferenceUsageDetails(presetNode);
+                : _database.GetComponentVariantReferenceUsageDetails(variantNode);
             var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(
                 settings.Name,
                 settings.ComponentType,
                 usages,
-                presetNode?.Name,
-                presetUsages);
+                variantNode?.Name,
+                variantUsages);
             if (selected is not null)
             {
                 await NavigateToSelection(selected);
@@ -92,16 +92,16 @@ internal sealed class EditorEmbeddedUsageNavigator
         }
     }
 
-    private ProjectTreeNode? ActivePresetNodeFor(ProjectTreeNode componentClassNode)
+    private ProjectTreeNode? ActiveVariantNodeFor(ProjectTreeNode componentClassNode)
     {
         var selected = _selectedNode();
-        return selected?.Kind == ProjectTreeNodeKind.ComponentPreset
+        return selected?.Kind == ProjectTreeNodeKind.ComponentVariant
                && selected.Parent?.Id.Equals(componentClassNode.Id, StringComparison.Ordinal) == true
             ? selected
             : componentClassNode.Children.FirstOrDefault((child) =>
-                child.Kind == ProjectTreeNodeKind.ComponentPreset
-                && child.Id.EndsWith("::preset::default", StringComparison.Ordinal))
-              ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentPreset);
+                child.Kind == ProjectTreeNodeKind.ComponentVariant
+                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+              ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant);
     }
 
     private async Task NavigateToSelection(EditorEmbeddedUsageDialog.Selection selection)

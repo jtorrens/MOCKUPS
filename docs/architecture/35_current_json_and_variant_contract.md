@@ -97,9 +97,9 @@ missing persisted data as an empty container and then save the result.
 
 ## 3. Component Variant envelope
 
-`component_classes.metadata_json.presets` is the current persisted Component
-Variant array. The internal `presets` spelling remains storage vocabulary;
-product language is Variant.
+`component_classes.metadata_json.variants` is the current persisted Component
+Variant array. `variants` is both the current storage vocabulary and the
+product language.
 
 The array is required, non-empty and contains objects only. Every entry has:
 
@@ -118,7 +118,8 @@ Readers must not:
 - skip a non-object or id-less array entry;
 - infer `locked` or `protected` from the `default` id;
 - replace a missing or empty Variant config with class config;
-- create `presets` while renaming, duplicating, deleting, locking or editing;
+- create an implicit `variants` array while renaming, duplicating, deleting,
+  locking or editing;
 - select a Variant by name or position.
 
 Creating or duplicating a Variant clones the complete selected Variant config
@@ -166,7 +167,7 @@ Read-only startup validation and architecture enforcement cover:
 - explicit names, booleans and config objects;
 - protected Default presence;
 - complete Variant references;
-- absence of catch-all object parsing, `EnsurePresetArray`, class-config
+- absence of catch-all object parsing, `EnsureVariantArray`, class-config
   fallback and id-derived lock inference in current paths.
 
 Tests corrupt disposable database copies and prove both that opening them fails

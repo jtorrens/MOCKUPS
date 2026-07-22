@@ -131,7 +131,7 @@ internal static class EditorIcons
 
     public static string ForNavigationTreeNode(ProjectTreeNode node)
     {
-        if ((node.Kind is ProjectTreeNodeKind.ComponentPreset or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null)
+        if ((node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant) && node.Parent is not null)
         {
             return ForNavigationTreeNode(node.Parent);
         }

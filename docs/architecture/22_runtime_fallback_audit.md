@@ -114,7 +114,7 @@ No active desktop preview path may use:
 - The old runtime visual modules under `src/visual/modules/**` have been
   removed from this repository. If chat runtime behavior is needed later, use
   the previous React repository as visual reference and recreate the component
-  graph through the current component/preset/resolver/renderable route.
+  graph through the current component/Variant/resolver/renderable route.
 - Message bubble migration must be all-owned-subcomponents-at-once, following
   `docs/architecture/23_embedded_component_composition_contract.md`.
 

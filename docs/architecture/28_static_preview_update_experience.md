@@ -278,7 +278,7 @@ Production preview chrome is not part of the rendered module payload:
   forces light or dark;
 - the context title identifies the active ModuleInstance;
 - the context list contains ordered ModuleInstance slots from the Shot, never
-  embedded component presets;
+  embedded component variants;
 - changing active instance or forced appearance updates editor chrome and the
   resident preview atomically, without exposing a mismatched intermediate
   state.

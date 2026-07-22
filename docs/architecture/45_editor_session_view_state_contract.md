@@ -39,7 +39,7 @@ Consequences:
 - returning from Actor to Theme restores the last Theme working point;
 - two different editor layout classes do not overwrite each other;
 - Component and Module Variant editors never collapse into the generic
-  `component.preset` or `module.variant` node classes.
+  `component.variant` or `module.variant` node classes.
 
 Keys must never be inferred from a label, tree depth, kind, order, selected
 position or control type.

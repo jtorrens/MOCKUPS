@@ -31,7 +31,7 @@ without creating a Variant for each combination.
 Collection Stack and Component Stack share the generic child contract:
 
 - stable item id;
-- full `componentClassId::preset::presetId` reference;
+- full `componentClassId::variant::variantId` reference;
 - item-local overrides;
 - the selected child Variant's runtime inputs;
 - Left, Center or Right alignment;
@@ -128,7 +128,7 @@ Easing only; this presentation does not add delay or intensity semantics.
 ## Preview boundary
 
 The owning resolver validates every runtime value and concrete Variant
-reference. Shared component-collection helpers resolve child presets, assign
+reference. Shared component-collection helpers resolve child Variants, assign
 optional uniform frames and measure/translate generic renderables. The registry only routes the new atom;
 the common bridge, web renderer and `MainWindow` contain no Collection Stack
 layout or component-specific rules.

@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import type {
@@ -128,10 +128,10 @@ export function resolveMediaComponentFromRecords(
   );
   const surfaceSlot = asRecord(media.surfaceSlot);
   const surfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "surface",
-      requiredString(surfaceSlot, "presetId", "component.media.surfaceSlot.presetId"),
+      requiredString(surfaceSlot, "variantReference", "component.media.surfaceSlot.variantReference"),
     ),
     asRecord(surfaceSlot.overrides),
   );
@@ -232,7 +232,7 @@ function resolveMediaTextOverlay(
   );
   const labelSlot = asRecord(overlay.labelSlot);
   const labelConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "label", labelSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "label", labelSlot.variantReference),
     asRecord(labelSlot.overrides),
   );
 
@@ -288,10 +288,10 @@ function resolveMediaIconBar(
 ) {
   const slot = asRecord(media[slotKey]);
   const config = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "iconBar",
-      requiredString(slot, "presetId", `component.media.${slotKey}.presetId`),
+      requiredString(slot, "variantReference", `component.media.${slotKey}.variantReference`),
     ),
     asRecord(slot.overrides),
   );

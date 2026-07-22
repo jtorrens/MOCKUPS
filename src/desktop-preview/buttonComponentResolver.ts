@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   asRecord,
   parseObject,
@@ -59,7 +59,7 @@ export function resolveButtonComponentFromRecords(
     stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
     badge: showBadge ? resolveBadgeComponentFromRecords(
       mergeComponentDefaults(
-        componentPresetConfig(bases, "badge", requiredString(badgeSlot, "presetId", "component.button.badgeSlot.presetId")),
+        componentVariantConfig(bases, "badge", requiredString(badgeSlot, "variantReference", "component.button.badgeSlot.variantReference")),
         asRecord(badgeSlot.overrides),
       ),
       {
@@ -92,7 +92,7 @@ function resolveButtonStateStyle(
     iconColorToken: requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
     label: contentMode === "icon" ? undefined : resolveLabelComponentFromRecords(
       mergeComponentDefaults(
-        componentPresetConfig(bases, "label", requiredString(labelSlot, "presetId", `component.button.states.${state}.label.presetId`)),
+        componentVariantConfig(bases, "label", requiredString(labelSlot, "variantReference", `component.button.states.${state}.label.variantReference`)),
         asRecord(labelSlot.overrides),
       ),
       { ...literalLabelPreview(text), textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
@@ -102,7 +102,7 @@ function resolveButtonStateStyle(
     ),
     surface: resolveSurfaceComponentAtSize(
       mergeComponentDefaults(
-        componentPresetConfig(bases, "surface", requiredString(surfaceSlot, "presetId", `component.button.states.${state}.surface.presetId`)),
+        componentVariantConfig(bases, "surface", requiredString(surfaceSlot, "variantReference", `component.button.states.${state}.surface.variantReference`)),
         asRecord(surfaceSlot.overrides),
       ),
       size,

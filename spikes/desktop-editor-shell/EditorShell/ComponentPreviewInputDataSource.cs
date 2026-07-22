@@ -17,24 +17,24 @@ internal sealed class ComponentPreviewInputDataSource
         return _database.GetProjectSettings(projectId).DefaultFps;
     }
 
-    public JsonObject ComponentPresetConfig(string presetReference)
+    public JsonObject ComponentVariantConfig(string variantReference)
     {
-        return _database.GetComponentPresetConfig(presetReference);
+        return _database.GetComponentVariantConfig(variantReference);
     }
 
-    public JsonObject ComponentPresetRuntimeContract(string presetReference)
+    public JsonObject ComponentVariantRuntimeContract(string variantReference)
     {
-        return _database.GetComponentPresetRuntimeContract(presetReference);
+        return _database.GetComponentVariantRuntimeContract(variantReference);
     }
 
-    public string ValidateComponentPresetReference(
+    public string ValidateComponentVariantReference(
         string projectId,
         string componentType,
-        string presetReference)
+        string variantReference)
     {
-        return _database.ValidateComponentPresetReferenceValue(
+        return _database.ValidateComponentVariantReferenceValue(
             projectId,
             componentType,
-            presetReference);
+            variantReference);
     }
 }

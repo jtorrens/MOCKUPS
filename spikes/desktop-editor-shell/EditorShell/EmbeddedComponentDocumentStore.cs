@@ -11,12 +11,12 @@ internal sealed class EmbeddedComponentDocumentStore
         _database = database;
     }
 
-    public string ActivePresetName(EditorEmbeddedContext context)
+    public string ActiveVariantName(EditorEmbeddedContext context)
     {
         return context.RuntimeSource is null
-            ? _database.GetEmbeddedComponentPresetName(context.OwnerNode, context.Slots)
-            : _database.GetRuntimeComponentPresetName(
-                context.RuntimeSource.PresetReference,
+            ? _database.GetEmbeddedComponentVariantName(context.OwnerNode, context.Slots)
+            : _database.GetRuntimeComponentVariantName(
+                context.RuntimeSource.VariantReference,
                 context.RuntimeSource.Overrides,
                 context.Slots);
     }

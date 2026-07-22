@@ -83,13 +83,13 @@ internal static class DictionaryControlRegistry
                 request.Definition.IsEditable,
                 request.Services.ShowIconTokenPicker,
                 request.Services.CreateIconPreview,
-                request.Services.GetComponentPresetOptions?.Invoke("button")
+                request.Services.GetComponentVariantOptions?.Invoke("button")
                     .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? ""),
-            [ValueKind.ComponentPreset] = (request) => new DictionaryComponentPresetControl(
+            [ValueKind.ComponentVariant] = (request) => new DictionaryComponentVariantControl(
                 request.Definition,
                 request.Value,
                 request.IsHighlighted,
-                request.Services.OpenComponentPresetReference,
+                request.Services.OpenComponentVariantReference,
                 request.Services.OpenEmbeddedComponent),
             [ValueKind.ComponentInputBindings] = (request) => new DictionaryComponentInputBindingsControl(
                 request.Definition,

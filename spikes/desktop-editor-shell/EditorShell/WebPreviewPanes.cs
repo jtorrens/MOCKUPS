@@ -2371,8 +2371,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 payload.Name,
                 payload.ConfigJson,
                 payload.ThemeTokensJson,
-                payload.ThemeStatusBarPresetId,
-                payload.ThemeNavigationBarPresetId,
+                payload.ThemeStatusBarVariantReference,
+                payload.ThemeNavigationBarVariantReference,
                 payload.ComponentBaseConfigsJson,
                 payload.AppConfigJson,
                 StablePreviewJson(payload.DesignPreviewJson));

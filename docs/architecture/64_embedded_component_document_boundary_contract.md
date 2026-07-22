@@ -76,7 +76,7 @@ call the general database facade.
 - Every embedded scalar still follows
   `FieldDefinition → ValueKind → dictionary control → generic commit`.
 - Every embedded slot stores a full
-  `componentClassId::preset::presetId` reference.
+  `componentClassId::variant::variantId` reference.
 - Crossing a new boundary still chooses explicit Default; current data never
   falls back to Default.
 - Inheritance reads the selected concrete Variant, not mutable class config.

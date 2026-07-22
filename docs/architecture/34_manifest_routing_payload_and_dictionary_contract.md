@@ -211,7 +211,7 @@ be exhaustive and may be used only when constructing new current definitions.
 Normal reads never derive a missing `valueKind` from `kind`.
 
 Runtime Input option lookup additionally follows contract 55. The typed data
-source supplies exact current Actor, Palette and complete Component preset
+source supplies exact current Actor, Palette and complete Component variant
 options; generic factories retain the metadata-driven `ValueKind` and declared
 dynamic-list mapping before the registered dictionary control is created.
 

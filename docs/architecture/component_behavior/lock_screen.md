@@ -21,7 +21,7 @@ Lock Screen owns four ordered visual layers:
 
 The Stack is the content container for future Lock Screen components. Status
 Bar, Navigation Bar and Stack are explicit embedded slots containing
-`presetId` plus local `overrides`.
+`variantReference` plus local `overrides`.
 
 Component Stack keeps its own public runtime contract. At the Lock Screen
 composition boundary, `stackInputs` binds that contract as module Variant data:

@@ -161,8 +161,8 @@ function resolveAlternative(
   const resolvedActive = index === 0
     ? { value: true, sourceKeyframeFrame: undefined }
     : resolveParameterAnimation(animation, "active", id, frame, alternative.active === true);
-  const presetReference = optionalString(alternative, "presetId");
-  const component = presetReference
+  const variantReference = optionalString(alternative, "variantReference");
+  const component = variantReference
     ? resolveComponentCollectionItem(payload, {
         ...alternative,
         alignment: "center",

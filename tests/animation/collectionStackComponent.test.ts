@@ -38,7 +38,7 @@ const payload: DesignPreviewPayload = {
 const items = ["first", "second"].map((id) => ({
   id,
   componentType: "stub",
-  presetReference: `stub::preset::${id}`,
+  variantReference: `stub::variant::${id}`,
   config: {},
   alignment: "center" as const,
   gapBeforeMode: "fixed" as const,
@@ -128,7 +128,7 @@ test("Collection Stack uses the largest frame and applies deterministic depth ra
 test("Stacked distribution resolves to fit-content even when stale runtime sizing says fill", () => {
   const resolved = resolveCollectionStackComponent({
     ...payload,
-    componentBaseConfigsJson: JSON.stringify({ presetTypes: {} }),
+    componentBaseConfigsJson: JSON.stringify({ variantTypes: {} }),
     designPreviewJson: JSON.stringify({
       distributionMode: "stacked",
       sizingMode: "fill",
@@ -148,7 +148,7 @@ test("Stacked distribution resolves to fit-content even when stale runtime sizin
 test("Present keeps an outgoing item through its exit and starts Reflow afterwards", () => {
   const item = (id: string) => ({
     id,
-    presetId: `stub::preset::${id}`,
+    variantReference: `stub::variant::${id}`,
     overrides: {},
     inputs: { id },
     present: true,
@@ -165,8 +165,8 @@ test("Present keeps an outgoing item through its exit and starts Reflow afterwar
     ...payload,
     localFrame: frame,
     componentBaseConfigsJson: JSON.stringify({
-      presetTypes: { "stub::preset::first": "stub", "stub::preset::second": "stub" },
-      presets: { "stub::preset::first": {}, "stub::preset::second": {} },
+      variantTypes: { "stub::variant::first": "stub", "stub::variant::second": "stub" },
+      variants: { "stub::variant::first": {}, "stub::variant::second": {} },
     }),
     instanceJson: JSON.stringify({
       context: { localFrame: frame },
@@ -206,8 +206,8 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
     ...payload,
     localFrame: frame,
     componentBaseConfigsJson: JSON.stringify({
-      presetTypes: { "stub::preset::notice": "stub" },
-      presets: { "stub::preset::notice": {} },
+      variantTypes: { "stub::variant::notice": "stub" },
+      variants: { "stub::variant::notice": {} },
     }),
     instanceJson: JSON.stringify({
       context: { localFrame: frame },
@@ -223,7 +223,7 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
       stackDirection: "down", stackOffsetToken: "theme.spacing.m",
       itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
       items: [{
-        id: "notice", presetId: "stub::preset::notice", overrides: {},
+        id: "notice", variantReference: "stub::variant::notice", overrides: {},
         inputs: { displayMode: "summary" }, present: true,
         presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
         alignment: "center", gapBeforeMode: "fixed",
@@ -241,8 +241,8 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
     localFrame: frame,
     frameRate: 30,
     componentBaseConfigsJson: JSON.stringify({
-      presetTypes: { "stub::preset::notice": "stub" },
-      presets: { "stub::preset::notice": {} },
+      variantTypes: { "stub::variant::notice": "stub" },
+      variants: { "stub::variant::notice": {} },
     }),
     instanceJson: JSON.stringify({
       context: { localFrame: frame },
@@ -258,7 +258,7 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
       stackDirection: "down", stackOffsetToken: "theme.spacing.m",
       itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
       items: [{
-        id: "notice", presetId: "stub::preset::notice", overrides: {},
+        id: "notice", variantReference: "stub::variant::notice", overrides: {},
         inputs: {
           inputs: [
             { id: "play", jsonKey: "play", valueKind: "Boolean" },

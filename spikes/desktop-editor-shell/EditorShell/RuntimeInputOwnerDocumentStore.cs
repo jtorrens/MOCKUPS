@@ -18,7 +18,7 @@ internal sealed record RuntimeInputOwnerDocumentSource(
     RuntimeInputDesignPreviewOwnerKind DesignPreviewOwnerKind,
     string DesignPreviewOwnerId);
 
-internal sealed record RuntimeComponentPresetSelectionSource(
+internal sealed record RuntimeComponentVariantSelectionSource(
     string ProjectId,
     string ComponentType,
     string RecordClassId,
@@ -59,9 +59,9 @@ internal sealed class RuntimeInputOwnerDocumentStore
                 moduleId);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.ComponentPreset && node.Parent is not null)
+        if (node.Kind == ProjectTreeNodeKind.ComponentVariant && node.Parent is not null)
         {
-            var settings = _database.GetComponentPresetSettings(node);
+            var settings = _database.GetComponentVariantSettings(node);
             return new RuntimeInputOwnerDocumentSource(
                 settings.ConfigJson,
                 settings.DesignPreviewJson,
@@ -99,15 +99,15 @@ internal sealed class RuntimeInputOwnerDocumentStore
         }
     }
 
-    public JsonObject ComponentPresetRuntimeInputs(string presetReference)
+    public JsonObject ComponentVariantRuntimeInputs(string variantReference)
     {
-        return _database.GetComponentPresetRuntimeInputs(presetReference);
+        return _database.GetComponentVariantRuntimeInputs(variantReference);
     }
 
-    public RuntimeComponentPresetSelectionSource ComponentPresetSelection(string presetReference)
+    public RuntimeComponentVariantSelectionSource ComponentVariantSelection(string variantReference)
     {
-        var selected = _database.GetComponentPresetSelectionSettings(presetReference);
-        return new RuntimeComponentPresetSelectionSource(
+        var selected = _database.GetComponentVariantSelectionSettings(variantReference);
+        return new RuntimeComponentVariantSelectionSource(
             selected.ProjectId,
             selected.ComponentType,
             selected.RecordClassId,

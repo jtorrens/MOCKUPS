@@ -23,7 +23,7 @@ internal sealed class EditorHeaderController
     private readonly Action<ProjectTreeNode, bool> _showNode;
     private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
-    private readonly Func<ProjectTreeNode, Task> _savePreset;
+    private readonly Func<ProjectTreeNode, Task> _saveVariant;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
     private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
     private readonly EditorActiveFieldControls _activeFieldControls;
@@ -39,7 +39,7 @@ internal sealed class EditorHeaderController
         Action<ProjectTreeNode, bool> showNode,
         Action<ProjectTreeNode> returnToEmbeddedOwner,
         Action<EditorEmbeddedContext> showEmbeddedContext,
-        Func<ProjectTreeNode, Task> savePreset,
+        Func<ProjectTreeNode, Task> saveVariant,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
         Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot,
         EditorActiveFieldControls activeFieldControls)
@@ -54,7 +54,7 @@ internal sealed class EditorHeaderController
         _showNode = showNode;
         _returnToEmbeddedOwner = returnToEmbeddedOwner;
         _showEmbeddedContext = showEmbeddedContext;
-        _savePreset = savePreset;
+        _saveVariant = saveVariant;
         _variantHistory = variantHistory;
         _restoreVariantSnapshot = restoreVariantSnapshot;
         _activeFieldControls = activeFieldControls;
@@ -97,18 +97,18 @@ internal sealed class EditorHeaderController
 
     public void SetEmbeddedTitle(EditorEmbeddedContext context)
     {
-        var activePresetName = _embeddedDocuments.ActivePresetName(context);
+        var activeVariantName = _embeddedDocuments.ActiveVariantName(context);
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
         if (context.RuntimeSource is not null)
         {
-            var rootPresetName = _embeddedDocuments.ActivePresetName(context.Ancestor(0));
+            var rootVariantName = _embeddedDocuments.ActiveVariantName(context.Ancestor(0));
             items.Add(context.Slots.Count == 0
-                ? new EditorBreadcrumbItem($"Component: {rootPresetName}")
+                ? new EditorBreadcrumbItem($"Component: {rootVariantName}")
                 : new EditorBreadcrumbItem(
-                    $"Component: {rootPresetName}",
+                    $"Component: {rootVariantName}",
                     () => _showEmbeddedContext(context.Ancestor(0))));
         }
         for (var index = 0; index < context.Slots.Count; index++)
@@ -134,7 +134,7 @@ internal sealed class EditorHeaderController
                 ? null
                 : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(null);
-        SetContextStrip(ContextMetadataForEmbedded(context, activePresetName));
+        SetContextStrip(ContextMetadataForEmbedded(context, activeVariantName));
     }
 
     private EditorContextStripMetadata? ContextMetadataForSelection()
@@ -143,10 +143,10 @@ internal sealed class EditorHeaderController
         if (selected is null) return null;
         var identities = selected.Kind switch
         {
-            ProjectTreeNodeKind.ComponentPreset when selected.Parent is not null =>
+            ProjectTreeNodeKind.ComponentVariant when selected.Parent is not null =>
                 new[] { new EditorContextIdentity("Component", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
             ProjectTreeNodeKind.ComponentClass =>
-                new[] { new EditorContextIdentity("Component", selected.Name), new EditorContextIdentity("Variant", _nodeSelection.PreferredPresetNode(selected).Name) },
+                new[] { new EditorContextIdentity("Component", selected.Name), new EditorContextIdentity("Variant", _nodeSelection.PreferredVariantNode(selected).Name) },
             ProjectTreeNodeKind.ModuleVariant when selected.Parent is not null =>
                 new[] { new EditorContextIdentity("Module", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
             ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
@@ -157,11 +157,11 @@ internal sealed class EditorHeaderController
         return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
     }
 
-    private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activePresetName)
+    private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activeVariantName)
     {
         var component = EditorUiText.IdentifierLabel(context.ComponentType);
         var identities = new List<EditorContextIdentity> { new("Component", component) };
-        if (!string.IsNullOrWhiteSpace(activePresetName)) identities.Add(new EditorContextIdentity("Variant", activePresetName));
+        if (!string.IsNullOrWhiteSpace(activeVariantName)) identities.Add(new EditorContextIdentity("Variant", activeVariantName));
         return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
     }
 
@@ -205,7 +205,7 @@ internal sealed class EditorHeaderController
                 Children =
                 {
                     CreateHistoryComboBox(moduleVariant),
-                    CreateSavePresetButton(moduleVariant),
+                    CreateSaveVariantButton(moduleVariant),
                 },
             };
         }
@@ -216,10 +216,10 @@ internal sealed class EditorHeaderController
         }
 
         var selected = _selectedNode();
-        var presetSourceNode = selected?.Kind == ProjectTreeNodeKind.ComponentPreset
+        var variantSourceNode = selected?.Kind == ProjectTreeNodeKind.ComponentVariant
             ? selected
-            : _nodeSelection.PreferredPresetNode(node);
-        if (presetSourceNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+            : _nodeSelection.PreferredVariantNode(node);
+        if (variantSourceNode.Kind != ProjectTreeNodeKind.ComponentVariant)
         {
             return null;
         }
@@ -230,8 +230,8 @@ internal sealed class EditorHeaderController
             Spacing = 6,
             Children =
             {
-                CreateHistoryComboBox(presetSourceNode),
-                CreateSavePresetButton(presetSourceNode),
+                CreateHistoryComboBox(variantSourceNode),
+                CreateSaveVariantButton(variantSourceNode),
             },
         };
     }
@@ -277,7 +277,7 @@ internal sealed class EditorHeaderController
         return combo;
     }
 
-    private Button CreateSavePresetButton(ProjectTreeNode node)
+    private Button CreateSaveVariantButton(ProjectTreeNode node)
     {
         var icon = EditorIcons.CreateSemantic("Save variant", EditorIcons.Add, 15);
         EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
@@ -307,7 +307,7 @@ internal sealed class EditorHeaderController
             VerticalAlignment = VerticalAlignment.Center,
         };
         ToolTip.SetTip(button, "Save variant");
-        button.Click += async (_, _) => await _savePreset(node);
+        button.Click += async (_, _) => await _saveVariant(node);
         return button;
     }
 }

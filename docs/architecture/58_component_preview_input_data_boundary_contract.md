@@ -82,7 +82,7 @@ source rather than duplicating that read in the Runtime Inputs editor.
 
 ## 5. Preserved boundaries
 
-- Stable ids and complete `componentClassId::preset::presetId` references are
+- Stable ids and complete `componentClassId::variant::variantId` references are
   preserved.
 - A new authored Component boundary still starts with its explicit Default
   Variant; current references never fall back to Default.

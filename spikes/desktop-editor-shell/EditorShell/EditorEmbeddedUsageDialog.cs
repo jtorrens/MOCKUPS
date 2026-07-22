@@ -29,8 +29,8 @@ internal sealed class EditorEmbeddedUsageDialog
         string componentName,
         string componentType,
         IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
-        string? presetName = null,
-        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage>? presetUsages = null)
+        string? variantName = null,
+        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage>? variantUsages = null)
     {
         Selection? selected = null;
         var dialog = new SukiWindow
@@ -61,8 +61,8 @@ internal sealed class EditorEmbeddedUsageDialog
 
         content.Children.Add(CreateUsageSwitch(
             classUsages,
-            presetName,
-            presetUsages ?? [],
+            variantName,
+            variantUsages ?? [],
             dialog,
             (selection) => selected = selection));
 
@@ -99,35 +99,35 @@ internal sealed class EditorEmbeddedUsageDialog
 
     private Control CreateUsageSwitch(
         IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
-        string? presetName,
-        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage> presetUsages,
+        string? variantName,
+        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage> variantUsages,
         Window dialog,
         System.Action<Selection> select)
     {
         var classContent = classUsages.Count == 0
             ? EmptyText("No embedded usages.")
             : CreateUsageTree(classUsages, dialog, select);
-        var presetContent = string.IsNullOrWhiteSpace(presetName)
+        var variantContent = string.IsNullOrWhiteSpace(variantName)
             ? EmptyText("No active variant selected.")
-            : presetUsages.Count == 0
-                ? EmptyText($"No usages for variant {presetName}.")
-                : CreatePresetUsageList(presetUsages, dialog, select);
+            : variantUsages.Count == 0
+                ? EmptyText($"No usages for variant {variantName}.")
+                : CreateVariantUsageList(variantUsages, dialog, select);
         var contentHost = new ContentControl
         {
             Content = classContent,
         };
         var classLabel = SwitchLabel("Class", selected: true);
-        var presetLabel = SwitchLabel("Variant", selected: false);
+        var variantLabel = SwitchLabel("Variant", selected: false);
         var usageSwitch = new ToggleSwitch
         {
             IsChecked = false,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        void Select(bool preset)
+        void Select(bool variant)
         {
-            contentHost.Content = preset ? presetContent : classContent;
-            SetSwitchLabelState(classLabel, !preset);
-            SetSwitchLabelState(presetLabel, preset);
+            contentHost.Content = variant ? variantContent : classContent;
+            SetSwitchLabelState(classLabel, !variant);
+            SetSwitchLabelState(variantLabel, variant);
         }
 
         usageSwitch.PropertyChanged += (_, change) =>
@@ -146,11 +146,11 @@ internal sealed class EditorEmbeddedUsageDialog
             {
                 classLabel,
                 usageSwitch,
-                presetLabel,
+                variantLabel,
             },
         };
         Grid.SetColumn(usageSwitch, 1);
-        Grid.SetColumn(presetLabel, 2);
+        Grid.SetColumn(variantLabel, 2);
 
         return new StackPanel
         {
@@ -283,8 +283,8 @@ internal sealed class EditorEmbeddedUsageDialog
         return button;
     }
 
-    private Control CreatePresetUsageList(
-        IReadOnlyList<SpikeDatabase.ComponentPresetReferenceUsage> usages,
+    private Control CreateVariantUsageList(
+        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage> usages,
         Window dialog,
         System.Action<Selection> select)
     {
@@ -306,7 +306,7 @@ internal sealed class EditorEmbeddedUsageDialog
             });
             foreach (var usage in group.OrderBy((item) => item.SourceName).ThenBy((item) => item.Detail))
             {
-                var leaf = CreatePresetUsageButton(usage, dialog, select);
+                var leaf = CreateVariantUsageButton(usage, dialog, select);
                 leaf.Margin = new Avalonia.Thickness(18, 0, 0, 0);
                 branch.Children.Add(leaf);
             }
@@ -325,8 +325,8 @@ internal sealed class EditorEmbeddedUsageDialog
         return root;
     }
 
-    private static Button CreatePresetUsageButton(
-        SpikeDatabase.ComponentPresetReferenceUsage usage,
+    private static Button CreateVariantUsageButton(
+        SpikeDatabase.ComponentVariantReferenceUsage usage,
         Window dialog,
         System.Action<Selection> select)
     {

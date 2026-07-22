@@ -20,12 +20,12 @@ internal sealed class RuntimeInputOptionsDataSource
         return _actorDataSource.Options(projectId);
     }
 
-    public IReadOnlyList<FieldOption> ComponentPresetOptions(
+    public IReadOnlyList<FieldOption> ComponentVariantOptions(
         string projectId,
         string componentType,
         bool includeNone)
     {
-        return _database.GetComponentPresetReferenceOptions(projectId, componentType, includeNone);
+        return _database.GetComponentVariantReferenceOptions(projectId, componentType, includeNone);
     }
 
     public IReadOnlyList<FieldOption> PaletteColorOptions(string projectId)
@@ -33,8 +33,8 @@ internal sealed class RuntimeInputOptionsDataSource
         return _database.GetPaletteColorOptions(projectId);
     }
 
-    public string RuntimeComponentPresetName(string presetReference)
+    public string RuntimeComponentVariantName(string variantReference)
     {
-        return _database.GetRuntimeComponentPresetName(presetReference, new JsonObject(), []);
+        return _database.GetRuntimeComponentVariantName(variantReference, new JsonObject(), []);
     }
 }

@@ -29,7 +29,7 @@ internal enum ProjectTreeNodeKind
     IconTheme,
     RenderPreset,
     ComponentClass,
-    ComponentPreset,
+    ComponentVariant,
     Device,
     Actor,
     Theme,
@@ -92,13 +92,13 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
         or ProjectTreeNodeKind.RenderPreset
-        or ProjectTreeNodeKind.ComponentPreset
+        or ProjectTreeNodeKind.ComponentVariant
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
     public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.ComponentClass
-        or ProjectTreeNodeKind.ComponentPreset
+        or ProjectTreeNodeKind.ComponentVariant
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.ModuleInstance;
@@ -112,7 +112,7 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
         or ProjectTreeNodeKind.ProductionFont
-        || (Kind == ProjectTreeNodeKind.ComponentPreset && !IsProtected && !IsLocked)
+        || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected && !IsLocked)
         || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected && !IsLocked);
     public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
@@ -127,7 +127,7 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.ThemesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
         and not ProjectTreeNodeKind.EpisodesRoot
-        and not ProjectTreeNodeKind.ComponentPreset
+        and not ProjectTreeNodeKind.ComponentVariant
         and not ProjectTreeNodeKind.ModuleVariant;
 
     public string Display => Name;
@@ -164,7 +164,7 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.RenderPreset => "render_preset",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
-            ProjectTreeNodeKind.ComponentPreset => "component.preset",
+            ProjectTreeNodeKind.ComponentVariant => "component.variant",
             ProjectTreeNodeKind.Device => "device",
             ProjectTreeNodeKind.Actor => "actor",
             ProjectTreeNodeKind.Theme => "theme",

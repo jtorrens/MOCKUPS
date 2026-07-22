@@ -16,7 +16,7 @@ export interface ComponentCollectionLayoutItem {
 
 export interface ComponentCollectionItemContract extends ComponentCollectionLayoutItem {
   componentType: string;
-  presetReference: string;
+  variantReference: string;
   config: Record<string, unknown>;
   inputs: Record<string, unknown>;
   present: boolean;

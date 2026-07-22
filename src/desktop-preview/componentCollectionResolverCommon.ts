@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
@@ -18,12 +18,12 @@ export function resolveComponentCollectionItems(
 ): ComponentCollectionItemContract[] {
   if (!Array.isArray(preview.items)) throw new Error(`Missing ${ownerPath} runtime items`);
   const bases = parseObject(payload.componentBaseConfigsJson);
-  const presetTypes = requiredRecord(bases, "presetTypes", "componentBaseConfigs.presetTypes");
+  const variantTypes = requiredRecord(bases, "variantTypes", "componentBaseConfigs.variantTypes");
   return preview.items.map((rawItem, index) => resolveComponentCollectionItem(
     payload,
     asRecord(rawItem),
     `${ownerPath}.items[${index}]`,
-    presetTypes,
+    variantTypes,
   ));
 }
 
@@ -31,12 +31,12 @@ export function resolveComponentCollectionItem(
   payload: DesignPreviewPayload,
   item: Record<string, unknown>,
   itemPath: string,
-  presetTypesOverride?: Record<string, unknown>,
+  variantTypesOverride?: Record<string, unknown>,
   ownsPresence = true,
 ): ComponentCollectionItemContract {
     const bases = parseObject(payload.componentBaseConfigsJson);
-    const presetTypes = presetTypesOverride
-      ?? requiredRecord(bases, "presetTypes", "componentBaseConfigs.presetTypes");
+    const variantTypes = variantTypesOverride
+      ?? requiredRecord(bases, "variantTypes", "componentBaseConfigs.variantTypes");
     const rawId = requiredString(item, "id", `${itemPath}.id`);
     const instance = parseObject(payload.instanceJson);
     const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
@@ -70,10 +70,10 @@ export function resolveComponentCollectionItem(
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
     const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame, themeTokens, payload.frameRate);
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
-    const presetReference = requiredString(item, "presetId", `${itemPath}.presetId`);
-    const componentType = presetTypes[presetReference];
+    const variantReference = requiredString(item, "variantReference", `${itemPath}.variantReference`);
+    const componentType = variantTypes[variantReference];
     if (typeof componentType !== "string" || !componentType) {
-      throw new Error(`Missing component type for ${itemPath} Variant ${presetReference}`);
+      throw new Error(`Missing component type for ${itemPath} Variant ${variantReference}`);
     }
     const alignment = requiredString(item, "alignment", `${itemPath}.alignment`);
     if (alignment !== "start" && alignment !== "center" && alignment !== "end") {
@@ -86,9 +86,9 @@ export function resolveComponentCollectionItem(
     return {
       id: rawId,
       componentType,
-      presetReference,
+      variantReference,
       config: mergeComponentDefaults(
-        componentPresetConfig(bases, componentType, presetReference),
+        componentVariantConfig(bases, componentType, variantReference),
         asRecord(item.overrides),
       ),
       alignment: alignment as ComponentCollectionAlignment,

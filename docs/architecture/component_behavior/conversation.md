@@ -76,7 +76,7 @@ for visual composition and layout.
 
 The visibility portion is active now: Conversation passes an ephemeral child
 composition override to Bubble. `individual` forces both actor Label and Avatar
-off; `group` respects the Bubble preset. The override never mutates or persists
+off; `group` respects the Bubble Variant. The override never mutates or persists
 the selected Bubble configuration.
 
 ### Interim group workflow

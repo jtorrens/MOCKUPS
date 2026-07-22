@@ -37,7 +37,7 @@ Relational references compare declared columns with exact ids. Component and
 Module Variant references compare their complete stored references exactly:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 moduleId::variant::variantId
 ```
 

@@ -168,9 +168,9 @@ internal sealed partial class SpikeDatabase
             "module.conversation.headerHeight" => JsonNumberString(config, ["conversation", "headerHeight"], "64"),
             "module.conversation.headerAvatarVariant" => JsonString(config, ["conversation", "headerAvatarVariant"]),
             "module.conversation.headerAvatarAlignment" => JsonString(config, ["conversation", "headerAvatarAlignment"]) is { Length: > 0 } alignment ? alignment : "left",
-            "module.conversation.headerLeftIconRow.editor" => JsonString(config, ["conversation", "headerLeftIconRowSlot", "presetId"]),
+            "module.conversation.headerLeftIconRow.editor" => JsonString(config, ["conversation", "headerLeftIconRowSlot", "variantReference"]),
             "module.conversation.headerLeftIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerLeftIconRowInputs"])?.ToJsonString() ?? "{}",
-            "module.conversation.headerRightIconRow.editor" => JsonString(config, ["conversation", "headerRightIconRowSlot", "presetId"]),
+            "module.conversation.headerRightIconRow.editor" => JsonString(config, ["conversation", "headerRightIconRowSlot", "variantReference"]),
             "module.conversation.headerRightIconRow.inputs" => JsonPath.Get(config, ["conversation", "headerRightIconRowInputs"])?.ToJsonString() ?? "{}",
             "module.conversation.showStatusBar" => JsonBoolString(config, ["conversation", "showStatusBar"], defaultValue: true),
             "module.conversation.showNavigationBar" => JsonBoolString(config, ["conversation", "showNavigationBar"], defaultValue: true),
@@ -184,9 +184,9 @@ internal sealed partial class SpikeDatabase
             "module.conversation.messageGap" => JsonString(config, ["conversation", "messageGap"]) is { Length: > 0 } gap ? gap : "theme.spacing.m",
             "module.conversation.messageViewportMotion" => JsonPath.Get(config, ["conversation", "messageViewportMotion"])?.ToJsonString()
                 ?? (MotionVariantValue.Default with { Bounds = MotionVariantValue.Parent }).ToJsonString(),
-            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarSlot", "presetId"]),
-            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarSlot", "presetId"]),
-            "module.lockScreen.stackVariant" => JsonString(config, ["lockScreen", "stackSlot", "presetId"]),
+            "module.lockScreen.statusBarVariant" => JsonString(config, ["lockScreen", "statusBarSlot", "variantReference"]),
+            "module.lockScreen.navigationBarVariant" => JsonString(config, ["lockScreen", "navigationBarSlot", "variantReference"]),
+            "module.lockScreen.stackVariant" => JsonString(config, ["lockScreen", "stackSlot", "variantReference"]),
             "module.lockScreen.stackInputs" => JsonPath.Get(config, ["lockScreen", "stackInputs"])?.ToJsonString() ?? "{}",
             "module.lockScreen.stackItems" => JsonPath.Get(config, ["lockScreen", "stackInputs", "items"])?.ToJsonString() ?? "[]",
             _ => throw new InvalidOperationException($"Unknown module config field '{fieldId}'."),
@@ -333,19 +333,19 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "headerHeight"], NumberNode(value));
                 break;
             case "module.conversation.headerAvatarVariant":
-                SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "avatar", value))!);
+                SetJsonValue(config, ["conversation", "headerAvatarVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "avatar", value))!);
                 break;
             case "module.conversation.headerAvatarAlignment":
                 SetJsonValue(config, ["conversation", "headerAvatarAlignment"], JsonValue.Create(value is "center" or "right" ? value : "left")!);
                 break;
             case "module.conversation.headerLeftIconRow.editor":
-                SetJsonValue(config, ["conversation", "headerLeftIconRowSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+                SetJsonValue(config, ["conversation", "headerLeftIconRowSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "iconRow", value))!);
                 break;
             case "module.conversation.headerLeftIconRow.inputs":
                 SetJsonValue(config, ["conversation", "headerLeftIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
                 break;
             case "module.conversation.headerRightIconRow.editor":
-                SetJsonValue(config, ["conversation", "headerRightIconRowSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "iconRow", value))!);
+                SetJsonValue(config, ["conversation", "headerRightIconRowSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "iconRow", value))!);
                 break;
             case "module.conversation.headerRightIconRow.inputs":
                 SetJsonValue(config, ["conversation", "headerRightIconRowInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());
@@ -360,16 +360,16 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "showTextInputBar"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.textInputBarVariant":
-                SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "textInputBar", value))!);
+                SetJsonValue(config, ["conversation", "textInputBarVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "textInputBar", value))!);
                 break;
             case "module.conversation.showKeyboard":
                 SetJsonValue(config, ["conversation", "showKeyboard"], JsonValue.Create(BoolFromText(value))!);
                 break;
             case "module.conversation.keyboardVariant":
-                SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "keyboard", value))!);
+                SetJsonValue(config, ["conversation", "keyboardVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "keyboard", value))!);
                 break;
             case "module.conversation.bubbleVariant":
-                SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "bubble", value))!);
+                SetJsonValue(config, ["conversation", "bubbleVariant"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "bubble", value))!);
                 break;
             case "module.conversation.bubbleMaxWidth":
                 SetJsonValue(config, ["conversation", "bubbleMaxWidth"], NumberNode(value));
@@ -384,13 +384,13 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(config, ["conversation", "messageViewportMotion"], JsonNode.Parse(MotionVariantValue.Parse(value).ToJsonString())!);
                 break;
             case "module.lockScreen.statusBarVariant":
-                SetJsonValue(config, ["lockScreen", "statusBarSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "status_bar", value))!);
+                SetJsonValue(config, ["lockScreen", "statusBarSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "status_bar", value))!);
                 break;
             case "module.lockScreen.navigationBarVariant":
-                SetJsonValue(config, ["lockScreen", "navigationBarSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "navigation_bar", value))!);
+                SetJsonValue(config, ["lockScreen", "navigationBarSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "navigation_bar", value))!);
                 break;
             case "module.lockScreen.stackVariant":
-                SetJsonValue(config, ["lockScreen", "stackSlot", "presetId"], JsonValue.Create(ValidateComponentPresetReference(connection, projectId, "componentStack", value))!);
+                SetJsonValue(config, ["lockScreen", "stackSlot", "variantReference"], JsonValue.Create(ValidateComponentVariantReference(connection, projectId, "componentStack", value))!);
                 break;
             case "module.lockScreen.stackInputs":
                 SetJsonValue(config, ["lockScreen", "stackInputs"], JsonNode.Parse(value) as JsonObject ?? new JsonObject());

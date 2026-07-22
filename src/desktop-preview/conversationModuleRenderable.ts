@@ -3,7 +3,7 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   asRecord,
   optionalBoolean,
@@ -62,18 +62,18 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     : undefined;
   if (wallpaper) children.push(wallpaper);
 
-  const themeStatusBarPresetId = payload.themeStatusBarPresetId?.trim() ?? "";
-  const themeNavigationBarPresetId = payload.themeNavigationBarPresetId?.trim() ?? "";
+  const themeStatusBarVariantReference = payload.themeStatusBarVariantReference?.trim() ?? "";
+  const themeNavigationBarVariantReference = payload.themeNavigationBarVariantReference?.trim() ?? "";
   const status = requiredBoolean(
     conversation,
     "showStatusBar",
     "module.conversation.showStatusBar",
-  ) && themeStatusBarPresetId
+  ) && themeStatusBarVariantReference
     ? childRenderable(
         payload,
         componentBaseConfigs,
         "status_bar",
-        themeStatusBarPresetId,
+        themeStatusBarVariantReference,
         {},
         (childPayload) =>
           statusBarComponentToRenderable(childPayload, resolveStatusBarComponent(childPayload)),
@@ -83,12 +83,12 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     conversation,
     "showNavigationBar",
     "module.conversation.showNavigationBar",
-  ) && themeNavigationBarPresetId
+  ) && themeNavigationBarVariantReference
     ? childRenderable(
         payload,
         componentBaseConfigs,
         "navigation_bar",
-        themeNavigationBarPresetId,
+        themeNavigationBarVariantReference,
         {},
         (childPayload) =>
           navigationBarComponentToRenderable(
@@ -616,11 +616,11 @@ function childRenderable(
   payload: DesignPreviewPayload,
   componentBaseConfigs: JsonRecord,
   componentType: string,
-  presetReference: string,
+  variantReference: string,
   designPreviewPatch: JsonRecord,
   render: (payload: DesignPreviewPayload) => RenderableNode,
 ) {
-  const config = componentPresetConfig(componentBaseConfigs, componentType, presetReference);
+  const config = componentVariantConfig(componentBaseConfigs, componentType, variantReference);
   return render({
     ...payload,
     kind: "componentClass",
@@ -647,7 +647,7 @@ function headerNode(
   const rightInputs = asRecord(conversation.headerRightIconRowInputs);
   const leftRow = resolveIconRowComponentFromRecords(
     mergeComponentDefaults(
-      componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(leftSlot, "presetId", "module.conversation.headerLeftIconRowSlot.presetId")),
+      componentVariantConfig(componentBaseConfigs, "iconRow", requiredString(leftSlot, "variantReference", "module.conversation.headerLeftIconRowSlot.variantReference")),
       asRecord(leftSlot.overrides),
     ),
     leftInputs,
@@ -656,7 +656,7 @@ function headerNode(
   );
   const rightRow = resolveIconRowComponentFromRecords(
     mergeComponentDefaults(
-      componentPresetConfig(componentBaseConfigs, "iconRow", requiredString(rightSlot, "presetId", "module.conversation.headerRightIconRowSlot.presetId")),
+      componentVariantConfig(componentBaseConfigs, "iconRow", requiredString(rightSlot, "variantReference", "module.conversation.headerRightIconRowSlot.variantReference")),
       asRecord(rightSlot.overrides),
     ),
     rightInputs,
@@ -671,7 +671,7 @@ function headerNode(
   const centerRight = screen.x + screen.width - edgePadding - rightSize.width - (rightSize.width > 0 ? rowGap : 0);
   const avatarAlignment = optionalString(conversation, "headerAvatarAlignment") || "left";
   const resolvedAvatar = resolveAvatarComponentFromRecords(
-      componentPresetConfig(
+      componentVariantConfig(
         componentBaseConfigs,
         "avatar",
         requiredString(

@@ -1,5 +1,5 @@
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -103,10 +103,10 @@ function resolveIconBarRow(
   const slot = asRecord(iconBar[slotKey]);
   const inputs = asRecord(iconBar[inputsKey]);
   const config = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "iconRow",
-      requiredString(slot, "presetId", `component.iconBar.${slotKey}.presetId`),
+      requiredString(slot, "variantReference", `component.iconBar.${slotKey}.variantReference`),
     ),
     asRecord(slot.overrides),
   );

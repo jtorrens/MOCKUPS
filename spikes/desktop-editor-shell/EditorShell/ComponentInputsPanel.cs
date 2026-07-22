@@ -127,7 +127,7 @@ internal sealed class ComponentPreviewInputSession
         var collections = ReadRuntimeCollections(preview, config);
         _actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
-            _previewInputData.ComponentPresetRuntimeContract);
+            _previewInputData.ComponentVariantRuntimeContract);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             _scopeKey = "";
@@ -377,7 +377,7 @@ internal sealed class ComponentPreviewInputSession
         var collections = ReadRuntimeCollections(preview, config);
         _actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
-            _previewInputData.ComponentPresetRuntimeContract);
+            _previewInputData.ComponentVariantRuntimeContract);
         if (inputs.Count == 0 && collections.Count == 0)
         {
             return payload;
@@ -398,7 +398,7 @@ internal sealed class ComponentPreviewInputSession
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
         {
             EnsureRecordReferenceValues(inputs, effectiveProjectId);
-            EnsureComponentPresetReferenceValues(inputs, effectiveProjectId);
+            EnsureComponentVariantReferenceValues(inputs, effectiveProjectId);
             ResolveCollectionRecordReferences(preview, config, themeMode, payload.PaletteColors);
         }
 
@@ -452,15 +452,15 @@ internal sealed class ComponentPreviewInputSession
             {
                 ResolveRecordReferenceInputs(item, collection.Fields, themeMode, paletteColors);
                 if (collection.ComponentItems is not { } componentItems
-                    || item[componentItems.PresetJsonKey] is not JsonValue presetValue
-                    || !presetValue.TryGetValue<string>(out var presetReference)
-                    || string.IsNullOrWhiteSpace(presetReference)
+                    || item[componentItems.VariantReferenceJsonKey] is not JsonValue variantValue
+                    || !variantValue.TryGetValue<string>(out var variantReference)
+                    || string.IsNullOrWhiteSpace(variantReference)
                     || item[componentItems.InputsJsonKey] is not JsonObject componentInputs)
                 {
                     continue;
                 }
 
-                var componentConfig = _previewInputData.ComponentPresetConfig(presetReference);
+                var componentConfig = _previewInputData.ComponentVariantConfig(variantReference);
                 ResolveRecordReferenceInputs(
                     componentInputs,
                     ReadRuntimeInputs(componentInputs, componentConfig),
@@ -657,34 +657,34 @@ internal sealed class ComponentPreviewInputSession
         }
     }
 
-    private void EnsureComponentPresetReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
+    private void EnsureComponentVariantReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
-        var presetInputs = inputs
-            .Where((input) => input.Kind == ComponentInputKind.ComponentPreset)
+        var variantInputs = inputs
+            .Where((input) => input.Kind == ComponentInputKind.ComponentVariant)
             .ToList();
-        if (presetInputs.Count == 0)
+        if (variantInputs.Count == 0)
         {
             return;
         }
 
-        foreach (var input in presetInputs)
+        foreach (var input in variantInputs)
         {
             var key = StorageKey(input);
             var reference = _values.GetValueOrDefault(key, input.DefaultValue);
             if (!string.IsNullOrWhiteSpace(reference))
             {
-                _values[key] = _previewInputData.ValidateComponentPresetReference(
+                _values[key] = _previewInputData.ValidateComponentVariantReference(
                     projectId,
                     input.ComponentType,
                     reference);
                 continue;
             }
 
-            var firstPreset = ComponentPresetOptions(input, projectId)
+            var firstVariant = ComponentVariantOptions(input, projectId)
                 .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
-            if (firstPreset is not null)
+            if (firstVariant is not null)
             {
-                _values[key] = firstPreset.Value;
+                _values[key] = firstVariant.Value;
             }
         }
     }
@@ -715,11 +715,11 @@ internal sealed class ComponentPreviewInputSession
         return _recordInputResolver.Options(projectId, input.TableId, input.Id);
     }
 
-    private IReadOnlyList<FieldOption> ComponentPresetOptions(ComponentInputDefinition input, string projectId)
+    private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input, string projectId)
     {
         return string.IsNullOrWhiteSpace(input.ComponentType)
             ? []
-            : _inputOptionsData.ComponentPresetOptions(projectId, input.ComponentType, includeNone: false);
+            : _inputOptionsData.ComponentVariantOptions(projectId, input.ComponentType, includeNone: false);
     }
 
     private static ComponentInputDefinition CreateInputDefinition(
@@ -1624,7 +1624,7 @@ internal sealed class ComponentPreviewInputSession
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
                     StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
-                    AllowEmptyComponentPreset = field["allowEmpty"]?.GetValue<bool>() == true,
+                    AllowEmptyComponentVariant = field["allowEmpty"]?.GetValue<bool>() == true,
                     ActionOnly = field["actionOnly"]?.GetValue<bool>() == true,
                     OptionsSourceCollectionJsonKey = JsonString(field, "optionsSourceCollectionJsonKey"),
                     OptionsSourceValueJsonKey = JsonString(field, "optionsSourceValueJsonKey", "id"),
@@ -1694,14 +1694,14 @@ internal sealed class ComponentPreviewInputSession
             return null;
         }
 
-        var presetJsonKey = JsonString(componentItems, "presetJsonKey");
+        var variantReferenceJsonKey = JsonString(componentItems, "variantReferenceJsonKey");
         var overridesJsonKey = JsonString(componentItems, "overridesJsonKey");
         var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
-        return string.IsNullOrWhiteSpace(presetJsonKey)
+        return string.IsNullOrWhiteSpace(variantReferenceJsonKey)
                || string.IsNullOrWhiteSpace(overridesJsonKey)
                || string.IsNullOrWhiteSpace(inputsJsonKey)
             ? null
-            : new RuntimeComponentCollectionItemDefinition(presetJsonKey, overridesJsonKey, inputsJsonKey);
+            : new RuntimeComponentCollectionItemDefinition(variantReferenceJsonKey, overridesJsonKey, inputsJsonKey);
     }
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
@@ -1804,7 +1804,7 @@ internal sealed class ComponentPreviewInputSession
             collection.AnimationPresentation,
             collection.ComponentItems is null
                 ? ""
-                : string.Join("/", collection.ComponentItems.PresetJsonKey,
+                : string.Join("/", collection.ComponentItems.VariantReferenceJsonKey,
                     collection.ComponentItems.OverridesJsonKey,
                     collection.ComponentItems.InputsJsonKey));
 
@@ -1902,7 +1902,7 @@ internal sealed class ComponentPreviewInputSession
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
             "recordreference" => ComponentInputKind.RecordReference,
-            "componentpreset" => ComponentInputKind.ComponentPreset,
+            "componentvariant" => ComponentInputKind.ComponentVariant,
             "themetoken" => ComponentInputKind.ThemeToken,
             "icon" => ComponentInputKind.Icon,
             "iconlist" => ComponentInputKind.IconList,
@@ -1974,7 +1974,7 @@ internal enum ComponentInputKind
     Boolean,
     Option,
     RecordReference,
-    ComponentPreset,
+    ComponentVariant,
     ThemeToken,
     Icon,
     IconList,
@@ -2027,7 +2027,7 @@ internal sealed record ComponentInputDefinition(
     string EnabledWhenValue = "",
     bool RefreshOnCommit = false,
     RuntimeInputCollectionDefinition? StructuredCollection = null,
-    bool AllowEmptyComponentPreset = false,
+    bool AllowEmptyComponentVariant = false,
     bool ActionOnly = false,
     string OptionsSourceCollectionJsonKey = "",
     string OptionsSourceValueJsonKey = "id",
@@ -2052,7 +2052,7 @@ internal sealed record RuntimeInputCollectionDefinition(
     bool CanEditStructure = true);
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
-    string PresetJsonKey,
+    string VariantReferenceJsonKey,
     string OverridesJsonKey,
     string InputsJsonKey);
 

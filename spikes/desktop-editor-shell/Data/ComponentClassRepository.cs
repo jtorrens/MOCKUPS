@@ -174,7 +174,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
 
     private static void ValidateVariantConfigs(string componentType, JsonObject metadata, string componentClassId)
     {
-        foreach (var variant in VariantEnvelopeContract.Read(metadata, "presets", $"Component class '{componentClassId}'"))
+        foreach (var variant in VariantEnvelopeContract.Read(metadata, "variants", $"Component class '{componentClassId}'"))
         {
             CurrentComponentConfigContract.Validate(
                 componentType,
@@ -186,7 +186,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
     private static JsonObject ValidateMetadata(string metadataJson, string componentClassId)
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Component class '{componentClassId}' metadata_json");
-        var variants = VariantEnvelopeContract.Read(metadata, "presets", $"Component class '{componentClassId}'");
+        var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Component class '{componentClassId}'");
         if (variants.All((variant) => variant.Id != "default"))
         {
             throw new InvalidOperationException($"Component class '{componentClassId}' has no explicit default Variant.");

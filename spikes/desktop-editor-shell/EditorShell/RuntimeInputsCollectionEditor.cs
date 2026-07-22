@@ -98,7 +98,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
         var actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
-            _previewInputData.ComponentPresetRuntimeContract);
+            _previewInputData.ComponentVariantRuntimeContract);
         var valuesTab = new TabItem
         {
             Header = owner.IsInstance ? "Runtime Values" : "Test Values",
@@ -777,12 +777,12 @@ internal sealed class RuntimeInputsCollectionEditor
                 owner, preview, collection, itemIndex, item, groupId, groups, RefreshActionVisibility));
         }
         var componentItemDefinition = collection.ComponentItems;
-        var componentPresetField = componentItemDefinition is null
+        var componentVariantField = componentItemDefinition is null
             ? null
-            : collection.Fields.FirstOrDefault((input) => input.JsonKey == componentItemDefinition.PresetJsonKey);
-        var componentPresetReference = componentPresetField is null
+            : collection.Fields.FirstOrDefault((input) => input.JsonKey == componentItemDefinition.VariantReferenceJsonKey);
+        var componentVariantReference = componentVariantField is null
             ? ""
-            : DesignPreviewTestValues.CollectionValue(item, componentPresetField);
+            : DesignPreviewTestValues.CollectionValue(item, componentVariantField);
         var itemRuntimeContractJsonKey = !string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
             ? collection.ItemRuntimeContractJsonKey
             : componentItemDefinition?.InputsJsonKey ?? "";
@@ -792,10 +792,10 @@ internal sealed class RuntimeInputsCollectionEditor
         var nestedInputs = new List<ComponentInputDefinition>();
         if (itemRuntimeContract is not null
             && (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
-                || !string.IsNullOrWhiteSpace(componentPresetReference)))
+                || !string.IsNullOrWhiteSpace(componentVariantReference)))
         {
             var componentConfig = string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
-                ? _previewInputData.ComponentPresetConfig(componentPresetReference)
+                ? _previewInputData.ComponentVariantConfig(componentVariantReference)
                 : new JsonObject();
             nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(itemRuntimeContract, componentConfig).ToList();
             var nestedActions = actions.Where((action) =>
@@ -867,7 +867,7 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var field in collection.Fields)
         {
             var value = field.DefaultValue;
-            if (field.ValueKind == ValueKind.ComponentPreset && string.IsNullOrWhiteSpace(value))
+            if (field.ValueKind == ValueKind.ComponentVariant && string.IsNullOrWhiteSpace(value))
             {
                 var options = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, field).Options ?? [];
                 var componentId = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.GroupValue))?.GroupValue ?? "";
@@ -875,23 +875,23 @@ internal sealed class RuntimeInputsCollectionEditor
                     ? ""
                     : options.SingleOrDefault((option) =>
                         option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                        && option.Value.Equals($"{componentId}::preset::default", StringComparison.Ordinal))?.Value
+                        && option.Value.Equals($"{componentId}::variant::default", StringComparison.Ordinal))?.Value
                       ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
             }
             item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);
         }
         StructuredCollectionItemIdentity.RebaseNestedItems(item, collection);
         var componentItems = collection.ComponentItems;
-        var preset = componentItems is null
+        var variant = componentItems is null
             ? null
-            : collection.Fields.FirstOrDefault((field) => field.JsonKey == componentItems.PresetJsonKey);
-        if (preset is not null && componentItems is not null)
+            : collection.Fields.FirstOrDefault((field) => field.JsonKey == componentItems.VariantReferenceJsonKey);
+        if (variant is not null && componentItems is not null)
         {
-            var reference = item[preset.JsonKey]?.GetValue<string>() ?? "";
+            var reference = item[variant.JsonKey]?.GetValue<string>() ?? "";
             item[componentItems.OverridesJsonKey] = new JsonObject();
             item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
                 ? new JsonObject()
-                : _ownerDocuments.ComponentPresetRuntimeInputs(reference);
+                : _ownerDocuments.ComponentVariantRuntimeInputs(reference);
         }
         return item;
     }
@@ -905,16 +905,16 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var componentItems = collection.ComponentItems
             ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no component item contract.");
-        var presetField = collection.Fields.Single((field) => field.JsonKey == componentItems.PresetJsonKey);
-        var presetReference = DesignPreviewTestValues.CollectionValue(item, presetField);
-        if (string.IsNullOrWhiteSpace(presetReference)) return;
+        var variantField = collection.Fields.Single((field) => field.JsonKey == componentItems.VariantReferenceJsonKey);
+        var variantReference = DesignPreviewTestValues.CollectionValue(item, variantField);
+        if (string.IsNullOrWhiteSpace(variantReference)) return;
         var overrides = item[componentItems.OverridesJsonKey] as JsonObject;
         if (overrides is null)
         {
             overrides = new JsonObject();
             item[componentItems.OverridesJsonKey] = overrides;
         }
-        var selected = _ownerDocuments.ComponentPresetSelection(presetReference);
+        var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
         void ApplyOverrides(JsonObject nextOverrides)
         {
             item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
@@ -941,7 +941,7 @@ internal sealed class RuntimeInputsCollectionEditor
             [],
             new RuntimeComponentOverrideSource(
                 selected.ProjectId,
-                presetReference,
+                variantReference,
                 selected.ComponentType,
                 selected.RecordClassId,
                 selected.ConfigJson,
@@ -979,7 +979,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var componentItems = collection.ComponentItems;
         var selectsComponent = componentItems is not null
-            && input.JsonKey.Equals(componentItems.PresetJsonKey, StringComparison.Ordinal);
+            && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
         var hasComponentOverrides = selectsComponent
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
@@ -989,7 +989,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
             return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
         },
-        openComponentPresetReference: (reference) =>
+        openComponentVariantReference: (reference) =>
         {
             _navigateToNode(reference);
             return Task.CompletedTask;
@@ -1053,7 +1053,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
                     ? new JsonObject()
-                    : _ownerDocuments.ComponentPresetRuntimeInputs(next);
+                    : _ownerDocuments.ComponentVariantRuntimeInputs(next);
             }
             if (owner.IsInstance)
             {

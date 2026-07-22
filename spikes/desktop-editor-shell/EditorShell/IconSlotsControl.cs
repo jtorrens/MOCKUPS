@@ -17,7 +17,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
     private readonly bool _isEditable;
-    private readonly string _defaultButtonPresetId;
+    private readonly string _defaultButtonVariantReference;
     private List<JsonObject> _items = [];
     private int _selectedIndex;
     private string _value;
@@ -27,12 +27,12 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         bool isEditable,
         Func<string, bool, Task<string?>>? showIconTokenPicker,
         Func<string, Control>? createIconPreview,
-        string defaultButtonPresetId)
+        string defaultButtonVariantReference)
     {
         _isEditable = isEditable;
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
-        _defaultButtonPresetId = defaultButtonPresetId;
+        _defaultButtonVariantReference = defaultButtonVariantReference;
         _value = Normalize(value);
         Spacing = 8;
         Rebuild();
@@ -236,7 +236,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     {
         var item = template is null ? new JsonObject() : Clone(template);
         item["id"] = $"button_{Guid.NewGuid():N}";
-        item["buttonPresetId"] = template?["buttonPresetId"]?.GetValue<string>() ?? _defaultButtonPresetId;
+        item["buttonVariantReference"] = template?["buttonVariantReference"]?.GetValue<string>() ?? _defaultButtonVariantReference;
         item["contentMode"] ??= "icon";
         item["state"] ??= "normal";
         item["iconToken"] ??= "media_mic";

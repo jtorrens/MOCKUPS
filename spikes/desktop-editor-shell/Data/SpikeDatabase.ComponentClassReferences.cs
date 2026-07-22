@@ -11,7 +11,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SpikeDatabase
 {
-    public sealed record ComponentPresetSelectionSettings(
+    public sealed record ComponentVariantSelectionSettings(
         string ProjectId,
         string ComponentType,
         string RecordClassId,
@@ -38,14 +38,14 @@ internal sealed partial class SpikeDatabase
                 row.Id,
                 row.ConfigJson,
                 componentType);
-            foreach (var preset in ComponentClassPresets(row.MetadataJson))
+            foreach (var variant in ComponentClassVariants(row.MetadataJson))
             {
                 AddEmbeddedComponentUsages(
                     usages,
                     row,
-                    $"{row.Name} · {preset.Name}",
-                    ComponentPresetNodeId(row.Id, preset.Id),
-                    preset.ConfigJson,
+                    $"{row.Name} · {variant.Name}",
+                    ComponentVariantNodeId(row.Id, variant.Id),
+                    variant.ConfigJson,
                     componentType);
             }
         }
@@ -85,7 +85,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    public string GetEmbeddedComponentPresetName(
+    public string GetEmbeddedComponentVariantName(
         string componentClassId,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
@@ -97,10 +97,10 @@ internal sealed partial class SpikeDatabase
         using var connection = OpenConnection();
         var settings = GetComponentClassSettings(connection, componentClassId);
         var ownerConfig = ParseJsonObject(settings.ConfigJson);
-        return GetEmbeddedComponentPresetName(connection, settings.ProjectId, ownerConfig, slots);
+        return GetEmbeddedComponentVariantName(connection, settings.ProjectId, ownerConfig, slots);
     }
 
-    public string GetEmbeddedComponentPresetName(
+    public string GetEmbeddedComponentVariantName(
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
@@ -113,7 +113,7 @@ internal sealed partial class SpikeDatabase
         var projectId = ownerNode.Kind switch
         {
             ProjectTreeNodeKind.ComponentClass => GetComponentClassSettings(connection, ownerNode.Id).ProjectId,
-            ProjectTreeNodeKind.ComponentPreset => GetComponentPresetSettings(connection, ownerNode).ProjectId,
+            ProjectTreeNodeKind.ComponentVariant => GetComponentVariantSettings(connection, ownerNode).ProjectId,
             ProjectTreeNodeKind.Module => GetModuleSettings(ownerNode.Id).ProjectId,
             ProjectTreeNodeKind.ModuleVariant => GetModuleVariantSettings(ownerNode).ProjectId,
             _ => throw new InvalidOperationException($"Embedded component variants are not supported for '{ownerNode.Kind}'."),
@@ -124,12 +124,12 @@ internal sealed partial class SpikeDatabase
                 : GetModuleVariantSettings(ownerNode).ConfigJson
             : ownerNode.Kind == ProjectTreeNodeKind.ComponentClass
                 ? GetComponentClassSettings(connection, ownerNode.Id).ConfigJson
-                : GetComponentPresetSettings(connection, ownerNode).ConfigJson;
+                : GetComponentVariantSettings(connection, ownerNode).ConfigJson;
         var ownerConfig = ParseJsonObject(ownerConfigJson);
-        return GetEmbeddedComponentPresetName(connection, projectId, ownerConfig, slots);
+        return GetEmbeddedComponentVariantName(connection, projectId, ownerConfig, slots);
     }
 
-    private string GetEmbeddedComponentPresetName(
+    private string GetEmbeddedComponentVariantName(
         SqliteConnection connection,
         string projectId,
         JsonObject ownerConfig,
@@ -142,17 +142,19 @@ internal sealed partial class SpikeDatabase
             var slotNode = currentContainer is null
                 ? null
                 : JsonPath.Get(currentContainer, slot.SlotPath) as JsonObject;
-            var presetId = JsonPath.String(slotNode ?? [], "presetId", DefaultComponentPresetId);
+            var variantReference = RequiredComponentVariantReference(
+                slotNode,
+                $"Embedded component slot '{slot.FieldId}'");
             if (index == slots.Count - 1)
             {
-                return ComponentPresetName(connection, projectId, slot.EmbeddedComponentType, presetId);
+                return ComponentVariantName(connection, projectId, slot.EmbeddedComponentType, variantReference);
             }
 
-            var child = ParseJsonObject(GetComponentClassPresetConfigJson(
+            var child = ParseJsonObject(GetComponentClassVariantConfigJson(
                 connection,
                 projectId,
                 slot.EmbeddedComponentType,
-                presetId));
+                variantReference));
             if (slotNode?["overrides"] is JsonObject overrides)
             {
                 MergeOverride(child, overrides);
@@ -168,51 +170,51 @@ internal sealed partial class SpikeDatabase
     {
         using var connection = OpenConnection();
         var configs = new JsonObject();
-        var presets = new JsonObject();
-        var presetTypes = new JsonObject();
+        var variants = new JsonObject();
+        var variantTypes = new JsonObject();
         foreach (var row in _componentClassRepository.QueryByProject(connection, projectId))
         {
-            AddComponentPresetConfigs(connection, presets, row);
-            foreach (var preset in RequiredComponentClassPresets(row))
+            AddComponentVariantConfigs(connection, variants, row);
+            foreach (var variant in RequiredComponentClassVariants(row))
             {
-                presetTypes[ComponentPresetNodeId(row.Id, preset.Id)] = row.ComponentType;
+                variantTypes[ComponentVariantNodeId(row.Id, variant.Id)] = row.ComponentType;
             }
             if (configs.ContainsKey(row.ComponentType))
             {
                 continue;
             }
 
-            var defaultConfig = ParseJsonObject(DefaultComponentPresetConfigJson(
+            var defaultConfig = ParseJsonObject(DefaultComponentVariantConfigJson(
                 row.MetadataJson,
                 $"Component class '{row.Id}'"));
-            ValidateEmbeddedSlotPresetReferences(connection, projectId, defaultConfig);
+            ValidateEmbeddedSlotVariantReferences(connection, projectId, defaultConfig);
             configs[row.ComponentType] = defaultConfig;
         }
 
-        configs["presets"] = presets;
-        configs["presetTypes"] = presetTypes;
+        configs["variants"] = variants;
+        configs["variantTypes"] = variantTypes;
         return configs.ToJsonString();
     }
 
-    public string ValidateComponentPresetReferencesForPreview(string projectId, string configJson)
+    public string ValidateComponentVariantReferencesForPreview(string projectId, string configJson)
     {
         using var connection = OpenConnection();
         var config = ParseJsonObject(configJson);
-        ValidateEmbeddedSlotPresetReferences(connection, projectId, config);
+        ValidateEmbeddedSlotVariantReferences(connection, projectId, config);
         return config.ToJsonString();
     }
 
-    private void AddComponentPresetConfigs(SqliteConnection connection, JsonObject target, ComponentClassDefinitionRecord row)
+    private void AddComponentVariantConfigs(SqliteConnection connection, JsonObject target, ComponentClassDefinitionRecord row)
     {
-        foreach (var preset in RequiredComponentClassPresets(row))
+        foreach (var variant in RequiredComponentClassVariants(row))
         {
-            var config = ParseJsonObject(preset.ConfigJson);
-            ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, config);
-            target[ComponentPresetNodeId(row.Id, preset.Id)] = config;
+            var config = ParseJsonObject(variant.ConfigJson);
+            ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, config);
+            target[ComponentVariantNodeId(row.Id, variant.Id)] = config;
         }
     }
 
-    private void ValidateEmbeddedSlotPresetReferences(
+    private void ValidateEmbeddedSlotVariantReferences(
         SqliteConnection connection,
         string projectId,
         JsonObject config)
@@ -228,8 +230,8 @@ internal sealed partial class SpikeDatabase
                 continue;
             }
 
-            var reference = JsonPath.String(slotNode, "presetId", "");
-            if (!TryParseComponentPresetNodeId(reference, out var componentClassId, out var presetId))
+            var reference = JsonPath.String(slotNode, "variantReference", "");
+            if (!TryParseComponentVariantNodeId(reference, out var componentClassId, out var variantId))
             {
                 throw new InvalidOperationException(
                     $"Embedded component slot '{slot.FieldId}' must use a full component variant reference.");
@@ -244,14 +246,26 @@ internal sealed partial class SpikeDatabase
                     $"Embedded component slot '{slot.FieldId}' references missing {slot.EmbeddedComponentType} class '{componentClassId}'.");
             }
 
-            if (!RequiredComponentClassPresets(componentClass)
-                    .Any((preset) => preset.Id.Equals(presetId, StringComparison.Ordinal)))
+            if (!RequiredComponentClassVariants(componentClass)
+                    .Any((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal)))
             {
                 throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' references missing variant '{presetId}' on '{componentClassId}'.");
+                    $"Embedded component slot '{slot.FieldId}' references missing variant '{variantId}' on '{componentClassId}'.");
             }
         }
 
+    }
+
+    private static string RequiredComponentVariantReference(JsonObject? slotNode, string owner)
+    {
+        if (slotNode?["variantReference"] is not JsonValue value
+            || !value.TryGetValue<string>(out var reference)
+            || string.IsNullOrWhiteSpace(reference))
+        {
+            throw new InvalidOperationException($"{owner} requires a full component Variant reference.");
+        }
+
+        return reference;
     }
 
     public IReadOnlyList<FieldOption> GetComponentClassOptionsByType(
@@ -275,21 +289,21 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
-    public IReadOnlyList<FieldOption> GetComponentPresetReferenceOptionsByType(
+    public IReadOnlyList<FieldOption> GetComponentVariantReferenceOptionsByType(
         string projectId,
         string componentType,
         bool includeNone = false)
     {
-        return GetComponentPresetReferenceOptions(projectId, componentType, includeNone);
+        return GetComponentVariantReferenceOptions(projectId, componentType, includeNone);
     }
 
-    public IReadOnlyList<FieldOption> GetStatusBarComponentPresetOptions(string projectId) =>
-        GetComponentPresetReferenceOptionsByType(projectId, "status_bar", includeNone: true);
+    public IReadOnlyList<FieldOption> GetStatusBarComponentVariantOptions(string projectId) =>
+        GetComponentVariantReferenceOptionsByType(projectId, "status_bar", includeNone: true);
 
-    public IReadOnlyList<FieldOption> GetNavigationBarComponentPresetOptions(string projectId) =>
-        GetComponentPresetReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
+    public IReadOnlyList<FieldOption> GetNavigationBarComponentVariantOptions(string projectId) =>
+        GetComponentVariantReferenceOptionsByType(projectId, "navigation_bar", includeNone: true);
 
-    public IReadOnlyList<FieldOption> GetComponentPresetReferenceOptions(
+    public IReadOnlyList<FieldOption> GetComponentVariantReferenceOptions(
         string projectId,
         string componentTypeSelector,
         bool includeNone = false)
@@ -313,13 +327,13 @@ internal sealed partial class SpikeDatabase
             .ToList();
         var showClassName = rows.Count > 1 || includeAll || includedTypes.Count > 1;
         var options = rows
-            .SelectMany((row) => RequiredComponentClassPresets(row)
-                .Select((preset) => new FieldOption(
-                    ComponentPresetNodeId(row.Id, preset.Id),
-                    showClassName ? $"{row.Name} · {preset.Name}" : preset.Name,
+            .SelectMany((row) => RequiredComponentClassVariants(row)
+                .Select((variant) => new FieldOption(
+                    ComponentVariantNodeId(row.Id, variant.Id),
+                    showClassName ? $"{row.Name} · {variant.Name}" : variant.Name,
                     GroupValue: row.Id,
                     GroupLabel: row.Name,
-                    LocalLabel: preset.Name)))
+                    LocalLabel: variant.Name)))
             .ToList();
         if (includeNone)
         {
@@ -329,36 +343,36 @@ internal sealed partial class SpikeDatabase
         return options;
     }
 
-    public JsonObject GetComponentPresetRuntimeInputs(string presetReference)
+    public JsonObject GetComponentVariantRuntimeInputs(string variantReference)
     {
-        var effective = GetComponentPresetRuntimeContract(presetReference);
+        var effective = GetComponentVariantRuntimeContract(variantReference);
         return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
     }
 
-    public JsonObject GetComponentPresetRuntimeContract(string presetReference)
+    public JsonObject GetComponentVariantRuntimeContract(string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
         {
-            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+            throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
 
         var settings = GetComponentClassSettings(componentClassId);
-        var config = GetComponentPresetConfig(presetReference);
+        var config = GetComponentVariantConfig(variantReference);
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
         return effective;
     }
 
-    public IReadOnlyList<ComponentInputBindingDefinition> GetComponentPresetRuntimeInputBindings(
-        string presetReference)
+    public IReadOnlyList<ComponentInputBindingDefinition> GetComponentVariantRuntimeInputBindings(
+        string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
         {
             return [];
         }
         var settings = GetComponentClassSettings(componentClassId);
-        var config = GetComponentPresetConfig(presetReference);
+        var config = GetComponentVariantConfig(variantReference);
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
@@ -387,87 +401,87 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
-    public IReadOnlyList<RuntimeInputCollectionDefinition> GetComponentPresetRuntimeCollections(
-        string presetReference)
+    public IReadOnlyList<RuntimeInputCollectionDefinition> GetComponentVariantRuntimeCollections(
+        string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out _))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
         {
             return [];
         }
         var settings = GetComponentClassSettings(componentClassId);
-        var config = GetComponentPresetConfig(presetReference);
+        var config = GetComponentVariantConfig(variantReference);
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
         return ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
     }
 
-    public JsonObject GetComponentPresetConfig(string presetReference)
+    public JsonObject GetComponentVariantConfig(string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+            throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
 
         using var connection = OpenConnection();
         var row = QueryComponentClassRows(connection)
             .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
-        var preset = RequiredComponentClassPresets(row)
-            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
-        return ParseJsonObject(preset.ConfigJson);
+        var variant = RequiredComponentClassVariants(row)
+            .Single((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal));
+        return ParseJsonObject(variant.ConfigJson);
     }
 
-    public ComponentPresetSelectionSettings GetComponentPresetSelectionSettings(string presetReference)
+    public ComponentVariantSelectionSettings GetComponentVariantSelectionSettings(string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+            throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
 
         using var connection = OpenConnection();
         var row = QueryComponentClassRows(connection)
             .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
-        var preset = RequiredComponentClassPresets(row)
-            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
-        return new ComponentPresetSelectionSettings(
+        var variant = RequiredComponentClassVariants(row)
+            .Single((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal));
+        return new ComponentVariantSelectionSettings(
             row.ProjectId,
             row.ComponentType,
             row.RecordClassId,
-            preset.ConfigJson);
+            variant.ConfigJson);
     }
 
-    public string GetRuntimeComponentPresetName(
-        string presetReference,
+    public string GetRuntimeComponentVariantName(
+        string variantReference,
         JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var presetId))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component Variant reference '{presetReference}'.");
+            throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
 
         using var connection = OpenConnection();
         var row = QueryComponentClassRows(connection)
             .Single((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
-        var preset = RequiredComponentClassPresets(row)
-            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal));
-        if (slots.Count == 0) return preset.Name;
-        var ownerConfig = ParseJsonObject(preset.ConfigJson);
+        var variant = RequiredComponentClassVariants(row)
+            .Single((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal));
+        if (slots.Count == 0) return variant.Name;
+        var ownerConfig = ParseJsonObject(variant.ConfigJson);
         MergeOverride(ownerConfig, overrides);
-        return GetEmbeddedComponentPresetName(connection, row.ProjectId, ownerConfig, slots);
+        return GetEmbeddedComponentVariantName(connection, row.ProjectId, ownerConfig, slots);
     }
 
-    public string ValidateComponentPresetReferenceValue(
+    public string ValidateComponentVariantReferenceValue(
         string projectId,
         string componentType,
         string reference,
         bool allowEmpty = false)
     {
         using var connection = OpenConnection();
-        return ValidateComponentPresetReference(connection, projectId, componentType, reference, allowEmpty);
+        return ValidateComponentVariantReference(connection, projectId, componentType, reference, allowEmpty);
     }
 
-    private string DefaultComponentPresetReference(
+    private string DefaultComponentVariantReference(
         SqliteConnection connection,
         string projectId,
         string componentType)
@@ -476,14 +490,14 @@ internal sealed partial class SpikeDatabase
         var componentClass = rows.FirstOrDefault()
             ?? throw new InvalidOperationException(
                 $"Project '{projectId}' has no {componentType} component class.");
-        var preset = RequiredComponentClassPresets(componentClass)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+        var variant = RequiredComponentClassVariants(componentClass)
+            .FirstOrDefault((candidate) => candidate.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Component class '{componentClass.Id}' has no protected default variant.");
-        return ComponentPresetNodeId(componentClass.Id, preset.Id);
+        return ComponentVariantNodeId(componentClass.Id, variant.Id);
     }
 
-    private string ValidateComponentPresetReference(
+    private string ValidateComponentVariantReference(
         SqliteConnection connection,
         string projectId,
         string componentType,
@@ -501,10 +515,10 @@ internal sealed partial class SpikeDatabase
                 $"A {componentType} component variant reference is required.");
         }
 
-        if (!TryParseComponentPresetNodeId(reference, out var componentClassId, out var presetId))
+        if (!TryParseComponentVariantNodeId(reference, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException(
-                $"Component variant reference '{reference}' must use the full componentClassId::preset::presetId form.");
+                $"Component variant reference '{reference}' must use the full componentClassId::variant::variantId form.");
         }
 
         var componentClass = ComponentClassRowsByType(connection, projectId, componentType)
@@ -515,8 +529,8 @@ internal sealed partial class SpikeDatabase
                 $"Component variant reference '{reference}' does not name a {componentType} class in project '{projectId}'.");
         }
 
-        if (!RequiredComponentClassPresets(componentClass)
-                .Any((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal)))
+        if (!RequiredComponentClassVariants(componentClass)
+                .Any((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal)))
         {
             throw new InvalidOperationException(
                 $"Component variant reference '{reference}' names a missing variant on '{componentClassId}'.");
@@ -538,28 +552,21 @@ internal sealed partial class SpikeDatabase
             .ToList();
     }
 
-    private static IReadOnlyList<ComponentClassPreset> RequiredComponentClassPresets(ComponentClassDefinitionRecord row)
+    private static IReadOnlyList<ComponentClassVariant> RequiredComponentClassVariants(ComponentClassDefinitionRecord row)
     {
-        return ComponentClassPresets(row.MetadataJson, $"Component class '{row.Id}'");
+        return ComponentClassVariants(row.MetadataJson, $"Component class '{row.Id}'");
     }
 
-    private static string PreferredPresetId(ComponentClassDefinitionRecord row)
-    {
-        var presets = RequiredComponentClassPresets(row);
-        return presets.FirstOrDefault((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))?.Id
-            ?? presets[0].Id;
-    }
-
-    private string GetComponentClassPresetConfigJson(
+    private string GetComponentClassVariantConfigJson(
         SqliteConnection connection,
         string projectId,
         string componentType,
-        string presetReference)
+        string variantReference)
     {
-        if (!TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
+        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var referencedVariantId))
         {
             throw new InvalidOperationException(
-                $"Component variant reference '{presetReference}' must use the full componentClassId::preset::presetId form.");
+                $"Component variant reference '{variantReference}' must use the full componentClassId::variant::variantId form.");
         }
 
         var referencedRow = QueryComponentClassRows(connection)
@@ -569,16 +576,16 @@ internal sealed partial class SpikeDatabase
                 && row.ComponentType.Equals(componentType, StringComparison.Ordinal));
         if (referencedRow is null)
         {
-            throw new InvalidOperationException($"Missing component variant reference '{presetReference}'.");
+            throw new InvalidOperationException($"Missing component variant reference '{variantReference}'.");
         }
 
-        return ComponentPresetConfigJson(referencedRow, referencedPresetId);
+        return ComponentVariantConfigJson(referencedRow, referencedVariantId);
     }
 
-    private static string ComponentPresetConfigJson(ComponentClassDefinitionRecord row, string presetId)
+    private static string ComponentVariantConfigJson(ComponentClassDefinitionRecord row, string variantId)
     {
-        return RequiredComponentClassPresets(row)
-            .Single((candidate) => candidate.Id.Equals(presetId, StringComparison.Ordinal))
+        return RequiredComponentClassVariants(row)
+            .Single((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal))
             .ConfigJson;
     }
 
@@ -591,18 +598,18 @@ internal sealed partial class SpikeDatabase
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];
     }
 
-    private IReadOnlyList<FieldOption> ComponentPresetOptions(string projectId, string componentType)
+    private IReadOnlyList<FieldOption> ComponentVariantOptions(string projectId, string componentType)
     {
-        return GetComponentPresetReferenceOptionsByType(projectId, componentType);
+        return GetComponentVariantReferenceOptionsByType(projectId, componentType);
     }
 
-    private string ComponentPresetName(
+    private string ComponentVariantName(
         SqliteConnection connection,
         string projectId,
         string componentType,
-        string presetReference)
+        string variantReference)
     {
-        if (TryParseComponentPresetNodeId(presetReference, out var componentClassId, out var referencedPresetId))
+        if (TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var referencedVariantId))
         {
             var row = QueryComponentClassRows(connection)
                 .FirstOrDefault((candidate) =>
@@ -611,17 +618,17 @@ internal sealed partial class SpikeDatabase
                     && candidate.ComponentType.Equals(componentType, StringComparison.Ordinal));
             if (row is null)
             {
-                return presetReference;
+                return variantReference;
             }
 
-            var referencedPreset = RequiredComponentClassPresets(row)
-                .FirstOrDefault((candidate) => candidate.Id.Equals(referencedPresetId, StringComparison.Ordinal));
-            var presetName = string.IsNullOrWhiteSpace(referencedPreset?.Name) ? referencedPresetId : referencedPreset.Name;
-            return $"{row.Name} · {presetName}";
+            var referencedVariant = RequiredComponentClassVariants(row)
+                .FirstOrDefault((candidate) => candidate.Id.Equals(referencedVariantId, StringComparison.Ordinal));
+            var variantName = string.IsNullOrWhiteSpace(referencedVariant?.Name) ? referencedVariantId : referencedVariant.Name;
+            return $"{row.Name} · {variantName}";
         }
 
         throw new InvalidOperationException(
-            $"Component variant reference '{presetReference}' must use the full componentClassId::preset::presetId form.");
+            $"Component variant reference '{variantReference}' must use the full componentClassId::variant::variantId form.");
     }
 
     private IReadOnlyList<FieldOption>? ComponentClassFieldOptions(
@@ -631,14 +638,14 @@ internal sealed partial class SpikeDatabase
         return descriptor.ValueKind switch
         {
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
-            ValueKind.ComponentPreset when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
-                => ComponentPresetOptions(projectId, slot.EmbeddedComponentType),
-            ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(descriptor.ComponentPresetType)
-                => ComponentPresetOptions(projectId, descriptor.ComponentPresetType),
-            ValueKind.OptionToken when !string.IsNullOrWhiteSpace(descriptor.ComponentPresetType)
-                => ComponentPresetOptions(projectId, descriptor.ComponentPresetType),
-            ValueKind.OptionToken when EmbeddedComponentPresetType(descriptor.Id) is { } componentType
-                => ComponentPresetOptions(projectId, componentType),
+            ValueKind.ComponentVariant when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
+                => ComponentVariantOptions(projectId, slot.EmbeddedComponentType),
+            ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(descriptor.ComponentVariantType)
+                => ComponentVariantOptions(projectId, descriptor.ComponentVariantType),
+            ValueKind.OptionToken when !string.IsNullOrWhiteSpace(descriptor.ComponentVariantType)
+                => ComponentVariantOptions(projectId, descriptor.ComponentVariantType),
+            ValueKind.OptionToken when EmbeddedComponentVariantType(descriptor.Id) is { } componentType
+                => ComponentVariantOptions(projectId, componentType),
             ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
                 => GetPaletteColorOptions(projectId),
             ValueKind.TypographyStyle
@@ -647,14 +654,14 @@ internal sealed partial class SpikeDatabase
         };
     }
 
-    private static string? EmbeddedComponentPresetType(string fieldId)
+    private static string? EmbeddedComponentVariantType(string fieldId)
     {
-        if (!fieldId.EndsWith(".presetId", StringComparison.Ordinal))
+        if (!fieldId.EndsWith(".variantReference", StringComparison.Ordinal))
         {
             return null;
         }
 
-        var slotEditorFieldId = string.Concat(fieldId.AsSpan(0, fieldId.Length - ".presetId".Length), ".editor");
+        var slotEditorFieldId = string.Concat(fieldId.AsSpan(0, fieldId.Length - ".variantReference".Length), ".editor");
         return EmbeddedComponentSlotCatalog.TryGet(slotEditorFieldId, out var slot)
             ? slot.EmbeddedComponentType
             : null;

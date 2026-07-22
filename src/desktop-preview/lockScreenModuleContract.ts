@@ -3,7 +3,7 @@ export interface LockScreenModuleContract {
   statusBarSlot: LockScreenComponentSlot;
   navigationBarSlot: LockScreenComponentSlot;
   stackSlot: {
-    presetId: string;
+    variantReference: string;
     overrides: Record<string, unknown>;
   };
   stackInputs: Record<string, unknown>;
@@ -12,6 +12,6 @@ export interface LockScreenModuleContract {
 }
 
 export interface LockScreenComponentSlot {
-  presetId: string;
+  variantReference: string;
   overrides: Record<string, unknown>;
 }

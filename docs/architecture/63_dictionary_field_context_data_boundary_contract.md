@@ -120,7 +120,7 @@ data, Preview payloads, animation, Render Mode or export.
 
 - querying `SpikeDatabase` directly from `EditorDictionaryFieldServices`;
 - selecting Theme or Variant context from a label, name or tree position;
-- resolving a short Component preset id;
+- resolving a short Component variant id;
 - supplying a token filename from the token id instead of its stored file;
 - reading or repairing SVG/token documents inside the data source;
 - returning empty Production Theme context;

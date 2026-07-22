@@ -171,10 +171,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var subcards = new List<EditorInternalNavigationSection>();
         if (collection.ComponentItems is { } componentItems)
         {
-            var presetReference = JsonText(item[componentItems.PresetJsonKey]);
-            var bindings = string.IsNullOrWhiteSpace(presetReference)
+            var variantReference = JsonText(item[componentItems.VariantReferenceJsonKey]);
+            var bindings = string.IsNullOrWhiteSpace(variantReference)
                 ? []
-                : _services.GetComponentPresetRuntimeInputs?.Invoke(presetReference) ?? [];
+                : _services.GetComponentVariantRuntimeInputs?.Invoke(variantReference) ?? [];
             if (bindings.Count > 0)
             {
                 var itemId = ItemId(item, itemIndex);
@@ -207,11 +207,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     {
         var componentItems = collection.ComponentItems;
         var selectsComponent = componentItems is not null
-            && input.JsonKey.Equals(componentItems.PresetJsonKey, StringComparison.Ordinal);
+            && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
         var options = input.ValueKind switch
         {
-            ValueKind.ComponentPreset when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                ComponentPresetOptions(input),
+            ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(input.ComponentType) =>
+                ComponentVariantOptions(input),
             ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
             _ => input.Options ?? [],
         };
@@ -226,7 +226,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
-            SelectComponentClass: input.ValueKind == ValueKind.ComponentPreset
+            SelectComponentClass: input.ValueKind == ValueKind.ComponentVariant
                 && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Contains("*", StringComparer.Ordinal),
             StructuredCollection: input.StructuredCollection);
@@ -238,7 +238,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             {
                 OpenEmbeddedComponent = async (_) =>
                 {
-                    var reference = JsonText(item[componentItems.PresetJsonKey]);
+                    var reference = JsonText(item[componentItems.VariantReferenceJsonKey]);
                     if (string.IsNullOrWhiteSpace(reference) || _services.OpenRuntimeComponentOverrides is null) return;
                     var currentOverrides = item[componentItems.OverridesJsonKey] as JsonObject ?? new JsonObject();
                     item[componentItems.OverridesJsonKey] = currentOverrides;
@@ -281,7 +281,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
                     ? new JsonObject()
-                    : _services.GetComponentPresetRuntimeValues?.Invoke(next) ?? new JsonObject();
+                    : _services.GetComponentVariantRuntimeValues?.Invoke(next) ?? new JsonObject();
             }
             Publish(commit: true);
             if (collection.Fields.Any((candidate) =>
@@ -324,34 +324,34 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         {
             return _definition.StructuredCollection;
         }
-        if (string.IsNullOrWhiteSpace(_definition.RuntimeCollectionComponentPresetFieldId)
+        if (string.IsNullOrWhiteSpace(_definition.RuntimeCollectionComponentVariantFieldId)
             || _services.GetFieldValue is null
-            || _services.GetComponentPresetRuntimeCollections is null)
+            || _services.GetComponentVariantRuntimeCollections is null)
         {
             return null;
         }
-        var reference = _services.GetFieldValue(_definition.RuntimeCollectionComponentPresetFieldId);
+        var reference = _services.GetFieldValue(_definition.RuntimeCollectionComponentVariantFieldId);
         return string.IsNullOrWhiteSpace(reference)
             ? null
-            : _services.GetComponentPresetRuntimeCollections(reference).FirstOrDefault();
+            : _services.GetComponentVariantRuntimeCollections(reference).FirstOrDefault();
     }
 
     private string DefaultValue(ComponentInputDefinition input)
     {
-        if (input.ValueKind != ValueKind.ComponentPreset
-            || input.AllowEmptyComponentPreset
+        if (input.ValueKind != ValueKind.ComponentVariant
+            || input.AllowEmptyComponentVariant
             || !string.IsNullOrWhiteSpace(input.DefaultValue))
         {
             return input.DefaultValue;
         }
-        return _services.GetComponentPresetOptions?.Invoke(input.ComponentType)
+        return _services.GetComponentVariantOptions?.Invoke(input.ComponentType)
             .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? "";
     }
 
-    private IReadOnlyList<FieldOption> ComponentPresetOptions(ComponentInputDefinition input)
+    private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input)
     {
-        var options = (_services.GetComponentPresetOptions?.Invoke(input.ComponentType) ?? []).ToList();
-        if (input.AllowEmptyComponentPreset && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
+        var options = (_services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? []).ToList();
+        if (input.AllowEmptyComponentVariant && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
         {
             options.Insert(0, new FieldOption("", "None"));
         }
@@ -361,11 +361,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private void InitializeComponentItem(RuntimeInputCollectionDefinition collection, JsonObject item)
     {
         if (collection.ComponentItems is not { } componentItems) return;
-        var reference = JsonText(item[componentItems.PresetJsonKey]);
+        var reference = JsonText(item[componentItems.VariantReferenceJsonKey]);
         item[componentItems.OverridesJsonKey] = new JsonObject();
         item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
             ? new JsonObject()
-            : _services.GetComponentPresetRuntimeValues?.Invoke(reference) ?? new JsonObject();
+            : _services.GetComponentVariantRuntimeValues?.Invoke(reference) ?? new JsonObject();
     }
 
     private static string ItemId(JsonObject item, int index) =>
@@ -380,7 +380,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     {
         var group = options.FirstOrDefault((option) => option.Value.Equals(reference, StringComparison.Ordinal))?.GroupValue;
         if (!string.IsNullOrWhiteSpace(group)) return group;
-        var separator = reference.IndexOf("::preset::", StringComparison.Ordinal);
+        var separator = reference.IndexOf("::variant::", StringComparison.Ordinal);
         return separator > 0 ? reference[..separator] : reference;
     }
 

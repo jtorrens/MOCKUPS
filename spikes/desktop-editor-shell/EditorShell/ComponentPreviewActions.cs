@@ -11,7 +11,7 @@ internal static class ComponentPreviewActions
 {
     public static IReadOnlyList<ComponentPreviewActionDefinition> ReadWithEmbedded(
         JsonObject preview,
-        Func<string, JsonObject> componentPresetRuntimeContract)
+        Func<string, JsonObject> componentVariantRuntimeContract)
     {
         var definitions = Read(preview).ToList();
         if (preview["collections"] is not JsonArray collections) return definitions;
@@ -41,16 +41,16 @@ internal static class ComponentPreviewActions
             }
             var componentItems = collection["componentItems"] as JsonObject;
             if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
-            var presetJsonKey = JsonString(componentItems, "presetJsonKey");
+            var variantReferenceJsonKey = JsonString(componentItems, "variantReferenceJsonKey");
             var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
-            if (string.IsNullOrWhiteSpace(presetJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
+            if (string.IsNullOrWhiteSpace(variantReferenceJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
             if (preview[collectionJsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())
             {
                 var itemId = JsonString(item, "id");
-                var presetReference = JsonString(item, presetJsonKey);
-                if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(presetReference)) continue;
-                var childContract = componentPresetRuntimeContract(presetReference);
+                var variantReference = JsonString(item, variantReferenceJsonKey);
+                if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(variantReference)) continue;
+                var childContract = componentVariantRuntimeContract(variantReference);
                 definitions.AddRange(Read(childContract)
                     .Where((action) => !action.IsCollectionItemAction)
                     .Select((action) => action with

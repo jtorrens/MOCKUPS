@@ -228,16 +228,16 @@ parent class owns schema and variants; each concrete embedded/system/component
 usage selects a variant by full reference:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
-The persisted reference still uses the internal `::preset::` delimiter and
-`presetId` field names until a dedicated storage migration renames them. Those
-names are compatibility details, not user-facing terminology.
+The persisted reference uses the canonical `::variant::` delimiter and
+`variantReference` field names. These names are current contract vocabulary.
 
-Short preset ids are legacy migration input only. Saving a new variant must
-clone the active selected variant config, never ambiguous "current class
-values".
+Short Variant ids and retired Component Preset spellings are invalid current
+data. An explicit one-off migration may translate them, but normal readers do
+not. Saving a new Variant must clone the active selected Variant config, never
+ambiguous "current class values".
 
 ### Bubble component migration guardrail
 
@@ -400,7 +400,7 @@ in `ProductionShotContextService`.
 
 Runtime Input option data access is governed by
 `55_runtime_input_options_data_boundary_contract.md`. Actor, Palette and full
-Component preset options now enter Runtime Input and animation dictionary
+Component variant options now enter Runtime Input and animation dictionary
 definitions through one typed source, while `ValueKind` mapping and declared
 dynamic-list presentation remain in their generic factories.
 

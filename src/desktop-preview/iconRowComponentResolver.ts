@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, parseObject, requiredString } from "./componentResolverCommon.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
@@ -37,9 +37,9 @@ export function resolveIconRowComponentFromRecords(
   const items = rawItems.map((rawItem, index) => {
     const item = asRecord(rawItem);
     const itemId = requiredString(item, "id", `component.iconRow.items[${index}].id`);
-    const buttonPresetId = requiredString(item, "buttonPresetId", `component.iconRow.items[${index}].buttonPresetId`);
+    const buttonVariantReference = requiredString(item, "buttonVariantReference", `component.iconRow.items[${index}].buttonVariantReference`);
     const buttonConfig = mergeComponentDefaults(
-      componentPresetConfig(componentBaseConfigs, "button", buttonPresetId),
+      componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
       asRecord(item.buttonOverrides),
     );
     return {

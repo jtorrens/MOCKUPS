@@ -131,6 +131,9 @@ this index wins.
 - `68_architecture_ux_cleanup_and_scaffolding_plan.md`: ordered non-technical
   plan for the remaining architecture/UX audit and the mandatory Codex brief,
   approval and delivery process for new Atoms, Components and Modules.
+- `69_component_variant_storage_vocabulary_contract.md`: canonical Component
+  Variant envelope, complete-reference grammar and retirement of Component
+  Preset storage vocabulary while preserving Render Presets.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

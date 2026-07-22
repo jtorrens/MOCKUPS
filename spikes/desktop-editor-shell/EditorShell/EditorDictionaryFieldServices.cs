@@ -32,7 +32,7 @@ internal sealed class EditorDictionaryFieldServices
     public DictionaryFieldServices ForNode(
         ProjectTreeNode node,
         Func<string, string> getFieldValue,
-        Func<string, Task>? openComponentPresetReference = null,
+        Func<string, Task>? openComponentVariantReference = null,
         Func<string, Task>? openEmbeddedComponent = null,
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null,
         Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null)
@@ -65,16 +65,16 @@ internal sealed class EditorDictionaryFieldServices
                 return null;
             }
         }
-        Task OpenRuntimeOverrides(string presetReference, JsonObject overrides, Action<JsonObject> changed)
+        Task OpenRuntimeOverrides(string variantReference, JsonObject overrides, Action<JsonObject> changed)
         {
             if (openRuntimeComponentOverrides is null) return Task.CompletedTask;
-            var selected = _contextData.ComponentPresetSelection(presetReference);
+            var selected = _contextData.ComponentVariantSelection(variantReference);
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
                 [],
                 new RuntimeComponentOverrideSource(
                     selected.ProjectId,
-                    presetReference,
+                    variantReference,
                     selected.ComponentType,
                     selected.RecordClassId,
                     selected.ConfigJson,
@@ -93,11 +93,11 @@ internal sealed class EditorDictionaryFieldServices
             ResolveImagePath: _pathBrowser.ResolveImagePath,
             GetFieldValue: getFieldValue,
             GetPaletteColorOptions: () => _contextData.PaletteColorOptions(projectId),
-            GetComponentPresetOptions: (componentType) => _contextData.ComponentPresetOptions(projectId, componentType),
-            GetComponentPresetRuntimeInputs: _contextData.ComponentPresetRuntimeInputBindings,
-            GetComponentPresetRuntimeValues: _contextData.ComponentPresetRuntimeValues,
-            GetComponentPresetRuntimeCollections: _contextData.ComponentPresetRuntimeCollections,
-            OpenComponentPresetReference: openComponentPresetReference,
+            GetComponentVariantOptions: (componentType) => _contextData.ComponentVariantOptions(projectId, componentType),
+            GetComponentVariantRuntimeInputs: _contextData.ComponentVariantRuntimeInputBindings,
+            GetComponentVariantRuntimeValues: _contextData.ComponentVariantRuntimeValues,
+            GetComponentVariantRuntimeCollections: _contextData.ComponentVariantRuntimeCollections,
+            OpenComponentVariantReference: openComponentVariantReference,
             OpenEmbeddedComponent: openEmbeddedComponent,
             OpenComponentInputBinding: openComponentInputBinding,
             ResolveBehaviorTimingFrames: ResolveBehaviorTimingFrames,

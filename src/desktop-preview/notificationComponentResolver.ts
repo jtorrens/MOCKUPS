@@ -1,5 +1,5 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { componentPresetConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -102,7 +102,7 @@ function embeddedConfig(
   path: string,
 ) {
   return mergeComponentDefaults(
-    componentPresetConfig(bases, componentType, requiredString(slot, "presetId", `${path}.presetId`)),
+    componentVariantConfig(bases, componentType, requiredString(slot, "variantReference", `${path}.variantReference`)),
     asRecord(slot.overrides),
   );
 }

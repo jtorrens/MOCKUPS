@@ -20,7 +20,7 @@ Several different structures use the word `slot`. They are not interchangeable.
 | Collection Stack item | Collection Stack runtime collection | variable ordered items | lay out a changing list of independent child instances |
 | Shot module slot | Shot | one Module Instance | place a module runtime unit on the Shot timeline |
 
-The persisted spelling `presetId` remains the internal field name for a concrete
+The persisted spelling `variantReference` remains the internal field name for a concrete
 component Variant reference. UI and architecture language use **Variant**.
 
 ## 2. Choosing the structural primitive
@@ -93,7 +93,7 @@ order and can be changed with the shared collection controls.
 Every State has a stable id and owns:
 
 - an editable presentation name, independent from its stable id;
-- a full `componentClassId::preset::presetId` reference or explicit None;
+- a full `componentClassId::variant::variantId` reference or explicit None;
 - local child Overrides;
 - bound Runtime Inputs for that selected child Variant;
 - one Placement relative to the frame assigned to the slot;

@@ -16,78 +16,78 @@ internal sealed partial class SpikeDatabase
         return ComponentClassSettingsFrom(_componentClassRepository.Get(componentClassId));
     }
 
-    public ComponentClassSettings GetComponentPresetSettings(ProjectTreeNode presetNode)
+    public ComponentClassSettings GetComponentVariantSettings(ProjectTreeNode variantNode)
     {
         using var connection = OpenConnection();
-        return GetComponentPresetSettings(connection, presetNode);
+        return GetComponentVariantSettings(connection, variantNode);
     }
 
     public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson) =>
         _componentClassRepository.UpdateDesignPreview(componentClassId, designPreviewJson);
 
-    private ComponentClassSettings GetComponentPresetSettings(SqliteConnection connection, ProjectTreeNode presetNode)
+    private ComponentClassSettings GetComponentVariantSettings(SqliteConnection connection, ProjectTreeNode variantNode)
     {
-        if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
-            || !TryParseComponentPresetNodeId(presetNode.Id, out var componentClassId, out var presetId))
+        if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
+            || !TryParseComponentVariantNodeId(variantNode.Id, out var componentClassId, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
         var metadata = ParseJsonObject(settings.MetadataJson);
-        var presets = VariantEnvelopeContract.RequiredArray(
+        var variants = VariantEnvelopeContract.RequiredArray(
             metadata,
-            "presets",
+            "variants",
             $"Component class '{componentClassId}'");
 
-        var preset = FindPreset(presets, presetId)
-            ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
-        if (preset["config"] is not JsonObject configObject)
+        var variant = FindVariant(variants, variantId)
+            ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
+        if (variant["config"] is not JsonObject configObject)
         {
-            throw new InvalidOperationException($"Component variant '{presetId}' has no config.");
+            throw new InvalidOperationException($"Component variant '{variantId}' has no config.");
         }
 
         var config = configObject.ToJsonString();
-        var presetName = JsonPath.String(preset, "name", presetId);
+        var variantName = JsonPath.String(variant, "name", variantId);
 
         return settings with
         {
-            Name = string.IsNullOrWhiteSpace(presetName)
+            Name = string.IsNullOrWhiteSpace(variantName)
                 ? settings.Name
-                : $"{settings.Name} · {presetName}",
+                : $"{settings.Name} · {variantName}",
             ConfigJson = config,
         };
     }
 
-    private JsonObject ComponentPresetConfigForUpdate(
+    private JsonObject ComponentVariantConfigForUpdate(
         SqliteConnection connection,
-        ProjectTreeNode presetNode,
+        ProjectTreeNode variantNode,
         out string componentClassId,
         out JsonObject metadata)
     {
-        if (presetNode.Kind != ProjectTreeNodeKind.ComponentPreset
-            || !TryParseComponentPresetNodeId(presetNode.Id, out componentClassId, out var presetId))
+        if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
+            || !TryParseComponentVariantNodeId(variantNode.Id, out componentClassId, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
 
         var settings = GetComponentClassSettings(connection, componentClassId);
         metadata = ParseJsonObject(settings.MetadataJson);
-        var presets = VariantEnvelopeContract.RequiredArray(
+        var variants = VariantEnvelopeContract.RequiredArray(
             metadata,
-            "presets",
+            "variants",
             $"Component class '{componentClassId}'");
 
-        var preset = FindPreset(presets, presetId)
-            ?? throw new InvalidOperationException($"Missing component variant '{presetId}'.");
-        if (JsonBool(preset, ["locked"]))
+        var variant = FindVariant(variants, variantId)
+            ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
+        if (JsonBool(variant, ["locked"]))
         {
-            throw new InvalidOperationException($"Component variant '{presetId}' is locked.");
+            throw new InvalidOperationException($"Component variant '{variantId}' is locked.");
         }
 
-        if (preset["config"] is not JsonObject config)
+        if (variant["config"] is not JsonObject config)
         {
-            throw new InvalidOperationException($"Component variant '{presetId}' has no config.");
+            throw new InvalidOperationException($"Component variant '{variantId}' has no config.");
         }
 
         return config;
@@ -107,7 +107,7 @@ internal sealed partial class SpikeDatabase
             record.RecordClassId,
             record.Name,
             record.Notes,
-            DefaultComponentPresetConfigJson(record.MetadataJson, $"Component class '{record.Id}'"),
+            DefaultComponentVariantConfigJson(record.MetadataJson, $"Component class '{record.Id}'"),
             record.DesignPreviewJson,
             record.MetadataJson);
     }
@@ -120,7 +120,7 @@ internal sealed partial class SpikeDatabase
             ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
@@ -136,21 +136,21 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
                 Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
     }
 
-    public FieldValue CreateComponentPresetFieldValue(ProjectTreeNode presetNode, string fieldId)
+    public FieldValue CreateComponentVariantFieldValue(ProjectTreeNode variantNode, string fieldId)
     {
-        var settings = GetComponentPresetSettings(presetNode);
+        var settings = GetComponentVariantSettings(variantNode);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         var value = fieldId == "component.type"
             ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
@@ -166,7 +166,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
                 Unit: descriptor.Unit),
             value,
             IsHighlighted: isHighlighted);
@@ -198,7 +198,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
                 Unit: descriptor.Unit),
             localValue,
             IsInherited: !hasOverride);
@@ -227,7 +227,7 @@ internal sealed partial class SpikeDatabase
         var localValue = hasOverride && localOverrides is not null
             ? ComponentConfigFieldValue(localOverrides.ToJsonString(), descriptor)
             : inheritedValue;
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(overrides, [.. slots, nestedSlot]);
         return new FieldValue(
@@ -244,7 +244,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId,
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
                 Unit: descriptor.Unit),
             localValue,
             IsInherited: !hasOverride,
@@ -310,7 +310,7 @@ internal sealed partial class SpikeDatabase
                 settings.ComponentType,
                 config,
                 $"Component class '{componentClassId}' config_json");
-            SetDefaultComponentPresetConfig(metadata, config);
+            SetDefaultComponentVariantConfig(metadata, config);
             _componentClassRepository.UpdateConfigAndMetadata(
                 connection,
                 componentClassId,
@@ -319,7 +319,7 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    public void UpdateComponentPresetField(ProjectTreeNode presetNode, string fieldId, string value)
+    public void UpdateComponentVariantField(ProjectTreeNode variantNode, string fieldId, string value)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0)
@@ -330,9 +330,9 @@ internal sealed partial class SpikeDatabase
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var config = ComponentPresetConfigForUpdate(connection, presetNode, out var componentClassId, out var metadata);
+            var config = ComponentVariantConfigForUpdate(connection, variantNode, out var componentClassId, out var metadata);
             SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
-            PersistComponentPresetUpdate(connection, presetNode, componentClassId, config, metadata);
+            PersistComponentVariantUpdate(connection, variantNode, componentClassId, config, metadata);
         }
     }
 
@@ -374,7 +374,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -401,7 +401,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
 
@@ -419,7 +419,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -459,7 +459,7 @@ internal sealed partial class SpikeDatabase
                 moduleLocalValue, IsInherited: !moduleHasOverride);
         }
 
-        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
         }
@@ -469,7 +469,7 @@ internal sealed partial class SpikeDatabase
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
         }
 
-        var settings = GetComponentPresetSettings(ownerNode);
+        var settings = GetComponentVariantSettings(ownerNode);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
         using var connection = OpenConnection();
         var config = ParseJsonObject(settings.ConfigJson);
@@ -481,7 +481,7 @@ internal sealed partial class SpikeDatabase
             ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentPreset
+        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(embeddedFieldId, out var nestedSlot)
             && EmbeddedComponentHasOverrides(config, [.. slots, nestedSlot]);
 
@@ -499,7 +499,7 @@ internal sealed partial class SpikeDatabase
                 Number: descriptor.Number,
                 ComponentInputBindings: descriptor.ComponentInputBindings,
                 StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentPresetFieldId: descriptor.RuntimeInputComponentPresetFieldId),
+                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -615,7 +615,7 @@ internal sealed partial class SpikeDatabase
             return;
         }
 
-        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentPreset)
+        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentVariant)
         {
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
         }
@@ -629,7 +629,7 @@ internal sealed partial class SpikeDatabase
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var config = ComponentPresetConfigForUpdate(connection, ownerNode, out var componentClassId, out var metadata);
+            var config = ComponentVariantConfigForUpdate(connection, ownerNode, out var componentClassId, out var metadata);
             var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
                 ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
 
@@ -643,40 +643,40 @@ internal sealed partial class SpikeDatabase
                 SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value));
             }
 
-            PersistComponentPresetUpdate(connection, ownerNode, componentClassId, config, metadata);
+            PersistComponentVariantUpdate(connection, ownerNode, componentClassId, config, metadata);
         }
     }
 
-    private static IReadOnlyList<ComponentClassPreset> ComponentClassPresets(
+    private static IReadOnlyList<ComponentClassVariant> ComponentClassVariants(
         string metadataJson,
         string owner = "Component class metadata")
     {
         var metadata = ParseJsonObject(metadataJson);
-        return VariantEnvelopeContract.Read(metadata, "presets", owner)
-            .Select((preset) => new ComponentClassPreset(
-                preset.Id,
-                preset.Name,
-                preset.IsProtected,
-                preset.IsLocked,
-                preset.Config.ToJsonString()))
-            .OrderBy((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal) ? 0 : 1)
-            .ThenBy((preset) => preset.Name, StringComparer.Ordinal)
+        return VariantEnvelopeContract.Read(metadata, "variants", owner)
+            .Select((variant) => new ComponentClassVariant(
+                variant.Id,
+                variant.Name,
+                variant.IsProtected,
+                variant.IsLocked,
+                variant.Config.ToJsonString()))
+            .OrderBy((variant) => variant.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy((variant) => variant.Name, StringComparer.Ordinal)
             .ToList();
     }
 
-    private static string DefaultComponentPresetConfigJson(string metadataJson, string owner)
+    private static string DefaultComponentVariantConfigJson(string metadataJson, string owner)
     {
-        return ComponentClassPresets(metadataJson, owner)
-            .Single((preset) => preset.Id.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+        return ComponentClassVariants(metadataJson, owner)
+            .Single((variant) => variant.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
             .ConfigJson;
     }
 
-    private static void SetDefaultComponentPresetConfig(JsonObject metadata, JsonObject config)
+    private static void SetDefaultComponentVariantConfig(JsonObject metadata, JsonObject config)
     {
-        var presets = VariantEnvelopeContract.RequiredArray(metadata, "presets", "Component class metadata");
-        var defaultPreset = FindPreset(presets, DefaultComponentPresetId)
+        var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", "Component class metadata");
+        var defaultVariant = FindVariant(variants, DefaultComponentVariantId)
             ?? throw new InvalidOperationException("Component class has no Default variant.");
-        defaultPreset["config"] = config.DeepClone();
+        defaultVariant["config"] = config.DeepClone();
     }
 
     private void PersistDefaultComponentConfig(
@@ -690,7 +690,7 @@ internal sealed partial class SpikeDatabase
             componentType,
             config,
             $"Component class '{componentClassId}' Default Variant config");
-        SetDefaultComponentPresetConfig(metadata, config);
+        SetDefaultComponentVariantConfig(metadata, config);
         _componentClassRepository.UpdateConfigAndMetadata(
             connection,
             componentClassId,
@@ -698,23 +698,23 @@ internal sealed partial class SpikeDatabase
             metadata.ToJsonString());
     }
 
-    private void PersistComponentPresetUpdate(
+    private void PersistComponentVariantUpdate(
         SqliteConnection connection,
-        ProjectTreeNode presetNode,
+        ProjectTreeNode variantNode,
         string componentClassId,
         JsonObject config,
         JsonObject metadata)
     {
-        if (!TryParseComponentPresetNodeId(presetNode.Id, out _, out var presetId))
+        if (!TryParseComponentVariantNodeId(variantNode.Id, out _, out var variantId))
         {
-            throw new InvalidOperationException($"Invalid component variant node id '{presetNode.Id}'.");
+            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
         var componentType = _componentClassRepository.Get(connection, componentClassId).ComponentType;
         CurrentComponentConfigContract.Validate(
             componentType,
             config,
-            $"Component class '{componentClassId}' Variant '{presetId}' config");
-        if (presetId.Equals(DefaultComponentPresetId, StringComparison.Ordinal))
+            $"Component class '{componentClassId}' Variant '{variantId}' config");
+        if (variantId.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
         {
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
             return;
@@ -862,12 +862,14 @@ internal sealed partial class SpikeDatabase
             var slotNode = currentContainer is null
                 ? null
                 : JsonPath.Get(currentContainer, slots[index].SlotPath) as JsonObject;
-            var presetId = JsonPath.String(slotNode ?? [], "presetId", DefaultComponentPresetId);
-            var child = ParseJsonObject(GetComponentClassPresetConfigJson(
+            var variantReference = RequiredComponentVariantReference(
+                slotNode,
+                $"Embedded component slot '{slots[index].FieldId}'");
+            var child = ParseJsonObject(GetComponentClassVariantConfigJson(
                 connection,
                 projectId,
                 slots[index].EmbeddedComponentType,
-                presetId));
+                variantReference));
             var overrides = slotNode?["overrides"] as JsonObject;
             if (index < slots.Count - 1 && overrides is not null)
             {

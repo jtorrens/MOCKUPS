@@ -63,7 +63,7 @@ The removed one-time converter preserved all rows and stable ids in the
 canonical tables, plus all current JSON payloads after normalizing them to the
 shapes below:
 
-- component variants use full `componentClassId::preset::presetId` references;
+- component variants use full `componentClassId::variant::variantId` references;
 - `media` replaces the historical `video` component type;
 - icon bar slots use current inline/full-screen slot names;
 - motion uses `fade`, never the earlier `opacity` key;

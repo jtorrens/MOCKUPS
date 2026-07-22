@@ -15,11 +15,11 @@ internal sealed record RecordClassFieldDescriptor(
     ImagePreviewDefinition? ImagePreview = null,
     NumberDefinition? Number = null,
     RecordReferenceDefinition? RecordReference = null,
-    string ComponentPresetType = "",
+    string ComponentVariantType = "",
     string Unit = "",
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
-    string RuntimeInputComponentPresetFieldId = "",
-    string RuntimeCollectionComponentPresetFieldId = "",
+    string RuntimeInputComponentVariantFieldId = "",
+    string RuntimeCollectionComponentVariantFieldId = "",
     MotionTimingDefinition? MotionTiming = null);
 
 internal static class RecordClassFieldCatalog
@@ -138,17 +138,17 @@ internal static class RecordClassFieldCatalog
         ["module.conversation.headerAvatarVariant"] = new(
             "module.conversation.headerAvatarVariant",
             "Header avatar variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "avatar"),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "avatar"),
         ["module.conversation.headerAvatarAlignment"] = new("module.conversation.headerAvatarAlignment", "Avatar alignment", ValueKind.OptionToken, Options:
         [
             new FieldOption("left", "Left"),
             new FieldOption("center", "Center"),
             new FieldOption("right", "Right"),
         ]),
-        ["module.conversation.headerLeftIconRow.editor"] = new("module.conversation.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerLeftIconRow.editor"] = new("module.conversation.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
         ["module.conversation.headerLeftIconRow.inputs"] = new("module.conversation.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
-        ["module.conversation.headerRightIconRow.editor"] = new("module.conversation.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentPreset, ComponentPresetType: "iconRow"),
+        ["module.conversation.headerRightIconRow.editor"] = new("module.conversation.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
         ["module.conversation.headerRightIconRow.inputs"] = new("module.conversation.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
         ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
         ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
@@ -156,19 +156,19 @@ internal static class RecordClassFieldCatalog
         ["module.conversation.textInputBarVariant"] = new(
             "module.conversation.textInputBarVariant",
             "Text input variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "textInputBar"),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "textInputBar"),
         ["module.conversation.showKeyboard"] = new("module.conversation.showKeyboard", "Keyboard", ValueKind.Boolean),
         ["module.conversation.keyboardVariant"] = new(
             "module.conversation.keyboardVariant",
             "Keyboard variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "keyboard"),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "keyboard"),
         ["module.conversation.bubbleVariant"] = new(
             "module.conversation.bubbleVariant",
             "Bubble variant",
-            ValueKind.ComponentPreset,
-            ComponentPresetType: "bubble"),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "bubble"),
         ["module.conversation.bubbleMaxWidth"] = new(
             "module.conversation.bubbleMaxWidth",
             "Max width %",
@@ -190,24 +190,24 @@ internal static class RecordClassFieldCatalog
             "Message viewport motion",
             ValueKind.Motion),
         ["module.lockScreen.statusBarVariant"] = new(
-            "module.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentPreset, ComponentPresetType: "status_bar"),
+            "module.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentVariant, ComponentVariantType: "status_bar"),
         ["module.lockScreen.navigationBarVariant"] = new(
-            "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentPreset, ComponentPresetType: "navigation_bar"),
+            "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentVariant, ComponentVariantType: "navigation_bar"),
         ["module.lockScreen.stackVariant"] = new(
-            "module.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentPreset, ComponentPresetType: "componentStack"),
+            "module.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentVariant, ComponentVariantType: "componentStack"),
         ["module.lockScreen.stackInputs"] = new(
             "module.lockScreen.stackInputs",
             "Stack inputs",
             ValueKind.ComponentInputBindings,
-            RuntimeInputComponentPresetFieldId: "module.lockScreen.stackVariant"),
+            RuntimeInputComponentVariantFieldId: "module.lockScreen.stackVariant"),
         ["module.lockScreen.stackItems"] = new(
             "module.lockScreen.stackItems",
             "Components",
             ValueKind.StructuredCollection,
-            RuntimeCollectionComponentPresetFieldId: "module.lockScreen.stackVariant"),
+            RuntimeCollectionComponentVariantFieldId: "module.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
-        ["moduleInstance.variant"] = new("moduleInstance.variant", "Variant", ValueKind.ComponentPreset),
+        ["moduleInstance.variant"] = new("moduleInstance.variant", "Variant", ValueKind.ComponentVariant),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",
@@ -282,13 +282,13 @@ internal static class RecordClassFieldCatalog
         ["theme.statusBarId"] = new(
             "theme.statusBarId",
             "Status bar",
-            ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "status_bar"),
         ["theme.navigationBarId"] = new(
             "theme.navigationBarId",
             "Navigation bar",
-            ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("component_presets")),
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "navigation_bar"),
         ["theme.defaultMode"] = new("theme.defaultMode", "Default mode", ValueKind.OptionToken),
         ["theme.neutralTint.hueDeg"] = new("theme.neutralTint.hueDeg", "Hue", ValueKind.HueDegrees),
         ["theme.neutralTint.saturation"] = new(

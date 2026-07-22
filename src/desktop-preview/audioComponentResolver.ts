@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
@@ -56,19 +56,19 @@ export function resolveAudioComponentFromRecords(
     "component.audio.input.showBadge",
   );
   const avatarConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "avatar", avatarSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "avatar", avatarSlot.variantReference),
     asRecord(avatarSlot.overrides),
   );
   const badgeConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "badge", badgeSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "badge", badgeSlot.variantReference),
     asRecord(badgeSlot.overrides),
   );
   const surfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
     asRecord(surfaceSlot.overrides),
   );
   const durationLabelConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "label", durationLabelSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "label", durationLabelSlot.variantReference),
     asRecord(durationLabelSlot.overrides),
   );
   const durationSeconds = Math.max(

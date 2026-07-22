@@ -22,7 +22,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.PaletteColor => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.IconThemesRoot or ProjectTreeNodeKind.IconTheme => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ComponentClassesRoot or ProjectTreeNodeKind.ComponentClassGroup
-                or ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentPreset => EditorWorkspaceScope.Design,
+                or ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentVariant => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ThemesRoot or ProjectTreeNodeKind.Theme => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot
                 or ProjectTreeNodeKind.ModuleInstance => EditorWorkspaceScope.Production,

@@ -150,7 +150,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         {
             foreach (var variant in component.Variants)
             {
-                catalog.Add(ProjectTreeNodeKind.ComponentPreset, variant.Reference, variant.Reference);
+                catalog.Add(ProjectTreeNodeKind.ComponentVariant, variant.Reference, variant.Reference);
             }
         }
 
@@ -256,8 +256,8 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         {
             var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Theme, "Theme", reader.GetString(1), ReferenceUsageScope.Design, reader.GetString(6));
             AddExact(usages, targets, ProjectTreeNodeKind.IconTheme, ReadString(reader, 2), source, "Icon theme");
-            AddExact(usages, targets, ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 3), source, "Status bar");
-            AddExact(usages, targets, ProjectTreeNodeKind.ComponentPreset, ReadString(reader, 4), source, "Navigation bar");
+            AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 3), source, "Status bar");
+            AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 4), source, "Navigation bar");
 
             var tokens = JsonPath.ParseRequiredObject(ReadString(reader, 5), $"Theme '{source.NodeId}' tokens_json");
             foreach (var token in ThemeColorTokenCatalog.ColorTokens)
@@ -326,7 +326,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             {
                 var source = new SourceContext(
                     variant.Reference,
-                    ProjectTreeNodeKind.ComponentPreset,
+                    ProjectTreeNodeKind.ComponentVariant,
                     "Component Variant",
                     $"{component.Name} · {variant.Name}",
                     ReferenceUsageScope.Design,
@@ -439,7 +439,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
     {
         foreach (var declaration in ModuleComponentReferencePaths)
         {
-            AddJsonString(usages, targets, ProjectTreeNodeKind.ComponentPreset, config, declaration.Path, source, declaration.Label);
+            AddJsonString(usages, targets, ProjectTreeNodeKind.ComponentVariant, config, declaration.Path, source, declaration.Label);
         }
 
         foreach (var slot in EmbeddedComponentSlotCatalog.All().Where((candidate) => candidate.FieldId.StartsWith("module.", StringComparison.Ordinal)))
@@ -451,8 +451,8 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             AddExact(
                 usages,
                 targets,
-                ProjectTreeNodeKind.ComponentPreset,
-                JsonPath.String(slotNode, "presetId", ""),
+                ProjectTreeNodeKind.ComponentVariant,
+                JsonPath.String(slotNode, "variantReference", ""),
                 source,
                 slot.Label);
         }
@@ -476,7 +476,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
 
         var stackReference = "";
         var stackSlot = JsonPath.Get(config, ["lockScreen", "stackSlot"]) as JsonObject;
-        stackReference = stackSlot is null ? stackReference : JsonPath.String(stackSlot, "presetId", "");
+        stackReference = stackSlot is null ? stackReference : JsonPath.String(stackSlot, "variantReference", "");
         if (componentsByReference.TryGetValue(stackReference, out var stack)
             && JsonPath.Get(config, ["lockScreen", "stackInputs"]) is JsonObject stackInputs)
         {
@@ -513,7 +513,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
 
             ReferenceEmbeddedContext? embedded = null;
             if (depth == 0
-                && descriptor.ValueKind == ValueKind.ComponentPreset
+                && descriptor.ValueKind == ValueKind.ComponentVariant
                 && source.ComponentOwner is not null
                 && EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var embeddedSlot)
                 && JsonPath.Get(config, embeddedSlot.SlotPath) is JsonObject embeddedNode)
@@ -560,9 +560,9 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         IReadOnlyDictionary<string, ComponentVariantOwner> componentsByReference,
         ReferenceEmbeddedContext? embedded)
     {
-        if (descriptor.ValueKind == ValueKind.ComponentPreset)
+        if (descriptor.ValueKind == ValueKind.ComponentVariant)
         {
-            AddExact(usages, targets, ProjectTreeNodeKind.ComponentPreset, StringValue(value), source, fieldLabel, embedded);
+            AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, StringValue(value), source, fieldLabel, embedded);
             return;
         }
         if (descriptor.ValueKind == ValueKind.ComponentInputBindings)
@@ -699,8 +699,8 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             }
 
             if (collection.ComponentItems is not { } componentItems) continue;
-            var reference = JsonPath.String(item, componentItems.PresetJsonKey, "");
-            AddExact(usages, targets, ProjectTreeNodeKind.ComponentPreset, reference, source, $"{itemLabel} · Component variant");
+            var reference = JsonPath.String(item, componentItems.VariantReferenceJsonKey, "");
+            AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, reference, source, $"{itemLabel} · Component variant");
             if (!componentsByReference.TryGetValue(reference, out var component)) continue;
             if (item[componentItems.OverridesJsonKey] is JsonObject overrides)
             {
@@ -753,8 +753,8 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             case ValueKind.RecordReference when RecordReferenceKinds.TryGetValue(tableId, out var targetKind):
                 AddExact(usages, targets, targetKind, StringValue(value), source, fieldLabel);
                 return;
-            case ValueKind.ComponentPreset:
-                AddExact(usages, targets, ProjectTreeNodeKind.ComponentPreset, StringValue(value), source, fieldLabel);
+            case ValueKind.ComponentVariant:
+                AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, StringValue(value), source, fieldLabel);
                 return;
             case ValueKind.PaletteColorToken:
                 AddExact(usages, targets, ProjectTreeNodeKind.PaletteColor, StringValue(value), source, fieldLabel);
@@ -860,7 +860,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         {
             var id = reader.GetString(0);
             var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 5), $"Component class '{id}' metadata_json");
-            var variants = ReadVariants(metadata, "presets", id, "preset");
+            var variants = ReadVariants(metadata, "variants", id, "variant");
             components.Add(new ComponentOwner(
                 id,
                 reader.GetString(1),

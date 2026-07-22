@@ -12,9 +12,9 @@ Runtime Input contracts or persisted payloads.
 Runtime Input option lookup and dictionary construction have separate owners:
 
 ```text
-validated current Actor, Palette and Component preset data
+validated current Actor, Palette and Component variant data
 → RuntimeInputOptionsDataSource
-→ exact FieldOption lists or preset display name
+→ exact FieldOption lists or Variant display name
 → RuntimeInputFieldDefinitionFactory / RuntimeInputDynamicOptions
 → FieldDefinition
 → registered dictionary control
@@ -30,13 +30,13 @@ dynamic option list.
 
 - Actor options for one explicit Project through `ActorPreviewDataSource`;
 - Palette color-token options for one explicit Project;
-- complete Component preset reference options for explicit component types and
+- complete Component variant reference options for explicit component types and
   the declared `includeNone` policy;
-- the current display name of one complete Component preset reference.
+- the current display name of one complete Component variant reference.
 
 It must not inspect a field label or JSON key to choose an option source;
 construct `FieldDefinition`; parse a structured collection; create controls;
-execute SQL; repair references; shorten preset ids; or infer a component class,
+execute SQL; repair references; shorten Variant ids; or infer a component class,
 Variant, Actor or Palette token from name, type spelling, position or index.
 
 The source composes current facade/domain operations during the repository
@@ -48,8 +48,8 @@ transition. It is not a repository.
 declared `ValueKind` and input metadata to generic `FieldDefinition`:
 
 - `RecordReference` with explicit `tableId: actors` requests Actor options;
-- `ComponentPreset` with explicit `componentType` requests complete preset
-  references and preserves `AllowEmptyComponentPreset`;
+- `ComponentVariant` with explicit `componentType` requests complete Variant
+  references and preserves `AllowEmptyComponentVariant`;
 - `PaletteColorToken` requests exact Palette token options;
 - every other kind uses only its declared options.
 
@@ -61,8 +61,8 @@ options data source and must not accept `SpikeDatabase`.
 
 `RuntimeInputDynamicOptions` reads only the collection and keys explicitly
 declared by `OptionsSourceCollectionJsonKey`, `OptionsSourceValueJsonKey` and
-`OptionsSourceLabelJsonKey`. A declared `presetId` label key may ask the data
-source for the preset display name. This is metadata-driven behavior, not a
+`OptionsSourceLabelJsonKey`. A declared `variantReference` label key may ask the data
+source for the Variant display name. This is metadata-driven behavior, not a
 guess based on component class or field position.
 
 Dynamic options remain a presentation of current structured values. They do
@@ -97,9 +97,9 @@ Architecture enforcement must verify:
   instance per editor service;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
-A disposable-database test must compare Actor, Palette and Component preset
+A disposable-database test must compare Actor, Palette and Component variant
 options with their exact current facade values, resolve a declared dynamic
-preset label and prove that the reads leave the database byte-for-byte
+Variant label and prove that the reads leave the database byte-for-byte
 unchanged.
 
 ## 7. Out of scope
@@ -113,7 +113,7 @@ forwarding, Overrides, tables, parity data, assets or animation behavior.
 - selecting options from a field name, label suffix, component class or tree
   position;
 - storing a display label instead of the stable id/token/reference;
-- accepting a short preset id as current data;
+- accepting a short Variant id as current data;
 - choosing the first Component or Variant when a reference is missing;
 - building a raw ComboBox outside the dictionary registry;
 - querying persistence from either option factory;

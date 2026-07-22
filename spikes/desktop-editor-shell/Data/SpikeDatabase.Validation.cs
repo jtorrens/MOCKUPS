@@ -13,10 +13,10 @@ internal sealed partial class SpikeDatabase
 {
     private static readonly Version MinimumSafeSqliteVersion = new(3, 50, 2);
 
-    private static readonly HashSet<string> CurrentComponentPresetReferenceKeys = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> CurrentComponentVariantReferenceKeys = new(StringComparer.Ordinal)
     {
-        "presetId",
-        "buttonPresetId",
+        "variantReference",
+        "buttonVariantReference",
         "bubbleVariant",
         "headerAvatarVariant",
         "keyboardVariant",
@@ -31,7 +31,7 @@ internal sealed partial class SpikeDatabase
         "boolean",
         "option",
         "recordReference",
-        "componentPreset",
+        "componentVariant",
         "themeToken",
         "icon",
         "iconList",
@@ -87,7 +87,7 @@ internal sealed partial class SpikeDatabase
         ValidateCurrentPreviewManifest(connection);
         ValidateCurrentRuntimeInputContracts(connection);
         ValidateCurrentReferences(connection);
-        ValidateCurrentComponentPresets(connection);
+        ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
     }
@@ -392,23 +392,23 @@ internal sealed partial class SpikeDatabase
         RequireNoRows(connection, "SELECT 1 FROM themes t LEFT JOIN icon_themes i ON i.id = t.icon_theme_id WHERE t.icon_theme_id <> '' AND i.id IS NULL", "Theme icon theme missing");
     }
 
-    private void ValidateCurrentComponentPresets(SqliteConnection connection)
+    private void ValidateCurrentComponentVariants(SqliteConnection connection)
     {
         var validReferences = new HashSet<string>(StringComparer.Ordinal);
         var documents = new List<(string Context, JsonNode Node)>();
         foreach (var row in QueryComponentClassRows(connection))
         {
-            var presets = RequiredComponentClassPresets(row);
-            foreach (var preset in presets)
+            var variants = RequiredComponentClassVariants(row);
+            foreach (var variant in variants)
             {
-                validReferences.Add(ComponentPresetNodeId(row.Id, preset.Id));
-                var presetConfig = ParseRequiredObject(preset.ConfigJson, $"component preset '{row.Id}::{preset.Id}'");
-                ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, presetConfig);
-                documents.Add(($"component preset '{row.Id}::{preset.Id}'", presetConfig));
+                validReferences.Add(ComponentVariantNodeId(row.Id, variant.Id));
+                var variantConfig = ParseRequiredObject(variant.ConfigJson, $"component variant '{row.Id}::{variant.Id}'");
+                ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, variantConfig);
+                documents.Add(($"component variant '{row.Id}::{variant.Id}'", variantConfig));
             }
 
             var classConfig = ParseRequiredObject(row.ConfigJson, $"component class '{row.Id}' config_json");
-            ValidateEmbeddedSlotPresetReferences(connection, row.ProjectId, classConfig);
+            ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, classConfig);
             documents.Add(($"component class '{row.Id}' config_json", classConfig));
             documents.Add(($"component class '{row.Id}' design_preview_json", ParseRequiredObject(row.DesignPreviewJson, $"component class '{row.Id}' design_preview_json")));
             documents.Add(($"component class '{row.Id}' metadata_json", ParseRequiredObject(row.MetadataJson, $"component class '{row.Id}' metadata_json")));
@@ -442,7 +442,7 @@ internal sealed partial class SpikeDatabase
 
         foreach (var (context, document) in documents)
         {
-            ValidateFullPresetReferences(document, context, validReferences);
+            ValidateFullComponentVariantReferences(document, context, validReferences);
         }
     }
 
@@ -513,44 +513,37 @@ internal sealed partial class SpikeDatabase
         return JsonPath.ParseRequiredObject(json, context);
     }
 
-    private void ValidateFullPresetReferences(JsonNode? node, string context, IReadOnlySet<string> validReferences)
+    private void ValidateFullComponentVariantReferences(JsonNode? node, string context, IReadOnlySet<string> validReferences)
     {
         switch (node)
         {
-            case JsonValue value when value.TryGetValue<string>(out var text)
-                && IsCompleteComponentPresetReference(text):
-                if (!validReferences.Contains(text))
-                {
-                    throw InvalidCurrentDatabase($"{context} references missing component Variant '{text}'");
-                }
-                break;
             case JsonObject obj:
                 foreach (var entry in obj)
                 {
-                    if (CurrentComponentPresetReferenceKeys.Contains(entry.Key)
+                    if (CurrentComponentVariantReferenceKeys.Contains(entry.Key)
                         && entry.Value is JsonValue referenceValue
                         && referenceValue.TryGetValue<string>(out var reference)
                         && !string.IsNullOrWhiteSpace(reference)
-                        && (!IsCompleteComponentPresetReference(reference) || !validReferences.Contains(reference)))
+                        && (!IsCompleteComponentVariantReference(reference) || !validReferences.Contains(reference)))
                     {
                         throw InvalidCurrentDatabase($"{context} has invalid full component Variant reference '{reference}' in '{entry.Key}'");
                     }
 
-                    ValidateFullPresetReferences(entry.Value, context, validReferences);
+                    ValidateFullComponentVariantReferences(entry.Value, context, validReferences);
                 }
                 break;
             case JsonArray array:
-                foreach (var item in array) ValidateFullPresetReferences(item, context, validReferences);
+                foreach (var item in array) ValidateFullComponentVariantReferences(item, context, validReferences);
                 break;
         }
     }
 
-    private static bool IsCompleteComponentPresetReference(string value)
+    private static bool IsCompleteComponentVariantReference(string value)
     {
-        if (!TryParseComponentPresetNodeId(value, out var componentClassId, out var presetId)) return false;
-        return ComponentPresetNodeId(componentClassId, presetId).Equals(value, StringComparison.Ordinal)
+        if (!TryParseComponentVariantNodeId(value, out var componentClassId, out var variantId)) return false;
+        return ComponentVariantNodeId(componentClassId, variantId).Equals(value, StringComparison.Ordinal)
             && componentClassId.All(IsStableReferenceCharacter)
-            && presetId.All(IsStableReferenceCharacter);
+            && variantId.All(IsStableReferenceCharacter);
     }
 
     private static bool IsStableReferenceCharacter(char value) =>

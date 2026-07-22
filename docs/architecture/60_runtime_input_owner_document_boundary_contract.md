@@ -33,7 +33,7 @@ kinds:
   Test Value writes target that exact Module id;
 - `ModuleVariant`: its complete selected Variant config and the owning Module's
   Design Preview document; writes target the explicit parent Module id;
-- `ComponentPreset`: its complete selected Component Variant config and owning
+- `ComponentVariant`: its complete selected Component Variant config and owning
   Component Class Design Preview document; writes target the explicit parent
   Component Class id;
 - `ModuleInstance`: its effective selected Module Variant config and complete
@@ -87,7 +87,7 @@ independent.
 
 ## 5. Preserved contracts
 
-- Stable ids and full `componentClassId::preset::presetId` references remain
+- Stable ids and full `componentClassId::variant::variantId` references remain
   authoritative.
 - New Component boundaries still begin with an explicit Default Variant.
 - Existing current references never fall back to Default.
@@ -102,12 +102,12 @@ independent.
 
 Architecture enforcement must verify:
 
-- `RuntimeInputOwnerDocumentStore` owns the declared owner/preset database reads
+- `RuntimeInputOwnerDocumentStore` owns the declared owner/Variant database reads
   and contains no SQL;
 - the Runtime Inputs editor creates one store per editor service;
 - owner resolution delegates to the store and no longer calls the retired
-  owner/preset facade methods directly;
-- Component preset config lookup continues through
+  owner/Variant facade methods directly;
+- Component variant config lookup continues through
   `ComponentPreviewInputDataSource` rather than being duplicated;
 - Module Instance isolated Design Preview writes fail explicitly;
 - this contract is linked from `AGENTS.md` and the architecture index.
@@ -129,7 +129,7 @@ modify parity assets.
 - selecting an owner or Variant from its display name, type or position;
 - persisting Design Test Values as Screen runtime content;
 - allowing a Module Instance to write an isolated Design Preview document;
-- accepting short Component preset ids or incomplete Variant config;
+- accepting short Component variant ids or incomplete Variant config;
 - returning `{}` for a missing or malformed current document;
 - moving forwarding, collection or animation semantics into the store;
 - bypassing owning repositories with local SQL.

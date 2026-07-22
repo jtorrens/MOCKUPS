@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
@@ -81,11 +81,11 @@ export function resolveTextBoxComponentFromRecords(
 
   const padding = requiredStringPair(textBox, "padding", "component.textBox.padding");
   const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "surface", surfaceSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
     asRecord(surfaceSlot.overrides),
   );
   const embeddedCursorConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "cursor", cursorSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "cursor", cursorSlot.variantReference),
     asRecord(cursorSlot.overrides),
   );
   const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
@@ -193,10 +193,10 @@ function resolveOptionalIconRowComponentFromRecords(
     slotInputKey,
     `component.textBox.input.${slotInputKey}`,
   );
-  const iconRowConfig = componentPresetConfig(
+  const iconRowConfig = componentVariantConfig(
     componentBaseConfigs,
     "iconRow",
-    iconRowSlot.presetId,
+    iconRowSlot.variantReference,
   );
   return resolveIconRowComponentFromRecords(
     mergeComponentDefaults(iconRowConfig, iconRowSlot.overrides),
@@ -216,7 +216,7 @@ function componentInputSlot(
 ) {
   const slot = asRecord(inputs[slotKey]);
   return {
-    presetId: requiredString(slot, "presetId", `${path}.presetId`),
+    variantReference: requiredString(slot, "variantReference", `${path}.variantReference`),
     overrides: asRecord(slot.overrides),
   };
 }
@@ -258,16 +258,16 @@ function iconRowInputsFromParent(
   const icons = Array.isArray(parentInputs.icons)
     ? parentInputs.icons.filter((icon): icon is string => typeof icon === "string" && icon.trim().length > 0)
     : [];
-  const buttonPresetId = Object.keys(asRecord(componentBaseConfigs.presets)).find((reference) =>
-    reference.endsWith("_button::preset::default"),
+  const buttonVariantReference = Object.keys(asRecord(componentBaseConfigs.variants)).find((reference) =>
+    reference.endsWith("_button::variant::default"),
   );
-  if (!buttonPresetId) throw new Error("Missing Button.default preset for TextBox icon rows");
+  if (!buttonVariantReference) throw new Error("Missing Button.default variant for TextBox icon rows");
   return {
     gap: parentInputs.gap,
     orientation: parentInputs.orientation,
     items: icons.map((iconToken, index) => ({
       id: `button_${String(index + 1).padStart(3, "0")}`,
-      buttonPresetId,
+      buttonVariantReference,
       contentMode: "icon",
       state: "normal",
       iconToken,

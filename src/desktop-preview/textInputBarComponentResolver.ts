@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentPresetConfig,
+  componentVariantConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
@@ -49,18 +49,18 @@ export function resolveTextInputBarComponent(
   const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInput.height");
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "surface", barSurfaceSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "surface", barSurfaceSlot.variantReference),
     asRecord(barSurfaceSlot.overrides),
   );
   const embeddedTextBoxConfig = mergeComponentDefaults(
-    componentPresetConfig(componentBaseConfigs, "textBox", textBoxSlot.presetId),
+    componentVariantConfig(componentBaseConfigs, "textBox", textBoxSlot.variantReference),
     asRecord(textBoxSlot.overrides),
   );
   const embeddedIconBarConfig = mergeComponentDefaults(
-    componentPresetConfig(
+    componentVariantConfig(
       componentBaseConfigs,
       "iconBar",
-      requiredString(iconBarSlot, "presetId", "component.textInput.iconBarSlot.presetId"),
+      requiredString(iconBarSlot, "variantReference", "component.textInput.iconBarSlot.variantReference"),
     ),
     asRecord(iconBarSlot.overrides),
   );
@@ -142,7 +142,7 @@ function componentInputSlot(
 ) {
   const slot = asRecord(inputs[slotKey]);
   return {
-    presetId: requiredString(slot, "presetId", `${path}.presetId`),
+    variantReference: requiredString(slot, "variantReference", `${path}.variantReference`),
     overrides: asRecord(slot.overrides),
   };
 }

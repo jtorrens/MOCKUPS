@@ -27,12 +27,12 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private readonly TextBox _alignYBox;
     private readonly TextBox _offsetXBox;
     private readonly TextBox _offsetYBox;
-    private readonly List<PresetButton> _presetButtons = [];
+    private readonly List<AnchorButton> _anchorButtons = [];
     private AlignmentPlacementValue _value;
     private bool _isUpdating;
     private bool _isExpanded;
 
-    private sealed record PresetButton(Button Button, Border Dot, double AlignX, double AlignY);
+    private sealed record AnchorButton(Button Button, Border Dot, double AlignX, double AlignY);
 
     public DictionaryAlignmentPlacementControl(FieldDefinition definition, string value)
     {
@@ -155,16 +155,16 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         AddSliderRow(offsetGrid, 1, "Offset Y", _offsetYSlider, _offsetYBox);
         _content.Children.Add(offsetGrid);
 
-        var presetRow = new Grid
+        var anchorRow = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("160,*"),
             ColumnSpacing = 10,
         };
-        presetRow.Children.Add(Label("Anchors"));
-        var preset = CreatePresetGrid(definition.IsEditable);
-        Grid.SetColumn(preset, 1);
-        presetRow.Children.Add(preset);
-        _content.Children.Add(presetRow);
+        anchorRow.Children.Add(Label("Anchors"));
+        var anchors = CreateAnchorGrid(definition.IsEditable);
+        Grid.SetColumn(anchors, 1);
+        anchorRow.Children.Add(anchors);
+        _content.Children.Add(anchorRow);
 
         Hook();
         ActualThemeVariantChanged += (_, _) => ApplyThemeBrushes();
@@ -218,7 +218,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         HookIntegerBox(_offsetYBox, (number) => SetLocal(_value with { OffsetY = number }, commit: true));
     }
 
-    private Grid CreatePresetGrid(bool isEditable)
+    private Grid CreateAnchorGrid(bool isEditable)
     {
         var grid = new Grid
         {
@@ -254,7 +254,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
                 Grid.SetColumn(button, x);
                 Grid.SetRow(button, y);
                 grid.Children.Add(button);
-                _presetButtons.Add(new PresetButton(button, dot, alignX, alignY));
+                _anchorButtons.Add(new AnchorButton(button, dot, alignX, alignY));
             }
         }
 
@@ -295,7 +295,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         _offsetYBox.Text = _value.OffsetY.ToString(CultureInfo.InvariantCulture);
         _summary.Text = Summary(_value);
         _chevron.Text = _isExpanded ? "v" : ">";
-        UpdatePresetBrushes();
+        UpdateAnchorBrushes();
         _isUpdating = false;
     }
 
@@ -312,22 +312,22 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         _card.Background = new SolidColorBrush(Color.Parse(isLight ? "#12000000" : "#12FFFFFF"));
         _card.BorderBrush = new SolidColorBrush(Color.Parse(isLight ? "#22000000" : "#22FFFFFF"));
         _headerButton.Background = Brushes.Transparent;
-        UpdatePresetBrushes();
+        UpdateAnchorBrushes();
     }
 
-    private void UpdatePresetBrushes()
+    private void UpdateAnchorBrushes()
     {
         var isLight = ActualThemeVariant == ThemeVariant.Light;
         var selectedDot = EditorSukiWindowTheme.AccentBrush();
         var neutralDot = new SolidColorBrush(Color.Parse(isLight ? "#73000000" : "#8AFFFFFF"));
         var selectedBackground = EditorSukiWindowTheme.AccentBrush(0x24);
         var selectedBorder = EditorSukiWindowTheme.AccentBrush(0x80);
-        foreach (var preset in _presetButtons)
+        foreach (var anchor in _anchorButtons)
         {
-            var isSelected = AreSamePreset(_value.AlignX, preset.AlignX) && AreSamePreset(_value.AlignY, preset.AlignY);
-            preset.Button.Background = isSelected ? selectedBackground : Brushes.Transparent;
-            preset.Button.BorderBrush = isSelected ? selectedBorder : Brushes.Transparent;
-            preset.Dot.Background = isSelected ? selectedDot : neutralDot;
+            var isSelected = AreSameAnchor(_value.AlignX, anchor.AlignX) && AreSameAnchor(_value.AlignY, anchor.AlignY);
+            anchor.Button.Background = isSelected ? selectedBackground : Brushes.Transparent;
+            anchor.Button.BorderBrush = isSelected ? selectedBorder : Brushes.Transparent;
+            anchor.Dot.Background = isSelected ? selectedDot : neutralDot;
         }
     }
 
@@ -476,7 +476,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         return Math.Clamp(value, -200, 200);
     }
 
-    private static bool AreSamePreset(double left, double right)
+    private static bool AreSameAnchor(double left, double right)
     {
         return Math.Abs(left - right) < 0.001;
     }

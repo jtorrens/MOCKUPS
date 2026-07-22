@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValueControl
 {
-    private const string PresetSeparator = "::preset::";
+    private const string VariantSeparator = "::variant::";
     private readonly FieldDefinition _definition;
     private readonly IReadOnlyList<FieldOption> _references;
     private readonly EditorInstantComboBox? _componentCombo;
@@ -21,11 +21,11 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
     private readonly Button? _overrideButton;
     private bool _isUpdating;
 
-    public DictionaryComponentPresetControl(
+    public DictionaryComponentVariantControl(
         FieldDefinition definition,
         string value,
         bool isHighlighted,
-        Func<string, Task>? openComponentPresetReference,
+        Func<string, Task>? openComponentVariantReference,
         Func<string, Task>? openEmbeddedComponent)
     {
         _definition = definition;
@@ -56,7 +56,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
             : DictionaryOptionSelector.CreateComboBox(definition, value);
         _variantCombo.SelectionChanged += (_, _) => VariantChanged();
 
-        if (openComponentPresetReference is not null)
+        if (openComponentVariantReference is not null)
         {
             _openButton = new Button
             {
@@ -76,7 +76,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
                 var selectedReference = SelectedReference();
                 if (!string.IsNullOrWhiteSpace(selectedReference))
                 {
-                    await openComponentPresetReference(selectedReference);
+                    await openComponentVariantReference(selectedReference);
                 }
             };
         }
@@ -192,7 +192,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
             ? ""
             : _references.SingleOrDefault((option) =>
                 option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                && option.Value.Equals($"{componentId}{PresetSeparator}default", StringComparison.Ordinal))?.Value
+                && option.Value.Equals($"{componentId}{VariantSeparator}default", StringComparison.Ordinal))?.Value
               ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
         SetVariantOptions(componentId, defaultReference);
         _isUpdating = false;
@@ -239,7 +239,7 @@ internal sealed class DictionaryComponentPresetControl : Grid, IDictionaryValueC
 
     private static string ComponentId(string reference)
     {
-        var separatorIndex = reference.IndexOf(PresetSeparator, StringComparison.Ordinal);
+        var separatorIndex = reference.IndexOf(VariantSeparator, StringComparison.Ordinal);
         return separatorIndex > 0 ? reference[..separatorIndex] : "";
     }
 }

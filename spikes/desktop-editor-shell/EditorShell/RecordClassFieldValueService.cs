@@ -96,8 +96,8 @@ internal sealed class RecordClassFieldValueService
                     Number: field.Number,
                     RecordReference: field.RecordReference,
                     ComponentInputBindings: field.ComponentInputBindings,
-                    RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
-                    RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
+                    RuntimeInputComponentVariantFieldId: field.RuntimeInputComponentVariantFieldId,
+                    RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
                     Unit: field.Unit,
                     MotionTiming: field.MotionTiming),
                 settings.FpsOverride?.ToString() ?? inheritedValue,
@@ -123,8 +123,8 @@ internal sealed class RecordClassFieldValueService
                 Number: field.Number,
                 RecordReference: field.RecordReference,
                 ComponentInputBindings: field.ComponentInputBindings,
-                RuntimeInputComponentPresetFieldId: field.RuntimeInputComponentPresetFieldId,
-                RuntimeCollectionComponentPresetFieldId: field.RuntimeCollectionComponentPresetFieldId,
+                RuntimeInputComponentVariantFieldId: field.RuntimeInputComponentVariantFieldId,
+                RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
                 Unit: field.Unit,
                 MotionTiming: field.MotionTiming),
             value);
@@ -410,9 +410,9 @@ internal sealed class RecordClassFieldValueService
     private IReadOnlyList<FieldOption>? ModuleFieldOptions(string moduleId, RecordClassFieldDescriptor field)
     {
         var settings = _database.GetModuleSettings(moduleId);
-        if (field.ValueKind == ValueKind.ComponentPreset && !string.IsNullOrWhiteSpace(field.ComponentPresetType))
+        if (field.ValueKind == ValueKind.ComponentVariant && !string.IsNullOrWhiteSpace(field.ComponentVariantType))
         {
-            return _database.GetComponentPresetReferenceOptionsByType(settings.ProjectId, field.ComponentPresetType);
+            return _database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, field.ComponentVariantType);
         }
 
         return field.Options;
@@ -443,8 +443,8 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("custom", "Custom"),
             ],
             "theme.iconThemeId" => _database.GetIconThemeOptions(settings.ProjectId),
-            "theme.statusBarId" => _database.GetStatusBarComponentPresetOptions(settings.ProjectId),
-            "theme.navigationBarId" => _database.GetNavigationBarComponentPresetOptions(settings.ProjectId),
+            "theme.statusBarId" => _database.GetStatusBarComponentVariantOptions(settings.ProjectId),
+            "theme.navigationBarId" => _database.GetNavigationBarComponentVariantOptions(settings.ProjectId),
             "theme.defaultMode" =>
             [
                 new FieldOption("light", "Light"),

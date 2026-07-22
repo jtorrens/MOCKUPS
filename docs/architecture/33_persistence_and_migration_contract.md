@@ -124,8 +124,8 @@ After migration, all active code knows only the current contract.
 The following are required:
 
 - stable ids bind records, collection owners and animation tracks;
-- component composition stores complete preset references as
-  `componentClassId::preset::presetId`;
+- component composition stores complete Variant references as
+  `componentClassId::variant::variantId`;
 - module instances store explicit module Variant references;
 - crossing a new component or module boundary selects an explicit default
   Variant, never an inferred one;
@@ -149,7 +149,7 @@ Validation is read-only and must cover at least:
 - required unique constraints, foreign keys and indexes;
 - foreign-key integrity;
 - JSON validity and expected current root shapes;
-- full component preset and module Variant references;
+- full component variant and module Variant references;
 - current animation schema and owner-relative track targets;
 - referenced committed assets;
 - canonical row ownership and required seed ids;

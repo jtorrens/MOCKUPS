@@ -109,15 +109,14 @@ Rules:
 - saving a variant is only valid from a selected variant. The component class is
   schema/ownership, not a cloneable visual base.
 
-An embedded slot stores a full child variant reference in its `presetId` field:
+An embedded slot stores a full child variant reference in its `variantReference` field:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
-The persisted field and delimiter keep `preset` until a dedicated storage
-migration renames them. They should be treated as internal compatibility
-spelling.
+The persisted field is `variantReference` and the full-reference delimiter is
+`::variant::`. Retired Component Preset spellings are not current data.
 
 When a field is restored to inherited state, it restores to the selected variant
 value, not to the component class's mutable current config.
@@ -131,9 +130,9 @@ slot references it.
 System component selectors, such as Theme Status Bar and Navigation Bar, must
 store variant references, not parent component class ids.
 Status Bar and Navigation Bar must not be exposed as separate editable tree
-sections once their component classes exist. Legacy storage may remain only as a
-temporary compatibility layer; all new editing and Theme assignment goes through
-component class variants.
+sections once their component classes exist. Retired storage is accepted only
+by an explicit one-off migration; all current editing and Theme assignment goes
+through Component Variants.
 Their preview manifest and registry entries must also use explicit component
 modules (`statusBarComponent...` and `navigationBarComponent...`). They may
 share family helpers internally, but those helpers are not public component
@@ -183,21 +182,20 @@ embedded editor context
 ```
 
 Embedded component slots use a dedicated dictionary value kind for variant
-selection. The visible slot row is one `ComponentPreset` control: it selects the
+selection. The visible slot row is one `ComponentVariant` control: it selects the
 child variant and opens the embedded child editor from the same row. Do not show
-`*.presetId` as a separate editor row for slots such as Avatar Label, Button
+`*.variantReference` as a separate editor row for slots such as Avatar Label, Button
 Icon Label, Audio Avatar or Audio Badge.
 
 The stored value for a selected embedded variant is a full component variant
 reference, not a short local id:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
-The persisted reference still uses `preset` internally until a dedicated storage
-migration renames it. In UI and architecture language, this is a component
-variant.
+The persisted reference and all UI and architecture language use Component
+Variant vocabulary.
 
 This is required because multiple component classes of the same type can define
 variants with the same local id. A slot such as Audio Badge must therefore know
@@ -325,7 +323,7 @@ same forwarding triangle. Forward ids include the stable item id, never the
 item index.
 
 Structural collections may declare an explicit runtime projection. In that
-case the Variant remains the sole owner of ordered child structure, presets,
+case the Variant remains the sole owner of ordered child structure, variants,
 Overrides, Placements and Motions. Test Values persists only the projection
 fields keyed by stable item id, including selected State and its transient
 source/transition/elapsed action transport. A Module Instance persists the

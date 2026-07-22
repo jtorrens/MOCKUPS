@@ -27,8 +27,8 @@ internal sealed record DesignPreviewPayload(
     string DeviceId = "",
     int FrameRate = 25,
     string ThemeMode = "",
-    string ThemeStatusBarPresetId = "",
-    string ThemeNavigationBarPresetId = "",
+    string ThemeStatusBarVariantReference = "",
+    string ThemeNavigationBarVariantReference = "",
     int LocalFrame = 0);
 
 internal static class DesignPreviewPayloadFactory
@@ -50,7 +50,7 @@ internal static class DesignPreviewPayloadFactory
         var payload = node.Kind switch
         {
             ProjectTreeNodeKind.ComponentClass => FromComponentClass(dataSource, node, theme),
-            ProjectTreeNodeKind.ComponentPreset => FromComponentPreset(dataSource, node, theme),
+            ProjectTreeNodeKind.ComponentVariant => FromComponentVariant(dataSource, node, theme),
             ProjectTreeNodeKind.Module => FromModule(dataSource, node, themeMode, theme),
             ProjectTreeNodeKind.ModuleVariant => FromModuleVariant(dataSource, node, themeMode, theme),
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(dataSource, node.Id, theme.DeviceId, themeMode, theme, dataSource.ModuleInstanceLocalFrame(node.Id, timelineFrame)),
@@ -61,8 +61,8 @@ internal static class DesignPreviewPayloadFactory
             ? null
             : payload with
             {
-                ThemeStatusBarPresetId = theme.StatusBarPresetId,
-                ThemeNavigationBarPresetId = theme.NavigationBarPresetId,
+                ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
+                ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
                 LocalFrame = node.Kind is ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.Shot
                     ? payload.LocalFrame
                     : Math.Max(0, timelineFrame),
@@ -290,7 +290,7 @@ internal static class DesignPreviewPayloadFactory
             settings.ComponentBaseConfigsJson);
     }
 
-    private static DesignPreviewPayload FromComponentPreset(
+    private static DesignPreviewPayload FromComponentVariant(
         DesignPreviewPayloadDataSource dataSource,
         ProjectTreeNode node,
         DesignPreviewThemeContext theme)

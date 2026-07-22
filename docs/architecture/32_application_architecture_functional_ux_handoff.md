@@ -376,13 +376,13 @@ Being an Atom does not permit special editor or renderer logic.
 ### Component class and Variant
 
 The class owns schema, resolver identity, editor layout and Variant list. A
-Variant is a named complete config snapshot. The internal persisted spelling
-may still say `preset`; UI and product language say Variant.
+Variant is a named complete config snapshot. Storage, code and product language
+all use Variant vocabulary.
 
 Full component Variant references are always:
 
 ```text
-componentClassId::preset::presetId
+componentClassId::variant::variantId
 ```
 
 Short ids and parent class references are not valid new composition values.
@@ -709,7 +709,7 @@ Questions for each flow:
 - Can an expert still reach every explicit contract without hidden magic?
 - Does returning from a nested editor preserve cognitive and scroll context?
 - Are disabled, inherited, forwarded and animated states visually distinct?
-- Are labels consistent: Variant in UI, internal `preset` only in storage/code?
+- Are Component Variant labels consistent across UI, storage and code?
 
 ## 18. Simplification opportunities to investigate
 
