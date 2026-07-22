@@ -1031,16 +1031,6 @@ assertDoesNotContain(
   "return new JsonArray();",
   "structured collection parsing must reject invalid current values instead of returning an empty array",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  '"component.statusBar.items"',
-  "Status Bar layout must declare its Items dictionary field",
-);
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  '"component.navigationBar.items"',
-  "Navigation Bar layout must declare its Items dictionary field",
-);
 for (const [componentPath, contractName] of [
   ["spikes/desktop-editor-shell/Data/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
   ["spikes/desktop-editor-shell/Data/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
@@ -1167,6 +1157,17 @@ assertContains(
   "71_active_code_retirement_contract.md",
   "the architecture index must include contract 71",
 );
+for (const retiredInactiveSource of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
+]) {
+  if (existsSync(path.join(root, retiredInactiveSource))) {
+    addViolation(
+      retiredInactiveSource,
+      "retired dormant layout/default source must not return to active desktop runtime",
+    );
+  }
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/ConversationMessageActorContract.cs",
   'public const string ConversationRecordClassId = "module.core.chat"',
@@ -2355,51 +2356,11 @@ for (const legacyConversationKey of [
   );
 }
 
-function componentLayoutFieldIds(source: string) {
-  const ids = new Set<string>();
-  const pattern = /\{\s*"id"\s*:\s*"(component\.[^"]+)"/g;
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(source)) !== null) {
-    ids.add(match[1] ?? "");
-  }
-  return ids;
-}
-
-function componentFieldCatalogIds(source: string) {
-  const ids = new Set<string>();
-  const pattern = /\["(component\.[^"]+)"\]\s*=/g;
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(source)) !== null) {
-    ids.add(match[1] ?? "");
-  }
-  return ids;
-}
-
 if (existsSync(path.join(previewRoot, "webPreviewBridge.ts"))) {
   addViolation(
     "src/desktop-preview/webPreviewBridge.ts",
     "central web preview bridge must not exist",
   );
-}
-
-const componentLayoutPath =
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs";
-const componentFieldCatalogPath =
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs";
-if (
-  existsSync(path.join(root, componentLayoutPath)) &&
-  existsSync(path.join(root, componentFieldCatalogPath))
-) {
-  const layoutIds = componentLayoutFieldIds(readText(componentLayoutPath));
-  const catalogIds = componentFieldCatalogIds(readText(componentFieldCatalogPath));
-  for (const fieldId of layoutIds) {
-    if (!catalogIds.has(fieldId)) {
-      addViolation(
-        componentLayoutPath,
-        `layout references component field "${fieldId}" without a ComponentClassFieldCatalog entry`,
-      );
-    }
-  }
 }
 
 for (const removedLegacyPath of [
@@ -3828,6 +3789,7 @@ let editorLayoutSource = "";
 let componentContractSource = "";
 let moduleContractSource = "";
 const editorLayoutRecordClassIds = new Set<string>();
+const editorLayoutsByRecordClass = new Map<string, string>();
 if (!existsSync(desktopDatabasePath)) {
   addViolation("data/desktop-editor-spike.sqlite", "committed current database is missing");
 } else {
@@ -3866,7 +3828,10 @@ if (!existsSync(desktopDatabasePath)) {
     const layouts = database
       .prepare("SELECT record_class_id, layout_json FROM editor_layouts ORDER BY record_class_id")
       .all() as { record_class_id: string; layout_json: string }[];
-    for (const layout of layouts) editorLayoutRecordClassIds.add(layout.record_class_id);
+    for (const layout of layouts) {
+      editorLayoutRecordClassIds.add(layout.record_class_id);
+      editorLayoutsByRecordClass.set(layout.record_class_id, layout.layout_json);
+    }
     editorLayoutSource = layouts.map((layout) => layout.layout_json).join("\n");
     moduleContractSource = (database
       .prepare("SELECT config_json, design_preview_json, metadata_json FROM modules ORDER BY id")
@@ -4393,16 +4358,12 @@ for (const legacyComponentRecordClassId of [
   "component.button_icon",
   "component.text_input_bar",
 ]) {
-  for (const filePath of [
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-    "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs",
-  ]) {
-    assertDoesNotContain(
-      filePath,
-      legacyComponentRecordClassId,
-      `legacy component record class id ${legacyComponentRecordClassId} must not return to ${filePath}`,
-    );
-  }
+  const filePath = "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs";
+  assertDoesNotContain(
+    filePath,
+    legacyComponentRecordClassId,
+    `legacy component record class id ${legacyComponentRecordClassId} must not return to ${filePath}`,
+  );
 }
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
@@ -4583,11 +4544,12 @@ for (const embeddedVariantField of [
   "component.avatar.label.variantReference",
   "component.audio.avatar.variantReference",
 ]) {
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-    `{ "id": "${embeddedVariantField}"`,
-    `embedded Variant field "${embeddedVariantField}" must not be shown as a separate layout row`,
-  );
+  if (new RegExp(`"id"\\s*:\\s*"${embeddedVariantField.replaceAll(".", "\\.")}"`).test(editorLayoutSource)) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `embedded Variant field "${embeddedVariantField}" must not be shown as a separate layout row`,
+    );
+  }
   assertMatches(
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
     new RegExp(`\\["${embeddedVariantField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
@@ -5141,29 +5103,34 @@ assertContains(
   '"separatedSections" => EditorSubcardLayout.SeparatedSections',
   "layout cards must route separated sections through the shared subcard host",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  '"groupLayout": "verticalCards"',
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
+  /"groupLayout"\s*:\s*"verticalCards"/,
   "component layouts must opt into vertical cards declaratively",
 );
-assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  '"groupLayout": "separatedSections"',
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutSource,
+  /"groupLayout"\s*:\s*"separatedSections"/,
   "component layouts must opt into separated sections declaratively",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  /"component\.status_bar"[\s\S]*?"groupLayout": "separatedSections"/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutsByRecordClass.get("component.status_bar") ?? "",
+  /"groupLayout"\s*:\s*"separatedSections"/,
   "Status Bar must use the same declarative separated-section organization as Atoms",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  /"component\.navigation_bar"[\s\S]*?"groupLayout": "separatedSections"/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutsByRecordClass.get("component.navigation_bar") ?? "",
+  /"groupLayout"\s*:\s*"separatedSections"/,
   "Navigation Bar must use the same declarative separated-section organization as Atoms",
 );
-assertMatches(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  /"component\.keyboard"[\s\S]*?"groupLayout": "verticalCards"/,
+assertSourceMatches(
+  "data/desktop-editor-spike.sqlite",
+  editorLayoutsByRecordClass.get("component.keyboard") ?? "",
+  /"groupLayout"\s*:\s*"verticalCards"/,
   "Keyboard categories must use the same declarative vertical-card organization as Atoms",
 );
 assertContains(

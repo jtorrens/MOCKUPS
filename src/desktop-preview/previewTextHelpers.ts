@@ -186,38 +186,6 @@ export function approximateTextWidth(text: string, fontSize: number) {
   ) * fontSize;
 }
 
-export function approximateMultilineTextSize(
-  text: string,
-  fontSize: number,
-  lineHeight: number,
-) {
-  const lines = text.split(/\r\n|\r|\n/u);
-  return {
-    width: Math.max(1, ...lines.map((line) => approximateTextWidth(line, fontSize))),
-    height: Math.max(1, lines.length) * lineHeight,
-    lineCount: Math.max(1, lines.length),
-  };
-}
-
-export function approximateWrappedTextSize(
-  text: string,
-  fontSize: number,
-  lineHeight: number,
-  maxWidth: number,
-) {
-  const lines = approximateWrappedTextLines(text, fontSize, maxWidth);
-  const width = Math.max(
-    1,
-    ...lines.map((line) => approximateTextWidth(line, fontSize)),
-  );
-
-  return {
-    width: Math.min(Math.max(1, maxWidth), width),
-    height: Math.max(1, lines.length) * lineHeight,
-    lineCount: Math.max(1, lines.length),
-  };
-}
-
 export function approximateWrappedTextLines(
   text: string,
   fontSize: number,

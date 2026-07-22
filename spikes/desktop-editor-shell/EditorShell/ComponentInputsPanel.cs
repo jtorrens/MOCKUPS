@@ -1084,14 +1084,6 @@ internal sealed class ComponentPreviewInputSession
         return NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action) + 1.0 / Math.Max(1, _playbackFrameRate));
     }
 
-    private void ClampCurrentPlaybackToDuration(ComponentPreviewActionDefinition action)
-    {
-        if (!SupportsPlayback()) return;
-
-        var seconds = NormalizedPlaybackSeconds(action, CurrentPlaybackSeconds(action));
-        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, seconds);
-    }
-
     private double DurationSeconds(ComponentPreviewActionDefinition action)
     {
         if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
@@ -1810,33 +1802,6 @@ internal sealed class ComponentPreviewInputSession
             string.Join(",", action.DeactivateInputIds),
             action.CollectionJsonKey,
             action.CollectionItemId);
-    }
-
-    private bool ShouldPrewarmFrames(ComponentPreviewActionDefinition action)
-    {
-        if (!action.PrewarmFrames)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(action.PrewarmWhenJsonKey)
-            && string.IsNullOrWhiteSpace(action.PrewarmWhenConfigPath))
-        {
-            return true;
-        }
-
-        if (!string.IsNullOrWhiteSpace(action.PrewarmWhenJsonKey))
-        {
-            return _values.TryGetValue(action.PrewarmWhenJsonKey, out var current)
-                && current.Equals(action.PrewarmWhenValue, StringComparison.Ordinal);
-        }
-
-        var configValue = JsonPath.Get(
-            _config,
-            action.PrewarmWhenConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries));
-        return configValue is JsonValue value
-            && value.TryGetValue<string>(out var text)
-            && text.Equals(action.PrewarmWhenValue, StringComparison.Ordinal);
     }
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)

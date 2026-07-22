@@ -65,13 +65,4 @@ internal static class ThemeColorTokenCatalog
         return new ThemeColorTokenPath(id, lightPath, darkPath);
     }
 
-    private static ThemeColorTokenPath TokenWithAlpha(
-        string id,
-        string[] lightPath,
-        string[] darkPath,
-        string[] lightAlphaPath,
-        string[] darkAlphaPath)
-    {
-        return new ThemeColorTokenPath(id, lightPath, darkPath, lightAlphaPath, darkAlphaPath);
-    }
 }

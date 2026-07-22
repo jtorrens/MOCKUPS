@@ -445,17 +445,6 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         };
     }
 
-    private static TextBlock SmallLabel(string text)
-    {
-        return new TextBlock
-        {
-            Text = text,
-            MinWidth = 18,
-            VerticalAlignment = VerticalAlignment.Center,
-            Opacity = 0.78,
-        };
-    }
-
     private static double Snap(double value)
     {
         return Clamp01(Math.Round(value / 0.05) * 0.05);

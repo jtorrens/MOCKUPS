@@ -24,6 +24,11 @@ Norma de ejecución: contrato 71.
 | Controles XAML nombrados | Cada nombre tiene referencia compilada desde el shell | Mantener; no hay candidato huérfano. |
 | Converters XAML | No existen converters declarados en la superficie actual | Sin acción. |
 | Métodos privados y DTOs C# restantes | El build estándar no demuestra por sí solo que estén huérfanos | Continuar con referencias directas, reflection y serialización. |
+| Generador privado de layouts de Component Classes | Única aparición en un archivo autocontenido de 780 líneas; los layouts actuales proceden de SQLite/repository | Retirar en 0B.3 como fuente paralela dormida. |
+| Normalizador privado de Preview Actions | Archivo autocontenido de 181 líneas sin caller; añadía defaults y reparaciones | Retirar en 0B.3; el formato actual no se normaliza en runtime. |
+| Helpers privados aislados | Varias declaraciones sin ninguna llamada; una segunda pasada descubre helpers agrupadores adicionales | Retirar en 0B.3 y repetir hasta cero candidatos. |
+| Aproximaciones exportadas de tamaño multilínea/wrapped | Solo aparece su declaración; el checker usa únicamente width y line wrapping | Retirar en 0B.3. |
+| `planRasterFrame` | Sin caller runtime actual, pero protegido como contrato genérico de planificación Raster por enforcement | Mantener mientras se decida Render Mode; no confundir incompleto con huérfano. |
 
 ## Slice 0B.1 — Bindings TypeScript sin consumidor
 
@@ -59,6 +64,29 @@ Preview no constituye todavía Render Mode ni un flujo final de exportación.
 El comando `check:unused:desktop` incorpora `IDE0060` a la validación completa.
 La revisión cruzada confirma además que todos los controles XAML nombrados se
 consumen y que no hay converters declarados pendientes de retirada.
+
+## Slice 0B.3 — Fuentes paralelas dormidas y segunda pasada
+
+Se elimina el generador privado de layouts de Component Classes. Sus 780 líneas
+no tenían caller y competían conceptualmente con la autoridad actual formada
+por layouts persistidos, repository y metadatos de editor. No se modifica
+ningún layout actual ni la base canónica.
+
+También se elimina el normalizador privado de Preview Actions: un bloque de 181
+líneas sin entrada que completaba defaults y reescribía acciones. Mantenerlo
+habría conservado una falsa ruta de reparación contraria a los documentos
+actuales estrictos.
+
+La pasada por métodos privados retira helpers sin llamada en bindings,
+playback, layout, Device metrics, Theme colors e infraestructura JSON. Al
+repetir el inventario desaparecen dos agrupadores que solo eran consumidos por
+otro helper retirado. La pasada final queda sin tipos, clases ni métodos
+privados con una única aparición.
+
+En TypeScript se retiran dos funciones exportadas de medida aproximada sin
+consumidor. Se conserva `planRasterFrame`: no está conectado al runtime actual,
+pero define el plan genérico `full/hold/tiles` protegido por el checker; su
+destino pertenece a la decisión futura de Render Mode.
 
 ## Siguientes pasadas
 

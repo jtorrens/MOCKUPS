@@ -142,11 +142,6 @@ internal sealed partial class SpikeDatabase
         return JsonPath.Remove(root, path);
     }
 
-    private static void SetJsonNumber(JsonObject root, IReadOnlyList<string> path, int value)
-    {
-        JsonPath.SetNumber(root, path, value);
-    }
-
     private static JsonNode NumberNode(string value)
     {
         return JsonPath.NumberNode(value);
