@@ -46,7 +46,7 @@ internal static class DesignPreviewTestValues
         var preview = Parse(previewJson);
         ApplyCollectionSources(preview);
         var sourcedCollectionKeys = SourcedCollectionKeys(preview);
-        if (preview["testValues"] is not JsonObject testValues)
+        if (TestValues(preview) is not { } testValues)
         {
             return preview.ToJsonString();
         }
@@ -65,7 +65,7 @@ internal static class DesignPreviewTestValues
 
     public static string Value(JsonObject preview, ComponentInputDefinition input)
     {
-        var testValues = preview["testValues"] as JsonObject;
+        var testValues = TestValues(preview);
         var value = testValues?[input.JsonKey] ?? preview[input.JsonKey];
         return value switch
         {
@@ -81,8 +81,7 @@ internal static class DesignPreviewTestValues
 
     public static void SetValue(JsonObject preview, ComponentInputDefinition input, string value)
     {
-        var testValues = preview["testValues"] as JsonObject ?? new JsonObject();
-        preview["testValues"] = testValues;
+        var testValues = TestValuesForWrite(preview);
         testValues[input.JsonKey] = ValueNode(input, value);
     }
 
@@ -95,11 +94,14 @@ internal static class DesignPreviewTestValues
             return SourceCollectionItems(preview, collection).ToList();
         }
 
-        var source = preview["testValues"] is JsonObject testValues
-                     && testValues[collection.JsonKey] is JsonArray testItems
-            ? testItems
-            : preview[collection.JsonKey] as JsonArray;
-        return source?.OfType<JsonObject>().Select(CloneObject).ToList() ?? [];
+        var testValues = TestValues(preview);
+        var source = testValues is not null
+                     && testValues.TryGetPropertyValue(collection.JsonKey, out var testNode)
+            ? testNode as JsonArray
+              ?? throw new InvalidOperationException(
+                  $"Design Test Values collection '{collection.JsonKey}' must be an array.")
+            : OptionalArray(preview, collection.JsonKey, "Design Preview collection");
+        return CloneItems(source, $"Design Preview collection '{collection.JsonKey}'");
     }
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
@@ -137,8 +139,7 @@ internal static class DesignPreviewTestValues
         }
 
         items[itemIndex][input.JsonKey] = ValueNode(input, value);
-        var testValues = preview["testValues"] as JsonObject ?? new JsonObject();
-        preview["testValues"] = testValues;
+        var testValues = TestValuesForWrite(preview);
         testValues[collection.JsonKey] = new JsonArray(items.Select((item) => (JsonNode?)item).ToArray());
     }
 
@@ -147,7 +148,7 @@ internal static class DesignPreviewTestValues
         IReadOnlyList<ComponentInputDefinition> inputs,
         IReadOnlyList<RuntimeInputCollectionDefinition>? collections = null)
     {
-        var contract = preview["inputs"] as JsonArray;
+        var contract = OptionalArray(preview, "inputs", "Design Preview Runtime inputs");
         foreach (var input in inputs)
         {
             var value = Value(preview, input);
@@ -157,8 +158,7 @@ internal static class DesignPreviewTestValues
                 continue;
             }
 
-            var definition = contract
-                .OfType<JsonObject>()
+            var definition = ObjectItems(contract, "Design Preview Runtime inputs")
                 .FirstOrDefault((candidate) =>
                     candidate["id"] is JsonValue id
                     && id.TryGetValue<string>(out var text)
@@ -176,9 +176,12 @@ internal static class DesignPreviewTestValues
                 preview[collection.SourceCollectionJsonKey] = new JsonArray(
                     CollectionItems(preview, collection).Select((item) => (JsonNode?)item).ToArray());
             }
-            else if (preview["testValues"] is JsonObject values
-                     && values[collection.JsonKey] is JsonArray items)
+            else if (TestValues(preview) is { } values
+                     && values.TryGetPropertyValue(collection.JsonKey, out var itemsNode))
             {
+                var items = itemsNode as JsonArray
+                    ?? throw new InvalidOperationException(
+                        $"Design Test Values collection '{collection.JsonKey}' must be an array.");
                 preview[collection.JsonKey] = items.DeepClone();
             }
         }
@@ -188,21 +191,22 @@ internal static class DesignPreviewTestValues
 
     private static void ApplyCollectionSources(JsonObject preview)
     {
-        var collections = preview["collections"] as JsonArray;
+        var collections = OptionalArray(preview, "collections", "Design Preview Runtime collections");
         if (collections is null) return;
-        foreach (var collectionNode in collections.OfType<JsonObject>())
+        foreach (var collectionNode in ObjectItems(collections, "Design Preview Runtime collections"))
         {
             var jsonKey = JsonString(collectionNode, "jsonKey");
             var sourceKey = JsonString(collectionNode, "sourceCollectionJsonKey");
-            if (string.IsNullOrWhiteSpace(jsonKey)
-                || string.IsNullOrWhiteSpace(sourceKey))
+            if (string.IsNullOrWhiteSpace(jsonKey))
             {
-                continue;
+                throw new InvalidOperationException("Runtime collection definition requires a non-empty jsonKey.");
             }
+            if (string.IsNullOrWhiteSpace(sourceKey)) continue;
 
             var sourceItems = MergeCollectionSource(
-                preview[sourceKey] as JsonArray,
-                (preview["testValues"] as JsonObject)?[jsonKey] as JsonArray);
+                RequiredArray(preview, sourceKey, "Design Preview source collection"),
+                OptionalArray(TestValues(preview), jsonKey, "Design Test Values collection"),
+                jsonKey);
             preview[jsonKey] = new JsonArray(sourceItems.Select((item) => (JsonNode?)item).ToArray());
         }
     }
@@ -210,15 +214,18 @@ internal static class DesignPreviewTestValues
     private static HashSet<string> SourcedCollectionKeys(JsonObject preview)
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var collectionNode in (preview["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        var collections = OptionalArray(preview, "collections", "Design Preview Runtime collections");
+        foreach (var collectionNode in collections is null
+                     ? []
+                     : ObjectItems(collections, "Design Preview Runtime collections"))
         {
             var jsonKey = JsonString(collectionNode, "jsonKey");
             var sourceKey = JsonString(collectionNode, "sourceCollectionJsonKey");
-            if (!string.IsNullOrWhiteSpace(jsonKey)
-                && !string.IsNullOrWhiteSpace(sourceKey))
+            if (string.IsNullOrWhiteSpace(jsonKey))
             {
-                keys.Add(jsonKey);
+                throw new InvalidOperationException("Runtime collection definition requires a non-empty jsonKey.");
             }
+            if (!string.IsNullOrWhiteSpace(sourceKey)) keys.Add(jsonKey);
         }
         return keys;
     }
@@ -228,14 +235,29 @@ internal static class DesignPreviewTestValues
         RuntimeInputCollectionDefinition collection)
     {
         return MergeCollectionSource(
-            preview[collection.SourceCollectionJsonKey] as JsonArray,
-            (preview["testValues"] as JsonObject)?[collection.JsonKey] as JsonArray);
+            RequiredArray(preview, collection.SourceCollectionJsonKey, "Design Preview source collection"),
+            OptionalArray(TestValues(preview), collection.JsonKey, "Design Test Values collection"),
+            collection.JsonKey);
     }
 
-    private static IReadOnlyList<JsonObject> MergeCollectionSource(JsonArray? source, JsonArray? overrides)
+    private static IReadOnlyList<JsonObject> MergeCollectionSource(
+        JsonArray source,
+        JsonArray? overrides,
+        string collectionJsonKey)
     {
+        RuntimeCollectionDocumentContract.Validate(
+            source,
+            $"Design Preview source collection '{collectionJsonKey}'");
+        if (overrides is not null)
+        {
+            RuntimeCollectionDocumentContract.Validate(
+                overrides,
+                $"Design Test Values collection '{collectionJsonKey}'");
+        }
         var overrideById = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
-        foreach (var item in overrides?.OfType<JsonObject>() ?? [])
+        foreach (var item in overrides is null
+                     ? []
+                     : ObjectItems(overrides, $"Design Test Values collection '{collectionJsonKey}'"))
         {
             var id = JsonString(item, "id");
             if (!string.IsNullOrWhiteSpace(id))
@@ -245,7 +267,9 @@ internal static class DesignPreviewTestValues
         }
 
         var result = new List<JsonObject>();
-        foreach (var sourceItem in source?.OfType<JsonObject>() ?? [])
+        foreach (var sourceItem in ObjectItems(
+                     source,
+                     $"Design Preview source collection '{collectionJsonKey}'"))
         {
             var item = CloneObject(sourceItem);
             var id = JsonString(item, "id");
@@ -278,14 +302,20 @@ internal static class DesignPreviewTestValues
         var id = JsonString(sourceItems[itemIndex], "id");
         if (string.IsNullOrWhiteSpace(id))
         {
-            id = itemIndex.ToString(CultureInfo.InvariantCulture);
+            throw new InvalidOperationException(
+                $"Design Preview source collection '{collection.JsonKey}' item requires a stable id.");
         }
 
-        var testValues = preview["testValues"] as JsonObject ?? new JsonObject();
-        preview["testValues"] = testValues;
-        var overrides = testValues[collection.JsonKey] as JsonArray ?? new JsonArray();
-        testValues[collection.JsonKey] = overrides;
-        var overrideItem = overrides.OfType<JsonObject>().FirstOrDefault((candidate) => JsonString(candidate, "id") == id);
+        var testValues = TestValuesForWrite(preview);
+        var overrides = ArrayForWrite(
+            testValues,
+            collection.JsonKey,
+            "Design Test Values collection");
+        RuntimeCollectionDocumentContract.Validate(
+            overrides,
+            $"Design Test Values collection '{collection.JsonKey}'");
+        var overrideItem = ObjectItems(overrides, $"Design Test Values collection '{collection.JsonKey}'")
+            .FirstOrDefault((candidate) => JsonString(candidate, "id") == id);
         if (overrideItem is null)
         {
             overrideItem = new JsonObject { ["id"] = id };
@@ -296,7 +326,59 @@ internal static class DesignPreviewTestValues
 
     private static JsonObject CloneObject(JsonObject item)
     {
-        return item.DeepClone() as JsonObject ?? new JsonObject();
+        return item.DeepClone().AsObject();
+    }
+
+    private static IReadOnlyList<JsonObject> CloneItems(JsonArray? items, string owner)
+    {
+        if (items is null) return [];
+        RuntimeCollectionDocumentContract.Validate(items, owner);
+        return ObjectItems(items, owner).Select(CloneObject).ToList();
+    }
+
+    private static JsonObject? TestValues(JsonObject preview)
+    {
+        if (!preview.TryGetPropertyValue("testValues", out var node)) return null;
+        return node as JsonObject
+            ?? throw new InvalidOperationException("Design Test Values must be an object when present.");
+    }
+
+    private static JsonObject TestValuesForWrite(JsonObject preview)
+    {
+        if (TestValues(preview) is { } existing) return existing;
+        var created = new JsonObject();
+        preview["testValues"] = created;
+        return created;
+    }
+
+    private static JsonArray? OptionalArray(JsonObject? owner, string key, string context)
+    {
+        if (owner is null || !owner.TryGetPropertyValue(key, out var node)) return null;
+        return node as JsonArray
+            ?? throw new InvalidOperationException($"{context} '{key}' must be an array when present.");
+    }
+
+    private static JsonArray RequiredArray(JsonObject owner, string key, string context)
+    {
+        return OptionalArray(owner, key, context)
+            ?? throw new InvalidOperationException($"{context} '{key}' is required.");
+    }
+
+    private static JsonArray ArrayForWrite(JsonObject owner, string key, string context)
+    {
+        if (OptionalArray(owner, key, context) is { } existing) return existing;
+        var created = new JsonArray();
+        owner[key] = created;
+        return created;
+    }
+
+    private static IEnumerable<JsonObject> ObjectItems(JsonArray items, string context)
+    {
+        for (var index = 0; index < items.Count; index++)
+        {
+            yield return items[index] as JsonObject
+                ?? throw new InvalidOperationException($"{context} item at index {index} must be an object.");
+        }
     }
 
     private static string JsonString(JsonObject owner, string key)

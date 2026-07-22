@@ -275,18 +275,23 @@ internal sealed class ComponentPreviewInputSession
             testValues = new JsonObject();
             _transientCollectionTestValuesByScope[_scopeKey] = testValues;
         }
-        if (testValues[collectionJsonKey] is not JsonArray)
+        if (!testValues.TryGetPropertyValue(collectionJsonKey, out var collectionNode))
         {
             var definition = ReadRuntimeCollections(_runtimePreview, _config)
                 .FirstOrDefault((candidate) => candidate.JsonKey == collectionJsonKey);
-            testValues[collectionJsonKey] = definition is null
+            collectionNode = definition is null
                 ? new JsonArray()
                 : new JsonArray(DesignPreviewTestValues.CollectionItems(_runtimePreview, definition)
                     .Select((item) => (JsonNode?)item.DeepClone()).ToArray());
+            testValues[collectionJsonKey] = collectionNode;
         }
-        var items = testValues[collectionJsonKey] as JsonArray ?? new JsonArray();
-        testValues[collectionJsonKey] = items;
-        var item = items.OfType<JsonObject>().FirstOrDefault((candidate) =>
+        var items = collectionNode as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Transient collection Test Values '{collectionJsonKey}' must be an array.");
+        RuntimeCollectionDocumentContract.Validate(
+            items,
+            $"Transient collection Test Values '{collectionJsonKey}'");
+        var item = items.Select((node) => node!.AsObject()).FirstOrDefault((candidate) =>
             candidate["id"] is JsonValue idValue
             && idValue.TryGetValue<string>(out var candidateId)
             && candidateId == itemId);
@@ -497,7 +502,7 @@ internal sealed class ComponentPreviewInputSession
         string scopeKey,
         JsonObject config)
     {
-        var envelope = preview.DeepClone() as JsonObject ?? new JsonObject();
+        var envelope = preview.DeepClone().AsObject();
         if (!string.IsNullOrWhiteSpace(scopeKey)
             && _transientCollectionTestValuesByScope.TryGetValue(scopeKey, out var collectionTestValues))
         {

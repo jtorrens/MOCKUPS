@@ -5007,6 +5007,33 @@ for (const retiredCompoundFallback of [
   );
 }
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "private static JsonObject? TestValues(JsonObject preview)",
+  "Design Test Values must own their optional strict transient envelope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "RuntimeCollectionDocumentContract.Validate(",
+  "Design Test Value collections must reuse the stable collection document owner",
+);
+for (const transientTestValueFallback of [
+  'preview["testValues"] as JsonObject ?? new JsonObject()',
+  "testValues[collection.JsonKey] as JsonArray ?? new JsonArray()",
+  "itemIndex.ToString(CultureInfo.InvariantCulture)",
+  "item.DeepClone() as JsonObject ?? new JsonObject()",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+    transientTestValueFallback,
+    `Design Test Values must not repair or position-bind invalid transient data (${transientTestValueFallback})`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "testValues[collectionJsonKey] as JsonArray ?? new JsonArray()",
+  "the Preview input session must reject a present wrong-root transient collection",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",

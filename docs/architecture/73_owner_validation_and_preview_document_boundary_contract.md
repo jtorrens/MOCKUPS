@@ -139,6 +139,13 @@ document contract. A control may create explicit empty Overrides or Inputs only
 while creating a new boundary; opening or editing an existing wrong-root
 document must fail without replacing it.
 
+Session-only Design Test Values follow the same document ownership. Their
+optional envelope is an object; collection values and sourced overrides keep
+array roots and stable unique ids. The session may create a missing envelope or
+override array only as the direct result of an explicit Test Value edit. It
+must not repair a present wrong root, filter malformed items or derive an id
+from collection position.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -201,6 +208,8 @@ Architecture enforcement must verify:
   roots before registry dispatch.
 - compound dictionary controls reuse the exact Runtime value and stable
   collection owners without local empty-document parsers.
+- transient Test Values preserve strict roots and stable collection ids without
+  becoming persisted Production payload.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

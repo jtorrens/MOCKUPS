@@ -188,3 +188,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los tres controles deben consumir el owner compartido y no pueden recuperar los parsers/coerciones retirados. |
 | Datos | Sin migración. Los documentos current usados por estas superficies ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo. La creación explícita mantiene ids nuevos, Default/selección y Overrides vacíos intencionales; solo deja de mutarse silenciosamente un documento existente inválido. |
+
+## Slice 1.12 — Documento transitorio de Design Test Values
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Un `testValues` con raíz incorrecta se ignoraba o reemplazaba por `{}`; collections wrong-root se sustituían por `[]`; los items no objeto se filtraban y una source collection sin id recibía el índice como identidad. La sesión externa también reemplazaba una colección transitoria dañada. |
+| Owner | `DesignPreviewTestValues` conserva el envelope transitorio; `RuntimeCollectionDocumentContract` valida sources/overrides; `ComponentPreviewInputSession` conserva scope y aplicación al payload. |
+| Cambio mínimo | Distinguir ausencia legítima de raíz incorrecta, validar arrays e ids antes de merge/clone/promote, crear envelope/override array solo durante un edit explícito y rechazar una colección transitoria presente con otra raíz. |
+| Rutas eliminadas | `testValues as JsonObject ?? {}`, collection `as JsonArray ?? []`, `OfType` silencioso, clone fallback e id derivado de `itemIndex`. |
+| Pruebas | 107/107 escritorio: envelope y collection wrong-root, ids duplicados, escritura transitoria válida y aplicación Runtime sin persistencia. |
+| Enforcement | Owner y stable collection contract requeridos; fallbacks y el id por posición retirados quedan prohibidos. |
+| Datos | Sin migración: Test Values permanecen de sesión y la base canónica no cambia (`ca53a71d8a51f6fc56ae1699ceb669eb49f02653`). |
+| Riesgo | Bajo. No cambia el payload de una sesión válida ni la separación Design/Production; únicamente se deja de ocultar estado transitorio corrupto. |

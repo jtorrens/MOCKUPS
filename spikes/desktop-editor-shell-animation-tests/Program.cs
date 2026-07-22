@@ -29,6 +29,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
+    ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
@@ -333,6 +334,54 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].defaultValue', '{}') WHERE id = 'module_core_chat'";
         command.ExecuteNonQuery();
     });
+}
+
+static void DesignTestValuesPreserveStrictDocuments()
+{
+    var input = new ComponentInputDefinition(
+        "title",
+        "Title",
+        "title",
+        ComponentInputKind.Text,
+        ValueKind.StringSingleLine,
+        "Default");
+    var collection = new RuntimeInputCollectionDefinition(
+        "items",
+        "Items",
+        "items",
+        "Item",
+        [input]);
+
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.RuntimeJson(
+        new JsonObject { ["testValues"] = new JsonArray() }.ToJsonString()));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.SetValue(
+        new JsonObject { ["testValues"] = JsonValue.Create(false) },
+        input,
+        "Value"));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["items"] = new JsonObject() },
+        collection));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject
+        {
+            ["testValues"] = new JsonObject
+            {
+                ["items"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "item_1" },
+                    new JsonObject { ["id"] = "item_1" },
+                },
+            },
+        },
+        collection));
+
+    var preview = new JsonObject { ["title"] = "Default" };
+    DesignPreviewTestValues.SetValue(preview, input, "Test");
+    Equal("Test", DesignPreviewTestValues.Value(preview, input));
+    Equal(
+        "Test",
+        DesignPreviewTestValues.Parse(
+            DesignPreviewTestValues.RuntimeJson(preview.ToJsonString()))["title"]?.GetValue<string>());
 }
 
 static void ComponentAndModuleVariantsShareReferenceGrammar()

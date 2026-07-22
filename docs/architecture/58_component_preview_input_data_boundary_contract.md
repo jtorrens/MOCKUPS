@@ -64,6 +64,15 @@ Test Values remain transient inspection fixtures. They must never be written
 to a Module Instance merely by changing a control, playing or restoring an
 action, or switching Preview context.
 
+Transient does not mean permissive. The optional `testValues` envelope is an
+object when present. Collection Test Values are arrays of object items with
+unique non-empty stable ids; sourced collections require their declared source
+array and join overrides only by those ids. A wrong root, malformed item or
+duplicate/missing id fails instead of becoming an empty document, being
+filtered or receiving an index-derived identity. Creating the absent envelope
+or one absent override array during an explicit Test Value edit is the only
+empty-document construction owned by the session.
+
 ## 4. Action interpretation
 
 `ComponentPreviewActions` is a pure action-contract interpreter. When an
@@ -89,6 +98,8 @@ source rather than duplicating that read in the Runtime Inputs editor.
 - Forwarding and local Overrides remain explicit and are not inferred here.
 - Runtime Input scalar controls still follow the dictionary route.
 - Structured collections preserve stored stable item ids and ordering.
+- Test Value collection overrides bind only through those stable ids and never
+  through positions.
 - Action timing and requested frames remain contract-owned and deterministic.
 - Resolution completes before the generic bridge and renderer.
 - The renderer receives resolved frame data and runs no timer or action logic.
@@ -105,6 +116,8 @@ Architecture enforcement must verify:
 - both the input session and Runtime Inputs editor supply embedded action
   contracts through `ComponentPreviewInputDataSource`;
 - Variant options continue to use `RuntimeInputOptionsDataSource`;
+- `DesignPreviewTestValues` requires the explicit Test Values envelope and the
+  stable collection document owner without blank/wrong-root fallbacks;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare Project fps, complete Component Variant
