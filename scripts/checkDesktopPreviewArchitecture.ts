@@ -1290,6 +1290,16 @@ for (const retiredDefaultVariantConstant of [
     `${retiredDefaultVariantConstant[0]} must not restore a local Default Variant id`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+  "ProjectPathService.ResolveLocalPath(state.SourcePath, state.ProjectMediaRoot)",
+  "Preview reference media paths must use the common Project path resolver",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+  "private static string ResolvePath(",
+  "Preview reference overlay must not restore a parallel Project media path resolver",
+);
 for (const variantCreationOwner of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",

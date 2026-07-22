@@ -52,6 +52,7 @@ var tests = new (string Name, Action Run)[]
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
+    ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -156,6 +157,17 @@ static void ComponentAndModuleVariantsShareEnvelopeOperations()
     Equal(false, source["protected"]?.GetValue<bool>());
     Equal(false, source["locked"]?.GetValue<bool>());
     Equal(7, source["config"]?["value"]?.GetValue<int>());
+}
+
+static void PreviewReferencesShareProjectMediaPathResolution()
+{
+    var mediaRoot = Path.Combine(Path.GetTempPath(), "mockups-media-root");
+    Equal(
+        Path.GetFullPath(Path.Combine(mediaRoot, "references", "frame.png")),
+        ProjectPathService.ResolveLocalPath(Path.Combine("references", "frame.png"), mediaRoot));
+
+    var absolute = Path.GetFullPath(Path.Combine(mediaRoot, "absolute.png"));
+    Equal(absolute, ProjectPathService.ResolveLocalPath(absolute, mediaRoot));
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()

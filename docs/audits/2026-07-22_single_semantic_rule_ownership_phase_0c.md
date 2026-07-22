@@ -172,3 +172,16 @@ esta batida.
 | Pruebas | Valor estable directo, suites de lifecycle y enforcement contra la reaparición de constantes por owner. |
 | Riesgo | Bajo; no cambia ids, referencias, documentos ni selección. |
 | Decisión | Consolidar. |
+
+### Familia 0C.9 — Resolución local de media de referencia
+
+| Campo | Resultado |
+|---|---|
+| Regla | Una ruta local absoluta o relativa se resuelve contra el media root explícito del Project. |
+| Rutas actuales | `ProjectPathService.ResolveLocalPath` ya sirve a imágenes y avatar; `PreviewReferenceOverlay` reconstruye la misma decisión localmente. |
+| Paridad | Una ruta absoluta se conserva y una relativa usa el mismo Project media root; no se buscan archivos por nombre ni ubicación. |
+| Owner definitivo | `ProjectPathService`, owner común de rutas locales del Project. |
+| Cambio mínimo | La referencia visual delega al servicio existente y elimina su método local. |
+| Pruebas | Ruta relativa, ruta absoluta y enforcement contra la reaparición del resolver local. |
+| Riesgo | Bajo; no cambia URI, caché, lectura, vídeo, FFmpeg ni persistencia. |
+| Decisión | Consolidar. |

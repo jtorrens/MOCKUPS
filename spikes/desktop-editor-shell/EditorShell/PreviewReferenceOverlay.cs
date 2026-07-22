@@ -44,7 +44,7 @@ internal sealed record PreviewReferenceOverlay(
 
     private static string ResolveSourceUri(PreviewReferenceState state)
     {
-        var sourcePath = ResolvePath(state.SourcePath, state.ProjectMediaRoot);
+        var sourcePath = ProjectPathService.ResolveLocalPath(state.SourcePath, state.ProjectMediaRoot);
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return "";
 
         var isVideo = IsVideo(sourcePath);
@@ -71,14 +71,6 @@ internal sealed record PreviewReferenceOverlay(
             }
         }
         return resolved;
-    }
-
-    private static string ResolvePath(string source, string mediaRoot)
-    {
-        if (Path.IsPathFullyQualified(source)) return source;
-        return string.IsNullOrWhiteSpace(mediaRoot)
-            ? ProjectPathService.ResolveProjectPath(source)
-            : Path.Combine(ProjectPathService.ResolveProjectPath(mediaRoot), source);
     }
 
     private static string ImageDataUri(string path)
