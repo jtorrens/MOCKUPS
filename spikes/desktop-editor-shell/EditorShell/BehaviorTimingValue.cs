@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Text.Json.Nodes;
 
@@ -9,18 +10,22 @@ internal sealed record BehaviorTimingValue(string Mode, int FixedFrames, string 
 
     public static BehaviorTimingValue Parse(string json)
     {
-        try
+        var value = JsonPath.ParseRequiredObject(json, "Behavior Timing value");
+        var mode = JsonPath.RequiredString(value, "mode", "Behavior Timing value");
+        if (mode is not "fixed" and not "natural")
         {
-            var value = JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json) as JsonObject;
-            return new BehaviorTimingValue(
-                value?["mode"]?.GetValue<string>() == "natural" ? "natural" : "fixed",
-                Math.Max(0, value?["fixedFrames"]?.GetValue<int>() ?? 0),
-                value?["paceToken"]?.GetValue<string>() is { Length: > 0 } token ? token : DefaultPaceToken);
+            throw new InvalidOperationException($"Behavior Timing mode '{mode}' is not supported.");
         }
-        catch
+        var fixedFrames = JsonPath.RequiredInteger(value, "fixedFrames", "Behavior Timing value");
+        if (fixedFrames < 0)
         {
-            return new BehaviorTimingValue("fixed", 0, DefaultPaceToken);
+            throw new InvalidOperationException("Behavior Timing fixedFrames must be non-negative.");
         }
+
+        return new BehaviorTimingValue(
+            mode,
+            fixedFrames,
+            JsonPath.RequiredString(value, "paceToken", "Behavior Timing value"));
     }
 
     public string ToJson() => new JsonObject

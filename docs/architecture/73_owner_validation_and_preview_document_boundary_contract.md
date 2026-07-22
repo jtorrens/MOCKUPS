@@ -106,6 +106,12 @@ and `inherited` mean that no local typography object is authored. Any other
 Typography Style value must be a valid JSON object; malformed or wrong-root
 input is not another spelling of inherited state.
 
+Runtime Input `defaultValue` is interpreted only by the canonical
+`RuntimeInputValueKindContract`. `BehaviorTiming` is a required object with an
+explicit supported mode, non-negative fixed frames and pace token. Invalid
+defaults never become a plausible false, zero, empty collection or fixed-zero
+timing value.
+
 Visual fallback policy remains separate from current-document validation. A
 declared missing-media placeholder or unsupported inline preview does not
 authorize an empty current config, Theme, Variant, Runtime contract or
@@ -158,6 +164,8 @@ Architecture enforcement must verify:
 - typography parsing keeps only its declared blank/`inherited` sentinel.
 - Module definitions and every complete Module Variant use the exact
   record-class-owned config contract, with no empty object/array write fallback.
+- Runtime Input defaults are validated and materialized by the exact
+  `ValueKind` owner; no parallel reconciliation parser remains.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

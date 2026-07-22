@@ -1,8 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -32,7 +32,12 @@ internal sealed partial class SpikeDatabase
                 content.Remove(jsonKey);
                 continue;
             }
-            if (content[jsonKey] is null) content[jsonKey] = RuntimeDefaultValue(input);
+            if (content[jsonKey] is null)
+            {
+                content[jsonKey] = RuntimeInputValueKindContract.CreateDefaultValue(
+                    input,
+                    $"Runtime Input '{input["id"]?.GetValue<string>() ?? jsonKey}'");
+            }
         }
 
         foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
@@ -54,7 +59,9 @@ internal sealed partial class SpikeDatabase
                     if (!RuntimeInputDefinition(field)) continue;
                     var jsonKey = field["jsonKey"]?.GetValue<string>() ?? "";
                     if (string.IsNullOrWhiteSpace(jsonKey) || item[jsonKey] is not null) continue;
-                    item[jsonKey] = RuntimeDefaultValue(field);
+                    item[jsonKey] = RuntimeInputValueKindContract.CreateDefaultValue(
+                        field,
+                        $"Runtime collection field '{field["id"]?.GetValue<string>() ?? jsonKey}'");
                 }
             }
         }
@@ -135,7 +142,7 @@ internal sealed partial class SpikeDatabase
         var result = new JsonArray();
         foreach (var defaultItem in defaults.OfType<JsonObject>())
         {
-            var next = defaultItem.DeepClone() as JsonObject ?? new JsonObject();
+            var next = defaultItem.DeepClone().AsObject();
             var id = next["id"]?.GetValue<string>()
                 ?? throw new InvalidOperationException("Projected runtime collection item has no stable id.");
             if (currentById.TryGetValue(id, out var currentItem))
@@ -148,20 +155,6 @@ internal sealed partial class SpikeDatabase
             result.Add(next);
         }
         return result;
-    }
-
-    private static JsonNode RuntimeDefaultValue(JsonObject definition)
-    {
-        var value = definition["defaultValue"]?.GetValue<string>() ?? "";
-        return (definition["kind"]?.GetValue<string>() ?? "text") switch
-        {
-            "boolean" => JsonValue.Create(bool.TryParse(value, out var boolean) && boolean)!,
-            "number" when decimal.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
-                => JsonValue.Create(number)!,
-            "iconList" => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value) ?? new JsonArray(),
-            "behaviorTiming" => JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value) ?? new JsonObject(),
-            _ => JsonValue.Create(value)!,
-        };
     }
 
 }

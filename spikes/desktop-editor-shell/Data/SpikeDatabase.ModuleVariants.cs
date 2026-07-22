@@ -160,7 +160,10 @@ internal sealed partial class SpikeDatabase
             if (!RuntimeInputDefinition(input)) continue;
             var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
             if (string.IsNullOrWhiteSpace(jsonKey)) continue;
-            next[jsonKey] = current[jsonKey]?.DeepClone() ?? RuntimeDefaultValue(input);
+            next[jsonKey] = current[jsonKey]?.DeepClone()
+                ?? RuntimeInputValueKindContract.CreateDefaultValue(
+                    input,
+                    $"Runtime Input '{input["id"]?.GetValue<string>() ?? jsonKey}'");
         }
         foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {

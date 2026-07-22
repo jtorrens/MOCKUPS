@@ -212,6 +212,15 @@ canonical shape declared for its stored `valueKind`. The mapping constructs new
 definitions and validates current ones; normal reads never derive or replace a
 missing/mismatched value from the other field.
 
+The same owner parses `defaultValue` into the runtime shape declared by
+`ValueKind`. Boolean, numeric, icon-list, structured-collection and
+`BehaviorTiming` defaults are strict; malformed values are not converted to
+`false`, zero, `{}`, `[]` or text. A projected `StructuredCollection` with an
+explicit collection contract owns an empty initial array even when it has no
+scalar `defaultValue`. Every other current Runtime Input definition requires an
+explicit string default, including an explicitly empty string where empty is
+meaningful.
+
 Runtime Input option lookup additionally follows contract 55. The typed data
 source supplies exact current Actor, Palette and complete Component variant
 options; generic factories retain the metadata-driven `ValueKind` and declared
@@ -222,6 +231,8 @@ The following are invalid current data:
 - missing or case-insensitive `valueKind` names;
 - an unknown Runtime Input `kind`;
 - a `kind`/`valueKind` pair that does not match the canonical shared mapping;
+- a missing or malformed default for its declared `ValueKind`;
+- a malformed `BehaviorTiming` object or unsupported timing mode;
 - a dictionary registry miss;
 - a silent generic text control;
 - an incomplete id, label or JSON key;
@@ -238,6 +249,7 @@ Read-only startup validation rejects:
 - component or module classes absent from the canonical manifest;
 - Runtime Input definitions without stable id, label and JSON key;
 - unknown or non-canonical Runtime Input kinds/value kinds;
+- missing or malformed Runtime Input defaults for their current `ValueKind`;
 - retired generic module layouts or records;
 - any other persistence violation defined by contract 33.
 
@@ -256,6 +268,7 @@ defaults, module routes or repaired JSON.
 - absence of component-specific bridge, common-helper and renderer knowledge;
 - exhaustive dictionary registry coverage;
 - strict Runtime Input kind/value-kind parsing;
+- strict Runtime Input default parsing through that same owner;
 - manifest and Runtime Input parity in the committed database;
 - absence of retired generic App/Module creation and layout paths;
 - rename-only App/Module definition permissions and repository enforcement.

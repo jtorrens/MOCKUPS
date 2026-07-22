@@ -4821,6 +4821,11 @@ assertContains(
   "public static ValueKind RequireCompatible(string kind, string valueKind, string owner)",
   "runtime input kind and valueKind must share one exact semantic owner",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static JsonNode CreateDefaultValue(JsonObject definition, string owner)",
+  "runtime input defaults must be parsed by the same exact ValueKind owner",
+);
 for (const runtimeInputKindConsumer of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -4831,6 +4836,32 @@ for (const runtimeInputKindConsumer of [
     `${runtimeInputKindConsumer} must consume the exact Runtime Input kind/valueKind owner`,
   );
 }
+for (const runtimeDefaultConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+]) {
+  assertContains(
+    runtimeDefaultConsumer,
+    "RuntimeInputValueKindContract.CreateDefaultValue(",
+    `${runtimeDefaultConsumer} must consume the exact Runtime Input default owner`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "RuntimeDefaultValue(",
+  "runtime reconciliation must not retain a second permissive default parser",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/BehaviorTimingValue.cs",
+  "catch",
+  "Behavior Timing must not catch invalid current values and return a plausible default",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/BehaviorTimingValue.cs",
+  'JsonPath.ParseRequiredObject(json, "Behavior Timing value")',
+  "Behavior Timing must require its current object document",
+);
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "CurrentRuntimeInputKinds",

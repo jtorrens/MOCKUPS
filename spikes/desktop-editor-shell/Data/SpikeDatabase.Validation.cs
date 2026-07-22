@@ -218,6 +218,9 @@ internal sealed partial class SpikeDatabase
                 kind,
                 valueKind,
                 $"{owner} runtime field '{id}' at {path}");
+            _ = RuntimeInputValueKindContract.CreateDefaultValue(
+                definition,
+                $"{owner} runtime field '{id}' at {path}");
         }
         catch (InvalidOperationException exception)
         {

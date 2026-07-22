@@ -27,6 +27,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
+    ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
@@ -211,6 +212,94 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         "collection",
         "UnknownValueKind",
         "Test Runtime Input"));
+}
+
+static void RuntimeInputDefaultsUseValueKindOwner()
+{
+    static JsonObject Definition(string kind, string valueKind, string? defaultValue) => new()
+    {
+        ["id"] = "test",
+        ["label"] = "Test",
+        ["jsonKey"] = "test",
+        ["kind"] = kind,
+        ["valueKind"] = valueKind,
+        ["defaultValue"] = defaultValue,
+    };
+
+    Equal(
+        true,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition("boolean", "Boolean", "true"),
+            "Test Runtime Input").GetValue<bool>());
+    Equal(
+        12,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition("number", "Integer", "12"),
+            "Test Runtime Input").GetValue<int>());
+    Equal(
+        2,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition("iconList", "IconTokenList", "[\"first\",\"second\"]"),
+            "Test Runtime Input").AsArray().Count);
+    Equal(
+        "natural",
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition(
+                "behaviorTiming",
+                "BehaviorTiming",
+                "{\"mode\":\"natural\",\"fixedFrames\":20,\"paceToken\":\"theme.motion.naturalPace.normal\"}"),
+            "Test Runtime Input")["mode"]?.GetValue<string>());
+
+    var projectedCollection = Definition("collection", "StructuredCollection", null);
+    projectedCollection["collection"] = new JsonObject { ["id"] = "items" };
+    Equal(
+        0,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            projectedCollection,
+            "Test Runtime Input").AsArray().Count);
+    Equal(
+        1,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition("collection", "StructuredCollection", "[{\"id\":\"item_1\"}]"),
+            "Test Runtime Input").AsArray().Count);
+
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
+        Definition("boolean", "Boolean", "perhaps"),
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
+        Definition("number", "Integer", "1.5"),
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
+        Definition("iconList", "IconSlots", "{}"),
+        "Test Runtime Input"));
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
+        Definition("collection", "StructuredCollection", null),
+        "Test Runtime Input"));
+
+    foreach (var invalid in new[]
+    {
+        "",
+        "[]",
+        "{}",
+        "{\"mode\":\"automatic\",\"fixedFrames\":0,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+        "{\"mode\":\"fixed\",\"fixedFrames\":-1,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+    })
+    {
+        Throws<InvalidOperationException>(() => BehaviorTimingValue.Parse(invalid));
+    }
+
+    AssertRejectedDatabaseIsReadOnly("runtime-boolean-default", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.inputs[6].defaultValue', 'perhaps') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-default", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].defaultValue', '{}') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
 }
 
 static void ComponentAndModuleVariantsShareReferenceGrammar()

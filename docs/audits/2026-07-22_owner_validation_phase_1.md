@@ -123,3 +123,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Router y tres consumidores obligatorios; validación de cada `variant.Config`; fallbacks retirados prohibidos. |
 | Datos | Sin migración. La base ya cumplía los dos contratos; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
 | Riesgo | Bajo para current data. Solo deja de ocultarse entrada inválida; ids, referencias, forwarding, Overrides, payloads y resultado visual no cambian. |
+
+## Slice 1.7 — Defaults de Runtime Input y `BehaviorTiming`
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La reconciliación mantenía un parser propio por `kind`: un booleano inválido pasaba a `false`, un número inválido terminaba como texto, icon lists/collections podían quedar vacías y `BehaviorTimingValue` capturaba cualquier error para devolver fixed/0. Startup solo validaba el par `kind`/`ValueKind`, no su default. |
+| Owner | `RuntimeInputValueKindContract` valida el par y materializa el default exacto por `ValueKind`; `BehaviorTimingValue` valida su objeto semántico. |
+| Cambio mínimo | Exigir defaults string actuales, parsear formas escalares y arrays estrictamente, declarar el array vacío únicamente para `StructuredCollection` con contrato de colección explícito y usar el owner en startup, reconciliación y cambio de Variant. |
+| Rutas eliminadas | `RuntimeDefaultValue` privado, `bool.TryParse && value`, parseos `?? []`/`?? {}` y el catch-all de `BehaviorTimingValue`. |
+| Pruebas | 105/105 escritorio: defaults válidos por familia, raíces y valores inválidos, colección proyectada explícita, semántica de timing y dos corrupciones de base rechazadas byte-for-byte read-only. |
+| Enforcement | Método owner y tres consumidores obligatorios; parser paralelo y catch de timing prohibidos. |
+| Datos | Sin migración. Todos los defaults current ya cumplen; SHA-1 permanece `ca53a71d8a51f6fc56ae1699ceb669eb49f02653`. |
+| Riesgo | Bajo. Solo cambia la entrada inválida y la reconciliación futura de contratos dañados; payload current y UI válida no cambian. |
