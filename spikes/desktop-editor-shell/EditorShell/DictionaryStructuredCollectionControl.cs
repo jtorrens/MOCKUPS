@@ -380,8 +380,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     {
         var group = options.FirstOrDefault((option) => option.Value.Equals(reference, StringComparison.Ordinal))?.GroupValue;
         if (!string.IsNullOrWhiteSpace(group)) return group;
-        var separator = reference.IndexOf("::variant::", StringComparison.Ordinal);
-        return separator > 0 ? reference[..separator] : reference;
+        return VariantReferenceId.TryParse(reference, out var componentId, out _)
+            ? componentId
+            : reference;
     }
 
     private static JsonArray Parse(string value)

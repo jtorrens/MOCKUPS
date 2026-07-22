@@ -1187,6 +1187,27 @@ for (const nodeProcessConsumer of [
     `${nodeProcessConsumer} must not restore a parallel Node executable resolver`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/Common/VariantReferenceId.cs",
+  'public const string Separator = "::variant::";',
+  "Component and Module Variants must share one full-reference grammar",
+);
+for (const retiredVariantReferenceHelper of [
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "TryParseComponentVariantNodeId"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "ComponentVariantNodeId("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "TryParseModuleVariantNodeId"],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantControl.cs", "VariantSeparator"],
+  ["spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs", 'IndexOf("::variant::"'],
+  ["spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
+  ["spikes/desktop-editor-shell/EditorShell/EditorEmbeddedUsageNavigator.cs", 'EndsWith("::variant::default"'],
+] as const) {
+  assertDoesNotContain(
+    retiredVariantReferenceHelper[0],
+    retiredVariantReferenceHelper[1],
+    `${retiredVariantReferenceHelper[0]} must not restore a parallel Variant reference grammar`,
+  );
+}
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
@@ -4610,7 +4631,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
-  "EndsWith(\"::variant::default\", StringComparison.Ordinal)",
+  'VariantReferenceId.HasVariantId(child.Id, "default")',
   "first component class selection must prefer the protected Default Variant",
 );
 assertContains(

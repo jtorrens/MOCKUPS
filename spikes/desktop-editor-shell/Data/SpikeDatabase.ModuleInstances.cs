@@ -326,7 +326,7 @@ internal sealed partial class SpikeDatabase
         if (shot.Kind != ProjectTreeNodeKind.Shot)
             throw new InvalidOperationException("A module instance can only be added to a Shot.");
         var module = draft.Module;
-        if (!TryParseModuleVariantNodeId(draft.VariantReference, out var variantModuleId, out _)
+        if (!VariantReferenceId.TryParse(draft.VariantReference, out var variantModuleId, out _)
             || !variantModuleId.Equals(module.Id, StringComparison.Ordinal)
             || GetModuleVariantOptions(module.Id).All((option) => option.Value != draft.VariantReference))
             throw new InvalidOperationException("The selected Variant does not belong to the selected Module.");

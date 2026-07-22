@@ -402,7 +402,7 @@ internal sealed partial class SpikeDatabase
             var variants = RequiredComponentClassVariants(row);
             foreach (var variant in variants)
             {
-                validReferences.Add(ComponentVariantNodeId(row.Id, variant.Id));
+                validReferences.Add(VariantReferenceId.Format(row.Id, variant.Id));
                 var variantConfig = ParseRequiredObject(variant.ConfigJson, $"component variant '{row.Id}::{variant.Id}'");
                 ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, variantConfig);
                 documents.Add(($"component variant '{row.Id}::{variant.Id}'", variantConfig));
@@ -477,7 +477,7 @@ internal sealed partial class SpikeDatabase
             var moduleId = instanceReader.GetString(1);
             var metadata = ParseRequiredObject(instanceReader.GetString(2), $"module instance '{instanceId}' metadata_json");
             var reference = metadata["moduleVariantReference"]?.GetValue<string>() ?? "";
-            if (!TryParseModuleVariantNodeId(reference, out var referencedModuleId, out var variantId)
+            if (!VariantReferenceId.TryParse(reference, out var referencedModuleId, out var variantId)
                 || !referencedModuleId.Equals(moduleId, StringComparison.Ordinal)
                 || !variantsByModule.TryGetValue(moduleId, out var variants)
                 || !variants.Contains(variantId))
@@ -541,8 +541,8 @@ internal sealed partial class SpikeDatabase
 
     private static bool IsCompleteComponentVariantReference(string value)
     {
-        if (!TryParseComponentVariantNodeId(value, out var componentClassId, out var variantId)) return false;
-        return ComponentVariantNodeId(componentClassId, variantId).Equals(value, StringComparison.Ordinal)
+        if (!VariantReferenceId.TryParse(value, out var componentClassId, out var variantId)) return false;
+        return VariantReferenceId.Format(componentClassId, variantId).Equals(value, StringComparison.Ordinal)
             && componentClassId.All(IsStableReferenceCharacter)
             && variantId.All(IsStableReferenceCharacter);
     }

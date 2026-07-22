@@ -36,25 +36,6 @@ internal sealed partial class SpikeDatabase
         bool IsLocked,
         string ConfigJson);
 
-    private static string ComponentVariantNodeId(string componentClassId, string variantId) =>
-        $"{componentClassId}::variant::{variantId}";
-
-    private static bool TryParseComponentVariantNodeId(string nodeId, out string componentClassId, out string variantId)
-    {
-        const string separator = "::variant::";
-        var separatorIndex = nodeId.IndexOf(separator, StringComparison.Ordinal);
-        if (separatorIndex <= 0 || separatorIndex + separator.Length >= nodeId.Length)
-        {
-            componentClassId = "";
-            variantId = "";
-            return false;
-        }
-
-        componentClassId = nodeId[..separatorIndex];
-        variantId = nodeId[(separatorIndex + separator.Length)..];
-        return true;
-    }
-
     private ProjectTreeNode RenameComponentClass(ProjectTreeNode node, string name)
     {
         var nextName = name.Trim();
@@ -83,7 +64,7 @@ internal sealed partial class SpikeDatabase
 
     private ProjectTreeNode DuplicateComponentVariant(ProjectTreeNode node)
     {
-        if (!TryParseComponentVariantNodeId(node.Id, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
@@ -112,7 +93,7 @@ internal sealed partial class SpikeDatabase
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
-                ComponentVariantNodeId(componentClassId, copyId),
+                VariantReferenceId.Format(componentClassId, copyId),
                 copyName,
                 "Component variant",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
@@ -136,7 +117,7 @@ internal sealed partial class SpikeDatabase
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            if (!TryParseComponentVariantNodeId(sourceNode.Id, out var componentClassId, out _))
+            if (!VariantReferenceId.TryParse(sourceNode.Id, out var componentClassId, out _))
             {
                 throw new InvalidOperationException($"Invalid component variant node id '{sourceNode.Id}'.");
             }
@@ -159,7 +140,7 @@ internal sealed partial class SpikeDatabase
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
-                ComponentVariantNodeId(componentClassId, variantId),
+                VariantReferenceId.Format(componentClassId, variantId),
                 variantName,
                 "Component variant",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
@@ -169,7 +150,7 @@ internal sealed partial class SpikeDatabase
 
     private void DeleteComponentVariant(ProjectTreeNode node)
     {
-        if (!TryParseComponentVariantNodeId(node.Id, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
@@ -215,7 +196,7 @@ internal sealed partial class SpikeDatabase
 
     public ProjectTreeNode RenameComponentVariant(ProjectTreeNode node, string name)
     {
-        if (!TryParseComponentVariantNodeId(node.Id, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
@@ -252,7 +233,7 @@ internal sealed partial class SpikeDatabase
 
     public ProjectTreeNode ToggleComponentVariantLock(ProjectTreeNode node)
     {
-        if (!TryParseComponentVariantNodeId(node.Id, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }
@@ -284,7 +265,7 @@ internal sealed partial class SpikeDatabase
 
     public void ReplaceComponentVariantConfig(ProjectTreeNode node, string configJson)
     {
-        if (!TryParseComponentVariantNodeId(node.Id, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
         }

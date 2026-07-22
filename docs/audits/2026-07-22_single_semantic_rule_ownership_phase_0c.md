@@ -70,3 +70,20 @@ distintos y aplican criterios distintos, por lo que su parecido no demuestra
 una única regla. Los ciclos de vida de los procesos persistentes, one-shot y
 FFmpeg también quedan fuera de este slice hasta comparar sus contratos de
 cancelación, timeout y errores.
+
+### Familia 0C.2 — Gramática de referencias completas a Variants
+
+| Campo | Resultado |
+|---|---|
+| Regla | Formar y separar la referencia estable común `ownerId::variant::variantId`, y reconocer su Variant por id. |
+| Rutas actuales | Component Classes y Modules tienen formatters/parsers equivalentes; cuatro controles de editor vuelven a concatenar, cortar o comprobar el mismo separador. |
+| Paridad | Un owner y una Variant no vacíos, primer separador ordinal y resto completo como Variant; el id `default` se reconoce sin inferirlo del tipo, nombre u orden. |
+| Owner definitivo | Helper común de identidad de Variant; la existencia y semántica concreta permanecen en los owners Component/Module. |
+| Cambio mínimo | Migrar formatters, parsers y comprobaciones activas; retirar constantes, métodos y cortes locales. |
+| Pruebas | Gramática válida/malformada, formato exacto y detección de `default`; enforcement contra parsers locales conocidos. |
+| Riesgo | Bajo-medio por número de consumidores; no cambia ids persistidos ni referencias. |
+| Decisión | Consolidar en un slice aislado. |
+
+No se unifican los envelopes de Component y Module ni sus reglas de ciclo de
+vida: comparten la identidad de referencia, pero siguen teniendo propietarios
+y documentos distintos.

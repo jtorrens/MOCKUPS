@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,7 @@ internal sealed class EditorNodeSelectionState
 
         return componentClassNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ComponentVariant
-                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+                && VariantReferenceId.HasVariantId(child.Id, "default"))
             ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant)
             ?? componentClassNode;
     }
@@ -60,7 +61,7 @@ internal sealed class EditorNodeSelectionState
             return remembered;
         return moduleNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ModuleVariant
-                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+                && VariantReferenceId.HasVariantId(child.Id, "default"))
             ?? moduleNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant)
             ?? moduleNode;
     }

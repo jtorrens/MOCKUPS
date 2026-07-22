@@ -28,7 +28,7 @@ internal sealed partial class SpikeDatabase
     private ComponentClassSettings GetComponentVariantSettings(SqliteConnection connection, ProjectTreeNode variantNode)
     {
         if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
-            || !TryParseComponentVariantNodeId(variantNode.Id, out var componentClassId, out var variantId))
+            || !VariantReferenceId.TryParse(variantNode.Id, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
@@ -66,7 +66,7 @@ internal sealed partial class SpikeDatabase
         out JsonObject metadata)
     {
         if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
-            || !TryParseComponentVariantNodeId(variantNode.Id, out componentClassId, out var variantId))
+            || !VariantReferenceId.TryParse(variantNode.Id, out componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
@@ -705,7 +705,7 @@ internal sealed partial class SpikeDatabase
         JsonObject config,
         JsonObject metadata)
     {
-        if (!TryParseComponentVariantNodeId(variantNode.Id, out _, out var variantId))
+        if (!VariantReferenceId.TryParse(variantNode.Id, out _, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }

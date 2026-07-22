@@ -11,7 +11,6 @@ namespace Mockups.DesktopEditorShell.Data;
 internal sealed partial class SpikeDatabase
 {
     private const string DefaultModuleVariantId = "default";
-    private const string ModuleVariantSeparator = "::variant::";
 
     public sealed record ModuleVariant(
         string Id,
@@ -19,24 +18,6 @@ internal sealed partial class SpikeDatabase
         bool IsProtected,
         bool IsLocked,
         string ConfigJson);
-
-    internal static string ModuleVariantNodeId(string moduleId, string variantId) =>
-        $"{moduleId}{ModuleVariantSeparator}{variantId}";
-
-    internal static bool TryParseModuleVariantNodeId(string nodeId, out string moduleId, out string variantId)
-    {
-        var separatorIndex = nodeId.IndexOf(ModuleVariantSeparator, StringComparison.Ordinal);
-        if (separatorIndex <= 0 || separatorIndex + ModuleVariantSeparator.Length >= nodeId.Length)
-        {
-            moduleId = "";
-            variantId = "";
-            return false;
-        }
-
-        moduleId = nodeId[..separatorIndex];
-        variantId = nodeId[(separatorIndex + ModuleVariantSeparator.Length)..];
-        return true;
-    }
 
     internal static IReadOnlyList<ModuleVariant> ModuleVariants(
         string metadataJson,
@@ -56,7 +37,7 @@ internal sealed partial class SpikeDatabase
     public ModuleSettings GetModuleVariantSettings(ProjectTreeNode variantNode)
     {
         if (variantNode.Kind != ProjectTreeNodeKind.ModuleVariant
-            || !TryParseModuleVariantNodeId(variantNode.Id, out var moduleId, out var variantId))
+            || !VariantReferenceId.TryParse(variantNode.Id, out var moduleId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid module variant node id '{variantNode.Id}'.");
         }
@@ -72,7 +53,7 @@ internal sealed partial class SpikeDatabase
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
         var reference = GetModuleInstanceVariantReference(moduleInstanceId);
-        if (!TryParseModuleVariantNodeId(reference, out var moduleId, out var variantId)
+        if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId)
             || !moduleId.Equals(instance.ModuleId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Module instance '{moduleInstanceId}' has an invalid module variant reference.");
@@ -107,7 +88,7 @@ internal sealed partial class SpikeDatabase
     public string GetModuleInstanceVariantName(string moduleInstanceId)
     {
         var reference = GetModuleInstanceVariantReference(moduleInstanceId);
-        if (!TryParseModuleVariantNodeId(reference, out var moduleId, out var variantId))
+        if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid module variant reference '{reference}'.");
         }
@@ -118,7 +99,7 @@ internal sealed partial class SpikeDatabase
 
     public IReadOnlyList<FieldOption> GetModuleVariantOptions(string moduleId) =>
         ModuleVariants(GetModuleSettings(moduleId).MetadataJson)
-            .Select((variant) => new FieldOption(ModuleVariantNodeId(moduleId, variant.Id), variant.Name))
+            .Select((variant) => new FieldOption(VariantReferenceId.Format(moduleId, variant.Id), variant.Name))
             .ToList();
 
     private static JsonObject EffectiveModuleInstanceContract(
@@ -130,7 +111,7 @@ internal sealed partial class SpikeDatabase
         var instanceMetadata = ParseJsonObject(instanceMetadataJson);
         var reference = instanceMetadata["moduleVariantReference"]?.GetValue<string>()
             ?? throw new InvalidOperationException("Module instance has no explicit module variant reference.");
-        if (!TryParseModuleVariantNodeId(reference, out var referencedModuleId, out var variantId)
+        if (!VariantReferenceId.TryParse(reference, out var referencedModuleId, out var variantId)
             || referencedModuleId != moduleId)
             throw new InvalidOperationException($"Invalid module variant reference '{reference}'.");
         var variant = ModuleVariants(moduleMetadataJson)
@@ -144,7 +125,7 @@ internal sealed partial class SpikeDatabase
     public void UpdateModuleInstanceVariant(string moduleInstanceId, string reference)
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
-        if (!TryParseModuleVariantNodeId(reference, out var moduleId, out var variantId)
+        if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId)
             || !moduleId.Equals(instance.ModuleId, StringComparison.Ordinal)
             || ModuleVariants(GetModuleSettings(moduleId).MetadataJson).All((variant) => variant.Id != variantId))
         {
@@ -233,7 +214,7 @@ internal sealed partial class SpikeDatabase
     public ProjectTreeNode SaveModuleVariant(ProjectTreeNode sourceNode, string name)
     {
         if (sourceNode.Kind != ProjectTreeNodeKind.ModuleVariant
-            || !TryParseModuleVariantNodeId(sourceNode.Id, out var moduleId, out _))
+            || !VariantReferenceId.TryParse(sourceNode.Id, out var moduleId, out _))
         {
             throw new InvalidOperationException("Module variants can only be saved from an active selected variant.");
         }
@@ -257,7 +238,7 @@ internal sealed partial class SpikeDatabase
                 ["config"] = ParseJsonObject(settings.ConfigJson),
             });
             _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
-            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, ModuleVariantNodeId(moduleId, variantId),
+            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, VariantReferenceId.Format(moduleId, variantId),
                 variantName, "Module variant", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant), sourceNode.Parent);
         }
     }
@@ -280,7 +261,7 @@ internal sealed partial class SpikeDatabase
 
     public void DeleteModuleVariant(ProjectTreeNode node)
     {
-        if (!TryParseModuleVariantNodeId(node.Id, out var moduleId, out var variantId))
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
             throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
         lock (WriteGate)
         {
@@ -316,7 +297,7 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateModuleVariantField(ProjectTreeNode node, string fieldId, string value)
     {
-        if (!TryParseModuleVariantNodeId(node.Id, out var moduleId, out _))
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out _))
             throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
         if (fieldId is "module.sortOrder" or "module.metadata" or "module.recordClassId")
         {
@@ -343,7 +324,7 @@ internal sealed partial class SpikeDatabase
     private ProjectTreeNode UpdateModuleVariantMetadata(ProjectTreeNode node, Action<JsonObject> update, string name)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Variant name cannot be empty.");
-        if (!TryParseModuleVariantNodeId(node.Id, out var moduleId, out _))
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out _))
             throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
         lock (WriteGate)
         {
@@ -361,7 +342,7 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject FindModuleVariant(JsonObject metadata, string nodeId)
     {
-        if (!TryParseModuleVariantNodeId(nodeId, out var moduleId, out var variantId))
+        if (!VariantReferenceId.TryParse(nodeId, out var moduleId, out var variantId))
             throw new InvalidOperationException($"Invalid module variant '{nodeId}'.");
         var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
         return variants.OfType<JsonObject>().FirstOrDefault((variant) => JsonPath.String(variant, "id", "") == variantId)

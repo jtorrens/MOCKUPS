@@ -50,6 +50,7 @@ var tests = new (string Name, Action Run)[]
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
+    ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -111,6 +112,24 @@ static void ExternalNodeProcessesShareExecutableResolution()
     var executable = DesktopChildProcess.ResolveNodeExecutable();
     True(!string.IsNullOrWhiteSpace(executable));
     Equal(OperatingSystem.IsWindows() ? "node.exe" : "node", Path.GetFileName(executable));
+}
+
+static void ComponentAndModuleVariantsShareReferenceGrammar()
+{
+    var reference = VariantReferenceId.Format("owner_001", "variant_001");
+    Equal("owner_001::variant::variant_001", reference);
+    True(VariantReferenceId.TryParse(reference, out var ownerId, out var variantId));
+    Equal("owner_001", ownerId);
+    Equal("variant_001", variantId);
+    True(VariantReferenceId.HasVariantId(
+        VariantReferenceId.Format("owner_001", "default"),
+        "default"));
+    True(!VariantReferenceId.HasVariantId(reference, "default"));
+
+    foreach (var malformed in new[] { "", "owner_001", "::variant::default", "owner_001::variant::" })
+    {
+        True(!VariantReferenceId.TryParse(malformed, out _, out _));
+    }
 }
 
 static void EditorViewStateFollowsRecordClass()

@@ -12,7 +12,6 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValueControl
 {
-    private const string VariantSeparator = "::variant::";
     private readonly FieldDefinition _definition;
     private readonly IReadOnlyList<FieldOption> _references;
     private readonly EditorInstantComboBox? _componentCombo;
@@ -192,7 +191,7 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
             ? ""
             : _references.SingleOrDefault((option) =>
                 option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                && option.Value.Equals($"{componentId}{VariantSeparator}default", StringComparison.Ordinal))?.Value
+                && option.Value.Equals(VariantReferenceId.Format(componentId, "default"), StringComparison.Ordinal))?.Value
               ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
         SetVariantOptions(componentId, defaultReference);
         _isUpdating = false;
@@ -239,7 +238,8 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
 
     private static string ComponentId(string reference)
     {
-        var separatorIndex = reference.IndexOf(VariantSeparator, StringComparison.Ordinal);
-        return separatorIndex > 0 ? reference[..separatorIndex] : "";
+        return VariantReferenceId.TryParse(reference, out var componentId, out _)
+            ? componentId
+            : "";
     }
 }

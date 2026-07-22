@@ -200,7 +200,7 @@ internal sealed partial class SpikeDatabase
             app.AddChild(moduleNode);
             foreach (var variant in ModuleVariants(module.MetadataJson))
             {
-                var reference = ModuleVariantNodeId(module.Id, variant.Id);
+                var reference = VariantReferenceId.Format(module.Id, variant.Id);
                 var used = IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ModuleVariant, reference);
                 moduleNode.AddChild(new ProjectTreeNode(
                     ProjectTreeNodeKind.ModuleVariant,
@@ -348,12 +348,12 @@ internal sealed partial class SpikeDatabase
             {
                 componentNode.AddChild(new ProjectTreeNode(
                     ProjectTreeNodeKind.ComponentVariant,
-                    ComponentVariantNodeId(componentClass.Id, variant.Id),
+                    VariantReferenceId.Format(componentClass.Id, variant.Id),
                     variant.Name,
                     variant.IsProtected ? "Protected component variant" : "Component variant",
                     ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
                     componentNode,
-                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, ComponentVariantNodeId(componentClass.Id, variant.Id)),
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, VariantReferenceId.Format(componentClass.Id, variant.Id)),
                     isProtected: variant.IsProtected,
                     isLocked: variant.IsLocked));
             }

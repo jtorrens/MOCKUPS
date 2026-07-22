@@ -44,7 +44,7 @@ internal sealed partial class SpikeDatabase
                     usages,
                     row,
                     $"{row.Name} · {variant.Name}",
-                    ComponentVariantNodeId(row.Id, variant.Id),
+                    VariantReferenceId.Format(row.Id, variant.Id),
                     variant.ConfigJson,
                     componentType);
             }
@@ -177,7 +177,7 @@ internal sealed partial class SpikeDatabase
             AddComponentVariantConfigs(connection, variants, row);
             foreach (var variant in RequiredComponentClassVariants(row))
             {
-                variantTypes[ComponentVariantNodeId(row.Id, variant.Id)] = row.ComponentType;
+                variantTypes[VariantReferenceId.Format(row.Id, variant.Id)] = row.ComponentType;
             }
             if (configs.ContainsKey(row.ComponentType))
             {
@@ -210,7 +210,7 @@ internal sealed partial class SpikeDatabase
         {
             var config = ParseJsonObject(variant.ConfigJson);
             ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, config);
-            target[ComponentVariantNodeId(row.Id, variant.Id)] = config;
+            target[VariantReferenceId.Format(row.Id, variant.Id)] = config;
         }
     }
 
@@ -231,7 +231,7 @@ internal sealed partial class SpikeDatabase
             }
 
             var reference = JsonPath.String(slotNode, "variantReference", "");
-            if (!TryParseComponentVariantNodeId(reference, out var componentClassId, out var variantId))
+            if (!VariantReferenceId.TryParse(reference, out var componentClassId, out var variantId))
             {
                 throw new InvalidOperationException(
                     $"Embedded component slot '{slot.FieldId}' must use a full component variant reference.");
@@ -329,7 +329,7 @@ internal sealed partial class SpikeDatabase
         var options = rows
             .SelectMany((row) => RequiredComponentClassVariants(row)
                 .Select((variant) => new FieldOption(
-                    ComponentVariantNodeId(row.Id, variant.Id),
+                    VariantReferenceId.Format(row.Id, variant.Id),
                     showClassName ? $"{row.Name} · {variant.Name}" : variant.Name,
                     GroupValue: row.Id,
                     GroupLabel: row.Name,
@@ -351,7 +351,7 @@ internal sealed partial class SpikeDatabase
 
     public JsonObject GetComponentVariantRuntimeContract(string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out _))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
@@ -367,7 +367,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<ComponentInputBindingDefinition> GetComponentVariantRuntimeInputBindings(
         string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out _))
         {
             return [];
         }
@@ -404,7 +404,7 @@ internal sealed partial class SpikeDatabase
     public IReadOnlyList<RuntimeInputCollectionDefinition> GetComponentVariantRuntimeCollections(
         string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out _))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out _))
         {
             return [];
         }
@@ -418,7 +418,7 @@ internal sealed partial class SpikeDatabase
 
     public JsonObject GetComponentVariantConfig(string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
@@ -433,7 +433,7 @@ internal sealed partial class SpikeDatabase
 
     public ComponentVariantSelectionSettings GetComponentVariantSelectionSettings(string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
@@ -455,7 +455,7 @@ internal sealed partial class SpikeDatabase
         JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException($"Invalid component Variant reference '{variantReference}'.");
         }
@@ -494,7 +494,7 @@ internal sealed partial class SpikeDatabase
             .FirstOrDefault((candidate) => candidate.Id.Equals(DefaultComponentVariantId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Component class '{componentClass.Id}' has no protected default variant.");
-        return ComponentVariantNodeId(componentClass.Id, variant.Id);
+        return VariantReferenceId.Format(componentClass.Id, variant.Id);
     }
 
     private string ValidateComponentVariantReference(
@@ -515,7 +515,7 @@ internal sealed partial class SpikeDatabase
                 $"A {componentType} component variant reference is required.");
         }
 
-        if (!TryParseComponentVariantNodeId(reference, out var componentClassId, out var variantId))
+        if (!VariantReferenceId.TryParse(reference, out var componentClassId, out var variantId))
         {
             throw new InvalidOperationException(
                 $"Component variant reference '{reference}' must use the full componentClassId::variant::variantId form.");
@@ -563,7 +563,7 @@ internal sealed partial class SpikeDatabase
         string componentType,
         string variantReference)
     {
-        if (!TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var referencedVariantId))
+        if (!VariantReferenceId.TryParse(variantReference, out var componentClassId, out var referencedVariantId))
         {
             throw new InvalidOperationException(
                 $"Component variant reference '{variantReference}' must use the full componentClassId::variant::variantId form.");
@@ -609,7 +609,7 @@ internal sealed partial class SpikeDatabase
         string componentType,
         string variantReference)
     {
-        if (TryParseComponentVariantNodeId(variantReference, out var componentClassId, out var referencedVariantId))
+        if (VariantReferenceId.TryParse(variantReference, out var componentClassId, out var referencedVariantId))
         {
             var row = QueryComponentClassRows(connection)
                 .FirstOrDefault((candidate) =>

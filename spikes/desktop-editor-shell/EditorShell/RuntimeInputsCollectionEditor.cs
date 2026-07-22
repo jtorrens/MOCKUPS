@@ -875,7 +875,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     ? ""
                     : options.SingleOrDefault((option) =>
                         option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                        && option.Value.Equals($"{componentId}::variant::default", StringComparison.Ordinal))?.Value
+                        && option.Value.Equals(VariantReferenceId.Format(componentId, "default"), StringComparison.Ordinal))?.Value
                       ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
             }
             item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);

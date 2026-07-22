@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
@@ -100,7 +101,7 @@ internal sealed class EditorEmbeddedUsageNavigator
             ? selected
             : componentClassNode.Children.FirstOrDefault((child) =>
                 child.Kind == ProjectTreeNodeKind.ComponentVariant
-                && child.Id.EndsWith("::variant::default", StringComparison.Ordinal))
+                && VariantReferenceId.HasVariantId(child.Id, "default"))
               ?? componentClassNode.Children.FirstOrDefault((child) => child.Kind == ProjectTreeNodeKind.ComponentVariant);
     }
 
