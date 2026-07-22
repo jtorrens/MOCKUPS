@@ -1177,6 +1177,38 @@ assertContains(
   "73_owner_validation_and_preview_document_boundary_contract.md",
   "the architecture index must include contract 73",
 );
+for (const requiredPreviewObjectDocument of [
+  "configJson",
+  "designPreviewJson",
+  "runtimeContractJson",
+  "componentBaseConfigsJson",
+  "appConfigJson",
+  "instanceJson",
+  "themeTokensJson",
+]) {
+  assertContains(
+    "src/desktop-preview/renderablePayloadBoundary.ts",
+    `["${requiredPreviewObjectDocument}",`,
+    `the web payload boundary must require object document ${requiredPreviewObjectDocument}`,
+  );
+}
+assertContains(
+  "src/desktop-preview/renderablePayloadBoundary.ts",
+  "payload.iconMappingJson !== undefined",
+  "a present optional icon mapping must still be validated",
+);
+for (const retiredPreviewObjectFallback of ['json || "{}"', "asRecord(JSON.parse("]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewJsonHelpers.ts",
+    retiredPreviewObjectFallback,
+    "the shared Preview object parser must not coerce invalid documents to an empty object",
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/runtimeInputForwarding.ts",
+  "function parseRecord(",
+  "Runtime Input forwarding must use the shared strict Preview object parser",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",

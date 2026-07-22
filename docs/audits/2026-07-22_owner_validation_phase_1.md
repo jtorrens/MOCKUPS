@@ -1,7 +1,7 @@
 # Ownership de validación — Fase 1
 
 Fecha: 2026-07-22
-Estado: inventario inicial; implementación no iniciada.
+Estado: implementación en curso.
 
 Norma de ejecución:
 `docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md`.
@@ -49,3 +49,15 @@ responsabilidad que permanezca deliberadamente separada.
   `9b0eae03ff952821162687e61c34b72afb88093a`;
 - validación heredada: 52/52 Preview, 99/99 escritorio, arquitectura y build
   correctos.
+
+## Slice 1.1 — Documentos objeto del payload web
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El boundary solo exigía `runtimeContractJson`; el parser compartido convertía ausencia o raíz incorrecta de cualquier otro documento en `{}`. Forwarding mantenía además otro parser de objetos. |
+| Owner | `renderablePayloadBoundary` declara el envelope requerido; `previewJsonHelpers.parseObject` realiza una única conversión estricta reutilizable. |
+| Cambio mínimo | Validar siete raíces requeridas antes del registry, validar el icon mapping opcional cuando está presente, endurecer `parseObject` y retirar el parser local de forwarding. |
+| Ruta eliminada | `JSON.parse(json || "{}")` seguido de `asRecord`, más `runtimeInputForwarding.parseRecord`. |
+| Pruebas | Documento completo; ausencia, blank, JSON malformado y raíz array para cada campo; icon mapping ausente y presente inválido. |
+| Enforcement | Lista explícita de campos en el boundary y prohibición de las dos coerciones retiradas. |
+| Riesgo | Bajo para current data; las entradas inválidas ahora fallan antes de routing. No cambia payload válido, forwarding ni renderables. |

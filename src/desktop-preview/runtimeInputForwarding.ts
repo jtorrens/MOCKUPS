@@ -1,15 +1,14 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { isRecord, parseObject, type JsonRecord } from "./previewJsonHelpers.js";
 
 const storageKey = "$forwardedInputs";
 const runtimeFieldIdsKey = "__runtimeFieldIds";
 
-type JsonRecord = Record<string, unknown>;
-
 export function applyRuntimeInputForwarding(
   payload: DesignPreviewPayload,
 ): DesignPreviewPayload {
-  const config = parseRecord(payload.configJson, "component config");
-  const runtime = parseRecord(payload.designPreviewJson, "component runtime payload");
+  const config = parseObject(payload.configJson, "component config");
+  const runtime = parseObject(payload.designPreviewJson, "component runtime payload");
   apply(config, runtime, "");
   return {
     ...payload,
@@ -96,14 +95,4 @@ function findRuntimeOwner(node: unknown, id: string, jsonKey: string): JsonRecor
     if (found) return found;
   }
   return undefined;
-}
-
-function parseRecord(json: string, label: string): JsonRecord {
-  const value: unknown = JSON.parse(json);
-  if (!isRecord(value)) throw new Error(`Invalid ${label}`);
-  return value;
-}
-
-function isRecord(value: unknown): value is JsonRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

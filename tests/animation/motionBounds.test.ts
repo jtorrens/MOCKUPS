@@ -8,9 +8,15 @@ import type { DesignPreviewPayload } from "../../src/desktop-preview/designPrevi
 
 const payload: DesignPreviewPayload = {
   kind: "componentClass",
+  componentType: "label",
+  componentBaseConfigsJson: "{}",
+  appConfigJson: "{}",
+  instanceJson: "{}",
   frameRate: 25,
   localFrame: 0,
   configJson: "{}",
+  designPreviewJson: "{}",
+  runtimeContractJson: "{}",
   previewFrame: {
     canvasWidth: 360,
     canvasHeight: 720,

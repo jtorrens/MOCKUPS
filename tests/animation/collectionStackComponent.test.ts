@@ -11,10 +11,14 @@ import type { RenderableBox, RenderableNode } from "../../src/visual/renderable/
 const payload: DesignPreviewPayload = {
   kind: "componentClass",
   componentType: "collectionStack",
+  componentBaseConfigsJson: "{}",
+  appConfigJson: "{}",
+  instanceJson: "{}",
   frameRate: 25,
   localFrame: 0,
   configJson: "{}",
   designPreviewJson: "{}",
+  runtimeContractJson: "{}",
   previewFrame: {
     canvasWidth: 360,
     canvasHeight: 720,

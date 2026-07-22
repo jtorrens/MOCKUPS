@@ -53,6 +53,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
       variantTypes: Object.fromEntries(references.map((reference) => [reference, "stub"])),
       variants: Object.fromEntries(references.map((reference) => [reference, {}])),
     }),
+    appConfigJson: "{}",
     instanceJson: JSON.stringify({ context: { localFrame: frame }, animation: { tracks: [] } }),
     frameRate: 25,
     localFrame: frame,
@@ -69,6 +70,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
         alternatives,
       }],
     }),
+    runtimeContractJson: "{}",
     previewFrame: {
       canvasWidth: 360,
       canvasHeight: 720,
