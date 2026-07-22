@@ -51,6 +51,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
+    ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -130,6 +131,19 @@ static void ComponentAndModuleVariantsShareReferenceGrammar()
     {
         True(!VariantReferenceId.TryParse(malformed, out _, out _));
     }
+}
+
+static void PreviewResourceSelectionHasOneSessionRule()
+{
+    var options = new[]
+    {
+        new FieldOption("first", "First"),
+        new FieldOption("second", "Second"),
+    };
+    Equal("second", EditorPreviewController.PreferredResourceOption(options, "second")?.Value);
+    Equal("first", EditorPreviewController.PreferredResourceOption(options, "missing")?.Value);
+    Equal("first", EditorPreviewController.PreferredResourceOption(options, "")?.Value);
+    True(EditorPreviewController.PreferredResourceOption([], "missing") is null);
 }
 
 static void EditorViewStateFollowsRecordClass()

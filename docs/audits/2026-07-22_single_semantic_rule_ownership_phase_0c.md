@@ -87,3 +87,16 @@ cancelación, timeout y errores.
 No se unifican los envelopes de Component y Module ni sus reglas de ciclo de
 vida: comparten la identidad de referencia, pero siguen teniendo propietarios
 y documentos distintos.
+
+### Familia 0C.3 — Selección de recursos del Preview
+
+| Campo | Resultado |
+|---|---|
+| Regla | Conservar el Device o Theme de Preview si todavía existe; si no, seleccionar la primera opción disponible para la sesión. |
+| Rutas actuales | `RefreshOptions` y `EnsureSelectedOptionsExist` repiten el mismo bloque para Device y Theme dentro de `EditorPreviewController`. |
+| Paridad | Selección existente, selección ausente/desaparecida y lista vacía deben resolverse igual en carga y recuperación. |
+| Owner definitivo | `EditorPreviewController`; es estado de selección del Preview, no contexto persistente de Shot ni fallback de repositorio. |
+| Cambio mínimo | Un helper propietario consumido por ambos recorridos y ambos tipos de recurso. |
+| Pruebas | Selección conservada, primera opción ante valor inexistente o vacío, y `null` ante lista vacía. |
+| Riesgo | Bajo; no cambia orden, opciones, persistencia ni contexto de Production. |
+| Decisión | Consolidar. |

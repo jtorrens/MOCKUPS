@@ -1208,6 +1208,21 @@ for (const retiredVariantReferenceHelper of [
     `${retiredVariantReferenceHelper[0]} must not restore a parallel Variant reference grammar`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "internal static FieldOption? PreferredResourceOption(",
+  "Preview resource refresh and recovery must share one session selection rule",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "selectedDevice ??= deviceOptions.FirstOrDefault();",
+  "Preview must not restore the duplicated Device selection path",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "selectedTheme ??= themeOptions.FirstOrDefault();",
+  "Preview must not restore the duplicated Theme selection path",
+);
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",

@@ -895,19 +895,13 @@ internal sealed class EditorPreviewController
         {
             var deviceOptions = _visualContextData.DeviceOptions(project.Id);
             _deviceComboBox.ItemsSource = deviceOptions;
-            var selectedDevice = !string.IsNullOrWhiteSpace(SelectedDeviceId)
-                ? deviceOptions.FirstOrDefault((option) => option.Value == SelectedDeviceId)
-                : null;
-            selectedDevice ??= deviceOptions.FirstOrDefault();
+            var selectedDevice = PreferredResourceOption(deviceOptions, SelectedDeviceId);
             _deviceComboBox.SelectedItem = selectedDevice;
             SelectedDeviceId = selectedDevice?.Value;
 
             var themeOptions = _visualContextData.ThemeOptions(project.Id);
             _themeComboBox.ItemsSource = themeOptions;
-            var selectedTheme = !string.IsNullOrWhiteSpace(_selectedThemeId)
-                ? themeOptions.FirstOrDefault((option) => option.Value == _selectedThemeId)
-                : null;
-            selectedTheme ??= themeOptions.FirstOrDefault();
+            var selectedTheme = PreferredResourceOption(themeOptions, _selectedThemeId);
             _themeComboBox.SelectedItem = selectedTheme;
             _selectedThemeId = selectedTheme?.Value;
 
@@ -2811,16 +2805,10 @@ internal sealed class EditorPreviewController
         }
 
         var deviceOptions = _visualContextData.DeviceOptions(_projectId);
-        var selectedDevice = !string.IsNullOrWhiteSpace(SelectedDeviceId)
-            ? deviceOptions.FirstOrDefault((option) => option.Value == SelectedDeviceId)
-            : null;
-        selectedDevice ??= deviceOptions.FirstOrDefault();
+        var selectedDevice = PreferredResourceOption(deviceOptions, SelectedDeviceId);
 
         var themeOptions = _visualContextData.ThemeOptions(_projectId);
-        var selectedTheme = !string.IsNullOrWhiteSpace(_selectedThemeId)
-            ? themeOptions.FirstOrDefault((option) => option.Value == _selectedThemeId)
-            : null;
-        selectedTheme ??= themeOptions.FirstOrDefault();
+        var selectedTheme = PreferredResourceOption(themeOptions, _selectedThemeId);
 
         _isRefreshingOptions = true;
         try
@@ -2837,6 +2825,14 @@ internal sealed class EditorPreviewController
         {
             _isRefreshingOptions = false;
         }
+    }
+
+    internal static FieldOption? PreferredResourceOption(
+        IReadOnlyList<FieldOption> options,
+        string? selectedValue)
+    {
+        return options.FirstOrDefault((option) => option.Value.Equals(selectedValue, StringComparison.Ordinal))
+            ?? options.FirstOrDefault();
     }
 
     private sealed record PreviewNodeKey(ProjectTreeNodeKind Kind, string Id)
