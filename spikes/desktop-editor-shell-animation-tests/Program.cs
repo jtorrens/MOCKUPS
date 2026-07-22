@@ -147,6 +147,14 @@ static void ComponentAndModuleVariantsShareEnvelopeOperations()
     True(VariantEnvelopeContract.FindSource(variants, "missing") is null);
     Equal("new_variant_3", VariantEnvelopeContract.UniqueId(variants, "New Variant"));
     Equal("variant_2", VariantEnvelopeContract.UniqueId(variants, "---"));
+
+    var config = new JsonObject { ["value"] = 7 };
+    var source = VariantEnvelopeContract.CreateSource("new", "New", config);
+    Equal("new", source["id"]?.GetValue<string>());
+    Equal("New", source["name"]?.GetValue<string>());
+    Equal(false, source["protected"]?.GetValue<bool>());
+    Equal(false, source["locked"]?.GetValue<bool>());
+    Equal(7, source["config"]?["value"]?.GetValue<int>());
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()

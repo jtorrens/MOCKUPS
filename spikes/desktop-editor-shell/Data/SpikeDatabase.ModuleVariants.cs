@@ -229,14 +229,10 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(module.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
             var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
-            variants.Add(new JsonObject
-            {
-                ["id"] = variantId,
-                ["name"] = variantName,
-                ["protected"] = false,
-                ["locked"] = false,
-                ["config"] = ParseJsonObject(settings.ConfigJson),
-            });
+            variants.Add(VariantEnvelopeContract.CreateSource(
+                variantId,
+                variantName,
+                ParseJsonObject(settings.ConfigJson)));
             _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
             return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, VariantReferenceId.Format(moduleId, variantId),
                 variantName, "Module variant", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant), sourceNode.Parent);

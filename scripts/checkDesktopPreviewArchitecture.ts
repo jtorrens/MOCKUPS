@@ -1268,11 +1268,21 @@ for (const retiredVariantEnvelopeHelper of [
     `${retiredVariantEnvelopeHelper[0]} must not restore parallel Variant envelope operation ${retiredVariantEnvelopeHelper[1]}`,
   );
 }
-for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId("]) {
+for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId(", "CreateSource("]) {
   assertContains(
     "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
     sharedVariantEnvelopeOperation,
     `Variant envelope contract must own ${sharedVariantEnvelopeOperation}`,
+  );
+}
+for (const variantCreationOwner of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+]) {
+  assertDoesNotContain(
+    variantCreationOwner,
+    '["protected"] = false',
+    `${variantCreationOwner} must use the complete common Variant source constructor`,
   );
 }
 for (const retiredInactiveSource of [

@@ -80,15 +80,11 @@ internal sealed partial class SpikeDatabase
             var sourceName = JsonPath.String(source, "name", variantId);
             var copyName = $"{sourceName} copy";
             var copyId = VariantEnvelopeContract.UniqueId(variants, copyName);
-            variants.Add(new JsonObject
-            {
-                ["id"] = copyId,
-                ["name"] = copyName,
-                ["protected"] = false,
-                ["locked"] = false,
-                ["config"] = (source["config"] as JsonObject
-                    ?? throw new InvalidOperationException($"Component Variant '{variantId}' has no config snapshot.")).DeepClone(),
-            });
+            var copyConfig = (source["config"] as JsonObject
+                ?? throw new InvalidOperationException($"Component Variant '{variantId}' has no config snapshot."))
+                .DeepClone()
+                .AsObject();
+            variants.Add(VariantEnvelopeContract.CreateSource(copyId, copyName, copyConfig));
             _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
@@ -128,14 +124,7 @@ internal sealed partial class SpikeDatabase
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
             var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
-            variants.Add(new JsonObject
-            {
-                ["id"] = variantId,
-                ["name"] = variantName,
-                ["protected"] = false,
-                ["locked"] = false,
-                ["config"] = sourceConfig,
-            });
+            variants.Add(VariantEnvelopeContract.CreateSource(variantId, variantName, sourceConfig));
             _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(

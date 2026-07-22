@@ -146,3 +146,16 @@ esta batida.
 | Pruebas | Búsqueda, ausencia, normalización, fallback `variant` y colisiones; permanecen las pruebas de lifecycle de Component/Module. |
 | Riesgo | Bajo; no cambia documentos ni acciones permitidas. |
 | Decisión | Consolidar. |
+
+### Familia 0C.7 — Construcción de una Variant completa
+
+| Campo | Resultado |
+|---|---|
+| Regla | Una Variant nueva es siempre un envelope completo con id, nombre, `protected`, `locked` y config objeto explícitos. |
+| Rutas actuales | Duplicar/guardar Component Variant y guardar Module Variant construyen manualmente el mismo objeto. |
+| Paridad | Las tres rutas crean exactamente las mismas claves y valores de flags; cada owner sigue suministrando su snapshot config. |
+| Owner definitivo | `VariantEnvelopeContract`. |
+| Cambio mínimo | Un constructor de source completo y tres consumidores; desaparecen los tres literales paralelos. |
+| Pruebas | Forma exacta del objeto y mantenimiento de los tests de lifecycle. |
+| Riesgo | Bajo. |
+| Decisión | Consolidar. |

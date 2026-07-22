@@ -85,6 +85,23 @@ internal static class VariantEnvelopeContract
         return candidate;
     }
 
+    public static JsonObject CreateSource(
+        string id,
+        string name,
+        JsonObject config,
+        bool isProtected = false,
+        bool isLocked = false)
+    {
+        return new JsonObject
+        {
+            ["id"] = id,
+            ["name"] = name,
+            ["protected"] = isProtected,
+            ["locked"] = isLocked,
+            ["config"] = config,
+        };
+    }
+
     private static CurrentVariantEnvelope ReadEntry(JsonNode? node, int index, string owner)
     {
         if (node is not JsonObject variant)
