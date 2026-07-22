@@ -100,3 +100,16 @@ y documentos distintos.
 | Pruebas | Selección conservada, primera opción ante valor inexistente o vacío, y `null` ante lista vacía. |
 | Riesgo | Bajo; no cambia orden, opciones, persistencia ni contexto de Production. |
 | Decisión | Consolidar. |
+
+### Familia 0C.4 — Preparación de payload desde definición o Variant
+
+| Campo | Resultado |
+|---|---|
+| Regla | Una fuente Component o Module ya cargada se transforma del mismo modo en payload de Design Preview, venga de la definición o de una Variant concreta. |
+| Rutas actuales | `FromComponentClass`/`FromComponentVariant` y `FromModule`/`FromModuleVariant` duplican toda la preparación tras elegir la fuente. |
+| Paridad | Config, forwarding, Runtime JSON, Actor de prueba, recursos visuales, bases de Components, App config y appearance mode deben coincidir para la misma fuente. |
+| Owner definitivo | `DesignPreviewPayloadFactory`; el data source conserva las cargas explícitas de definición y Variant. |
+| Cambio mínimo | El switch elige la fuente y dos constructores únicos preparan Component o Module. |
+| Pruebas | Suite de payload/render de definición, Variant, Module, forwarding y composición existente; enforcement prohíbe restaurar los cuatro constructores paralelos. |
+| Riesgo | Medio-bajo; cruza Preview pero es una extracción mecánica sin alterar documentos. |
+| Decisión | Consolidar. |

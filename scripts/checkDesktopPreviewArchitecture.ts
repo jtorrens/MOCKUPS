@@ -1223,6 +1223,25 @@ assertDoesNotContain(
   "selectedTheme ??= themeOptions.FirstOrDefault();",
   "Preview must not restore the duplicated Theme selection path",
 );
+for (const retiredParallelPayloadBuilder of [
+  "FromComponentClass(",
+  "FromComponentVariant(",
+  "FromModule(",
+  "FromModuleVariant(",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    retiredParallelPayloadBuilder,
+    `Design Preview payload preparation must not restore parallel builder ${retiredParallelPayloadBuilder}`,
+  );
+}
+for (const sharedPayloadBuilder of ["FromComponentSource(", "FromModuleSource("]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    sharedPayloadBuilder,
+    `Design Preview payload preparation must keep shared builder ${sharedPayloadBuilder}`,
+  );
+}
 for (const retiredInactiveSource of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
@@ -4680,7 +4699,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "ProjectTreeNodeKind.ComponentVariant => FromComponentVariant",
+  "ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), theme)",
   "design preview must route selected Component Variant nodes",
 );
 assertContains(

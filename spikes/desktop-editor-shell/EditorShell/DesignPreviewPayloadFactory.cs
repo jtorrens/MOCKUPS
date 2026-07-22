@@ -49,10 +49,10 @@ internal static class DesignPreviewPayloadFactory
         if (theme is null) return null;
         var payload = node.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => FromComponentClass(dataSource, node, theme),
-            ProjectTreeNodeKind.ComponentVariant => FromComponentVariant(dataSource, node, theme),
-            ProjectTreeNodeKind.Module => FromModule(dataSource, node, themeMode, theme),
-            ProjectTreeNodeKind.ModuleVariant => FromModuleVariant(dataSource, node, themeMode, theme),
+            ProjectTreeNodeKind.ComponentClass => FromComponentSource(dataSource.LoadComponentClass(node), theme),
+            ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), theme),
+            ProjectTreeNodeKind.Module => FromModuleSource(dataSource, dataSource.LoadModule(node), themeMode, theme),
+            ProjectTreeNodeKind.ModuleVariant => FromModuleSource(dataSource, dataSource.LoadModuleVariant(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(dataSource, node.Id, theme.DeviceId, themeMode, theme, dataSource.ModuleInstanceLocalFrame(node.Id, timelineFrame)),
             ProjectTreeNodeKind.Shot => FromShot(dataSource, node, theme.DeviceId, themeMode, theme, timelineFrame),
             _ => null,
@@ -176,54 +176,17 @@ internal static class DesignPreviewPayloadFactory
         };
     }
 
-    private static DesignPreviewPayload FromModule(
+    private static DesignPreviewPayload FromModuleSource(
         DesignPreviewPayloadDataSource dataSource,
-        ProjectTreeNode node,
+        DesignPreviewModuleSource settings,
         string themeMode,
         DesignPreviewThemeContext theme)
     {
-        var settings = dataSource.LoadModule(node);
         var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
-        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
-        var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
-        runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
-            ? ActorPreviewInputFactory.CreateSample()
-            : dataSource.CreateActorPreview(actorId, effectiveThemeMode, theme.PaletteColors);
-        var runtimePreviewJson = runtimePreview.ToJsonString();
-        return new DesignPreviewPayload(
-            "module",
-            settings.Name,
-            settings.ConfigJson,
-            theme.TokensJson,
-            theme.PaletteColors,
-            theme.PaletteNeutralColors,
-            theme.ProjectMediaRoot,
-            theme.IconAssetRoot,
-            theme.IconMappingJson,
-            theme.FontFaces,
-            settings.RecordClassId,
-            runtimePreviewJson,
-            runtimePreviewJson,
-            settings.ComponentBaseConfigsJson,
-            settings.AppConfigJson,
-            ThemeMode: effectiveThemeMode);
-    }
-
-    private static DesignPreviewPayload FromModuleVariant(
-        DesignPreviewPayloadDataSource dataSource,
-        ProjectTreeNode node,
-        string themeMode,
-        DesignPreviewThemeContext theme)
-    {
-        var settings = dataSource.LoadModuleVariant(node);
-        var effectiveThemeMode = EffectiveThemeMode(settings.ConfigJson, themeMode);
-        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
-            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-            DesignPreviewTestValues.Parse(settings.ConfigJson));
         var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
         var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
@@ -261,43 +224,10 @@ internal static class DesignPreviewPayloadFactory
             : selectedThemeMode is "dark" ? "dark" : "light";
     }
 
-    private static DesignPreviewPayload FromComponentClass(
-        DesignPreviewPayloadDataSource dataSource,
-        ProjectTreeNode node,
+    private static DesignPreviewPayload FromComponentSource(
+        DesignPreviewComponentSource settings,
         DesignPreviewThemeContext theme)
     {
-        var settings = dataSource.LoadComponentClass(node);
-        var configJson = settings.ConfigJson;
-        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
-            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-            DesignPreviewTestValues.Parse(configJson));
-        var designPreviewJson = ResolveActionDurationsJson(
-            configJson,
-            theme.TokensJson,
-            DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
-        return new DesignPreviewPayload(
-            "componentClass",
-            settings.Name,
-            configJson,
-            theme.TokensJson,
-            theme.PaletteColors,
-            theme.PaletteNeutralColors,
-            theme.ProjectMediaRoot,
-            theme.IconAssetRoot,
-            theme.IconMappingJson,
-            theme.FontFaces,
-            settings.ComponentType,
-            designPreviewJson,
-            designPreviewJson,
-            settings.ComponentBaseConfigsJson);
-    }
-
-    private static DesignPreviewPayload FromComponentVariant(
-        DesignPreviewPayloadDataSource dataSource,
-        ProjectTreeNode node,
-        DesignPreviewThemeContext theme)
-    {
-        var settings = dataSource.LoadComponentVariant(node);
         var configJson = settings.ConfigJson;
         var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
