@@ -14,26 +14,46 @@ internal static class BehaviorTimingResolver
         IReadOnlyList<JsonObject> ownerFields,
         JsonObject themeTokens)
     {
-        var jsonKey = Text(definition["jsonKey"]);
-        if (owner[jsonKey] is not JsonObject value)
-            throw new InvalidOperationException($"Behavior timing field '{Text(definition["id"])}' must be an object.");
+        var definitionContext = "Behavior timing definition";
+        var fieldId = JsonPath.RequiredString(definition, "id", definitionContext);
+        var jsonKey = JsonPath.RequiredString(definition, "jsonKey", definitionContext);
+        var value = owner[jsonKey] as JsonObject
+            ?? throw new InvalidOperationException(
+                $"Behavior timing field '{fieldId}' must be an object.");
+        var timing = BehaviorTimingValue.Parse(value, $"Behavior timing field '{fieldId}'");
+        if (timing.Mode == "fixed") return timing.FixedFrames;
 
-        var mode = Text(value["mode"]);
-        if (mode == "fixed") return Math.Max(0, Integer(value["fixedFrames"]));
-        if (mode != "natural")
-            throw new InvalidOperationException($"Behavior timing field '{Text(definition["id"])}' has invalid mode '{mode}'.");
-
-        var natural = definition["naturalTiming"] as JsonObject
-            ?? throw new InvalidOperationException($"Behavior timing field '{Text(definition["id"])}' is missing naturalTiming metadata.");
-        var sourceId = Text(natural["sourceFieldId"]);
-        var source = ownerFields.FirstOrDefault((field) => Text(field["id"]) == sourceId)
+        var natural = JsonPath.RequiredObject(
+            definition,
+            "naturalTiming",
+            $"Behavior timing field '{fieldId}'");
+        var sourceId = JsonPath.RequiredString(
+            natural,
+            "sourceFieldId",
+            $"Behavior timing field '{fieldId}' naturalTiming");
+        var source = ownerFields.FirstOrDefault((field) =>
+                JsonString(field, "id", "Behavior timing source definition") == sourceId)
             ?? throw new InvalidOperationException($"Behavior timing source field '{sourceId}' does not exist.");
-        var sourceText = Text(owner[Text(source["jsonKey"])]);
+        var sourceJsonKey = JsonPath.RequiredString(
+            source,
+            "jsonKey",
+            $"Behavior timing source field '{sourceId}'");
+        var sourceText = JsonPath.RequiredString(
+            owner,
+            sourceJsonKey,
+            $"Behavior timing source field '{sourceId}' value",
+            allowEmpty: true);
         return ResolveNaturalFrames(
             sourceText,
-            Text(natural["unit"]),
-            Number(natural["baseFramesPerUnit"]),
-            Text(value["paceToken"]),
+            JsonPath.RequiredString(
+                natural,
+                "unit",
+                $"Behavior timing field '{fieldId}' naturalTiming"),
+            JsonPath.RequiredNumber(
+                natural,
+                "baseFramesPerUnit",
+                $"Behavior timing field '{fieldId}' naturalTiming"),
+            timing.PaceToken,
             themeTokens);
     }
 
@@ -44,6 +64,11 @@ internal static class BehaviorTimingResolver
         string paceToken,
         JsonObject themeTokens)
     {
+        if (!double.IsFinite(baseFramesPerUnit) || baseFramesPerUnit <= 0)
+        {
+            throw new InvalidOperationException(
+                "Behavior timing baseFramesPerUnit must be a positive finite number.");
+        }
         var units = unit switch
         {
             "grapheme" => StringInfo.ParseCombiningCharacters(sourceText).Length,
@@ -52,7 +77,9 @@ internal static class BehaviorTimingResolver
         if (!ThemeNumericTokenCatalog.TryGet(paceToken, out var token)
             || !paceToken.StartsWith("theme.motion.naturalPace.", StringComparison.Ordinal))
             throw new InvalidOperationException($"Behavior timing pace token '{paceToken}' is invalid.");
-        var multiplier = Number(Path(themeTokens, token.Path));
+        var multiplier = RequiredNumber(
+            Path(themeTokens, token.Path),
+            $"Behavior timing pace token '{paceToken}'");
         if (multiplier <= 0) throw new InvalidOperationException($"Behavior timing pace token '{paceToken}' must be positive.");
         return Math.Max(0, (int)Math.Round(units * baseFramesPerUnit * multiplier, MidpointRounding.AwayFromZero));
     }
@@ -64,7 +91,17 @@ internal static class BehaviorTimingResolver
         return current;
     }
 
-    private static string Text(JsonNode? value) => value is JsonValue json && json.TryGetValue<string>(out var text) ? text : "";
-    private static int Integer(JsonNode? value) => value is JsonValue json && json.TryGetValue<int>(out var number) ? number : 0;
-    private static double Number(JsonNode? value) => value is JsonValue json && json.TryGetValue<double>(out var number) ? number : 0;
+    private static string JsonString(JsonObject owner, string key, string context) =>
+        JsonPath.RequiredString(owner, key, context);
+
+    private static double RequiredNumber(JsonNode? value, string context)
+    {
+        if (value is not JsonValue scalar
+            || !scalar.TryGetValue<double>(out var number)
+            || !double.IsFinite(number))
+        {
+            throw new InvalidOperationException($"{context} must resolve to a finite number.");
+        }
+        return number;
+    }
 }

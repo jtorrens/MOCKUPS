@@ -307,3 +307,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner común y sus tres consumidores obligatorios; fallbacks/filtros concretos prohibidos en el facade. |
 | Datos | Sin migración. Las cuatro familias y sus 22 archivos current ya cumplen; base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia ningún font face, asset ni salida válida; un documento dañado deja de producir una familia parcial o tipografía aparentemente válida. |
+
+## Slice 1.21 — Valor y metadata de `BehaviorTiming`
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El value object ya exigía objeto, pero aceptaba cualquier pace token. Los resolvers C# y web convertían `fixedFrames` o `baseFramesPerUnit` ausentes/incorrectos en cero; la UI ocultaba cualquier error como duración calculada ausente y el lector de metadata convertía una definición incompleta en `null`. Startup no comprobaba que la fuente semántica fuera un sibling string exacto. |
+| Owner | `BehaviorTimingValue` común conserva el valor; `RuntimeInputValueKindContract` valida metadata y fuente sibling; `BehaviorTimingResolver`/`behaviorTiming.ts` resuelven el frame exacto sin redefinir defaults. |
+| Cambio mínimo | Mover el value object a Common, exigir pace token del catálogo, metadata natural completa con unit grapheme/rate positiva/source string exacta, y hacer estrictas las dos rutas de resolución y la lectura UI. Zero sigue siendo un fixed duration explícito válido. |
+| Rutas eliminadas | Missing integer/rate → 0, numeric string en web, `naturalTiming` wrong-root → `{}`, metadata incompleta → null, error de cálculo → null y draft inválido → frame 0. |
+| Pruebas | 114/114 escritorio ampliadas y 3 pruebas focales web: valor/root/entero/token, metadata/rate/unit/source, Theme multiplier y cuatro corrupciones SQLite read-only; resolver válido conserva 525 frames. |
+| Enforcement | Owner y consumidores de startup/presentación requeridos; fallbacks concretos prohibidos en escritorio y web. |
+| Datos | Sin migración. Los contratos, Themes y valores current cumplen; `fixedFrames: 0` se conserva como intención explícita. Base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo para datos válidos. Natural/Fix producen las mismas duraciones; solo deja de ocultarse un contrato temporal roto. |

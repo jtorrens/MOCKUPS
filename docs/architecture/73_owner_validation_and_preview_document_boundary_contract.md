@@ -208,6 +208,14 @@ entry, skip a missing path or infer style/weight defaults. Physical asset
 existence remains a separate Preview/resource diagnostic and is never repaired
 while reading persistence.
 
+`BehaviorTiming` values and their declaring Runtime metadata remain one
+temporal contract across editor, owner timeline and web Preview. A value keeps
+its explicit mode, non-negative integer fixed duration and declared natural
+pace token. A natural definition keeps one exact sibling string source,
+supported semantic unit and positive numeric base rate. Invalid or incomplete
+values/metadata do not become duration zero, a missing definition or a
+calculated UI fallback.
+
 ## 6. Failure and diagnostics
 
 The current application uses fail-fast exceptions at internal payload and
@@ -286,6 +294,9 @@ Architecture enforcement must verify:
 - Production Font file entries share one startup/read/projection contract;
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.
+- `BehaviorTiming` values, sibling-source metadata and both desktop/web
+  resolvers reject missing members, wrong scalar shapes and zero-rate/default
+  inference.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,

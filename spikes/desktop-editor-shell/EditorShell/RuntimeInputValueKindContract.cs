@@ -1,6 +1,8 @@
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -107,6 +109,76 @@ internal static class RuntimeInputValueKindContract
                 JsonPath.RequiredString(definition, "pairFirstLabel", owner),
                 JsonPath.RequiredString(definition, "pairSecondLabel", owner)),
             owner);
+    }
+
+    public static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(
+        JsonObject definition,
+        IReadOnlyList<JsonObject>? ownerDefinitions,
+        string owner)
+    {
+        var valueKind = JsonPath.RequiredString(definition, "valueKind", owner);
+        if (!valueKind.Equals(ValueKind.BehaviorTiming.ToString(), StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var natural = JsonPath.RequiredObject(definition, "naturalTiming", owner);
+        var sourceFieldId = JsonPath.RequiredString(natural, "sourceFieldId", $"{owner} naturalTiming");
+        var unit = JsonPath.RequiredString(natural, "unit", $"{owner} naturalTiming");
+        if (!unit.Equals("grapheme", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{owner} naturalTiming unit '{unit}' is not supported.");
+        }
+        var baseFramesPerUnit = JsonPath.RequiredNumber(
+            natural,
+            "baseFramesPerUnit",
+            $"{owner} naturalTiming");
+        if (baseFramesPerUnit <= 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner} naturalTiming baseFramesPerUnit must be positive.");
+        }
+
+        if (ownerDefinitions is not null)
+        {
+            var sources = ownerDefinitions.Where((candidate) =>
+                    ExplicitDefinitionIdentity(candidate, "id") == sourceFieldId
+                    || ExplicitDefinitionIdentity(candidate, "sourceInputId") == sourceFieldId)
+                .Distinct()
+                .ToList();
+            if (sources.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    $"{owner} naturalTiming must reference one exact sibling field '{sourceFieldId}'.");
+            }
+            var sourceValueKind = JsonPath.RequiredString(
+                sources[0],
+                "valueKind",
+                $"{owner} naturalTiming source '{sourceFieldId}'");
+            if (sourceValueKind is not nameof(ValueKind.StringSingleLine)
+                and not nameof(ValueKind.StringMultiline)
+                and not nameof(ValueKind.StringReadOnly))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} naturalTiming source '{sourceFieldId}' must be a string field.");
+            }
+        }
+
+        return new BehaviorTimingDefinition(sourceFieldId, unit, baseFramesPerUnit);
+    }
+
+    public static void ValidateBehaviorTimingDefinitions(
+        IReadOnlyList<JsonObject> definitions,
+        string owner)
+    {
+        for (var index = 0; index < definitions.Count; index++)
+        {
+            _ = ReadBehaviorTimingDefinition(
+                definitions[index],
+                definitions,
+                $"{owner}[{index}]");
+        }
     }
 
     public static JsonNode ParseValue(ValueKind valueKind, string value, string owner) => valueKind switch
@@ -283,6 +355,13 @@ internal static class RuntimeInputValueKindContract
         var bindings = JsonPath.ParseRequiredObject(value, owner);
         _ = RuntimeInputForwardingContract.Labels(bindings);
         return bindings;
+    }
+
+    private static string ExplicitDefinitionIdentity(JsonObject definition, string key)
+    {
+        return definition[key] is JsonValue value && value.TryGetValue<string>(out var identity)
+            ? identity
+            : "";
     }
 
     private static decimal ParseDecimal(string value, string owner)

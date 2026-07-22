@@ -555,6 +555,25 @@ static void RuntimeInputDefaultsUseValueKindOwner()
                 "{\"mode\":\"natural\",\"fixedFrames\":20,\"paceToken\":\"theme.motion.naturalPace.normal\"}"),
             "Test Runtime Input")["mode"]?.GetValue<string>());
 
+    var behaviorSource = Definition("text", "StringSingleLine", "Sample");
+    behaviorSource["id"] = "text";
+    behaviorSource["jsonKey"] = "text";
+    var behaviorTiming = Definition(
+        "behaviorTiming",
+        "BehaviorTiming",
+        "{\"mode\":\"natural\",\"fixedFrames\":20,\"paceToken\":\"theme.motion.naturalPace.normal\"}");
+    behaviorTiming["id"] = "writeOn";
+    behaviorTiming["jsonKey"] = "writeOnTiming";
+    behaviorTiming["naturalTiming"] = new JsonObject
+    {
+        ["sourceFieldId"] = "text",
+        ["unit"] = "grapheme",
+        ["baseFramesPerUnit"] = 7.0,
+    };
+    RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+        [behaviorSource, behaviorTiming],
+        "Test Runtime Inputs");
+
     var projectedCollection = Definition("collection", "StructuredCollection", null);
     projectedCollection["collection"] = new JsonObject { ["id"] = "items" };
     Equal(
@@ -668,10 +687,30 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         "{}",
         "{\"mode\":\"automatic\",\"fixedFrames\":0,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
         "{\"mode\":\"fixed\",\"fixedFrames\":-1,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+        "{\"mode\":\"fixed\",\"fixedFrames\":12,\"paceToken\":\"theme.motion.other\"}",
     })
     {
         Throws<InvalidOperationException>(() => BehaviorTimingValue.Parse(invalid));
     }
+
+    var missingNaturalTiming = behaviorTiming.DeepClone().AsObject();
+    missingNaturalTiming.Remove("naturalTiming");
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+            [behaviorSource, missingNaturalTiming],
+            "Test Runtime Inputs"));
+    var missingSource = behaviorTiming.DeepClone().AsObject();
+    missingSource["naturalTiming"]!["sourceFieldId"] = "missing";
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+            [behaviorSource, missingSource],
+            "Test Runtime Inputs"));
+    var invalidBaseRate = behaviorTiming.DeepClone().AsObject();
+    invalidBaseRate["naturalTiming"]!["baseFramesPerUnit"] = 0;
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+            [behaviorSource, invalidBaseRate],
+            "Test Runtime Inputs"));
 
     AssertRejectedDatabaseIsReadOnly("runtime-boolean-default", (connection) =>
     {
@@ -683,6 +722,24 @@ static void RuntimeInputDefaultsUseValueKindOwner()
     {
         using var command = connection.CreateCommand();
         command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].defaultValue', '{}') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-metadata", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET design_preview_json = json_remove(design_preview_json, '$.collections[0].fields[4].naturalTiming') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-source", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].naturalTiming.sourceFieldId', 'missing') WHERE id = 'module_core_chat'";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-pace", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE module_instances SET content_json = json_set(content_json, '$.messages[0].writeOnTiming.paceToken', 'theme.motion.other') WHERE id = 'module_instance_900f1616432d4f63a97f2a74dd647e08'";
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("runtime-pair-label", (connection) =>
@@ -6176,6 +6233,18 @@ static void NaturalBehaviorTimingUsesGraphemesAndThemePace()
         Object("""{"schemaVersion":2,"tracks":[]}"""),
         1,
         theme));
+    Throws<InvalidOperationException>(() => BehaviorTimingResolver.ResolveNaturalFrames(
+        "text",
+        "grapheme",
+        0,
+        "theme.motion.naturalPace.slow",
+        theme));
+    Throws<InvalidOperationException>(() => BehaviorTimingResolver.ResolveNaturalFrames(
+        "text",
+        "grapheme",
+        7,
+        "theme.motion.naturalPace.slow",
+        Object("""{"motion":{"naturalPace":{"slow":"1.5"}}}""")));
 }
 
 static void TimelineReferenceBandsUseContractDurations()

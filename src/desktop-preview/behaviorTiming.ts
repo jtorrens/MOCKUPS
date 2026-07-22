@@ -1,7 +1,21 @@
-import { asRecord, optionalNumber, optionalString } from "./componentResolverCommon.js";
+import { asRecord, optionalString } from "./componentResolverCommon.js";
+import {
+  requiredNumberValue,
+  requiredPossiblyEmptyString,
+  requiredRecord,
+  requiredString,
+} from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
+
+const NATURAL_PACE_TOKENS = new Set([
+  "theme.motion.naturalPace.verySlow",
+  "theme.motion.naturalPace.slow",
+  "theme.motion.naturalPace.normal",
+  "theme.motion.naturalPace.fast",
+  "theme.motion.naturalPace.veryFast",
+]);
 
 export function resolveBehaviorTimingFrames(
   owner: JsonRecord,
@@ -9,25 +23,42 @@ export function resolveBehaviorTimingFrames(
   ownerFields: JsonRecord[],
   themeTokens: JsonRecord,
 ) {
-  const value = asRecord(owner[optionalString(definition, "jsonKey")]);
-  const mode = optionalString(value, "mode");
-  if (mode === "fixed") return Math.max(0, Math.floor(optionalNumber(value, "fixedFrames", 0)));
-  if (mode !== "natural") throw new Error(`Invalid behavior timing mode '${mode}'.`);
-
-  const natural = asRecord(definition.naturalTiming);
-  const sourceId = optionalString(natural, "sourceFieldId");
-  const source = ownerFields.find((field) => optionalString(field, "id") === sourceId);
-  if (!source) throw new Error(`Missing behavior timing source field '${sourceId}'.`);
-  const unit = optionalString(natural, "unit");
-  if (unit !== "grapheme") throw new Error(`Unsupported natural timing unit '${unit}'.`);
-  const units = textGraphemes(optionalString(owner, optionalString(source, "jsonKey"))).length;
-  const paceToken = optionalString(value, "paceToken");
-  if (!paceToken.startsWith("theme.motion.naturalPace.")) {
+  const fieldId = requiredString(definition, "id", "Behavior timing definition.id");
+  const jsonKey = requiredString(definition, "jsonKey", `Behavior timing '${fieldId}'.jsonKey`);
+  const value = requiredRecord(owner, jsonKey, `Behavior timing '${fieldId}' value`);
+  const mode = requiredString(value, "mode", `Behavior timing '${fieldId}'.mode`);
+  const fixedFrames = requiredInteger(value.fixedFrames, `Behavior timing '${fieldId}'.fixedFrames`);
+  if (fixedFrames < 0) throw new Error(`Behavior timing '${fieldId}'.fixedFrames must be non-negative.`);
+  const paceToken = requiredString(value, "paceToken", `Behavior timing '${fieldId}'.paceToken`);
+  if (!NATURAL_PACE_TOKENS.has(paceToken)) {
     throw new Error(`Invalid natural pace token '${paceToken}'.`);
   }
+  if (mode === "fixed") return fixedFrames;
+  if (mode !== "natural") throw new Error(`Invalid behavior timing mode '${mode}'.`);
+
+  const natural = requiredRecord(definition, "naturalTiming", `Behavior timing '${fieldId}'.naturalTiming`);
+  const sourceId = requiredString(natural, "sourceFieldId", `Behavior timing '${fieldId}'.sourceFieldId`);
+  const sources = ownerFields.filter((field) => optionalString(field, "id") === sourceId);
+  if (sources.length !== 1) throw new Error(`Missing or ambiguous behavior timing source field '${sourceId}'.`);
+  const source = sources[0]!;
+  if (!source) throw new Error(`Missing behavior timing source field '${sourceId}'.`);
+  const unit = requiredString(natural, "unit", `Behavior timing '${fieldId}'.unit`);
+  if (unit !== "grapheme") throw new Error(`Unsupported natural timing unit '${unit}'.`);
+  const sourceJsonKey = requiredString(source, "jsonKey", `Behavior timing source '${sourceId}'.jsonKey`);
+  const sourceText = requiredPossiblyEmptyString(owner, sourceJsonKey, `Behavior timing source '${sourceId}' value`);
+  const units = textGraphemes(sourceText).length;
+  const baseFramesPerUnit = requiredNumberValue(
+    natural.baseFramesPerUnit,
+    `Behavior timing '${fieldId}'.baseFramesPerUnit`,
+  );
+  if (baseFramesPerUnit <= 0) {
+    throw new Error(`Behavior timing '${fieldId}'.baseFramesPerUnit must be positive.`);
+  }
   const multiplier = tokenNumber(themeTokens, paceToken);
-  if (multiplier <= 0) throw new Error(`Natural pace token '${paceToken}' must be positive.`);
-  return Math.max(0, Math.round(units * optionalNumber(natural, "baseFramesPerUnit", 0) * multiplier));
+  if (!Number.isFinite(multiplier) || multiplier <= 0) {
+    throw new Error(`Natural pace token '${paceToken}' must resolve to a positive finite number.`);
+  }
+  return Math.max(0, Math.round(units * baseFramesPerUnit * multiplier));
 }
 
 export function naturalWriteOnFrame(
@@ -65,6 +96,12 @@ function tokenNumber(tokens: JsonRecord, token: string) {
   let current: unknown = tokens;
   for (const segment of path) current = asRecord(current)[segment];
   return typeof current === "number" ? current : Number.NaN;
+}
+
+function requiredInteger(value: unknown, path: string) {
+  const number = requiredNumberValue(value, path);
+  if (Number.isInteger(number)) return number;
+  throw new Error(`Missing integer value ${path}`);
 }
 
 function stableUnit(value: string) {

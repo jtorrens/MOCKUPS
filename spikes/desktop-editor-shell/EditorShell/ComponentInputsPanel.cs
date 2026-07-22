@@ -1681,13 +1681,10 @@ internal sealed class ComponentPreviewInputSession
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
     {
-        if (field["naturalTiming"] is not JsonObject natural) return null;
-        var sourceFieldId = JsonString(natural, "sourceFieldId");
-        var unit = JsonString(natural, "unit");
-        var baseFramesPerUnit = (double)JsonDecimal(natural, "baseFramesPerUnit", 0);
-        return string.IsNullOrWhiteSpace(sourceFieldId) || string.IsNullOrWhiteSpace(unit) || baseFramesPerUnit <= 0
-            ? null
-            : new BehaviorTimingDefinition(sourceFieldId, unit, baseFramesPerUnit);
+        return RuntimeInputValueKindContract.ReadBehaviorTimingDefinition(
+            field,
+            ownerDefinitions: null,
+            "Runtime Input");
     }
 
     private static bool InputIsVisible(JsonObject input, JsonObject config)

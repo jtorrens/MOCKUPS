@@ -2,7 +2,9 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -151,5 +153,6 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
         return row;
     }
 
-    private static int ParseFrames(string value) => int.TryParse(value, out var frames) ? Math.Max(0, frames) : 0;
+    private static int ParseFrames(string value) =>
+        int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 }

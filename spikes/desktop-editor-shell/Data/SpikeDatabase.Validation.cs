@@ -199,13 +199,20 @@ internal sealed partial class SpikeDatabase
             var forwarded = forwardedNode as JsonObject
                 ?? throw InvalidCurrentDatabase(
                     $"{owner} has a non-object forwarding envelope at {path}.{RuntimeInputForwardingContract.StorageKey}");
+            var forwardedDefinitions = new List<JsonObject>(forwarded.Count);
             foreach (var (key, definition) in forwarded)
             {
+                var forwardedDefinition = definition as JsonObject;
                 ValidateRuntimeInputDefinition(
-                    definition as JsonObject,
+                    forwardedDefinition,
                     owner,
                     $"{path}.{RuntimeInputForwardingContract.StorageKey}.{key}");
+                forwardedDefinitions.Add(forwardedDefinition!);
             }
+            ValidateBehaviorTimingDefinitions(
+                forwardedDefinitions,
+                owner,
+                $"{path}.{RuntimeInputForwardingContract.StorageKey}");
         }
 
         foreach (var (key, child) in obj)
@@ -219,12 +226,33 @@ internal sealed partial class SpikeDatabase
         string owner,
         string path)
     {
+        var currentDefinitions = new List<JsonObject>(definitions.Count);
         for (var index = 0; index < definitions.Count; index++)
         {
+            var definition = definitions[index] as JsonObject;
             ValidateRuntimeInputDefinition(
-                definitions[index] as JsonObject,
+                definition,
                 owner,
                 $"{path}[{index}]");
+            currentDefinitions.Add(definition!);
+        }
+        ValidateBehaviorTimingDefinitions(currentDefinitions, owner, path);
+    }
+
+    private void ValidateBehaviorTimingDefinitions(
+        IReadOnlyList<JsonObject> definitions,
+        string owner,
+        string path)
+    {
+        try
+        {
+            RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+                definitions,
+                $"{owner} at {path}");
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw InvalidCurrentDatabase(exception.Message);
         }
     }
 

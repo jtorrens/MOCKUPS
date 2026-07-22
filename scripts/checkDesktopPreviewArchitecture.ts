@@ -4962,15 +4962,66 @@ assertDoesNotContain(
   "runtime reconciliation must not retain a second permissive default parser",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/BehaviorTimingValue.cs",
+  "spikes/desktop-editor-shell/Common/BehaviorTimingValue.cs",
   "catch",
   "Behavior Timing must not catch invalid current values and return a plausible default",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/BehaviorTimingValue.cs",
-  'JsonPath.ParseRequiredObject(json, "Behavior Timing value")',
+  "spikes/desktop-editor-shell/Common/BehaviorTimingValue.cs",
+  "JsonPath.ParseRequiredObject(json, context)",
   "Behavior Timing must require its current object document",
 );
+for (const behaviorTimingMetadataConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+]) {
+  assertContains(
+    behaviorTimingMetadataConsumer,
+    "RuntimeInputValueKindContract.",
+    `${behaviorTimingMetadataConsumer} must consume the strict Behavior Timing definition owner`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "ValidateBehaviorTimingDefinitions(",
+  "Runtime Input definitions must validate Behavior Timing metadata and source ownership",
+);
+for (const forbiddenBehaviorTimingFallback of [
+  'optionalNumber(value, "fixedFrames"',
+  'optionalNumber(natural, "baseFramesPerUnit"',
+  "asRecord(definition.naturalTiming)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/behaviorTiming.ts",
+    forbiddenBehaviorTimingFallback,
+    `web Behavior Timing must not infer ${forbiddenBehaviorTimingFallback}`,
+  );
+}
+assertContains(
+  "src/desktop-preview/behaviorTiming.ts",
+  "!Number.isFinite(multiplier) || multiplier <= 0",
+  "web Behavior Timing must reject missing or non-finite Theme pace values",
+);
+assertContains(
+  "src/desktop-preview/behaviorTiming.ts",
+  "NATURAL_PACE_TOKENS.has(paceToken)",
+  "web Behavior Timing must require one exact declared natural pace token even in Fixed mode",
+);
+for (const forbiddenDesktopBehaviorTimingFallback of [
+  "? Math.Max(0, frames) : 0",
+  "catch\n            {\n                return null;",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+    forbiddenDesktopBehaviorTimingFallback,
+    `desktop Behavior Timing must not coerce an invalid frame (${forbiddenDesktopBehaviorTimingFallback})`,
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+    forbiddenDesktopBehaviorTimingFallback,
+    `desktop Behavior Timing must surface invalid current resolution (${forbiddenDesktopBehaviorTimingFallback})`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "CurrentRuntimeInputKinds",

@@ -246,13 +246,23 @@ Reusable time-based interactions use the dictionary `BehaviorTiming` value kind.
 }
 ```
 
-`fixed` resolves directly to the positive integer `fixedFrames`. `natural` resolves a final integer duration from contract metadata, never from editor-specific logic:
+`fixed` resolves directly to the non-negative integer `fixedFrames` (zero is an
+explicit no-duration value). `natural` resolves a final integer duration from
+contract metadata, never from editor-specific logic:
 
 ```text
 round(semanticUnitCount * baseFramesPerUnit * naturalPaceMultiplier)
 ```
 
 The declaring module owns `semanticUnitCount`, `baseFramesPerUnit`, and the deterministic distribution of its interaction inside the resolved duration. The generic owner timeline consumes only the resulting frame duration. The Theme owns five numeric pace multipliers: `verySlow = 2`, `slow = 1.5`, `normal = 1`, `fast = 0.8`, and `veryFast = 0.6`. Values greater than one deliberately make an interaction longer. These are Theme motion tokens, not animation tracks or renderer timers.
+
+Every `BehaviorTiming` definition declares an object `naturalTiming` with one
+exact sibling string `sourceFieldId`, the supported semantic `unit` and a
+positive finite numeric `baseFramesPerUnit`. Its value always retains an
+explicit valid natural-pace token, including while mode is Fixed. Missing or
+wrong-root values, string numbers, unknown tokens, missing/ambiguous sources
+and incomplete metadata are invalid; desktop and web resolution must not turn
+them into frame zero or an absent calculated duration.
 
 The dictionary keeps `Duration (frames)` visible in both modes. It is editable in Fixed mode and read-only in Natural mode, where it displays the live derived value from the same shared resolver used by the owner timeline. The calculated number is not persisted and changes when its semantic source, module rate, selected pace token, or effective Theme changes.
 

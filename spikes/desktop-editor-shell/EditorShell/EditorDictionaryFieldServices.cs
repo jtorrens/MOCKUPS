@@ -49,21 +49,14 @@ internal sealed class EditorDictionaryFieldServices
         int? ResolveBehaviorTimingFrames(FieldDefinition definition, string json)
         {
             if (definition.BehaviorTiming is not { } timing) return null;
-            try
-            {
-                var value = BehaviorTimingValue.Parse(json);
-                if (value.Mode == "fixed") return value.FixedFrames;
-                return BehaviorTimingResolver.ResolveNaturalFrames(
-                    getFieldValue(timing.SourceFieldId),
-                    timing.Unit,
-                    timing.BaseFramesPerUnit,
-                    value.PaceToken,
-                    ThemeTokens());
-            }
-            catch
-            {
-                return null;
-            }
+            var value = BehaviorTimingValue.Parse(json);
+            if (value.Mode == "fixed") return value.FixedFrames;
+            return BehaviorTimingResolver.ResolveNaturalFrames(
+                getFieldValue(timing.SourceFieldId),
+                timing.Unit,
+                timing.BaseFramesPerUnit,
+                value.PaceToken,
+                ThemeTokens());
         }
         Task OpenRuntimeOverrides(string variantReference, JsonObject overrides, Action<JsonObject> changed)
         {
