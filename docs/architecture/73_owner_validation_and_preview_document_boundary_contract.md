@@ -1,0 +1,173 @@
+# Owner Validation and Preview Document Boundary Contract
+
+Status: normative.
+
+This document governs cleanup phase 1. It extends contracts 24, 33, 34, 35,
+51, 56, 57 and 72 without changing valid current data, persisted payloads,
+Preview primitives or editor interaction.
+
+## 1. Objective
+
+Every current invariant is checked by the layer that owns its meaning. A
+consumer may report the owner's failure, but it must not repair, reinterpret or
+reconstruct the rule.
+
+The target route is:
+
+```text
+validated current persistence
+→ complete prepared payload
+→ strict payload-document boundary
+→ id-only registry
+→ owner resolver/renderable
+→ generic renderer
+```
+
+Phase 1 moves only verified dispersed validation. It does not require a common
+`IValidatable`, a general validation graph, reflection, a new diagnostic
+framework or migration of every existing value object.
+
+## 2. Validation ownership
+
+- repositories validate the current row and root shape they store or write;
+- current document contracts validate their own envelope and domain
+  invariants;
+- `VariantEnvelopeContract` owns complete current Variant entries;
+- Module runtime-document owners validate their declared Runtime values;
+- the common animation/timeline contracts validate owner-relative animation;
+- payload preparation validates and resolves the complete desktop boundary;
+- `renderablePayloadBoundary` validates serialized object roots before routing
+  in the web runtime;
+- component and Module resolvers validate their own semantic fields;
+- asset resolvers validate final fonts, icons and media they materialize;
+- the renderer receives only routed, validated and fully resolved primitives.
+
+The shell may show a validation result or prevent an action whose owner has
+rejected it. `MainWindow`, controllers, registries and the generic renderer do
+not become domain validators.
+
+## 3. Required Preview payload documents
+
+Every routed `DesignPreviewPayload` requires current JSON object roots for:
+
+- `configJson`;
+- `designPreviewJson`;
+- `runtimeContractJson`;
+- `componentBaseConfigsJson`;
+- `appConfigJson`;
+- `instanceJson`;
+- `themeTokensJson`.
+
+Blank, malformed, absent or wrong-root values fail before registry dispatch.
+They are never converted into `{}` by `parseObject`, a resolver, a registry or
+the renderer.
+
+`iconMappingJson` remains optional in the web payload type for existing
+isolated fixtures. Absence is an explicit empty optional mapping; when present,
+it must be a JSON object. Optionality must be declared at the call site or type
+boundary and must not be inferred from a failed parse.
+
+The boundary may parse again when a resolver consumes a document, but every
+such parse remains strict. A downstream parser is a local type conversion, not
+a second policy that can accept data rejected by the boundary.
+
+## 4. Effective Theme mode
+
+`DesignPreviewPayloadFactory` owns the effective Preview Theme mode:
+
+- an explicit Module Variant `appearanceMode: light` resolves to `light`;
+- an explicit Module Variant `appearanceMode: dark` resolves to `dark`;
+- `inherit` resolves from the selected or inherited session/Shot mode;
+- isolated Component payloads without a Module appearance choice use the
+  session mode.
+
+Once `DesignPreviewPayload.ThemeMode` contains `light` or `dark`, that value is
+authoritative. `WebDesignPreviewRenderer` normalizes only the absence of an
+explicit payload mode; it must not let session `dark` override explicit payload
+`light`, nor inspect Module config itself.
+
+## 5. Current JSON and value objects
+
+Persisted C# object and array roots continue through
+`JsonPath.ParseRequiredObject` and `ParseRequiredArray`. Repository or facade
+wrappers may add an owner/path to the error, but must not add a second accepted
+shape.
+
+Value objects may define explicit sentinels. In particular, blank typography
+and `inherited` mean that no local typography object is authored. Any other
+Typography Style value must be a valid JSON object; malformed or wrong-root
+input is not another spelling of inherited state.
+
+Visual fallback policy remains separate from current-document validation. A
+declared missing-media placeholder or unsupported inline preview does not
+authorize an empty current config, Theme, Variant, Runtime contract or
+animation document.
+
+## 6. Failure and diagnostics
+
+The current application uses fail-fast exceptions at internal payload and
+persistence boundaries. Phase 1 keeps that model unless a real consumer needs
+independent diagnostic aggregation.
+
+Errors must identify the document, owner or field being rejected. They must be
+reported through the established Messages/context surfaces and must not be
+caught to produce plausible empty data.
+
+A future collect-all preflight may introduce a minimal serializable diagnostic
+DTO only when editor and export consumers exist. It must not carry controls,
+delegates, windows, view models or navigation state.
+
+## 7. Preserved boundaries
+
+This phase preserves:
+
+- stable ids and complete Variant references;
+- explicit Forward and local Overrides;
+- Design Test Values versus persisted Production payload;
+- exact Shot Actor/Theme/Device context;
+- owner-relative keyframes and stable target ids;
+- complete frame resolution before Preview;
+- generic bridge and renderer;
+- shell-only `MainWindow`;
+- dictionary-owned editable fields;
+- read-only startup and explicit migrations only.
+
+Valid current data must produce the same payload and Preview result. A newly
+visible error is permitted only where invalid current input was previously
+coerced or ignored.
+
+## 8. Enforcement and tests
+
+Architecture enforcement must verify:
+
+- this contract is required by `AGENTS.md` and the architecture index;
+- required Preview object roots are listed at the payload boundary;
+- `previewJsonHelpers.parseObject` contains no blank-to-`{}` or wrong-root-to-
+  `{}` fallback;
+- registries remain id-only and do not validate concrete component fields;
+- the renderer does not parse `appearanceMode` or override explicit payload
+  `ThemeMode`;
+- typography parsing keeps only its declared blank/`inherited` sentinel.
+
+Tests cover every required payload root with valid, malformed and wrong-root
+input; optional icon mapping absence and invalid presence; explicit light,
+explicit dark and inherited mode; strict typography object parsing; and the
+existing read-only database proof.
+
+## 9. Out of scope
+
+This phase does not redesign UX, add export or Render Mode, change payload
+storage, migrate the database, add a general validator framework, change Theme
+selection, redesign visual placeholders or introduce new Component/Module
+semantics.
+
+## 10. Forbidden shortcuts
+
+- returning `{}`, `[]`, `null`, the first record or frame zero after invalid
+  required data;
+- validating component-specific fields in a registry, bridge or renderer;
+- parsing Module `appearanceMode` in the renderer;
+- catching a required payload parse error to retain a plausible render;
+- treating malformed typography as inherited;
+- adding validation that mutates or normalizes current persistence;
+- keeping an old permissive parser beside a new strict parser.

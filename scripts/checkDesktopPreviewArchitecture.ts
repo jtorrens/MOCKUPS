@@ -1168,6 +1168,16 @@ assertContains(
   "the architecture index must include contract 72",
 );
 assertContains(
+  "AGENTS.md",
+  "docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md",
+  "AGENTS must require the owner validation and Preview document boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "73_owner_validation_and_preview_document_boundary_contract.md",
+  "the architecture index must include contract 73",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",
   "external Node processes must share one platform executable resolver",

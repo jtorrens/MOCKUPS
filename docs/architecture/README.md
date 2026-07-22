@@ -143,6 +143,9 @@ this index wins.
 - `72_single_semantic_rule_ownership_contract.md`: evidence, owner selection and
   one-rule-at-a-time procedure for consolidating live semantic duplication in
   cleanup phase 0C without changing behavior or moving later validations.
+- `73_owner_validation_and_preview_document_boundary_contract.md`: owner-driven
+  validation for cleanup phase 1, including strict serialized Preview object
+  roots and authoritative effective Theme mode before generic rendering.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

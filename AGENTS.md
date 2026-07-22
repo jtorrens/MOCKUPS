@@ -46,6 +46,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/70_conversation_message_actor_ownership_contract.md`
 - `docs/architecture/71_active_code_retirement_contract.md`
 - `docs/architecture/72_single_semantic_rule_ownership_contract.md`
+- `docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -241,6 +242,18 @@ Runtime Input definition has an explicit canonical `valueKind`, and the
 dictionary registry must exhaustively register every `ValueKind`. Missing or
 unknown routes, payload documents, kinds and value kinds fail explicitly. See
 `docs/architecture/34_manifest_routing_payload_and_dictionary_contract.md`.
+
+Required serialized Preview documents are validated as current JSON objects at
+the web payload boundary before registry dispatch. Blank, malformed, absent or
+wrong-root required documents must fail and must never become `{}` in
+`previewJsonHelpers`, a resolver, registry or renderer. Optional documents are
+optional only when declared explicitly by the payload contract.
+
+`DesignPreviewPayload.ThemeMode` is authoritative when it contains explicit
+`light` or `dark`. The renderer may use session mode only when the payload has
+no explicit effective mode; it must not parse Module `appearanceMode` or let a
+session mode override an explicit payload mode. See
+`docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md`.
 
 App and Module definition nodes expose Rename as their only lifecycle action.
 Creating, duplicating or deleting either definition belongs to the explicit
