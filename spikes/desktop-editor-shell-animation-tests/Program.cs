@@ -2025,6 +2025,74 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
             database.GetRuntimeComponentVariantName(variantReference, new JsonObject(), []),
             dynamicOptions[0].Label);
 
+        var namedInput = dynamicInput with
+        {
+            OptionsSourceLabelJsonKey = "name",
+            OptionsSourceFirstItemBadge = "Initial",
+        };
+        var namedValues = new JsonObject
+        {
+            ["states"] = new JsonArray
+            {
+                new JsonObject { ["id"] = "state_clock", ["name"] = "Clock" },
+            },
+        };
+        Equal(
+            "Clock · Initial",
+            RuntimeInputDynamicOptions.Resolve(dataSource, namedInput, namedValues)!.Single().Label);
+
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput,
+            new JsonObject()));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput,
+            new JsonObject { ["states"] = new JsonObject() }));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput,
+            new JsonObject { ["states"] = new JsonArray("invalid") }));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput,
+            new JsonObject
+            {
+                ["states"] = new JsonArray(new JsonObject { ["id"] = "state_missing_name" }),
+            }));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput with { OptionsSourceValueJsonKey = "code" },
+            new JsonObject
+            {
+                ["states"] = new JsonArray(new JsonObject { ["id"] = "state_missing_code", ["name"] = "Missing code" }),
+            }));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            namedInput with { OptionsSourceValueJsonKey = "code" },
+            new JsonObject
+            {
+                ["states"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "state_1", ["code"] = "duplicate", ["name"] = "First" },
+                    new JsonObject { ["id"] = "state_2", ["code"] = "duplicate", ["name"] = "Second" },
+                },
+            }));
+        Throws<InvalidOperationException>(() => RuntimeInputDynamicOptions.Resolve(
+            dataSource,
+            dynamicInput,
+            new JsonObject
+            {
+                ["states"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "state_missing_variant",
+                        ["variantReference"] = "component_missing::variant::default",
+                    },
+                },
+            }));
+
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }

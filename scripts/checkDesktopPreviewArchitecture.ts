@@ -448,6 +448,37 @@ for (const runtimeInputOptionConsumer of [
     "Runtime Input and animation editors must reuse one typed options data source",
   );
 }
+for (const strictDynamicOptionOwner of [
+  "RuntimeCollectionDocumentContract.Validate(",
+  "JsonPath.RequiredString(item, input.OptionsSourceValueJsonKey",
+  "JsonPath.RequiredString(item, input.OptionsSourceLabelJsonKey",
+  "valuesSeen.Add(value)",
+  "optionsDataSource.RuntimeComponentVariantName(rawLabel)",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+    strictDynamicOptionOwner,
+    `dynamic Runtime options must keep strict owner rule '${strictDynamicOptionOwner}'`,
+  );
+}
+for (const retiredDynamicOptionFallback of [
+  "if (values[input.OptionsSourceCollectionJsonKey] is not JsonArray items) return [];",
+  ".OfType<JsonObject>()",
+  "catch { label = rawLabel; }",
+  '$"State {index + 1}"',
+  ".Where((option) => !string.IsNullOrWhiteSpace(option.Value))",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+    retiredDynamicOptionFallback,
+    `dynamic Runtime options must not filter or reconstruct current values (${retiredDynamicOptionFallback})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "RuntimeInputDynamicOptions.Resolve(_inputOptionsData, input, item)",
+  "Runtime option action normalization must consume the shared strict option projection",
+);
 assertContains(
   "AGENTS.md",
   "docs/architecture/56_preview_visual_context_data_boundary_contract.md",

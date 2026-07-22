@@ -610,11 +610,16 @@ internal sealed class ComponentPreviewInputSession
                     candidate["id"] is JsonValue value
                     && value.TryGetValue<string>(out var id)
                     && id.Equals(action.CollectionItemId, StringComparison.Ordinal));
-            var validValues = (item?[input.OptionsSourceCollectionJsonKey] as JsonArray)?.OfType<JsonObject>()
-                .Select((candidate) => candidate[input.OptionsSourceValueJsonKey]?.GetValue<string>() ?? "")
-                .Where((value) => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.Ordinal)
-                .ToList() ?? [];
+            if (item is null)
+            {
+                throw new InvalidOperationException(
+                    $"Runtime action '{action.Id}' target item '{action.CollectionItemId}' does not exist.");
+            }
+            var validValues = (RuntimeInputDynamicOptions.Resolve(_inputOptionsData, input, item)
+                    ?? throw new InvalidOperationException(
+                        $"Runtime action '{action.Id}' has no declared option source."))
+                .Select((option) => option.Value)
+                .ToList();
             var targetKey = ActionTargetStorageKey(action);
             var current = _values.GetValueOrDefault(targetKey, "");
             if (validValues.Contains(current)) continue;

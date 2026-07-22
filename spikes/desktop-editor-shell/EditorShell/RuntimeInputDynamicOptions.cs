@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Nodes;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -14,30 +14,47 @@ internal static class RuntimeInputDynamicOptions
     {
         if (input is null) return null;
         if (string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)) return input.Options;
-        if (values[input.OptionsSourceCollectionJsonKey] is not JsonArray items) return [];
-        return items.OfType<JsonObject>().Select((item, index) =>
+        var items = values[input.OptionsSourceCollectionJsonKey] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Runtime option source '{input.OptionsSourceCollectionJsonKey}' must be an array.");
+        RuntimeCollectionDocumentContract.Validate(
+            items,
+            $"Runtime option source '{input.OptionsSourceCollectionJsonKey}'");
+        if (string.IsNullOrWhiteSpace(input.OptionsSourceValueJsonKey)
+            || string.IsNullOrWhiteSpace(input.OptionsSourceLabelJsonKey))
         {
-            var value = item[input.OptionsSourceValueJsonKey]?.GetValue<string>() ?? "";
-            var rawLabel = string.IsNullOrWhiteSpace(input.OptionsSourceLabelJsonKey)
-                ? ""
-                : item[input.OptionsSourceLabelJsonKey]?.GetValue<string>() ?? "";
+            throw new InvalidOperationException(
+                $"Runtime option source '{input.OptionsSourceCollectionJsonKey}' requires explicit value and label keys.");
+        }
+
+        var options = new List<FieldOption>(items.Count);
+        var valuesSeen = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index]!.AsObject();
+            var owner = $"Runtime option source '{input.OptionsSourceCollectionJsonKey}' item at index {index}";
+            var value = JsonPath.RequiredString(item, input.OptionsSourceValueJsonKey, owner);
+            var rawLabel = JsonPath.RequiredString(item, input.OptionsSourceLabelJsonKey, owner);
             var label = rawLabel;
             if (input.OptionsSourceLabelJsonKey.Equals("variantReference", StringComparison.Ordinal)
                 && !string.IsNullOrWhiteSpace(rawLabel))
             {
-                try { label = optionsDataSource.RuntimeComponentVariantName(rawLabel); }
-                catch { label = rawLabel; }
+                label = optionsDataSource.RuntimeComponentVariantName(rawLabel);
             }
-            if (input.OptionsSourceLabelJsonKey.Equals("name", StringComparison.Ordinal)
-                && string.IsNullOrWhiteSpace(label))
+            if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(label))
             {
                 throw new InvalidOperationException(
-                    $"Runtime option '{value}' is missing its required name in '{input.OptionsSourceCollectionJsonKey}'.");
+                    $"{owner} requires non-empty option value and label strings.");
             }
-            if (string.IsNullOrWhiteSpace(label)) label = $"State {index + 1}";
+            if (!valuesSeen.Add(value))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime option source '{input.OptionsSourceCollectionJsonKey}' has duplicate value '{value}'.");
+            }
             if (index == 0 && !string.IsNullOrWhiteSpace(input.OptionsSourceFirstItemBadge))
                 label = $"{label} · {input.OptionsSourceFirstItemBadge}";
-            return new FieldOption(value, label);
-        }).Where((option) => !string.IsNullOrWhiteSpace(option.Value)).ToList();
+            options.Add(new FieldOption(value, label));
+        }
+        return options;
     }
 }

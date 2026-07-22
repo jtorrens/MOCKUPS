@@ -73,6 +73,14 @@ Dynamic options remain a presentation of current structured values. They do
 not create ids, alter ordering, forward Runtime Inputs, change selected state
 or persist collection data.
 
+A declared dynamic source is required current data: its storage member is a
+validated Runtime collection and both value and label keys are explicit. Every
+item must expose non-empty string values at those keys and option values are
+unique. A `variantReference` label resolves through the exact data-source
+lookup; a missing Variant does not fall back to its stored reference text.
+Missing/wrong-root collections, filtered items, positional `State N` labels and
+empty option values are not presentation policies and fail explicitly.
+
 Contract 58 reuses this source for isolated Preview Component Variant options.
 Complete Variant config, effective child runtime contracts and strict reference
 validation remain in that contract's separate typed data boundary.
@@ -99,6 +107,8 @@ Architecture enforcement must verify:
 - it reuses the Actor data boundary for Actor options;
 - Runtime Inputs and Module Instance animation editors reuse one data-source
   instance per editor service;
+- dynamic option presentation and action-target normalization share the same
+  strict collection/value/label resolution;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare required and optional Actor, Palette
@@ -119,6 +129,8 @@ preparation, forwarding, Overrides, tables, assets or animation behavior.
 - storing a display label instead of the stable id/token/reference;
 - accepting a short Variant id as current data;
 - choosing the first Component or Variant when a reference is missing;
+- omitting a malformed dynamic option or inventing its label from array
+  position;
 - building a raw ComboBox outside the dictionary registry;
 - querying persistence from either option factory;
 - moving Runtime Input or Component semantics into a repository, bridge or

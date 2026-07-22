@@ -333,3 +333,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los cuatro consumidores temporales deben usar el owner común; Reflow pertenece al catálogo; los walkers/fallbacks locales y tokens action no declarados quedan prohibidos. |
 | Datos | Sin migración. Themes, acciones, States y Motion current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. La duración válida no cambia. Solo se diferencia la ausencia legítima de selección de sesión de un id/documento temporal current realmente inválido. |
+
+## Slice 1.23 — Proyección de opciones Runtime dinámicas
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Una source collection ausente o con otra raíz se presentaba como cero opciones; items/values dañados se filtraban, labels vacíos se convertían en `State N` por posición y una Variant inexistente se mostraba con su referencia raw. La normalización de target actions repetía otro lector permisivo de esos valores. |
+| Owner | `RuntimeInputDynamicOptions` consume la colección estable y las keys explícitas declaradas; `RuntimeInputOptionsDataSource` resuelve el nombre de una referencia completa. El host de acciones reutiliza esa misma lista tipada. |
+| Cambio mínimo | Exigir array current, items estables, value/label strings no vacíos, valores únicos y lookup exacto de Variant; sustituir el segundo reader del action host por el owner común. El badge del primer item se conserva porque está declarado explícitamente por metadata. |
+| Rutas eliminadas | Source inválida → `[]`, `OfType`/`Where` que omitía entradas, reference rota → texto raw, label vacío → `State {posición}` y extracción duplicada de valores de acción. |
+| Pruebas | 114/114 escritorio: fuente válida con Variant/nombre/badge; source ausente, root/entry incorrectos, value/label ausentes, valor duplicado y Variant rota; lectura completa sigue byte-for-byte read-only. |
+| Enforcement | Owner de colección y strings requerido; filtros/fallbacks/label posicional prohibidos; normalización action debe llamar al resolver común. |
+| Datos | Sin migración. Las opciones dinámicas current ya declaran `alternatives`, `id` y `name`; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Las opciones y selección válidas conservan ids, orden y labels; solo deja de ocultarse un contrato o referencia rota. |

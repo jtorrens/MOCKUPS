@@ -125,6 +125,14 @@ owns both editor serialization and persisted shape validation. Parent-owned or
 undeclared keys do not become Runtime data, and invalid booleans, numbers,
 arrays or semantic objects do not become plausible values.
 
+Declared dynamic Runtime options also preserve that collection owner. Their
+source collection, value key and label key are exact metadata; items remain
+objects with stable ids and option values are unique non-empty strings. The UI
+does not turn a missing collection into no options, filter malformed entries,
+derive a label from position or show a broken Variant reference as its own
+display label. Action-target normalization consumes the same option projection
+instead of maintaining a second permissive reader.
+
 Explicit forwarding keeps one strict envelope through persistence validation,
 desktop payload preparation and the web payload boundary. The optional
 `$forwardedInputs` member and every contained definition are objects; Preview
@@ -276,6 +284,8 @@ Architecture enforcement must verify:
   `ValueKind` owner; no parallel reconciliation parser remains.
 - current Runtime collections and every mutation preserve declared storage
   ownership, array roots and unique stable item ids.
+- dynamic Runtime option presentation and action normalization share one
+  strict source projection without filtering or positional labels.
 - persisted Runtime scalars, collection fields, Test Values and keyframe values
   share exact `ValueKind` serialization and validation.
 - forwarding envelopes and projected child Runtime documents reject wrong
