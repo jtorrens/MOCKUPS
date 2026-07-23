@@ -6960,6 +6960,21 @@ assertContains(
   'validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime")',
   "the web timeline must reject invalid present root retime durations",
 );
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "const trackTargets = new Set<string>();",
+  "the web transient timeline must keep each field/target track address unique",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "if (frames.has(frame))",
+  "the web transient timeline must reject duplicate frames within a track",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "if (frame < previousFrame)",
+  "the web transient timeline must reject out-of-order frames instead of sorting them into plausibility",
+);
 for (const permissiveWebAnimationEnvelope of [
   "records(this.animation.tracks)",
   "records(track?.keyframes)",

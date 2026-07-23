@@ -619,3 +619,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `HashSet<(field,target)>`, `frames.Add` y comparación con frame previo obligatorios en el guard transitorio. |
 | Datos | Sin migración. Los documentos persistidos y payloads current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No se reordena ni modifica animación válida; solo deja de elegirse por posición una dirección contradictoria. |
+
+## Slice 1.45 — Paridad web de identidad de tracks
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El guard web validaba roots y scalars pero permitía los mismos targets y frames ambiguos; `find` y el sort de keyframes decidían cuál usar. |
+| Owner | El timeline web consume el address estable y el frame owner-relative exactos antes de resolver; no normaliza la animación que recibe. |
+| Cambio mínimo | Mantener un set de parejas serializadas sin colisión; exigir frames únicos y orden ascendente en cada track. Tratar target ausente y sentinel vacío como la misma dirección Screen. |
+| Rutas eliminadas | Track duplicado → primero, frame duplicado → orden incidental y lista desordenada → sorted silencioso. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: misma matriz de address/frame y todos los resolvers, actions y tracks current. |
+| Enforcement | Set de targets, `frames.has` y comparación con frame previo obligatorios en el guard web. |
+| Datos | Sin migración. Los payloads current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Preview mantiene el resultado válido y deja de divergir del editor ante el mismo track contradictorio. |

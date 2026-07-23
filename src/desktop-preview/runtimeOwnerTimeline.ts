@@ -589,19 +589,36 @@ function validateFieldTimeline(field: JsonRecord) {
 }
 
 function validateAnimationEnvelope(animation: JsonRecord) {
+  const trackTargets = new Set<string>();
   for (const track of optionalObjectArray(animation, "tracks", "runtime owner animation")) {
-    requiredString(track, "fieldId", "runtime animation track field id");
+    const fieldId = requiredString(track, "fieldId", "runtime animation track field id");
+    let targetId = "";
     if (Object.hasOwn(track, "targetId")) {
-      const targetId = track.targetId;
-      if (typeof targetId !== "string" || (targetId.length > 0 && !targetId.trim())) {
+      if (typeof track.targetId !== "string" || (track.targetId.length > 0 && !track.targetId.trim())) {
         throw new Error("runtime animation track target id must be a stable string or the Screen sentinel");
       }
+      targetId = track.targetId;
     }
+    const trackTarget = JSON.stringify([fieldId, targetId]);
+    if (trackTargets.has(trackTarget)) {
+      throw new Error(`runtime animation contains duplicate track target '${fieldId}'/'${targetId}'`);
+    }
+    trackTargets.add(trackTarget);
+    const frames = new Set<number>();
+    let previousFrame = -1;
     for (const keyframe of optionalObjectArray(track, "keyframes", "runtime animation track")) {
       const frame = requiredNumberValue(keyframe.frame, "runtime animation keyframe frame");
       if (!Number.isInteger(frame) || frame < 0) {
         throw new Error("runtime animation keyframe frame must be a non-negative integer");
       }
+      if (frames.has(frame)) {
+        throw new Error(`runtime animation track '${fieldId}'/'${targetId}' contains duplicate frame ${frame}`);
+      }
+      frames.add(frame);
+      if (frame < previousFrame) {
+        throw new Error(`runtime animation track '${fieldId}'/'${targetId}' keyframes must be ordered by frame`);
+      }
+      previousFrame = frame;
       if (Object.hasOwn(keyframe, "enabled") && typeof keyframe.enabled !== "boolean") {
         throw new Error("runtime animation keyframe enabled must be a boolean when present");
       }

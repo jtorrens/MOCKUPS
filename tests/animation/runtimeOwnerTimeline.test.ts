@@ -132,6 +132,16 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
     { tracks: [{ fieldId: "field", keyframes: [null] }] },
     { tracks: [{ fieldId: "field", keyframes: [{ frame: "0" }] }] },
     { tracks: [{ fieldId: "field", keyframes: [{ frame: 0.5 }] }] },
+    { tracks: [
+      { fieldId: "field", targetId: "item", keyframes: [] },
+      { fieldId: "field", targetId: "item", keyframes: [] },
+    ] },
+    { tracks: [
+      { fieldId: "field", keyframes: [] },
+      { fieldId: "field", targetId: "", keyframes: [] },
+    ] },
+    { tracks: [{ fieldId: "field", keyframes: [{ frame: 0 }, { frame: 0 }] }] },
+    { tracks: [{ fieldId: "field", keyframes: [{ frame: 2 }, { frame: 1 }] }] },
     { tracks: [{ fieldId: "field", keyframes: [{ frame: 0, enabled: "true" }] }] },
     { retime: null },
     { retime: [] },
