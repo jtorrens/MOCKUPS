@@ -4,13 +4,18 @@ import {
   resolvePaletteColor,
 } from "./previewColorHelpers.js";
 import { renderScale } from "./previewGeometryHelpers.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
-import { requiredNumberValue } from "./previewValueHelpers.js";
+import { parseObject } from "./previewJsonHelpers.js";
+import { requiredNumberValue, requiredRecord } from "./previewValueHelpers.js";
 
 export function shadow(payload: DesignPreviewPayload) {
   const root = parseObject(payload.themeTokensJson);
-  const shadowRoot = asRecord(asRecord(root.shadows).default);
-  const color = asRecord(shadowRoot.color);
+  const shadows = requiredRecord(root, "shadows", "theme.shadows");
+  const shadowRoot = requiredRecord(shadows, "default", "theme.shadows.default");
+  const color = requiredRecord(
+    shadowRoot,
+    "color",
+    "theme.shadows.default.color",
+  );
   const colorToken = color.color;
   if (typeof colorToken !== "string" || !colorToken.trim()) {
     throw new Error("Missing theme.shadows.default.color.color");

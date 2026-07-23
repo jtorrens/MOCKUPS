@@ -1029,3 +1029,16 @@ y Overrides por item.
 | Enforcement | Lectura `requiredRecord` fijada y cast anterior prohibido. |
 | Datos | Sin migración. Todos los Styles current no-sentinel ya son objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia tipografía válida ni sentinels; mejora el fallo de un documento inválido. |
+
+## Slice 1.75 — Ruta exacta de Shadow
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Shadow convertía `shadows`, `default` y `color` wrong-root en `{}` mediante casts encadenados. |
+| Owner | Theme posee la definición completa; el helper común proyecta una sombra genérica ya resuelta para cualquier Component. |
+| Cambio mínimo | Requerir los tres objetos antes de offsets, blur, token y alpha. |
+| Rutas eliminadas | `asRecord(asRecord(root.shadows).default)` y `asRecord(shadowRoot.color)`. |
+| Pruebas | Cobertura nueva valida resultado exacto y rechaza array en cada nivel por su path; 106/106 Preview, 116/116 escritorio, fronteras y build pasan. |
+| Enforcement | Los tres `requiredRecord` quedan fijados y los casts anteriores prohibidos. |
+| Datos | Sin migración. Todos los Themes current contienen Shadow completo; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia geometría/color válidos ni el renderer. |

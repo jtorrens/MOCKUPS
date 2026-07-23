@@ -7992,6 +7992,27 @@ assertDoesNotContain(
   "const typography = asRecord(value[key]);",
   "Preview Typography Style must not coerce an invalid root",
 );
+for (const requiredShadowDocument of [
+  'requiredRecord(root, "shadows", "theme.shadows")',
+  'requiredRecord(shadows, "default", "theme.shadows.default")',
+  'requiredRecord(\n    shadowRoot,\n    "color",\n    "theme.shadows.default.color",',
+]) {
+  assertContains(
+    "src/desktop-preview/previewSurfaceHelpers.ts",
+    requiredShadowDocument,
+    `Shadow must require its Theme document path (${requiredShadowDocument})`,
+  );
+}
+for (const permissiveShadowDocument of [
+  "asRecord(asRecord(root.shadows).default)",
+  "asRecord(shadowRoot.color)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewSurfaceHelpers.ts",
+    permissiveShadowDocument,
+    `Shadow must not coerce an invalid Theme document (${permissiveShadowDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
