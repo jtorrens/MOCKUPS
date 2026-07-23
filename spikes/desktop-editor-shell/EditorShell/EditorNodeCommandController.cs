@@ -40,9 +40,9 @@ internal sealed class EditorNodeCommandController
     public async Task SaveCurrentVariant(ProjectTreeNode node)
     {
         var variantName = await Dialogs().PromptText(
-            "Save variant",
+            "New Variant",
             "Variant name",
-            $"{node.Name} variant");
+            $"{node.Name} copy");
         if (string.IsNullOrWhiteSpace(variantName))
         {
             return;
@@ -60,7 +60,7 @@ internal sealed class EditorNodeCommandController
         }
         catch (Exception exception)
         {
-            _messages.Error($"Save variant {node.Name}", exception);
+            _messages.Error($"Create Variant from {node.Name}", exception);
         }
     }
 

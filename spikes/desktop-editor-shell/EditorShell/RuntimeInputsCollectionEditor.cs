@@ -89,26 +89,26 @@ internal sealed class RuntimeInputsCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var owner = ResolveOwner(node);
-        var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-        var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-        var preview = RuntimeInputForwardingContract.EffectivePreview(
-            _applyTransientTestValues(owner.Node, persistedPreview),
-            config);
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
-        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
-        var actions = ComponentPreviewActions.ReadWithEmbedded(
-            preview,
-            _previewInputData.ComponentVariantRuntimeContract);
+        var surface = LoadSurface(node);
+        if (!surface.Owner.IsInstance)
+        {
+            return CreateRuntimeContractCard(surface);
+        }
+
         var valuesTab = new TabItem
         {
-            Header = owner.IsInstance ? "Runtime Values" : "Test Values",
-            Content = CreateTestValuesTab(owner, preview, inputs, collections, actions),
+            Header = "Runtime Values",
+            Content = CreateTestValuesTab(
+                surface.Owner,
+                surface.Preview,
+                surface.Inputs,
+                surface.Collections,
+                surface.Actions),
         };
         var apiTab = new TabItem
         {
             Header = "Runtime API",
-            Content = CreateApiTab(owner, inputs, collections),
+            Content = CreateApiTab(surface.Owner, surface.Inputs, surface.Collections),
         };
         var tabStateKey = $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:runtime-inputs:tab";
         var selectedTabId = _sessionUiState.Selection(tabStateKey);
@@ -123,7 +123,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var card = new InstantEditorCard(
             EditorCardHeader.Create(
                 "Runtime Inputs",
-                $"{EditorUiText.Count(inputs.Count, "input")} · {EditorUiText.Count(collections.Count, "collection")}",
+                $"{EditorUiText.Count(surface.Inputs.Count, "input")} · {EditorUiText.Count(surface.Collections.Count, "collection")}",
                 EditorIcons.CreateSemantic("Runtime Inputs", EditorIcons.Design, 18)),
             new Border { Padding = new Thickness(10), Child = tabs },
             isExpanded: false)
@@ -133,6 +133,72 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         EditorGroupBlock.ApplyContentSeparator(card);
         return card;
+    }
+
+    public Control? CreateDesignTestValuesSurface(ProjectTreeNode node)
+    {
+        var surface = LoadSurface(node);
+        if (surface.Owner.IsInstance)
+        {
+            return null;
+        }
+        if (surface.Inputs.Count == 0
+            && surface.Collections.Count == 0
+            && surface.Actions.Count == 0)
+        {
+            return null;
+        }
+
+        return new ScrollViewer
+        {
+            MaxHeight = 320,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Padding = new Thickness(12),
+            Content = CreateTestValuesTab(
+                surface.Owner,
+                surface.Preview,
+                surface.Inputs,
+                surface.Collections,
+                surface.Actions),
+        };
+    }
+
+    private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
+    {
+        var card = new InstantEditorCard(
+            EditorCardHeader.Create(
+                "Runtime Contract",
+                $"{EditorUiText.Count(surface.Inputs.Count, "input")} · {EditorUiText.Count(surface.Collections.Count, "collection")}",
+                EditorIcons.CreateSemantic("Runtime Contract", EditorIcons.Design, 18)),
+            new Border
+            {
+                Padding = new Thickness(10),
+                Child = CreateApiTab(surface.Owner, surface.Inputs, surface.Collections),
+            },
+            isExpanded: false)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId = "collection:runtime-contract",
+        };
+        EditorGroupBlock.ApplyContentSeparator(card);
+        return card;
+    }
+
+    private RuntimeInputSurface LoadSurface(ProjectTreeNode node)
+    {
+        var owner = ResolveOwner(node);
+        var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
+        var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
+        var preview = RuntimeInputForwardingContract.EffectivePreview(
+            _applyTransientTestValues(owner.Node, persistedPreview),
+            config);
+        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
+        var actions = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            _previewInputData.ComponentVariantRuntimeContract);
+        return new RuntimeInputSurface(owner, preview, inputs, collections, actions);
     }
 
     private Control CreateApiTab(
@@ -201,7 +267,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         header.Children.Add(new TextBlock
         {
-            Text = owner.IsInstance ? "Runtime Values" : "Test Values",
+            Text = owner.IsInstance ? "Runtime Values" : "Temporary Preview data",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -1452,4 +1518,11 @@ internal sealed class RuntimeInputsCollectionEditor
         string DesignPreviewJson,
         Action<string> Save,
         bool IsInstance);
+
+    private sealed record RuntimeInputSurface(
+        RuntimeInputOwner Owner,
+        JsonObject Preview,
+        IReadOnlyList<ComponentInputDefinition> Inputs,
+        IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
+        IReadOnlyList<ComponentPreviewActionDefinition> Actions);
 }

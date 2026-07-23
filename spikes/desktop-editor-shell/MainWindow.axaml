@@ -192,56 +192,74 @@
                         </StackPanel>
                     </Border>
                     <Grid Margin="22"
-                          RowDefinitions="Auto,Auto,*,Auto"
+                          RowDefinitions="Auto,*,Auto"
                           RowSpacing="14">
-                        <ContentControl x:Name="PreviewSetupHost"
-                                        Grid.Row="0">
-                            <StackPanel Spacing="10">
-                                <Grid ColumnDefinitions="*,*,Auto,Auto"
-                                      ColumnSpacing="10">
-                                    <StackPanel Spacing="8">
-                                        <TextBlock FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Text="DEVICE" />
-                                        <editor:EditorInstantComboBox x:Name="PreviewDeviceComboBox"
-                                                                      MinHeight="36"
-                                                                      HorizontalAlignment="Stretch" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1"
-                                                Spacing="8">
-                                        <TextBlock FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Text="THEME" />
-                                        <editor:EditorInstantComboBox x:Name="PreviewThemeComboBox"
-                                                                      MinHeight="36"
-                                                                      HorizontalAlignment="Stretch" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2"
-                                                Spacing="8"
-                                                MinWidth="112">
-                                        <TextBlock FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Text="MODE" />
-                                        <editor:EditorInstantComboBox x:Name="PreviewModeComboBox"
-                                                                      MinHeight="36"
-                                                                      HorizontalAlignment="Stretch" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="3"
-                                                Spacing="8"
-                                                MinWidth="132">
-                                        <TextBlock FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Text="ORIENTATION" />
-                                        <editor:EditorInstantComboBox x:Name="PreviewOrientationComboBox"
-                                                                      MinHeight="36"
-                                                                      HorizontalAlignment="Stretch" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </ContentControl>
-                        <ContentControl x:Name="PreviewControlsHost"
-                                        Grid.Row="1" />
-                        <Grid Grid.Row="2"
+                        <Border Grid.Row="0"
+                                Padding="8"
+                                CornerRadius="12"
+                                Background="#18000000">
+                            <TabControl x:Name="PreviewUtilityTabs"
+                                        HorizontalContentAlignment="Stretch">
+                                <TabItem x:Name="PreviewTestValuesTab"
+                                         Header="Test Values"
+                                         IsVisible="False">
+                                    <ContentControl x:Name="PreviewTestValuesHost"
+                                                    HorizontalContentAlignment="Stretch" />
+                                </TabItem>
+                                <TabItem x:Name="PreviewSetupTab"
+                                         Header="Preview Setup">
+                                    <ContentControl x:Name="PreviewSetupHost">
+                                        <StackPanel Spacing="10">
+                                            <Grid ColumnDefinitions="*,*,Auto,Auto"
+                                                  ColumnSpacing="10">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Text="DEVICE" />
+                                                    <editor:EditorInstantComboBox x:Name="PreviewDeviceComboBox"
+                                                                                  MinHeight="36"
+                                                                                  HorizontalAlignment="Stretch" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1"
+                                                            Spacing="8">
+                                                    <TextBlock FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Text="THEME" />
+                                                    <editor:EditorInstantComboBox x:Name="PreviewThemeComboBox"
+                                                                                  MinHeight="36"
+                                                                                  HorizontalAlignment="Stretch" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2"
+                                                            Spacing="8"
+                                                            MinWidth="112">
+                                                    <TextBlock FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Text="MODE" />
+                                                    <editor:EditorInstantComboBox x:Name="PreviewModeComboBox"
+                                                                                  MinHeight="36"
+                                                                                  HorizontalAlignment="Stretch" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="3"
+                                                            Spacing="8"
+                                                            MinWidth="132">
+                                                    <TextBlock FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Text="ORIENTATION" />
+                                                    <editor:EditorInstantComboBox x:Name="PreviewOrientationComboBox"
+                                                                                  MinHeight="36"
+                                                                                  HorizontalAlignment="Stretch" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </ContentControl>
+                                </TabItem>
+                                <TabItem x:Name="PreviewControlsTab"
+                                         Header="Preview Controls">
+                                    <ContentControl x:Name="PreviewControlsHost" />
+                                </TabItem>
+                            </TabControl>
+                        </Border>
+                        <Grid Grid.Row="1"
                               RowDefinitions="Auto,*"
                               RowSpacing="6">
                             <Border Padding="10,6"
@@ -302,7 +320,7 @@
                                 </Grid>
                             </Border>
                         </Grid>
-                        <Border Grid.Row="3"
+                        <Border Grid.Row="2"
                                 Padding="10,6"
                                 CornerRadius="8"
                                 Background="#14000000">

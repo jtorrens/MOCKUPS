@@ -173,6 +173,10 @@ this index wins.
 - `82_standard_editor_text_input_interaction_contract.md`: shared native-style
   text selection, Pen/Wacom drag adaptation and complete numeric-value
   selection on double-click.
+- `83_design_authoring_context_and_preview_test_values_contract.md`: one
+  explicit Component/Module Variant breadcrumb and selector in the fixed editor
+  header, Design-only temporary Test Values in the horizontal Preview utility
+  tabs and persisted Production Runtime Values in the central editor.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

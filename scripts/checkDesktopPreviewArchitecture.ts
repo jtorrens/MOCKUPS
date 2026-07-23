@@ -7028,6 +7028,106 @@ assertContains(
   "Runtime Inputs tabs must retain their session selection by exact layout class",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "EditorContextVariantSelector",
+  "the shared editor context strip must own the explicit Variant selector presentation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  'Status("Used"',
+  "the shared editor context strip must expose the active Used state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  'Status("Protected"',
+  "the shared editor context strip must expose the active Protected state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  'Status("Locked"',
+  "the shared editor context strip must expose the active Locked state",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "EditorContextSaveState",
+  "the immediate-commit editor must not present a permanent document Saved state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "new FieldOption(variant.Id, variant.Name)",
+  "the header Variant selector must navigate by exact stable Variant node ids",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "new EditorBreadcrumbItem(parent.Name)",
+  "the root Variant breadcrumb must retain its exact Component or Module parent identity",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "new EditorBreadcrumbItem(selected.Name)",
+  "the root Variant breadcrumb must expose the exact active Variant",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  'Text = "New Variant…"',
+  "Variant cloning must be presented as creating a new Variant",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  'x:Name="PreviewTestValuesHost"',
+  "Design Test Values must have a dedicated Preview-panel host",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewTestValuesTab"[\s\S]*?Header="Test Values"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
+  "the upper Preview utility surface must keep the agreed horizontal Test Values, Setup and Controls tab order",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "_collectionCards.CreateDesignTestValues(node)",
+  "the shell must delegate Preview Test Values construction to the shared collection-card factory",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "CreateTestValuesTab",
+  "the shell must not construct Runtime or Test Value controls",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  '"Runtime Contract"',
+  "Design authoring must present its Runtime Contract separately from temporary Preview samples",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  '"Temporary Preview data',
+  "Design Test Values must be visibly identified as temporary Preview data",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  ":preview:utility-tab",
+  "Preview utility tab selection must remain session-only by exact layout class",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  'Header = "Runtime Values"',
+  "Production Module Instance Runtime Values must remain in the central Runtime Inputs editor",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "CreateDesignTestValues(ProjectTreeNode node)",
+  "the shared collection-card factory must own the Design Test Values surface",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateDesignTestValuesSurface(ProjectTreeNode node)",
+  "Design Test Values must expose tab content without creating alternate card chrome",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "new GlassCard",
+  "Preview Setup and Preview Controls must not retain nested card chrome inside their shared tabs",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   '"Interpolation",\n                    ValueKind.OptionToken',
   "keyframe interpolation must use the dictionary field route",

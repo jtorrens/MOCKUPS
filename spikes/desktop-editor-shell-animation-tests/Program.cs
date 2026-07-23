@@ -74,6 +74,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
+    ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
@@ -146,6 +147,38 @@ static void ActorPreviewSurfacesShareInitialsIdentity()
     Equal("JN", ActorIdentityText.Initials("", "  Jorge   Navarro  "));
     Equal("A", ActorIdentityText.Initials("Alex", "Ignored Name"));
     Equal("", ActorIdentityText.Initials("", ""));
+}
+
+static void DesignAuthoringContextExposesExactVariantState()
+{
+    var selectedVariantId = "";
+    var metadata = new EditorContextStripMetadata(
+        [new EditorContextIdentity("Component", "Text Box")],
+        new EditorContextVariantSelector(
+            [
+                new FieldOption("component.text_box::variant::default", "Default"),
+                new FieldOption("component.text_box::variant::search", "Search"),
+            ],
+            "component.text_box::variant::search",
+            (variantId) => selectedVariantId = variantId),
+        2,
+        IsUsed: true,
+        IsProtected: true,
+        IsLocked: true);
+
+    True(metadata.AccessibleText.Contains("Component: Text Box", StringComparison.Ordinal));
+    True(metadata.AccessibleText.Contains("Variant: Search", StringComparison.Ordinal));
+    True(metadata.AccessibleText.Contains("2 overrides", StringComparison.Ordinal));
+    True(metadata.AccessibleText.Contains("Used", StringComparison.Ordinal));
+    True(metadata.AccessibleText.Contains("Protected", StringComparison.Ordinal));
+    True(metadata.AccessibleText.Contains("Locked", StringComparison.Ordinal));
+    True(!metadata.AccessibleText.Contains("Saved", StringComparison.Ordinal));
+
+    metadata.VariantSelector!.Select("component.text_box::variant::default");
+    Equal("component.text_box::variant::default", selectedVariantId);
+
+    var rootVariantMetadata = metadata with { Identities = [] };
+    True(rootVariantMetadata.AccessibleText.StartsWith("Variant: Search", StringComparison.Ordinal));
 }
 
 static void TypographyStyleKeepsOnlyExplicitSentinels()

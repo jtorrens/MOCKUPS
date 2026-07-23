@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -131,8 +132,27 @@ internal sealed class EditorCollectionCardFactory
         return cards;
     }
 
+    public Control? CreateDesignTestValues(ProjectTreeNode node)
+    {
+        if (node.Kind is not ProjectTreeNodeKind.ComponentVariant
+            and not ProjectTreeNodeKind.ModuleVariant
+            and not ProjectTreeNodeKind.Module)
+        {
+            return null;
+        }
+
+        return CreateRuntimeInputsEditor(animationEditor: null)
+            .CreateDesignTestValuesSurface(node);
+    }
+
     private InstantEditorCard CreateRuntimeInputsCard(
         ProjectTreeNode node,
+        ModuleInstanceAnimationEditor? animationEditor)
+    {
+        return CreateRuntimeInputsEditor(animationEditor).Create(node);
+    }
+
+    private RuntimeInputsCollectionEditor CreateRuntimeInputsEditor(
         ModuleInstanceAnimationEditor? animationEditor)
     {
         return new RuntimeInputsCollectionEditor(
@@ -155,6 +175,6 @@ internal sealed class EditorCollectionCardFactory
             _navigateToNode,
             _openEmbeddedContext,
             animationEditor,
-            _reloadAndSelect).Create(node);
+            _reloadAndSelect);
     }
 }

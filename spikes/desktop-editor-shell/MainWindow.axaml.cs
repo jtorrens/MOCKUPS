@@ -15,6 +15,9 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
+    private const string PreviewUtilityTestValuesId = "test-values";
+    private const string PreviewUtilitySetupId = "setup";
+    private const string PreviewUtilityControlsId = "controls";
     private readonly SpikeDatabase _database;
     private readonly CoreFieldValueService _coreFieldValues;
     private readonly RecordClassFieldValueService _recordClassFieldValues;
@@ -55,6 +58,8 @@ public partial class MainWindow : SukiWindow
     private readonly Dictionary<EditorWorkspace, string> _workspaceSelections = [];
     private string _selectedProductionId = "";
     private bool _isUpdatingProductionPicker;
+    private string _previewUtilityTabStateKey = "";
+    private bool _isUpdatingPreviewUtilityTab;
 
     public MainWindow()
         : this(SpikeDatabase.DefaultDatabasePath())
@@ -226,6 +231,18 @@ public partial class MainWindow : SukiWindow
             _inlinePreviews,
             _layoutCards,
             _collectionCards);
+        PreviewUtilityTabs.SelectionChanged += (_, args) =>
+        {
+            if (_isUpdatingPreviewUtilityTab
+                || !ReferenceEquals(args.Source, PreviewUtilityTabs)
+                || string.IsNullOrWhiteSpace(_previewUtilityTabStateKey)
+                || PreviewUtilityTabId(PreviewUtilityTabs.SelectedItem) is not { } tabId)
+            {
+                return;
+            }
+
+            _editorSessionUiState.Select(_previewUtilityTabStateKey, tabId);
+        };
         UsageRefreshButton.Content = new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Horizontal,
@@ -443,6 +460,7 @@ public partial class MainWindow : SukiWindow
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         transaction.Checkpoint("before-editor-candidate");
         _editorContent.Build(editorNode, node);
+        RefreshPreviewAuthoringSurface(node);
         SetEditorRootTitle(editorNode.Name);
         transaction.Checkpoint("after-editor-swap");
         _editorViewState.Restore(node, _editorContent.Cards);
@@ -454,6 +472,44 @@ public partial class MainWindow : SukiWindow
         }
         ApplyUiTextScale();
         _previewController.ScheduleSelectionRefresh();
+    }
+
+    private void RefreshPreviewAuthoringSurface(ProjectTreeNode node)
+    {
+        var content = _workspace == EditorWorkspace.Design
+            ? _collectionCards.CreateDesignTestValues(node)
+            : null;
+        _previewUtilityTabStateKey =
+            $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
+        var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
+        var selectedTab = selectedId switch
+        {
+            PreviewUtilityControlsId => PreviewControlsTab,
+            PreviewUtilitySetupId => PreviewSetupTab,
+            PreviewUtilityTestValuesId when content is not null => PreviewTestValuesTab,
+            _ when content is not null => PreviewTestValuesTab,
+            _ => PreviewSetupTab,
+        };
+
+        _isUpdatingPreviewUtilityTab = true;
+        try
+        {
+            PreviewTestValuesHost.Content = content;
+            PreviewTestValuesTab.IsVisible = content is not null;
+            PreviewUtilityTabs.SelectedItem = selectedTab;
+        }
+        finally
+        {
+            _isUpdatingPreviewUtilityTab = false;
+        }
+    }
+
+    private string? PreviewUtilityTabId(object? selectedTab)
+    {
+        if (ReferenceEquals(selectedTab, PreviewTestValuesTab)) return PreviewUtilityTestValuesId;
+        if (ReferenceEquals(selectedTab, PreviewSetupTab)) return PreviewUtilitySetupId;
+        if (ReferenceEquals(selectedTab, PreviewControlsTab)) return PreviewUtilityControlsId;
+        return null;
     }
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)

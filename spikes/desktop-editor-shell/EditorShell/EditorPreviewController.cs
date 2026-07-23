@@ -7,7 +7,6 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
-using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -593,46 +592,30 @@ internal sealed class EditorPreviewController
         }
 
         previewSetupHost.Content = null;
-        var header = new Grid
+        ToolTip.SetTip(_previewPerformanceDot, "Preview FPS and rendering status");
+        var content = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,Auto"),
             ColumnSpacing = 12,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-        };
-        header.Children.Add(EditorCardHeader.Create(
-            "Preview setup",
-            "Context and component inputs",
-            EditorIcons.CreateSemantic("Preview setup", EditorIcons.Design, 18)));
-
-        var actions = new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 10,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-        };
-        ToolTip.SetTip(_previewPerformanceDot, "Preview FPS and rendering status");
-        actions.Children.Add(_previewPerformanceDot);
-        Grid.SetColumn(actions, 1);
-        header.Children.Add(actions);
-
-        previewSetupHost.Content = new GlassCard
-        {
-            Content = new InstantEditorCard(
-                header,
-                new Border
+            Children =
+            {
+                new StackPanel
                 {
-                    Padding = new Thickness(12, 0, 12, 12),
-                    Child = new StackPanel
+                    Spacing = 0,
+                    Children =
                     {
-                        Spacing = 0,
-                        Children =
-                        {
-                            _productionContextHost,
-                            setupContent,
-                        },
+                        _productionContextHost,
+                        setupContent,
                     },
                 },
-                isExpanded: true),
+            },
+        };
+        Grid.SetColumn(_previewPerformanceDot, 1);
+        content.Children.Add(_previewPerformanceDot);
+        previewSetupHost.Content = new Border
+        {
+            Padding = new Thickness(12),
+            Child = content,
         };
         _previewSetupGrid = _deviceComboBox.Parent?.Parent as Grid;
         _orientationField = _orientationComboBox.Parent as Control;
@@ -804,28 +787,20 @@ internal sealed class EditorPreviewController
         controlsRow.LayoutUpdated += (_, _) => ArrangeTransport(controlsRow.Bounds.Width);
         ArrangeTransport(controlsRow.Bounds.Width);
 
-        previewControlsHost.Content = new GlassCard
+        _shotHeaderTimelineControls.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
+        previewControlsHost.Content = new Border
         {
-            Content = new InstantEditorCard(
-                EditorCardHeader.Create(
-                    "Preview controls",
-                    "Display and reference",
-                    EditorIcons.CreateSemantic("Preview controls", EditorIcons.Design, 18)),
-                new Border
+            Padding = new Thickness(12),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
                 {
-                    Padding = new Thickness(12, 0, 12, 12),
-                    Child = new StackPanel
-                    {
-                        Spacing = 8,
-                        Children =
-                        {
-                            controlsRow,
-                            _referenceSplitControls,
-                        },
-                    },
+                    _shotHeaderTimelineControls,
+                    controlsRow,
+                    _referenceSplitControls,
                 },
-                isExpanded: true,
-                headerTrailing: _shotHeaderTimelineControls),
+            },
         };
         UpdateReferenceControlsVisibility();
     }

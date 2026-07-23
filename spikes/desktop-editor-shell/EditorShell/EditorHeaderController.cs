@@ -64,19 +64,40 @@ internal sealed class EditorHeaderController
     {
         var selected = _selectedNode();
         var productionPath = ProductionPath(selected);
-        var breadcrumbItems = productionPath
-            .Select((node, index) => new EditorBreadcrumbItem(
-                node.Name,
-                index == productionPath.Count - 1 ? null : () => _showNode(node, false)))
-            .ToList();
+        var breadcrumbItems = VariantPath(selected)
+            ?? productionPath
+                .Select((node, index) => new EditorBreadcrumbItem(
+                    node.Name,
+                    index == productionPath.Count - 1 ? null : () => _showNode(node, false)))
+                .ToList();
         EditorBreadcrumbBar.Render(
             _breadcrumbPanel,
             productionPath.Count > 0
                 ? breadcrumbItems
-                : [new EditorBreadcrumbItem(title)],
+                : breadcrumbItems.Count > 0
+                    ? breadcrumbItems
+                    : [new EditorBreadcrumbItem(title)],
             CreateStructureButtonForSelectedComponent());
         SetHeaderActions(CreateHeaderActionsForSelectedComponent());
         SetContextStrip(ContextMetadataForSelection());
+    }
+
+    private static List<EditorBreadcrumbItem>? VariantPath(ProjectTreeNode? selected)
+    {
+        if (selected is not
+            {
+                Kind: ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant,
+                Parent: { } parent,
+            })
+        {
+            return null;
+        }
+
+        return
+        [
+            new EditorBreadcrumbItem(parent.Name),
+            new EditorBreadcrumbItem(selected.Name),
+        ];
     }
 
     private static IReadOnlyList<ProjectTreeNode> ProductionPath(ProjectTreeNode? selected)
@@ -141,20 +162,26 @@ internal sealed class EditorHeaderController
     {
         var selected = _selectedNode();
         if (selected is null) return null;
-        var identities = selected.Kind switch
+        var variantNode = SelectedVariantNode(selected);
+        var identities = variantNode is not null
+            ? []
+            : selected.Kind switch
         {
-            ProjectTreeNodeKind.ComponentVariant when selected.Parent is not null =>
-                new[] { new EditorContextIdentity("Component", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
             ProjectTreeNodeKind.ComponentClass =>
-                new[] { new EditorContextIdentity("Component", selected.Name), new EditorContextIdentity("Variant", _nodeSelection.PreferredVariantNode(selected).Name) },
-            ProjectTreeNodeKind.ModuleVariant when selected.Parent is not null =>
-                new[] { new EditorContextIdentity("Module", selected.Parent.Name), new EditorContextIdentity("Variant", selected.Name) },
+                new[] { new EditorContextIdentity("Component", selected.Name) },
             ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
             ProjectTreeNodeKind.ModuleInstance => [new EditorContextIdentity("Screen", selected.Name)],
             ProjectTreeNodeKind.App => [new EditorContextIdentity("App", selected.Name)],
             _ => [new EditorContextIdentity(EditorUiText.IdentifierLabel(selected.Kind.ToString()), selected.Name)],
         };
-        return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
+        var statusNode = variantNode ?? selected;
+        return new EditorContextStripMetadata(
+            identities,
+            VariantSelectorFor(variantNode),
+            OverrideCount(),
+            statusNode.IsUsed,
+            statusNode.IsProtected,
+            statusNode.IsLocked);
     }
 
     private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activeVariantName)
@@ -162,7 +189,48 @@ internal sealed class EditorHeaderController
         var component = EditorUiText.IdentifierLabel(context.ComponentType);
         var identities = new List<EditorContextIdentity> { new("Component", component) };
         if (!string.IsNullOrWhiteSpace(activeVariantName)) identities.Add(new EditorContextIdentity("Variant", activeVariantName));
-        return new EditorContextStripMetadata(identities, OverrideCount(), EditorContextSaveState.Saved);
+        return new EditorContextStripMetadata(identities, null, OverrideCount());
+    }
+
+    private ProjectTreeNode? SelectedVariantNode(ProjectTreeNode selected)
+    {
+        return selected.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant => selected,
+            ProjectTreeNodeKind.ComponentClass => _nodeSelection.PreferredVariantNode(selected) is { Kind: ProjectTreeNodeKind.ComponentVariant } variant
+                ? variant
+                : null,
+            ProjectTreeNodeKind.Module => _nodeSelection.PreferredModuleVariantNode(selected) is { Kind: ProjectTreeNodeKind.ModuleVariant } variant
+                ? variant
+                : null,
+            _ => null,
+        };
+    }
+
+    private EditorContextVariantSelector? VariantSelectorFor(ProjectTreeNode? selectedVariant)
+    {
+        if (selectedVariant?.Parent is not { } parent)
+        {
+            return null;
+        }
+
+        var variants = parent.Children
+            .Where((child) => child.Kind == selectedVariant.Kind)
+            .ToList();
+        var options = variants
+            .Select((variant) => new FieldOption(variant.Id, variant.Name))
+            .ToList();
+        return new EditorContextVariantSelector(
+            options,
+            selectedVariant.Id,
+            (variantId) =>
+            {
+                var next = variants.FirstOrDefault((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal));
+                if (next is not null && next.Id != selectedVariant.Id)
+                {
+                    _showNode(next, true);
+                }
+            });
     }
 
     private int OverrideCount() => _activeFieldControls.ControlsByFieldId.Values.Count((control) => control.HasLocalOverride);
@@ -205,7 +273,7 @@ internal sealed class EditorHeaderController
                 Children =
                 {
                     CreateHistoryComboBox(moduleVariant),
-                    CreateSaveVariantButton(moduleVariant),
+                    CreateNewVariantButton(moduleVariant),
                 },
             };
         }
@@ -231,7 +299,7 @@ internal sealed class EditorHeaderController
             Children =
             {
                 CreateHistoryComboBox(variantSourceNode),
-                CreateSaveVariantButton(variantSourceNode),
+                CreateNewVariantButton(variantSourceNode),
             },
         };
     }
@@ -277,9 +345,9 @@ internal sealed class EditorHeaderController
         return combo;
     }
 
-    private Button CreateSaveVariantButton(ProjectTreeNode node)
+    private Button CreateNewVariantButton(ProjectTreeNode node)
     {
-        var icon = EditorIcons.CreateSemantic("Save variant", EditorIcons.Add, 15);
+        var icon = EditorIcons.CreateSemantic("New Variant", EditorIcons.Add, 15);
         EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
         var button = new Button
         {
@@ -292,7 +360,7 @@ internal sealed class EditorHeaderController
                     icon,
                     new TextBlock
                     {
-                        Text = "Save variant",
+                        Text = "New Variant…",
                         FontWeight = FontWeight.SemiBold,
                         VerticalAlignment = VerticalAlignment.Center,
                     },
@@ -306,7 +374,7 @@ internal sealed class EditorHeaderController
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
         };
-        ToolTip.SetTip(button, "Save variant");
+        ToolTip.SetTip(button, $"Create a new Variant by cloning {node.Name}.");
         button.Click += async (_, _) => await _saveVariant(node);
         return button;
     }

@@ -56,6 +56,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/80_forward_action_presentation_contract.md`
 - `docs/architecture/81_keyboard_pressed_popup_composition_contract.md`
 - `docs/architecture/82_standard_editor_text_input_interaction_contract.md`
+- `docs/architecture/83_design_authoring_context_and_preview_test_values_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -259,6 +260,18 @@ mouse/touch/keyboard selection, adapt primary Pen drag only at that common
 boundary and declare complete numeric-value double-click selection through the
 shared numeric style. Do not add editor-local selection handlers or restore
 `NumericUpDown` multiple-click interception.
+
+Design authoring context and Preview Test Values additionally follow
+`docs/architecture/83_design_authoring_context_and_preview_test_values_contract.md`.
+The fixed editor header owns one exact Component/Module Variant selector and
+its `Used`, `Protected` and `Locked` states beneath the exact
+`Component/Module › Variant` breadcrumb. Design Test Values are temporary
+Preview data and use the upper Preview utility tabs with Preview Setup and
+Preview Controls; the central Design editor exposes the Runtime Contract.
+Production Module Instance Runtime Values remain persisted instance data in
+the central editor. Do not infer Variant choices, repeat the parent identity in
+the root Variant context strip, show a permanent `Saved` state, or move
+Production payload editing into the Design Preview surface.
 
 ## Hard rule: Text Box Icon Rows are exact structured boundaries
 
