@@ -76,6 +76,30 @@ test("only group incoming messages expose per-message Actor identity", () => {
   assert.equal(conversationMessageActorIdentityVisible("individual", "incoming"), false);
 });
 
+test("Conversation requires its current messages collection", () => {
+  const current = payload(0, [], []);
+  const preview = JSON.parse(current.designPreviewJson) as Record<string, unknown>;
+  delete preview.messages;
+  assert.throws(
+    () => resolveConversationModuleFrame({
+      ...current,
+      designPreviewJson: JSON.stringify(preview),
+    }),
+    /module\.conversation runtime 'messages' is required/,
+  );
+});
+
+test("Conversation rejects an unsupported message direction", () => {
+  assert.throws(
+    () => resolveConversationModuleFrame(payload(0, [], [{
+      id: "m1",
+      direction: "plausible",
+      text: "hello",
+    }])),
+    /unsupported direction 'plausible'/,
+  );
+});
+
 test("Screen-owned header animation uses the Screen frame", () => {
   const resolved = resolveConversationModuleFrame(payload(3, [
     track("headerSubtitle", "", [

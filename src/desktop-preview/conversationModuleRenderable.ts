@@ -3,18 +3,19 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   optionalBoolean,
   optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
+  requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
@@ -54,9 +55,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const config = parseObject(payload.configJson);
   const preview = resolveConversationModuleFrame(payload);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const conversation = {
-    ...asRecord(config.conversation),
-  };
+  const conversation = requiredRecord(config, "conversation", "module config");
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const children: RenderableNode[] = [];
@@ -458,50 +457,44 @@ function optionalBooleanWithFallback(
 }
 
 function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[] {
-  const messages = Array.isArray(preview.messages)
-    ? preview.messages.map(asRecord)
-    : [];
-  if (messages.length > 0) {
-    return messages.map((message) => {
-      const status = asRecord(message.status);
-      return {
-        actor: asRecord(message.actor),
-        state: optionalString(message, "direction") || "incoming",
-        text: optionalString(message, "text"),
-        statusState: optionalString(message, "statusState") || optionalString(status, "deliveryStatus") || "none",
-        statusText: optionalString(message, "statusText") || optionalString(status, "text"),
-        delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
-        writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
-        timelineBodyDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "timelineBodyDurationFrames", 0))),
-        timelineStartFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineStartFrame", 0))),
-        timelineEndFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineEndFrame", 0))),
-        timelineRevealAtFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0))),
-        postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
-        writeOnTrigger: false,
-        writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
-        statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
-        visibleAtFrame: 0,
-        mediaType: messageMediaType(message),
-        mediaSource: optionalString(message, "mediaSource"),
-        viewportSize: optionalString(message, "viewportSize") || "240|160",
-        mediaScale: optionalNumber(message, "mediaScale", 1),
-        mediaOffset: optionalString(message, "mediaOffset") || "0|0",
-        isPlaying: optionalBoolean(message, "isPlaying"),
-        currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
-        durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
-        playbackMode: playbackMode(optionalString(message, "playbackMode")),
-        playDurationFrames: Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 72))),
-        playbackFrame: Math.max(0, Math.floor(optionalNumber(message, "playbackFrame", 0))),
-        isFullScreen: optionalBoolean(message, "isFullScreen"),
-        fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
-        fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
-        controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
-        isTypingIndicator: false,
-      };
-    });
-  }
-
-  return [];
+  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
+  return messages.map((message, index) => {
+    const path = `module.conversation.messages[${index}]`;
+    return {
+      actor: optionalObject(message, "actor", path),
+      state: requiredString(message, "direction", path),
+      text: optionalString(message, "text"),
+      statusState: optionalString(message, "statusState") || "none",
+      statusText: optionalString(message, "statusText"),
+      delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
+      writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
+      timelineBodyDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "timelineBodyDurationFrames", 0))),
+      timelineStartFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineStartFrame", 0))),
+      timelineEndFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineEndFrame", 0))),
+      timelineRevealAtFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0))),
+      postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
+      writeOnTrigger: false,
+      writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
+      statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
+      visibleAtFrame: 0,
+      mediaType: messageMediaType(message),
+      mediaSource: optionalString(message, "mediaSource"),
+      viewportSize: optionalString(message, "viewportSize") || "240|160",
+      mediaScale: optionalNumber(message, "mediaScale", 1),
+      mediaOffset: optionalString(message, "mediaOffset") || "0|0",
+      isPlaying: optionalBoolean(message, "isPlaying"),
+      currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
+      durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
+      playbackMode: playbackMode(optionalString(message, "playbackMode")),
+      playDurationFrames: Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 72))),
+      playbackFrame: Math.max(0, Math.floor(optionalNumber(message, "playbackFrame", 0))),
+      isFullScreen: optionalBoolean(message, "isFullScreen"),
+      fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
+      fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
+      controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
+      isTypingIndicator: false,
+    };
+  });
 }
 
 function visibleMessages(
@@ -646,23 +639,43 @@ function headerNode(
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const subtitle = optionalString(preview, "headerSubtitle");
-  const leftSlot = asRecord(conversation.headerLeftIconRowSlot);
-  const rightSlot = asRecord(conversation.headerRightIconRowSlot);
-  const leftInputs = asRecord(conversation.headerLeftIconRowInputs);
-  const rightInputs = asRecord(conversation.headerRightIconRowInputs);
+  const leftSlot = requiredRecord(
+    conversation,
+    "headerLeftIconRowSlot",
+    "module.conversation",
+  );
+  const rightSlot = requiredRecord(
+    conversation,
+    "headerRightIconRowSlot",
+    "module.conversation",
+  );
+  const leftInputs = requiredRecord(
+    conversation,
+    "headerLeftIconRowInputs",
+    "module.conversation",
+  );
+  const rightInputs = requiredRecord(
+    conversation,
+    "headerRightIconRowInputs",
+    "module.conversation",
+  );
   const leftRow = resolveIconRowComponentFromRecords(
-    mergeComponentDefaults(
-      componentVariantConfig(componentBaseConfigs, "iconRow", requiredString(leftSlot, "variantReference", "module.conversation.headerLeftIconRowSlot.variantReference")),
-      asRecord(leftSlot.overrides),
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      leftSlot,
+      "iconRow",
+      "module.conversation.headerLeftIconRowSlot",
     ),
     leftInputs,
     componentBaseConfigs,
     "module.conversation.header.left",
   );
   const rightRow = resolveIconRowComponentFromRecords(
-    mergeComponentDefaults(
-      componentVariantConfig(componentBaseConfigs, "iconRow", requiredString(rightSlot, "variantReference", "module.conversation.headerRightIconRowSlot.variantReference")),
-      asRecord(rightSlot.overrides),
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      rightSlot,
+      "iconRow",
+      "module.conversation.headerRightIconRowSlot",
     ),
     rightInputs,
     componentBaseConfigs,

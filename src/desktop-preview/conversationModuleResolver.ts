@@ -1,11 +1,11 @@
 import {
-  asRecord,
   optionalNumber,
   optionalString,
   parseObject,
+  requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { optionalObject } from "./previewJsonHelpers.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { naturalWriteOnFrame } from "./behaviorTiming.js";
@@ -28,11 +28,24 @@ export function resolveConversationModuleFrame(payload: DesignPreviewPayload): J
     preview.headerSubtitle,
   ).value;
 
-  if (!Array.isArray(preview.messages)) return preview;
-  preview.messages = preview.messages.map((value) => {
-    const message = { ...asRecord(value) };
-    const targetId = optionalString(message, "id");
-    const direction = optionalString(message, "direction") || "incoming";
+  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
+  preview.messages = messages.map((value, index) => {
+    const message = { ...value };
+    const targetId = requiredString(
+      message,
+      "id",
+      `module.conversation.messages[${index}]`,
+    );
+    const direction = requiredString(
+      message,
+      "direction",
+      `module.conversation.messages[${index}]`,
+    );
+    if (direction !== "incoming" && direction !== "outgoing" && direction !== "system") {
+      throw new Error(
+        `module.conversation.messages[${index}] has unsupported direction '${direction}'`,
+      );
+    }
     const resolve = (fieldId: string, baseValue: unknown) =>
       resolveParameterAnimation(
         animation,

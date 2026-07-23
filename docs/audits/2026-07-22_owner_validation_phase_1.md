@@ -959,3 +959,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Sentinel App, Actor opcional exacto y owners requeridos fijados; casts/predicate tolerantes prohibidos. |
 | Datos | Sin migración. App/Actor current ya usan null u objetos según contrato; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia el owner válido; un App/Actor presente roto deja de parecer ausencia y de activar una fuente alternativa. |
+
+## Slice 1.70 — Documentos exactos de Conversation
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Conversation convertía la config, los mensajes y los documentos del Header wrong-root en `{}`/`[]`; además admitía `incoming` por defecto y una forma anidada retirada de status. |
+| Owner | El Module posee `conversation`; su Runtime contract posee `messages` y la dirección cerrada. Cada Header Icon Row posee un slot completo con Variant y Overrides más sus Inputs. Contract 70 conserva la semántica Actor por dirección. |
+| Cambio mínimo | Exigir config/colección/items e ids estables, validar `incoming/outgoing/system`, mantener Actor resuelto opcional y preparar ambos Header Icon Rows con `embeddedComponentConfig`. |
+| Rutas eliminadas | Retorno silencioso sin mensajes, `map(asRecord)`, fallback de dirección, fallback `message.status` y dos merges locales Variant+Overrides. |
+| Pruebas | Cobertura nueva de colección ausente y dirección desconocida, además de la batería Preview/escritorio completa. |
+| Enforcement | Roots, vocabulario y helper compartido fijados; casts, fallback y merges paralelos prohibidos. |
+| Datos | Sin migración. Los documentos current ya tienen colección, ids/direcciones y slots completos; no existe `message.status` en la base comprometida. Base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia timing, Actor, layout ni Variants válidos; documentos incompletos dejan de producir una conversación plausible. |

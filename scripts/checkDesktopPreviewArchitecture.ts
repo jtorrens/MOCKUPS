@@ -7820,6 +7820,54 @@ for (const permissiveWallpaperDocument of [
     `Wallpaper must not confuse invalid owner documents with absence (${permissiveWallpaperDocument})`,
   );
 }
+for (const requiredConversationDocument of [
+  ["src/desktop-preview/conversationModuleResolver.ts", 'requiredObjectArray(preview, "messages", "module.conversation runtime")'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(config, "conversation", "module config")'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredObjectArray(preview, "messages", "module.conversation runtime")'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerLeftIconRowSlot",'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerRightIconRowSlot",'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerLeftIconRowInputs",'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerRightIconRowInputs",'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'embeddedComponentConfig(\n      componentBaseConfigs,\n      leftSlot,\n      "iconRow",'],
+  ["src/desktop-preview/conversationModuleRenderable.ts", 'embeddedComponentConfig(\n      componentBaseConfigs,\n      rightSlot,\n      "iconRow",'],
+] as const) {
+  assertContains(
+    requiredConversationDocument[0],
+    requiredConversationDocument[1],
+    `${requiredConversationDocument[0]} must require its current Conversation document (${requiredConversationDocument[1]})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/conversationModuleResolver.ts",
+  'direction !== "incoming" && direction !== "outgoing" && direction !== "system"',
+  "Conversation must validate its closed message direction vocabulary",
+);
+for (const permissiveConversationDocument of [
+  "if (!Array.isArray(preview.messages)) return preview;",
+  "preview.messages.map((value) => {\n    const message = { ...asRecord(value) };",
+  "? preview.messages.map(asRecord)",
+  'optionalString(message, "direction") || "incoming"',
+  "asRecord(config.conversation)",
+  "asRecord(conversation.headerLeftIconRowSlot)",
+  "asRecord(conversation.headerRightIconRowSlot)",
+  "asRecord(conversation.headerLeftIconRowInputs)",
+  "asRecord(conversation.headerRightIconRowInputs)",
+  "asRecord(leftSlot.overrides)",
+  "asRecord(rightSlot.overrides)",
+  "asRecord(message.status)",
+  "mergeComponentDefaults(",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/conversationModuleRenderable.ts",
+    permissiveConversationDocument,
+    `Conversation must not keep a permissive document fallback (${permissiveConversationDocument})`,
+  );
+  assertDoesNotContain(
+    "src/desktop-preview/conversationModuleResolver.ts",
+    permissiveConversationDocument,
+    `Conversation frame resolution must not keep a permissive document fallback (${permissiveConversationDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

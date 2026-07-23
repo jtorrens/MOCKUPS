@@ -351,6 +351,16 @@ must contain a wallpaper object. Wrong roots and incomplete present Actors are
 not converted into “no wallpaper”, and the selected owner document remains the
 only source of wallpaper plus Light/Dark mode colors.
 
+Conversation requires its current Module `conversation` object and `messages`
+collection before resolving the owner timeline. Every message is an exact
+object with one stable id and one supported direction; there is no missing-collection or
+`incoming` fallback. The optional resolved Actor object remains separate from
+direction validation so the explicit outgoing/system rules in contract 70 are
+unchanged. Header Icon Row slots and Inputs are required objects, and each slot
+is prepared through the shared embedded Component owner from its full Variant
+reference and local Overrides. Retired nested status shapes are not read as an
+alternative to the current direct message fields.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -659,6 +669,9 @@ Architecture enforcement must verify:
   configs through the shared embedded owner.
 - Wallpaper distinguishes the App null sentinel and absent isolated Actor from
   invalid present owner documents without adding cross-owner fallback.
+- Conversation requires its config/messages/headers, validates the closed
+  direction vocabulary and routes both Header Icon Rows through the shared
+  embedded owner without changing per-message Actor ownership.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope
