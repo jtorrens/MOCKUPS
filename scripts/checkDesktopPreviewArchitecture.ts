@@ -7960,6 +7960,28 @@ for (const permissiveBubbleDocument of [
     `Bubble must not keep a permissive owner or Actor route (${permissiveBubbleDocument})`,
   );
 }
+for (const requiredMotionDocument of [
+  'const raw = requiredRecord(value, key, path);',
+  'const motion = requiredRecord(root, "motion", "theme.motion");',
+  'const transitions = requiredRecord(motion, "transitions", "theme.motion.transitions");',
+  'requiredRecord(\n    transitions,\n    transition,\n    `theme.motion.transitions.${transition}`,',
+]) {
+  assertContains(
+    "src/desktop-preview/previewMotionHelpers.ts",
+    requiredMotionDocument,
+    `Motion must require its authored and Theme timing documents (${requiredMotionDocument})`,
+  );
+}
+for (const permissiveMotionDocument of [
+  "asRecord(value[key])",
+  "asRecord(asRecord(asRecord(root.motion).transitions)[transition])",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewMotionHelpers.ts",
+    permissiveMotionDocument,
+    `Motion must not coerce invalid timing documents (${permissiveMotionDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

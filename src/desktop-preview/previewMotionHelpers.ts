@@ -5,8 +5,8 @@ import type {
 } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { rootPreviewScreenBox } from "./previewGeometryHelpers.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
-import { requiredNumberValue, stringValue } from "./previewValueHelpers.js";
+import { parseObject } from "./previewJsonHelpers.js";
+import { requiredNumberValue, requiredRecord, stringValue } from "./previewValueHelpers.js";
 
 interface MotionTiming {
   durationMs: number;
@@ -144,7 +144,7 @@ export function requiredMotionContract(
   key: string,
   path: string,
 ): ComponentMotionContract {
-  const raw = asRecord(value[key]);
+  const raw = requiredRecord(value, key, path);
   const transition = stringValue(raw.transition);
   const direction = stringValue(raw.direction);
   const bounds = stringValue(raw.bounds);
@@ -170,7 +170,13 @@ export function requiredMotionContract(
 
 function motionTiming(payload: DesignPreviewPayload, transition: string): MotionTiming {
   const root = parseObject(payload.themeTokensJson);
-  const timing = asRecord(asRecord(asRecord(root.motion).transitions)[transition]);
+  const motion = requiredRecord(root, "motion", "theme.motion");
+  const transitions = requiredRecord(motion, "transitions", "theme.motion.transitions");
+  const timing = requiredRecord(
+    transitions,
+    transition,
+    `theme.motion.transitions.${transition}`,
+  );
   return {
     durationMs: requiredNumberValue(timing.durationMs, `theme.motion.${transition}.durationMs`),
     delayMs: requiredNumberValue(timing.delayMs, `theme.motion.${transition}.delayMs`),

@@ -1003,3 +1003,16 @@ La migración estructurada de los Icon Rows internos de Text Box/Text Input Bar
 sigue fuera de este slice: Bubble conserva temporalmente su binding vacío
 actual hasta aprobar el documento con ids estables, Variant completa de Button
 y Overrides por item.
+
+## Slice 1.73 — Rutas exactas de Motion
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El helper común convertía Motion authored, `theme.motion`, `transitions` y el timing seleccionado wrong-root en `{}` antes de fallar por un miembro posterior. |
+| Owner | El Component declara el contrato visual de Motion; Theme posee la tabla exacta de timing por transition. El helper solo calcula progreso/duración tras validar ambos. |
+| Cambio mínimo | Sustituir los cuatro casts encadenados por `requiredRecord` con paths explícitos. |
+| Rutas eliminadas | `asRecord(value[key])` y la cadena triple de `asRecord` del timing Theme. |
+| Pruebas | Cobertura nueva acepta un timing completo y rechaza ausencia, arrays y transition ausente antes del cálculo; 104/104 Preview, 116/116 escritorio, fronteras y build pasan. |
+| Enforcement | Documento authored y los tres niveles Theme fijados; casts tolerantes prohibidos. |
+| Datos | Sin migración. Los Themes y Motions current ya contienen los objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia ningún frame válido; solo precisa el boundary y el error. |

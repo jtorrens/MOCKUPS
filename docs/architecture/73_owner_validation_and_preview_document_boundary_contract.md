@@ -381,6 +381,12 @@ message ownership remains unchanged under contract 70. A truly absent Actor in
 isolated Bubble inspection may still use the deliberate sample Actor, but a
 present wrong-root Actor or Avatar document fails.
 
+Generic Motion resolution requires both its authored Component document and the
+exact Theme timing path `motion.transitions.<transition>`. Missing, array or
+otherwise wrong-root Motion, transitions and selected timing documents fail
+before duration or easing calculation. A valid zero duration/delay remains a
+valid authored number; document failure never becomes an inert animation.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -697,6 +703,8 @@ Architecture enforcement must verify:
 - Bubble requires its root/status/slots, routes child configs through the
   shared owner and resolves visual Actor data only for explicitly visible
   incoming identity.
+- generic Motion requires its authored object and exact Theme transition timing
+  objects before calculating progress or total duration.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope
