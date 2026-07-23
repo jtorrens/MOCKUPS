@@ -1,11 +1,9 @@
 import manifest from "./desktopPreviewManifest.json" with { type: "json" };
 
 export type DesktopPreviewComponentCategory = "system" | "atom" | "component";
-export type DesktopPreviewComponentMigrationStatus = "structural" | "functional";
 
 export interface DesktopPreviewComponentManifestEntry {
   category: DesktopPreviewComponentCategory;
-  migrationStatus: DesktopPreviewComponentMigrationStatus;
   contract: string;
   resolver: string;
   renderable: string;

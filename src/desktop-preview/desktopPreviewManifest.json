@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "components": {
     "label": {
       "category": "atom",
-      "migrationStatus": "functional",
       "contract": "./labelComponentContract",
       "resolver": "./labelComponentResolver",
       "renderable": "./labelComponentRenderable",
@@ -11,7 +10,6 @@
     },
     "surface": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./surfaceComponentContract",
       "resolver": "./surfaceComponentResolver",
       "renderable": "./surfaceComponentRenderable",
@@ -19,7 +17,6 @@
     },
     "cursor": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./cursorComponentContract",
       "resolver": "./cursorComponentResolver",
       "renderable": "./cursorComponentRenderable",
@@ -27,7 +24,6 @@
     },
     "textBox": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./textBoxComponentContract",
       "resolver": "./textBoxComponentResolver",
       "renderable": "./textBoxComponentRenderable",
@@ -35,7 +31,6 @@
     },
     "iconRow": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./iconRowComponentContract",
       "resolver": "./iconRowComponentResolver",
       "renderable": "./iconRowComponentRenderable",
@@ -43,7 +38,6 @@
     },
     "iconBar": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./iconBarComponentContract",
       "resolver": "./iconBarComponentResolver",
       "renderable": "./iconBarComponentRenderable",
@@ -51,7 +45,6 @@
     },
     "componentStack": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./componentStackComponentContract",
       "resolver": "./componentStackComponentResolver",
       "renderable": "./componentStackComponentRenderable",
@@ -59,7 +52,6 @@
     },
     "collectionStack": {
       "category": "atom",
-      "migrationStatus": "structural",
       "contract": "./collectionStackComponentContract",
       "resolver": "./collectionStackComponentResolver",
       "renderable": "./collectionStackComponentRenderable",
@@ -67,7 +59,6 @@
     },
     "badge": {
       "category": "atom",
-      "migrationStatus": "functional",
       "contract": "./badgeComponentContract",
       "resolver": "./badgeComponentResolver",
       "renderable": "./badgeComponentRenderable",
@@ -75,7 +66,6 @@
     },
     "notification": {
       "category": "component",
-      "migrationStatus": "structural",
       "contract": "./notificationComponentContract",
       "resolver": "./notificationComponentResolver",
       "renderable": "./notificationComponentRenderable",
@@ -83,7 +73,6 @@
     },
     "notifications": {
       "category": "component",
-      "migrationStatus": "structural",
       "contract": "./notificationsComponentContract",
       "resolver": "./notificationsComponentResolver",
       "renderable": "./notificationsComponentRenderable",
@@ -91,7 +80,6 @@
     },
     "codeIndicator": {
       "category": "atom",
-      "migrationStatus": "functional",
       "contract": "./codeIndicatorComponentContract",
       "resolver": "./codeIndicatorComponentResolver",
       "renderable": "./codeIndicatorComponentRenderable",
@@ -99,7 +87,6 @@
     },
     "avatar": {
       "category": "component",
-      "migrationStatus": "functional",
       "contract": "./avatarComponentContract",
       "resolver": "./avatarComponentResolver",
       "renderable": "./avatarComponentRenderable",
@@ -107,7 +94,6 @@
     },
     "button": {
       "category": "atom",
-      "migrationStatus": "functional",
       "contract": "./buttonComponentContract",
       "resolver": "./buttonComponentResolver",
       "renderable": "./buttonComponentRenderable",
@@ -115,7 +101,6 @@
     },
     "audio": {
       "category": "component",
-      "migrationStatus": "functional",
       "contract": "./audioComponentContract",
       "resolver": "./audioComponentResolver",
       "renderable": "./audioComponentRenderable",
@@ -123,7 +108,6 @@
     },
     "textInputBar": {
       "category": "system",
-      "migrationStatus": "structural",
       "contract": "./textInputBarComponentContract",
       "resolver": "./textInputBarComponentResolver",
       "renderable": "./textInputBarComponentRenderable",
@@ -131,7 +115,6 @@
     },
     "keyboard": {
       "category": "system",
-      "migrationStatus": "structural",
       "contract": "./keyboardComponentContract",
       "resolver": "./keyboardComponentResolver",
       "renderable": "./keyboardComponentRenderable",
@@ -139,7 +122,6 @@
     },
     "keypad": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./keypadComponentContract",
       "resolver": "./keypadComponentResolver",
       "renderable": "./keypadComponentRenderable",
@@ -147,7 +129,6 @@
     },
     "fingerprint": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./fingerprintComponentContract",
       "resolver": "./fingerprintComponentResolver",
       "renderable": "./fingerprintComponentRenderable",
@@ -155,7 +136,6 @@
     },
     "faceRecognition": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./faceRecognitionComponentContract",
       "resolver": "./faceRecognitionComponentResolver",
       "renderable": "./faceRecognitionComponentRenderable",
@@ -163,7 +143,6 @@
     },
     "drawPassword": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./drawPasswordComponentContract",
       "resolver": "./drawPasswordComponentResolver",
       "renderable": "./drawPasswordComponentRenderable",
@@ -171,7 +150,6 @@
     },
     "password": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./passwordComponentContract",
       "resolver": "./passwordComponentResolver",
       "renderable": "./passwordComponentRenderable",
@@ -179,7 +157,6 @@
     },
     "media": {
       "category": "component",
-      "migrationStatus": "structural",
       "contract": "./mediaComponentContract",
       "resolver": "./mediaComponentResolver",
       "renderable": "./mediaComponentRenderable",
@@ -187,7 +164,6 @@
     },
     "bubble": {
       "category": "component",
-      "migrationStatus": "structural",
       "contract": "./bubbleComponentContract",
       "resolver": "./bubbleComponentResolver",
       "renderable": "./bubbleComponentRenderable",
@@ -195,7 +171,6 @@
     },
     "status_bar": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./statusBarComponentContract",
       "resolver": "./statusBarComponentResolver",
       "renderable": "./statusBarComponentRenderable",
@@ -203,7 +178,6 @@
     },
     "navigation_bar": {
       "category": "system",
-      "migrationStatus": "functional",
       "contract": "./navigationBarComponentContract",
       "resolver": "./navigationBarComponentResolver",
       "renderable": "./navigationBarComponentRenderable",

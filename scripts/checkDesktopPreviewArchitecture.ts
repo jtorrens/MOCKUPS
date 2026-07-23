@@ -3088,6 +3088,32 @@ const filesystemAllowedPreviewFiles = new Set([
 
 const manifestEntries = Object.entries(desktopPreviewComponents);
 const moduleManifestEntries = Object.entries(desktopPreviewModules);
+assertContains(
+  "src/desktop-preview/desktopPreviewManifest.json",
+  '"schemaVersion": 2',
+  "the current desktop Preview manifest must use schema version 2",
+);
+for (const currentManifestOwner of [
+  "src/desktop-preview/desktopPreviewManifest.json",
+  "src/desktop-preview/desktopPreviewComponents.ts",
+  "spikes/desktop-editor-shell/Common/DesktopPreviewManifest.cs",
+]) {
+  assertDoesNotContain(
+    currentManifestOwner,
+    "migrationStatus",
+    "the current Preview manifest must not carry inert migration state",
+  );
+}
+assertContains(
+  "docs/architecture/README.md",
+  "Concrete Component and Module behavior is catalogued by the current",
+  "the architecture index must distinguish cross-cutting documentation from executable owner behavior",
+);
+assertContains(
+  "docs/architecture/preview_rendering.md",
+  "complete executable catalog of current Preview owners",
+  "Preview documentation must identify the manifest as the complete executable owner catalog",
+);
 
 function moduleFile(entry: DesktopPreviewComponentManifestEntry, kind: "resolver" | "renderable") {
   return `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
@@ -3210,12 +3236,6 @@ for (const [componentClass, entry] of manifestEntries) {
     addViolation(
       "src/desktop-preview/desktopPreviewManifest.json",
       `component "${componentClass}" has unsupported category "${entry.category}"`,
-    );
-  }
-  if (!["functional", "structural"].includes(entry.migrationStatus)) {
-    addViolation(
-      "src/desktop-preview/desktopPreviewManifest.json",
-      `component "${componentClass}" has unsupported migration status "${entry.migrationStatus}"`,
     );
   }
   if (new Set(entry.embeds).size !== entry.embeds.length) {

@@ -27,6 +27,12 @@ It includes:
 - architecture enforcement;
 - desktop application build.
 
+Architecture enforcement treats the Preview manifest as the complete executable
+Component and Module catalog. It checks exact owner files, registry routes,
+declared embedded dependencies and committed database parity. The manifest is a
+current contract rather than a migration ledger; inert migration-state fields
+are rejected.
+
 The clean-checkout gate is:
 
 ```text

@@ -16,7 +16,6 @@ internal enum DesktopPreviewComponentCategory
 
 internal sealed record DesktopPreviewComponentManifestEntry(
     [property: JsonPropertyName("category")] string Category,
-    [property: JsonPropertyName("migrationStatus")] string MigrationStatus,
     [property: JsonPropertyName("contract")] string Contract,
     [property: JsonPropertyName("resolver")] string Resolver,
     [property: JsonPropertyName("renderable")] string Renderable,
@@ -65,7 +64,7 @@ internal static class DesktopPreviewManifest
             ?? throw new InvalidOperationException($"Embedded desktop preview manifest '{ResourceName}' is missing.");
         var manifest = JsonSerializer.Deserialize<DesktopPreviewManifestDocument>(stream)
             ?? throw new InvalidDataException("Desktop preview manifest is empty.");
-        if (manifest.SchemaVersion != 1)
+        if (manifest.SchemaVersion != 2)
         {
             throw new InvalidDataException($"Unsupported desktop preview manifest schema {manifest.SchemaVersion}.");
         }

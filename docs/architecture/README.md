@@ -2,9 +2,17 @@
 
 Status: normative.
 
-This directory contains the complete active documentation set. Each rule has
-one canonical owner. When implementation changes an architectural or
-functional rule, update its owning document in the same revision.
+This directory contains the complete active documentation set for cross-cutting
+architecture and product rules. Each such rule has one canonical document
+owner. Concrete Component and Module behavior is catalogued by the current
+Preview manifest and owned by its declared contract, resolver, renderable and
+focused characterization tests, as defined in `preview_rendering.md`.
+
+When implementation changes a cross-cutting architectural or functional rule,
+update its owning document in the same revision. When it changes concrete
+Component or Module behavior, update the declared owner files and their focused
+tests; update active documentation as well only when the cross-cutting contract
+changes.
 
 ## Mandatory documents
 

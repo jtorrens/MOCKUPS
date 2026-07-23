@@ -70,6 +70,9 @@ error. Optionality exists only when declared by the payload contract.
 
 `src/desktop-preview/desktopPreviewManifest.json` is the current registry of
 Component and Module identity, category, entrypoint and embedded dependencies.
+It is the complete executable catalog of current Preview owners, not a migration
+ledger. The current schema contains only fields with an observable routing or
+ownership consequence.
 
 Registries:
 
@@ -79,6 +82,23 @@ Registries:
 
 They do not perform forwarding, defaults, config merging, token resolution,
 layout, renderable construction or fallback presentation.
+
+## Concrete behavior authority
+
+For every manifest entry, concrete behavior has one executable owner chain:
+
+- the contract owns required inputs and accepted current shapes;
+- the resolver owns validation, semantic resolution, defaults and timing state;
+- the renderable owns composition and final generic geometry;
+- `embeds` owns the permitted concrete child dependencies;
+- focused characterization tests own the observable examples and edge cases.
+
+The active documents specify rules shared across owners. They do not duplicate a
+hand-maintained per-Component catalog that could drift from the executable
+manifest. Architecture validation requires every manifest identity to have its
+declared owner files, exact registry route, permitted dependency edges and
+committed database parity. A behavior change is incomplete until its focused
+tests change in the same revision.
 
 ## Component and Module ownership
 
