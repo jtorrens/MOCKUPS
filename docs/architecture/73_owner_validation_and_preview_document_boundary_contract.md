@@ -229,6 +229,13 @@ member. This structural rule does not choose between two clock fields or alter
 the owner-relative timing formulas; clock authority remains a separate
 contract decision.
 
+Component Stack transition-exit discovery is a projection of that same
+validated transient animation document. It may order distinct event frames
+from newest to oldest to calculate currently exiting States, but it must not
+filter malformed tracks/keyframes, coerce their frames or maintain a second
+animation grammar. Its event traversal therefore consumes the shared owner and
+the exact object-array readers before applying Component Stack semantics.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -501,6 +508,9 @@ Architecture enforcement must verify:
 - Preview frame-state resolvers distinguish absent instance `context` and
   `animation` members from present wrong-root values without changing clock
   authority or owner-relative formulas.
+- Component Stack exit-event projection consumes the shared transient
+  animation owner and exact keyframe scalars; its descending event traversal is
+  not a document-normalization fallback.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

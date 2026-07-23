@@ -139,6 +139,25 @@ test("Component Stack distinguishes absent instance members from invalid present
   }
 });
 
+test("Component Stack consumes one exact transient animation document", () => {
+  const source = payload([alternative("clock", "stub::variant::clock", true)]);
+  for (const animation of [
+    { tracks: null },
+    { tracks: [null] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: null }] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: [null] }] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: [{ frame: "0", value: true }] }] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: [{ frame: 0, value: true, enabled: "true" }] }] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: [{ frame: 0 }] }] },
+    { tracks: [{ fieldId: "active", targetId: "clock", keyframes: [{ frame: 0, value: true, interpolation: "unknown" }] }] },
+  ]) {
+    assert.throws(() => resolveComponentStackComponent({
+      ...source,
+      instanceJson: JSON.stringify({ animation }),
+    }));
+  }
+});
+
 test("an explicit empty Replace state clears the slot", () => {
   const resolved = resolveComponentStackComponent(payload([
     alternative("clock", "stub::variant::clock", false),

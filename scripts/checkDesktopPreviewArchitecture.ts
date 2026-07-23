@@ -7158,6 +7158,38 @@ assertDoesNotContain(
   "Component Stack transitions must not keep a second tolerant instance context reader",
 );
 assertContains(
+  "src/desktop-preview/componentStackComponentResolver.ts",
+  "validateTransientAnimationDocument(animation);",
+  "Component Stack exit events must consume the shared transient animation owner",
+);
+assertContains(
+  "src/desktop-preview/componentStackComponentResolver.ts",
+  'optionalObjectArray(animation, "tracks", "Component Stack animation")',
+  "Component Stack exit events must read exact animation track objects",
+);
+assertContains(
+  "src/desktop-preview/componentStackComponentResolver.ts",
+  'optionalObjectArray(track, "keyframes", `Component Stack active track[${index}]`)',
+  "Component Stack exit events must read exact keyframe objects",
+);
+assertContains(
+  "src/desktop-preview/componentStackComponentResolver.ts",
+  'requiredNumberValue(keyframe.frame, "Component Stack active keyframe frame")',
+  "Component Stack exit events must preserve validated numeric frames",
+);
+for (const permissiveComponentStackAnimationReader of [
+  "Array.isArray(animation.tracks) ? animation.tracks : []",
+  ".map(asRecord)",
+  "Array.isArray(track.keyframes) ? track.keyframes.map(asRecord) : []",
+  "Math.max(0, Math.floor(Number(keyframe.frame) || 0))",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/componentStackComponentResolver.ts",
+    permissiveComponentStackAnimationReader,
+    `Component Stack exit events must not normalize animation data (${permissiveComponentStackAnimationReader})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

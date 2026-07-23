@@ -1,7 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveComponentCollectionItem } from "./componentCollectionResolverCommon.js";
 import {
-  asRecord,
   optionalString,
   parseObject,
   requiredNumber,
@@ -9,7 +8,9 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
+import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
+import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
+import { requiredNumberValue } from "./previewValueHelpers.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import type {
   ComponentStackAlternativeContract,
@@ -208,12 +209,12 @@ function visibleAlternativesWithExits(
   const desired = visibleAlternatives(alternatives);
   const desiredIds = new Set(desired.map((item) => item.id));
   const byId = new Map(alternatives.map((item) => [item.id, item]));
-  const eventFrames = (Array.isArray(animation.tracks) ? animation.tracks : [])
-    .map(asRecord)
+  validateTransientAnimationDocument(animation);
+  const eventFrames = optionalObjectArray(animation, "tracks", "Component Stack animation")
     .filter((track) => optionalString(track, "fieldId") === "active" && byId.has(optionalString(track, "targetId")))
-    .flatMap((track) => Array.isArray(track.keyframes) ? track.keyframes.map(asRecord) : [])
+    .flatMap((track, index) => optionalObjectArray(track, "keyframes", `Component Stack active track[${index}]`))
     .filter((keyframe) => keyframe.enabled !== false)
-    .map((keyframe) => Math.max(0, Math.floor(Number(keyframe.frame) || 0)))
+    .map((keyframe) => requiredNumberValue(keyframe.frame, "Component Stack active keyframe frame"))
     .filter((eventFrame) => eventFrame <= frame)
     .sort((a, b) => b - a);
   const exiting: ComponentStackAlternativeContract[] = [];

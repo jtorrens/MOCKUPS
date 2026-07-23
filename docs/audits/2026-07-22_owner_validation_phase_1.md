@@ -723,3 +723,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los cuatro consumers deben usar `optionalObject`; las tres formas tolerantes retiradas quedan prohibidas. |
 | Datos | Sin migración. Los payloads current ya contienen objetos válidos o ausencia estructural; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. Solo deja de confundirse un envelope roto con ausencia legítima. La autoridad pendiente de `localFrame` queda explícitamente fuera de este slice. |
+
+## Slice 1.53 — Proyección exacta de eventos de salida en Component Stack
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La interpolación ya usaba el owner único de animación, pero el recorrido que mantiene States salientes repetía su propio parser: roots incorrectas parecían listas vacías, entries no objeto parecían `{}` y frames inválidos se convertían en cero. |
+| Owner | `transientAnimationDocument` valida el documento completo; Component Stack solo proyecta los frames de tracks `active` para decidir qué salida sigue visible. |
+| Cambio mínimo | Validar el mismo objeto, leer tracks/keyframes con los readers exactos y exigir el frame numérico ya validado. Se conserva el orden descendente de eventos porque es semántica de evaluación de salidas, no normalización del documento. |
+| Rutas eliminadas | `Array.isArray(...)?...:[]`, `map(asRecord)` y `Number(frame) || 0` dentro de la proyección de eventos. |
+| Pruebas | 96/96 Preview: roots/entries, frame, enabled, value e interpolation dañados; transiciones Replace/Overlay, actions y salidas válidas conservan sus frames. |
+| Enforcement | Owner compartido y readers exactos obligatorios en Component Stack; los tres patrones tolerantes retirados quedan prohibidos. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia una animación válida ni el orden de salida; solo se elimina un segundo significado para un documento incorrecto. |
