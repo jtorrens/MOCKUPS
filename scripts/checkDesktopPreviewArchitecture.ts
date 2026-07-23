@@ -6846,6 +6846,21 @@ assertContains(
   "the web owner timeline must reject a present invalid collections envelope",
 );
 assertContains(
+  "src/desktop-preview/previewJsonHelpers.ts",
+  "export function optionalObjectArray(",
+  "web payload consumers must share one strict optional object-array boundary",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'import { isRecord, optionalObjectArray } from "./previewJsonHelpers.js";',
+  "the web owner timeline must consume the shared strict object-array boundary",
+);
+assertDoesNotContain(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "function optionalObjectArray(",
+  "the web owner timeline must not maintain a divergent local object-array reader",
+);
+assertContains(
   "src/desktop-preview/runtimeOwnerTimeline.ts",
   'requiredString(item, "id", `runtime owner collection \'${key}\' item id`)',
   "the web owner timeline must bind collection owners by their stable ids",

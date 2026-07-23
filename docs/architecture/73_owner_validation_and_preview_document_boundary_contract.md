@@ -224,6 +224,12 @@ presence for direct, embedded and projected Runtime data; a malformed Preview
 document cannot therefore produce a different plausible duration from the
 desktop editor.
 
+The strict optional array-of-objects reader is a shared Preview JSON boundary,
+not a timeline-local convention. Every web payload consumer that adopts this
+shape must preserve structural absence as an empty optional collection while
+rejecting a present wrong root or any non-object entry. Consumers must not
+reintroduce local filtering readers with subtly different acceptance rules.
+
 An animation owner with no authored data may still supply an empty transient
 object. If tracks, keyframes or retime are present, the desktop timeline
 validates their calculation envelope before using it: no wrong array/object

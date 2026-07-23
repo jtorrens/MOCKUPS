@@ -645,3 +645,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Readers y arrays deben distinguir `ContainsKey`; seis patrones concretos de null-as-absence quedan prohibidos. |
 | Datos | Sin migración. Las actions current omiten opcionales y no persisten null; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia un default declarado por ausencia; solo se rechaza una segunda representación no autorizada. |
+
+## Slice 1.47 — Reader web común de arrays de objetos
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El timeline web ya distinguía ausencia de raíz/entrada inválida, pero conservaba un reader privado. Esa copia hacía que otros payload consumers pudieran repetir o alterar accidentalmente la misma frontera. |
+| Owner | `previewJsonHelpers` posee las conversiones estructurales comunes después del payload boundary; cada resolver conserva la semántica de sus documentos. |
+| Cambio mínimo | Extraer `optionalObjectArray` sin cambiar su contrato ni sus llamadas y hacer que `RuntimeOwnerTimeline` lo importe. |
+| Rutas eliminadas | Copia local del reader exacto y futura divergencia entre arrays opcionales de objetos. |
+| Pruebas | 89/89 Preview, typecheck y arquitectura; todos los envelopes temporales válidos e inválidos conservan el mismo resultado. |
+| Enforcement | El helper común exportado y su import en el timeline son obligatorios; queda prohibida una nueva definición local. |
+| Datos | Sin migración ni cambio de payload. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. Es una extracción pura que prepara la adopción gradual del mismo límite por otros consumers. |

@@ -24,3 +24,21 @@ export function parseObject(json: string | undefined, label = "JSON object"): Js
   }
   return value;
 }
+
+export function optionalObjectArray(
+  owner: JsonRecord,
+  key: string,
+  path: string,
+): JsonRecord[] {
+  if (!Object.hasOwn(owner, key)) return [];
+  const value = owner[key];
+  if (!Array.isArray(value)) {
+    throw new Error(`${path} '${key}' must be an array when present`);
+  }
+  return value.map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new Error(`${path} '${key}'[${index}] must be an object`);
+    }
+    return entry;
+  });
+}

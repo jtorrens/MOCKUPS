@@ -1,5 +1,5 @@
 import { optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
-import { isRecord } from "./previewJsonHelpers.js";
+import { isRecord, optionalObjectArray } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 
@@ -417,20 +417,6 @@ export class RuntimeOwnerTimeline {
     );
     return duration > 0 ? duration : natural;
   }
-}
-
-function optionalObjectArray(owner: JsonRecord, key: string, path: string): JsonRecord[] {
-  if (!Object.hasOwn(owner, key)) return [];
-  const value = owner[key];
-  if (!Array.isArray(value)) {
-    throw new Error(`${path} '${key}' must be an array when present`);
-  }
-  return value.map((entry, index) => {
-    if (!isRecord(entry)) {
-      throw new Error(`${path} '${key}'[${index}] must be an object`);
-    }
-    return entry;
-  });
 }
 
 function optionalObject(owner: JsonRecord, key: string, path: string): JsonRecord {
