@@ -167,6 +167,9 @@ this index wins.
 - `80_forward_action_presentation_contract.md`: one shared compact
   right-pointing Forward action, with consistent inactive/active states,
   accessibility and unchanged explicit forwarding behavior.
+- `81_keyboard_pressed_popup_composition_contract.md`: component-owned
+  continuous pressed-key popup, single exterior shadow and Keyboard-frame edge
+  containment without renderer knowledge.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

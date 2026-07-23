@@ -54,6 +54,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/78_component_variant_slot_value_kind_contract.md`
 - `docs/architecture/79_fixed_and_polymorphic_component_authoring_contract.md`
 - `docs/architecture/80_forward_action_presentation_contract.md`
+- `docs/architecture/81_keyboard_pressed_popup_composition_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -242,6 +243,13 @@ Component inputs are runtime component inputs, not preview-only controls. The pr
 Component composition must reference concrete Component Variants, not parent Component Classes. Parent classes own schema, resolver identity and Variant lists; reusable visual instances store full Variant references in the form `componentClassId::variant::variantId`. Short Variant ids and retired Component Preset spellings are invalid current data. Saving a new Variant must clone the active selected Variant config, never ambiguous "current class values". `Preset` remains a distinct term used by Render Presets and reserved for future non-Variant reusable recipes.
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
+
+Keyboard pressed-popup composition additionally follows
+`docs/architecture/81_keyboard_pressed_popup_composition_contract.md`.
+Keyboard owns one continuous head/connector/pressed-key path, one exterior
+shadow and horizontal containment inside its resolved frame. Do not restore a
+separate popup tail over a normally rendered key, duplicate the pressed glyph,
+or move edge handling into a generic bridge or renderer.
 
 ## Hard rule: Text Box Icon Rows are exact structured boundaries
 

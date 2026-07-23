@@ -8800,6 +8800,33 @@ assertNoTerms(
   "spikes/desktop-editor-shell/EditorShell/ProductionPreviewRuntimeResolver.cs",
   ["ApplyTransientTestValues", "ComponentPreviewActions", "PlaybackTimeValue"],
 );
+for (const requiredKeyboardPopupBoundary of [
+  "export const KeyboardPopupWidthRatio = 1.3;",
+  "export function keyboardPopupGeometry(",
+  "keyBox.width * KeyboardPopupWidthRatio",
+  "keyboardBox.x + keyboardBox.width - headWidth",
+  "const connectorCenterX = keyBox.x + keyBox.width / 2 - headX;",
+  "if (showPopup) {\n      return keyboardPopoverNodes(",
+  "filter: dropShadowFilter(keyShadow)",
+]) {
+  assertContains(
+    "src/desktop-preview/keyboardComponentRenderable.ts",
+    requiredKeyboardPopupBoundary,
+    `Keyboard must retain its unified frame-contained pressed popup (${requiredKeyboardPopupBoundary})`,
+  );
+}
+for (const retiredKeyboardPopupComposition of [
+  "keyNodes.push(...keyboardPopoverNodes(",
+  "const popoverWidth = keyBox.width;",
+  "const tailHeight = keyBox.height * 0.44;",
+  "const gap = tailHeight;",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/keyboardComponentRenderable.ts",
+    retiredKeyboardPopupComposition,
+    `Keyboard must not restore the separate popup-over-normal-key composition (${retiredKeyboardPopupComposition})`,
+  );
+}
 
 function assertDesktopSystemTypographyData() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");

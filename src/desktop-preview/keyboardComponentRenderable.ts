@@ -17,6 +17,19 @@ import type {
 } from "./keyboardComponentContract.js";
 import { wrapMotionFrame } from "./previewMotionHelpers.js";
 
+export const KeyboardPopupWidthRatio = 1.3;
+export const KeyboardPopupConnectorHeightRatio = 0.34;
+const KeyboardPopupConnectorTopWidthRatio = 0.72;
+const KeyboardPopupConnectorBottomWidthRatio = 0.36;
+
+export interface KeyboardPopupGeometry {
+  shapeBox: RenderableBox;
+  labelBox: RenderableBox;
+  pathData: string;
+  viewBox: string;
+  connectorCenterX: number;
+}
+
 export function keyboardComponentToRenderable(
   payload: DesignPreviewPayload,
   keyboard: KeyboardDesignContract,
@@ -190,6 +203,25 @@ function keyboardRowNodes(
         ? specialKeyBackground
         : keyBackground;
     const fontSize = Math.max(8, typography.fontSize * fontScale);
+    const showPopup = pressed && keyboard.pressedEffect === "popup" && displayText.length > 0;
+    if (showPopup) {
+      return keyboardPopoverNodes(
+        keyboard,
+        `${rowIndex}.${index}`,
+        keyboardBox,
+        box,
+        displayText,
+        background,
+        keyColor,
+        fontSize * 1.2,
+        typography,
+        keyShadow,
+        Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
+        keyBorderColor,
+        keyBorderWidth,
+      );
+    }
+
     const keyNodes: RenderableNode[] = [
       {
         id: `${keyboard.id}.key.${rowIndex}.${index}.background`,
@@ -235,23 +267,6 @@ function keyboardRowNodes(
       },
     ];
 
-    if (pressed && keyboard.pressedEffect === "popup" && displayText) {
-      keyNodes.push(...keyboardPopoverNodes(
-        keyboard,
-        `${rowIndex}.${index}`,
-        box,
-        displayText,
-        background,
-        keyColor,
-        fontSize * 1.2,
-        typography,
-        keyShadow,
-        Math.max(0, numberToken(payload, keyboard.keyCornerRadiusToken) * scale),
-        keyBorderColor,
-        keyBorderWidth,
-      ));
-    }
-
     return keyNodes;
   });
 }
@@ -272,6 +287,7 @@ function centeredSquareBox(box: RenderableBox, size: number): RenderableBox {
 function keyboardPopoverNodes(
   keyboard: KeyboardDesignContract,
   idSuffix: string,
+  keyboardBox: RenderableBox,
   keyBox: RenderableBox,
   text: string,
   background: string,
@@ -283,49 +299,24 @@ function keyboardPopoverNodes(
   borderColor: string,
   borderWidth: number,
 ): RenderableNode[] {
-  const popoverWidth = keyBox.width;
-  const popoverHeight = keyBox.height;
-  const tailHeight = keyBox.height * 0.44;
-  const gap = tailHeight;
-  const bodyBox = {
-    x: keyBox.x + keyBox.width / 2 - popoverWidth / 2,
-    y: keyBox.y - popoverHeight - gap,
-    width: popoverWidth,
-    height: popoverHeight,
-  };
-  const tailWidth = popoverWidth;
-  const tailTipWidth = Math.min(keyBox.width * 0.34, popoverWidth * 0.34);
-  const shapeBox = {
-    x: bodyBox.x,
-    y: bodyBox.y,
-    width: popoverWidth,
-    height: popoverHeight + tailHeight,
-  };
-  const pathData = popoverPathData(
-    popoverWidth,
-    popoverHeight,
-    tailWidth,
-    tailTipWidth,
-    tailHeight,
-    radius,
-  );
+  const geometry = keyboardPopupGeometry(keyboardBox, keyBox, radius);
 
   return [
     {
       id: `${keyboard.id}.key.${idSuffix}.popover`,
       type: "path",
       frame: 0,
-      box: shapeBox,
+      box: geometry.shapeBox,
       style: {
         fill: background,
         filter: dropShadowFilter(keyShadow),
         overflow: "visible",
-        pathData,
+        pathData: geometry.pathData,
         preserveAspectRatio: "none",
         stroke: borderWidth > 0 ? borderColor : undefined,
         strokeWidth: borderWidth > 0 ? borderWidth : undefined,
         vectorEffect: "non-scaling-stroke",
-        viewBox: `0 0 ${popoverWidth} ${popoverHeight + tailHeight}`,
+        viewBox: geometry.viewBox,
         zIndex: 20,
       },
       children: [
@@ -333,7 +324,7 @@ function keyboardPopoverNodes(
           id: `${keyboard.id}.key.${idSuffix}.popover.text`,
           type: "text",
           frame: 0,
-          box: bodyBox,
+          box: geometry.labelBox,
           text,
           style: {
             alignItems: "center",
@@ -344,7 +335,7 @@ function keyboardPopoverNodes(
             fontStyle: typography.fontStyle,
             fontWeight: typography.fontWeight,
             justifyContent: "center",
-            lineHeight: popoverHeight,
+            lineHeight: geometry.labelBox.height,
             textAlign: "center",
             whiteSpace: "nowrap",
             zIndex: 21,
@@ -355,37 +346,88 @@ function keyboardPopoverNodes(
   ];
 }
 
-function popoverPathData(
-  width: number,
-  bodyHeight: number,
-  tailWidth: number,
-  tailTipWidth: number,
-  tailHeight: number,
+export function keyboardPopupGeometry(
+  keyboardBox: RenderableBox,
+  keyBox: RenderableBox,
   radius: number,
-) {
-  const r = Math.max(0, Math.min(radius, width / 2, bodyHeight / 2));
-  const center = width / 2;
-  const tailLeft = center - tailWidth / 2;
-  const tailRight = center + tailWidth / 2;
-  const tailTipLeft = center - tailTipWidth / 2;
-  const tailTipRight = center + tailTipWidth / 2;
-  const tailBottom = bodyHeight + tailHeight;
-  return [
-    `M${r} 0`,
-    `H${width - r}`,
-    `Q${width} 0 ${width} ${r}`,
-    `V${bodyHeight - r}`,
-    `Q${width} ${bodyHeight} ${width - r} ${bodyHeight}`,
-    `H${tailRight}`,
-    `L${tailTipRight} ${tailBottom}`,
-    `H${tailTipLeft}`,
-    `L${tailLeft} ${bodyHeight}`,
-    `H${r}`,
-    `Q0 ${bodyHeight} 0 ${bodyHeight - r}`,
-    `V${r}`,
-    `Q0 0 ${r} 0`,
+): KeyboardPopupGeometry {
+  const headWidth = Math.min(
+    keyBox.width * KeyboardPopupWidthRatio,
+    keyboardBox.width,
+  );
+  const preferredHeadX = keyBox.x + keyBox.width / 2 - headWidth / 2;
+  const headX = Math.max(
+    keyboardBox.x,
+    Math.min(
+      preferredHeadX,
+      keyboardBox.x + keyboardBox.width - headWidth,
+    ),
+  );
+  const headHeight = keyBox.height;
+  const connectorHeight = keyBox.height * KeyboardPopupConnectorHeightRatio;
+  const totalHeight = headHeight + connectorHeight + keyBox.height;
+  const baseTop = headHeight + connectorHeight;
+  const baseLeft = keyBox.x - headX;
+  const baseRight = baseLeft + keyBox.width;
+  const connectorCenterX = keyBox.x + keyBox.width / 2 - headX;
+  const connectorTopHalfWidth = Math.min(
+    keyBox.width * KeyboardPopupConnectorTopWidthRatio / 2,
+    connectorCenterX,
+    headWidth - connectorCenterX,
+  );
+  const connectorBottomHalfWidth = Math.min(
+    keyBox.width * KeyboardPopupConnectorBottomWidthRatio / 2,
+    connectorCenterX - baseLeft,
+    baseRight - connectorCenterX,
+  );
+  const connectorTopLeft = connectorCenterX - connectorTopHalfWidth;
+  const connectorTopRight = connectorCenterX + connectorTopHalfWidth;
+  const connectorBottomLeft = connectorCenterX - connectorBottomHalfWidth;
+  const connectorBottomRight = connectorCenterX + connectorBottomHalfWidth;
+  const headRadius = Math.max(0, Math.min(radius, headWidth / 2, headHeight / 2));
+  const keyRadius = Math.max(0, Math.min(radius, keyBox.width / 2, keyBox.height / 2));
+  const shapeBox = {
+    x: headX,
+    y: keyBox.y - headHeight - connectorHeight,
+    width: headWidth,
+    height: totalHeight,
+  };
+  const pathData = [
+    `M${headRadius} 0`,
+    `H${headWidth - headRadius}`,
+    `Q${headWidth} 0 ${headWidth} ${headRadius}`,
+    `V${headHeight - headRadius}`,
+    `Q${headWidth} ${headHeight} ${headWidth - headRadius} ${headHeight}`,
+    `H${connectorTopRight}`,
+    `L${connectorBottomRight} ${baseTop}`,
+    `H${baseRight - keyRadius}`,
+    `Q${baseRight} ${baseTop} ${baseRight} ${baseTop + keyRadius}`,
+    `V${totalHeight - keyRadius}`,
+    `Q${baseRight} ${totalHeight} ${baseRight - keyRadius} ${totalHeight}`,
+    `H${baseLeft + keyRadius}`,
+    `Q${baseLeft} ${totalHeight} ${baseLeft} ${totalHeight - keyRadius}`,
+    `V${baseTop + keyRadius}`,
+    `Q${baseLeft} ${baseTop} ${baseLeft + keyRadius} ${baseTop}`,
+    `H${connectorBottomLeft}`,
+    `L${connectorTopLeft} ${headHeight}`,
+    `H${headRadius}`,
+    `Q0 ${headHeight} 0 ${headHeight - headRadius}`,
+    `V${headRadius}`,
+    `Q0 0 ${headRadius} 0`,
     "Z",
   ].join(" ");
+  return {
+    shapeBox,
+    labelBox: {
+      x: headX,
+      y: shapeBox.y,
+      width: headWidth,
+      height: headHeight,
+    },
+    pathData,
+    viewBox: `0 0 ${headWidth} ${totalHeight}`,
+    connectorCenterX,
+  };
 }
 
 function dropShadowFilter(value: Record<string, unknown> | undefined) {

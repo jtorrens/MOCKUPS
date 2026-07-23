@@ -41,8 +41,12 @@ It does not depend on Text Input Bar. The parent composes both as siblings.
 - Keyboard resolves a screen-width bottom keyboard frame; the parent translates
   that frame to the final composer location.
 - Key rows use weighted distribution; special keys are compact variants.
-- A pressed-key popup and tail sit above the regular keys with higher local
-  z-order and visible overflow.
+- A pressed-key popup follows
+  [contract 81](../81_keyboard_pressed_popup_composition_contract.md): its
+  wider head, connector and pressed-key base form one continuous silhouette
+  with one exterior shadow and one enlarged glyph.
+- The popup remains inside the resolved Keyboard frame. Near either horizontal
+  edge its head shifts while its connector continues to target the key center.
 - Emoji mode omits normal special keyboard keys. Duplicate emojis from source
   text are removed and extra emojis are deterministically distributed.
 - **Canonical parent rule:** Keyboard is above Text Input Bar, so popup/key
