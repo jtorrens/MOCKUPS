@@ -53,6 +53,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/77_text_box_icon_row_composition_contract.md`
 - `docs/architecture/78_component_variant_slot_value_kind_contract.md`
 - `docs/architecture/79_fixed_and_polymorphic_component_authoring_contract.md`
+- `docs/architecture/80_forward_action_presentation_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -142,6 +143,11 @@ Unless the user explicitly asks for a special treatment, new editor UI must use
 the existing shared cards, controls and layout helpers. Do not introduce local
 expanders, custom card chrome or one-off controls when an equivalent common
 surface exists. Extract a shared control before adding a reusable visual pattern.
+
+Forward actions additionally follow
+`docs/architecture/80_forward_action_presentation_contract.md`: use the shared
+compact right-pointing indicator and its existing active/inactive semantics.
+Do not create local Forward glyphs, action sizes, tooltips or highlighted states.
 
 ## Hard rule: editor organization is metadata-driven and session-only
 

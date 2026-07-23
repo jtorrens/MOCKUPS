@@ -5508,6 +5508,35 @@ assertContains(
   "forwarding !== undefined && !isRecord(forwarding)",
   "web payload forwarding must reject a present non-object envelope",
 );
+for (const requiredForwardPresentation of [
+  'public const double IndicatorSize = 10;',
+  'public const double ActionSize = 30;',
+  'public const string IndicatorGeometry = "M 1,1 L 9,5 L 1,9 Z";',
+  'isForwarded ? EditorOverrideVisuals.Brush : Brushes.Transparent',
+  'isForwarded ? ActiveAccessibleName : InactiveAccessibleName',
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/EditorForwardVisuals.cs",
+    requiredForwardPresentation,
+    `Forward actions must retain the shared compact right-pointing presentation (${requiredForwardPresentation})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "EditorForwardVisuals.CreateActionButton(forwarded is not null)",
+  "every embedded Runtime Input Forward action must use the shared presentation",
+);
+for (const retiredLocalForwardPresentation of [
+  'Geometry.Parse("M 6,1 L 11,10 L 1,10 Z")',
+  "var indicator = new Path",
+  'ToolTip.SetTip(toggle, forwarded is null ? "Expose to parent runtime" : "Keep as Variant value")',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    retiredLocalForwardPresentation,
+    `embedded Runtime Input fields must not retain a local Forward presentation (${retiredLocalForwardPresentation})`,
+  );
+}
 for (const compoundDictionaryControl of [
   "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
   "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",

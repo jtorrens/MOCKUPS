@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -166,33 +165,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             ColumnSpacing = 6,
         };
         row.Children.Add(content);
-        var indicator = new Path
-        {
-            Width = 12,
-            Height = 11,
-            Data = Geometry.Parse("M 6,1 L 11,10 L 1,10 Z"),
-            Fill = forwarded is null ? Brushes.Transparent : EditorOverrideVisuals.Brush,
-            Stroke = forwarded is null ? null : EditorOverrideVisuals.Brush,
-            StrokeThickness = 1.5,
-            Stretch = Stretch.Uniform,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        var toggle = new Button
-        {
-            Content = indicator,
-            Width = 30,
-            Height = 30,
-            Padding = new Thickness(0),
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            VerticalAlignment = VerticalAlignment.Top,
-        };
-        if (forwarded is null)
-        {
-            indicator.Bind(Path.StrokeProperty, toggle.GetObservable(Button.ForegroundProperty));
-        }
-        ToolTip.SetTip(toggle, forwarded is null ? "Expose to parent runtime" : "Keep as Variant value");
+        var toggle = EditorForwardVisuals.CreateActionButton(forwarded is not null);
         toggle.Click += async (_, args) =>
         {
             args.Handled = true;

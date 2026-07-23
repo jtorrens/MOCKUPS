@@ -122,6 +122,7 @@ var tests = new (string Name, Action Run)[]
     ("Notifications composes Notification items through Collection Stack", NotificationsSeedOpensAndRenders),
     ("Keypad exposes Variant keys and renders from System", KeypadSeedOpensAndRenders),
     ("dictionary fields contract labels before stacking compound actions", DictionaryFieldsRespondToCompactWidths),
+    ("Forward actions use one compact right-pointing presentation", ForwardActionsUseSharedPresentation),
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
@@ -4827,6 +4828,15 @@ static void DictionaryFieldsRespondToCompactWidths()
         actionsMinimumWidth: 154,
         columnGapCount: 2,
         columnSpacing: 8));
+}
+
+static void ForwardActionsUseSharedPresentation()
+{
+    Equal(10d, EditorForwardVisuals.IndicatorSize);
+    Equal(30d, EditorForwardVisuals.ActionSize);
+    Equal("M 1,1 L 9,5 L 1,9 Z", EditorForwardVisuals.IndicatorGeometry);
+    Equal("Expose to parent runtime", EditorForwardVisuals.AccessibleName(isForwarded: false));
+    Equal("Keep as Variant value", EditorForwardVisuals.AccessibleName(isForwarded: true));
 }
 
 var failures = new List<string>();

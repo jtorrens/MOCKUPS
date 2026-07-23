@@ -164,6 +164,9 @@ this index wins.
 - `79_fixed_and_polymorphic_component_authoring_contract.md`: shared
   fixed-versus-polymorphic Component Variant authoring, explicit Default
   creation and standard Variant/navigation/Overrides presentation.
+- `80_forward_action_presentation_contract.md`: one shared compact
+  right-pointing Forward action, with consistent inactive/active states,
+  accessibility and unchanged explicit forwarding behavior.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.
