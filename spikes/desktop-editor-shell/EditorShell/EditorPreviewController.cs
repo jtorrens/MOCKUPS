@@ -207,6 +207,7 @@ internal sealed class EditorPreviewController
     private string _shotTimelineShotId = "";
     private string _shotTimelineContextNodeId = "";
     private bool _isUpdatingShotTimeline;
+    private long _selectionRefreshGeneration;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
@@ -1139,7 +1140,45 @@ internal sealed class EditorPreviewController
         _designInputsPanel.PlaybackFrameRate,
         string.IsNullOrWhiteSpace(_projectId) ? "" : _visualContextData.ProjectMediaRoot(_projectId));
 
+    public void BeginSelectionTransition()
+    {
+        if (_workspace != EditorWorkspace.Production
+            || ProductionContextNode() is not { } selected)
+        {
+            return;
+        }
+
+        _designPreviewPane.BeginContextUpdate(selected.Name);
+        PreviewDebugLog.Write(
+            "preview.selection-transition.begin",
+            ("workspace", _workspace),
+            ("kind", selected.Kind),
+            ("id", selected.Id));
+    }
+
+    public void ScheduleSelectionRefresh()
+    {
+        var generation = Interlocked.Increment(ref _selectionRefreshGeneration);
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                if (generation != Volatile.Read(ref _selectionRefreshGeneration))
+                {
+                    return;
+                }
+
+                RefreshCore();
+            },
+            DispatcherPriority.Background);
+    }
+
     public void Refresh()
+    {
+        Interlocked.Increment(ref _selectionRefreshGeneration);
+        RefreshCore();
+    }
+
+    private void RefreshCore()
     {
         try
         {

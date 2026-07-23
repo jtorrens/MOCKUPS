@@ -65,6 +65,8 @@ move between Screen boundaries. It must not reproduce duration formulas.
 - one absolute Shot playhead and Screen-local navigation projection;
 - previous/next Screen and keyframe transport;
 - playback preparation, elapsed-time progression and Play/Stop UI;
+- immediate Preview transition feedback and coalescing of stale scheduled
+  selection refreshes;
 - reading the explicit Module Variant `appearanceMode` from the supplied
   complete config;
 - diagnostics that distinguish Shot-absolute, root Screen and current-boundary
@@ -73,6 +75,16 @@ move between Screen boundaries. It must not reproduce duration formulas.
 The controller may receive `SpikeDatabase` as a construction/composition
 parameter while the staged shell creates its typed services, but it must not
 retain a database field or perform direct database reads.
+
+Selection feedback is part of this transient orchestration. When a selected
+Production Shot or Screen has an explicit Preview route, the shell delegates
+the transition immediately to the controller before rebuilding editor content.
+The controller asks the resident Preview pane to present its loading state and
+schedules only the latest requested Preview refresh at background dispatcher
+priority. This gives the shell a render opportunity before payload preparation
+without moving payload resolution into the UI, weakening strict failures or
+changing the resolved result. The pane owns the loading presentation; the
+shell must not manipulate WebView state directly.
 
 ## 5. Preserved temporal and payload boundaries
 

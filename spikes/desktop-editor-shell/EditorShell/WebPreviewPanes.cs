@@ -1829,6 +1829,27 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             """);
     }
 
+    public void BeginContextUpdate(string message)
+    {
+        Interlocked.Increment(ref _latestUpdateSequence);
+        if (!_hasResidentDocument)
+        {
+            return;
+        }
+
+        var messageJson = JsonSerializer.Serialize(message);
+        _ = WebView.InvokeScript($$"""
+            (() => {
+              if (typeof window.mockupsSetNonRenderablePreviewState === "function") {
+                window.mockupsSetNonRenderablePreviewState("", "", "", "");
+              }
+              return typeof window.mockupsSetContextualPreviewState === "function"
+                ? window.mockupsSetContextualPreviewState("loading", "Actualizando preview", {{messageJson}})
+                : false;
+            })();
+            """);
+    }
+
     public static IReadOnlyList<string> ImageSourcesForPreload(string html)
     {
         return PreviewImageSources(PreviewHtmlParts.Split(html).BodyHtml).ToList();

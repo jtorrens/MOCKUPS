@@ -439,6 +439,7 @@ public partial class MainWindow : SukiWindow
         _workspaceSelections[_workspace] = node.Id;
         _nodeSelection.RememberComponentVariantSelection(node);
         _treeExpansion.ExpandAncestors(node);
+        _previewController.BeginSelectionTransition();
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         transaction.Checkpoint("before-editor-candidate");
         _editorContent.Build(editorNode, node);
@@ -446,13 +447,13 @@ public partial class MainWindow : SukiWindow
         transaction.Checkpoint("after-editor-swap");
         _editorViewState.Restore(node, _editorContent.Cards);
 
-        RefreshPreviewDevice();
         if (rebuildTree)
         {
             RebuildNavigationCards();
             transaction.Checkpoint("after-navigation-swap");
         }
         ApplyUiTextScale();
+        _previewController.ScheduleSelectionRefresh();
     }
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)

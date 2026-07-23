@@ -586,6 +586,26 @@ assertContains(
   "the Preview controller must reuse the typed timeline slot boundary",
 );
 assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "_previewController.BeginSelectionTransition();",
+  "the shell must delegate immediate Preview selection feedback to the Preview controller",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "_previewController.ScheduleSelectionRefresh();",
+  "the shell must delegate the deferred selection refresh to the Preview controller",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "DispatcherPriority.Background",
+  "the Preview controller must leave a shell render opportunity before resolving a selected Preview",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "public void BeginContextUpdate(string message)",
+  "the resident Preview pane must own immediate loading presentation",
+);
+assertContains(
   "AGENTS.md",
   "docs/architecture/58_component_preview_input_data_boundary_contract.md",
   "AGENTS must require the Component Preview input data boundary contract",
