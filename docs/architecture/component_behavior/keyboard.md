@@ -45,6 +45,8 @@ It does not depend on Text Input Bar. The parent composes both as siblings.
   [contract 81](../81_keyboard_pressed_popup_composition_contract.md): its
   wider head, connector and pressed-key base form one continuous silhouette
   with one exterior shadow and one enlarged glyph.
+- The connector starts across the head's complete lower width, without a
+  horizontal shelf, and narrows towards the pressed key.
 - The popup remains inside the resolved Keyboard frame. Near either horizontal
   edge its head shifts while its connector continues to target the key center.
 - Emoji mode omits normal special keyboard keys. Duplicate emojis from source
