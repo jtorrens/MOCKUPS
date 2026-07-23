@@ -303,6 +303,14 @@ Each key keeps its explicit stable id/kind/value and duplicate checks. The
 selected visual state is an exact state object and the Label slot keeps its
 full Variant reference and local Overrides even when a key is a spacer.
 
+Password requires its config, exact Runtime Input definition array and its
+complete composition set: three state Label slots plus Indicator, Icon Bar,
+Fingerprint, Face Recognition, Draw Password and Keypad slots. All slots are
+validated before the active password mode/state is selected, then each selected
+child crosses the shared embedded owner. An inactive method is still complete
+current Variant configuration; it is not optional data and no slot is derived
+from its display label, list position or payload type.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -597,6 +605,8 @@ Architecture enforcement must verify:
   local Overrides; Icon Bar requires each selected state/zone slot and Inputs.
 - Keyboard and Keypad require their config/slot documents; Keypad keeps exact
   key entries and selected state objects without positional identity.
+- Password validates its complete explicitly named state/method slot set and
+  exact Runtime definitions before resolving the selected mode.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

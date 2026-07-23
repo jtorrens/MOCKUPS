@@ -853,3 +853,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Roots, array exacto, states/Label slot y dos adopciones del helper fijados; casts tolerantes prohibidos. |
 | Datos | Sin migración. Las teclas, estados y slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una tecla, estado o fila válida; solo deja de crearse identidad/apariencia plausible desde un entry roto. |
+
+## Slice 1.63 — Composición completa de Password
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Password convertía config, Runtime Input definitions y cada slot en objetos vacíos; solo validaba la rama del state/mode activo. Conservaba además otro helper local que borraba Overrides inválidos. |
+| Owner | Password declara explícitamente tres state Labels y seis children de método/estructura; `embeddedComponentConfig` posee cada referencia+Override y el Runtime contract posee definitions objeto. |
+| Cambio mínimo | Exigir todas las roots/slots al inicio, seleccionar después el state/mode, usar el helper común en cada child y retirar el parser local. No se modifica progreso, credenciales, Timing ni selección. |
+| Rutas eliminadas | `preview.inputs.map(asRecord)`, nueve casts de slots/config y el helper `embeddedConfig` tolerante. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; PIN, biometría, Draw Password, Timing natural, Keypad/Icon Bar/Indicator y estados current pasan. |
+| Enforcement | Set explícito de nueve slots, definitions exactas y siete rutas del helper fijadas; parser/casts tolerantes prohibidos. |
+| Datos | Sin migración. La Variant Password current ya contiene el set completo; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una rama válida; una rama inactive rota deja de quedar oculta hasta que el usuario cambie de método/estado. |

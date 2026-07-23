@@ -7592,6 +7592,71 @@ for (const permissiveKeypadDocument of [
   );
 }
 assertContains(
+  "src/desktop-preview/passwordComponentResolver.ts",
+  'requiredRecord(config, "password", "component.password")',
+  "Password must require its config object",
+);
+assertContains(
+  "src/desktop-preview/passwordComponentResolver.ts",
+  'requiredObjectArray(preview, "inputs", "component.password runtime contract")',
+  "Password must require exact Runtime Input definition objects",
+);
+for (const passwordSlot of [
+  "initialLabelSlot",
+  "correctLabelSlot",
+  "incorrectLabelSlot",
+  "indicatorSlot",
+  "iconBarSlot",
+  "fingerprintSlot",
+  "faceRecognitionSlot",
+  "drawPasswordSlot",
+  "keypadSlot",
+] as const) {
+  assertContains(
+    "src/desktop-preview/passwordComponentResolver.ts",
+    `requiredRecord(password, "${passwordSlot}", "component.password.${passwordSlot}")`,
+    `Password must require its explicitly declared ${passwordSlot}`,
+  );
+}
+for (const embeddedPasswordSlot of [
+  'embeddedComponentConfig(bases, labelSlot, "label",',
+  'embeddedComponentConfig(bases, slots.indicator, "codeIndicator",',
+  'embeddedComponentConfig(bases, slots.iconBar, "iconBar",',
+  'embeddedComponentConfig(bases, slots.fingerprint, "fingerprint",',
+  'embeddedComponentConfig(bases, slots.faceRecognition, "faceRecognition",',
+  'embeddedComponentConfig(bases, slots.drawPassword, "drawPassword",',
+  'embeddedComponentConfig(bases, slots.keypad, "keypad",',
+] as const) {
+  assertContains(
+    "src/desktop-preview/passwordComponentResolver.ts",
+    embeddedPasswordSlot,
+    `Password children must consume the shared embedded Component owner (${embeddedPasswordSlot})`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/passwordComponentResolver.ts",
+  "function embeddedConfig(",
+  "Password must not keep a local embedded Component config parser",
+);
+for (const permissivePasswordDocument of [
+  "asRecord(config.password)",
+  "preview.inputs.map(asRecord)",
+  "asRecord(password[`${progress.state}LabelSlot`])",
+  "asRecord(password.indicatorSlot)",
+  "asRecord(password.iconBarSlot)",
+  "asRecord(password.fingerprintSlot)",
+  "asRecord(password.faceRecognitionSlot)",
+  "asRecord(password.drawPasswordSlot)",
+  "asRecord(password.keypadSlot)",
+  "asRecord(slot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/passwordComponentResolver.ts",
+    permissivePasswordDocument,
+    `Password must not coerce required documents (${permissivePasswordDocument})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

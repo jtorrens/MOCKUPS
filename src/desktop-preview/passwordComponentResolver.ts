@@ -1,13 +1,12 @@
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredBoolean,
   requiredNumber,
+  requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveCodeIndicatorComponentFromRecords } from "./codeIndicatorComponentResolver.js";
@@ -24,13 +23,25 @@ import {
 } from "./labelComponentResolver.js";
 import type { PasswordDesignContract, PasswordInputContract, PasswordMode, PasswordState } from "./passwordComponentContract.js";
 import { renderScale } from "./componentRenderableCommon.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
+
+type PasswordCompositionSlots = {
+  labels: Record<PasswordState, Record<string, unknown>>;
+  indicator: Record<string, unknown>;
+  iconBar: Record<string, unknown>;
+  fingerprint: Record<string, unknown>;
+  faceRecognition: Record<string, unknown>;
+  drawPassword: Record<string, unknown>;
+  keypad: Record<string, unknown>;
+};
 
 export function resolvePasswordComponent(payload: DesignPreviewPayload): PasswordDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
   const themeTokens = parseObject(payload.themeTokensJson);
-  const password = asRecord(config.password);
+  const password = requiredRecord(config, "password", "component.password");
+  const slots = passwordCompositionSlots(password);
   const mode = passwordMode(requiredString(password, "mode", "component.password.mode"));
   const expected = passwordCredential(
     requiredString(preview, "expectedPassword", "component.password.runtime.expectedPassword"),
@@ -48,18 +59,18 @@ export function resolvePasswordComponent(payload: DesignPreviewPayload): Passwor
   const enabled = requiredBoolean(preview, "enabled", "component.password.runtime.enabled");
   const trigger = requiredBoolean(preview, "entryTrigger", "component.password.runtime.entryTrigger");
   const entryFrame = nonNegativeFrame(requiredNumber(preview, "entryFrame", "component.password.runtime.entryFrame"));
-  const inputDefinitions = Array.isArray(preview.inputs) ? preview.inputs.map(asRecord) : [];
+  const inputDefinitions = requiredObjectArray(preview, "inputs", "component.password runtime contract");
   const timingDefinition = inputDefinitions.find((definition) => definition.id === "entryTiming");
   if (!timingDefinition) throw new Error("Missing component.password entryTiming runtime contract");
   const durationFrames = resolveBehaviorTimingFrames(preview, timingDefinition, inputDefinitions, themeTokens);
   const progress = passwordProgress(enabled && trigger, entryFrame, durationFrames, attempt, expected);
   const availableWidth = payload.previewFrame.screenWidth / renderScale(payload);
 
-  const labelSlot = asRecord(password[`${progress.state}LabelSlot`]);
-  const labelConfig = embeddedConfig(labelSlot, "label", bases, `component.password.${progress.state}LabelSlot`);
+  const labelSlot = slots.labels[progress.state];
+  const labelConfig = embeddedComponentConfig(bases, labelSlot, "label", `component.password.${progress.state}LabelSlot`);
   const labelText = requiredString(preview, `${progress.state}Text`, `component.password.runtime.${progress.state}Text`);
-  const indicatorConfig = embeddedConfig(asRecord(password.indicatorSlot), "codeIndicator", bases, "component.password.indicatorSlot");
-  const input = resolvePasswordInput(mode, password, attempt, progress, enabled, availableWidth, bases);
+  const indicatorConfig = embeddedComponentConfig(bases, slots.indicator, "codeIndicator", "component.password.indicatorSlot");
+  const input = resolvePasswordInput(mode, slots, attempt, progress, enabled, availableWidth, bases);
   const iconBarHeight = requiredNumber(password, "iconBarHeight", "component.password.iconBarHeight");
   if (iconBarHeight <= 0) throw new Error("component.password.iconBarHeight must be positive");
 
@@ -92,7 +103,7 @@ export function resolvePasswordComponent(payload: DesignPreviewPayload): Passwor
     ),
     input,
     iconBar: resolveIconBarComponentFromRecords(
-      embeddedConfig(asRecord(password.iconBarSlot), "iconBar", bases, "component.password.iconBarSlot"),
+      embeddedComponentConfig(bases, slots.iconBar, "iconBar", "component.password.iconBarSlot"),
       { state: progress.state === "initial" ? "idle" : "active", size: `${availableWidth}|${iconBarHeight}` },
       bases,
       "component.password.iconBar",
@@ -102,7 +113,7 @@ export function resolvePasswordComponent(payload: DesignPreviewPayload): Passwor
 
 function resolvePasswordInput(
   mode: PasswordMode,
-  password: Record<string, unknown>,
+  slots: PasswordCompositionSlots,
   attempt: string,
   progress: ReturnType<typeof passwordProgress>,
   enabled: boolean,
@@ -114,7 +125,7 @@ function resolvePasswordInput(
     return {
       kind: "fingerprint",
       component: resolveFingerprintComponentFromRecords(
-        embeddedConfig(asRecord(password.fingerprintSlot), "fingerprint", bases, "component.password.fingerprintSlot"),
+        embeddedComponentConfig(bases, slots.fingerprint, "fingerprint", "component.password.fingerprintSlot"),
         { state: recognitionState, progress: progress.progress },
         "component.password.fingerprint",
       ),
@@ -124,7 +135,7 @@ function resolvePasswordInput(
     return {
       kind: "faceRecognition",
       component: resolveFaceRecognitionComponentFromRecords(
-        embeddedConfig(asRecord(password.faceRecognitionSlot), "faceRecognition", bases, "component.password.faceRecognitionSlot"),
+        embeddedComponentConfig(bases, slots.faceRecognition, "faceRecognition", "component.password.faceRecognitionSlot"),
         { state: recognitionState, progress: progress.progress },
         "component.password.faceRecognition",
       ),
@@ -134,14 +145,14 @@ function resolvePasswordInput(
     return {
       kind: "drawPassword",
       component: resolveDrawPasswordComponentFromRecords(
-        embeddedConfig(asRecord(password.drawPasswordSlot), "drawPassword", bases, "component.password.drawPasswordSlot"),
+        embeddedComponentConfig(bases, slots.drawPassword, "drawPassword", "component.password.drawPasswordSlot"),
         { state: recognitionState, pattern: attempt, visibleCount: progress.visibleCount },
         "component.password.drawPassword",
       ),
     };
   }
   const keypad = resolveKeypadComponentFromRecords(
-    embeddedConfig(asRecord(password.keypadSlot), "keypad", bases, "component.password.keypadSlot"),
+    embeddedComponentConfig(bases, slots.keypad, "keypad", "component.password.keypadSlot"),
     { availableWidth, activeKey: "", pushedKey: progress.pushedKey, enabled },
     bases,
     "component.password.keypad",
@@ -161,16 +172,20 @@ function verticalAnchor(password: Record<string, unknown>, key: string) {
   return value;
 }
 
-function embeddedConfig(
-  slot: Record<string, unknown>,
-  componentType: string,
-  bases: Record<string, unknown>,
-  path: string,
-) {
-  return mergeComponentDefaults(
-    componentVariantConfig(bases, componentType, requiredString(slot, "variantReference", `${path}.variantReference`)),
-    asRecord(slot.overrides),
-  );
+function passwordCompositionSlots(password: Record<string, unknown>): PasswordCompositionSlots {
+  return {
+    labels: {
+      initial: requiredRecord(password, "initialLabelSlot", "component.password.initialLabelSlot"),
+      correct: requiredRecord(password, "correctLabelSlot", "component.password.correctLabelSlot"),
+      incorrect: requiredRecord(password, "incorrectLabelSlot", "component.password.incorrectLabelSlot"),
+    },
+    indicator: requiredRecord(password, "indicatorSlot", "component.password.indicatorSlot"),
+    iconBar: requiredRecord(password, "iconBarSlot", "component.password.iconBarSlot"),
+    fingerprint: requiredRecord(password, "fingerprintSlot", "component.password.fingerprintSlot"),
+    faceRecognition: requiredRecord(password, "faceRecognitionSlot", "component.password.faceRecognitionSlot"),
+    drawPassword: requiredRecord(password, "drawPasswordSlot", "component.password.drawPasswordSlot"),
+    keypad: requiredRecord(password, "keypadSlot", "component.password.keypadSlot"),
+  };
 }
 
 export function passwordProgress(
