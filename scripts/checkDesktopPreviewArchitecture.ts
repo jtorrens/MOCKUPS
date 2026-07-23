@@ -8153,6 +8153,45 @@ for (const [renderer, permissiveCursorMetadata] of [
     `${renderer} must consume schema-validated inline cursor metadata`,
   );
 }
+for (const requiredComplexRenderableStyle of [
+  "const RenderableShadowSchema = z.object({",
+  "const RenderableSurfaceReliefSchema = z.object({",
+  "shadow: RenderableShadowSchema.optional(),",
+  "textShadow: RenderableShadowSchema.optional(),",
+  "surfaceRelief: RenderableSurfaceReliefSchema.optional(),",
+  "style: RenderableStyleSchema.optional(),",
+]) {
+  assertContains(
+    "src/visual/renderable/schema.ts",
+    requiredComplexRenderableStyle,
+    `Renderable schema must own its complex generic style (${requiredComplexRenderableStyle})`,
+  );
+}
+for (const requiredComplexStyleConsumer of [
+  'resolvedStyleObject(value, "Renderable shadow")',
+  'resolvedStyleNumber(shadow, "offsetX", "Renderable shadow.offsetX")',
+  'resolvedStyleString(shadow, "color", "Renderable shadow.color")',
+  'resolvedStyleObject(value, "Renderable surfaceRelief")',
+  'resolvedStyleNumber(relief, "angleDeg", "Renderable surfaceRelief.angleDeg")',
+]) {
+  assertContains(
+    "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+    requiredComplexStyleConsumer,
+    `HTML renderer must consume exact complex Renderable styles (${requiredComplexStyleConsumer})`,
+  );
+}
+for (const permissiveComplexStyleConsumer of [
+  "const shadow = asRecord(value);",
+  "const relief = asRecord(value);",
+  "optionalNumberValue(shadow.offsetX) ?? 0",
+  "optionalNumberValue(relief.angleDeg) ?? -45",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/DesktopRenderableHtmlAdapter.tsx",
+    permissiveComplexStyleConsumer,
+    `HTML renderer must not default invalid complex Renderable styles (${permissiveComplexStyleConsumer})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

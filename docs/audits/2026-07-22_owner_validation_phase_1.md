@@ -1120,3 +1120,16 @@ y Overrides por item.
 | Enforcement | Root/modo de cadencia, ids y recorrido Theme exacto quedan fijados; `asRecord` queda prohibido en el helper. |
 | Datos | Sin migración. Los valores, definiciones y Themes current ya satisfacen el contrato; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia duración/cadencia válida; evita que metadata rota se reproduzca plausiblemente como Fixed o pace ausente. |
+
+## Slice 1.82 — Estilos visuales complejos exactos en Renderable
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | HTML convertía Shadow/Relief wrong-root en `{}` y sustituía miembros inválidos por offset/blur/spread cero, ángulo -45 o extensión 1; SVG aceptaba la misma forma porque `style` era completamente abierto. |
+| Owner | El schema Renderable posee las primitives genéricas finales `shadow`, `textShadow` y `surfaceRelief`; los adapters solo las pintan. |
+| Cambio mínimo | Declarar los tres objetos completos en el schema común y exigir sus miembros al construir CSS. La ausencia continúa desactivando el efecto. |
+| Rutas eliminadas | Dos `asRecord` y todos los defaults locales de miembros presentes inválidos. |
+| Pruebas | HTML/SVG conservan cursor/sombra válida y ambos rechazan Shadow, Text Shadow y Relief incompletos o wrong-root. |
+| Enforcement | Schemas genéricos, style route y consumo HTML exacto quedan fijados; casts/defaults retirados quedan prohibidos. |
+| Datos | Sin migración. Todos los renderables current generan estas primitives completas; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia un efecto válido ni añade conocimiento de Component; un árbol final inválido ya no se pinta de forma plausible. |

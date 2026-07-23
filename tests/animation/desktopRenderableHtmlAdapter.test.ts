@@ -63,3 +63,24 @@ test("both generic renderers consume the same exact Renderable metadata", () => 
   )));
   assert.throws(() => renderableToSvg(invalid as unknown as typeof tree));
 });
+
+test("both generic renderers reject incomplete complex visual styles", () => {
+  const base = {
+    id: "surface",
+    type: "surface" as const,
+    frame: 0,
+    box: { x: 0, y: 0, width: 120, height: 32 },
+  };
+  for (const style of [
+    { shadow: [] },
+    { textShadow: { offsetX: 1, offsetY: 2, blur: 3 } },
+    { surfaceRelief: { angleDeg: -45, extension: 1, spread: 0 } },
+  ]) {
+    const invalid = { ...base, style };
+    assert.throws(() => renderToStaticMarkup(React.createElement(
+      DesktopRenderableHtmlAdapter,
+      { tree: invalid as unknown as typeof base },
+    )));
+    assert.throws(() => renderableToSvg(invalid as unknown as typeof base));
+  }
+});

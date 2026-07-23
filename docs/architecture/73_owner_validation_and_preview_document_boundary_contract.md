@@ -442,6 +442,14 @@ bounded opacity. HTML and SVG consume that typed visual primitive directly;
 they do not convert a wrong-root cursor into absence or add Component-specific
 interpretation. An absent cursor remains the only no-cursor sentinel.
 
+Complex generic visual styles are part of that same final schema. Present
+`shadow` and `textShadow` values require finite offsets/blur plus one resolved
+non-empty color; present `surfaceRelief` requires all five finite resolved
+members. Structural absence disables the visual effect. HTML must not replace
+missing members with zero/default angles or interpret a wrong root as absence,
+and SVG must reject the same invalid tree even when a target does not yet paint
+that optional visual effect. These are generic primitives, not Component rules.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -779,6 +787,8 @@ Architecture enforcement must verify:
   present mapping/token/file documents and never fabricates an SVG filename.
 - HTML and SVG validate the same recursive Renderable schema and consume exact
   optional inline-cursor metadata without a second permissive parser.
+- complex Renderable shadow/text-shadow/surface-relief styles are complete
+  generic primitives; only structural absence disables them.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

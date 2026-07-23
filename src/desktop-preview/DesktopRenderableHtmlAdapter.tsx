@@ -9,7 +9,6 @@ import {
   numberValue as commonNumberValue,
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
-import { asRecord } from "./previewJsonHelpers.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;
@@ -67,10 +66,9 @@ function boxStyle(
 }
 
 function shadowValue(value: unknown): string | undefined {
-  const shadow = asRecord(value);
-  const color = optionalStringValue(shadow.color);
-  if (!color) return undefined;
-  return `${optionalNumberValue(shadow.offsetX) ?? 0}px ${optionalNumberValue(shadow.offsetY) ?? 0}px ${optionalNumberValue(shadow.blur) ?? 0}px ${color}`;
+  if (value === undefined) return undefined;
+  const shadow = resolvedStyleObject(value, "Renderable shadow");
+  return `${resolvedStyleNumber(shadow, "offsetX", "Renderable shadow.offsetX")}px ${resolvedStyleNumber(shadow, "offsetY", "Renderable shadow.offsetY")}px ${resolvedStyleNumber(shadow, "blur", "Renderable shadow.blur")}px ${resolvedStyleString(shadow, "color", "Renderable shadow.color")}`;
 }
 
 function intensityColor(value: unknown): string | undefined {
@@ -83,22 +81,55 @@ function intensityColor(value: unknown): string | undefined {
 }
 
 function surfaceReliefValue(value: unknown): string | undefined {
-  const relief = asRecord(value);
-  if (!Object.keys(relief).length) return undefined;
-  const angleDeg = optionalNumberValue(relief.angleDeg) ?? -45;
-  const extension = optionalNumberValue(relief.extension) ?? 1;
-  const spread = optionalNumberValue(relief.spread) ?? 0;
+  if (value === undefined) return undefined;
+  const relief = resolvedStyleObject(value, "Renderable surfaceRelief");
+  const angleDeg = resolvedStyleNumber(relief, "angleDeg", "Renderable surfaceRelief.angleDeg");
+  const extension = resolvedStyleNumber(relief, "extension", "Renderable surfaceRelief.extension");
+  const spread = resolvedStyleNumber(relief, "spread", "Renderable surfaceRelief.spread");
   const angleRad = (angleDeg * Math.PI) / 180;
   const x = Math.cos(angleRad) * extension;
   const y = Math.sin(angleRad) * extension;
-  const upperColor = intensityColor(relief.upperIntensity);
-  const lowerColor = intensityColor(relief.lowerIntensity);
+  const upperColor = intensityColor(resolvedStyleNumber(
+    relief,
+    "upperIntensity",
+    "Renderable surfaceRelief.upperIntensity",
+  ));
+  const lowerColor = intensityColor(resolvedStyleNumber(
+    relief,
+    "lowerIntensity",
+    "Renderable surfaceRelief.lowerIntensity",
+  ));
   return [
     upperColor ? `inset ${x}px ${y}px ${spread}px ${upperColor}` : undefined,
     lowerColor ? `inset ${-x}px ${-y}px ${spread}px ${lowerColor}` : undefined,
   ]
     .filter(Boolean)
     .join(", ") || undefined;
+}
+
+function resolvedStyleObject(value: unknown, path: string) {
+  if (isRecord(value)) return value;
+  throw new Error(`${path} must be an object`);
+}
+
+function resolvedStyleNumber(
+  owner: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const value = owner[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  throw new Error(`${path} must be a finite number`);
+}
+
+function resolvedStyleString(
+  owner: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const value = owner[key];
+  if (typeof value === "string" && value.trim()) return value;
+  throw new Error(`${path} must be a non-empty string`);
 }
 
 function joinedBoxShadow(...values: Array<string | undefined>) {

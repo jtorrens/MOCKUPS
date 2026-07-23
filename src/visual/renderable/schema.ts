@@ -23,6 +23,27 @@ const RenderableAssetSchema = z.object({
 
 const RenderableNodeTypeSchema = z.enum(renderableNodeTypes);
 
+const RenderableShadowSchema = z.object({
+  offsetX: z.number(),
+  offsetY: z.number(),
+  blur: z.number(),
+  color: z.string().min(1),
+}).strict();
+
+const RenderableSurfaceReliefSchema = z.object({
+  angleDeg: z.number(),
+  extension: z.number(),
+  spread: z.number(),
+  upperIntensity: z.number(),
+  lowerIntensity: z.number(),
+}).strict();
+
+const RenderableStyleSchema = z.object({
+  shadow: RenderableShadowSchema.optional(),
+  textShadow: RenderableShadowSchema.optional(),
+  surfaceRelief: RenderableSurfaceReliefSchema.optional(),
+}).catchall(z.unknown());
+
 const RenderableMetadataSchema = z.object({
   fontFaces: z.array(z.object({
     family: z.string().min(1),
@@ -49,7 +70,7 @@ export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>
     frame: z.number().int().min(0).optional(),
     box: RenderableBoxSchema.optional(),
     transform: RenderableTransformSchema.optional(),
-    style: z.record(z.string(), z.unknown()).optional(),
+    style: RenderableStyleSchema.optional(),
     text: z.string().optional(),
     asset: RenderableAssetSchema.optional(),
     children: z.array(RenderableNodeSchema).optional(),
