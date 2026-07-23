@@ -217,6 +217,14 @@ presence for direct, embedded and projected Runtime data; a malformed Preview
 document cannot therefore produce a different plausible duration from the
 desktop editor.
 
+An animation owner with no authored data may still supply an empty transient
+object. If tracks, keyframes or retime are present, the desktop timeline
+validates their calculation envelope before using it: no wrong array/object
+root, filtered entry, empty track field/target id, invalid frame/enabled scalar
+or non-positive retime duration may be interpreted as “no animation” or “Retime
+off”. Persisted Module Instance animation retains the stricter complete v2
+document owner.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -395,6 +403,8 @@ Architecture enforcement must verify:
   empty fallbacks.
 - the web owner timeline preserves the same complete envelopes and rejects
   `asRecord`/array filtering fallbacks before frame resolution.
+- present desktop track, keyframe and retime envelopes are validated before the
+  common timeline calculates duration or frame origins.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

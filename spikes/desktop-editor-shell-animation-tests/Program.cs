@@ -5179,6 +5179,31 @@ static void ScreenFieldsStartAtZero()
 static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
 {
     var emptyAnimation = new JsonObject();
+    foreach (var invalidAnimation in new[]
+    {
+        Object("""{"tracks":null}"""),
+        Object("""{"tracks":[4]}"""),
+        Object("""{"tracks":[{"fieldId":""}]}"""),
+        Object("""{"tracks":[{"fieldId":"field","targetId":4}]}"""),
+        Object("""{"tracks":[{"fieldId":"field","keyframes":{}}]}"""),
+        Object("""{"tracks":[{"fieldId":"field","keyframes":[null]}]}"""),
+        Object("""{"tracks":[{"fieldId":"field","keyframes":[{"frame":"0"}]}]}"""),
+        Object("""{"tracks":[{"fieldId":"field","keyframes":[{"frame":0,"enabled":"true"}]}]}"""),
+        Object("""{"retime":[]}"""),
+        Object("""{"retime":{"targetDurationFrames":0}}"""),
+        Object("""{"retime":{"targetDurationFrames":"4"}}"""),
+        Object("""{"retime":{"targets":[]}}"""),
+        Object("""{"retime":{"targets":{"item":null}}}"""),
+        Object("""{"retime":{"targets":{"item":{"targetDurationFrames":0}}}}"""),
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+            new JsonObject(),
+            new JsonObject(),
+            invalidAnimation,
+            0));
+    }
+
     Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
         Object("""{"collections":null}"""),
         new JsonObject(),

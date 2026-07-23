@@ -6828,6 +6828,32 @@ for (const permissiveWebRuntimeTimelineEnvelope of [
   );
 }
 assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "ValidateAnimationEnvelope(animation);",
+  "the desktop timeline must validate every present transient animation calculation envelope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'JsonPath.OptionalObjectArray(_animation, "tracks", "Runtime owner animation")',
+  "the desktop timeline must read present tracks as an exact object array",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime")',
+  "the desktop timeline must reject invalid present root retime durations",
+);
+for (const permissiveDesktopAnimationEnvelope of [
+  '(_animation["tracks"] as JsonArray)?.OfType<JsonObject>()',
+  '(Track(playFieldId, targetId)?["keyframes"] as JsonArray)?.OfType<JsonObject>()',
+  '(_runtime[sourceCollectionKey] as JsonArray)?.OfType<JsonObject>()',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    permissiveDesktopAnimationEnvelope,
+    `the desktop timeline must not filter malformed animation entries (${permissiveDesktopAnimationEnvelope})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

@@ -125,6 +125,7 @@ internal static class RuntimeAnimationFrameOrigin
 
         public TimelineModel(JsonObject contract, JsonObject runtime, JsonObject animation, int storedFallback, JsonObject themeTokens)
         {
+            ValidateAnimationEnvelope(animation);
             _contract = contract;
             _runtime = runtime;
             _animation = animation;
@@ -328,12 +329,7 @@ internal static class RuntimeAnimationFrameOrigin
             }
             resolving.Remove(fieldId);
 
-            var enabledKeyframes = Track(fieldId, targetId)?["keyframes"] is JsonArray keyframes
-                ? keyframes.OfType<JsonObject>()
-                    .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
-                    .OrderBy((keyframe) => Number(keyframe["frame"]))
-                    .ToList()
-                : [];
+            var enabledKeyframes = EnabledKeyframes(Track(fieldId, targetId));
             var completionDefinition = fieldTimeline["completion"] as JsonObject;
             var baseDurationFieldId = Text(completionDefinition?["baseDurationFieldId"]);
             var minimumOverrideKeyframes = Math.Max(2, (int)Number(completionDefinition?["minimumEnabledKeyframes"], 2));
@@ -407,10 +403,7 @@ internal static class RuntimeAnimationFrameOrigin
                 var baseEnabled = item[Text(action["durationEnabledInputId"])] is JsonValue enabled
                     && enabled.TryGetValue<bool>(out var enabledValue)
                     && enabledValue;
-                var keyframes = (Track(playFieldId, targetId)?["keyframes"] as JsonArray)?.OfType<JsonObject>()
-                    .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
-                    .OrderBy((keyframe) => Number(keyframe["frame"]))
-                    .ToList() ?? [];
+                var keyframes = EnabledKeyframes(Track(playFieldId, targetId));
                 var hasActiveKeyframe = keyframes.Any((keyframe) =>
                     keyframe["value"] is JsonValue value
                     && value.TryGetValue<bool>(out var playing)
@@ -449,7 +442,7 @@ internal static class RuntimeAnimationFrameOrigin
         }
 
         private JsonObject? Track(string fieldId, string targetId) =>
-            (_animation["tracks"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault((track) =>
+            JsonPath.OptionalObjectArray(_animation, "tracks", "Runtime owner animation").FirstOrDefault((track) =>
                 Text(track["fieldId"]) == fieldId
                 && Text(track["targetId"]) == targetId);
 
@@ -474,20 +467,33 @@ internal static class RuntimeAnimationFrameOrigin
                 throw new InvalidOperationException("Incomplete firstMatchingValue owner-origin contract.");
             }
 
-            var sourceItem = (_runtime[sourceCollectionKey] as JsonArray)?.OfType<JsonObject>()
+            var sourceItems = _runtime[sourceCollectionKey] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Owner-origin source collection '{sourceCollectionKey}' must be a JSON array.");
+            var sourceItem = JsonPath.ObjectItems(
+                    sourceItems,
+                    $"Owner-origin source collection '{sourceCollectionKey}'")
                 .FirstOrDefault((candidate) => Text(candidate["id"]) == sourceTargetId)
                 ?? throw new InvalidOperationException(
                     $"Owner-origin source item '{sourceTargetId}' is missing from '{sourceCollectionKey}'.");
             if (Text(sourceItem[sourceValueJsonKey]) == matchValue) return 0;
 
-            var firstMatch = (Track(sourceFieldId, sourceTargetId)?["keyframes"] as JsonArray)?
-                .OfType<JsonObject>()
+            var firstMatch = EnabledKeyframes(Track(sourceFieldId, sourceTargetId))
                 .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
                 .Where((keyframe) => Text(keyframe["value"]) == matchValue)
                 .Select((keyframe) => Number(keyframe["frame"]))
                 .DefaultIfEmpty(0)
-                .Min() ?? 0;
+                .Min();
             return firstMatch;
+        }
+
+        private static IReadOnlyList<JsonObject> EnabledKeyframes(JsonObject? track)
+        {
+            if (track is null) return [];
+            return JsonPath.OptionalObjectArray(track, "keyframes", "Runtime animation track")
+                .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
+                .OrderBy((keyframe) => Number(keyframe["frame"]))
+                .ToList();
         }
 
         private double TargetDuration(string targetId, double natural) =>
@@ -518,6 +524,61 @@ internal static class RuntimeAnimationFrameOrigin
             double EffectiveSequence)
         {
             public Dictionary<string, FieldTiming> Fields { get; } = new(StringComparer.Ordinal);
+        }
+    }
+
+    private static void ValidateAnimationEnvelope(JsonObject animation)
+    {
+        var tracks = JsonPath.OptionalObjectArray(animation, "tracks", "Runtime owner animation");
+        foreach (var track in tracks)
+        {
+            _ = JsonPath.RequiredString(track, "fieldId", "Runtime animation track");
+            if (track.TryGetPropertyValue("targetId", out _))
+            {
+                _ = JsonPath.RequiredString(track, "targetId", "Runtime animation track");
+            }
+            foreach (var keyframe in JsonPath.OptionalObjectArray(
+                track,
+                "keyframes",
+                "Runtime animation track"))
+            {
+                var frame = JsonPath.RequiredInteger(keyframe, "frame", "Runtime animation keyframe");
+                if (frame < 0)
+                {
+                    throw new InvalidOperationException("Runtime animation keyframe frame must not be negative.");
+                }
+                if (keyframe.TryGetPropertyValue("enabled", out _))
+                {
+                    _ = JsonPath.RequiredBoolean(keyframe, "enabled", "Runtime animation keyframe");
+                }
+            }
+        }
+
+        var retime = JsonPath.OptionalObject(animation, "retime", "Runtime owner animation");
+        if (retime is null) return;
+        ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime");
+        var targets = JsonPath.OptionalObject(retime, "targets", "Runtime animation retime");
+        if (targets is null) return;
+        foreach (var (targetId, targetNode) in targets)
+        {
+            if (string.IsNullOrWhiteSpace(targetId) || targetNode is not JsonObject target)
+            {
+                throw new InvalidOperationException("Runtime animation retime target must be a named JSON object.");
+            }
+            ValidateOptionalPositiveFrameCount(
+                target,
+                "targetDurationFrames",
+                $"Runtime animation retime target '{targetId}'");
+        }
+    }
+
+    private static void ValidateOptionalPositiveFrameCount(JsonObject owner, string key, string context)
+    {
+        if (!owner.TryGetPropertyValue(key, out _)) return;
+        var value = JsonPath.RequiredInteger(owner, key, context);
+        if (value <= 0)
+        {
+            throw new InvalidOperationException($"{context} '{key}' must be positive.");
         }
     }
 

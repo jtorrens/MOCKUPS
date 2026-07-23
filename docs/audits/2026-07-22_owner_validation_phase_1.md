@@ -489,3 +489,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El timeline web debe usar sus readers exactos y quedan prohibidas las invocaciones `records`/`asRecord` retiradas sobre contract, runtime collection, fields, itemActions y nested Runtime documents. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. El frame válido no cambia; Preview deja de discrepar silenciosamente del editor ante un envelope inválido. |
+
+## Slice 1.35 — Envelope de cálculo de tracks y Retime en escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Aunque `animation_json` persistido ya tenía un owner v2 estricto, el timeline común admite también animación transitoria y volvía a filtrar tracks/keyframes no objeto. Tracks/keyframes wrong-root aparentaban ausencia y un Retime null/string/cero se trataba como Retime off. La búsqueda de owner-origin filtraba además items dañados. |
+| Owner | `ModuleInstanceAnimationDocumentContract` conserva el documento persistido completo; `RuntimeAnimationFrameOrigin` posee el envelope mínimo que consume al calcular, incluida la forma transitoria vacía legítima. |
+| Cambio mínimo | Validar una vez el envelope al construir el modelo: arrays de objetos, field/target ids, frame entero no negativo, enabled boolean si está presente, retime/targets objeto y duraciones positivas. Compartir una lectura exacta de keyframes y source items. |
+| Rutas eliminadas | Tracks/keyframes/items `OfType`, root incorrecta → sin track, field/target inválido → no match, frame inválido → cero y Retime inválido/no positivo → off. |
+| Pruebas | 116/116 escritorio: transient vacío válido y 14 formas inválidas de tracks, keyframes y Retime; todas las pruebas owner-relative, duration, actions y retime actuales pasan. |
+| Enforcement | El constructor debe ejecutar el guard; tracks/keyframes/source items usan arrays exactos y quedan prohibidos los tres filtros `OfType` retirados. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. El v2 current ya cumple; se conserva el objeto transitorio vacío y solo deja de confundirse animación presente dañada con ausencia. |
