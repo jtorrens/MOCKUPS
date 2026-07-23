@@ -71,8 +71,11 @@
 
         <Grid x:Name="ShellColumns"
               Grid.Row="1"
-              ColumnDefinitions="320,6,2*,6,*">
-            <Border Grid.Column="0" Margin="10">
+              ColumnDefinitions="300,6,2*,6,*">
+            <Border x:Name="NavigationPanelBorder"
+                    Grid.Column="0"
+                    Margin="10"
+                    MinWidth="220">
                 <suki:GlassCard>
                     <DockPanel>
                     <Border DockPanel.Dock="Top"
@@ -111,7 +114,10 @@
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" />
 
-            <Border Grid.Column="2" Margin="10">
+            <Border x:Name="EditorPanelBorder"
+                    Grid.Column="2"
+                    Margin="10"
+                    MinWidth="260">
                 <suki:GlassCard>
                     <DockPanel>
                     <Border DockPanel.Dock="Top"
@@ -152,7 +158,10 @@
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" />
 
-            <Border Grid.Column="4" Margin="10">
+            <Border x:Name="PreviewPanelBorder"
+                    Grid.Column="4"
+                    Margin="10"
+                    MinWidth="400">
                 <suki:GlassCard>
                     <DockPanel>
                     <Border DockPanel.Dock="Top"
@@ -173,6 +182,7 @@
                                 CornerRadius="12"
                                 Background="#18000000">
                             <TabControl x:Name="PreviewUtilityTabs"
+                                        TabStripPlacement="Top"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch">
                                 <TabItem x:Name="PreviewAuthoringDataTab"
@@ -184,10 +194,13 @@
                                 </TabItem>
                                 <TabItem x:Name="PreviewSetupTab"
                                          Header="Preview Setup">
-                                    <ContentControl x:Name="PreviewSetupHost">
-                                        <StackPanel Spacing="10">
-                                            <Grid ColumnDefinitions="*,*,Auto,Auto"
-                                                  ColumnSpacing="10">
+                                    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <ContentControl x:Name="PreviewSetupHost">
+                                            <StackPanel Spacing="10">
+                                                <Grid x:Name="PreviewSetupGrid"
+                                                      ColumnDefinitions="*,*,Auto,Auto"
+                                                      ColumnSpacing="10">
                                                 <StackPanel Spacing="8">
                                                     <TextBlock FontSize="11"
                                                                FontWeight="SemiBold"
@@ -225,9 +238,10 @@
                                                                                   MinHeight="36"
                                                                                   HorizontalAlignment="Stretch" />
                                                 </StackPanel>
-                                            </Grid>
-                                        </StackPanel>
-                                    </ContentControl>
+                                                </Grid>
+                                            </StackPanel>
+                                        </ContentControl>
+                                    </ScrollViewer>
                                 </TabItem>
                                 <TabItem x:Name="PreviewControlsTab"
                                          Header="Preview Controls">

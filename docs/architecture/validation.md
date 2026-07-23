@@ -23,6 +23,7 @@ It includes:
 - desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
 - Preview and desktop animation tests;
+- deterministic Preview shell layout smoke at 1040 and 1440 px;
 - architecture enforcement;
 - desktop application build.
 

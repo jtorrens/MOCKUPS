@@ -142,7 +142,11 @@ internal sealed class EditorPreviewController
         IsVisible = false,
     };
     private Grid? _previewSetupGrid;
+    private Control? _deviceField;
+    private Control? _themeField;
+    private Control? _modeField;
     private Control? _orientationField;
+    private PreviewSetupLayoutMode? _previewSetupLayoutMode;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
     private readonly ProductionShotContextService _productionShotContext;
@@ -637,7 +641,16 @@ internal sealed class EditorPreviewController
             Child = content,
         };
         _previewSetupGrid = _deviceComboBox.Parent?.Parent as Grid;
+        _deviceField = _deviceComboBox.Parent as Control;
+        _themeField = _themeComboBox.Parent as Control;
+        _modeField = _modeComboBox.Parent as Control;
         _orientationField = _orientationComboBox.Parent as Control;
+        if (_previewSetupGrid is { } setupGrid)
+        {
+            setupGrid.SizeChanged += (_, args) => ApplyPreviewSetupLayout(args.NewSize.Width);
+            setupGrid.LayoutUpdated += (_, _) => ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
+            ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
+        }
     }
 
     private void CreatePreviewControls(ContentControl previewControlsHost)
@@ -2886,24 +2899,22 @@ internal sealed class EditorPreviewController
     {
         var production = _workspace == EditorWorkspace.Production;
         UpdateProductionContextStrip(production);
-        if (_deviceComboBox.Parent is Control deviceField) deviceField.IsVisible = !production;
-        if (_themeComboBox.Parent is Control themeField) themeField.IsVisible = !production;
-        if (_modeComboBox.Parent is Control modeField) modeField.IsVisible = !production;
+        if (_deviceField is { } deviceField) deviceField.IsVisible = !production;
+        if (_themeField is { } themeField) themeField.IsVisible = !production;
+        if (_modeField is { } modeField) modeField.IsVisible = !production;
         if (_previewSetupGrid is { } setupGrid)
         {
-            setupGrid.ColumnDefinitions = new ColumnDefinitions(production
-                ? "0,0,0,Auto"
-                : "*,*,Auto,Auto");
             if (!production && _orientationField is { Parent: Panel currentParent } orientationField)
             {
                 if (!ReferenceEquals(currentParent, setupGrid))
                 {
                     currentParent.Children.Remove(orientationField);
-                    Grid.SetColumn(orientationField, 3);
                     orientationField.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
                     setupGrid.Children.Add(orientationField);
                 }
             }
+            _previewSetupLayoutMode = null;
+            ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
         }
         var appearanceMode = production ? ActiveModuleAppearanceMode() : "inherit";
         var forcedMode = appearanceMode is "light" or "dark";
@@ -2916,6 +2927,74 @@ internal sealed class EditorPreviewController
         }
         _modeComboBox.IsEnabled = !forcedMode;
         ToolTip.SetTip(_modeComboBox, forcedMode ? "Mode is fixed by the active module" : null);
+    }
+
+    private void ApplyPreviewSetupLayout(double availableWidth)
+    {
+        if (_previewSetupGrid is not { } setupGrid
+            || _workspace == EditorWorkspace.Production)
+        {
+            return;
+        }
+        if (_deviceField is not { } deviceField
+            || _themeField is not { } themeField
+            || _modeField is not { } modeField
+            || _orientationField is not { } orientationField
+            || !ReferenceEquals(orientationField.Parent, setupGrid))
+        {
+            return;
+        }
+
+        var layoutMode = PreviewPanelLayoutPolicy.SetupMode(availableWidth);
+        if (_previewSetupLayoutMode == layoutMode)
+        {
+            return;
+        }
+        _previewSetupLayoutMode = layoutMode;
+        switch (layoutMode)
+        {
+            case PreviewSetupLayoutMode.FourColumns:
+                setupGrid.ColumnDefinitions = new ColumnDefinitions("*,*,Auto,Auto");
+                setupGrid.RowDefinitions = new RowDefinitions("Auto");
+                setupGrid.RowSpacing = 0;
+                modeField.MinWidth = 112;
+                orientationField.MinWidth = 132;
+                PlaceSetupField(deviceField, 0, 0);
+                PlaceSetupField(themeField, 1, 0);
+                PlaceSetupField(modeField, 2, 0);
+                PlaceSetupField(orientationField, 3, 0);
+                break;
+            case PreviewSetupLayoutMode.TwoColumns:
+                setupGrid.ColumnDefinitions = new ColumnDefinitions("*,*");
+                setupGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
+                setupGrid.RowSpacing = 10;
+                modeField.MinWidth = 112;
+                orientationField.MinWidth = 132;
+                PlaceSetupField(deviceField, 0, 0);
+                PlaceSetupField(themeField, 1, 0);
+                PlaceSetupField(modeField, 0, 1);
+                PlaceSetupField(orientationField, 1, 1);
+                break;
+            case PreviewSetupLayoutMode.OneColumn:
+                setupGrid.ColumnDefinitions = new ColumnDefinitions("*");
+                setupGrid.RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto");
+                setupGrid.RowSpacing = 10;
+                modeField.MinWidth = 0;
+                orientationField.MinWidth = 0;
+                PlaceSetupField(deviceField, 0, 0);
+                PlaceSetupField(themeField, 0, 1);
+                PlaceSetupField(modeField, 0, 2);
+                PlaceSetupField(orientationField, 0, 3);
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported Preview Setup layout '{layoutMode}'.");
+        }
+    }
+
+    private static void PlaceSetupField(Control field, int column, int row)
+    {
+        Grid.SetColumn(field, column);
+        Grid.SetRow(field, row);
     }
 
     private void UpdateProductionContextStrip(bool production)

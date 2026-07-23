@@ -53,8 +53,12 @@ internal sealed class EditorShellStateService
 
             if (state.LeftPanelWidth > 0 && state.EditorPanelWidth > 0)
             {
-                _shellColumns.ColumnDefinitions[0].Width = new GridLength(state.LeftPanelWidth);
-                _shellColumns.ColumnDefinitions[2].Width = new GridLength(state.EditorPanelWidth);
+                var columns = PreviewPanelLayoutPolicy.ClampRestoredColumns(
+                    _window.Width,
+                    state.LeftPanelWidth,
+                    state.EditorPanelWidth);
+                _shellColumns.ColumnDefinitions[0].Width = new GridLength(columns.LeftPanelWidth);
+                _shellColumns.ColumnDefinitions[2].Width = new GridLength(columns.EditorPanelWidth);
                 _shellColumns.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
             }
 

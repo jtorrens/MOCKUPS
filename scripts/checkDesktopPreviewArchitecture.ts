@@ -6614,11 +6614,17 @@ assertContains(
   "_pendingPlaybackFramesOverride = frames;",
   "Shot playback must prepare its frames through the shared HTML/raster playback route",
 );
-assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  '"0,0,0,Auto"',
-  "production preview setup must collapse editor-owned Device, Theme and Mode selectors",
-);
+for (const hiddenProductionPreviewField of [
+  "deviceField.IsVisible = !production",
+  "themeField.IsVisible = !production",
+  "modeField.IsVisible = !production",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    hiddenProductionPreviewField,
+    `production preview setup must hide its Design-owned field (${hiddenProductionPreviewField})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "ProductionPreviewContextStrip.Render",
@@ -6893,6 +6899,22 @@ assertMatches(
   /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewAuthoringDataTab"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
   "the upper Preview utility surface must keep the agreed horizontal authoring-data, Setup and Controls tab order",
 );
+for (const [relativePath, responsivePreviewTerm] of [
+  ["spikes/desktop-editor-shell/MainWindow.axaml", 'ColumnDefinitions="300,6,2*,6,*"'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewPanelBorder"'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", 'MinWidth="400"'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewSetupGrid"'],
+  ["spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs", "PreviewPanelLayoutPolicy.SetupMode(availableWidth)"],
+  ["spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs", "PreviewPanelLayoutPolicy.ClampRestoredColumns("],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellLayoutIsResponsive"],
+  ["docs/architecture/ux_ui.md", "1040 px minimum"],
+] as const) {
+  assertContains(
+    relativePath,
+    responsivePreviewTerm,
+    `${relativePath} must preserve the measurable responsive Preview policy`,
+  );
+}
 assertMatches(
   "spikes/desktop-editor-shell/MainWindow.axaml",
   /x:Name="PreviewPanelGrid"[\s\S]*?x:Name="PreviewUtilitySplitter"[\s\S]*?ResizeDirection="Rows"[\s\S]*?ResizeBehavior="PreviousAndNext"/,

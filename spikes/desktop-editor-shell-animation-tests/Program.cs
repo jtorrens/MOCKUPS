@@ -77,6 +77,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
+    ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
@@ -1958,6 +1959,43 @@ static void ExistingDatabaseOpenIsReadOnly()
     {
         File.Delete(temporary);
     }
+}
+
+static void PreviewShellLayoutIsResponsive()
+{
+    foreach (var width in new[]
+             {
+                 PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+                 PreviewPanelLayoutPolicy.DefaultWindowWidth,
+             })
+    {
+        var layout = PreviewPanelLayoutPolicy.ForWindow(width);
+        True(layout.PreviewPanelWidth >= PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth);
+        True(layout.HeaderStripWidth >= PreviewPanelLayoutPolicy.MinimumHeaderStripWidth);
+        True(layout.EditorPanelWidth >= PreviewPanelLayoutPolicy.MinimumEditorColumnWidth);
+        Equal(PreviewSetupLayoutMode.TwoColumns, layout.SetupMode);
+    }
+
+    Equal(
+        PreviewSetupLayoutMode.FourColumns,
+        PreviewPanelLayoutPolicy.SetupMode(PreviewPanelLayoutPolicy.FourColumnSetupWidth));
+    Equal(
+        PreviewSetupLayoutMode.TwoColumns,
+        PreviewPanelLayoutPolicy.SetupMode(PreviewPanelLayoutPolicy.TwoColumnSetupWidth));
+    Equal(
+        PreviewSetupLayoutMode.OneColumn,
+        PreviewPanelLayoutPolicy.SetupMode(PreviewPanelLayoutPolicy.TwoColumnSetupWidth - 1));
+
+    var restored = PreviewPanelLayoutPolicy.ClampRestoredColumns(
+        PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+        requestedLeftWidth: 800,
+        requestedEditorWidth: 800);
+    True(restored.LeftPanelWidth >= PreviewPanelLayoutPolicy.MinimumLeftColumnWidth);
+    True(restored.EditorPanelWidth >= PreviewPanelLayoutPolicy.MinimumEditorColumnWidth);
+    True(restored.LeftPanelWidth
+        + restored.EditorPanelWidth
+        + PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth
+        <= PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth - 32);
 }
 
 static void RejectedDatabaseOpenIsReadOnly()

@@ -78,6 +78,13 @@ Production places the selected Screen Payload in the corresponding Preview
 authoring area. Runtime Inputs and structured slots are edited beside the
 result they control. Persisted payload remains owned by the Screen.
 
+The three Preview utility headers remain in one horizontal row at the supported
+1040 px minimum and the 1440 px default window widths. The Preview column has a
+real minimum independent of star sizing. Preview Setup uses four columns only
+when its measured content width allows them, otherwise it reflows to two rows
+and finally one scrollable column. Splitter movement, the selected utility tab
+and session state remain intact across these layout changes.
+
 Preview state is visibly distinct:
 
 - idle;

@@ -172,6 +172,12 @@ Reusable editor organization is metadata-driven:
 Do not infer presentation from hierarchy depth, record class, label or position.
 Dictionary controls own their compound visuals.
 
+Preview utility tabs remain one horizontal row at the supported 1040 px minimum
+and 1440 px default window widths. The shell reserves the policy-owned Preview
+minimum; Preview Setup reflows by measured width through the shared layout
+policy. Do not encode the supported layout as an unchecked four-column XAML
+assumption.
+
 ## Hard rule: editor view memory is session-only
 
 Card expansion, internal selection and scroll are keyed by exact layout
