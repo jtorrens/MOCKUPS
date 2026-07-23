@@ -7,24 +7,24 @@ import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { motionTotalDurationMs } from "./previewMotionHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import { optionalObject } from "./previewJsonHelpers.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
 
 export function resolveNotificationsComponent(payload: DesignPreviewPayload): NotificationsDesignContract {
   const config = parseObject(payload.configJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
-  const notifications = asRecord(config.notifications);
-  const slot = asRecord(notifications.collectionStackSlot);
-  const notificationSlot = asRecord(notifications.notificationSlot);
+  const notifications = requiredRecord(config, "notifications", "component.notifications");
+  const slot = requiredRecord(notifications, "collectionStackSlot", "component.notifications.collectionStackSlot");
+  const notificationSlot = requiredRecord(notifications, "notificationSlot", "component.notifications.notificationSlot");
   const notificationInputs = requiredRecord(notifications, "notificationInputs", "component.notifications.notificationInputs");
-  const badgeSlot = asRecord(notifications.badgeSlot);
-  const badgeInputs = asRecord(notifications.badgeInputs);
+  const badgeSlot = requiredRecord(notifications, "badgeSlot", "component.notifications.badgeSlot");
+  const badgeInputs = requiredRecord(notifications, "badgeInputs", "component.notifications.badgeInputs");
   const preview = parseObject(payload.designPreviewJson);
   const distributionMotion = requiredMotionContract(notifications, "distributionMotion", "component.notifications.distributionMotion");
   const distribution = resolveDistribution(payload, preview, distributionMotion);
   const stackConfig = mergeComponentDefaults(
     componentVariantConfig(bases, "collectionStack", requiredString(slot, "variantReference", "component.notifications.collectionStackSlot.variantReference")),
-    asRecord(slot.overrides),
+    requiredRecord(slot, "overrides", "component.notifications.collectionStackSlot.overrides"),
   );
   const notificationVariantReference = requiredString(
     notificationSlot,
@@ -33,11 +33,10 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   );
   const notificationConfig = mergeComponentDefaults(
     componentVariantConfig(bases, "notification", notificationVariantReference),
-    asRecord(notificationSlot.overrides),
+    requiredRecord(notificationSlot, "overrides", "component.notifications.notificationSlot.overrides"),
   );
-  if (!Array.isArray(preview.items)) throw new Error("Missing component.notifications runtime items");
-  const stackItems = preview.items.map((rawItem, index) => notificationStackItem(
-    asRecord(rawItem),
+  const stackItems = requiredObjectArray(preview, "items", "component.notifications runtime").map((rawItem, index) => notificationStackItem(
+    rawItem,
     index,
     notificationVariantReference,
     notificationConfig,
@@ -93,7 +92,7 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
   const showBadge = requiredBoolean(notifications, "showBadge", "component.notifications.showBadge");
   const badgeConfig = mergeComponentDefaults(
     componentVariantConfig(bases, "badge", requiredString(badgeSlot, "variantReference", "component.notifications.badgeSlot.variantReference")),
-    asRecord(badgeSlot.overrides),
+    requiredRecord(badgeSlot, "overrides", "component.notifications.badgeSlot.overrides"),
   );
   return {
     id: "component.notifications",

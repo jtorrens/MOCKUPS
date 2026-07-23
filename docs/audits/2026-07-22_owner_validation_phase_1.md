@@ -736,3 +736,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner compartido y readers exactos obligatorios en Component Stack; los tres patrones tolerantes retirados quedan prohibidos. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia una animación válida ni el orden de salida; solo se elimina un segundo significado para un documento incorrecto. |
+
+## Slice 1.54 — Documentos de composición de Notifications
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Notifications convertía su config raíz, tres slots, varios Inputs/Overrides y cada item no objeto en `{}`. La raíz de `items` era array requerido, pero sus entries seguían tolerantes. |
+| Owner | El resolver Notifications posee su composición explícita; cada slot/Inputs/Overrides es un objeto requerido y el Runtime collection owner posee el array de items estables. |
+| Cambio mínimo | Exigir todos los objetos antes de resolver referencias o mezclar Overrides y usar el reader común de array requerido de objetos para `items`. No cambia ninguna referencia Variant ni el payload de los children válidos. |
+| Rutas eliminadas | Nueve `asRecord` de fronteras requeridas y el `preview.items.map(asRecord)` que convertía una entry dañada en una Notification incompleta. |
+| Pruebas | 98/98 Preview: fixture válida, nueve roots de config dañadas y cuatro formas inválidas de la colección Runtime; 116/116 escritorio conserva la composición seeded completa. |
+| Enforcement | `requiredRecord`/`requiredObjectArray` obligatorios en cada frontera y los casts tolerantes concretos quedan prohibidos. |
+| Datos | Sin migración. La configuración y los items current ya son objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una Notification válida; un documento roto deja de parecer un slot vacío o una colección parcialmente usable. |

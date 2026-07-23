@@ -236,6 +236,13 @@ filter malformed tracks/keyframes, coerce their frames or maintain a second
 animation grammar. Its event traversal therefore consumes the shared owner and
 the exact object-array readers before applying Component Stack semantics.
 
+Notifications composition owns a required current `notifications` config
+object, three embedded slot objects, their local Overrides, the declared
+notification/badge Inputs and a required Runtime `items` array of objects. Its
+resolver must require those roots before it constructs Collection Stack,
+Notification or Badge child payloads. A malformed child boundary is not an
+empty slot, no local Override or an empty Notifications collection.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -511,6 +518,8 @@ Architecture enforcement must verify:
 - Component Stack exit-event projection consumes the shared transient
   animation owner and exact keyframe scalars; its descending event traversal is
   not a document-normalization fallback.
+- Notifications requires exact config, embedded slot/Input/Override and Runtime
+  item documents before composing its child Components.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

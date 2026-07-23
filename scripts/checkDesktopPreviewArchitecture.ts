@@ -7189,6 +7189,45 @@ for (const permissiveComponentStackAnimationReader of [
     `Component Stack exit events must not normalize animation data (${permissiveComponentStackAnimationReader})`,
   );
 }
+for (const requiredNotificationsObject of [
+  'requiredRecord(config, "notifications", "component.notifications")',
+  'requiredRecord(notifications, "collectionStackSlot", "component.notifications.collectionStackSlot")',
+  'requiredRecord(notifications, "notificationSlot", "component.notifications.notificationSlot")',
+  'requiredRecord(notifications, "notificationInputs", "component.notifications.notificationInputs")',
+  'requiredRecord(notifications, "badgeSlot", "component.notifications.badgeSlot")',
+  'requiredRecord(notifications, "badgeInputs", "component.notifications.badgeInputs")',
+  'requiredRecord(slot, "overrides", "component.notifications.collectionStackSlot.overrides")',
+  'requiredRecord(notificationSlot, "overrides", "component.notifications.notificationSlot.overrides")',
+  'requiredRecord(badgeSlot, "overrides", "component.notifications.badgeSlot.overrides")',
+] as const) {
+  assertContains(
+    "src/desktop-preview/notificationsComponentResolver.ts",
+    requiredNotificationsObject,
+    `Notifications composition must preserve its required object boundary (${requiredNotificationsObject})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/notificationsComponentResolver.ts",
+  'requiredObjectArray(preview, "items", "component.notifications runtime")',
+  "Notifications runtime items must be an exact required object array",
+);
+for (const permissiveNotificationsDocument of [
+  "asRecord(config.notifications)",
+  "asRecord(notifications.collectionStackSlot)",
+  "asRecord(notifications.notificationSlot)",
+  "asRecord(notifications.badgeSlot)",
+  "asRecord(notifications.badgeInputs)",
+  "asRecord(slot.overrides)",
+  "asRecord(notificationSlot.overrides)",
+  "asRecord(badgeSlot.overrides)",
+  "asRecord(rawItem)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/notificationsComponentResolver.ts",
+    permissiveNotificationsDocument,
+    `Notifications composition must not coerce required documents (${permissiveNotificationsDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
