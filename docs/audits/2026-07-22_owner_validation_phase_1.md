@@ -567,3 +567,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Key leída con `RequiredString`; `HashSet` para keys, `TryAdd` para targets y validator de ids de field; overwrite directo de `_items[targetId]` prohibido. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia ninguna identidad válida; únicamente deja de depender del orden una dirección temporal contradictoria. |
+
+## Slice 1.41 — Paridad web de identidad temporal
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `RuntimeOwnerTimeline` mantenía los equivalentes web de la selección tolerante y del overwrite: cadena `storage/source/json` por primer string truthy, `Map.set` para targets repetidos y `.find` para fields repetidos. |
+| Owner | El payload preparado conserva las identidades declaradas; el timeline web las consume sin reinterpretarlas antes de resolver el frame. Resolver y renderer no participan en este control. |
+| Cambio mínimo | Aplicar la misma precedencia presente/estricta; rechazar keys efectivas, targets e ids de field repetidos; validar la combinación de fields directos, embedded y projected. |
+| Rutas eliminadas | Wrong key → fallback, target duplicado → último item y field duplicado → primero por orden de concatenación. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: misma matriz de keys/ids ambiguos y todos los resolvers, forwarding, Stacks, Conversation y ownership temporal actuales. |
+| Enforcement | Set de collection keys, guard antes de `items.set`, `requiredString` en la precedencia y validator de fields; cadena truthy anterior prohibida. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Preview conserva todas las direcciones válidas y deja de elegir un owner diferente por orden del documento. |

@@ -6831,6 +6831,26 @@ assertContains(
   'optionalStringArray(',
   "the web owner timeline must preserve exact pre/post duration field-id lists",
 );
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "const collectionKeys = new Set<string>();",
+  "the web owner timeline must keep effective collection keys unique",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "if (this.items.has(targetId))",
+  "the web owner timeline must reject duplicate stable target ids before routing frames",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'return requiredString(collection, key, "runtime owner collection");',
+  "the web owner timeline must validate the first explicitly declared collection key",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'validateUniqueFieldIds(fields, "runtime owner item fields")',
+  "the web owner timeline must reject ambiguous direct/embedded/projected field ids",
+);
 for (const permissiveWebRuntimeTimelineEnvelope of [
   "records(contract.collections)",
   "records(runtime[collectionKey(collection)])",
@@ -6841,6 +6861,7 @@ for (const permissiveWebRuntimeTimelineEnvelope of [
   "records(asRecord(item[runtimeContractKey]).actions)",
   "strings(timeline.preDurationFieldIds)",
   "strings(asRecord(collection.animationTimeline).postDurationFieldIds)",
+  'return optionalString(collection, "storageCollectionJsonKey")',
 ]) {
   assertDoesNotContain(
     "src/desktop-preview/runtimeOwnerTimeline.ts",

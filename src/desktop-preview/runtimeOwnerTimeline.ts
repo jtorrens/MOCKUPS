@@ -32,12 +32,19 @@ export class RuntimeOwnerTimeline {
     validateAnimationEnvelope(animation);
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
     const collections = optionalObjectArray(contract, "collections", "runtime owner contract");
+    const collectionKeys = new Set<string>();
     for (const collection of collections) {
       validateCollectionTimeline(collection);
-      for (const field of optionalObjectArray(collection, "fields", "runtime owner collection")) {
+      const directFields = optionalObjectArray(collection, "fields", "runtime owner collection");
+      for (const field of directFields) {
         validateFieldTimeline(field);
       }
+      validateUniqueFieldIds(directFields, "runtime owner collection fields");
       const key = collectionKey(collection);
+      if (collectionKeys.has(key)) {
+        throw new Error(`runtime owner contract contains duplicate collection key '${key}'`);
+      }
+      collectionKeys.add(key);
       const values = optionalObjectArray(runtime, key, `runtime owner collection '${key}'`);
       const collectionTimeline = optionalObject(
         collection,
@@ -59,6 +66,9 @@ export class RuntimeOwnerTimeline {
         const durations = this.itemDurations(collection, item, targetId);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
+        if (this.items.has(targetId)) {
+          throw new Error(`runtime owner collections contain duplicate target id '${targetId}'`);
+        }
         this.items.set(targetId, {
           collection,
           item,
@@ -76,9 +86,9 @@ export class RuntimeOwnerTimeline {
     }
     const topInputs = optionalObjectArray(contract, "inputs", "runtime owner contract");
     topInputs.forEach(validateFieldTimeline);
+    validateUniqueFieldIds(topInputs, "runtime owner inputs");
     for (const definition of topInputs) {
-      const fieldId = optionalString(definition, "id");
-      if (!fieldId) continue;
+      const fieldId = requiredString(definition, "id", "runtime owner input");
       const timing = this.resolveFieldTiming(
         definition,
         runtime,
@@ -597,9 +607,11 @@ function validateOptionalPositiveFrameCount(owner: JsonRecord, key: string, path
 }
 
 function collectionKey(collection: JsonRecord) {
-  return optionalString(collection, "storageCollectionJsonKey")
-    || optionalString(collection, "sourceCollectionJsonKey")
-    || optionalString(collection, "jsonKey");
+  for (const key of ["storageCollectionJsonKey", "sourceCollectionJsonKey", "jsonKey"]) {
+    if (!Object.hasOwn(collection, key)) continue;
+    return requiredString(collection, key, "runtime owner collection");
+  }
+  throw new Error("runtime owner collection requires an explicit storage key");
 }
 
 function itemFields(collection: JsonRecord, item: JsonRecord) {
@@ -621,7 +633,19 @@ function itemFields(collection: JsonRecord, item: JsonRecord) {
     : [];
   const fields = [...direct, ...embedded, ...runtime];
   fields.forEach(validateFieldTimeline);
+  validateUniqueFieldIds(fields, "runtime owner item fields");
   return fields;
+}
+
+function validateUniqueFieldIds(fields: JsonRecord[], context: string) {
+  const ids = new Set<string>();
+  for (const field of fields) {
+    const fieldId = requiredString(field, "id", context);
+    if (ids.has(fieldId)) {
+      throw new Error(`${context} contain duplicate id '${fieldId}'`);
+    }
+    ids.add(fieldId);
+  }
 }
 
 function itemActions(collection: JsonRecord, item: JsonRecord) {
