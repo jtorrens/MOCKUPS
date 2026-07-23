@@ -1016,3 +1016,16 @@ y Overrides por item.
 | Enforcement | Documento authored y los tres niveles Theme fijados; casts tolerantes prohibidos. |
 | Datos | Sin migración. Los Themes y Motions current ya contienen los objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia ningún frame válido; solo precisa el boundary y el error. |
+
+## Slice 1.74 — Raíz exacta de Typography Style en Preview
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El helper de Preview convertía una raíz Typography Style ausente, array o scalar en `{}` y solo fallaba al leer `lineHeight`. |
+| Owner | El valor ya llega al resolver como Style authored; los sentinels blank/`inherited` se resuelven antes en el owner de diccionario. |
+| Cambio mínimo | Requerir el objeto antes de sus cinco miembros actuales. |
+| Rutas eliminadas | `asRecord(value[key])` y el import tolerante restante de `previewValueHelpers`. |
+| Pruebas | Cobertura nueva acepta el Style completo y rechaza raíz ausente/array por su path owner; 105/105 Preview, 116/116 escritorio, fronteras y build pasan. |
+| Enforcement | Lectura `requiredRecord` fijada y cast anterior prohibido. |
+| Datos | Sin migración. Todos los Styles current no-sentinel ya son objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia tipografía válida ni sentinels; mejora el fallo de un documento inválido. |

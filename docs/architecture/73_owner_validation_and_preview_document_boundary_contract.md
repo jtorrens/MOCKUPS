@@ -387,6 +387,12 @@ otherwise wrong-root Motion, transitions and selected timing documents fail
 before duration or easing calculation. A valid zero duration/delay remains a
 valid authored number; document failure never becomes an inert animation.
 
+Preview Typography Style resolution requires its authored object root before
+reading font family, weight, style, size and line height. Array, scalar or
+missing roots fail as the style document itself; they are never treated as an
+empty style whose first missing member happens to fail later. The editor-side
+blank and `inherited` sentinels remain owned and resolved before this boundary.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -705,6 +711,8 @@ Architecture enforcement must verify:
   incoming identity.
 - generic Motion requires its authored object and exact Theme transition timing
   objects before calculating progress or total duration.
+- Preview Typography Style requires its object root before resolving every
+  required typography member.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

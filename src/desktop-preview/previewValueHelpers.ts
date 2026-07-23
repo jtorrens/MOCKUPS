@@ -4,7 +4,6 @@ import type {
   SurfaceStyleContract,
   TypographyStyleContract,
 } from "./previewComponentContracts.js";
-import { asRecord } from "./previewJsonHelpers.js";
 
 export function numberValue(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -235,7 +234,7 @@ export function requiredTypographyStyle(
   key: string,
   path: string,
 ): TypographyStyleContract {
-  const typography = asRecord(value[key]);
+  const typography = requiredRecord(value, key, path);
   const lineHeight = typography.lineHeight;
   if (
     typeof lineHeight !== "string" &&

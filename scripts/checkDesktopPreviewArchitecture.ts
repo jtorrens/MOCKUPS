@@ -7983,6 +7983,16 @@ for (const permissiveMotionDocument of [
   );
 }
 assertContains(
+  "src/desktop-preview/previewValueHelpers.ts",
+  "const typography = requiredRecord(value, key, path);",
+  "Preview Typography Style must require its authored object root",
+);
+assertDoesNotContain(
+  "src/desktop-preview/previewValueHelpers.ts",
+  "const typography = asRecord(value[key]);",
+  "Preview Typography Style must not coerce an invalid root",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
