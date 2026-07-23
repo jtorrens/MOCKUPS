@@ -749,3 +749,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `requiredRecord`/`requiredObjectArray` obligatorios en cada frontera y los casts tolerantes concretos quedan prohibidos. |
 | Datos | Sin migración. La configuración y los items current ya son objetos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una Notification válida; un documento roto deja de parecer un slot vacío o una colección parcialmente usable. |
+
+## Slice 1.55 — Sobre transitorio de Runtime Transition
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Notifications convertía `__runtimeTransitions` y su miembro `distributionMode` dañados en `{}`; `sourceFrame` aceptaba strings y valores no positivos como ausencia. Un objeto presente sin `previousValue` podía mezclar metadata forwarded incompleta con un valor recalculado. |
+| Owner | `runtimeTransitionDocument` define el sobre transitorio genérico producido por la composición embebida; Notifications conserva únicamente el vocabulario `flow`/`stacked` y el cálculo visual. |
+| Cambio mínimo | Distinguir raíz/miembro ausente de presencia inválida, exigir frame entero positivo y `previousValue` explícito. Se mantiene la precedencia actual del track local sobre el frame forwarded. |
+| Rutas eliminadas | Doble `asRecord`, `Number(sourceFrame)`, no positivo → ausencia y previous ausente → recálculo silencioso. |
+| Pruebas | 99/99 Preview: transición completa válida y diez formas de root, miembro, frame o valor previo inválidas; 116/116 escritorio y toda la composición current conservada. |
+| Enforcement | Owner común obligatorio, uso en Notifications fijado y parsers tolerantes concretos prohibidos. |
+| Datos | Sin migración. El metadata se genera en memoria con ambos miembros completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia la transición válida ni su precedencia; solo se deja de completar un sobre interno contradictorio. |

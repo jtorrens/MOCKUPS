@@ -134,3 +134,41 @@ test("Notifications requires an exact runtime item array", () => {
     }), label);
   }
 });
+
+test("Notifications validates an optional forwarded distribution transition", () => {
+  const source = payload();
+  assert.doesNotThrow(() => resolveNotificationsComponent({
+    ...source,
+    localFrame: 2,
+    designPreviewJson: JSON.stringify({
+      distributionMode: "stacked",
+      items: [],
+      __runtimeTransitions: {
+        distributionMode: { sourceFrame: 1, previousValue: "flow" },
+      },
+    }),
+  }));
+
+  for (const [label, transitions] of [
+    ["null envelope", null],
+    ["array envelope", []],
+    ["null transition", { distributionMode: null }],
+    ["array transition", { distributionMode: [] }],
+    ["missing source", { distributionMode: { previousValue: "flow" } }],
+    ["string source", { distributionMode: { sourceFrame: "1", previousValue: "flow" } }],
+    ["zero source", { distributionMode: { sourceFrame: 0, previousValue: "flow" } }],
+    ["fractional source", { distributionMode: { sourceFrame: 1.5, previousValue: "flow" } }],
+    ["missing previous", { distributionMode: { sourceFrame: 1 } }],
+    ["unknown previous", { distributionMode: { sourceFrame: 1, previousValue: "unknown" } }],
+  ] as const) {
+    assert.throws(() => resolveNotificationsComponent({
+      ...source,
+      localFrame: 2,
+      designPreviewJson: JSON.stringify({
+        distributionMode: "stacked",
+        items: [],
+        __runtimeTransitions: transitions,
+      }),
+    }), label);
+  }
+});

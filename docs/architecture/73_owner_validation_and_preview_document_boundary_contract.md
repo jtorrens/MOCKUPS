@@ -243,6 +243,15 @@ resolver must require those roots before it constructs Collection Stack,
 Notification or Badge child payloads. A malformed child boundary is not an
 empty slot, no local Override or an empty Notifications collection.
 
+Embedded Runtime transition metadata is a transient prepared-document
+boundary. Its root may be structurally absent or an object. Each present field
+transition is an object with a positive integer `sourceFrame` and an explicit
+`previousValue`; a present empty/incomplete/wrong-root transition is not
+equivalent to no transition. Components consume this shared document owner and
+then apply their own closed value vocabulary. The owner does not choose between
+an explicit local animation track and forwarded metadata or change transition
+precedence.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -520,6 +529,9 @@ Architecture enforcement must verify:
   not a document-normalization fallback.
 - Notifications requires exact config, embedded slot/Input/Override and Runtime
   item documents before composing its child Components.
+- transient forwarded Runtime transitions distinguish structural absence from
+  a present incomplete object and retain a positive integer source frame plus
+  explicit previous value.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

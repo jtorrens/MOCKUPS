@@ -1,6 +1,6 @@
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
@@ -9,6 +9,7 @@ import { motionTotalDurationMs } from "./previewMotionHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
+import { optionalRuntimeTransition } from "./runtimeTransitionDocument.js";
 
 export function resolveNotificationsComponent(payload: DesignPreviewPayload): NotificationsDesignContract {
   const config = parseObject(payload.configJson);
@@ -179,16 +180,24 @@ function resolveDistribution(
   const resolved = resolveParameterAnimation(animation, "distributionMode", "", frame, base);
   const mode = resolved.value;
   if (mode !== "flow" && mode !== "stacked") throw new Error(`Unsupported Notifications distribution ${String(mode)}`);
-  const forwardedTransition = asRecord(asRecord(preview.__runtimeTransitions).distributionMode);
-  const forwardedSource = Number(forwardedTransition.sourceFrame);
+  const forwardedTransitions = optionalObject(
+    preview,
+    "__runtimeTransitions",
+    "component.notifications runtime transitions",
+  );
+  const forwardedTransition = optionalRuntimeTransition(
+    forwardedTransitions,
+    "distributionMode",
+    "component.notifications runtime transitions",
+  );
   const source = resolved.sourceKeyframeFrame
-    ?? (Number.isFinite(forwardedSource) && forwardedSource > 0 ? forwardedSource : undefined);
+    ?? forwardedTransition?.sourceFrame;
   if (source === undefined || source <= 0) return { mode: mode as CollectionStackDistributionMode, transition: undefined };
   const durationFrames = Math.ceil(motionTotalDurationMs(payload, motion) / 1000 * Math.max(1, payload.frameRate));
   if (durationFrames <= 0 || frame - source >= durationFrames) {
     return { mode: mode as CollectionStackDistributionMode, transition: undefined };
   }
-  const previous = forwardedTransition.previousValue
+  const previous = forwardedTransition?.previousValue
     ?? resolveParameterAnimation(animation, "distributionMode", "", Math.max(0, source - 1), base).value;
   if (previous !== "flow" && previous !== "stacked") throw new Error(`Unsupported previous Notifications distribution ${String(previous)}`);
   return {

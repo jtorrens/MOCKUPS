@@ -7229,6 +7229,37 @@ for (const permissiveNotificationsDocument of [
   );
 }
 assertContains(
+  "src/desktop-preview/runtimeTransitionDocument.ts",
+  "if (!Object.hasOwn(owner, key)) return undefined;",
+  "the transient Runtime transition owner must preserve structural absence",
+);
+assertContains(
+  "src/desktop-preview/runtimeTransitionDocument.ts",
+  "if (!Number.isInteger(sourceFrame) || sourceFrame <= 0)",
+  "the transient Runtime transition owner must require a positive integer source frame",
+);
+assertContains(
+  "src/desktop-preview/runtimeTransitionDocument.ts",
+  'if (!Object.hasOwn(transition, "previousValue"))',
+  "the transient Runtime transition owner must require an explicit previous value",
+);
+assertContains(
+  "src/desktop-preview/notificationsComponentResolver.ts",
+  "optionalRuntimeTransition(",
+  "Notifications must consume the shared transient Runtime transition owner",
+);
+for (const permissiveNotificationsTransition of [
+  "asRecord(asRecord(preview.__runtimeTransitions).distributionMode)",
+  "Number(forwardedTransition.sourceFrame)",
+  "Number.isFinite(forwardedSource)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/notificationsComponentResolver.ts",
+    permissiveNotificationsTransition,
+    `Notifications must not infer or coerce Runtime transition metadata (${permissiveNotificationsTransition})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
