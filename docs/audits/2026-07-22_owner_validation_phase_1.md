@@ -372,3 +372,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Ambos consumidores deben usar el owner compartido; el walker `JsonPath.NumberDouble(..., 0)` y los retornos silenciosos de la factory quedan prohibidos. |
 | Datos | Sin migración. Los Motion paths y Themes current ya son completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Las duraciones válidas son las mismas; solo deja de ejecutarse una action con un tiempo plausible inventado cuando su contrato está roto. |
+
+## Slice 1.26 — Valores Runtime de duración de actions
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Después de validar la declaración, el panel y el preparador de frames aún convertían un `durationInputId` ausente/string/no positivo en cero, un frame o un segundo. Las duraciones de colección filtraban items y aceptaban ausencia como colección vacía. El panel ignoraba además `durationOwnerTimeline`, por lo que `playConversation` quedaba reducido a un segundo privado. Los owner timelines C#/web aceptaban strings o uno implícito para acciones finitas activas. |
+| Owner | `ComponentPreviewActionRuntimeValue` posee los valores temporales de una action en Diseño; `RuntimeAnimationFrameOrigin` y `RuntimeOwnerTimeline` aplican el mismo contrato al endpoint de Producción. `JsonPath` aporta la lectura numérica JSON exacta reutilizable. |
+| Cambio mínimo | Exigir duración directa positiva y finita, tiempo no negativo y trigger boolean; exigir array/items/números de colección; resolver definiciones `BehaviorTiming` desde el owner exacto; delegar `durationOwnerTimeline` al timeline común. En Producción solo una action condicional realmente activada exige su duración, para conservar items legítimos a los que esa acción no aplica. |
+| Rutas eliminadas | `durationInputId → 0/1`, numeric/boolean JSON string, colección ausente → base/1, `OfType` sobre items temporales, panel `durationOwnerTimeline → 1 segundo`, `Number(...) || 0` y `optionalNumber(..., 1)` en las dos rutas de Producción. |
+| Pruebas | 114/114 escritorio y 88/88 Preview: duración/time/state válidos y tipos/rangos inválidos; colección completa y contributor string; action embebida; endpoint Production numérico/string/cero; conversación y todos los escenarios previos conservan su timing válido. |
+| Enforcement | Los dos hosts de Diseño deben consumir el owner común; los timelines C#/web deben exigir duración positiva solo al activarse; quedan prohibidos los parsers/fallbacks locales retirados. |
+| Datos | Sin migración. Los valores y colecciones current cumplen; base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Los valores válidos conservan su duración; se corrige `playConversation` para respetar su owner declarado y solo fallan contratos temporales realmente mal formados. |

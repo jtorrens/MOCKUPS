@@ -849,6 +849,87 @@ static void PreviewActionContractsAreStrict()
         "theme.motion.buttonPushedDurationMs",
         ComponentPreviewActions.Read(Preview(validThemeDuration)).Single().DurationThemeToken);
 
+    var durationInputAction = Action();
+    durationInputAction.Remove("durationSeconds");
+    durationInputAction["durationInputId"] = "duration";
+    var durationInputPreview = Preview(durationInputAction);
+    durationInputPreview["duration"] = 2.5;
+    durationInputPreview["currentTimeSeconds"] = 0;
+    durationInputPreview["isPlaying"] = false;
+    var parsedDurationInputAction = ComponentPreviewActions.Read(durationInputPreview).Single();
+    Equal(
+        2.5d,
+        ComponentPreviewActionRuntimeValue.RequireDurationInput(
+            durationInputPreview,
+            parsedDurationInputAction));
+    Equal(
+        2.5d,
+        ComponentPreviewActionRuntimeValue.RequireDurationInput(
+            "2,5",
+            parsedDurationInputAction));
+    Equal(
+        0d,
+        ComponentPreviewActionRuntimeValue.RequireTime(
+            durationInputPreview,
+            parsedDurationInputAction));
+    True(!ComponentPreviewActionRuntimeValue.RequireBoolean(
+        durationInputPreview,
+        parsedDurationInputAction,
+        parsedDurationInputAction.PlayInputId));
+    durationInputPreview["duration"] = "2.5";
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireDurationInput(
+        durationInputPreview,
+        parsedDurationInputAction));
+    durationInputPreview["duration"] = 0;
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireDurationInput(
+        durationInputPreview,
+        parsedDurationInputAction));
+    durationInputPreview["duration"] = 2.5;
+    durationInputPreview["currentTimeSeconds"] = "0";
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireTime(
+        durationInputPreview,
+        parsedDurationInputAction));
+    durationInputPreview["currentTimeSeconds"] = 0;
+    durationInputPreview["isPlaying"] = "false";
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireBoolean(
+        durationInputPreview,
+        parsedDurationInputAction,
+        parsedDurationInputAction.PlayInputId));
+
+    var collectionDurationAction = Action();
+    collectionDurationAction.Remove("durationSeconds");
+    collectionDurationAction["durationCollectionJsonKey"] = "items";
+    collectionDurationAction["durationBaseFrames"] = 1;
+    collectionDurationAction["durationItemNumberKeys"] = new JsonArray("frames");
+    collectionDurationAction["durationCollectionMultiplierNumberKeys"] = new JsonArray("gap");
+    var collectionDurationPreview = Preview(collectionDurationAction);
+    collectionDurationPreview["items"] = new JsonArray
+    {
+        new JsonObject { ["id"] = "a", ["frames"] = 2 },
+        new JsonObject { ["id"] = "b", ["frames"] = 3 },
+    };
+    collectionDurationPreview["gap"] = 1;
+    var parsedCollectionDurationAction = ComponentPreviewActions.Read(collectionDurationPreview).Single();
+    Equal(
+        8,
+        ComponentPreviewActionRuntimeValue.CollectionDurationFrames(
+            collectionDurationPreview,
+            parsedCollectionDurationAction));
+    ((JsonObject)((JsonArray)collectionDurationPreview["items"]!)[0]!)["frames"] = "2";
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.CollectionDurationFrames(
+        collectionDurationPreview,
+        parsedCollectionDurationAction));
+
+    var behaviorDurationAction = Action();
+    behaviorDurationAction.Remove("durationSeconds");
+    behaviorDurationAction["durationBehaviorTimingInputId"] = "timing";
+    var behaviorDurationPreview = Preview(behaviorDurationAction);
+    behaviorDurationPreview["inputs"] = new JsonArray("invalid");
+    var parsedBehaviorDurationAction = ComponentPreviewActions.Read(behaviorDurationPreview).Single();
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireInputDefinitions(
+        behaviorDurationPreview,
+        parsedBehaviorDurationAction));
+
     var missingId = Action();
     missingId.Remove("id");
     Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(

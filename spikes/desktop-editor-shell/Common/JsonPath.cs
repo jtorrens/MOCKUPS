@@ -86,12 +86,61 @@ internal static class JsonPath
 
     public static double RequiredNumber(JsonObject root, string key, string context)
     {
-        if (root[key] is not JsonValue value
-            || !value.TryGetValue<double>(out var result)
-            || double.IsNaN(result)
-            || double.IsInfinity(result))
+        return RequiredNumber(root[key], $"{context} '{key}'");
+    }
+
+    public static double RequiredNumber(JsonNode? node, string context)
+    {
+        if (node is not JsonValue value || !TryFiniteNumber(value, out var result))
         {
-            throw new InvalidOperationException($"{context} must contain a finite number '{key}'.");
+            throw new InvalidOperationException($"{context} must be a finite JSON number.");
+        }
+
+        return result;
+    }
+
+    private static bool TryFiniteNumber(JsonValue value, out double result)
+    {
+        if (value.TryGetValue<double>(out result) && double.IsFinite(result))
+        {
+            return true;
+        }
+        if (value.TryGetValue<decimal>(out var decimalValue))
+        {
+            result = (double)decimalValue;
+            return double.IsFinite(result);
+        }
+        if (value.TryGetValue<long>(out var longValue))
+        {
+            result = longValue;
+            return true;
+        }
+        if (value.TryGetValue<int>(out var integerValue))
+        {
+            result = integerValue;
+            return true;
+        }
+        result = 0;
+        return false;
+    }
+
+    public static double RequiredNonNegativeNumber(JsonNode? node, string context)
+    {
+        var result = RequiredNumber(node, context);
+        if (result < 0)
+        {
+            throw new InvalidOperationException($"{context} must not be negative.");
+        }
+
+        return result;
+    }
+
+    public static double RequiredPositiveNumber(JsonNode? node, string context)
+    {
+        var result = RequiredNumber(node, context);
+        if (result <= 0)
+        {
+            throw new InvalidOperationException($"{context} must be positive.");
         }
 
         return result;

@@ -5,6 +5,7 @@ import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
+import { requiredNumberValue } from "./previewValueHelpers.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -282,17 +283,31 @@ function actionDurationFrames(
   if (timingId) {
     const timing = definitions.find((definition) => optionalString(definition, "id") === timingId);
     if (!timing) throw new Error(`Runtime action references missing BehaviorTiming '${timingId}'`);
-    return Math.max(1, resolveBehaviorTimingFrames(values, timing, definitions, themeTokens));
+    return resolveBehaviorTimingFrames(values, timing, definitions, themeTokens);
   }
   const durationInputId = optionalString(action, "durationInputId");
   if (durationInputId) {
     const definition = definitions.find((candidate) => optionalString(candidate, "id") === durationInputId);
     if (!definition) throw new Error(`Runtime action references missing duration input '${durationInputId}'`);
-    const duration = Math.max(0, Number(values[optionalString(definition, "jsonKey")]) || 0);
+    const duration = requiredNumberValue(
+      values[optionalString(definition, "jsonKey")],
+      `runtime action '${optionalString(action, "id")}' duration input '${durationInputId}'`,
+    );
+    if (duration <= 0) {
+      throw new Error(`Runtime action '${optionalString(action, "id")}' duration input '${durationInputId}' must be positive.`);
+    }
     return Math.max(1, actionFrames(duration, optionalString(action, "timeUnit"), frameRate));
   }
-  const durationSeconds = Math.max(0, optionalNumber(action, "durationSeconds", 0));
-  if (durationSeconds > 0) return Math.max(1, Math.round(durationSeconds * Math.max(1, frameRate)));
+  if (Object.hasOwn(action, "durationSeconds")) {
+    const durationSeconds = requiredNumberValue(
+      action.durationSeconds,
+      `runtime action '${optionalString(action, "id")}' durationSeconds`,
+    );
+    if (durationSeconds <= 0) {
+      throw new Error(`Runtime action '${optionalString(action, "id")}' durationSeconds must be positive.`);
+    }
+    return Math.max(1, Math.round(durationSeconds * Math.max(1, frameRate)));
+  }
   throw new Error(`Runtime action '${optionalString(action, "id")}' has no finite duration contract`);
 }
 

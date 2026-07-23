@@ -1086,7 +1086,9 @@ internal sealed class ComponentPreviewInputSession
             return NormalizedPlaybackSeconds(action, seconds);
         }
 
-        var stored = ParseDouble(_values.GetValueOrDefault(ActionTimeKey(action), "0"));
+        var stored = ComponentPreviewActionRuntimeValue.RequireTime(
+            _values.GetValueOrDefault(ActionTimeKey(action), "0"),
+            action);
         return NormalizedPlaybackSeconds(
             action,
             action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
@@ -1133,12 +1135,7 @@ internal sealed class ComponentPreviewInputSession
             return action.DurationSeconds;
         }
 
-        if (action.IsCollectionItemAction)
-        {
-            return Math.Max(1, JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1));
-        }
-
-        return Math.Max(1, ActionDurationInputValue(action, 1));
+        return ActionDurationInputValue(action);
     }
 
     private int DurationFrames(ComponentPreviewActionDefinition action)
@@ -1146,12 +1143,6 @@ internal sealed class ComponentPreviewInputSession
         if (action.TimeUnit != ComponentPreviewActionTimeUnit.Frames)
         {
             return Math.Max(1, (int)Math.Ceiling(DurationSeconds(action) * Math.Max(1, _playbackFrameRate)));
-        }
-
-        if (action.IsCollectionItemAction)
-        {
-            return Math.Max(1, (int)Math.Ceiling(
-                JsonNodeNumber(ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId), 1)));
         }
 
         if (!string.IsNullOrWhiteSpace(action.DurationThemeToken))
@@ -1166,44 +1157,33 @@ internal sealed class ComponentPreviewInputSession
 
         if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
         {
-            var fields = _runtimePreview["inputs"] is JsonArray inputs
-                ? inputs.OfType<JsonObject>().ToList()
-                : [];
+            var owner = ComponentPreviewActions.RequiredOwner(_runtimePreview, action);
+            var fields = ComponentPreviewActionRuntimeValue.RequireInputDefinitions(
+                _runtimePreview,
+                action);
             var definition = fields.FirstOrDefault((field) =>
                 field["id"]?.GetValue<string>() == action.DurationBehaviorTimingInputId)
                 ?? throw new InvalidOperationException(
                     $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
-            return BehaviorTimingResolver.ResolveFrames(_runtimePreview, definition, fields, _themeTokens);
+            return BehaviorTimingResolver.ResolveFrames(owner, definition, fields, _themeTokens);
         }
 
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
-            return CollectionDurationFrames(_runtimePreview, action);
+            return ComponentPreviewActionRuntimeValue.CollectionDurationFrames(_runtimePreview, action);
         }
 
-        return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action, 1), MidpointRounding.AwayFromZero));
-    }
-
-    private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
-    {
-        if (preview[action.DurationCollectionJsonKey] is not JsonArray items)
+        if (action.DurationOwnerTimeline)
         {
-            return Math.Max(1, (int)Math.Round(action.DurationBaseFrames, MidpointRounding.AwayFromZero));
+            return RuntimeTimeline.DurationFrames(
+                _runtimePreview.ToJsonString(),
+                _runtimePreview.ToJsonString(),
+                "{}",
+                1,
+                _themeTokens.ToJsonString());
         }
 
-        var total = action.DurationBaseFrames;
-        foreach (var item in items.OfType<JsonObject>())
-        {
-            foreach (var key in action.DurationItemNumberKeys)
-            {
-                total += (double)JsonDecimal(item, key, 0);
-            }
-            foreach (var key in action.DurationCollectionMultiplierNumberKeys)
-            {
-                total += (double)JsonDecimal(preview, key, 0);
-            }
-        }
-        return Math.Max(1, (int)Math.Ceiling(total));
+        return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action), MidpointRounding.AwayFromZero));
     }
 
     private double PlaybackTimeValue(ComponentPreviewActionDefinition action)
@@ -1225,30 +1205,27 @@ internal sealed class ComponentPreviewInputSession
         return Math.Max(0, Math.Min(DurationFrames(action), frame));
     }
 
-    private double ActionDurationInputValue(ComponentPreviewActionDefinition action, double fallback)
+    private double ActionDurationInputValue(ComponentPreviewActionDefinition action)
     {
-        if (string.IsNullOrWhiteSpace(action.DurationInputId)) return fallback;
         if (action.IsCollectionItemAction)
         {
-            return JsonNodeNumber(
-                ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId),
-                fallback);
+            return ComponentPreviewActionRuntimeValue.RequireDurationInput(_runtimePreview, action);
         }
 
         var inputKey = $"{_scopeKey}:{action.DurationInputId}";
         if (_values.TryGetValue(inputKey, out var value))
         {
-            return ParseDouble(value);
+            return ComponentPreviewActionRuntimeValue.RequireDurationInput(value, action);
         }
-        return JsonNodeNumber(
-            ComponentPreviewActions.Value(_runtimePreview, action, action.DurationInputId),
-            fallback);
+        return ComponentPreviewActionRuntimeValue.RequireDurationInput(_runtimePreview, action);
     }
 
     private bool IsPlaying(ComponentPreviewActionDefinition action)
     {
         var key = ActionStateKey(action);
-        return StringToBool(_values.GetValueOrDefault(key, InputDefault(key, "false")));
+        return BooleanText.ParseRequired(
+            _values.GetValueOrDefault(key, InputDefault(key, "false")),
+            $"Design Preview action '{action.Id}' playback state");
     }
 
     private void SetPlaybackState(ComponentPreviewActionDefinition action, bool isPlaying)
@@ -1380,7 +1357,11 @@ internal sealed class ComponentPreviewInputSession
         }
         var target = action.TargetMode switch
         {
-            ComponentPreviewActionTargetMode.Toggle => StringToBool(current) ? "false" : "true",
+            ComponentPreviewActionTargetMode.Toggle => BooleanText.ParseRequired(
+                current,
+                $"Design Preview action '{action.Id}' target '{action.TargetInputId}'")
+                    ? "false"
+                    : "true",
             ComponentPreviewActionTargetMode.Option or ComponentPreviewActionTargetMode.Value
                 when !string.IsNullOrWhiteSpace(explicitValue) => explicitValue,
             _ => "",
@@ -1417,29 +1398,6 @@ internal sealed class ComponentPreviewInputSession
     }
 
     private readonly record struct ActionValueSnapshot(bool Exists, string Value);
-
-    private static double ParseDouble(string? value)
-    {
-        return double.TryParse((value ?? "").Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : 0;
-    }
-
-    private static double JsonNodeNumber(JsonNode? node, double fallback)
-    {
-        if (node is not JsonValue value)
-        {
-            return fallback;
-        }
-        if (value.TryGetValue<double>(out var number))
-        {
-            return number;
-        }
-        return value.TryGetValue<string>(out var text)
-            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-                ? parsed
-                : fallback;
-    }
 
     private static JsonObject ParseJsonObject(string json)
     {
@@ -1910,10 +1868,6 @@ internal sealed class ComponentPreviewInputSession
             : fallback;
     }
 
-    private static bool StringToBool(string? value)
-    {
-        return BooleanText.Parse(value ?? "");
-    }
 }
 
 internal enum ComponentInputKind

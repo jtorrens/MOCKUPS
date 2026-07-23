@@ -381,6 +381,18 @@ finite duration before either playback host consumes the action. No host keeps
 a second Motion walker or substitutes frame zero/one second when the path or
 Theme timing is invalid.
 
+Direct and collection-derived action duration values follow the same rule in
+Design and Production. `durationInputId` addresses the exact action owner and
+requires a positive finite JSON number when that finite action is active;
+numeric strings, missing values and zero are invalid. Collection duration
+sources keep their declared array, stable items and non-negative numeric
+contributors. The Design panel and frame-preparation controller share that
+owner instead of applying independent zero/one fallbacks. A Module action with
+`durationOwnerTimeline` consumes the common owner timeline; the panel does not
+replace it with a private one-second clock. An inactive conditional finite
+action contributes no duration and therefore does not require a value that its
+item contract does not currently expose.
+
 The structural ownership and Module Instance mapping are specified in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
 

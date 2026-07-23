@@ -701,6 +701,16 @@ Rules:
   positive delay+duration from the exact Theme transition tokens; a missing
   path, `none` Motion, absent timing or wrong scalar type is not converted to
   zero/one-second playback;
+- a `durationInputId` resolves against the action's exact runtime owner. Its
+  current value is a positive finite JSON number; session text is parsed
+  strictly before use. Numeric strings in payload JSON, absent values and
+  non-positive values are not converted to zero or one;
+- a collection-derived duration requires the declared array, stable object
+  items and every declared non-negative numeric contributor. An absent/wrong
+  collection or malformed entry is not treated as an empty collection;
+- action time and trigger values retain explicit non-negative number and JSON
+  boolean shapes. The host may create the declared session initial values zero
+  and false, but it must not reinterpret malformed current values as them;
 - optional booleans, finite numbers, string lists and target options retain
   their exact JSON shapes. Numeric/boolean strings, filtered list entries and
   incomplete target/visibility groups are invalid current contracts;

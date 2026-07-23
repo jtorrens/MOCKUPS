@@ -240,7 +240,7 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
 });
 
 test("a forwarded embedded action derives its requested-frame clock from the stable field track", () => {
-  const resolveAt = (frame: number) => resolveCollectionStackComponent({
+  const resolveAt = (frame: number, duration: number | string = 4) => resolveCollectionStackComponent({
     ...payload,
     localFrame: frame,
     frameRate: 30,
@@ -273,7 +273,7 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
             durationInputId: "duration", timeUnit: "frames", completionBehavior: "holdFinal",
           }],
           __runtimeFieldIds: { play: "forwarded.notice.play" },
-          play: false, actionFrame: 0, duration: 4,
+          play: false, actionFrame: 0, duration,
         },
         present: true,
         presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
@@ -287,6 +287,8 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
   assert.equal(resolveAt(7)?.actionFrame, 2);
   assert.equal(resolveAt(12)?.play, true);
   assert.equal(resolveAt(12)?.actionFrame, 4);
+  assert.throws(() => resolveAt(7, "4"));
+  assert.throws(() => resolveAt(7, 0));
 });
 
 test("Reflow interpolates the complete stable child geometry instead of scaling its frame", () => {

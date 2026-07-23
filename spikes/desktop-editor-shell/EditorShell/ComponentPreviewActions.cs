@@ -164,6 +164,13 @@ internal static class ComponentPreviewActions
         return Target(preview, action)?[key];
     }
 
+    public static JsonObject RequiredOwner(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action) =>
+        Target(preview, action)
+        ?? throw new InvalidOperationException(
+            $"Design Preview action '{action.Id}' has no current runtime owner.");
+
     public static void SetValue(
         JsonObject preview,
         ComponentPreviewActionDefinition action,

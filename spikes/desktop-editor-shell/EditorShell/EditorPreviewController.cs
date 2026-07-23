@@ -1782,20 +1782,6 @@ internal sealed class EditorPreviewController
         }
 
         var timeJsonKey = action.TimeJsonKey;
-        var durationInputId = action.DurationInputId;
-        var durationBehaviorTimingInputId = action.DurationBehaviorTimingInputId;
-        var animationDurationSeconds = action.DurationSeconds;
-        if (string.IsNullOrWhiteSpace(timeJsonKey)
-            || (string.IsNullOrWhiteSpace(durationInputId)
-                && string.IsNullOrWhiteSpace(durationBehaviorTimingInputId)
-                && string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey)
-                && string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey)
-                && !action.DurationOwnerTimeline
-                && animationDurationSeconds <= 0))
-        {
-            yield break;
-        }
-
         var frameCount = PlaybackDurationFrames(action, preview, fps, payload.ThemeTokensJson);
         if (frameCount <= 0)
         {
@@ -1836,11 +1822,12 @@ internal sealed class EditorPreviewController
             yield break;
         }
 
+        var actionTime = ComponentPreviewActionRuntimeValue.RequireTime(preview, action);
         var currentFrame = action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
-            ? Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0)))
+            ? Math.Max(0, (int)Math.Floor(actionTime))
             : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
-                ? Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) / 1000 * fps))
-                : Math.Max(0, (int)Math.Floor(JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.TimeJsonKey), 0) * fps));
+                ? Math.Max(0, (int)Math.Floor(actionTime / 1000 * fps))
+                : Math.Max(0, (int)Math.Floor(actionTime * fps));
         for (var index = 1; index <= AheadPlaybackPreloadFrames * 2; index++)
         {
             var frame = currentFrame + index;
@@ -1897,56 +1884,31 @@ internal sealed class EditorPreviewController
         }
         if (!string.IsNullOrWhiteSpace(action.DurationCollectionJsonKey))
         {
-            return CollectionDurationFrames(preview, action);
+            return ComponentPreviewActionRuntimeValue.CollectionDurationFrames(preview, action);
         }
         if (!string.IsNullOrWhiteSpace(action.DurationBehaviorTimingInputId))
         {
-            var fields = preview["inputs"] is JsonArray inputs
-                ? inputs.OfType<JsonObject>().ToList()
-                : [];
+            var owner = ComponentPreviewActions.RequiredOwner(preview, action);
+            var fields = ComponentPreviewActionRuntimeValue.RequireInputDefinitions(preview, action);
             var definition = fields.FirstOrDefault((field) =>
                 JsonString(field, "id") == action.DurationBehaviorTimingInputId)
                 ?? throw new InvalidOperationException(
                     $"Missing BehaviorTiming action input '{action.DurationBehaviorTimingInputId}'.");
             var themeTokens = JsonPath.ParseRequiredObject(themeTokensJson, "Theme tokens");
-            return BehaviorTimingResolver.ResolveFrames(preview, definition, fields, themeTokens);
+            return BehaviorTimingResolver.ResolveFrames(owner, definition, fields, themeTokens);
         }
 
         if (action.TimeUnit == ComponentPreviewActionTimeUnit.Frames)
         {
-            return Math.Max(0, (int)Math.Round(
-                JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.DurationInputId), 0),
+            return Math.Max(1, (int)Math.Round(
+                ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action),
                 MidpointRounding.AwayFromZero));
         }
 
         var duration = action.DurationSeconds > 0
             ? action.DurationSeconds
-            : Math.Max(0, JsonNodeNumber(ComponentPreviewActions.Value(preview, action, action.DurationInputId), 0));
-        return duration <= 0
-            ? 0
-            : Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
-    }
-
-    private static int CollectionDurationFrames(JsonObject preview, ComponentPreviewActionDefinition action)
-    {
-        if (preview[action.DurationCollectionJsonKey] is not JsonArray items)
-        {
-            return Math.Max(1, (int)Math.Round(action.DurationBaseFrames, MidpointRounding.AwayFromZero));
-        }
-
-        var total = action.DurationBaseFrames;
-        foreach (var item in items.OfType<JsonObject>())
-        {
-            foreach (var key in action.DurationItemNumberKeys)
-            {
-                total += JsonNumber(item, key, 0);
-            }
-            foreach (var key in action.DurationCollectionMultiplierNumberKeys)
-            {
-                total += JsonNumber(preview, key, 0);
-            }
-        }
-        return Math.Max(1, (int)Math.Ceiling(total));
+            : ComponentPreviewActionRuntimeValue.RequireDurationInput(preview, action);
+        return Math.Max(1, (int)Math.Ceiling(duration * Math.Max(1, fps)));
     }
 
     private static string PlaybackFrameKey(DesignPreviewPayload payload)
@@ -1975,23 +1937,9 @@ internal sealed class EditorPreviewController
     private static ComponentPreviewActionDefinition? PlaybackFrameAction(JsonObject preview)
     {
         var actions = ComponentPreviewActions.ReadApplicable(preview);
-        return actions.FirstOrDefault((action) => JsonBoolean(ComponentPreviewActions.Value(preview, action, action.PlayInputId)))
+        return actions.FirstOrDefault((action) =>
+                ComponentPreviewActionRuntimeValue.RequireBoolean(preview, action, action.PlayInputId))
             ?? actions.FirstOrDefault();
-    }
-
-    private static bool JsonBoolean(JsonNode? node)
-    {
-        if (node is not JsonValue value)
-        {
-            return false;
-        }
-
-        if (value.TryGetValue<bool>(out var boolean))
-        {
-            return boolean;
-        }
-
-        return value.TryGetValue<string>(out var text) && BooleanText.Parse(text);
     }
 
     private static string JsonString(JsonObject owner, string key)
@@ -2001,33 +1949,6 @@ internal sealed class EditorPreviewController
             : "";
     }
 
-    private static double JsonNumber(JsonObject owner, string key, double fallback)
-    {
-        if (owner[key] is not JsonValue value)
-        {
-            return fallback;
-        }
-
-        if (value.TryGetValue<double>(out var number))
-        {
-            return number;
-        }
-
-        return value.TryGetValue<string>(out var text)
-            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : fallback;
-    }
-
-    private static double JsonNodeNumber(JsonNode? node, double fallback)
-    {
-        if (node is not JsonValue value) return fallback;
-        if (value.TryGetValue<double>(out var number)) return number;
-        return value.TryGetValue<string>(out var text)
-            && double.TryParse(text.Replace(",", "."), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : fallback;
-    }
 
     private DevicePreviewMetrics ApplyPreviewOrientation(DevicePreviewMetrics metrics)
     {

@@ -77,3 +77,41 @@ test("entity-owned keyframes use first appearance and do not restart on re-entry
   assert.equal(timeline.localFrame("text", "state-password", 40), 30);
 });
 
+test("finite runtime action durations require positive JSON numbers", () => {
+  const finiteContract = {
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: { sequenceItems: false },
+      fields: [{ id: "play", jsonKey: "isPlaying" }],
+      itemActions: [{
+        extendsModuleDuration: true,
+        playInputId: "play",
+        durationInputId: "durationFrames",
+        durationEnabledInputId: "isPlaying",
+      }],
+    }],
+  };
+  const finiteAnimation = {
+    tracks: [{
+      fieldId: "play",
+      targetId: "item",
+      keyframes: [{ frame: 0, value: false }, { frame: 2, value: true }],
+    }],
+  };
+
+  assert.equal(new RuntimeOwnerTimeline(
+    finiteContract,
+    { items: [{ id: "item", isPlaying: false, durationFrames: 4 }] },
+    finiteAnimation,
+  ).durationFrames, 6);
+  assert.throws(() => new RuntimeOwnerTimeline(
+    finiteContract,
+    { items: [{ id: "item", isPlaying: false, durationFrames: "4" }] },
+    finiteAnimation,
+  ));
+  assert.throws(() => new RuntimeOwnerTimeline(
+    finiteContract,
+    { items: [{ id: "item", isPlaying: false, durationFrames: 0 }] },
+    finiteAnimation,
+  ));
+});

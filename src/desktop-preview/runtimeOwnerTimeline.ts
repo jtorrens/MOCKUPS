@@ -1,5 +1,6 @@
 import { asRecord, optionalNumber, optionalString } from "./componentResolverCommon.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
+import { requiredNumberValue } from "./previewValueHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 type FieldTiming = { origin: number; completion: number; endExclusive: number };
@@ -251,11 +252,23 @@ export class RuntimeOwnerTimeline {
       const definition = fields.find((field) => optionalString(field, "id") === playFieldId);
       if (!definition) continue;
       const origin = this.resolveFieldTiming(definition, item, targetId, fields, new Set()).origin;
-      const duration = Math.max(1, optionalNumber(item, optionalString(action, "durationInputId"), 1));
-      if (item[optionalString(action, "durationEnabledInputId")] === true) {
-        lastEnd = Math.max(lastEnd, origin + duration);
-      }
       const keyframes = enabledKeyframes(this.track(playFieldId, targetId));
+      const baseEnabled = item[optionalString(action, "durationEnabledInputId")] === true;
+      const hasActiveKeyframe = keyframes.some((keyframe) => keyframe.value === true);
+      if (!baseEnabled && !hasActiveKeyframe) continue;
+
+      const durationInputId = optionalString(action, "durationInputId");
+      if (!durationInputId) {
+        throw new Error("A finite runtime action that extends Module duration requires durationInputId.");
+      }
+      const duration = requiredNumberValue(
+        item[durationInputId],
+        `runtime action duration input '${durationInputId}'`,
+      );
+      if (duration <= 0) {
+        throw new Error(`Runtime action duration input '${durationInputId}' must be positive.`);
+      }
+      if (baseEnabled) lastEnd = Math.max(lastEnd, origin + duration);
       for (let index = 0; index < keyframes.length; index += 1) {
         const keyframe = keyframes[index]!;
         if (keyframe.value !== true) continue;
@@ -371,7 +384,16 @@ function enabledKeyframes(track?: JsonRecord) {
 function declaredBaseDuration(contract: JsonRecord) {
   return records(contract.actions)
     .filter((action) => action.definesModuleDuration === true)
-    .reduce((maximum, action) => Math.max(maximum, optionalNumber(action, "durationBaseFrames", 0)), 0);
+    .reduce((maximum, action) => {
+      const duration = requiredNumberValue(
+        action.durationBaseFrames,
+        `runtime action '${optionalString(action, "id")}' durationBaseFrames`,
+      );
+      if (duration < 0) {
+        throw new Error(`Runtime action '${optionalString(action, "id")}' durationBaseFrames must not be negative.`);
+      }
+      return Math.max(maximum, duration);
+    }, 0);
 }
 
 function scale(value: number, natural: number, effective: number) {

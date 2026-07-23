@@ -397,17 +397,35 @@ internal static class RuntimeAnimationFrameOrigin
                     targetId,
                     fields,
                     new HashSet<string>(StringComparer.Ordinal)).Origin;
-                var duration = Math.Max(1, Number(item[Text(action["durationInputId"])]));
-                if (item[Text(action["durationEnabledInputId"])] is JsonValue enabled
-                    && enabled.TryGetValue<bool>(out var baseEnabled)
-                    && baseEnabled)
-                {
-                    lastEnd = Math.Max(lastEnd, fieldOrigin + duration);
-                }
+                var baseEnabled = item[Text(action["durationEnabledInputId"])] is JsonValue enabled
+                    && enabled.TryGetValue<bool>(out var enabledValue)
+                    && enabledValue;
                 var keyframes = (Track(playFieldId, targetId)?["keyframes"] as JsonArray)?.OfType<JsonObject>()
                     .Where((keyframe) => keyframe["enabled"]?.GetValue<bool>() != false)
                     .OrderBy((keyframe) => Number(keyframe["frame"]))
                     .ToList() ?? [];
+                var hasActiveKeyframe = keyframes.Any((keyframe) =>
+                    keyframe["value"] is JsonValue value
+                    && value.TryGetValue<bool>(out var playing)
+                    && playing);
+                if (!baseEnabled && !hasActiveKeyframe)
+                {
+                    continue;
+                }
+
+                var durationInputId = Text(action["durationInputId"]);
+                if (string.IsNullOrWhiteSpace(durationInputId))
+                {
+                    throw new InvalidOperationException(
+                        "A finite runtime action that extends Module duration requires durationInputId.");
+                }
+                var duration = JsonPath.RequiredPositiveNumber(
+                    item[durationInputId],
+                    $"Runtime action duration input '{durationInputId}'");
+                if (baseEnabled)
+                {
+                    lastEnd = Math.Max(lastEnd, fieldOrigin + duration);
+                }
                 for (var index = 0; index < keyframes.Count; index++)
                 {
                     if (keyframes[index]["value"] is not JsonValue value
@@ -545,7 +563,9 @@ internal static class RuntimeAnimationFrameOrigin
     private static int DeclaredBaseDuration(JsonObject contract) =>
         (contract["actions"] as JsonArray)?.OfType<JsonObject>()
             .Where((action) => action["definesModuleDuration"]?.GetValue<bool>() == true)
-            .Select((action) => (int)Number(action["durationBaseFrames"]))
+            .Select((action) => (int)JsonPath.RequiredNonNegativeNumber(
+                action["durationBaseFrames"],
+                $"Runtime action '{Text(action["id"])}' durationBaseFrames"))
             .DefaultIfEmpty(0)
             .Max() ?? 0;
 

@@ -5120,6 +5120,70 @@ for (const retiredMotionPathDurationFallback of [
     `action Motion-path duration must not return a plausible missing value (${retiredMotionPathDurationFallback})`,
   );
 }
+for (const actionRuntimeValueConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+]) {
+  assertContains(
+    actionRuntimeValueConsumer,
+    "ComponentPreviewActionRuntimeValue.",
+    `${actionRuntimeValueConsumer} must consume the strict action runtime-value owner`,
+  );
+}
+for (const requiredActionRuntimeOwnerTerm of [
+  "JsonPath.RequiredPositiveNumber(",
+  "JsonPath.RequiredNonNegativeNumber(",
+  "RuntimeCollectionDocumentContract.Validate(",
+  "ComponentPreviewActions.RequiredOwner(",
+  "must be a JSON boolean",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActionRuntimeValue.cs",
+    requiredActionRuntimeOwnerTerm,
+    `action runtime values must keep owner rule '${requiredActionRuntimeOwnerTerm}'`,
+  );
+}
+for (const retiredActionRuntimeFallback of [
+  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "ActionDurationInputValue(action, 1)"],
+  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "JsonNodeNumber("],
+  ["spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs", "JsonNodeNumber("],
+] as const) {
+  assertDoesNotContain(
+    retiredActionRuntimeFallback[0],
+    retiredActionRuntimeFallback[1],
+    `${retiredActionRuntimeFallback[0]} must not retain action duration fallback '${retiredActionRuntimeFallback[1]}'`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "JsonPath.RequiredPositiveNumber(",
+  "desktop runtime owner timeline must reject non-positive active finite action durations",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "must be positive",
+  "web runtime owner timeline must reject non-positive active finite action durations",
+);
+assertContains(
+  "src/desktop-preview/componentCollectionResolverCommon.ts",
+  "requiredNumberValue(",
+  "web embedded actions must require an exact numeric duration value",
+);
+for (const retiredWebActionDurationFallback of [
+  'optionalNumber(item, optionalString(action, "durationInputId"), 1)',
+  'Number(values[optionalString(definition, "jsonKey")]) || 0',
+]) {
+  for (const webActionDurationConsumer of [
+    "src/desktop-preview/runtimeOwnerTimeline.ts",
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+  ]) {
+    assertDoesNotContain(
+      webActionDurationConsumer,
+      retiredWebActionDurationFallback,
+      `${webActionDurationConsumer} must not infer active action duration from '${retiredWebActionDurationFallback}'`,
+    );
+  }
+}
 for (const forbiddenDesktopBehaviorTimingFallback of [
   "? Math.Max(0, frames) : 0",
   "catch\n            {\n                return null;",
@@ -6784,8 +6848,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "ActionDurationInputValue(action, 1)",
-  "declarative playback clocks must read the action duration input instead of a private fallback",
+  "RuntimeTimeline.DurationFrames(",
+  "durationOwnerTimeline actions must delegate to the common owner timeline instead of a private clock",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",

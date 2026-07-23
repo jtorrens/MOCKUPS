@@ -221,6 +221,18 @@ Motion in the owner config and uses that same timing owner. Payload preparation
 must materialize a positive duration or fail; downstream playback hosts do not
 reconstruct or default the missing result.
 
+Action runtime values remain strict after declaration validation. A direct
+duration is a positive finite JSON number on the action's exact owner; a
+collection-derived duration requires its declared array, stable object items
+and non-negative numeric contributors. Action time is a non-negative JSON
+number and action state is a JSON boolean. Session storage may serialize those
+values as text internally, but parses them strictly before use. Missing,
+wrong-root, numeric/boolean-string or non-positive current duration values do
+not become zero, one frame or one second. Design frame preparation and the
+Production owner timeline enforce the same numeric contract. An inactive
+conditional finite action contributes no endpoint until its activating value
+or keyframe is true.
+
 Production Font file lists are also current typed documents. Every entry keeps
 its required file name, normalized safe relative path, explicit normal/italic
 style and integer CSS weight. Startup, repository access, editor summaries and
@@ -321,6 +333,9 @@ Architecture enforcement must verify:
   timing cannot be interpreted as zero/default.
 - action Motion-path durations and State Motion durations share one strict
   Motion/Theme timing owner before playback.
+- direct and collection-derived action duration, time and state values use one
+  strict runtime owner in both Design hosts and the Production owner timeline;
+  malformed values never become zero, one frame or one second.
 - Production Font file entries share one startup/read/projection contract;
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.
