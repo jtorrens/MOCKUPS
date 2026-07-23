@@ -56,6 +56,14 @@ height for both, and lets the selected utility content scroll inside its
 assigned height. Expanding the utility surface therefore never changes the
 Preview document or introduces editor-specific sizing behavior.
 
+Within the `Test Values` tab, the temporary-data explanation, Reset,
+`Save as defaults…` and root Preview action controls form one fixed
+content-height region. The vertical input/collection navigation occupies the
+remaining height below it and owns the only Test Values editor scroll. Scrolling
+or editing values therefore never moves the root Play/Restore controls out of
+view. Collection-item and nested actions remain with their exact collection
+owner instead of being promoted into the root action region.
+
 That surface retains the existing:
 
 - scalar and structured Test Value controls;
@@ -119,6 +127,8 @@ Architecture checks require:
 - the ordered horizontal Preview utility tabs and dedicated Test Values host;
 - the standard row splitter, its adjacent-row behavior and minimum utility and
   Preview heights;
+- the fixed root Test Values action region and independently scrolling vertical
+  value-navigation region;
 - separate Design Runtime Contract and Preview Test Values surfaces;
 - exact-class session ownership for selected Preview utility tab;
 - absence of persisted utility/Preview split state;

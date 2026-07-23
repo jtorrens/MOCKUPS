@@ -200,12 +200,14 @@
                                 CornerRadius="12"
                                 Background="#18000000">
                             <TabControl x:Name="PreviewUtilityTabs"
-                                        HorizontalContentAlignment="Stretch">
+                                        HorizontalContentAlignment="Stretch"
+                                        VerticalContentAlignment="Stretch">
                                 <TabItem x:Name="PreviewTestValuesTab"
                                          Header="Test Values"
                                          IsVisible="False">
                                     <ContentControl x:Name="PreviewTestValuesHost"
-                                                    HorizontalContentAlignment="Stretch" />
+                                                    HorizontalContentAlignment="Stretch"
+                                                    VerticalContentAlignment="Stretch" />
                                 </TabItem>
                                 <TabItem x:Name="PreviewSetupTab"
                                          Header="Preview Setup">

@@ -149,18 +149,12 @@ internal sealed class RuntimeInputsCollectionEditor
             return null;
         }
 
-        return new ScrollViewer
-        {
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Padding = new Thickness(12),
-            Content = CreateTestValuesTab(
-                surface.Owner,
-                surface.Preview,
-                surface.Inputs,
-                surface.Collections,
-                surface.Actions),
-        };
+        return CreateTestValuesTab(
+            surface.Owner,
+            surface.Preview,
+            surface.Inputs,
+            surface.Collections,
+            surface.Actions);
     }
 
     private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
@@ -257,7 +251,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<RuntimeInputCollectionDefinition> collections,
         IReadOnlyList<ComponentPreviewActionDefinition> actions)
     {
-        var panel = new StackPanel { Spacing = 8, Margin = new Thickness(0, 8, 0, 0) };
+        var fixedPanel = new StackPanel { Spacing = 8 };
         var header = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,Auto"),
@@ -326,10 +320,10 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
-        panel.Children.Add(header);
+        fixedPanel.Children.Add(header);
         if (!owner.IsInstance)
         {
-            panel.Children.Add(new TextBlock
+            fixedPanel.Children.Add(new TextBlock
             {
                 Text = "These values affect only the current Preview until you choose to save them as defaults.",
                 FontSize = 11,
@@ -347,79 +341,124 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 AddActionControl(actionPanel, CreateActionControl(action, inputs, preview));
             }
-            panel.Children.Add(actionPanel);
+            fixedPanel.Children.Add(actionPanel);
         }
+        var valuesPanel = new StackPanel { Spacing = 8 };
         if (inputs.Count == 0 && collections.Count == 0)
         {
-            panel.Children.Add(new TextBlock { Text = "No test values are required.", Opacity = 0.68 });
-            return panel;
+            valuesPanel.Children.Add(new TextBlock { Text = "No test values are required.", Opacity = 0.68 });
+        }
+        else
+        {
+            var visibleInputs = inputs.Where((input) => IsVisibleRuntimeValue(owner, input)).ToList();
+            var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
+            var sections = new List<EditorInternalNavigationSection>();
+            var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
+            var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
+            if (ownInputs.Count > 0)
+            {
+                var generalSubcards = new List<EditorInternalNavigationSection>();
+                if (owner.IsInstance
+                    && _animationEditor is not null
+                    && inputs.Any((input) => input.Animation is not null))
+                {
+                    var animation = _animationEditor.CreateTargetContent(owner.Node, "");
+                    generalSubcards.Add(new EditorInternalNavigationSection(
+                        "animation",
+                        "Animation",
+                        EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
+                        EditorIcons.Animation,
+                        animation.Content));
+                }
+                sections.Add(new EditorInternalNavigationSection(
+                    "general",
+                    "General",
+                    "Runtime inputs",
+                    EditorIcons.General,
+                    CreateSeparatedInputContent(owner, preview, ownInputs),
+                    Subcards: generalSubcards,
+                    SubcardLayout: EditorSubcardLayout.FlatStack,
+                    ShowLabel: false));
+            }
+            foreach (var groupId in topLevelGroupIds)
+            {
+                sections.Add(CreateTestValueGroupSubcard(owner, preview, groupId, groups));
+            }
+            foreach (var collection in collections.Where((collection) => string.IsNullOrWhiteSpace(collection.UiParentCollectionJsonKey)))
+            {
+                var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+                var childCollections = collections
+                    .Where((candidate) => candidate.UiParentCollectionJsonKey.Equals(collection.JsonKey, StringComparison.Ordinal))
+                    .ToList();
+                var collectionContent = childCollections.Count == 0
+                    ? CreateTestValueCollectionContent(owner, preview, collection, actions, items)
+                    : CreateTestValueCollectionContent(owner, preview, collection, actions, items, childCollections);
+                sections.Add(new EditorInternalNavigationSection(
+                    collection.Id,
+                    collection.Label,
+                    $"{items.Count} active {EditorUiText.Noun(items.Count, "instance")}",
+                    EditorIcons.Component,
+                    collectionContent));
+            }
+            valuesPanel.Children.Add(CreateSessionSubcardLayout(
+                $"{owner.Node.Id}:test-values",
+                sections,
+                EditorSubcardLayout.VerticalCards));
         }
 
-        var visibleInputs = inputs.Where((input) => IsVisibleRuntimeValue(owner, input)).ToList();
-        var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
-        var sections = new List<EditorInternalNavigationSection>();
-        var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
-        var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
-        if (ownInputs.Count > 0)
+        Control surface;
+        if (owner.IsInstance)
         {
-            var generalSubcards = new List<EditorInternalNavigationSection>();
-            if (owner.IsInstance
-                && _animationEditor is not null
-                && inputs.Any((input) => input.Animation is not null))
+            var panel = new StackPanel
             {
-                var animation = _animationEditor.CreateTargetContent(owner.Node, "");
-                generalSubcards.Add(new EditorInternalNavigationSection(
-                    "animation",
-                    "Animation",
-                    EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
-                    EditorIcons.Animation,
-                    animation.Content));
-            }
-            sections.Add(new EditorInternalNavigationSection(
-                "general",
-                "General",
-                "Runtime inputs",
-                EditorIcons.General,
-                CreateSeparatedInputContent(owner, preview, ownInputs),
-                Subcards: generalSubcards,
-                SubcardLayout: EditorSubcardLayout.FlatStack,
-                ShowLabel: false));
+                Spacing = 8,
+                Margin = new Thickness(0, 8, 0, 0),
+                Children =
+                {
+                    fixedPanel,
+                    EditorGroupBlock.CreateSeparator(),
+                    valuesPanel,
+                },
+            };
+            surface = panel;
         }
-        foreach (var groupId in topLevelGroupIds)
+        else
         {
-            sections.Add(CreateTestValueGroupSubcard(owner, preview, groupId, groups));
+            fixedPanel.Name = "PreviewTestValuesFixedActions";
+            fixedPanel.Margin = new Thickness(12, 8, 12, 0);
+            fixedPanel.Children.Add(EditorGroupBlock.CreateSeparator());
+            var valuesScroll = new ScrollViewer
+            {
+                Name = "PreviewTestValuesEditorScroll",
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                Padding = new Thickness(12, 8, 12, 12),
+                Content = valuesPanel,
+            };
+            Grid.SetRow(valuesScroll, 1);
+            var layout = new Grid
+            {
+                Name = "PreviewTestValuesSplitLayout",
+                RowDefinitions = new RowDefinitions("Auto,*"),
+                MinHeight = 0,
+                Children =
+                {
+                    fixedPanel,
+                    valuesScroll,
+                },
+            };
+            surface = layout;
         }
-        foreach (var collection in collections.Where((collection) => string.IsNullOrWhiteSpace(collection.UiParentCollectionJsonKey)))
-        {
-            var items = DesignPreviewTestValues.CollectionItems(preview, collection);
-            var childCollections = collections
-                .Where((candidate) => candidate.UiParentCollectionJsonKey.Equals(collection.JsonKey, StringComparison.Ordinal))
-                .ToList();
-            var collectionContent = childCollections.Count == 0
-                ? CreateTestValueCollectionContent(owner, preview, collection, actions, items)
-                : CreateTestValueCollectionContent(owner, preview, collection, actions, items, childCollections);
-            sections.Add(new EditorInternalNavigationSection(
-                collection.Id,
-                collection.Label,
-                $"{items.Count} active {EditorUiText.Noun(items.Count, "instance")}",
-                EditorIcons.Component,
-                collectionContent));
-        }
-        panel.Children.Add(EditorGroupBlock.CreateSeparator());
-        panel.Children.Add(CreateSessionSubcardLayout(
-            $"{owner.Node.Id}:test-values",
-            sections,
-            EditorSubcardLayout.VerticalCards));
 
         void UpdatePlaybackState()
         {
-            panel.IsEnabled = !_playbackState.IsBusy;
+            surface.IsEnabled = !_playbackState.IsBusy;
         }
         void OnPlaybackStateChanged() => UpdatePlaybackState();
         _playbackState.Changed += OnPlaybackStateChanged;
-        panel.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
+        surface.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
         UpdatePlaybackState();
-        return panel;
+        return surface;
     }
 
     private Control CreateSeparatedInputContent(

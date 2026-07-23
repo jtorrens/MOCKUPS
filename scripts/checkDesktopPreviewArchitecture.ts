@@ -6941,9 +6941,9 @@ assertContains(
   "CreateSeparatedInputContent(owner, preview, ownInputs)",
   "the General runtime category must use shared separated-section content",
 );
-assertContains(
+assertMatches(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  '"general",\n                "General",\n                "Runtime inputs"',
+  /"general",\s*"General",\s*"Runtime inputs"/,
   "direct runtime fields must join the shared top-level category navigator",
 );
 assertContains(
@@ -7191,6 +7191,16 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateDesignTestValuesSurface(ProjectTreeNode node)",
   "Design Test Values must expose tab content without creating alternate card chrome",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  /Name = "PreviewTestValuesFixedActions"[\s\S]*?Name = "PreviewTestValuesEditorScroll"[\s\S]*?Name = "PreviewTestValuesSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
+  "Design Test Values must keep root actions fixed above one independently scrolling value editor",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  'VerticalContentAlignment="Stretch"',
+  "the Preview utility tab host must stretch the fixed-actions and scrolling-values layout",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
