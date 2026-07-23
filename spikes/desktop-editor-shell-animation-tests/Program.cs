@@ -748,6 +748,14 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("iconList", "IconTokenList", "[\"first\",\"second\"]"),
             "Test Runtime Input").AsArray().Count);
+    const string iconSlot = """
+        [{"id":"button_001","buttonVariantReference":"component_button::variant::default","contentMode":"icon","state":"normal","iconToken":"media_mic","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}]
+        """;
+    Equal(
+        1,
+        RuntimeInputValueKindContract.CreateDefaultValue(
+            Definition("iconList", "IconSlots", iconSlot),
+            "Test Runtime Input").AsArray().Count);
     Equal(
         "natural",
         RuntimeInputValueKindContract.CreateDefaultValue(
@@ -857,6 +865,19 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         ValueKind.IconSlots,
         "[{\"contentMode\":\"icon\"}]",
         "Test Runtime Input"));
+    foreach (var invalidIconSlot in new[]
+    {
+        iconSlot.Replace("component_button::variant::default", "default", StringComparison.Ordinal),
+        iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":null", StringComparison.Ordinal),
+        iconSlot.Replace("\"pushElapsedMs\":0", "\"pushElapsedMs\":-1", StringComparison.Ordinal),
+        iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":{},\"position\":1", StringComparison.Ordinal),
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IconSlots,
+            invalidIconSlot,
+            "Test Runtime Input"));
+    }
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
         ValueKind.IntegerPair,
         "10|1.5",

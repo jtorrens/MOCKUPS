@@ -50,6 +50,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/74_cleanup_verification_and_baseline_closure_contract.md`
 - `docs/architecture/75_action_duration_field_identity_contract.md`
 - `docs/architecture/76_preview_frame_clock_boundary_contract.md`
+- `docs/architecture/77_text_box_icon_row_composition_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -228,6 +229,20 @@ Component inputs are runtime component inputs, not preview-only controls. The pr
 Component composition must reference concrete Component Variants, not parent Component Classes. Parent classes own schema, resolver identity and Variant lists; reusable visual instances store full Variant references in the form `componentClassId::variant::variantId`. Short Variant ids and retired Component Preset spellings are invalid current data. Saving a new Variant must clone the active selected Variant config, never ambiguous "current class values". `Preset` remains a distinct term used by Render Presets and reserved for future non-Variant reusable recipes.
 
 If a change appears to require `if componentType == ...` behavior in the bridge or renderer, stop and move that responsibility to the component resolver or to a parameterized common helper.
+
+## Hard rule: Text Box Icon Rows are exact structured boundaries
+
+Text Box Left and Right Icon Rows use the exact current inputs declared by
+`docs/architecture/77_text_box_icon_row_composition_contract.md`. Every row
+keeps a complete Icon Row Variant slot plus explicit items, gap and
+orientation. Every item keeps a stable id, full Button Variant reference and
+explicit local `buttonOverrides`.
+
+Do not restore flat icon-token lists, shared Text-Box-owned Button size fields,
+suffix/type/position lookup, generated positional ids, optional empty-row
+slots or a compatibility translation. Text Input Bar and Bubble persist and
+forward complete Text Box child inputs; they do not reconstruct Icon Row
+defaults in their resolvers.
 
 ## Hard rule: manifest, routing and payload contracts are strict
 

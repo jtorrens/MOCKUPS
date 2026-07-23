@@ -55,15 +55,16 @@ must not be opened repeatedly after internal slices. The handoff records that
 manual review is pending and opens only the final validated build for that
 review.
 
-## 4. Deferred decisions are not validation defects
+## 4. Approved cleanup decisions are explicit contracts
 
-The following phase-1 findings require explicit product/model approval and are
-not resolved through a compatibility fallback:
+The following phase-1 findings have explicit product/model approval and are
+not resolved through compatibility fallbacks:
 
-- Text Box and Text Input Bar icon composition requires one explicit migration
-  to structured Icon Row items with stable ids, complete Button Variant
-  references and local Overrides. Names, types and positions must not generate
-  identity or select a Variant.
+- Text Box and Text Input Bar icon composition is now governed by
+  [Text Box Icon Row Composition Contract](77_text_box_icon_row_composition_contract.md).
+  Structured items keep stable ids, complete Button Variant references and
+  local Overrides. Names, types and positions do not generate identity or
+  select a Variant.
 - `durationInputId` was approved as the declared stable field id and is now
   governed by
   [Action Duration Field Identity Contract](75_action_duration_field_identity_contract.md).
@@ -74,9 +75,8 @@ not resolved through a compatibility fallback:
   [Preview Frame Clock Boundary Contract](76_preview_frame_clock_boundary_contract.md).
   The retired context `localFrame` name has no fallback.
 
-These items remain documented decisions, not permission to keep expanding the
-old path. No code or data migration begins until the user confirms the chosen
-contract.
+These items are documented current decisions, not permission to retain or
+expand their retired paths.
 
 ## 5. Baseline acceptance
 

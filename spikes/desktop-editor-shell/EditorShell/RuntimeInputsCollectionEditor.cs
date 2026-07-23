@@ -443,7 +443,15 @@ internal sealed class RuntimeInputsCollectionEditor
         var value = DesignPreviewTestValues.Value(preview, input);
         var control = new DictionaryFieldControl(
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input), value),
-            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+            _dictionaryServices.ForNode(
+                owner.Node,
+                (_) => "",
+                openComponentVariantReference: (reference) =>
+                {
+                    _navigateToNode(reference);
+                    return Task.CompletedTask;
+                },
+                openRuntimeComponentOverrides: _openEmbeddedContext));
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
         {
@@ -1148,7 +1156,15 @@ internal sealed class RuntimeInputsCollectionEditor
             new FieldValue(
                 RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input),
                 DesignPreviewTestValues.Value(componentInputs, input)),
-            _dictionaryServices.ForNode(owner.Node, (_) => ""));
+            _dictionaryServices.ForNode(
+                owner.Node,
+                (_) => "",
+                openComponentVariantReference: (reference) =>
+                {
+                    _navigateToNode(reference);
+                    return Task.CompletedTask;
+                },
+                openRuntimeComponentOverrides: _openEmbeddedContext));
         void ApplyTransientValue(string next)
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);

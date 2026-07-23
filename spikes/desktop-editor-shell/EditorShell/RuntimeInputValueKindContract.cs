@@ -193,8 +193,8 @@ internal static class RuntimeInputValueKindContract
         ValueKind.PaletteColorAlphaPair => JsonValue.Create(
             PaletteAlphaPair.NormalizeRequired(value, owner))!,
         ValueKind.IconTokenList => ParseStringArray(value, owner),
-        ValueKind.IconSlots or ValueKind.StructuredCollection =>
-            ParseCollection(value, owner),
+        ValueKind.IconSlots => ParseIconSlots(value, owner),
+        ValueKind.StructuredCollection => ParseCollection(value, owner),
         ValueKind.AlignmentPlacement => JsonPath.ParseRequiredObject(
             AlignmentPlacementValue.Parse(value).ToJsonString(),
             owner),
@@ -266,7 +266,7 @@ internal static class RuntimeInputValueKindContract
                 RequireStringArray(value, owner);
                 return;
             case ValueKind.IconSlots:
-                RuntimeCollectionDocumentContract.Validate(RequireArray(value, owner), owner);
+                IconSlotsDocumentContract.Validate(RequireArray(value, owner), owner);
                 return;
             case ValueKind.StructuredCollection:
                 RuntimeCollectionDocumentContract.Validate(RequireArray(value, owner), owner);
@@ -354,6 +354,13 @@ internal static class RuntimeInputValueKindContract
     {
         var items = JsonPath.ParseRequiredArray(value, owner);
         RuntimeCollectionDocumentContract.Validate(items, owner);
+        return items;
+    }
+
+    private static JsonArray ParseIconSlots(string value, string owner)
+    {
+        var items = JsonPath.ParseRequiredArray(value, owner);
+        IconSlotsDocumentContract.Validate(items, owner);
         return items;
     }
 

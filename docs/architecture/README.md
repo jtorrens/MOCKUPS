@@ -155,6 +155,9 @@ this index wins.
 - `76_preview_frame_clock_boundary_contract.md`: distinct current-boundary
   `payload.localFrame` and root Screen `instance.context.screenFrame` clocks,
   including strict root equality and recursive preservation.
+- `77_text_box_icon_row_composition_contract.md`: exact structured Left/Right
+  Icon Row inputs for Text Box, stable Button item identity, complete Variant
+  references, local Overrides and explicit parent forwarding.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

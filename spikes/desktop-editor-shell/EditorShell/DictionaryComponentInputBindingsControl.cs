@@ -237,15 +237,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     private FieldValue CreateFieldValue(ComponentInputBindingDefinition input)
     {
         var options = OptionsFor(input) ?? [];
-        var value = InputValue(input, options);
-        if (string.IsNullOrWhiteSpace(value) && input.ValueKind == ValueKind.ComponentVariant)
-        {
-            value = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? "";
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                _value[input.JsonKey] = ComponentVariantSlotNode(input, value);
-            }
-        }
+        var value = InputValue(input);
 
         return new FieldValue(
             new FieldDefinition(
@@ -339,7 +331,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             return false;
         }
-        var current = InputValue(target, OptionsFor(target) ?? []);
+        var current = InputValue(target);
         if (!string.IsNullOrWhiteSpace(transition.TargetValuePattern)
             && Regex.IsMatch(current, transition.TargetValuePattern, RegexOptions.CultureInvariant))
         {
@@ -378,7 +370,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 _definition,
                 input,
                 input.Label,
-                InputValue(input, OptionsFor(input) ?? []));
+                InputValue(input));
         }
         else
         {
@@ -406,12 +398,12 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private string DisplayValue(ComponentInputBindingDefinition input)
     {
-        var value = InputValue(input, OptionsFor(input) ?? []);
+        var value = InputValue(input);
         var option = OptionsFor(input)?.FirstOrDefault((candidate) => candidate.Value == value);
         return option?.Label ?? value;
     }
 
-    private string InputValue(ComponentInputBindingDefinition input, IReadOnlyList<FieldOption> options)
+    private string InputValue(ComponentInputBindingDefinition input)
     {
         if (input.ValueKind != ValueKind.ComponentVariant)
         {
@@ -424,15 +416,12 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             return JsonText(slot["variantReference"], input.DefaultValue);
         }
 
-        var value = StringValue(node, input.DefaultValue);
-        return string.IsNullOrWhiteSpace(value)
-            ? options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? ""
-            : value;
+        return StringValue(node, input.DefaultValue);
     }
 
     private void EnsureComponentVariantSlot(ComponentInputBindingDefinition input, bool commit)
     {
-        var value = InputValue(input, OptionsFor(input) ?? []);
+        var value = InputValue(input);
         if (string.IsNullOrWhiteSpace(value)) return;
 
         _value[input.JsonKey] = ComponentVariantSlotNode(input, value);

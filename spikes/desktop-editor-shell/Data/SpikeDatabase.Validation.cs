@@ -454,14 +454,29 @@ internal sealed partial class SpikeDatabase
             {
                 validReferences.Add(VariantReferenceId.Format(row.Id, variant.Id));
                 var variantConfig = ParseRequiredObject(variant.ConfigJson, $"component variant '{row.Id}::{variant.Id}'");
+                ComponentIconRowCompositionContract.ValidateConfig(
+                    row.ComponentType,
+                    variantConfig,
+                    $"Component Variant '{row.Id}::{variant.Id}'");
                 ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, variantConfig);
                 documents.Add(($"component variant '{row.Id}::{variant.Id}'", variantConfig));
             }
 
             var classConfig = ParseRequiredObject(row.ConfigJson, $"component class '{row.Id}' config_json");
+            ComponentIconRowCompositionContract.ValidateConfig(
+                row.ComponentType,
+                classConfig,
+                $"Component Class '{row.Id}' config_json");
             ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, classConfig);
             documents.Add(($"component class '{row.Id}' config_json", classConfig));
-            documents.Add(($"component class '{row.Id}' design_preview_json", ParseRequiredObject(row.DesignPreviewJson, $"component class '{row.Id}' design_preview_json")));
+            var designPreview = ParseRequiredObject(
+                row.DesignPreviewJson,
+                $"component class '{row.Id}' design_preview_json");
+            ComponentIconRowCompositionContract.ValidateDesignPreview(
+                row.ComponentType,
+                designPreview,
+                $"Component Class '{row.Id}' design_preview_json");
+            documents.Add(($"component class '{row.Id}' design_preview_json", designPreview));
             documents.Add(($"component class '{row.Id}' metadata_json", ParseRequiredObject(row.MetadataJson, $"component class '{row.Id}' metadata_json")));
         }
 

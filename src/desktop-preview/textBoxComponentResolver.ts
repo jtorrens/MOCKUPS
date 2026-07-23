@@ -7,13 +7,13 @@ import {
   type TypographyStyleContract,
 } from "./previewComponentContracts.js";
 import {
-  asRecord,
   optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredRecord,
   requiredString,
   requiredStringPair,
   requiredTypographyStyle,
@@ -21,6 +21,7 @@ import {
 import { resolveCursorComponentAtHeight } from "./cursorComponentResolver.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveTextBoxComponent(
@@ -43,9 +44,10 @@ export function resolveTextBoxComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): TextBoxDesignContract {
-  const textBox = asRecord(config.textBox);
-  const surfaceSlot = asRecord(textBox.surfaceSlot);
-  const cursorSlot = asRecord(textBox.cursorSlot);
+  rejectRetiredIconRowInputs(inputs);
+  const textBox = requiredRecord(config, "textBox", "component.textBox");
+  const surfaceSlot = requiredRecord(textBox, "surfaceSlot", "component.textBox.surfaceSlot");
+  const cursorSlot = requiredRecord(textBox, "cursorSlot", "component.textBox.cursorSlot");
   const dimensionMode = requiredString(
     textBox,
     "dimensionMode",
@@ -81,15 +83,29 @@ export function resolveTextBoxComponentFromRecords(
 
   const padding = requiredStringPair(textBox, "padding", "component.textBox.padding");
   const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
-    asRecord(surfaceSlot.overrides),
+    componentVariantConfig(
+      componentBaseConfigs,
+      "surface",
+      requiredString(
+        surfaceSlot,
+        "variantReference",
+        "component.textBox.surfaceSlot.variantReference",
+      ),
+    ),
+    requiredRecord(surfaceSlot, "overrides", "component.textBox.surfaceSlot.overrides"),
   );
   const embeddedCursorConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "cursor", cursorSlot.variantReference),
-    asRecord(cursorSlot.overrides),
+    componentVariantConfig(
+      componentBaseConfigs,
+      "cursor",
+      requiredString(
+        cursorSlot,
+        "variantReference",
+        "component.textBox.cursorSlot.variantReference",
+      ),
+    ),
+    requiredRecord(cursorSlot, "overrides", "component.textBox.cursorSlot.overrides"),
   );
-  const leftIconRowInputs = textBoxIconRowInputs(inputs, "left");
-  const rightIconRowInputs = textBoxIconRowInputs(inputs, "right");
   const typography = typographyWithInputSizeOverride(
     requiredTypographyStyle(
       textBox,
@@ -135,19 +151,17 @@ export function resolveTextBoxComponentFromRecords(
     ),
     cursor: resolveCursorComponentAtHeight(embeddedCursorConfig, 1, `${id}.cursor`),
     iconGapToken: requiredString(inputs, "iconGap", "component.textBox.input.iconGap"),
-    leftIconRow: resolveOptionalIconRowComponentFromRecords(
+    leftIconRow: resolveTextBoxIconRowComponentFromRecords(
       inputs,
-      leftIconRowInputs,
-      "leftIconRowSlot",
+      "left",
       componentBaseConfigs,
-      `${id}.leftIcons`,
+      `${id}.leftIconRow`,
     ),
-    rightIconRow: resolveOptionalIconRowComponentFromRecords(
+    rightIconRow: resolveTextBoxIconRowComponentFromRecords(
       inputs,
-      rightIconRowInputs,
-      "rightIconRowSlot",
+      "right",
       componentBaseConfigs,
-      `${id}.rightIcons`,
+      `${id}.rightIconRow`,
     ),
     textAnimation: {
       mode: textAnimationMode(optionalString(inputs, "textAnimationMode")),
@@ -169,81 +183,58 @@ function textAnimationMode(value: string | undefined): TextBoxDesignContract["te
   return value === "pulsating" || value === "wave" ? value : "none";
 }
 
-function resolveOptionalIconRowComponentFromRecords(
+function resolveTextBoxIconRowComponentFromRecords(
   parentInputs: Record<string, unknown>,
-  iconRowInputs: Record<string, unknown>,
-  slotInputKey: string,
+  side: "left" | "right",
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
-  const icons = iconRowInputs.icons;
-  const hasIcons = Array.isArray(icons)
-    && icons.some((entry) => typeof entry === "string" && entry.trim().length > 0);
-  if (!hasIcons) {
-    return {
-      id,
-      orientation: requiredIconRowOrientation(iconRowInputs),
-      gapToken: requiredString(iconRowInputs, "gap", "component.textBox.input.iconRow.gap"),
-      items: [],
-    };
-  }
-
-  const iconRowSlot = componentInputSlot(
-    parentInputs,
-    slotInputKey,
-    `component.textBox.input.${slotInputKey}`,
-  );
+  const slotInputKey = `${side}IconRowSlot`;
+  const itemInputKey = `${side}IconRowItems`;
+  const gapInputKey = `${side}IconRowGap`;
+  const orientationInputKey = `${side}IconRowOrientation`;
+  const slotPath = `component.textBox.input.${slotInputKey}`;
+  const iconRowSlot = requiredRecord(parentInputs, slotInputKey, slotPath);
   const iconRowConfig = componentVariantConfig(
     componentBaseConfigs,
     "iconRow",
-    iconRowSlot.variantReference,
+    requiredString(iconRowSlot, "variantReference", `${slotPath}.variantReference`),
   );
   return resolveIconRowComponentFromRecords(
-    mergeComponentDefaults(iconRowConfig, iconRowSlot.overrides),
-    iconRowInputsFromParent(
-      iconRowInputs,
-      componentBaseConfigs,
+    mergeComponentDefaults(
+      iconRowConfig,
+      requiredRecord(iconRowSlot, "overrides", `${slotPath}.overrides`),
     ),
+    {
+      items: requiredObjectArray(
+        parentInputs,
+        itemInputKey,
+        "component.textBox input",
+      ),
+      gap: requiredString(
+        parentInputs,
+        gapInputKey,
+        `component.textBox.input.${gapInputKey}`,
+      ),
+      orientation: requiredIconRowOrientation(
+        parentInputs,
+        orientationInputKey,
+      ),
+    },
     componentBaseConfigs,
     id,
   );
 }
 
-function componentInputSlot(
+function requiredIconRowOrientation(
   inputs: Record<string, unknown>,
-  slotKey: string,
-  path: string,
-) {
-  const slot = asRecord(inputs[slotKey]);
-  return {
-    variantReference: requiredString(slot, "variantReference", `${path}.variantReference`),
-    overrides: asRecord(slot.overrides),
-  };
-}
-
-function textBoxIconRowInputs(inputs: Record<string, unknown>, side: "left" | "right") {
-  const nested = asRecord(inputs[`${side}IconRowInputs`]);
-  if (Object.keys(nested).length > 0) {
-    return nested;
-  }
-
-  const icons = inputs[`${side}Icons`];
-  return {
-    size: requiredString(inputs, "iconRowSize", "component.textBox.input.iconRowSize"),
-    gap: requiredString(inputs, "iconRowGap", "component.textBox.input.iconRowGap"),
-    orientation: requiredString(inputs, "iconRowOrientation", "component.textBox.input.iconRowOrientation"),
-    icons: Array.isArray(icons) && icons.every((entry) => typeof entry === "string")
-      ? icons
-      : [],
-    actionIconNumber: optionalNumber(inputs, `${side}ActionIconNumber`, 0),
-    actionBackgroundAlpha: optionalNumber(inputs, `${side}ActionBackgroundAlpha`, 1),
-    actionBackgroundColor: optionalString(inputs, `${side}ActionBackgroundColor`),
-    actionIconColor: optionalString(inputs, `${side}ActionIconColor`),
-  };
-}
-
-function requiredIconRowOrientation(value: Record<string, unknown>): "horizontal" | "vertical" {
-  const orientation = requiredString(value, "orientation", "component.textBox.input.iconRow.orientation");
+  key: string,
+): "horizontal" | "vertical" {
+  const orientation = requiredString(
+    inputs,
+    key,
+    `component.textBox.input.${key}`,
+  );
   if (orientation === "horizontal" || orientation === "vertical") {
     return orientation;
   }
@@ -251,30 +242,18 @@ function requiredIconRowOrientation(value: Record<string, unknown>): "horizontal
   throw new Error(`Unsupported icon row orientation ${orientation}`);
 }
 
-function iconRowInputsFromParent(
-  parentInputs: Record<string, unknown>,
-  componentBaseConfigs: Record<string, unknown>,
-) {
-  const icons = Array.isArray(parentInputs.icons)
-    ? parentInputs.icons.filter((icon): icon is string => typeof icon === "string" && icon.trim().length > 0)
-    : [];
-  const buttonVariantReference = Object.keys(asRecord(componentBaseConfigs.variants)).find((reference) =>
-    reference.endsWith("_button::variant::default"),
-  );
-  if (!buttonVariantReference) throw new Error("Missing Button.default variant for TextBox icon rows");
-  return {
-    gap: parentInputs.gap,
-    orientation: parentInputs.orientation,
-    items: icons.map((iconToken, index) => ({
-      id: `button_${String(index + 1).padStart(3, "0")}`,
-      buttonVariantReference,
-      contentMode: "icon",
-      state: "normal",
-      iconToken,
-      text: "",
-      pushTrigger: false,
-      pushElapsedMs: 0,
-      buttonOverrides: {},
-    })),
-  };
+function rejectRetiredIconRowInputs(inputs: Record<string, unknown>) {
+  for (const key of [
+    "leftIcons",
+    "rightIcons",
+    "leftIconRowInputs",
+    "rightIconRowInputs",
+    "iconRowSize",
+    "iconRowGap",
+    "iconRowOrientation",
+  ]) {
+    if (Object.hasOwn(inputs, key)) {
+      throw new Error(`Retired Text Box Runtime Input '${key}' is not supported`);
+    }
+  }
 }

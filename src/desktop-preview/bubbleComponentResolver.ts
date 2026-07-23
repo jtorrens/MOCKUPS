@@ -88,6 +88,11 @@ export function resolveBubbleComponent(
     "textBox",
     "component.bubble.textBoxSlot",
   );
+  const textBoxInputDefaults = requiredRecord(
+    bubble,
+    "textBoxInputs",
+    "component.bubble.textBoxInputs",
+  );
   // A bubble owns the message's size and weight choices, but not its font
   // family: message text always follows the active theme text face.
   const textBoxConfig = mergeComponentDefaults(textBoxBaseConfig, {
@@ -135,20 +140,13 @@ export function resolveBubbleComponent(
   }
 
   const textBoxInputs = {
+    ...textBoxInputDefaults,
     sampleText: visibleText,
     placeholder: "",
     maxLines: 12,
     textSizeToken: optionalString(preview, "textSizeToken"),
     textAnimationMode: optionalString(preview, "textAnimationMode"),
     textAnimationElapsedMs: optionalNumber(preview, "textAnimationElapsedMs", 0),
-    leftIconRowSlot: {},
-    leftIcons: [],
-    rightIconRowSlot: {},
-    rightIcons: [],
-    iconGap: "theme.spacing.none",
-    iconRowSize: "theme.iconSizes.s",
-    iconRowGap: "theme.spacing.none",
-    iconRowOrientation: "horizontal",
     size: `${maxWidth}|1`,
     maxWidth,
   };

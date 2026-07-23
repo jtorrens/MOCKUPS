@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,12 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 {
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
+    private readonly Func<string, Task>? _openComponentVariantReference;
+    private readonly Func<string, JsonObject, Action<JsonObject>, Task>? _openRuntimeComponentOverrides;
     private readonly bool _isEditable;
-    private readonly string _defaultButtonVariantReference;
+    private readonly IReadOnlyList<FieldOption> _buttonVariantOptions;
     private List<JsonObject> _items = [];
+    private string _pendingFirstButtonVariantReference = "";
     private int _selectedIndex;
     private string _value;
 
@@ -27,12 +31,16 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         bool isEditable,
         Func<string, bool, Task<string?>>? showIconTokenPicker,
         Func<string, Control>? createIconPreview,
-        string defaultButtonVariantReference)
+        IReadOnlyList<FieldOption> buttonVariantOptions,
+        Func<string, Task>? openComponentVariantReference,
+        Func<string, JsonObject, Action<JsonObject>, Task>? openRuntimeComponentOverrides)
     {
         _isEditable = isEditable;
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
-        _defaultButtonVariantReference = defaultButtonVariantReference;
+        _buttonVariantOptions = buttonVariantOptions;
+        _openComponentVariantReference = openComponentVariantReference;
+        _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
         _value = Normalize(value);
         Spacing = 8;
         Rebuild();
@@ -81,15 +89,96 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
         if (_items.Count == 0)
         {
-            slots.Children.Add(ActionButton(EditorIcons.Add, "Create first slot", _isEditable, InsertAfterSelection));
+            return BuildFirstSlotCreator();
         }
         return new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Content = slots };
+    }
+
+    private Control BuildFirstSlotCreator()
+    {
+        if (_buttonVariantOptions.Count == 0)
+        {
+            return new TextBlock
+            {
+                Text = "No Button Variants are available.",
+                Opacity = 0.72,
+            };
+        }
+
+        var variant = CreateButtonVariantControl(
+            "iconSlots.new.buttonVariantReference",
+            _pendingFirstButtonVariantReference);
+        var add = ActionButton(
+            EditorIcons.Add,
+            "Create first Button",
+            _isEditable && !string.IsNullOrWhiteSpace(_pendingFirstButtonVariantReference),
+            AddFirstItem);
+        variant.ValueChanged += (_, reference) =>
+        {
+            _pendingFirstButtonVariantReference = reference;
+            add.IsEnabled = _isEditable && !string.IsNullOrWhiteSpace(reference);
+        };
+
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Choose the Button Component and Variant for the first row item.",
+            Opacity = 0.72,
+            TextWrapping = TextWrapping.Wrap,
+        });
+        panel.Children.Add(variant);
+        panel.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { add },
+        });
+        return panel;
     }
 
     private Control BuildSelectedEditor()
     {
         var item = _items[_selectedIndex];
         var editor = new StackPanel { Spacing = 8 };
+
+        var buttonVariant = CreateButtonVariantControl(
+            $"iconSlots.{String(item, "id", "")}.buttonVariantReference",
+            String(item, "buttonVariantReference", ""));
+        buttonVariant.ValueCommitted += (_, reference) =>
+        {
+            item["buttonVariantReference"] = reference;
+            item["buttonOverrides"] = new JsonObject();
+            Commit();
+        };
+        editor.Children.Add(FieldRow("Button", buttonVariant));
+
+        if (_openRuntimeComponentOverrides is not null)
+        {
+            var overrides = new Button
+            {
+                Content = "Overrides…",
+                HorizontalAlignment = HorizontalAlignment.Right,
+                IsEnabled = _isEditable,
+            };
+            EditorOverrideVisuals.ApplyActionButton(
+                overrides,
+                item["buttonOverrides"] is JsonObject currentOverrides && currentOverrides.Count > 0);
+            overrides.Click += async (_, _) =>
+            {
+                var reference = String(item, "buttonVariantReference", "");
+                var current = item["buttonOverrides"]?.AsObject()
+                    ?? throw new InvalidOperationException("Icon Row Button item requires local Overrides.");
+                await _openRuntimeComponentOverrides(
+                    reference,
+                    Clone(current),
+                    (next) =>
+                    {
+                        item["buttonOverrides"] = Clone(next);
+                        Commit();
+                    });
+            };
+            editor.Children.Add(overrides);
+        }
 
         var contentMode = OptionControl(
             String(item, "contentMode", "icon"),
@@ -210,9 +299,19 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     private void InsertAfterSelection()
     {
-        var index = _selectedIndex < 0 ? 0 : _selectedIndex + 1;
-        _items.Insert(index, NewItem(_selectedIndex >= 0 ? _items[_selectedIndex] : null));
+        if (_selectedIndex < 0) return;
+        var index = _selectedIndex + 1;
+        _items.Insert(index, NewItem(_items[_selectedIndex]));
         _selectedIndex = index;
+        Commit();
+    }
+
+    private void AddFirstItem()
+    {
+        if (string.IsNullOrWhiteSpace(_pendingFirstButtonVariantReference)) return;
+        _items.Add(NewItem(null, _pendingFirstButtonVariantReference));
+        _pendingFirstButtonVariantReference = "";
+        _selectedIndex = 0;
         Commit();
     }
 
@@ -232,11 +331,14 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         ValueCommitted?.Invoke(this, _value);
     }
 
-    private JsonObject NewItem(JsonObject? template)
+    private JsonObject NewItem(JsonObject? template, string explicitVariantReference = "")
     {
         var item = template is null ? new JsonObject() : Clone(template);
         item["id"] = $"button_{Guid.NewGuid():N}";
-        item["buttonVariantReference"] = template?["buttonVariantReference"]?.GetValue<string>() ?? _defaultButtonVariantReference;
+        item["buttonVariantReference"] = template?["buttonVariantReference"]?.GetValue<string>()
+            ?? (string.IsNullOrWhiteSpace(explicitVariantReference)
+                ? throw new InvalidOperationException("A Button Variant must be selected before creating an Icon Row item.")
+                : explicitVariantReference);
         item["contentMode"] ??= "icon";
         item["state"] ??= "normal";
         item["iconToken"] ??= "media_mic";
@@ -247,6 +349,22 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         item["pushElapsedMs"] = 0;
         item["buttonOverrides"] ??= new JsonObject();
         return item;
+    }
+
+    private DictionaryComponentVariantControl CreateButtonVariantControl(string id, string value)
+    {
+        return new DictionaryComponentVariantControl(
+            new FieldDefinition(
+                id,
+                "Button Variant",
+                ValueKind.ComponentVariant,
+                _isEditable,
+                Options: _buttonVariantOptions,
+                SelectComponentClass: true),
+            value,
+            isHighlighted: false,
+            _openComponentVariantReference,
+            openEmbeddedComponent: null);
     }
 
     private static string String(JsonObject item, string key, string fallback) => item[key]?.GetValue<string>() ?? fallback;

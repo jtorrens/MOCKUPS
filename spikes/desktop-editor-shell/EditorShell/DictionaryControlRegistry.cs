@@ -83,8 +83,9 @@ internal static class DictionaryControlRegistry
                 request.Definition.IsEditable,
                 request.Services.ShowIconTokenPicker,
                 request.Services.CreateIconPreview,
-                request.Services.GetComponentVariantOptions?.Invoke("button")
-                    .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? ""),
+                request.Services.GetComponentVariantOptions?.Invoke("button") ?? [],
+                request.Services.OpenComponentVariantReference,
+                request.Services.OpenRuntimeComponentOverrides),
             [ValueKind.ComponentVariant] = (request) => new DictionaryComponentVariantControl(
                 request.Definition,
                 request.Value,

@@ -9077,6 +9077,241 @@ function assertConversationMessageActorOwnership() {
   }
 }
 
+function assertStructuredTextBoxIconRowsAreCanonical() {
+  for (const requiredTextBoxBoundary of [
+    'requiredRecord(config, "textBox", "component.textBox")',
+    'requiredRecord(parentInputs, slotInputKey, slotPath)',
+    "requiredObjectArray(",
+    'requiredRecord(iconRowSlot, "overrides", `${slotPath}.overrides`)',
+    "rejectRetiredIconRowInputs(inputs)",
+  ]) {
+    assertContains(
+      "src/desktop-preview/textBoxComponentResolver.ts",
+      requiredTextBoxBoundary,
+      `Text Box Icon Rows must preserve the exact structured boundary (${requiredTextBoxBoundary})`,
+    );
+  }
+  for (const retiredTextBoxInference of [
+    "iconRowInputsFromParent",
+    "textBoxIconRowInputs",
+    "resolveOptionalIconRowComponentFromRecords",
+    ".endsWith(",
+    "button_${String(index",
+  ]) {
+    assertDoesNotContain(
+      "src/desktop-preview/textBoxComponentResolver.ts",
+      retiredTextBoxInference,
+      `Text Box must not infer Icon Row identity or translate retired flat lists (${retiredTextBoxInference})`,
+    );
+  }
+  for (const requiredTextInputBoundary of [
+    'requiredRecord(config, "textInput", "component.textInput")',
+    'requiredRecord(\n    textInput,\n    "textBoxInputs",',
+    "...textBoxInputs",
+  ]) {
+    assertContains(
+      "src/desktop-preview/textInputBarComponentResolver.ts",
+      requiredTextInputBoundary,
+      `Text Input Bar must forward the exact Text Box input document (${requiredTextInputBoundary})`,
+    );
+  }
+  for (const retiredTextInputTranslation of [
+    "iconRowInputsForTextBox",
+    "requiredIconList",
+    "asRecord(",
+  ]) {
+    assertDoesNotContain(
+      "src/desktop-preview/textInputBarComponentResolver.ts",
+      retiredTextInputTranslation,
+      `Text Input Bar must not rebuild or coerce Text Box Icon Rows (${retiredTextInputTranslation})`,
+    );
+  }
+  assertContains(
+    "src/desktop-preview/bubbleComponentResolver.ts",
+    'requiredRecord(\n    bubble,\n    "textBoxInputs",',
+    "Bubble must own complete explicit Text Box child inputs",
+  );
+  for (const requiredIconSlotsEditorBoundary of [
+    "CreateButtonVariantControl(",
+    "_openRuntimeComponentOverrides(",
+    "_pendingFirstButtonVariantReference",
+  ]) {
+    assertContains(
+      "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+      requiredIconSlotsEditorBoundary,
+      `Icon Slots authoring must expose explicit Button Variant and local Overrides (${requiredIconSlotsEditorBoundary})`,
+    );
+  }
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+    "_defaultButtonVariantReference",
+    "Icon Slots authoring must not infer the first Button Variant",
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    "button::variant::default",
+    "static dictionary defaults must not contain a short or project-inferred Button Variant reference",
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    "options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))",
+    "embedded Component bindings must wait for explicit Component selection instead of taking the first Variant option",
+  );
+  for (const requiredRuntimeIconSlotsService of [
+    "openComponentVariantReference: (reference) =>",
+    "openRuntimeComponentOverrides: _openEmbeddedContext",
+  ]) {
+    assertContains(
+      "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+      requiredRuntimeIconSlotsService,
+      `Runtime/Test Values Icon Slots must retain Variant navigation and local Overrides (${requiredRuntimeIconSlotsService})`,
+    );
+  }
+
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const rows = database.prepare(
+      "SELECT id, component_type, config_json, design_preview_json, metadata_json FROM component_classes ORDER BY id",
+    ).all() as {
+      id: string;
+      component_type: string;
+      config_json: string;
+      design_preview_json: string;
+      metadata_json: string;
+    }[];
+    const retiredKeys = [
+      "leftIcons",
+      "rightIcons",
+      "leftIconRowInputs",
+      "rightIconRowInputs",
+      "iconRowSize",
+      "iconRowGap",
+      "iconRowOrientation",
+    ];
+    const exactItemKeys = [
+      "buttonOverrides",
+      "buttonVariantReference",
+      "contentMode",
+      "iconSizeToken",
+      "iconToken",
+      "id",
+      "pushElapsedMs",
+      "pushTrigger",
+      "state",
+      "text",
+      "textSizeToken",
+    ];
+    const validateTextBoxInputs = (owner: string, value: unknown) => {
+      const inputs = jsonRecord(value);
+      for (const key of retiredKeys) {
+        if (Object.hasOwn(inputs, key)) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner} retains retired Text Box input ${key}`);
+        }
+      }
+      for (const side of ["left", "right"]) {
+        const slot = jsonRecord(inputs[`${side}IconRowSlot`]);
+        if (typeof slot.variantReference !== "string"
+            || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(slot.variantReference)
+            || !slot.overrides
+            || Array.isArray(slot.overrides)
+            || typeof slot.overrides !== "object") {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner} has an incomplete ${side} Icon Row slot`);
+        }
+        const items = inputs[`${side}IconRowItems`];
+        if (!Array.isArray(items)) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner} has no exact ${side} Icon Row items array`);
+          continue;
+        }
+        const ids = new Set<string>();
+        for (const [index, rawItem] of items.entries()) {
+          const item = jsonRecord(rawItem);
+          const keys = Object.keys(item).sort();
+          if (keys.length !== exactItemKeys.length
+              || keys.some((key, keyIndex) => key !== exactItemKeys[keyIndex])) {
+            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} is not an exact current item`);
+          }
+          if (typeof item.id !== "string" || !item.id || ids.has(item.id)) {
+            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} has no unique stable id`);
+          } else {
+            ids.add(item.id);
+          }
+          if (typeof item.buttonVariantReference !== "string"
+              || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(item.buttonVariantReference)
+              || !item.buttonOverrides
+              || Array.isArray(item.buttonOverrides)
+              || typeof item.buttonOverrides !== "object") {
+            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} has no full Button Variant and local Overrides`);
+          }
+        }
+        if (typeof inputs[`${side}IconRowGap`] !== "string"
+            || !["horizontal", "vertical"].includes(String(inputs[`${side}IconRowOrientation`]))) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner} has incomplete ${side} Icon Row layout inputs`);
+        }
+      }
+      if (typeof inputs.iconGap !== "string") {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} has no explicit gap from Icon Rows to text`);
+      }
+    };
+    const validateConfig = (row: (typeof rows)[number], config: Record<string, unknown>, owner: string) => {
+      if (row.component_type !== "textInputBar" && Object.hasOwn(config, "textInput")) {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} retains foreign Text Input Bar config`);
+      }
+      if (row.component_type === "textInputBar") {
+        validateTextBoxInputs(`${owner}.textInput.textBoxInputs`, jsonRecord(config.textInput).textBoxInputs);
+      } else if (row.component_type === "bubble") {
+        validateTextBoxInputs(`${owner}.bubble.textBoxInputs`, jsonRecord(config.bubble).textBoxInputs);
+      }
+    };
+
+    for (const row of rows) {
+      validateConfig(row, jsonRecord(jsonParse(row.config_json)), `Component ${row.id} config`);
+      const metadata = jsonRecord(jsonParse(row.metadata_json));
+      for (const variant of jsonArray(metadata.variants).map(jsonRecord)) {
+        validateConfig(
+          row,
+          jsonRecord(variant.config),
+          `Component ${row.id} Variant ${String(variant.id)}`,
+        );
+      }
+      const preview = jsonRecord(jsonParse(row.design_preview_json));
+      if (row.component_type === "textBox") {
+        const inputs = jsonArray(preview.inputs).map(jsonRecord);
+        const byId = new Map(inputs.map((input) => [String(input.id), input]));
+        for (const side of ["left", "right"]) {
+          for (const [suffix, valueKind] of [
+            ["IconRowSlot", "ComponentVariant"],
+            ["IconRowItems", "IconSlots"],
+            ["IconRowGap", "ThemeToken"],
+            ["IconRowOrientation", "OptionToken"],
+          ]) {
+            const id = `${side}${suffix}`;
+            const input = byId.get(id);
+            if (!input || input.jsonKey !== id || input.valueKind !== valueKind) {
+              addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview has no exact ${id} Runtime Input`);
+            }
+          }
+        }
+        for (const key of retiredKeys) {
+          if (byId.has(key) || Object.hasOwn(preview, key)) {
+            addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview retains retired Runtime Input ${key}`);
+          }
+        }
+      }
+      if (row.component_type === "textInputBar") {
+        for (const key of retiredKeys) {
+          if (Object.hasOwn(preview, key)) {
+            addViolation("data/desktop-editor-spike.sqlite", `Text Input Bar Design Preview retains retired value ${key}`);
+          }
+        }
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 
 assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();
@@ -9087,6 +9322,7 @@ assertDesktopRuntimeInputValueKindsAreCanonical();
 assertModuleInstanceRuntimePayloadsMatchContracts();
 assertActionDurationFieldIdsAreCanonical();
 assertConversationMessageActorOwnership();
+assertStructuredTextBoxIconRowsAreCanonical();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

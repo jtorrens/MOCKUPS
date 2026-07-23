@@ -5,10 +5,10 @@ import {
 } from "./componentPreviewDefaults.js";
 import type { TextInputBarDesignContract } from "./textInputBarComponentContract.js";
 import {
-  asRecord,
   parseObject,
   requiredNumber,
   requiredPossiblyEmptyString,
+  requiredRecord,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -22,20 +22,26 @@ export function resolveTextInputBarComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const textInput = asRecord(config.textInput);
-  const barSurfaceSlot = asRecord(textInput.barSurfaceSlot);
-  const textBoxSlot = asRecord(textInput.textBoxSlot);
-  const iconBarSlot = asRecord(textInput.iconBarSlot);
-  const textBoxInputs = asRecord(textInput.textBoxInputs);
-  const leftTextBoxIconRowSlot = componentInputSlot(
-    textBoxInputs,
-    "leftIconRowSlot",
-    "component.textInput.textBox.leftIconRowSlot",
+  const textInput = requiredRecord(config, "textInput", "component.textInput");
+  const barSurfaceSlot = requiredRecord(
+    textInput,
+    "barSurfaceSlot",
+    "component.textInput.barSurfaceSlot",
   );
-  const rightTextBoxIconRowSlot = componentInputSlot(
-    textBoxInputs,
-    "rightIconRowSlot",
-    "component.textInput.textBox.rightIconRowSlot",
+  const textBoxSlot = requiredRecord(
+    textInput,
+    "textBoxSlot",
+    "component.textInput.textBoxSlot",
+  );
+  const iconBarSlot = requiredRecord(
+    textInput,
+    "iconBarSlot",
+    "component.textInput.iconBarSlot",
+  );
+  const textBoxInputs = requiredRecord(
+    textInput,
+    "textBoxInputs",
+    "component.textInput.textBoxInputs",
   );
   const sampleText = requiredPossiblyEmptyString(
     textBoxInputs,
@@ -49,12 +55,36 @@ export function resolveTextInputBarComponent(
   const isTyping = sampleText.trim().length > 0;
   const height = requiredNumber(textInput, "height", "component.textInput.height");
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "surface", barSurfaceSlot.variantReference),
-    asRecord(barSurfaceSlot.overrides),
+    componentVariantConfig(
+      componentBaseConfigs,
+      "surface",
+      requiredString(
+        barSurfaceSlot,
+        "variantReference",
+        "component.textInput.barSurfaceSlot.variantReference",
+      ),
+    ),
+    requiredRecord(
+      barSurfaceSlot,
+      "overrides",
+      "component.textInput.barSurfaceSlot.overrides",
+    ),
   );
   const embeddedTextBoxConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "textBox", textBoxSlot.variantReference),
-    asRecord(textBoxSlot.overrides),
+    componentVariantConfig(
+      componentBaseConfigs,
+      "textBox",
+      requiredString(
+        textBoxSlot,
+        "variantReference",
+        "component.textInput.textBoxSlot.variantReference",
+      ),
+    ),
+    requiredRecord(
+      textBoxSlot,
+      "overrides",
+      "component.textInput.textBoxSlot.overrides",
+    ),
   );
   const embeddedIconBarConfig = mergeComponentDefaults(
     componentVariantConfig(
@@ -62,38 +92,18 @@ export function resolveTextInputBarComponent(
       "iconBar",
       requiredString(iconBarSlot, "variantReference", "component.textInput.iconBarSlot.variantReference"),
     ),
-    asRecord(iconBarSlot.overrides),
+    requiredRecord(
+      iconBarSlot,
+      "overrides",
+      "component.textInput.iconBarSlot.overrides",
+    ),
   );
 
   const resolvedTextBox = resolveTextBoxComponentFromRecords(
     embeddedTextBoxConfig,
     {
+      ...textBoxInputs,
       sampleText,
-      placeholder: requiredString(
-        textBoxInputs,
-        "placeholder",
-        "component.textInput.textBox.placeholder",
-      ),
-      maxLines: requiredNumber(
-        textBoxInputs,
-        "maxLines",
-        "component.textInput.textBox.maxLines",
-      ),
-      leftIconRowSlot: leftTextBoxIconRowSlot,
-      leftIconRowInputs: iconRowInputsForTextBox(
-        textBoxInputs,
-        "left",
-      ),
-      rightIconRowSlot: rightTextBoxIconRowSlot,
-      rightIconRowInputs: iconRowInputsForTextBox(
-        textBoxInputs,
-        "right",
-      ),
-      iconGap: requiredString(
-        textBoxInputs,
-        "iconGap",
-        "component.textInput.textBox.iconGap",
-      ),
       size: `${availableWidth}|${height}`,
       maxWidth: availableWidth,
     },
@@ -135,60 +145,6 @@ export function resolveTextInputBarComponent(
   };
 }
 
-function componentInputSlot(
-  inputs: Record<string, unknown>,
-  slotKey: string,
-  path: string,
-) {
-  const slot = asRecord(inputs[slotKey]);
-  return {
-    variantReference: requiredString(slot, "variantReference", `${path}.variantReference`),
-    overrides: asRecord(slot.overrides),
-  };
-}
-
-function iconRowInputsForTextBox(
-  textBoxInputs: Record<string, unknown>,
-  side: "left" | "right",
-) {
-  const variantIcons = requiredIconList(
-    textBoxInputs,
-    `${side}Icons`,
-    `component.textInput.textBox.${side}Icons`,
-  );
-  return {
-    size: requiredString(
-      textBoxInputs,
-      "iconRowSize",
-      "component.textInput.textBox.iconRowSize",
-    ),
-    gap: requiredString(
-      textBoxInputs,
-      "iconRowGap",
-      "component.textInput.textBox.iconRowGap",
-    ),
-    orientation: requiredString(
-      textBoxInputs,
-      "iconRowOrientation",
-      "component.textInput.textBox.iconRowOrientation",
-    ),
-    icons: variantIcons,
-  };
-}
-
 function toSpacingPair(pair: { first: string; second: string }) {
   return { xToken: pair.first, yToken: pair.second };
-}
-
-function requiredIconList(
-  value: Record<string, unknown>,
-  key: string,
-  path: string,
-) {
-  const raw = value[key];
-  if (Array.isArray(raw) && raw.every((entry) => typeof entry === "string")) {
-    return raw;
-  }
-
-  throw new Error(`Missing icon list value ${path}`);
 }
