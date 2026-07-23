@@ -1,6 +1,6 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
@@ -46,9 +46,11 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
   const stackPayload = previewPayloadInBox(
     {
       ...componentPayload(payload, componentBaseConfigs, "componentStack", contract.stackSlot.variantReference),
-      configJson: JSON.stringify(mergeComponentDefaults(
-        componentVariantConfig(componentBaseConfigs, "componentStack", contract.stackSlot.variantReference),
-        contract.stackSlot.overrides,
+      configJson: JSON.stringify(embeddedComponentConfig(
+        componentBaseConfigs,
+        { ...contract.stackSlot },
+        "componentStack",
+        "module.lockScreen.stackSlot",
       )),
       designPreviewJson: JSON.stringify(contract.stackInputs),
     },
@@ -75,9 +77,11 @@ function componentSlotPayload(
 ): DesignPreviewPayload {
   return {
     ...componentPayload(payload, componentBaseConfigs, componentType, slot.variantReference),
-    configJson: JSON.stringify(mergeComponentDefaults(
-      componentVariantConfig(componentBaseConfigs, componentType, slot.variantReference),
-      slot.overrides,
+    configJson: JSON.stringify(embeddedComponentConfig(
+      componentBaseConfigs,
+      { ...slot },
+      componentType,
+      `module.lockScreen.${componentType}`,
     )),
   };
 }

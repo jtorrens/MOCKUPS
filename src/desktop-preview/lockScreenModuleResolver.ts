@@ -1,7 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { LockScreenModuleContract } from "./lockScreenModuleContract.js";
 import {
-  asRecord,
   parseObject,
   requiredBoolean,
   requiredRecord,
@@ -11,7 +10,8 @@ import {
 export function resolveLockScreenModuleFrame(
   payload: DesignPreviewPayload,
 ): LockScreenModuleContract {
-  const lockScreen = asRecord(parseObject(payload.configJson).lockScreen);
+  const config = parseObject(payload.configJson);
+  const lockScreen = requiredRecord(config, "lockScreen", "module.lockScreen");
   const runtime = parseObject(payload.designPreviewJson);
   const statusBarSlot = requiredRecord(lockScreen, "statusBarSlot", "module.lockScreen.statusBarSlot");
   const navigationBarSlot = requiredRecord(lockScreen, "navigationBarSlot", "module.lockScreen.navigationBarSlot");

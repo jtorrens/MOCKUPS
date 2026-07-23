@@ -336,6 +336,13 @@ wrong-root motion document is not an empty Theme awaiting duration/easing
 fallbacks. Collection Stack continues to own only Reflow selection; Theme
 timing vocabulary remains in the shared motion helpers/contracts.
 
+Lock Screen requires its Module config `lockScreen` object before reading its
+Status Bar, Navigation Bar and Component Stack slots/Inputs. Those three slots
+retain their already-required full references and local Overrides, and the
+renderable uses the same shared embedded owner as Components when preparing
+child payloads. Visibility flags omit only final system-bar renderables; they do
+not make the slot documents optional or add a default Variant fallback.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -640,6 +647,8 @@ Architecture enforcement must verify:
   stable item identity before visibility and zone ordering.
 - Collection Stack requires the exact Theme motion object for every Reflow
   calculation without changing its owner-relative item timing.
+- Lock Screen requires its Module config root and prepares all three child
+  configs through the shared embedded owner.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

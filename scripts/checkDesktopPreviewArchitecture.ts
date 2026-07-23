@@ -7765,6 +7765,31 @@ assertDoesNotContain(
   "Collection Stack Reflow must not coerce an invalid Theme motion root",
 );
 assertContains(
+  "src/desktop-preview/lockScreenModuleResolver.ts",
+  'requiredRecord(config, "lockScreen", "module.lockScreen")',
+  "Lock Screen must require its Module config object",
+);
+assertDoesNotContain(
+  "src/desktop-preview/lockScreenModuleResolver.ts",
+  "asRecord(parseObject(payload.configJson).lockScreen)",
+  "Lock Screen must not coerce an invalid Module config root",
+);
+for (const lockScreenEmbeddedChild of [
+  'embeddedComponentConfig(\n        componentBaseConfigs,\n        { ...contract.stackSlot },\n        "componentStack",',
+  'embeddedComponentConfig(\n      componentBaseConfigs,\n      { ...slot },\n      componentType,',
+] as const) {
+  assertContains(
+    "src/desktop-preview/lockScreenModuleRenderable.ts",
+    lockScreenEmbeddedChild,
+    `Lock Screen children must consume the shared embedded Component owner (${lockScreenEmbeddedChild})`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/lockScreenModuleRenderable.ts",
+  "mergeComponentDefaults(",
+  "Lock Screen must not keep a parallel child config merge",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

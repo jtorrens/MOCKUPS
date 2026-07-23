@@ -933,3 +933,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Ambas lecturas `requiredRecord` fijadas y el cast tolerante prohibido. |
 | Datos | Sin migración. Todos los Themes current declaran motion; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia timing válido; solo se elimina una segunda aceptación de raíz incorrecta. |
+
+## Slice 1.68 — Config y children exactos de Lock Screen
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El resolver convertía `config.lockScreen` wrong-root en `{}`. El contrato resultante ya exigía slots/Overrides, pero el renderable repetía manualmente dos merges de child configs fuera del owner compartido. |
+| Owner | Lock Screen posee su config y slots; `embeddedComponentConfig` posee la preparación de cada Component Variant+Override antes del registry child. |
+| Cambio mínimo | Exigir la raíz Module y usar el helper común para Component Stack y system bars, conservando payload, Inputs y flags de visibilidad. |
+| Rutas eliminadas | `asRecord(config.lockScreen)` y dos secuencias manuales de merge child. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Lock Screen, forwarding, Stacks, Wallpaper y system bars current pasan. |
+| Enforcement | Root requerida y dos rutas del helper fijadas; cast/merges manuales retirados prohibidos. |
+| Datos | Sin migración. La config current y sus tres slots son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia selección ni visibilidad; solo unifica la frontera ya contractual. |
