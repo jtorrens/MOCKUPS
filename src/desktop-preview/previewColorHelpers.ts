@@ -1,12 +1,19 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
-import { numberValue } from "./previewValueHelpers.js";
+import { isRecord, optionalObject, parseObject } from "./previewJsonHelpers.js";
+import {
+  numberValue,
+  requiredNumberValue,
+  requiredRecord,
+} from "./previewValueHelpers.js";
 
 export function variants(payload: DesignPreviewPayload) {
   const tokens = parseObject(payload.themeTokensJson);
-  const modes = asRecord(tokens.modes);
+  const modes = requiredRecord(tokens, "modes", "theme.modes");
   const names = Object.keys(modes);
-  return names.length > 0 ? names : [payload.themeMode || "light"];
+  if (names.length === 0) {
+    throw new Error("Theme modes must contain at least one explicit mode");
+  }
+  return names;
 }
 
 function tokenValueForMode(
@@ -19,17 +26,18 @@ function tokenValueForMode(
   }
 
   const root = parseObject(payload.themeTokensJson);
-  const modeRoot = asRecord(asRecord(root.modes)[mode]);
+  const modes = requiredRecord(root, "modes", "theme.modes");
+  const modeRoot = requiredRecord(modes, mode, `theme.modes.${mode}`);
   const semanticKey = token.replace(/^theme\./, "");
   const parts = semanticKey.split(".");
-  for (const source of [modeRoot, root]) {
-    let current: unknown = source;
-    for (const part of parts) {
-      current = asRecord(current)[part];
-    }
+  for (const [source, path] of [
+    [modeRoot, `theme.modes.${mode}`],
+    [root, "theme"],
+  ] as const) {
+    const current = optionalPathValue(source, parts, path);
     if (current !== undefined) return current;
 
-    const colors = asRecord(asRecord(source).colors);
+    const colors = optionalObject(source, "colors", path);
     if (colors[semanticKey] !== undefined) return colors[semanticKey];
     if (colors[token] !== undefined) return colors[token];
   }
@@ -57,18 +65,18 @@ export function colorForMode(
 ) {
   const raw = tokenValueForMode(payload, token, mode);
   const color =
-    typeof raw === "object" && raw !== null && !Array.isArray(raw)
-      ? resolvePaletteColor(payload, asRecord(raw).color)
+    isRecord(raw)
+      ? resolvePaletteColor(payload, raw.color)
       : resolvePaletteColor(payload, raw);
   const rawAlpha =
-    typeof raw === "object" && raw !== null && !Array.isArray(raw)
-      ? numberValue(asRecord(raw).alpha, 1)
+    isRecord(raw)
+      ? numberValue(raw.alpha, 1)
       : 1;
   return cssColorWithAlpha(color, rawAlpha * alpha);
 }
 
 export function selectedColor(payload: DesignPreviewPayload, token: string, alpha = 1) {
-  return colorForMode(payload, token, payload.themeMode || "light", alpha);
+  return colorForMode(payload, token, requiredThemeMode(payload), alpha);
 }
 
 export function selectedPaletteColor(payload: DesignPreviewPayload, token: string, alpha = 1) {
@@ -76,7 +84,7 @@ export function selectedPaletteColor(payload: DesignPreviewPayload, token: strin
 }
 
 export function numberToken(payload: DesignPreviewPayload, token: string) {
-  const raw = tokenValueForMode(payload, token, payload.themeMode || "light");
+  const raw = tokenValueForMode(payload, token, requiredThemeMode(payload));
   const value = numberValue(raw, NaN);
   if (Number.isFinite(value)) return value;
   throw new Error(`Theme token ${token} is not numeric`);
@@ -95,7 +103,7 @@ export function numberOrThemeToken(payload: DesignPreviewPayload, value: number 
 }
 
 export function stringThemeToken(payload: DesignPreviewPayload, token: string) {
-  const raw = tokenValueForMode(payload, token, payload.themeMode || "light");
+  const raw = tokenValueForMode(payload, token, requiredThemeMode(payload));
   if (typeof raw === "string" && raw.trim()) return raw;
   throw new Error(`Theme token ${token} is not a string`);
 }
@@ -127,9 +135,15 @@ function formatAlpha(value: number) {
 
 function applyNeutralTint(payload: DesignPreviewPayload, color: string) {
   const root = parseObject(payload.themeTokensJson);
-  const tint = asRecord(root.neutralTint);
-  const hueDeg = numberValue(tint.hueDeg, 0);
-  const saturation = Math.max(0, Math.min(1, numberValue(tint.saturation, 0)));
+  const tint = requiredRecord(root, "neutralTint", "theme.neutralTint");
+  const hueDeg = requiredNumberValue(tint.hueDeg, "theme.neutralTint.hueDeg");
+  const saturation = Math.max(
+    0,
+    Math.min(
+      1,
+      requiredNumberValue(tint.saturation, "theme.neutralTint.saturation"),
+    ),
+  );
   if (saturation <= 0) return color;
   const parsed = parseHex(color);
   if (!parsed) return color;
@@ -137,6 +151,31 @@ function applyNeutralTint(payload: DesignPreviewPayload, color: string) {
   const [red, green, blue] = hslToRgb(normalizeHue(hueDeg) / 360, saturation, lightness);
   const rgb = `#${byteHex(red * 255)}${byteHex(green * 255)}${byteHex(blue * 255)}`;
   return parsed.alpha === 255 ? rgb : `${rgb}${byteHex(parsed.alpha)}`;
+}
+
+function requiredThemeMode(payload: DesignPreviewPayload) {
+  if (payload.themeMode === "light" || payload.themeMode === "dark") {
+    return payload.themeMode;
+  }
+  throw new Error(`Unsupported Preview Theme mode ${payload.themeMode || "<empty>"}`);
+}
+
+function optionalPathValue(
+  source: Record<string, unknown>,
+  parts: string[],
+  path: string,
+) {
+  let current: unknown = source;
+  const traversed: string[] = [];
+  for (const part of parts) {
+    if (!isRecord(current)) {
+      throw new Error(`Theme token path ${path}.${traversed.join(".")} must be an object`);
+    }
+    if (!Object.hasOwn(current, part)) return undefined;
+    current = current[part];
+    traversed.push(part);
+  }
+  return current;
 }
 
 function parseHex(color: string) {

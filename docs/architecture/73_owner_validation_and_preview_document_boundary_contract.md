@@ -414,6 +414,16 @@ default. Partial Typography objects inside explicit Component Overrides may
 still inherit weight/style from the already validated Theme; that local merge
 semantics is not a second Theme parser.
 
+Theme color and scalar-token resolution requires a non-empty `modes` object and
+the exact selected Light/Dark mode object. Lookup keeps the authored precedence:
+the selected mode first, then the global Theme root, including the current flat
+keys inside each optional `colors` object. A structurally absent path may
+continue to the next declared source, but a present intermediate member or
+`colors` member with a wrong root fails where it is owned. Selected resolution
+never substitutes Light for an absent or unknown mode. Neutral Palette tinting
+additionally requires the exact `neutralTint` object with finite numeric
+`hueDeg` and `saturation`; numeric strings and invalid roots are not defaults.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -740,6 +750,9 @@ Architecture enforcement must verify:
   ids before checking Production Font availability.
 - Production Font requirement collection validates the same Theme ids, numeric
   weight and closed style before inspecting local Typography Overrides.
+- Theme token/color resolution requires non-empty modes, the exact selected
+  Light/Dark owner, strict present object paths and numeric Neutral Tint while
+  preserving only the declared mode-to-global absence precedence.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

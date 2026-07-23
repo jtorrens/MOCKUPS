@@ -30,6 +30,7 @@ const payload: DesignPreviewPayload = {
   },
   themeMode: "light",
   themeTokensJson: JSON.stringify({
+    modes: { light: {} },
     spacing: { none: 0, s: 5, m: 10 },
     motion: {
       reflowDurationMs: 240,

@@ -8056,6 +8056,35 @@ for (const permissiveFontRequirement of [
     `Production Font requirements must not default Theme Typography (${permissiveFontRequirement})`,
   );
 }
+for (const requiredThemeColorDocument of [
+  'requiredRecord(tokens, "modes", "theme.modes")',
+  'requiredRecord(root, "modes", "theme.modes")',
+  'requiredRecord(modes, mode, `theme.modes.${mode}`)',
+  "const current = optionalPathValue(source, parts, path);",
+  'const colors = optionalObject(source, "colors", path);',
+  "colorForMode(payload, token, requiredThemeMode(payload), alpha)",
+  "tokenValueForMode(payload, token, requiredThemeMode(payload))",
+  'requiredRecord(root, "neutralTint", "theme.neutralTint")',
+  'requiredNumberValue(tint.hueDeg, "theme.neutralTint.hueDeg")',
+  'requiredNumberValue(tint.saturation, "theme.neutralTint.saturation")',
+]) {
+  assertContains(
+    "src/desktop-preview/previewColorHelpers.ts",
+    requiredThemeColorDocument,
+    `Theme color resolution must validate its exact owner (${requiredThemeColorDocument})`,
+  );
+}
+for (const permissiveThemeColorDocument of [
+  "asRecord(",
+  'payload.themeMode || "light"',
+  "modes[payload.themeMode] || modes.light",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewColorHelpers.ts",
+    permissiveThemeColorDocument,
+    `Theme color resolution must not default its owner (${permissiveThemeColorDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

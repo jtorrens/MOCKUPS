@@ -118,6 +118,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
     },
     themeMode: "light",
     themeTokensJson: JSON.stringify({
+      modes: { light: {} },
       spacing: { none: 0 },
       motion: {
         transitions: {
@@ -358,6 +359,7 @@ test("independent slots keep their occupied flow space when a later slot changes
     },
   });
   source.themeTokensJson = JSON.stringify({
+    modes: { light: {} },
     spacing: { none: 0, gap: 20 },
     motion: {
       transitions: {

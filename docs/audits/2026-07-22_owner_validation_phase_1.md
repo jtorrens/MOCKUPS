@@ -1068,3 +1068,16 @@ y Overrides por item.
 | Enforcement | Lecturas exactas y helper de style Theme fijados; antigua ruta permisiva prohibida. |
 | Datos | Sin migración. Los Themes current ya declaran ids, peso numérico y style soportado; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia faces válidas; documentos Theme rotos ya no pueden aparentar una fuente normal 400. |
+
+## Slice 1.78 — Resolución exacta de color y tokens Theme
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El helper de color podía fabricar una lista de modos cuando `modes` faltaba, seleccionar Light ante un modo ausente y convertir raíces intermedias, `colors` o `neutralTint` incorrectas en ausencia/objetos vacíos. |
+| Owner | Theme posee sus modos, rutas de tokens y Neutral Tint. El helper genérico conserva únicamente la precedencia explícita modo seleccionado → raíz global. |
+| Cambio mínimo | Requerir `modes` no vacío, el objeto del modo exacto, distinguir miembro ausente de miembro presente wrong-root, exigir Light/Dark explícito y números JSON en Neutral Tint. |
+| Rutas eliminadas | Modo Light implícito, lista fabricada desde `themeMode`, casts tolerantes de paths/`colors`/`neutralTint` y coerción numérica del tint. |
+| Pruebas | Cobertura nueva verifica precedencia válida y rechaza modo vacío, `modes` vacío/wrong-root, path/`colors` incorrectos y Neutral Tint con raíz o número inválido. |
+| Enforcement | Modos, selected mode, paths opcionales estrictos y Neutral Tint quedan fijados; casts y Light por defecto quedan prohibidos. |
+| Datos | Sin migración. Los Themes current ya declaran Light/Dark, roots de color y Neutral Tint numérico; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia la precedencia ni los colores válidos; evita que un documento roto produzca un Preview plausible bajo otro modo o sin tint contractual. |
