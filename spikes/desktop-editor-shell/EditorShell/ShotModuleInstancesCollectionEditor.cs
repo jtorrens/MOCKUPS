@@ -63,7 +63,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         body.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
         RefreshActiveScreen();
 
-        var add = EditorCollectionItemControls.CreateAddButton("Add module to Shot");
+        var add = EditorCollectionItemControls.CreateAddButton("Add Screen");
         add.Click += async (_, _) =>
         {
             var draft = await _defineModuleInstance(shot.Id);
@@ -93,7 +93,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     {
         var row = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("18,*,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("18,*,Auto,Auto,Auto,Auto"),
             ColumnSpacing = 6,
         };
         var activeIcon = EditorIcons.Create(EditorIcons.Play, 11);
@@ -123,13 +123,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Left,
         };
-        open.Click += (_, _) => _reloadAndSelect(new ProjectTreeNode(
-            ProjectTreeNodeKind.ModuleInstance,
-            slot.Id,
-            slot.Name,
-            $"{slot.ModuleName} · {slot.TransitionType}",
-            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
-            shot));
+        open.Click += (_, _) => _reloadAndSelect(ScreenNode(shot, slot));
         Grid.SetColumn(open, 1);
         row.Children.Add(open);
 
@@ -138,22 +132,26 @@ internal sealed class ShotModuleInstancesCollectionEditor
         row.Children.Add(MoveButton(up: false, index == count - 1, 1));
         Grid.SetColumn(row.Children[^1], 3);
 
-        var delete = EditorCollectionItemControls.CreateDeleteButton();
+        var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {slot.Name}");
+        duplicate.Click += (_, _) =>
+        {
+            var copy = _database.Duplicate(ScreenNode(shot, slot));
+            _onChanged();
+            _reloadAndSelect(copy);
+        };
+        Grid.SetColumn(duplicate, 4);
+        row.Children.Add(duplicate);
+
+        var delete = EditorCollectionItemControls.CreateDeleteButton($"Delete {slot.Name}");
         delete.Click += async (_, _) =>
         {
-            var instance = new ProjectTreeNode(
-                ProjectTreeNodeKind.ModuleInstance,
-                slot.Id,
-                slot.Name,
-                "",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
-                shot);
+            var instance = ScreenNode(shot, slot);
             if (!await _confirmDelete(instance)) return;
             _database.Delete(instance);
             _onChanged();
             _reloadAndSelect(shot);
         };
-        Grid.SetColumn(delete, 4);
+        Grid.SetColumn(delete, 5);
         row.Children.Add(delete);
 
         return new Border { Padding = new Thickness(8), Child = row };
@@ -170,4 +168,15 @@ internal sealed class ShotModuleInstancesCollectionEditor
             return button;
         }
     }
+
+    private static ProjectTreeNode ScreenNode(
+        ProjectTreeNode shot,
+        SpikeDatabase.ModuleInstanceSlot slot) =>
+        new(
+            ProjectTreeNodeKind.ModuleInstance,
+            slot.Id,
+            slot.Name,
+            $"{slot.ModuleName} · {slot.TransitionType}",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
+            shot);
 }

@@ -116,7 +116,7 @@ internal sealed class EditorDialogService
                 : "This removes this item from the current spike database.";
 
         return Confirm(
-            $"Delete {node.Kind}",
+            node.Kind == ProjectTreeNodeKind.ModuleInstance ? "Delete Screen" : $"Delete {node.Kind}",
             $"Delete {node.Name}?",
             message,
             "Delete",

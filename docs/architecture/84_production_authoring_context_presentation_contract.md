@@ -32,9 +32,11 @@ A Module Instance's editable Runtime values are persisted with that exact
 Screen instance. The visible tab and section title are `Screen Payload`, with
 the explanation `Saved with this Screen instance.`.
 
-`Runtime Inputs` remains the contract-level card name and `Runtime API` remains
-the declaration view. The terminology change does not move values into Preview,
-make them temporary, change their keys or introduce another write path.
+`Runtime API` remains implemented but is not presented in the current
+Production UI. `Screen Payload` shows the persisted values directly above the
+resolved Preview. This co-location does not make the values temporary, change
+their owner, keys or write path, or introduce a second payload surface in the
+central editor.
 
 Design Test Values retain their separate temporary Preview ownership from
 contract 83.
@@ -117,5 +119,7 @@ Manual review covers Episode, Shot and Screen selection; breadcrumb and summary
 content; Screen Payload terminology; Shot versus Screen timeline labels; active
 Screen indicators during scrubbing and Play; and compact Preview widths.
 
-Lifecycle action duplication between the tree and editor cards is deliberately
-outside this slice and requires a separate interaction decision.
+Lifecycle action presentation follows
+`85_consistent_lifecycle_action_presentation_contract.md`.
+Screen Payload placement follows
+`86_production_preview_payload_presentation_contract.md`.

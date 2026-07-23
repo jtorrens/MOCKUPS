@@ -96,12 +96,22 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme;
-    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.App
+    public bool CanRenameDirectly => Kind is ProjectTreeNodeKind.Project
+        or ProjectTreeNodeKind.App
         or ProjectTreeNodeKind.ComponentClass
         or ProjectTreeNodeKind.ComponentVariant
         or ProjectTreeNodeKind.Module
         or ProjectTreeNodeKind.ModuleVariant
-        or ProjectTreeNodeKind.ModuleInstance;
+        or ProjectTreeNodeKind.ModuleInstance
+        or ProjectTreeNodeKind.Episode
+        or ProjectTreeNodeKind.Shot
+        or ProjectTreeNodeKind.PaletteColor
+        or ProjectTreeNodeKind.IconTheme
+        or ProjectTreeNodeKind.RenderPreset
+        or ProjectTreeNodeKind.Device
+        or ProjectTreeNodeKind.Actor
+        or ProjectTreeNodeKind.Theme
+        or ProjectTreeNodeKind.ProductionFont;
     public bool CanDelete => Kind is ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot

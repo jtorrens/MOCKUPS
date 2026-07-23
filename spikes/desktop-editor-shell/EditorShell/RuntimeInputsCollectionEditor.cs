@@ -90,49 +90,36 @@ internal sealed class RuntimeInputsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var surface = LoadSurface(node);
-        if (!surface.Owner.IsInstance)
+        if (surface.Owner.IsInstance)
         {
-            return CreateRuntimeContractCard(surface);
+            throw new InvalidOperationException(
+                "Production Screen Payload belongs to the Preview authoring surface.");
         }
 
-        var valuesTab = new TabItem
+        return CreateRuntimeContractCard(surface);
+    }
+
+    public Control CreateProductionScreenPayloadSurface(ProjectTreeNode node)
+    {
+        var surface = LoadSurface(node);
+        if (!surface.Owner.IsInstance)
         {
-            Header = "Screen Payload",
-            Content = CreateTestValuesTab(
+            throw new InvalidOperationException(
+                "Only a Production Screen instance can expose a persisted Screen Payload surface.");
+        }
+
+        return new Border
+        {
+            Padding = new Thickness(4),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Child = CreateTestValuesTab(
                 surface.Owner,
                 surface.Preview,
                 surface.Inputs,
                 surface.Collections,
                 surface.Actions),
         };
-        var apiTab = new TabItem
-        {
-            Header = "Runtime API",
-            Content = CreateApiTab(surface.Owner, surface.Inputs, surface.Collections),
-        };
-        var tabStateKey = $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:runtime-inputs:tab";
-        var selectedTabId = _sessionUiState.Selection(tabStateKey);
-        var tabs = new TabControl
-        {
-            Items = { valuesTab, apiTab },
-            SelectedItem = selectedTabId == "api" ? apiTab : valuesTab,
-        };
-        tabs.SelectionChanged += (_, _) =>
-            _sessionUiState.Select(tabStateKey, ReferenceEquals(tabs.SelectedItem, apiTab) ? "api" : "values");
-
-        var card = new InstantEditorCard(
-            EditorCardHeader.Create(
-                "Runtime Inputs",
-                $"{EditorUiText.Count(surface.Inputs.Count, "input")} · {EditorUiText.Count(surface.Collections.Count, "collection")}",
-                EditorIcons.CreateSemantic("Runtime Inputs", EditorIcons.Design, 18)),
-            new Border { Padding = new Thickness(10), Child = tabs },
-            isExpanded: false)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "collection:runtime-inputs",
-        };
-        EditorGroupBlock.ApplyContentSeparator(card);
-        return card;
     }
 
     public Control? CreateDesignTestValuesSurface(ProjectTreeNode node)
@@ -416,49 +403,40 @@ internal sealed class RuntimeInputsCollectionEditor
                 EditorSubcardLayout.VerticalCards));
         }
 
-        Control surface;
         if (owner.IsInstance)
         {
-            var panel = new StackPanel
-            {
-                Spacing = 8,
-                Margin = new Thickness(0, 8, 0, 0),
-                Children =
-                {
-                    fixedPanel,
-                    EditorGroupBlock.CreateSeparator(),
-                    valuesPanel,
-                },
-            };
-            surface = panel;
+            fixedPanel.Name = "PreviewScreenPayloadFixedHeader";
         }
         else
         {
             fixedPanel.Name = "PreviewTestValuesFixedActions";
-            fixedPanel.Margin = new Thickness(12, 8, 12, 0);
-            fixedPanel.Children.Add(EditorGroupBlock.CreateSeparator());
-            var valuesScroll = new ScrollViewer
-            {
-                Name = "PreviewTestValuesEditorScroll",
-                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                Padding = new Thickness(12, 8, 12, 12),
-                Content = valuesPanel,
-            };
-            Grid.SetRow(valuesScroll, 1);
-            var layout = new Grid
-            {
-                Name = "PreviewTestValuesSplitLayout",
-                RowDefinitions = new RowDefinitions("Auto,*"),
-                MinHeight = 0,
-                Children =
-                {
-                    fixedPanel,
-                    valuesScroll,
-                },
-            };
-            surface = layout;
         }
+        fixedPanel.Margin = new Thickness(12, 8, 12, 0);
+        fixedPanel.Children.Add(EditorGroupBlock.CreateSeparator());
+        var valuesScroll = new ScrollViewer
+        {
+            Name = owner.IsInstance
+                ? "PreviewScreenPayloadEditorScroll"
+                : "PreviewTestValuesEditorScroll",
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Padding = new Thickness(12, 8, 12, 12),
+            Content = valuesPanel,
+        };
+        Grid.SetRow(valuesScroll, 1);
+        var surface = new Grid
+        {
+            Name = owner.IsInstance
+                ? "PreviewScreenPayloadSplitLayout"
+                : "PreviewTestValuesSplitLayout",
+            RowDefinitions = new RowDefinitions("Auto,*"),
+            MinHeight = 0,
+            Children =
+            {
+                fixedPanel,
+                valuesScroll,
+            },
+        };
 
         void UpdatePlaybackState()
         {

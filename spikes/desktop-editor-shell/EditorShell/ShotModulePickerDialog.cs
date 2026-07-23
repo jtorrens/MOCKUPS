@@ -29,7 +29,7 @@ internal sealed class ShotModulePickerDialog
         var modules = _database.GetAvailableShotModules(shotId);
         var dialog = new SukiWindow
         {
-            Title = "Add Module Instance to Shot",
+            Title = "Add Screen to Shot",
             Width = 540,
             Height = 360,
             MinWidth = 460,
@@ -65,7 +65,7 @@ internal sealed class ShotModulePickerDialog
         });
         var addButton = new Button
         {
-            Content = "Add",
+            Content = "Add Screen",
             MinWidth = 92,
         };
         var cancelButton = new Button

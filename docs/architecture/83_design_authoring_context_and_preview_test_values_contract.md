@@ -75,26 +75,31 @@ That surface retains the existing:
 Moving the surface does not change any Test Value, default, forwarding,
 collection, action or payload behavior.
 
-The central Design editor exposes the Runtime Contract separately. It describes
-the inputs and collections that the authored Component or Module makes
-available; it does not mix that contract with temporary Preview samples.
+The Runtime Contract / Runtime API implementation remains available as an
+internal inspection capability, but it has no visible Design card in the
+current authoring UI. Test Values continue to derive from that exact contract;
+the UI must not replace it with an inferred catalog.
 
 ## 3. Production remains distinct
 
 A Module Instance is Production data. Its Runtime Input values are persisted
-instance payload, presented as `Screen Payload`, and remain in the central
-editor together with its Runtime API. They
-must not move into the Design Test Values surface or be described as temporary
-Preview data.
+instance payload and are presented directly as `Screen Payload` in the upper
+Preview utility surface. This is presentation co-location only: the values
+remain owned and persisted by the exact Screen instance and must never be
+described as temporary Preview data.
 
-The Preview Test Values tab is never shown for a Production Module Instance.
+The `Test Values` tab is never shown for a Production Module Instance. Its
+equivalent first utility tab is explicitly `Screen Payload` and uses the
+current persisted instance editor.
 
 ## 4. Session and shell ownership
 
 The selected Preview utility tab is session-only and keyed by the exact editor
 layout `recordClassId`; it is not written to `data/window-state.json`. A Design
 definition with Test Values opens that tab by default. A definition without
-Test Values and every Production context opens `Preview Setup` by default.
+Test Values opens `Preview Setup` by default. A selected Production Screen
+opens `Screen Payload` by default; other Production contexts open
+`Preview Setup`.
 
 The horizontal utility/Preview split is also session-only, but it is one
 window-level presentation value rather than per-record authoring state. The
@@ -130,13 +135,17 @@ Architecture checks require:
   Preview heights;
 - the fixed root Test Values action region and independently scrolling vertical
   value-navigation region;
-- separate Design Runtime Contract and Preview Test Values surfaces;
+- hidden-but-retained Runtime API implementation and visible Design Test Values;
 - exact-class session ownership for selected Preview utility tab;
 - absence of persisted utility/Preview split state;
-- Production Screen Payload to remain in the central Runtime Inputs surface;
+- Production Screen Payload to use the first Preview utility tab without a
+  nested Runtime API tab or a duplicate central editor card;
 - `MainWindow` to host and delegate without constructing Runtime fields.
 
 Desktop tests verify the context metadata, exact selector ids, active statuses
 and session-only expansion key. Manual review covers Component and Module
 Variant switching, embedded context, temporary Test Values, Production Runtime
 Values and compact panel widths.
+
+Production placement additionally follows
+`86_production_preview_payload_presentation_contract.md`.

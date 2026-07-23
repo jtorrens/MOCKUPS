@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+internal sealed record EditorPreviewAuthoringSurface(string Header, Control Content);
+
 internal sealed class EditorCollectionCardFactory
 {
     private readonly SpikeDatabase _database;
@@ -86,17 +88,6 @@ internal sealed class EditorCollectionCardFactory
 
     public IReadOnlyList<InstantEditorCard> Create(ProjectTreeNode node)
     {
-        var animationEditor = node.Kind == ProjectTreeNodeKind.ModuleInstance
-            ? new ModuleInstanceAnimationEditor(
-                _database,
-                _dictionaryServices,
-                _onChanged,
-                _sessionUiState,
-                _shotFrame,
-                _setShotFrame,
-                _previewPlaybackState,
-                _toggleProductionPlayback)
-            : null;
         IReadOnlyList<InstantEditorCard> cards = node.Kind switch
         {
             ProjectTreeNodeKind.IconTheme =>
@@ -109,10 +100,6 @@ internal sealed class EditorCollectionCardFactory
                     _domainDialogs.ShowIconThemeSearch,
                     _domainDialogs.ShowIconThemeSvgReplace,
                     _reloadAndSelect).Create(node),
-            ],
-            ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.ModuleVariant =>
-            [
-                CreateRuntimeInputsCard(node, animationEditor),
             ],
             ProjectTreeNodeKind.Shot =>
                 [new ShotModuleInstancesCollectionEditor(
@@ -134,8 +121,22 @@ internal sealed class EditorCollectionCardFactory
         return cards;
     }
 
-    public Control? CreateDesignTestValues(ProjectTreeNode node)
+    public EditorPreviewAuthoringSurface? CreatePreviewAuthoringSurface(
+        ProjectTreeNode node,
+        EditorWorkspace workspace)
     {
+        if (workspace == EditorWorkspace.Production)
+        {
+            if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
+            {
+                return null;
+            }
+
+            var content = CreateRuntimeInputsEditor(CreateModuleInstanceAnimationEditor())
+                .CreateProductionScreenPayloadSurface(node);
+            return new EditorPreviewAuthoringSurface("Screen Payload", content);
+        }
+
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant
             and not ProjectTreeNodeKind.ModuleVariant
             and not ProjectTreeNodeKind.Module)
@@ -143,15 +144,29 @@ internal sealed class EditorCollectionCardFactory
             return null;
         }
 
-        return CreateRuntimeInputsEditor(animationEditor: null)
+        var designContent = CreateRuntimeInputsEditor(animationEditor: null)
             .CreateDesignTestValuesSurface(node);
+        return designContent is null
+            ? null
+            : new EditorPreviewAuthoringSurface("Test Values", designContent);
     }
 
-    private InstantEditorCard CreateRuntimeInputsCard(
-        ProjectTreeNode node,
-        ModuleInstanceAnimationEditor? animationEditor)
+    private InstantEditorCard CreateRuntimeInputsCard(ProjectTreeNode node)
     {
-        return CreateRuntimeInputsEditor(animationEditor).Create(node);
+        return CreateRuntimeInputsEditor(animationEditor: null).Create(node);
+    }
+
+    private ModuleInstanceAnimationEditor CreateModuleInstanceAnimationEditor()
+    {
+        return new ModuleInstanceAnimationEditor(
+            _database,
+            _dictionaryServices,
+            _onChanged,
+            _sessionUiState,
+            _shotFrame,
+            _setShotFrame,
+            _previewPlaybackState,
+            _toggleProductionPlayback);
     }
 
     private RuntimeInputsCollectionEditor CreateRuntimeInputsEditor(

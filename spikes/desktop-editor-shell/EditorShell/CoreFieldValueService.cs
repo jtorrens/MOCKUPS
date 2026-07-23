@@ -26,7 +26,7 @@ internal sealed class CoreFieldValueService
                     "core.name",
                     "Name",
                     ValueKind.StringSingleLine,
-                    IsEditable: IsPersisted(node.Kind),
+                    IsEditable: node.CanRenameDirectly,
                     DefaultValue: node.Name),
                 node.Name),
             "core.kind" => new FieldValue(
@@ -47,7 +47,7 @@ internal sealed class CoreFieldValueService
                         _ => "Notes",
                     },
                     ValueKind.StringMultiline,
-                    IsEditable: IsPersisted(node.Kind),
+                    IsEditable: SupportsNotes(node.Kind),
                     DefaultValue: node.Notes),
                 node.Notes),
             _ => throw new InvalidOperationException($"Core field '{fieldId}' is not supported."),
@@ -58,20 +58,19 @@ internal sealed class CoreFieldValueService
     {
         if (fieldId == "core.name")
         {
-            node.Name = value;
-        }
-        else if (fieldId == "core.notes")
-        {
-            node.Notes = value;
+            var renamed = _database.RenameDirectNode(node, value);
+            node.Name = renamed.Name;
+            return;
         }
 
-        if (IsPersisted(node.Kind) && fieldId is "core.name" or "core.notes")
+        if (fieldId == "core.notes" && SupportsNotes(node.Kind))
         {
+            node.Notes = value;
             _database.UpdateNode(node);
         }
     }
 
-    private static bool IsPersisted(ProjectTreeNodeKind nodeKind)
+    private static bool SupportsNotes(ProjectTreeNodeKind nodeKind)
     {
         return nodeKind is ProjectTreeNodeKind.Project
             or ProjectTreeNodeKind.App

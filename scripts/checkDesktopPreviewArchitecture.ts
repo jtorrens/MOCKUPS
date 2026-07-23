@@ -4562,6 +4562,11 @@ for (const row of currentComponentClassRows) {
       "data/desktop-editor-spike.sqlite",
       `current component class "${componentClass}" is missing editor layout "${row.record_class_id}"`,
     );
+  } else if (!/"id"\s*:\s*"core\.name"/.test(editorLayoutsByRecordClass.get(row.record_class_id) ?? "")) {
+    addViolation(
+      "data/desktop-editor-spike.sqlite",
+      `current component class "${componentClass}" editor layout "${row.record_class_id}" is missing core.name`,
+    );
   }
 
   if (componentClass === "bubble") {
@@ -6534,8 +6539,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
-  "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance",
-  "module instances must use the same declarative runtime-input editor as module Test Values",
+  ".CreateProductionScreenPayloadSurface(node)",
+  "Production Screen Payload must use the shared declarative runtime-input editor",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -7083,11 +7088,6 @@ assertDoesNotContain(
   "the retired Simplified/Complete presentation mode must not create session state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  'EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId',
-  "Runtime Inputs tabs must retain their session selection by exact layout class",
-);
-assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
   "EditorContextVariantSelector",
   "the shared editor context strip must own the explicit Variant selector presentation",
@@ -7134,13 +7134,13 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml",
-  'x:Name="PreviewTestValuesHost"',
-  "Design Test Values must have a dedicated Preview-panel host",
+  'x:Name="PreviewAuthoringDataHost"',
+  "Design Test Values and Production Screen Payload must share one delegated Preview authoring host",
 );
 assertMatches(
   "spikes/desktop-editor-shell/MainWindow.axaml",
-  /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewTestValuesTab"[\s\S]*?Header="Test Values"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
-  "the upper Preview utility surface must keep the agreed horizontal Test Values, Setup and Controls tab order",
+  /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewAuthoringDataTab"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
+  "the upper Preview utility surface must keep the agreed horizontal authoring-data, Setup and Controls tab order",
 );
 assertMatches(
   "spikes/desktop-editor-shell/MainWindow.axaml",
@@ -7154,8 +7154,8 @@ assertMatches(
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
-  "_collectionCards.CreateDesignTestValues(node)",
-  "the shell must delegate Preview Test Values construction to the shared collection-card factory",
+  "_collectionCards.CreatePreviewAuthoringSurface(node, _workspace)",
+  "the shell must delegate Design Test Values and Production Screen Payload construction to the shared collection-card factory",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
@@ -7165,7 +7165,17 @@ assertDoesNotContain(
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   '"Runtime Contract"',
-  "Design authoring must present its Runtime Contract separately from temporary Preview samples",
+  "the hidden Runtime Contract implementation must remain available",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateApiTab(",
+  "the hidden Runtime API implementation must remain available",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "CreateRuntimeInputsCard(node)",
+  "Design and Production must not present the dormant Runtime API card",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
@@ -7178,9 +7188,9 @@ assertContains(
   "Preview utility tab selection must remain session-only by exact layout class",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  'Header = "Screen Payload"',
-  "Production Module Instance Screen Payload must remain in the central Runtime Inputs editor",
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "PreviewAuthoringDataTab.Header = authoringSurface?.Header",
+  "the shared Preview authoring tab must present the exact delegated Design or Production label",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
@@ -7189,13 +7199,38 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
-  "CreateDesignTestValues(ProjectTreeNode node)",
-  "the shared collection-card factory must own the Design Test Values surface",
+  "CreatePreviewAuthoringSurface(",
+  "the shared collection-card factory must own both Preview authoring surfaces",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateDesignTestValuesSurface(ProjectTreeNode node)",
   "Design Test Values must expose tab content without creating alternate card chrome",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "CreateProductionScreenPayloadSurface(ProjectTreeNode node)",
+  "Production Screen Payload must expose its existing editor without alternate card chrome",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  /workspace == EditorWorkspace\.Production[\s\S]*?node\.Kind != ProjectTreeNodeKind\.ModuleInstance[\s\S]*?CreateProductionScreenPayloadSurface\(node\)/,
+  "only an exact Production Module Instance may expose the persisted Screen Payload utility surface",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance",
+  "Production Module Instances must not retain a duplicate central Runtime Inputs card",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  /CreateProductionScreenPayloadSurface\(ProjectTreeNode node\)[\s\S]*?return new Border[\s\S]*?Child = CreateTestValuesTab\(/,
+  "Production Screen Payload must present its persisted values directly without a nested tab bar",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "new TabControl",
+  "the hidden Runtime API must not leave a nested Design or Production tab bar",
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml",
@@ -7242,6 +7277,114 @@ assertContains(
   "GetModuleInstanceVariantName",
   "the Production Screen summary must use the exact current Module Variant",
 );
+for (const screenCollectionAction of [
+  'CreateAddButton("Add Screen")',
+  "CreateDuplicateButton",
+  "CreateDeleteButton",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ShotModuleInstancesCollectionEditor.cs",
+    screenCollectionAction,
+    `the Shot Modules collection must retain ${screenCollectionAction}`,
+  );
+}
+for (const deadProductionAction of [
+  "ProductionAddButton",
+  "ProductionDuplicateButton",
+  "ProductionDeleteButton",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/MainWindow.axaml",
+    deadProductionAction,
+    `the Production picker must not present disabled ${deadProductionAction} placeholders`,
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+    deadProductionAction,
+    `the Production shell must not wire retired ${deadProductionAction} placeholders`,
+  );
+}
+for (const lifecycleContractIndex of [
+  "AGENTS.md",
+  "docs/architecture/README.md",
+]) {
+  assertContains(
+    lifecycleContractIndex,
+    "85_consistent_lifecycle_action_presentation_contract.md",
+    `${lifecycleContractIndex} must require the consistent lifecycle action presentation contract`,
+  );
+}
+assertContains(
+  "docs/architecture/85_consistent_lifecycle_action_presentation_contract.md",
+  "An action may be available in more than one useful context.",
+  "the lifecycle action contract must preserve consistent repeated actions",
+);
+for (const payloadPresentationContractIndex of [
+  "AGENTS.md",
+  "docs/architecture/README.md",
+]) {
+  assertContains(
+    payloadPresentationContractIndex,
+    "86_production_preview_payload_presentation_contract.md",
+    `${payloadPresentationContractIndex} must require the Production Preview payload presentation contract`,
+  );
+}
+assertContains(
+  "docs/architecture/86_production_preview_payload_presentation_contract.md",
+  "The first Preview tab is an authoring host, not a Preview-owned data store.",
+  "the Production payload presentation contract must preserve exact Screen ownership",
+);
+for (const renameableKind of [
+  "Project",
+  "App",
+  "ComponentClass",
+  "ComponentVariant",
+  "Module",
+  "ModuleVariant",
+  "ModuleInstance",
+  "Episode",
+  "Shot",
+  "PaletteColor",
+  "IconTheme",
+  "RenderPreset",
+  "Device",
+  "Actor",
+  "Theme",
+  "ProductionFont",
+]) {
+  assertPropertyBlockContainsKind(
+    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "CanRenameDirectly",
+    renameableKind,
+    true,
+    `${renameableKind} must expose consistent Rename in navigation and its editor`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/CoreFieldValueService.cs",
+  "IsEditable: node.CanRenameDirectly",
+  "core.name editability must match the shared Rename capability",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/CoreFieldValueService.cs",
+  "_database.RenameDirectNode(node, value)",
+  "editor core.name must use the same direct Rename operation as navigation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  'node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token"',
+  "Palette Token must remain the explicit editable identity field",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "_database.RenameDirectNode(node, value)",
+  "Palette Token must use the same direct Rename operation as navigation",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/EditorFieldPostCommitEffects.cs",
+  /fieldId == "core\.name"[\s\S]*?_setEditorTitle\(node\.Name\);[\s\S]*?_rebuildNavigation\(\);[\s\S]*?_refreshPreviewOptions\(\);/,
+  "editor Rename must refresh title, navigation and Preview options",
+);
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
   "Sqlite",
@@ -7254,8 +7397,13 @@ assertDoesNotContain(
 );
 assertMatches(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  /Name = "PreviewTestValuesFixedActions"[\s\S]*?Name = "PreviewTestValuesEditorScroll"[\s\S]*?Name = "PreviewTestValuesSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
+  /"PreviewTestValuesFixedActions"[\s\S]*?"PreviewTestValuesEditorScroll"[\s\S]*?"PreviewTestValuesSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
   "Design Test Values must keep root actions fixed above one independently scrolling value editor",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  /Name = "PreviewScreenPayloadFixedHeader"[\s\S]*?"PreviewScreenPayloadEditorScroll"[\s\S]*?"PreviewScreenPayloadSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
+  "Production Screen Payload must keep its persisted-owner header fixed above one independently scrolling value editor",
 );
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml",

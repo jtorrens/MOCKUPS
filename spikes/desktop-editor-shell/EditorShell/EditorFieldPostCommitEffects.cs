@@ -34,6 +34,7 @@ internal sealed class EditorFieldPostCommitEffects
         if (fieldId == "core.name")
         {
             _setEditorTitle(node.Name);
+            _rebuildNavigation();
             _refreshPreviewOptions();
             return;
         }

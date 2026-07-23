@@ -136,6 +136,12 @@ internal sealed class RecordClassFieldValueService
     public void CommitFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked) return;
+        if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token")
+        {
+            var renamed = _database.RenameDirectNode(node, value);
+            node.Name = renamed.Name;
+            return;
+        }
         switch (node.Kind)
         {
             case ProjectTreeNodeKind.Project when fieldId.StartsWith("project.", StringComparison.Ordinal):

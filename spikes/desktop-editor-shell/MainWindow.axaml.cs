@@ -15,7 +15,7 @@ namespace Mockups.DesktopEditorShell;
 
 public partial class MainWindow : SukiWindow
 {
-    private const string PreviewUtilityTestValuesId = "test-values";
+    private const string PreviewUtilityAuthoringDataId = "authoring-data";
     private const string PreviewUtilitySetupId = "setup";
     private const string PreviewUtilityControlsId = "controls";
     private readonly SpikeDatabase _database;
@@ -267,9 +267,6 @@ public partial class MainWindow : SukiWindow
         ApplyHeaderUtilityButton(ShellSettingsButton);
         EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
-        ProductionAddButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
-        ProductionDuplicateButton.Content = EditorIcons.Create(EditorIcons.Duplicate, 15);
-        ProductionDeleteButton.Content = EditorIcons.Create(EditorIcons.Delete, 15);
         ProductionEditButton.Content = EditorIcons.Create(EditorIcons.Edit, 15);
         _shellState.Restore();
         _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
@@ -490,9 +487,7 @@ public partial class MainWindow : SukiWindow
 
     private void RefreshPreviewAuthoringSurface(ProjectTreeNode node)
     {
-        var content = _workspace == EditorWorkspace.Design
-            ? _collectionCards.CreateDesignTestValues(node)
-            : null;
+        var authoringSurface = _collectionCards.CreatePreviewAuthoringSurface(node, _workspace);
         _previewUtilityTabStateKey =
             $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
@@ -500,16 +495,17 @@ public partial class MainWindow : SukiWindow
         {
             PreviewUtilityControlsId => PreviewControlsTab,
             PreviewUtilitySetupId => PreviewSetupTab,
-            PreviewUtilityTestValuesId when content is not null => PreviewTestValuesTab,
-            _ when content is not null => PreviewTestValuesTab,
+            PreviewUtilityAuthoringDataId when authoringSurface is not null => PreviewAuthoringDataTab,
+            _ when authoringSurface is not null => PreviewAuthoringDataTab,
             _ => PreviewSetupTab,
         };
 
         _isUpdatingPreviewUtilityTab = true;
         try
         {
-            PreviewTestValuesHost.Content = content;
-            PreviewTestValuesTab.IsVisible = content is not null;
+            PreviewAuthoringDataHost.Content = authoringSurface?.Content;
+            PreviewAuthoringDataTab.Header = authoringSurface?.Header ?? "Authoring Data";
+            PreviewAuthoringDataTab.IsVisible = authoringSurface is not null;
             PreviewUtilityTabs.SelectedItem = selectedTab;
         }
         finally
@@ -520,7 +516,7 @@ public partial class MainWindow : SukiWindow
 
     private string? PreviewUtilityTabId(object? selectedTab)
     {
-        if (ReferenceEquals(selectedTab, PreviewTestValuesTab)) return PreviewUtilityTestValuesId;
+        if (ReferenceEquals(selectedTab, PreviewAuthoringDataTab)) return PreviewUtilityAuthoringDataId;
         if (ReferenceEquals(selectedTab, PreviewSetupTab)) return PreviewUtilitySetupId;
         if (ReferenceEquals(selectedTab, PreviewControlsTab)) return PreviewUtilityControlsId;
         return null;

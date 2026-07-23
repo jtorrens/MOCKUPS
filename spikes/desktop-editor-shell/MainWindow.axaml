@@ -81,40 +81,13 @@
                             <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
                             <TextBlock x:Name="NavigationWorkspaceTextBlock" FontSize="17" FontWeight="Bold" Text="Design" />
                             <Grid x:Name="ProductionPickerGrid"
-                                  ColumnDefinitions="*,Auto,Auto,Auto,Auto"
+                                  ColumnDefinitions="*,Auto"
                                   ColumnSpacing="6"
                                   IsVisible="False"
                                   Margin="0,8,0,0">
                                 <editor:EditorInstantComboBox x:Name="ProductionComboBox"
                                                               Grid.Column="0"
                                                               MinHeight="34" />
-                                <Button x:Name="ProductionAddButton"
-                                        Grid.Column="2"
-                                        Width="30"
-                                        Height="34"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent"
-                                        IsEnabled="False" />
-                                <Button x:Name="ProductionDuplicateButton"
-                                        Grid.Column="3"
-                                        Width="30"
-                                        Height="34"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent"
-                                        IsEnabled="False" />
-                                <Button x:Name="ProductionDeleteButton"
-                                        Grid.Column="4"
-                                        Width="30"
-                                        Height="34"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent"
-                                        IsEnabled="False" />
                                 <Button x:Name="ProductionEditButton"
                                         Grid.Column="1"
                                         Width="30"
@@ -202,10 +175,10 @@
                             <TabControl x:Name="PreviewUtilityTabs"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch">
-                                <TabItem x:Name="PreviewTestValuesTab"
+                                <TabItem x:Name="PreviewAuthoringDataTab"
                                          Header="Test Values"
                                          IsVisible="False">
-                                    <ContentControl x:Name="PreviewTestValuesHost"
+                                    <ContentControl x:Name="PreviewAuthoringDataHost"
                                                     HorizontalContentAlignment="Stretch"
                                                     VerticalContentAlignment="Stretch" />
                                 </TabItem>

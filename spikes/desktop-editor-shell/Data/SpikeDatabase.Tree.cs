@@ -997,14 +997,47 @@ internal sealed partial class SpikeDatabase
     {
         return node.Kind switch
         {
+            ProjectTreeNodeKind.Project => RenameStoredNode(node, name),
             ProjectTreeNodeKind.App => RenameApp(node, name),
             ProjectTreeNodeKind.ComponentClass => RenameComponentClass(node, name),
             ProjectTreeNodeKind.ComponentVariant => RenameComponentVariant(node, name),
             ProjectTreeNodeKind.Module => RenameModuleClass(node, name),
             ProjectTreeNodeKind.ModuleVariant => RenameModuleVariant(node, name),
             ProjectTreeNodeKind.ModuleInstance => RenameModuleInstance(node, name),
+            ProjectTreeNodeKind.Episode
+                or ProjectTreeNodeKind.Shot
+                or ProjectTreeNodeKind.PaletteColor
+                or ProjectTreeNodeKind.IconTheme
+                or ProjectTreeNodeKind.RenderPreset
+                or ProjectTreeNodeKind.Device
+                or ProjectTreeNodeKind.Actor
+                or ProjectTreeNodeKind.Theme
+                or ProjectTreeNodeKind.ProductionFont => RenameStoredNode(node, name),
             _ => throw new InvalidOperationException($"Cannot rename {node.Kind} directly."),
         };
+    }
+
+    private ProjectTreeNode RenameStoredNode(ProjectTreeNode node, string name)
+    {
+        var nextName = name.Trim();
+        if (string.IsNullOrWhiteSpace(nextName))
+        {
+            throw new InvalidOperationException($"{node.Kind} name cannot be empty.");
+        }
+
+        var renamed = new ProjectTreeNode(
+            node.Kind,
+            node.Id,
+            nextName,
+            node.Notes,
+            node.RecordClassId,
+            node.Parent,
+            node.ColorHex,
+            node.IsUsed,
+            node.IsProtected,
+            node.IsLocked);
+        UpdateNode(renamed);
+        return renamed;
     }
 
     private ProjectTreeNode RenameApp(ProjectTreeNode node, string name)

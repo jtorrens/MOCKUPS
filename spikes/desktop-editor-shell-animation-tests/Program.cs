@@ -119,7 +119,7 @@ var tests = new (string Name, Action Run)[]
     ("module parents open Default then remember the session Variant", ModuleParentsFollowComponentVariantSelection),
     ("only Default system bar variants are protected", OnlyDefaultSystemBarVariantsAreProtected),
     ("collection item presentation summarizes configured fields", CollectionItemPresentationSummarizesConfiguredFields),
-    ("Screen tree nodes keep actions in their editor", ScreenTreeNodesKeepActionsInEditor),
+    ("lifecycle actions stay consistent across navigation and editors", LifecycleActionsStayConsistentAcrossNavigationAndEditors),
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
@@ -7627,11 +7627,61 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
     Equal(EditorIcons.Image, presentation.Icon);
 }
 
-static void ScreenTreeNodesKeepActionsInEditor()
+static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
 {
-    var screen = new ProjectTreeNode(ProjectTreeNodeKind.ModuleInstance, "screen", "Screen", "", "module_instance");
+    var episode = new ProjectTreeNode(ProjectTreeNodeKind.Episode, "episode", "Episode", "", "episode");
+    var shot = new ProjectTreeNode(ProjectTreeNodeKind.Shot, "shot", "Shot", "", "shot", episode);
+    var screen = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleInstance,
+        "screen",
+        "Screen",
+        "",
+        "module_instance",
+        shot);
+
+    True(shot.CanAddChild);
+    True(episode.CanRenameDirectly);
+    True(shot.CanRenameDirectly);
+    True(screen.CanRenameDirectly);
     True(screen.CanDuplicate);
     True(screen.CanDelete);
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-lifecycle-consistency-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var currentScreen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var originalName = currentScreen.Name;
+        var editorName = $"{originalName} editor rename";
+        var coreFields = new CoreFieldValueService(database);
+
+        True(coreFields.CreateFieldValue(currentScreen, "core.name").Definition.IsEditable);
+        coreFields.CommitFieldValue(currentScreen, "core.name", editorName);
+        Equal(editorName, Descendants(database.LoadProjectTree()).Single((node) => node.Id == currentScreen.Id).Name);
+        database.RenameDirectNode(
+            Descendants(database.LoadProjectTree()).Single((node) => node.Id == currentScreen.Id),
+            originalName);
+
+        var componentRecordClasses = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
+            .Select((node) => node.RecordClassId)
+            .Distinct(StringComparer.Ordinal);
+        foreach (var recordClassId in componentRecordClasses)
+        {
+            var layout = database.LoadEditorLayout(recordClassId);
+            True(layout.Cards
+                .SelectMany((card) => card.Groups)
+                .SelectMany((group) => group.Fields)
+                .Any((field) => field.Id == "core.name"));
+        }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void NaturalBehaviorTimingUsesGraphemesAndThemePace()

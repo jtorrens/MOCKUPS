@@ -16,11 +16,11 @@ internal static class EditorCollectionItemControls
         return button;
     }
 
-    public static Button CreateDeleteButton()
+    public static Button CreateDeleteButton(string accessibleName = "Delete")
     {
         return CreateChromeFreeButton(
             EditorIcons.Create(EditorIcons.Delete, 14),
-            "Delete");
+            accessibleName);
     }
 
     public static Button CreateAddButton(string accessibleName = "Add item")
