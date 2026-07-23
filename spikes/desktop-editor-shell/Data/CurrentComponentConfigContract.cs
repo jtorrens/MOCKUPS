@@ -18,6 +18,9 @@ internal static class CurrentComponentConfigContract
             case ListItemComponentConfigContract.ComponentType:
                 ListItemComponentConfigContract.Validate(config, context);
                 break;
+            case ListComponentConfigContract.ComponentType:
+                ListComponentConfigContract.Validate(config, context);
+                break;
         }
     }
 }

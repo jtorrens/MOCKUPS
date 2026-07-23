@@ -19,6 +19,8 @@ import { notificationsComponentToRenderable } from "./notificationsComponentRend
 import { resolveNotificationsComponent } from "./notificationsComponentResolver.js";
 import { listItemComponentToRenderable } from "./listItemComponentRenderable.js";
 import { resolveListItemComponent } from "./listItemComponentResolver.js";
+import { listComponentToRenderable } from "./listComponentRenderable.js";
+import { resolveListComponent } from "./listComponentResolver.js";
 import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import {
@@ -93,6 +95,8 @@ export const componentRenderableFactories = {
     notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), renderChild),
   listItem: (payload, assignedBox) =>
     listItemComponentToRenderable(payload, resolveListItemComponent(payload), assignedBox),
+  list: (payload, _assignedBox, renderChild) =>
+    listComponentToRenderable(payload, resolveListComponent(payload), renderChild),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),

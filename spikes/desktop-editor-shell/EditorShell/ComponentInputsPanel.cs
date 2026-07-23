@@ -483,18 +483,11 @@ internal sealed class ComponentPreviewInputSession
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        foreach (var input in inputs.Where((field) => field.Kind == ComponentInputKind.RecordReference))
-        {
-            if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey)) continue;
-            var recordId = DesignPreviewTestValues.Value(values, input);
-            values[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
-                input.TableId,
-                recordId,
-                themeMode,
-                paletteColors,
-                input.Id,
-                CollectionFieldAvailability.AllowsEmpty(values, input));
-        }
+        _nestedRecordInputResolver.ResolveDeclaredValues(
+            values,
+            inputs,
+            themeMode,
+            paletteColors);
     }
 
     private static string ScopeKey(DesignPreviewPayload payload)

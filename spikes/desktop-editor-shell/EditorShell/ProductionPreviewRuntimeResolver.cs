@@ -12,13 +12,11 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 /// </summary>
 internal sealed class ProductionPreviewRuntimeResolver
 {
-    private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
     private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
 
     public ProductionPreviewRuntimeResolver(SpikeDatabase database)
     {
         var actorDataSource = new ActorPreviewDataSource(database);
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
         _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
     }
 
@@ -29,38 +27,22 @@ internal sealed class ProductionPreviewRuntimeResolver
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
 
-        foreach (var input in inputs.Where((input) =>
-                     input.Kind == ComponentInputKind.RecordReference
-                     && !string.IsNullOrWhiteSpace(input.ResolvedJsonKey)))
-        {
-            var recordId = preview[input.JsonKey]?.GetValue<string>() ?? "";
-            preview[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
-                input.TableId,
-                recordId,
-                themeMode,
-                payload.PaletteColors,
-                input.Id,
-                input.AllowEmpty);
-        }
+        _nestedRecordInputResolver.ResolveDeclaredValues(
+            preview,
+            inputs,
+            themeMode,
+            payload.PaletteColors);
 
         foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(preview, config))
         {
             if (preview[collection.JsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())
             {
-                foreach (var input in collection.Fields.Where((field) =>
-                             field.Kind == ComponentInputKind.RecordReference
-                             && !string.IsNullOrWhiteSpace(field.ResolvedJsonKey)))
-                {
-                    var recordId = item[input.JsonKey]?.GetValue<string>() ?? "";
-                    item[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
-                        input.TableId,
-                        recordId,
-                        themeMode,
-                        payload.PaletteColors,
-                        input.Id,
-                        CollectionFieldAvailability.AllowsEmpty(item, input));
-                }
+                _nestedRecordInputResolver.ResolveDeclaredValues(
+                    item,
+                    collection.Fields,
+                    themeMode,
+                    payload.PaletteColors);
             }
         }
 

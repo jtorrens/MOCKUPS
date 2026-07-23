@@ -48,14 +48,14 @@
       "contract": "./componentStackComponentContract",
       "resolver": "./componentStackComponentResolver",
       "renderable": "./componentStackComponentRenderable",
-      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
+      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "list", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
     },
     "collectionStack": {
       "category": "atom",
       "contract": "./collectionStackComponentContract",
       "resolver": "./collectionStackComponentResolver",
       "renderable": "./collectionStackComponentRenderable",
-      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
+      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "list", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
     },
     "badge": {
       "category": "atom",
@@ -84,6 +84,13 @@
       "resolver": "./listItemComponentResolver",
       "renderable": "./listItemComponentRenderable",
       "embeds": ["surface", "avatar", "label", "iconRow"]
+    },
+    "list": {
+      "category": "component",
+      "contract": "./listComponentContract",
+      "resolver": "./listComponentResolver",
+      "renderable": "./listComponentRenderable",
+      "embeds": ["collectionStack", "listItem"]
     },
     "codeIndicator": {
       "category": "atom",

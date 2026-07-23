@@ -109,6 +109,18 @@ The state appearance contains exactly one Surface Variant slot and one
 `elementsOpacity` multiplier between zero and one. The multiplier applies to
 Avatar, Label and Icon Row as a group; it never changes the state Surface.
 
+## List
+
+A List is a vertical Collection Stack whose repeated child boundary is one
+exact List Item Variant. Its Variant owns the Collection Stack slot, List Item
+slot, sizing, edge gaps, item alignment, inter-item gap policy and item
+presence motion.
+
+Runtime owns the ordered item collection. Each item has a stable id, presence,
+selected content set and its complete List Item content sets. List owns
+vertical flow, entry, exit and reflow. It does not reinterpret Avatar, Label,
+Icon Row, List Item state or content-set behavior.
+
 ## Structural stacks
 
 ### Component Stack

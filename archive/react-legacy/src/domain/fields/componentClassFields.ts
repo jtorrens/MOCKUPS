@@ -30,6 +30,7 @@ export const COMPONENT_CLASS_FIELDS = defineFields({
         "notification",
         "notifications",
         "listItem",
+        "list",
         "codeIndicator",
         "iconRow",
         "keyboard",
