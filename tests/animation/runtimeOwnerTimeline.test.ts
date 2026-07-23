@@ -179,4 +179,58 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
   for (const [invalidContract, invalidRuntime] of invalidCases) {
     assert.throws(() => new RuntimeOwnerTimeline(invalidContract, invalidRuntime, {}));
   }
+
+  const invalidTimelineContracts: Array<Record<string, unknown>> = [
+    { collections: [{ jsonKey: "items", animationTimeline: { sequence: "parallel" } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { sequenceItems: "false" } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: null } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: { kind: "ownerStart" } } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: { kind: "firstMatchingValue" } } }] },
+    { inputs: [{ id: "field", animationTimeline: { extendsOwnerDuration: "false" } }] },
+    { inputs: [{ id: "field", animationTimeline: { origin: null } }] },
+    { inputs: [{ id: "field", animationTimeline: { origin: { kind: "unknown" } } }] },
+    { inputs: [{ id: "field", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "source" } } }] },
+    { inputs: [{ id: "field", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "source", offsetFrames: -1 } } }] },
+    { inputs: [{ id: "field", animationTimeline: { completion: null } }] },
+    { inputs: [{ id: "field", animationTimeline: { completion: {} } }] },
+    { inputs: [{ id: "field", animationTimeline: { completion: { baseDurationFieldId: "duration", trackOverride: "first" } } }] },
+    { inputs: [{ id: "field", animationTimeline: { completion: { baseDurationFieldId: "duration", minimumEnabledKeyframes: 1 } } }] },
+  ];
+  for (const invalidContract of invalidTimelineContracts) {
+    assert.throws(() => new RuntimeOwnerTimeline(invalidContract, {}, {}));
+  }
+
+  const missingDurationField = {
+    collections: [{
+      jsonKey: "items",
+      fields: [{
+        id: "text",
+        jsonKey: "text",
+        animationTimeline: { completion: { baseDurationFieldId: "missing", minimumEnabledKeyframes: 2 } },
+      }],
+    }],
+  };
+  assert.throws(() => new RuntimeOwnerTimeline(
+    missingDurationField,
+    { items: [{ id: "item", text: "value" }] },
+    {},
+  ));
+
+  const missingPreDurationValue = {
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: { preDurationFieldIds: ["delay"] },
+      fields: [{ id: "delay", jsonKey: "delay" }],
+    }],
+  };
+  assert.throws(() => new RuntimeOwnerTimeline(
+    missingPreDurationValue,
+    { items: [{ id: "item" }] },
+    {},
+  ));
+  assert.throws(() => new RuntimeOwnerTimeline(
+    missingPreDurationValue,
+    { items: [{ id: "item", delay: "2" }] },
+    {},
+  ));
 });

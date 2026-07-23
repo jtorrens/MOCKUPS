@@ -9,17 +9,23 @@ function payload(
   tracks: Array<Record<string, unknown>>,
   messages: Array<Record<string, unknown>>,
 ): DesignPreviewPayload {
+  const completeMessages = messages.map((message) => ({
+    delayAfterPreviousFrames: 0,
+    writeOnDurationFrames: 0,
+    postWriteOnHoldFrames: 0,
+    ...message,
+  }));
   const fields = [
     { id: "text", jsonKey: "text", animationTimeline: { origin: { kind: "ownerStart" }, completion: { baseDurationFieldId: "writeOn", minimumEnabledKeyframes: 2 } } },
     { id: "delay", jsonKey: "delayAfterPreviousFrames" },
     { id: "writeOn", jsonKey: "writeOnDurationFrames" },
     { id: "postWriteOnHold", jsonKey: "postWriteOnHoldFrames" },
-    { id: "statusVisible", jsonKey: "statusVisible", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text" }, extendsOwnerDuration: false } },
-    { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text" }, extendsOwnerDuration: false } },
-    { id: "statusText", jsonKey: "statusText", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text" }, extendsOwnerDuration: false } },
-    { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text" } } },
+    { id: "statusVisible", jsonKey: "statusVisible", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
+    { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
+    { id: "statusText", jsonKey: "statusText", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
+    { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "playDuration", jsonKey: "playDurationFrames" },
-    { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text" } } },
+    { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
   ];
   return {
     kind: "moduleInstance",
@@ -27,7 +33,7 @@ function payload(
     configJson: "{}",
     designPreviewJson: JSON.stringify({
       headerSubtitle: "base header",
-      messages,
+      messages: completeMessages,
       inputs: [{ id: "headerSubtitle", jsonKey: "headerSubtitle", animationTimeline: { origin: { kind: "ownerStart" } } }],
       collections: [{
         id: "messages",

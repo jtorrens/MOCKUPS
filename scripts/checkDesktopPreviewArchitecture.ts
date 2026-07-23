@@ -6910,6 +6910,49 @@ for (const permissiveDesktopTimingMetadata of [
   );
 }
 assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "validateCollectionTimeline(collection);",
+  "the web owner timeline must validate closed collection timing metadata",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "topInputs.forEach(validateFieldTimeline);",
+  "the web owner timeline must validate every top-level field timing contract",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "fields.forEach(validateFieldTimeline);",
+  "the web owner timeline must validate direct and projected field timing metadata",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'field.animationTimeline === null',
+  "the web owner timeline must preserve the explicit forwarded field timeline null sentinel",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  '!field.TryGetPropertyValue("animationTimeline", out var node) || node is null',
+  "the desktop owner timeline must preserve the explicit forwarded field timeline null sentinel",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "return requiredNonNegativeNumber(",
+  "the web owner timeline must require exact direct and embedded duration values",
+);
+for (const permissiveWebTimingMetadata of [
+  "asRecord(",
+  "function records(",
+  "Math.max(2, Math.floor(optionalNumber(completion",
+  "Math.max(0, optionalNumber(owner, jsonKey, 0))",
+  "records(embedded.inputs)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/runtimeOwnerTimeline.ts",
+    permissiveWebTimingMetadata,
+    `the web timeline must not default invalid temporal metadata (${permissiveWebTimingMetadata})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

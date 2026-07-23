@@ -236,6 +236,17 @@ Referenced pre/post/completion Runtime values must exist as non-negative JSON
 numbers or their declared `BehaviorTiming` owner. Missing fields, strings in
 place of numbers and negative values do not become frame zero.
 
+Web frame resolution mirrors that same metadata and duration-value contract.
+Prepared fixtures and payloads contain every declared Runtime duration value;
+an explicit embedded Runtime object is resolved only through its complete
+input-definition list and exact JSON key. The timeline does not use `asRecord`,
+array filtering, a name-based lookup or zero to conceal a missing value.
+
+The forwarding projection explicitly serializes `animationTimeline: null` for
+a field without authored animation metadata. This is a field-level absence
+sentinel shared by the desktop and web timelines; a collection timeline null or
+any other present wrong root remains invalid.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -420,6 +431,10 @@ Architecture enforcement must verify:
   and empty Screen target sentinel.
 - desktop collection/field temporal metadata and every referenced duration
   value are validated without unknown-kind or frame-zero fallbacks.
+- web collection/field temporal metadata and direct/embedded duration values
+  follow the same exact contract before frame resolution.
+- the explicit forwarded field `animationTimeline: null` sentinel remains
+  distinct from an invalid collection timeline or wrong-root field value.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

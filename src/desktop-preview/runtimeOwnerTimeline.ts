@@ -1,4 +1,4 @@
-import { asRecord, optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
+import { optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
 import { isRecord } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
@@ -31,7 +31,12 @@ export class RuntimeOwnerTimeline {
   ) {
     validateAnimationEnvelope(animation);
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
-    for (const collection of optionalObjectArray(contract, "collections", "runtime owner contract")) {
+    const collections = optionalObjectArray(contract, "collections", "runtime owner contract");
+    for (const collection of collections) {
+      validateCollectionTimeline(collection);
+      for (const field of optionalObjectArray(collection, "fields", "runtime owner collection")) {
+        validateFieldTimeline(field);
+      }
       const key = collectionKey(collection);
       const values = optionalObjectArray(runtime, key, `runtime owner collection '${key}'`);
       const collectionTimeline = optionalObject(
@@ -70,6 +75,7 @@ export class RuntimeOwnerTimeline {
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }
     const topInputs = optionalObjectArray(contract, "inputs", "runtime owner contract");
+    topInputs.forEach(validateFieldTimeline);
     for (const definition of topInputs) {
       const fieldId = optionalString(definition, "id");
       if (!fieldId) continue;
@@ -145,8 +151,9 @@ export class RuntimeOwnerTimeline {
 
   usesTrackCompletion(fieldId: string, targetId: string) {
     const definition = this.fieldDefinition(fieldId, targetId);
-    const completion = asRecord(asRecord(definition.animationTimeline).completion);
-    const minimum = Math.max(2, Math.floor(optionalNumber(completion, "minimumEnabledKeyframes", 2)));
+    const fieldTimeline = optionalFieldTimeline(definition, "runtime animation field timeline");
+    const completion = optionalObject(fieldTimeline, "completion", "runtime animation field timeline");
+    const minimum = optionalInteger(completion, "minimumEnabledKeyframes", 2);
     return !!optionalString(completion, "baseDurationFieldId")
       && enabledKeyframes(this.track(fieldId, targetId)).length >= minimum;
   }
@@ -196,7 +203,7 @@ export class RuntimeOwnerTimeline {
         new Set(),
       ).endExclusive;
       spanEnd = Math.max(spanEnd, end);
-      if (asRecord(definition.animationTimeline).extendsOwnerDuration !== false) {
+      if (optionalFieldTimeline(definition, "runtime animation field timeline").extendsOwnerDuration !== false) {
         sequenceBodyEnd = Math.max(sequenceBodyEnd, end);
       }
     }
@@ -223,25 +230,42 @@ export class RuntimeOwnerTimeline {
     const fieldId = optionalString(definition, "id");
     if (resolving.has(fieldId)) throw new Error(`Animation timeline dependency cycle at field '${fieldId}'.`);
     resolving.add(fieldId);
-    const fieldTimeline = asRecord(definition.animationTimeline);
-    const originDefinition = asRecord(fieldTimeline.origin);
+    const fieldTimeline = optionalFieldTimeline(
+      definition,
+      `runtime animation field '${optionalString(definition, "id")}' timeline`,
+    );
+    const originDefinition = optionalObject(
+      fieldTimeline,
+      "origin",
+      `runtime animation field '${optionalString(definition, "id")}' timeline`,
+    );
     let origin = 0;
     if (optionalString(originDefinition, "kind") === "fieldCompletion") {
       const sourceId = optionalString(originDefinition, "fieldId");
       const source = ownerFields.find((field) => optionalString(field, "id") === sourceId);
       if (!source) throw new Error(`Animation field '${fieldId}' references missing field '${sourceId}'.`);
       origin = this.resolveFieldTiming(source, owner, targetId, ownerFields, resolving).completion
-        + Math.max(0, optionalNumber(originDefinition, "offsetFrames", 0));
+        + requiredNonNegativeInteger(
+          originDefinition.offsetFrames,
+          `runtime animation field '${fieldId}' origin offsetFrames`,
+        );
     }
     resolving.delete(fieldId);
     const keyframes = enabledKeyframes(this.track(fieldId, targetId));
-    const completion = asRecord(fieldTimeline.completion);
+    const completion = optionalObject(
+      fieldTimeline,
+      "completion",
+      `runtime animation field '${fieldId}' timeline`,
+    );
     const baseFieldId = optionalString(completion, "baseDurationFieldId");
-    const minimum = Math.max(2, Math.floor(optionalNumber(completion, "minimumEnabledKeyframes", 2)));
+    const minimum = optionalInteger(completion, "minimumEnabledKeyframes", 2);
     if (baseFieldId && keyframes.length < minimum) {
       const baseDefinition = ownerFields.find((field) => optionalString(field, "id") === baseFieldId);
-      const completionFrame = origin + (optionalString(baseDefinition ?? {}, "valueKind") === "BehaviorTiming"
-        ? resolveBehaviorTimingFrames(owner, baseDefinition!, ownerFields, this.themeTokens)
+      if (!baseDefinition) {
+        throw new Error(`Animation field '${fieldId}' references missing duration field '${baseFieldId}'.`);
+      }
+      const completionFrame = origin + (optionalString(baseDefinition, "valueKind") === "BehaviorTiming"
+        ? resolveBehaviorTimingFrames(owner, baseDefinition, ownerFields, this.themeTokens)
         : fieldValue(owner, ownerFields, baseFieldId));
       return {
         origin,
@@ -313,7 +337,11 @@ export class RuntimeOwnerTimeline {
   }
 
   private itemOwnerOrigin(collection: JsonRecord, item: JsonRecord) {
-    const origin = asRecord(asRecord(collection.animationTimeline).ownerOrigin);
+    const origin = optionalObject(
+      optionalObject(collection, "animationTimeline", "runtime owner collection animation timeline"),
+      "ownerOrigin",
+      "runtime owner collection animation timeline",
+    );
     if (optionalString(origin, "kind") !== "firstMatchingValue") return 0;
 
     const sourceCollectionKey = optionalString(origin, "sourceCollectionJsonKey");
@@ -361,10 +389,6 @@ export class RuntimeOwnerTimeline {
   }
 }
 
-function records(value: unknown): JsonRecord[] {
-  return Array.isArray(value) ? value.map(asRecord) : [];
-}
-
 function optionalObjectArray(owner: JsonRecord, key: string, path: string): JsonRecord[] {
   if (!Object.hasOwn(owner, key)) return [];
   const value = owner[key];
@@ -388,6 +412,11 @@ function optionalObject(owner: JsonRecord, key: string, path: string): JsonRecor
   return value;
 }
 
+function optionalFieldTimeline(field: JsonRecord, path: string): JsonRecord {
+  if (!Object.hasOwn(field, "animationTimeline") || field.animationTimeline === null) return {};
+  return optionalObject(field, "animationTimeline", path);
+}
+
 function requiredObject(owner: JsonRecord, key: string, path: string): JsonRecord {
   const value = owner[key];
   if (!isRecord(value)) {
@@ -408,6 +437,120 @@ function optionalStringArray(owner: JsonRecord, key: string, path: string): stri
     }
     return entry;
   });
+}
+
+function optionalInteger(owner: JsonRecord, key: string, fallback: number) {
+  if (!Object.hasOwn(owner, key)) return fallback;
+  return requiredNonNegativeInteger(owner[key], `${key}`);
+}
+
+function requiredNonNegativeInteger(value: unknown, path: string) {
+  const number = requiredNumberValue(value, path);
+  if (!Number.isInteger(number) || number < 0) {
+    throw new Error(`${path} must be a non-negative integer`);
+  }
+  return number;
+}
+
+function requiredNonNegativeNumber(value: unknown, path: string) {
+  const number = requiredNumberValue(value, path);
+  if (number < 0) throw new Error(`${path} must not be negative`);
+  return number;
+}
+
+function validateCollectionTimeline(collection: JsonRecord) {
+  const timeline = optionalObject(
+    collection,
+    "animationTimeline",
+    "runtime owner collection animation timeline",
+  );
+  if (Object.hasOwn(timeline, "sequence")) {
+    const sequence = requiredString(timeline, "sequence", "runtime collection sequence");
+    if (sequence !== "serial") throw new Error(`Unknown runtime collection sequence '${sequence}'`);
+  }
+  if (Object.hasOwn(timeline, "sequenceItems") && typeof timeline.sequenceItems !== "boolean") {
+    throw new Error("runtime collection sequenceItems must be a boolean when present");
+  }
+  optionalStringArray(timeline, "preDurationFieldIds", "runtime collection animation timeline");
+  optionalStringArray(timeline, "postDurationFieldIds", "runtime collection animation timeline");
+
+  const ownerOrigin = optionalObject(
+    timeline,
+    "ownerOrigin",
+    "runtime collection animation timeline",
+  );
+  if (Object.keys(ownerOrigin).length === 0 && !Object.hasOwn(timeline, "ownerOrigin")) return;
+  const kind = requiredString(ownerOrigin, "kind", "runtime collection owner origin kind");
+  if (kind !== "firstMatchingValue") {
+    throw new Error(`Unknown runtime collection owner origin '${kind}'`);
+  }
+  for (const key of [
+    "sourceCollectionJsonKey",
+    "sourceTargetIdJsonKey",
+    "sourceFieldId",
+    "sourceValueJsonKey",
+    "matchValueJsonKey",
+  ]) {
+    requiredString(ownerOrigin, key, `runtime collection owner origin ${key}`);
+  }
+}
+
+function validateFieldTimeline(field: JsonRecord) {
+  const fieldId = requiredString(field, "id", "runtime animation field id");
+  const timeline = optionalFieldTimeline(field, `runtime animation field '${fieldId}' timeline`);
+  if (Object.hasOwn(timeline, "extendsOwnerDuration")
+    && typeof timeline.extendsOwnerDuration !== "boolean") {
+    throw new Error(`runtime animation field '${fieldId}' extendsOwnerDuration must be a boolean`);
+  }
+
+  const origin = optionalObject(
+    timeline,
+    "origin",
+    `runtime animation field '${fieldId}' timeline`,
+  );
+  if (Object.hasOwn(timeline, "origin")) {
+    const kind = requiredString(origin, "kind", `runtime animation field '${fieldId}' origin kind`);
+    if (kind === "fieldCompletion") {
+      requiredString(origin, "fieldId", `runtime animation field '${fieldId}' origin field`);
+      requiredNonNegativeInteger(
+        origin.offsetFrames,
+        `runtime animation field '${fieldId}' origin offsetFrames`,
+      );
+    } else if (kind !== "ownerStart") {
+      throw new Error(`Unknown runtime animation field '${fieldId}' origin '${kind}'`);
+    }
+  }
+
+  const completion = optionalObject(
+    timeline,
+    "completion",
+    `runtime animation field '${fieldId}' timeline`,
+  );
+  if (!Object.hasOwn(timeline, "completion")) return;
+  requiredString(
+    completion,
+    "baseDurationFieldId",
+    `runtime animation field '${fieldId}' completion duration field`,
+  );
+  if (Object.hasOwn(completion, "trackOverride")) {
+    const trackOverride = requiredString(
+      completion,
+      "trackOverride",
+      `runtime animation field '${fieldId}' completion track override`,
+    );
+    if (trackOverride !== "lastEnabledKeyframe") {
+      throw new Error(`Unknown runtime animation field '${fieldId}' track override '${trackOverride}'`);
+    }
+  }
+  if (Object.hasOwn(completion, "minimumEnabledKeyframes")) {
+    const minimum = requiredNonNegativeInteger(
+      completion.minimumEnabledKeyframes,
+      `runtime animation field '${fieldId}' completion minimumEnabledKeyframes`,
+    );
+    if (minimum < 2) {
+      throw new Error(`runtime animation field '${fieldId}' minimumEnabledKeyframes must be at least 2`);
+    }
+  }
 }
 
 function validateAnimationEnvelope(animation: JsonRecord) {
@@ -476,7 +619,9 @@ function itemFields(collection: JsonRecord, item: JsonRecord) {
   const runtime = runtimeContractKey
     ? optionalObjectArray(runtimeContract, "inputs", "projected Runtime contract")
     : [];
-  return [...direct, ...embedded, ...runtime];
+  const fields = [...direct, ...embedded, ...runtime];
+  fields.forEach(validateFieldTimeline);
+  return fields;
 }
 
 function itemActions(collection: JsonRecord, item: JsonRecord) {
@@ -495,15 +640,25 @@ function itemActions(collection: JsonRecord, item: JsonRecord) {
 
 function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
   const definition = fields.find((field) => optionalString(field, "id") === fieldId);
-  const jsonKey = optionalString(definition ?? {}, "jsonKey");
-  if (Object.hasOwn(owner, jsonKey)) return Math.max(0, optionalNumber(owner, jsonKey, 0));
+  if (!definition) throw new Error(`Runtime animation duration references missing field '${fieldId}'`);
+  const jsonKey = requiredString(definition, "jsonKey", `runtime animation duration field '${fieldId}' key`);
+  if (Object.hasOwn(owner, jsonKey)) {
+    return requiredNonNegativeNumber(
+      owner[jsonKey],
+      `runtime animation duration field '${fieldId}' value`,
+    );
+  }
   for (const value of Object.values(owner)) {
-    const embedded = asRecord(value);
-    if (records(embedded.inputs).some((field) => optionalString(field, "id") === fieldId)) {
-      return Math.max(0, optionalNumber(embedded, jsonKey, 0));
+    if (!isRecord(value) || !Object.hasOwn(value, "inputs")) continue;
+    const embeddedDefinitions = optionalObjectArray(value, "inputs", "embedded Runtime contract");
+    if (embeddedDefinitions.some((field) => optionalString(field, "id") === fieldId)) {
+      return requiredNonNegativeNumber(
+        value[jsonKey],
+        `embedded runtime animation duration field '${fieldId}' value`,
+      );
     }
   }
-  return 0;
+  throw new Error(`Missing runtime animation duration field '${fieldId}' value`);
 }
 
 function enabledKeyframes(track?: JsonRecord) {

@@ -294,7 +294,7 @@ internal static class RuntimeAnimationFrameOrigin
                     fields,
                     new HashSet<string>(StringComparer.Ordinal)).EndExclusive;
                 spanEnd = Math.Max(spanEnd, end);
-                if (Timeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false)
+                if (FieldTimeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false)
                     sequenceBodyEnd = Math.Max(sequenceBodyEnd, end);
             }
             var actionEnd = LastFiniteActionEnd(collection, item, targetId, fields);
@@ -316,7 +316,7 @@ internal static class RuntimeAnimationFrameOrigin
             var fieldId = Text(definition["id"]);
             if (!resolving.Add(fieldId))
                 throw new InvalidOperationException($"Animation timeline dependency cycle at field '{fieldId}'.");
-            var fieldTimeline = Timeline(definition);
+            var fieldTimeline = FieldTimeline(definition);
             var originDefinition = JsonPath.OptionalObject(
                 fieldTimeline,
                 "origin",
@@ -378,7 +378,7 @@ internal static class RuntimeAnimationFrameOrigin
             IReadOnlyList<JsonObject> actions)
         {
             var completion = JsonPath.OptionalObject(
-                Timeline(definition),
+                FieldTimeline(definition),
                 "completion",
                 $"Runtime animation field '{Text(definition["id"])}' timeline");
             var baseDurationFieldId = Text(completion?["baseDurationFieldId"]);
@@ -698,6 +698,17 @@ internal static class RuntimeAnimationFrameOrigin
     private static JsonObject Timeline(JsonObject owner) =>
         JsonPath.OptionalObject(owner, "animationTimeline", "Runtime animation owner") ?? new JsonObject();
 
+    private static JsonObject FieldTimeline(JsonObject field)
+    {
+        if (!field.TryGetPropertyValue("animationTimeline", out var node) || node is null)
+        {
+            return new JsonObject();
+        }
+        return node as JsonObject
+            ?? throw new InvalidOperationException(
+                "Runtime animation field animationTimeline must be an object or the explicit null sentinel.");
+    }
+
     private static void ValidateCollectionTimeline(JsonObject collection)
     {
         var timeline = Timeline(collection);
@@ -750,7 +761,7 @@ internal static class RuntimeAnimationFrameOrigin
     private static void ValidateFieldTimeline(JsonObject field)
     {
         var fieldId = JsonPath.RequiredString(field, "id", "Runtime animation field");
-        var timeline = Timeline(field);
+        var timeline = FieldTimeline(field);
         if (timeline.TryGetPropertyValue("extendsOwnerDuration", out _))
         {
             _ = JsonPath.RequiredBoolean(

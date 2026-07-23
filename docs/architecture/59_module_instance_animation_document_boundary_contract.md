@@ -122,6 +122,18 @@ Offsets and Runtime duration values are non-negative numeric frames. Missing
 referenced fields or values are invalid; the desktop calculator never replaces
 them with frame zero.
 
+The web owner timeline validates the same closed collection/field metadata and
+references before frame resolution. A prepared Preview fixture or payload must
+materialize its declared duration values; the web calculator does not use a
+definition default, scan by name or manufacture zero after the payload boundary.
+Explicit embedded Runtime documents remain discoverable through their declared
+input definitions and exact JSON key only.
+
+Forwarding materializes `animationTimeline: null` on a projected field that has
+no authored timeline. That exact null is a declared field-level absence sentinel
+in both desktop and web consumers. It does not make null valid for collection
+timeline metadata, nor permit another scalar/array root for a field timeline.
+
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
 frame.
@@ -156,6 +168,10 @@ Architecture enforcement must verify:
   explicit empty Screen target sentinel;
 - the desktop timeline validates closed collection/field temporal metadata and
   exact referenced duration values before applying its formulas;
+- the web timeline mirrors the metadata vocabulary and exact direct/embedded
+  duration-value lookup;
+- both consumers preserve the explicit forwarded field timeline null sentinel
+  without generalizing it to collection metadata;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;

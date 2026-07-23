@@ -528,3 +528,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `ValidateCollectionTimeline`/`ValidateFieldTimeline` obligatorios; origins/completion exactos y `FieldValue` numérico estricto; casts/fallbacks retirados prohibidos. |
 | Datos | Sin migración. Los documentos canónicos ya declaran metadata y valores completos; base SHA-1 `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una fórmula ni un valor current; solo impide calcular con metadata contradictoria o Runtime incompleto. |
+
+## Slice 1.38 — Paridad web de metadata temporal y duraciones
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La ruta web aún convertía origin/completion/ownerOrigin incorrectos en `{}`, clampaba offset/minimum, aceptaba vocabulario desconocido y devolvía cero si un field o su valor de duración no existía. La búsqueda embebida filtraba además definitions dañadas. |
+| Owner | `RuntimeOwnerTimeline` aplica el contrato 29 después del payload boundary; los valores embedded se localizan por su lista de inputs explícita y JSON key, no por el nombre del componente. |
+| Cambio mínimo | Replicar validators de collection/field; exigir referencias y números no negativos; materializar defaults explícitamente en fixtures antes de cruzar la frontera; retirar por completo `records`/`asRecord` del timeline; conservar únicamente el sentinel field-level `animationTimeline: null` que emite forwarding. |
+| Rutas eliminadas | Wrong metadata → `{}`, unknown kind → ownerStart, offset/minimum inválido → clamp/default, missing field/value → 0 y embedded inputs malformed → omitidos. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: misma matriz de 14 metadatas, referencias y valores inválidos; fixtures de Conversation completan offsets y valores como lo hace payload preparation; Lock Screen confirma el sentinel null de sus fields forwarded. |
+| Enforcement | Validators web requeridos para contracts/direct/projected fields; duration lookup exacto; `asRecord`, `records` y clamps de metadata quedan prohibidos en el timeline. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Payload current completo conserva cada frame y el null explícito de forwarding; solo dejan de aceptarse fixtures o payloads parciales que nunca debían cruzar la frontera. |
