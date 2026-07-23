@@ -261,7 +261,11 @@ class default or short id.
 
 Every embedded Component slot crosses that lookup through one shared prepared
 slot owner: a complete stable `variantReference` and a required local
-`overrides` object. The helper merges only those two validated documents. The
+`overrides` object. The helper merges only those two validated documents,
+recursing only when both corresponding members are actual objects; scalar and
+array Overrides replace their base member. The merge uses that explicit object
+guard directly and does not recast a checked value through an empty-object
+fallback. The
 parent Component remains responsible for requiring its slot object and for
 declaring whether the embedded child is visually enabled. Audio applies this
 owner to its Surface, Avatar, Badge and duration Label slots; hidden children
@@ -737,7 +741,8 @@ Architecture enforcement must verify:
 - Component Variant base lookup requires an exact variants object and exact
   referenced config object before applying local Overrides.
 - embedded Component config uses one shared full-reference plus required local
-  Overrides owner; each parent still requires its declared slot objects.
+  Overrides owner and recurses only across explicit object branches; each
+  parent still requires its declared slot objects.
 - Avatar and Label require their declared config/style/slot objects and route
   every child through the shared embedded Component owner.
 - Notification requires both mode slots plus Avatar/Surface composition and

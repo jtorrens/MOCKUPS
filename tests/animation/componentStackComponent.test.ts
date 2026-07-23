@@ -3,7 +3,11 @@ import test from "node:test";
 
 import { resolveComponentStackComponent } from "../../src/desktop-preview/componentStackComponentResolver.js";
 import { componentStackComponentToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
-import { componentVariantConfig, embeddedComponentConfig } from "../../src/desktop-preview/componentPreviewDefaults.js";
+import {
+  componentVariantConfig,
+  embeddedComponentConfig,
+  mergeComponentDefaults,
+} from "../../src/desktop-preview/componentPreviewDefaults.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 
 test("Component Variant references require the exact stable full-reference grammar", () => {
@@ -53,6 +57,16 @@ test("embedded Component config requires a complete reference and local Override
   ]) {
     assert.throws(() => embeddedComponentConfig(bases, slot, "stub", "component.parent.slot"));
   }
+});
+
+test("Component defaults merge only explicit object branches", () => {
+  assert.deepEqual(
+    mergeComponentDefaults(
+      { nested: { inherited: true, local: false }, items: ["base"] },
+      { nested: { local: true }, items: ["override"] },
+    ),
+    { nested: { inherited: true, local: true }, items: ["override"] },
+  );
 });
 
 const motion = {

@@ -1,4 +1,4 @@
-import { asRecord } from "./previewJsonHelpers.js";
+import { isRecord } from "./previewJsonHelpers.js";
 import { requiredRecord, requiredString } from "./previewValueHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
@@ -36,13 +36,8 @@ export function mergeComponentDefaults(
   for (const [key, value] of Object.entries(overrides)) {
     const defaultValue = merged[key];
     merged[key] =
-      typeof defaultValue === "object" &&
-      defaultValue !== null &&
-      !Array.isArray(defaultValue) &&
-      typeof value === "object" &&
-      value !== null &&
-      !Array.isArray(value)
-        ? mergeComponentDefaults(asRecord(defaultValue), asRecord(value))
+      isRecord(defaultValue) && isRecord(value)
+        ? mergeComponentDefaults(defaultValue, value)
         : value;
   }
   return merged;

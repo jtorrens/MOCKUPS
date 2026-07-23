@@ -7314,6 +7314,21 @@ assertContains(
   'const overrides = requiredRecord(slot, "overrides", `${path}.overrides`);',
   "embedded Component config must require explicit local Overrides",
 );
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "isRecord(defaultValue) && isRecord(value)",
+  "Component Override merge must recurse only through explicitly guarded object branches",
+);
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "mergeComponentDefaults(defaultValue, value)",
+  "Component Override merge must pass its guarded object branches directly",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "mergeComponentDefaults(asRecord(defaultValue), asRecord(value))",
+  "Component Override merge must not recast guarded values through an empty-object fallback",
+);
 for (const audioSlot of ["avatarSlot", "badgeSlot", "surfaceSlot", "durationLabelSlot"] as const) {
   assertContains(
     "src/desktop-preview/audioComponentResolver.ts",

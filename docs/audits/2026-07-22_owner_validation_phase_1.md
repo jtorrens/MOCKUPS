@@ -1133,3 +1133,16 @@ y Overrides por item.
 | Enforcement | Schemas genéricos, style route y consumo HTML exacto quedan fijados; casts/defaults retirados quedan prohibidos. |
 | Datos | Sin migración. Todos los renderables current generan estas primitives completas; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia un efecto válido ni añade conocimiento de Component; un árbol final inválido ya no se pinta de forma plausible. |
+
+## Slice 1.83 — Guard explícito del merge de Component Overrides
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El merge común comprobaba correctamente ambos objetos, pero después los recasteaba mediante `asRecord`, ocultando visualmente la garantía que acababa de establecer. |
+| Owner | El helper compartido posee el merge base Variant + Overrides; objetos recursan y arrays/scalars reemplazan. |
+| Cambio mínimo | Usar `isRecord` como guard y pasar directamente sus valores ya estrechados al merge recursivo. |
+| Ruta eliminada | `mergeComponentDefaults(asRecord(defaultValue), asRecord(value))`. |
+| Pruebas | Cobertura explícita confirma merge recursivo de objetos y reemplazo completo de arrays; la batería de fronteras embebidas permanece igual. |
+| Enforcement | Guard y llamada directa quedan fijados; el recast redundante queda prohibido. |
+| Datos | Sin migración ni cambio de resultado; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Nulo. Es una simplificación nominal de una rama ya validada. |
