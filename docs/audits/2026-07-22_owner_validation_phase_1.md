@@ -502,3 +502,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El constructor debe ejecutar el guard; tracks/keyframes/source items usan arrays exactos y quedan prohibidos los tres filtros `OfType` retirados. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. El v2 current ya cumple; se conserva el objeto transitorio vacío y solo deja de confundirse animación presente dañada con ausencia. |
+
+## Slice 1.36 — Paridad web del envelope de tracks y Retime
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El timeline web seguía convirtiendo `tracks`/`keyframes` wrong-root o entries dañadas en ausencia mediante `records`; `asRecord` y `optionalNumber` convertían Retime inválido/no positivo en off. |
+| Owner | `RuntimeOwnerTimeline` consume la misma animación transitoria resuelta por frame; el renderer continúa recibiendo solo el estado final. |
+| Cambio mínimo | Ejecutar un guard equivalente al de escritorio antes del cálculo; usar arrays/objetos exactos para lookup y keyframes; validar frame/enabled y Retime raíz/targets. Conservar `{}` y el `targetId: ""` explícito que representa al owner Screen. |
+| Rutas eliminadas | `records(animation.tracks/keyframes) → []`, `asRecord(retime/targets/target) → {}` y `optionalNumber(invalid, 0) → Retime off`. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: vacío y sentinel Screen válidos, 16 formas inválidas web más la matriz de escritorio; todos los frames y resolvers actuales pasan. |
+| Enforcement | Constructor web con guard obligatorio; tracks/keyframes/retime exactos; patrones `records`/`asRecord` retirados prohibidos. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia animación válida ni ownership; desaparece únicamente el falso “sin animación/Retime off” ante datos presentes incorrectos. |

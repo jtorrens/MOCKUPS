@@ -6854,6 +6854,33 @@ for (const permissiveDesktopAnimationEnvelope of [
   );
 }
 assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "validateAnimationEnvelope(animation);",
+  "the web timeline must validate every present transient animation calculation envelope",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'optionalObjectArray(this.animation, "tracks", "runtime owner animation")',
+  "the web timeline must read present tracks as an exact object array",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime")',
+  "the web timeline must reject invalid present root retime durations",
+);
+for (const permissiveWebAnimationEnvelope of [
+  "records(this.animation.tracks)",
+  "records(track?.keyframes)",
+  "asRecord(this.animation.retime)",
+  "asRecord(asRecord(asRecord(this.animation.retime).targets)[targetId])",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/runtimeOwnerTimeline.ts",
+    permissiveWebAnimationEnvelope,
+    `the web timeline must not filter malformed animation entries (${permissiveWebAnimationEnvelope})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

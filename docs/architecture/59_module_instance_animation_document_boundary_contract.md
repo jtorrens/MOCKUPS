@@ -104,11 +104,13 @@ the bridge or renderer.
 The desktop common timeline also accepts an explicit empty transient animation
 object for an owner with no authored tracks. Once `tracks` or `retime` is
 present, their calculation envelope is strict: tracks/keyframes are object
-arrays, track field ids and optional target ids are stable strings, keyframe
-frames are non-negative integers, optional enabled state is boolean, and all
-authored root/target retime durations are positive integers. This consumption
-guard complements, but does not replace, the complete persisted v2 document
-contract above.
+arrays, track field ids are stable strings, and target ids are either stable
+strings or the explicit empty Screen-owner sentinel. Keyframe frames are
+non-negative integers, optional enabled state is boolean, and all authored
+root/target retime durations are positive integers. This consumption guard
+complements, but does not replace, the complete persisted v2 document contract
+above. The web owner timeline applies the same transient-animation guard before
+resolving frames.
 
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
@@ -140,6 +142,8 @@ Architecture enforcement must verify:
 - the web owner timeline enforces the same envelopes before resolving a frame;
 - the desktop timeline validates every present transient track/keyframe/retime
   calculation envelope without filtering malformed entries;
+- the web timeline mirrors that transient animation envelope, including the
+  explicit empty Screen target sentinel;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;

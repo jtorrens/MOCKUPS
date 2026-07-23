@@ -535,7 +535,16 @@ internal static class RuntimeAnimationFrameOrigin
             _ = JsonPath.RequiredString(track, "fieldId", "Runtime animation track");
             if (track.TryGetPropertyValue("targetId", out _))
             {
-                _ = JsonPath.RequiredString(track, "targetId", "Runtime animation track");
+                var targetId = JsonPath.RequiredString(
+                    track,
+                    "targetId",
+                    "Runtime animation track",
+                    allowEmpty: true);
+                if (targetId.Length > 0 && string.IsNullOrWhiteSpace(targetId))
+                {
+                    throw new InvalidOperationException(
+                        "Runtime animation track targetId must be stable or the empty Screen sentinel.");
+                }
             }
             foreach (var keyframe in JsonPath.OptionalObjectArray(
                 track,

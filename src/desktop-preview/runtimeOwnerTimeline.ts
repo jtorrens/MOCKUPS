@@ -29,6 +29,7 @@ export class RuntimeOwnerTimeline {
     private readonly themeTokens: JsonRecord = {},
     storedFallback = 0,
   ) {
+    validateAnimationEnvelope(animation);
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
     for (const collection of optionalObjectArray(contract, "collections", "runtime owner contract")) {
       const key = collectionKey(collection);
@@ -306,7 +307,7 @@ export class RuntimeOwnerTimeline {
   }
 
   private track(fieldId: string, targetId: string) {
-    return records(this.animation.tracks).find((track) =>
+    return optionalObjectArray(this.animation, "tracks", "runtime owner animation").find((track) =>
       optionalString(track, "fieldId") === fieldId
       && optionalString(track, "targetId") === targetId);
   }
@@ -343,13 +344,19 @@ export class RuntimeOwnerTimeline {
   }
 
   private targetDuration(targetId: string, natural: number) {
-    const target = asRecord(asRecord(asRecord(this.animation.retime).targets)[targetId]);
+    const retime = optionalObject(this.animation, "retime", "runtime owner animation");
+    const targets = optionalObject(retime, "targets", "runtime animation retime");
+    const target = optionalObject(targets, targetId, "runtime animation retime targets");
     const duration = optionalNumber(target, "targetDurationFrames", 0);
     return duration > 0 ? duration : natural;
   }
 
   private rootTargetDuration(natural: number) {
-    const duration = optionalNumber(asRecord(this.animation.retime), "targetDurationFrames", 0);
+    const duration = optionalNumber(
+      optionalObject(this.animation, "retime", "runtime owner animation"),
+      "targetDurationFrames",
+      0,
+    );
     return duration > 0 ? duration : natural;
   }
 }
@@ -401,6 +408,49 @@ function optionalStringArray(owner: JsonRecord, key: string, path: string): stri
     }
     return entry;
   });
+}
+
+function validateAnimationEnvelope(animation: JsonRecord) {
+  for (const track of optionalObjectArray(animation, "tracks", "runtime owner animation")) {
+    requiredString(track, "fieldId", "runtime animation track field id");
+    if (Object.hasOwn(track, "targetId")) {
+      const targetId = track.targetId;
+      if (typeof targetId !== "string" || (targetId.length > 0 && !targetId.trim())) {
+        throw new Error("runtime animation track target id must be a stable string or the Screen sentinel");
+      }
+    }
+    for (const keyframe of optionalObjectArray(track, "keyframes", "runtime animation track")) {
+      const frame = requiredNumberValue(keyframe.frame, "runtime animation keyframe frame");
+      if (!Number.isInteger(frame) || frame < 0) {
+        throw new Error("runtime animation keyframe frame must be a non-negative integer");
+      }
+      if (Object.hasOwn(keyframe, "enabled") && typeof keyframe.enabled !== "boolean") {
+        throw new Error("runtime animation keyframe enabled must be a boolean when present");
+      }
+    }
+  }
+
+  const retime = optionalObject(animation, "retime", "runtime owner animation");
+  validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime");
+  const targets = optionalObject(retime, "targets", "runtime animation retime");
+  for (const [targetId, value] of Object.entries(targets)) {
+    if (!targetId.trim() || !isRecord(value)) {
+      throw new Error("runtime animation retime target must be a named object");
+    }
+    validateOptionalPositiveFrameCount(
+      value,
+      "targetDurationFrames",
+      `runtime animation retime target '${targetId}'`,
+    );
+  }
+}
+
+function validateOptionalPositiveFrameCount(owner: JsonRecord, key: string, path: string) {
+  if (!Object.hasOwn(owner, key)) return;
+  const value = requiredNumberValue(owner[key], `${path} '${key}'`);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${path} '${key}' must be a positive integer`);
+  }
 }
 
 function collectionKey(collection: JsonRecord) {
@@ -457,7 +507,8 @@ function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
 }
 
 function enabledKeyframes(track?: JsonRecord) {
-  return records(track?.keyframes)
+  if (!track) return [];
+  return optionalObjectArray(track, "keyframes", "runtime animation track")
     .filter((keyframe) => keyframe.enabled !== false)
     .sort((left, right) => optionalNumber(left, "frame", 0) - optionalNumber(right, "frame", 0));
 }

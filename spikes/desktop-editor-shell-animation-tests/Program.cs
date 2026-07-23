@@ -5179,6 +5179,11 @@ static void ScreenFieldsStartAtZero()
 static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
 {
     var emptyAnimation = new JsonObject();
+    Equal(1, RuntimeAnimationFrameOrigin.DurationFrames(
+        new JsonObject(),
+        new JsonObject(),
+        Object("""{"tracks":[{"fieldId":"screenField","targetId":"","keyframes":[]}]}"""),
+        0));
     foreach (var invalidAnimation in new[]
     {
         Object("""{"tracks":null}"""),

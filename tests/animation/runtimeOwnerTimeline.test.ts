@@ -118,6 +118,31 @@ test("finite runtime action durations require positive JSON numbers", () => {
 
 test("runtime owner timeline rejects filtered contract envelopes", () => {
   assert.doesNotThrow(() => new RuntimeOwnerTimeline({}, {}, {}));
+  assert.doesNotThrow(() => new RuntimeOwnerTimeline({}, {}, {
+    tracks: [{ fieldId: "screenField", targetId: "", keyframes: [] }],
+  }));
+
+  const invalidAnimations: Array<Record<string, unknown>> = [
+    { tracks: null },
+    { tracks: [4] },
+    { tracks: [{ fieldId: "" }] },
+    { tracks: [{ fieldId: "field", targetId: 4 }] },
+    { tracks: [{ fieldId: "field", keyframes: {} }] },
+    { tracks: [{ fieldId: "field", keyframes: [null] }] },
+    { tracks: [{ fieldId: "field", keyframes: [{ frame: "0" }] }] },
+    { tracks: [{ fieldId: "field", keyframes: [{ frame: 0.5 }] }] },
+    { tracks: [{ fieldId: "field", keyframes: [{ frame: 0, enabled: "true" }] }] },
+    { retime: null },
+    { retime: [] },
+    { retime: { targetDurationFrames: 0 } },
+    { retime: { targetDurationFrames: "4" } },
+    { retime: { targets: [] } },
+    { retime: { targets: { item: null } } },
+    { retime: { targets: { item: { targetDurationFrames: 0 } } } },
+  ];
+  for (const invalidAnimation of invalidAnimations) {
+    assert.throws(() => new RuntimeOwnerTimeline({}, {}, invalidAnimation));
+  }
 
   const invalidCases: Array<[Record<string, unknown>, Record<string, unknown>]> = [
     [{ collections: null }, {}],

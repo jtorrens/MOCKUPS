@@ -220,10 +220,12 @@ desktop editor.
 An animation owner with no authored data may still supply an empty transient
 object. If tracks, keyframes or retime are present, the desktop timeline
 validates their calculation envelope before using it: no wrong array/object
-root, filtered entry, empty track field/target id, invalid frame/enabled scalar
-or non-positive retime duration may be interpreted as “no animation” or “Retime
-off”. Persisted Module Instance animation retains the stricter complete v2
-document owner.
+root, filtered entry, empty track field id, invalid target-id scalar, invalid
+frame/enabled scalar or non-positive retime duration may be interpreted as “no
+animation” or “Retime off”. A target id is a stable string or the explicit
+empty Screen-owner sentinel. Persisted Module Instance animation retains the
+stricter complete v2 document owner. The web timeline enforces the same
+transient calculation envelope.
 
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
@@ -405,6 +407,8 @@ Architecture enforcement must verify:
   `asRecord`/array filtering fallbacks before frame resolution.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
+- the web timeline mirrors the exact transient track/keyframe/retime envelope
+  and empty Screen target sentinel.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.
