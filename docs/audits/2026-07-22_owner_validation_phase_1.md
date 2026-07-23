@@ -385,3 +385,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los dos hosts de Diseño deben consumir el owner común; los timelines C#/web deben exigir duración positiva solo al activarse; quedan prohibidos los parsers/fallbacks locales retirados. |
 | Datos | Sin migración. Los valores y colecciones current cumplen; base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Los valores válidos conservan su duración; se corrige `playConversation` para respetar su owner declarado y solo fallan contratos temporales realmente mal formados. |
+
+## Slice 1.27 — Lectura completa de definiciones Runtime
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El reader común filtraba entradas de `inputs`, `collections`, `fields`, options y listas; una definición incompleta o una raíz incorrecta podía desaparecer de la UI. Cualquier `source` desconocido se trataba como Runtime y cualquier `uiOrigin` desconocido como Self. Objetos de presentación, composición, animación o transition con otra raíz se convertían en ausencia. |
+| Owner | `RuntimeInputValueKindContract` sigue poseyendo `kind`/`ValueKind`/default/BehaviorTiming; `ComponentPreviewInputSession` conserva y materializa el documento completo para presentación. `JsonPath` se usa para scalars JSON exactos. |
+| Cambio mínimo | Distinguir miembro ausente de miembro presente incorrecto; exigir arrays/objetos/identidades completos; validar toda definición incluso si después queda oculta o su source no es editable; hacer estrictas options, string lists, visibility, itemPresentation, componentItems, nested collection, animation y transition. Se conservan los defaults estructurales ya declarados: source ausente = Runtime y uiOrigin ausente = Self. |
+| Rutas eliminadas | `OfType`/`Where` que filtraban definitions/options/lists, incomplete field → `continue`, wrong root → `[]`/`null`, unknown source → Runtime, unknown origin → Self y objetos nested incorrectos → ausencia. |
+| Pruebas | 115/115 escritorio: input/collection válido y ausencia opcional; roots/entries/required fields incorrectos; source/origin desconocidos; option root/entry/duplicado; list, visibility, animation/timeline/transition, fields, componentItems e itemPresentation inválidos. Todos los escenarios current siguen pasando. |
+| Enforcement | Los readers deben exigir arrays/objects y conservar los defaults solo por ausencia; quedan prohibidos los filtros y ramas catch-all retiradas. |
+| Datos | Sin migración. Las 257 definiciones y cinco colecciones current cumplen; las ausencias existentes de `source`/`uiOrigin` son formas estructurales declaradas. Base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. La presentación válida no cambia; un contrato incompleto deja de aparentar que el campo o colección simplemente no existe. |

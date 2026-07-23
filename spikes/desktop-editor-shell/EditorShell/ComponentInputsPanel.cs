@@ -1408,35 +1408,32 @@ internal sealed class ComponentPreviewInputSession
     {
         preview = RuntimeInputForwardingContract.EffectivePreview(preview, config);
         var definitions = new List<ComponentInputDefinition>();
-        if (preview["inputs"] is not JsonArray inputs)
+        if (preview["inputs"] is null)
         {
             return definitions;
         }
+        var inputs = preview["inputs"] as JsonArray
+            ?? throw new InvalidOperationException(
+                "Runtime Input definitions must be an array when present.");
+        var inputDefinitions = inputs.Select((node, index) => node as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Runtime Input definition at index {index} must be an object."))
+            .ToList();
+        RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+            inputDefinitions,
+            "Runtime Input definitions");
 
-        foreach (var item in inputs.OfType<JsonObject>())
+        for (var index = 0; index < inputDefinitions.Count; index++)
         {
-            if (!InputIsVisible(item, config))
-            {
-                continue;
-            }
-
-            var id = JsonString(item, "id");
-            var label = JsonString(item, "label");
-            var jsonKey = JsonString(item, "jsonKey");
-            var kind = JsonString(item, "kind");
-            if (string.IsNullOrWhiteSpace(id)
-                || string.IsNullOrWhiteSpace(label)
-                || string.IsNullOrWhiteSpace(jsonKey)
-                || string.IsNullOrWhiteSpace(kind))
-            {
-                continue;
-            }
-
+            var item = inputDefinitions[index];
+            var owner = $"Runtime Input definition at index {index}";
+            var id = JsonPath.RequiredString(item, "id", owner);
+            var label = JsonPath.RequiredString(item, "label", owner);
+            var jsonKey = JsonPath.RequiredString(item, "jsonKey", owner);
+            var kind = JsonPath.RequiredString(item, "kind", owner);
+            _ = RuntimeInputValueKindContract.CreateDefaultValue(item, $"Runtime Input '{id}'");
             var source = ParseInputSource(JsonString(item, "source"));
-            if (source != ComponentInputSource.Runtime)
-            {
-                continue;
-            }
+            var uiOrigin = ParseInputUiOrigin(JsonString(item, "uiOrigin"));
 
             var definition = CreateInputDefinition(
                 id,
@@ -1454,7 +1451,7 @@ internal sealed class ComponentPreviewInputSession
                 JsonString(item, "componentType"),
                 source,
                 ReadPairLabels(item),
-                ParseInputUiOrigin(JsonString(item, "uiOrigin")),
+                uiOrigin,
                 JsonString(item, "uiGroupId"),
                 JsonString(item, "uiGroupLabel"),
                 JsonString(item, "uiParentGroupId"),
@@ -1470,12 +1467,16 @@ internal sealed class ComponentPreviewInputSession
                 AllowEmptyWhenItemJsonKey = JsonString(item, "allowEmptyWhenItemJsonKey"),
                 AllowEmptyWhenItemValues = JsonStringArray(item, "allowEmptyWhenItemValues"),
             };
-            definitions.Add(definition with
+            var completeDefinition = definition with
             {
                 Animation = ReadAnimationDefinition(item),
                 BehaviorTiming = ReadBehaviorTimingDefinition(item),
                 Transition = ReadInputTransitionDefinition(item),
-            });
+            };
+            if (source == ComponentInputSource.Runtime && InputIsVisible(item, config))
+            {
+                definitions.Add(completeDefinition);
+            }
         }
 
         return definitions;
@@ -1483,44 +1484,49 @@ internal sealed class ComponentPreviewInputSession
 
     internal static IReadOnlyList<RuntimeInputCollectionDefinition> ReadRuntimeCollections(JsonObject preview, JsonObject config)
     {
-        if (preview["collections"] is not JsonArray collections)
+        if (preview["collections"] is null)
         {
             return [];
         }
+        var collections = preview["collections"] as JsonArray
+            ?? throw new InvalidOperationException(
+                "Runtime Input collections must be an array when present.");
 
         var definitions = new List<RuntimeInputCollectionDefinition>();
-        foreach (var collection in collections.OfType<JsonObject>())
+        for (var collectionIndex = 0; collectionIndex < collections.Count; collectionIndex++)
         {
-            if (!InputIsVisible(collection, config))
-            {
-                continue;
-            }
-
-            var id = JsonString(collection, "id");
-            var label = JsonString(collection, "label");
-            var jsonKey = JsonString(collection, "jsonKey");
-            if (string.IsNullOrWhiteSpace(id)
-                || string.IsNullOrWhiteSpace(label)
-                || string.IsNullOrWhiteSpace(jsonKey)
-                || collection["fields"] is not JsonArray fields)
-            {
-                continue;
-            }
+            var collection = collections[collectionIndex] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Runtime Input collection at index {collectionIndex} must be an object.");
+            var owner = $"Runtime Input collection at index {collectionIndex}";
+            var id = JsonPath.RequiredString(collection, "id", owner);
+            var label = JsonPath.RequiredString(collection, "label", owner);
+            var jsonKey = JsonPath.RequiredString(collection, "jsonKey", owner);
+            var itemLabel = JsonPath.RequiredString(collection, "itemLabel", owner);
+            var fields = collection["fields"] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Runtime Input collection '{id}' fields must be an array.");
+            var fieldDefinitions = fields.Select((node, index) => node as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' field at index {index} must be an object."))
+                .ToList();
+            RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(
+                fieldDefinitions,
+                $"Runtime Input collection '{id}' fields");
+            var isVisible = InputIsVisible(collection, config);
 
             var itemFields = new List<ComponentInputDefinition>();
-            foreach (var field in fields.OfType<JsonObject>())
+            for (var fieldIndex = 0; fieldIndex < fieldDefinitions.Count; fieldIndex++)
             {
-                var fieldId = JsonString(field, "id");
-                var fieldLabel = JsonString(field, "label");
-                var fieldJsonKey = JsonString(field, "jsonKey");
-                var kind = JsonString(field, "kind");
-                if (string.IsNullOrWhiteSpace(fieldId)
-                    || string.IsNullOrWhiteSpace(fieldLabel)
-                    || string.IsNullOrWhiteSpace(fieldJsonKey)
-                    || string.IsNullOrWhiteSpace(kind))
-                {
-                    continue;
-                }
+                var field = fieldDefinitions[fieldIndex];
+                var fieldOwner = $"Runtime Input collection '{id}' field at index {fieldIndex}";
+                var fieldId = JsonPath.RequiredString(field, "id", fieldOwner);
+                var fieldLabel = JsonPath.RequiredString(field, "label", fieldOwner);
+                var fieldJsonKey = JsonPath.RequiredString(field, "jsonKey", fieldOwner);
+                var kind = JsonPath.RequiredString(field, "kind", fieldOwner);
+                _ = RuntimeInputValueKindContract.CreateDefaultValue(
+                    field,
+                    $"Runtime Input collection '{id}' field '{fieldId}'");
 
                 var definition = CreateInputDefinition(
                     fieldId,
@@ -1556,7 +1562,10 @@ internal sealed class ComponentPreviewInputSession
                 {
                     Animation = ReadAnimationDefinition(field),
                     BehaviorTiming = ReadBehaviorTimingDefinition(field),
-                    StructuredCollection = ReadRuntimeCollection(field["structuredCollection"] as JsonObject),
+                    StructuredCollection = ReadRuntimeCollection(OptionalObject(
+                        field,
+                        "structuredCollection",
+                        $"Runtime Input collection '{id}' field '{fieldId}'")),
                     AllowEmpty = field["allowEmpty"]?.GetValue<bool>() == true,
                     AllowEmptyWhenItemJsonKey = JsonString(field, "allowEmptyWhenItemJsonKey"),
                     AllowEmptyWhenItemValues = JsonStringArray(field, "allowEmptyWhenItemValues"),
@@ -1569,23 +1578,23 @@ internal sealed class ComponentPreviewInputSession
                 });
             }
 
-            if (itemFields.Count > 0)
-            {
-                definitions.Add(new RuntimeInputCollectionDefinition(
-                    id,
-                    label,
-                    jsonKey,
-                    JsonString(collection, "itemLabel", "Item"),
-                    itemFields,
-                    JsonString(collection, "sourceCollectionJsonKey"),
-                    ReadItemPresentation(collection),
-                    ReadComponentItems(collection),
-                    JsonString(collection, "storageCollectionJsonKey"),
-                    JsonString(collection, "itemRuntimeContractJsonKey"),
-                    JsonString(collection, "uiParentCollectionJsonKey"),
-                    JsonString(collection, "uiParentItemIdJsonKey"),
-                    JsonString(collection, "animationPresentation", "item")));
-            }
+            var itemPresentation = ReadItemPresentation(collection);
+            var componentItems = ReadComponentItems(collection);
+            if (!isVisible) continue;
+            definitions.Add(new RuntimeInputCollectionDefinition(
+                id,
+                label,
+                jsonKey,
+                itemLabel,
+                itemFields,
+                JsonString(collection, "sourceCollectionJsonKey"),
+                itemPresentation,
+                componentItems,
+                JsonString(collection, "storageCollectionJsonKey"),
+                JsonString(collection, "itemRuntimeContractJsonKey"),
+                JsonString(collection, "uiParentCollectionJsonKey"),
+                JsonString(collection, "uiParentItemIdJsonKey"),
+                JsonString(collection, "animationPresentation", "item")));
         }
 
         return definitions;
@@ -1600,19 +1609,32 @@ internal sealed class ComponentPreviewInputSession
 
     private static RuntimeInputCollectionItemPresentation? ReadItemPresentation(JsonObject collection)
     {
-        if (collection["itemPresentation"] is not JsonObject presentation)
-        {
-            return null;
-        }
+        var presentation = OptionalObject(
+            collection,
+            "itemPresentation",
+            $"Runtime Input collection '{JsonString(collection, "id")}'");
+        if (presentation is null) return null;
 
         var subtitleFieldIds = JsonStringArray(presentation, "subtitleFieldIds");
-        var iconValueMap = (presentation["iconValueMap"] as JsonObject)?
-            .Where((property) => property.Value is JsonValue)
-            .ToDictionary(
-                (property) => property.Key,
-                (property) => property.Value?.GetValue<string>() ?? "",
-                StringComparer.OrdinalIgnoreCase)
-            ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var iconValueMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (presentation["iconValueMap"] is not null)
+        {
+            var mapping = presentation["iconValueMap"] as JsonObject
+                ?? throw new InvalidOperationException(
+                    "Runtime Input itemPresentation iconValueMap must be an object when present.");
+            foreach (var (key, node) in mapping)
+            {
+                if (string.IsNullOrWhiteSpace(key)
+                    || node is not JsonValue value
+                    || !value.TryGetValue<string>(out var icon)
+                    || string.IsNullOrWhiteSpace(icon))
+                {
+                    throw new InvalidOperationException(
+                        "Runtime Input itemPresentation iconValueMap requires non-empty string keys and values.");
+                }
+                iconValueMap.Add(key, icon);
+            }
+        }
         return new RuntimeInputCollectionItemPresentation(
             JsonString(presentation, "titleFieldId"),
             JsonString(presentation, "firstItemBadge"),
@@ -1625,19 +1647,25 @@ internal sealed class ComponentPreviewInputSession
 
     private static RuntimeComponentCollectionItemDefinition? ReadComponentItems(JsonObject collection)
     {
-        if (collection["componentItems"] is not JsonObject componentItems)
-        {
-            return null;
-        }
+        var componentItems = OptionalObject(
+            collection,
+            "componentItems",
+            $"Runtime Input collection '{JsonString(collection, "id")}'");
+        if (componentItems is null) return null;
 
-        var variantReferenceJsonKey = JsonString(componentItems, "variantReferenceJsonKey");
-        var overridesJsonKey = JsonString(componentItems, "overridesJsonKey");
-        var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
-        return string.IsNullOrWhiteSpace(variantReferenceJsonKey)
-               || string.IsNullOrWhiteSpace(overridesJsonKey)
-               || string.IsNullOrWhiteSpace(inputsJsonKey)
-            ? null
-            : new RuntimeComponentCollectionItemDefinition(variantReferenceJsonKey, overridesJsonKey, inputsJsonKey);
+        return new RuntimeComponentCollectionItemDefinition(
+            JsonPath.RequiredString(
+                componentItems,
+                "variantReferenceJsonKey",
+                "Runtime Input componentItems"),
+            JsonPath.RequiredString(
+                componentItems,
+                "overridesJsonKey",
+                "Runtime Input componentItems"),
+            JsonPath.RequiredString(
+                componentItems,
+                "inputsJsonKey",
+                "Runtime Input componentItems"));
     }
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
@@ -1651,15 +1679,15 @@ internal sealed class ComponentPreviewInputSession
     private static bool InputIsVisible(JsonObject input, JsonObject config)
     {
         var path = JsonString(input, "visibleWhenPath");
-        if (string.IsNullOrWhiteSpace(path))
+        var expected = JsonString(input, "visibleWhenValue");
+        if (string.IsNullOrWhiteSpace(path) && string.IsNullOrWhiteSpace(expected))
         {
             return true;
         }
-
-        var expected = JsonString(input, "visibleWhenValue");
-        if (string.IsNullOrWhiteSpace(expected))
+        if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(expected))
         {
-            return true;
+            throw new InvalidOperationException(
+                "Runtime Input visibility requires visibleWhenPath and visibleWhenValue together.");
         }
 
         var current = JsonPath.Get(config, path.Split('.', StringSplitOptions.RemoveEmptyEntries));
@@ -1670,14 +1698,24 @@ internal sealed class ComponentPreviewInputSession
 
     private static AnimationFieldDefinition? ReadAnimationDefinition(JsonObject input)
     {
-        if (input["animatable"] is not JsonValue enabled
-            || !enabled.TryGetValue<bool>(out var isEnabled)
-            || !isEnabled)
+        if (input["animatable"] is null)
         {
             return null;
         }
+        if (input["animatable"] is not JsonValue enabled
+            || !enabled.TryGetValue<bool>(out var isEnabled))
+        {
+            throw new InvalidOperationException(
+                "Runtime Input animatable must be a JSON boolean when present.");
+        }
+        if (!isEnabled) return null;
         var interpolations = JsonStringArray(input, "animationInterpolations");
-        var extendsOwnerDuration = input["animationTimeline"]?["extendsOwnerDuration"]?.GetValue<bool>() != false;
+        var animationTimeline = OptionalObject(input, "animationTimeline", "Runtime Input animation");
+        var extendsOwnerDuration = animationTimeline?["extendsOwnerDuration"] is null
+            || JsonPath.RequiredBoolean(
+                animationTimeline,
+                "extendsOwnerDuration",
+                "Runtime Input animationTimeline");
         return interpolations.Count > 0
             ? new AnimationFieldDefinition(interpolations, extendsOwnerDuration)
             : new AnimationFieldDefinition(["hold"], extendsOwnerDuration);
@@ -1685,10 +1723,8 @@ internal sealed class ComponentPreviewInputSession
 
     private static ComponentInputTransitionDefinition? ReadInputTransitionDefinition(JsonObject input)
     {
-        if (input["transition"] is not JsonObject transition)
-        {
-            return null;
-        }
+        var transition = OptionalObject(input, "transition", "Runtime Input");
+        if (transition is null) return null;
         var targetInputId = JsonString(transition, "targetInputId");
         var replacementValue = JsonString(transition, "replacementValue");
         var triggerValues = JsonStringArray(transition, "triggerValues");
@@ -1772,29 +1808,49 @@ internal sealed class ComponentPreviewInputSession
 
     private static IReadOnlyList<FieldOption> ReadOptions(JsonObject input)
     {
-        if (input["options"] is not JsonArray options)
+        if (input["options"] is null)
         {
             return [];
         }
+        var options = input["options"] as JsonArray
+            ?? throw new InvalidOperationException(
+                "Runtime Input options must be an array when present.");
+        var values = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<FieldOption>(options.Count);
+        for (var index = 0; index < options.Count; index++)
+        {
+            var option = options[index] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Runtime Input option at index {index} must be an object.");
+            var value = JsonPath.RequiredString(option, "value", $"Runtime Input option at index {index}");
+            var label = JsonPath.RequiredString(option, "label", $"Runtime Input option at index {index}");
+            if (!values.Add(value))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input options contain duplicate value '{value}'.");
+            }
+            result.Add(new FieldOption(value, label));
+        }
 
-        return options
-            .OfType<JsonObject>()
-            .Select((option) => new FieldOption(JsonString(option, "value"), JsonString(option, "label")))
-            .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
-            .ToList();
+        return result;
     }
 
     private static IReadOnlyList<string> JsonStringArray(JsonObject input, string key)
     {
-        if (input[key] is not JsonArray values)
+        if (input[key] is null)
         {
             return [];
         }
+        var values = input[key] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Runtime Input {key} must be an array when present.");
 
-        return values
-            .OfType<JsonValue>()
-            .Select((value) => value.TryGetValue<string>(out var text) ? text : "")
-            .Where((text) => !string.IsNullOrWhiteSpace(text))
+        return values.Select((node, index) => node is JsonValue value
+                && value.TryGetValue<string>(out var text)
+                && !string.IsNullOrWhiteSpace(text)
+                    ? text
+                    : throw new InvalidOperationException(
+                        $"Runtime Input {key}[{index}] must be a non-empty string."))
             .ToList();
     }
 
@@ -1820,20 +1876,24 @@ internal sealed class ComponentPreviewInputSession
 
     private static ComponentInputSource ParseInputSource(string source)
     {
-        return source.Trim().ToLowerInvariant() switch
+        return source switch
         {
+            "" or "runtime" => ComponentInputSource.Runtime,
             "variant" => ComponentInputSource.Variant,
             "calculated" => ComponentInputSource.Calculated,
-            _ => ComponentInputSource.Runtime,
+            _ => throw new InvalidOperationException(
+                $"Unknown Runtime Input source '{source}'."),
         };
     }
 
     private static ComponentInputUiOrigin ParseInputUiOrigin(string origin)
     {
-        return origin.Trim().ToLowerInvariant() switch
+        return origin switch
         {
+            "" or "self" => ComponentInputUiOrigin.Self,
             "embedded" => ComponentInputUiOrigin.Embedded,
-            _ => ComponentInputUiOrigin.Self,
+            _ => throw new InvalidOperationException(
+                $"Unknown Runtime Input uiOrigin '{origin}'."),
         };
     }
 
@@ -1856,16 +1916,34 @@ internal sealed class ComponentPreviewInputSession
 
     private static string JsonString(JsonObject owner, string key, string fallback)
     {
+        if (owner[key] is null) return fallback;
         return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
             ? text
-            : fallback;
+            : throw new InvalidOperationException(
+                $"Runtime Input {key} must be a string when present.");
     }
 
     private static decimal JsonDecimal(JsonObject owner, string key, decimal fallback)
     {
-        return owner[key] is JsonValue value && value.TryGetValue<decimal>(out var number)
-            ? number
-            : fallback;
+        if (owner[key] is null) return fallback;
+        try
+        {
+            return (decimal)JsonPath.RequiredNumber(owner[key], $"Runtime Input {key}");
+        }
+        catch (OverflowException exception)
+        {
+            throw new InvalidOperationException(
+                $"Runtime Input {key} must fit a decimal value.",
+                exception);
+        }
+    }
+
+    private static JsonObject? OptionalObject(JsonObject owner, string key, string context)
+    {
+        if (owner[key] is null) return null;
+        return owner[key] as JsonObject
+            ?? throw new InvalidOperationException(
+                $"{context} {key} must be an object when present.");
     }
 
 }

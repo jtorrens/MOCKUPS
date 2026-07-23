@@ -112,6 +112,15 @@ explicit supported mode, non-negative fixed frames and pace token. Invalid
 defaults never become a plausible false, zero, empty collection or fixed-zero
 timing value.
 
+Presentation readers preserve those complete definitions. Optional
+`inputs`/`collections` members may be absent; when present they are arrays of
+complete objects and collection fields are complete definitions. Static option
+arrays, string lists, nested presentation/component contracts, animation and
+transition metadata keep their exact roots and entries. Unknown present
+`source`/`uiOrigin` values, incomplete visibility pairs, filtered options or a
+hidden malformed definition are invalid. Only structural absence retains the
+declared `runtime` and `self` meanings.
+
 Persisted Runtime collections use `RuntimeCollectionDocumentContract` for the
 stable item envelope. The effective Runtime contract owns the exact storage
 key; current content owns an existing array of object items with unique
@@ -300,6 +309,9 @@ Architecture enforcement must verify:
   record-class-owned config contract, with no empty object/array write fallback.
 - Runtime Input defaults are validated and materialized by the exact
   `ValueKind` owner; no parallel reconciliation parser remains.
+- Runtime Input presentation readers preserve complete input/collection
+  definition arrays and exact optional metadata without filtering hidden,
+  non-Runtime or malformed entries.
 - current Runtime collections and every mutation preserve declared storage
   ownership, array roots and unique stable item ids.
 - dynamic Runtime option presentation and action normalization share one

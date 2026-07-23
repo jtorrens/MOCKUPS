@@ -56,6 +56,15 @@ transition. It is read-only and is not a repository.
 - conversion of Project fps through the common Preview playback timing policy;
 - applying transient values to a complete payload before resolution.
 
+Its Runtime definition readers consume the complete current envelope before
+constructing controls. Optional `inputs`/`collections` may be absent, but a
+present member is an array of complete objects; collection fields, static
+options and string-list metadata are not filtered. Required identities,
+`kind`/`valueKind`, defaults, nested presentation/composition objects,
+animation and transition metadata fail at their owner instead of disappearing
+from the editor. Structurally absent `source` and `uiOrigin` retain their
+declared Runtime/Self meanings, while a present unknown value is invalid.
+
 The session may receive `SpikeDatabase` only as a construction/composition
 parameter while the staged desktop shell creates its typed sources. It must not
 retain a database field or perform direct database reads.
@@ -118,6 +127,8 @@ Architecture enforcement must verify:
 - Variant options continue to use `RuntimeInputOptionsDataSource`;
 - `DesignPreviewTestValues` requires the explicit Test Values envelope and the
   stable collection document owner without blank/wrong-root fallbacks;
+- Runtime Input and collection definition readers reject wrong roots,
+  incomplete entries, filtered static options and unknown source/origin values;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare Project fps, complete Component Variant

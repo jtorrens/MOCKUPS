@@ -28,6 +28,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
+    ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
@@ -221,6 +222,155 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         "collection",
         "UnknownValueKind",
         "Test Runtime Input"));
+}
+
+static void RuntimeInputDefinitionReadersAreStrict()
+{
+    static JsonObject Input() => new()
+    {
+        ["id"] = "title",
+        ["label"] = "Title",
+        ["jsonKey"] = "title",
+        ["kind"] = "text",
+        ["valueKind"] = "StringSingleLine",
+        ["defaultValue"] = "Default",
+    };
+
+    static JsonObject Preview(JsonNode? input) => new()
+    {
+        ["inputs"] = new JsonArray(input),
+    };
+
+    var valid = ComponentPreviewInputSession.ReadRuntimeInputs(Preview(Input()), new JsonObject()).Single();
+    Equal(ComponentInputSource.Runtime, valid.Source);
+    Equal(ComponentInputUiOrigin.Self, valid.UiOrigin);
+    Equal(0, ComponentPreviewInputSession.ReadRuntimeInputs(new JsonObject(), new JsonObject()).Count);
+
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        new JsonObject { ["inputs"] = new JsonObject() },
+        new JsonObject()));
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(JsonValue.Create("invalid")),
+        new JsonObject()));
+    var missingId = Input();
+    missingId.Remove("id");
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(missingId),
+        new JsonObject()));
+    var unknownSource = Input();
+    unknownSource["source"] = "automatic";
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(unknownSource),
+        new JsonObject()));
+    var unknownOrigin = Input();
+    unknownOrigin["uiOrigin"] = "automatic";
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(unknownOrigin),
+        new JsonObject()));
+    var wrongOptionsRoot = Input();
+    wrongOptionsRoot["options"] = new JsonObject();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(wrongOptionsRoot),
+        new JsonObject()));
+    var filteredOption = Input();
+    filteredOption["options"] = new JsonArray(JsonValue.Create("invalid"));
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(filteredOption),
+        new JsonObject()));
+    var duplicateOptions = Input();
+    duplicateOptions["options"] = new JsonArray
+    {
+        new JsonObject { ["value"] = "same", ["label"] = "One" },
+        new JsonObject { ["value"] = "same", ["label"] = "Two" },
+    };
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(duplicateOptions),
+        new JsonObject()));
+    var invalidList = Input();
+    invalidList["allowEmptyWhenItemValues"] = new JsonArray("valid", 4);
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(invalidList),
+        new JsonObject()));
+    var incompleteVisibility = Input();
+    incompleteVisibility["visibleWhenPath"] = "mode";
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(incompleteVisibility),
+        new JsonObject()));
+    var invalidAnimation = Input();
+    invalidAnimation["animatable"] = "true";
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(invalidAnimation),
+        new JsonObject()));
+    var invalidTimeline = Input();
+    invalidTimeline["animatable"] = true;
+    invalidTimeline["animationTimeline"] = new JsonArray();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(invalidTimeline),
+        new JsonObject()));
+    var invalidTransition = Input();
+    invalidTransition["transition"] = new JsonArray();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+        Preview(invalidTransition),
+        new JsonObject()));
+
+    static JsonObject Collection() => new()
+    {
+        ["id"] = "items",
+        ["label"] = "Items",
+        ["jsonKey"] = "items",
+        ["itemLabel"] = "Item",
+        ["fields"] = new JsonArray(Input()),
+    };
+
+    static JsonObject CollectionPreview(JsonNode? collection) => new()
+    {
+        ["collections"] = new JsonArray(collection),
+    };
+
+    Equal(
+        "items",
+        ComponentPreviewInputSession.ReadRuntimeCollections(
+            CollectionPreview(Collection()),
+            new JsonObject()).Single().Id);
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        new JsonObject { ["collections"] = new JsonObject() },
+        new JsonObject()));
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(JsonValue.Create("invalid")),
+        new JsonObject()));
+    var missingItemLabel = Collection();
+    missingItemLabel.Remove("itemLabel");
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(missingItemLabel),
+        new JsonObject()));
+    var wrongFieldsRoot = Collection();
+    wrongFieldsRoot["fields"] = new JsonObject();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(wrongFieldsRoot),
+        new JsonObject()));
+    var filteredField = Collection();
+    filteredField["fields"] = new JsonArray(JsonValue.Create("invalid"));
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(filteredField),
+        new JsonObject()));
+    var wrongComponentItems = Collection();
+    wrongComponentItems["componentItems"] = new JsonArray();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(wrongComponentItems),
+        new JsonObject()));
+    var incompleteComponentItems = Collection();
+    incompleteComponentItems["componentItems"] = new JsonObject
+    {
+        ["variantReferenceJsonKey"] = "variantReference",
+    };
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(incompleteComponentItems),
+        new JsonObject()));
+    var wrongPresentation = Collection();
+    wrongPresentation["itemPresentation"] = new JsonArray();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(wrongPresentation),
+        new JsonObject()));
 }
 
 static void ComponentDictionaryFieldsUseExactValueKinds()

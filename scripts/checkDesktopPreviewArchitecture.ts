@@ -4930,6 +4930,37 @@ for (const runtimeDefaultConsumer of [
     `${runtimeDefaultConsumer} must consume the exact Runtime Input default owner`,
   );
 }
+for (const requiredRuntimeDefinitionReaderTerm of [
+  "Runtime Input definitions must be an array when present.",
+  "Runtime Input collections must be an array when present.",
+  "RuntimeInputValueKindContract.CreateDefaultValue(",
+  "RuntimeInputValueKindContract.ValidateBehaviorTimingDefinitions(",
+  "Runtime Input options contain duplicate value",
+  "Runtime Input visibility requires visibleWhenPath and visibleWhenValue together.",
+  "Unknown Runtime Input source",
+  "Unknown Runtime Input uiOrigin",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    requiredRuntimeDefinitionReaderTerm,
+    `Runtime definition presentation must keep strict rule '${requiredRuntimeDefinitionReaderTerm}'`,
+  );
+}
+for (const retiredRuntimeDefinitionReaderFallback of [
+  "foreach (var item in inputs.OfType<JsonObject>())",
+  "foreach (var collection in collections.OfType<JsonObject>())",
+  "foreach (var field in fields.OfType<JsonObject>())",
+  "_ => ComponentInputSource.Runtime",
+  "_ => ComponentInputUiOrigin.Self",
+  "return source.Trim().ToLowerInvariant() switch",
+  "return origin.Trim().ToLowerInvariant() switch",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    retiredRuntimeDefinitionReaderFallback,
+    `Runtime definition presentation must not filter or infer '${retiredRuntimeDefinitionReaderFallback}'`,
+  );
+}
 for (const runtimeCollectionConsumer of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",

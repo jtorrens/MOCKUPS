@@ -295,6 +295,23 @@ The following are invalid current data:
 - an incomplete id, label or JSON key;
 - a local editor control that bypasses `FieldDefinition` and the dictionary.
 
+The generic Runtime Input reader preserves the same definition envelope. An
+absent optional `inputs` or `collections` member means that the owner declares
+none; a present member is an array whose every entry is a complete object.
+Definitions and collection fields are never filtered because `id`, `label`,
+`jsonKey`, `kind`, `valueKind`, default metadata or an entry is malformed.
+`source` may be absent as the structural spelling of `runtime`, and `uiOrigin`
+may be absent as the structural spelling of `self`; when present, both use only
+their exact declared values. Unknown values do not become those defaults.
+
+Present static `options`, string-list metadata, `itemPresentation`,
+`componentItems`, nested collection, animation and transition members retain
+their exact roots and complete entries. Option values are unique non-empty
+strings with non-empty labels. Paired visibility metadata is complete. A
+definition hidden by valid visibility or excluded from the editable Runtime
+surface by its explicit source is still validated before presentation decides
+not to show it.
+
 Changing either vocabulary requires an explicit migration of canonical source
 data and the committed desktop database. No alias or compatibility parser may
 remain after that migration.
