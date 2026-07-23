@@ -1,0 +1,102 @@
+# Validation and enforcement
+
+Status: normative.
+
+## Validation principle
+
+Architecture rules are executable wherever a stable check is possible.
+Documentation describes ownership; validation prevents a future change from
+silently restoring a second owner, implicit route or invalid persisted shape.
+
+## Standard checks
+
+The complete repository validation is:
+
+```text
+npm test
+```
+
+It includes:
+
+- desktop Preview bundle build;
+- TypeScript type checking;
+- unused desktop-code analysis;
+- Preview and desktop animation tests;
+- architecture enforcement;
+- desktop application build.
+
+Use focused checks while iterating:
+
+```text
+npm run check:architecture
+npm run animation:test
+npm run desktop-preview:build
+npm run desktop:build
+npm run desktop:db:validate
+git diff --check
+```
+
+## Architecture enforcement
+
+`scripts/checkDesktopPreviewArchitecture.ts` verifies current boundaries,
+including:
+
+- canonical documentation and archive isolation;
+- exact manifest routing and declared dependencies;
+- strict Preview payload documents;
+- generic bridge and renderer boundaries;
+- dictionary and Runtime Input `ValueKind` coverage;
+- complete Variant references and local Overrides;
+- focused repository and typed data-source ownership;
+- recursive timing and animation contracts;
+- shared UI action and input behavior;
+- absence of startup persistence writes and compatibility paths.
+
+The check must fail when a concrete Component name, resolver or layout rule
+leaks into a common Preview helper, central bridge or generic renderer.
+
+## Persistence validation
+
+Database validation is read-only and confirms:
+
+- schema version and expected tables, columns, indexes and foreign keys;
+- exact JSON root kinds;
+- complete Component and Module Variants;
+- full reference formats and same-Project integrity;
+- required Shot Actor and Production context;
+- declared font, icon and media assets;
+- manifest-to-row agreement.
+
+Lifecycle and migration tests operate on disposable database copies.
+
+## Manual UI validation
+
+For any editor or Preview change, exercise at least:
+
+1. Design selection, Variant change and class navigation;
+2. temporary Test Values, Play, Restore and Escape;
+3. fixed and polymorphic embedded Component authoring;
+4. Overrides and explicit Forward presentation;
+5. structured collection add, reorder, selection and deletion;
+6. Component Stack and Collection Stack slots and States;
+7. Production Episode → Shot → Screen selection and context;
+8. Screen Payload editing beside Preview;
+9. keyframe selection, Wacom/mouse drag and playback;
+10. Usage navigation across Design and Production;
+11. tree/editor Rename consistency and destructive confirmation links;
+12. resizable panels, compact layout and scroll restoration.
+
+Component-specific changes add an isolated Design case and a Production case
+that reaches the same owner through a Screen payload.
+
+## Delivery gate
+
+A revision is ready for review only when:
+
+- focused and full applicable checks pass;
+- `git diff --check` passes;
+- no unintended code, database or asset changes remain;
+- required parity files are included;
+- the worktree is clean after the local commit;
+- the latest validated app is open for UI review, or the handoff states why a
+  UI launch is not applicable.

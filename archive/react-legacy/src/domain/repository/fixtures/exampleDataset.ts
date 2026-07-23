@@ -1,16 +1,16 @@
-import deviceExample from "../../../../../../docs/examples/device_iphone_generic.json" with {
+import deviceExample from "../../../../examples/device_iphone_generic.json" with {
   type: "json",
 };
-import productionExample from "../../../../../../docs/examples/production_minimal.json" with {
+import productionExample from "../../../../examples/production_minimal.json" with {
   type: "json",
 };
-import resolvedChatExample from "../../../../../../docs/examples/resolved_props_chat_screen.json" with {
+import resolvedChatExample from "../../../../examples/resolved_props_chat_screen.json" with {
   type: "json",
 };
-import shotExample from "../../../../../../docs/examples/shot_chat.json" with {
+import shotExample from "../../../../examples/shot_chat.json" with {
   type: "json",
 };
-import themeExample from "../../../../../../docs/examples/theme_ios_light.json" with {
+import themeExample from "../../../../examples/theme_ios_light.json" with {
   type: "json",
 };
 import {

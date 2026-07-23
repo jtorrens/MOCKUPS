@@ -1,4 +1,4 @@
-import shotExample from "../../../../../docs/examples/shot_chat.json" with {
+import shotExample from "../../../examples/shot_chat.json" with {
   type: "json",
 };
 import { loadExampleRepository } from "../repository/fixtureLoader.js";

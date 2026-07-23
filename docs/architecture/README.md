@@ -1,229 +1,41 @@
-# Active Architecture Index
+# MOCKUPS current architecture
 
-This index identifies the documents that govern current work on the desktop
-editor. If an older document conflicts with one listed here, the document in
-this index wins.
+Status: normative.
 
-## Normative Documents
+This directory contains the complete active documentation set. Each rule has
+one canonical owner. When implementation changes an architectural or
+functional rule, update its owning document in the same revision.
 
-- `editor_shell_non_negotiables.md`: editor boundaries and non-negotiable rules.
-- `editor_modernization_roadmap.md`: cleanup and migration order.
-- `21_desktop_editor_base_routines_audit.md`: shared-routine ownership.
-- `23_embedded_component_composition_contract.md`: recursive component slots,
-  variants and overrides.
-- `24_desktop_preview_component_architecture.md`: component-to-web-preview
-  boundary.
-- `25_component_migration_status.md`: current component route and remaining
-  functional work.
-- `26_shot_module_instance_contract.md`: Project -> Episode -> Shot -> Module
-  Instance model.
-- `31_structural_stacks_slots_and_module_instances.md`: Component Stack and
-  Collection Stack types, slot/State semantics, Module Variant ownership and
-  their effective runtime/animation contract inside Module Instances.
-- `32_application_architecture_functional_ux_handoff.md`: end-to-end map of the
-  current application, tables, resources, authoring/Production flows, preview
-  boundaries and the brief for the next architecture/functionality/UX audit.
-- `33_persistence_and_migration_contract.md`: ownership and mandatory workflows
-  for SQLite creation, read-only startup validation, explicit one-shot
-  migrations, current record creation and committed database parity.
-- `34_manifest_routing_payload_and_dictionary_contract.md`: canonical Preview
-  manifest, route-only registries, explicit payload/forwarding ownership,
-  recursive temporal context and exhaustive dictionary/Runtime Input kinds.
-- `35_current_json_and_variant_contract.md`: strict persisted JSON roots and
-  complete Component/Module Variant envelopes without reader or writer repair.
-- `36_desktop_persistence_repository_contract.md`: shared SQLite context,
-  focused repository ownership and the compatibility-facade boundary for the
-  staged split of `SpikeDatabase`.
-- `37_desktop_resource_repository_contract.md`: persistence ownership for
-  Palette, Device and Actor resources, with domain interpretation kept outside
-  repositories and Usage inference explicitly prohibited.
-- `38_explicit_reference_usage_contract.md`: one typed, exact reference-edge
-  projection for tree Used state, Usage navigation and deletion protection,
-  based only on declared relational and JSON owner contracts.
-- `39_design_production_resource_navigation_contract.md`: current workspace
-  ownership and navigation for Design definitions, Episodes and the grouped
-  Production Data resources, plus constraints for future Project duplication.
-- `40_theme_persistence_and_context_contract.md`: Theme row repository
-  ownership, strict current Theme documents and the separate Module Instance
-  Production Theme-context boundary.
-- `41_explicit_shot_production_context_contract.md`: exact Shot owner
-  Actor/Theme context, protected Module Instance creation/editing and the
-  intentional one-Shot canonical parity project.
-- `42_production_font_persistence_contract.md`: focused ownership of
-  `production_fonts` current rows while file import, asset lifecycle and
-  Preview font-face interpretation remain outside persistence.
-- `43_icon_theme_persistence_and_asset_contract.md`: focused ownership of
-  `icon_themes` current rows, strict token file references and separation of
-  SQLite persistence from manifests, SVGs and generation scripts.
-- `44_app_module_definition_persistence_contract.md`: focused ownership of App
-  and Module definition rows/current documents while configuration, Variants,
-  Runtime forwarding and Module Instances remain in their domain owners.
-- `45_editor_session_view_state_contract.md`: process-local continuity of
-  editor cards, internal navigation and clamped scroll by exact layout class,
-  with stable UI ids and no persistence through window or history state.
-- `46_component_class_definition_persistence_contract.md`: focused ownership
-  of Component Class current rows and prepared document writes while field
-  semantics, Variants, embedded composition and Preview remain domain-owned.
-- `47_module_instance_persistence_contract.md`: focused ownership of complete
-  Screen/Module Instance rows and prepared writes while Variants, Runtime
-  forwarding, structured collections, temporal ownership and Preview remain
-  domain-owned.
-- `48_shot_persistence_contract.md`: focused ownership of complete Shot rows,
-  strict documents and lifecycle copies while Production context, Screen
-  timing, duration aggregation and Preview remain domain-owned.
-- `49_component_definition_source_contract.md`: canonical current Component
-  definition authorities, retirement of the disconnected runtime defaults
-  catalog and constraints for future explicit development scaffolding.
-- `50_module_definition_source_contract.md`: canonical current Module
-  definition authorities, retirement of the disconnected Conversation factory
-  and constraints for future explicit development scaffolding.
-- `51_preview_payload_data_boundary_contract.md`: typed desktop data access for
-  Preview payload construction, separated from forwarding, temporal-envelope
-  and Shot-to-Screen selection semantics owned by the payload factory.
-- `52_module_instance_timeline_data_boundary_contract.md`: typed read access
-  for current Screen/Shot timeline inputs, separated from contract-owned
-  duration, owner-origin and keyframe projection formulas.
-- `53_actor_preview_data_boundary_contract.md`: typed read access for current
-  Actor Preview inputs, separated from Runtime Actor resolution and inline
-  avatar presentation semantics.
-- `54_production_shot_context_data_boundary_contract.md`: typed read access for
-  the explicit Shot owner Actor, Device, Theme and mode route, separated from
-  context validity and navigation policy.
-- `55_runtime_input_options_data_boundary_contract.md`: typed option lookup for
-  Runtime Input dictionary definitions and declared dynamic lists, separated
-  from `ValueKind` mapping and collection presentation.
-- `56_preview_visual_context_data_boundary_contract.md`: typed Device/Theme
-  options, Project media root and resolved common Device metrics for Preview,
-  separated from shell selection and generic web presentation.
-- `57_production_preview_session_data_boundary_contract.md`: typed Shot fps,
-  Screen owner and selected Module Variant data for Production Preview,
-  composed with the common ordered timeline source.
-- `58_component_preview_input_data_boundary_contract.md`: typed Project fps,
-  complete Component Variant config and effective embedded action contracts for
-  session-only Preview Test Values.
-- `59_module_instance_animation_document_boundary_contract.md`: typed current
-  Screen animation documents and explicit complete v2 writes, separated from
-  owner-relative animation authoring and common timeline formulas.
-- `60_runtime_input_owner_document_boundary_contract.md`: exact owner documents
-  and explicit isolated Design Preview writes for Runtime Inputs, separated
-  from Test/Runtime Value and structured collection semantics.
-- `61_runtime_input_instance_document_boundary_contract.md`: typed persisted
-  Screen scalar, structured collection and complete animation writes, separated
-  from Runtime Input and collection interaction semantics.
-- `62_animation_keyframe_drag_interaction_contract.md`: stable keyframe pointer
-  gestures across synchronous shared-Preview feedback, without a second
-  playhead or intermediate persistence.
-- `63_dictionary_field_context_data_boundary_contract.md`: typed Theme, Icon
-  Theme, Palette and Component Variant context for shared dictionary controls,
-  separated from UI composition and field semantics.
-- `64_embedded_component_document_boundary_contract.md`: pure structural
-  embedded-editor context plus one typed Variant/Override field document
-  boundary shared by breadcrumbs and dictionary field access.
-- `65_editor_presentation_context_data_boundary_contract.md`: typed Project
-  media-root, Theme navigation and Production Font file reads for shared editor
-  presentation services, separated from filesystem and field behavior.
-- `66_simplified_editor_retirement_contract.md`: one complete editor surface,
-  retirement of Simplified projection/capture UI and a strict cards-only
-  `editor_layouts` current root.
-- `67_system_bar_item_authoring_contract.md`: fixed Status/Navigation item
-  collections through the generic dictionary route, with strict separate
-  component contracts and stable Variant-owned item ids.
-- `68_architecture_ux_cleanup_and_scaffolding_plan.md`: ordered non-technical
-  plan for the remaining architecture/UX audit and the mandatory Codex brief,
-  approval and delivery process for new Atoms, Components and Modules.
-- `69_component_variant_storage_vocabulary_contract.md`: canonical Component
-  Variant envelope, complete-reference grammar and retirement of Component
-  Preset storage vocabulary while preserving Render Presets.
-- `70_conversation_message_actor_ownership_contract.md`: exact incoming,
-  outgoing and system message Actor ownership, atomic direction transitions
-  and Production-only projection of the Shot owner without sample fallbacks.
-- `71_active_code_retirement_contract.md`: evidence required to retire active
-  code without deleting validation, historical material or live duplicated
-  responsibilities during cleanup phase 0B.
-- `72_single_semantic_rule_ownership_contract.md`: evidence, owner selection and
-  one-rule-at-a-time procedure for consolidating live semantic duplication in
-  cleanup phase 0C without changing behavior or moving later validations.
-- `73_owner_validation_and_preview_document_boundary_contract.md`: owner-driven
-  validation for cleanup phase 1, including strict serialized Preview object
-  roots and authoritative effective Theme mode before generic rendering.
-- `74_cleanup_verification_and_baseline_closure_contract.md`: precise
-  antiregression coverage, automated Mac verification and the separate manual
-  gates required before accepting the cleaned baseline.
-- `75_action_duration_field_identity_contract.md`: stable runtime field
-  identity for finite action durations, explicit storage-key resolution and
-  field-id-preserving forwarding across Component and Module boundaries.
-- `76_preview_frame_clock_boundary_contract.md`: distinct current-boundary
-  `payload.localFrame` and root Screen `instance.context.screenFrame` clocks,
-  including strict root equality and recursive preservation.
-- `77_text_box_icon_row_composition_contract.md`: Variant-owned Text Box
-  Left/Right Icon Row slots, Icon-Row-owned Buttons/layout and the strict
-  Runtime separation.
-- `78_component_variant_slot_value_kind_contract.md`: exact shared dictionary
-  Runtime value for a genuine Runtime Component Variant reference plus local
-  Overrides; not a substitute for Variant-owned composition.
-- `79_fixed_and_polymorphic_component_authoring_contract.md`: shared
-  fixed-versus-polymorphic Component Variant authoring, explicit Default
-  creation and standard Variant/navigation/Overrides presentation.
-- `80_forward_action_presentation_contract.md`: one shared compact
-  right-pointing Forward action, with consistent inactive/active states,
-  accessibility and unchanged explicit forwarding behavior.
-- `81_keyboard_pressed_popup_composition_contract.md`: component-owned
-  continuous pressed-key popup, single exterior shadow and Keyboard-frame edge
-  containment without renderer knowledge.
-- `82_standard_editor_text_input_interaction_contract.md`: shared native-style
-  text selection, Pen/Wacom drag adaptation and complete numeric-value
-  selection on double-click.
-- `83_design_authoring_context_and_preview_test_values_contract.md`: one
-  explicit Component/Module Variant breadcrumb and selector in the fixed editor
-  header, Design-only temporary Test Values in the horizontal Preview utility
-  tabs and a distinct persisted Production Screen Payload in the same Preview
-  utility region.
-- `84_production_authoring_context_presentation_contract.md`: explicit
-  Episode/Shot/Screen presentation, persisted Screen Payload terminology,
-  Shot-versus-Screen timeline labels and one session-only active Screen
-  indicator without changing selection or Production data.
-- `85_consistent_lifecycle_action_presentation_contract.md`: consistent
-  lifecycle actions across navigation and editors, with shared Rename identity
-  writes and repeated Screen collection actions where both contexts are useful.
-- `86_production_preview_payload_presentation_contract.md`: presentation-only
-  co-location of persisted Screen Payload above Production Preview, with the
-  Runtime API implementation retained but hidden and no change to Module
-  Instance ownership or resolution boundaries.
-- `27_design_production_ux_separation.md`: UX direction for separating design
-  system work from shot-oriented production work.
-- `26_pc_parity_validation.md`: Mac/PC validation process.
-- `schema_v1_consolidation_manifest.md`: active database schema and startup
-  rules.
+## Mandatory documents
 
-`00_project_vision.md`, `01_data_model.md`, `05_decisions_log.md` and
-`15_target_system_architecture.md` remain supporting architecture references.
-They must be read alongside the normative documents above when a change touches
-their subject. They describe intent and accepted decisions, but never override
-the schema-v1, component, preview or shot/module contracts.
+- `system_overview.md`: application purpose, domains, layers and dependency
+  direction.
+- `data_persistence.md`: SQLite ownership, repositories, JSON roots,
+  validation and explicit maintenance.
+- `design_system.md`: Apps, Modules, Atoms, Components, Themes and complete
+  Variants.
+- `production.md`: Episodes, Shots, Screens, production context, payload and
+  message ownership.
+- `editor_dictionary.md`: metadata-driven editors, `FieldDefinition`,
+  `ValueKind`, cards, controls and session state.
+- `composition_runtime.md`: embedded Components, slots, Overrides, forwarding,
+  stacks and structured collections.
+- `animation.md`: temporal ownership, durations, keyframes, frame clocks and
+  playback authoring.
+- `preview_rendering.md`: payload preparation, resolver, renderable, bridge and
+  renderer boundaries.
+- `resources_assets.md`: palette, Themes, Actors, Devices, fonts, icon themes,
+  wallpaper and media assets.
+- `ux_ui.md`: current Design/Production navigation and interaction model.
+- `development_workflow.md`: definition lifecycle, scaffolding boundaries,
+  migrations and contribution procedure.
+- `validation.md`: architecture checks, automated tests, parity database and
+  manual review.
 
-## Historical Material
+## Authority rule
 
-`archive/react-legacy/` contains the archived TypeScript domain, SQLite and
-icon-import implementation from the removed React runtime. `docs/exchange/`
-contains handoffs, completed tasks, external reviews and historical status
-records. Both are useful for visual or behavioral comparison but do not define
-active implementation rules.
+The documents above describe only the current system. Phase reports, audits,
+handoffs and superseded specifications are stored under `docs/old` and are
+subject to the prohibition in `docs/README.md` and `AGENTS.md`.
 
-The following root-level notes are historical reference only and must not be
-treated as implementation instructions: `02_render_architecture.md`,
-`03_visual_modules.md`, `04_shot_builder.md`, `07_initial_data_schema.md`,
-`08_visual_tokens_layout_contract.md`, `09_foundational_module_contracts.md`,
-`10_module_theme_configs.md`, `11_ui_css_layers.md`,
-`12_editor_encapsulation_contract.md`, `13_keyboard_text_input_audit.md`,
-`14_data_model_consolidation_policy.md`, `16_theme_editor_dictionary_audit.md`,
-`22_runtime_fallback_audit.md`, `editor_architecture_diagnosis.md`,
-`editor_architecture_second_review_questions.md`,
-`editor_icon_theme_script_prompt.md`,
-`icon_theme_generator_implementation_plan.md` and
-`icon_theme_set_script_contract.md`. `schema_v1_candidate_validation.md` is the
-historical cutover validation record; it is evidence, not an active workflow.
-
-They remain in place because historical handoffs link to them. Before using one
-for visual or behavioral comparison, reconcile it with the active contracts
-above. New implementation rules belong in a normative document, never in this
-historical set.
+An active document must not link to or derive a decision from `docs/old`.

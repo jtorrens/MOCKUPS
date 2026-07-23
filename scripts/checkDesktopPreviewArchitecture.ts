@@ -162,6 +162,70 @@ function assertFilesDoNotContain(files: readonly string[], term: string, message
   }
 }
 
+const canonicalArchitectureDocuments = [
+  "system_overview.md",
+  "data_persistence.md",
+  "design_system.md",
+  "production.md",
+  "editor_dictionary.md",
+  "composition_runtime.md",
+  "animation.md",
+  "preview_rendering.md",
+  "resources_assets.md",
+  "ux_ui.md",
+  "development_workflow.md",
+  "validation.md",
+] as const;
+const canonicalArchitectureEntries = new Set<string>([
+  "README.md",
+  ...canonicalArchitectureDocuments,
+]);
+const architectureDirectory = path.join(root, "docs", "architecture");
+for (const entry of readdirSync(architectureDirectory)) {
+  if (entry === ".DS_Store") continue;
+  if (!canonicalArchitectureEntries.has(entry)) {
+    addViolation(
+      `docs/architecture/${entry}`,
+      "active architecture contains a file or directory outside the canonical set",
+    );
+  }
+}
+for (const document of canonicalArchitectureDocuments) {
+  const relativePath = `docs/architecture/${document}`;
+  if (!existsSync(path.join(root, relativePath))) {
+    addViolation(relativePath, "canonical architecture document is missing");
+    continue;
+  }
+  assertContains(relativePath, "Status: normative.", "canonical architecture document must be normative");
+  assertContains("AGENTS.md", relativePath, `AGENTS must require ${relativePath}`);
+  assertContains(
+    "docs/architecture/README.md",
+    document,
+    `the architecture index must include ${document}`,
+  );
+}
+for (const archiveRuleOwner of ["AGENTS.md", "docs/README.md", "docs/old/README.md"]) {
+  assertContains(
+    archiveRuleOwner,
+    "open, search, read, quote, summarize, cite",
+    `${archiveRuleOwner} must prohibit historical archive consultation`,
+  );
+}
+for (const activeMarkdownPath of [
+  "AGENTS.md",
+  "docs/README.md",
+  "docs/architecture/README.md",
+  ...canonicalArchitectureDocuments.map((document) => `docs/architecture/${document}`),
+]) {
+  const source = readText(activeMarkdownPath);
+  for (const match of source.matchAll(/\]\(([^)]+)\)/g)) {
+    const target = match[1] ?? "";
+    if (target.includes("docs/old") || target.includes("../old")) {
+      addViolation(activeMarkdownPath, "active documentation must not link to the historical archive");
+    }
+  }
+}
+
 const currentRepositoryFiles = walkFilesByExtension(
   path.join(root, "spikes", "desktop-editor-shell", "Data"),
   [".cs"],
@@ -199,36 +263,6 @@ for (const retiredModuleFactoryTerm of [
     `runtime Data sources must not contain retired Module factory ${retiredModuleFactoryTerm}`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/49_component_definition_source_contract.md",
-  "AGENTS must require the Component definition source contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "49_component_definition_source_contract.md",
-  "the architecture index must include contract 49",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/50_module_definition_source_contract.md",
-  "AGENTS must require the Module definition source contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "50_module_definition_source_contract.md",
-  "the architecture index must include contract 50",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/51_preview_payload_data_boundary_contract.md",
-  "AGENTS must require the Preview payload data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "51_preview_payload_data_boundary_contract.md",
-  "the architecture index must include contract 51",
-);
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
   "SpikeDatabase",
@@ -267,16 +301,6 @@ assertContains(
   "_previewPayloadData = new DesignPreviewPayloadDataSource(database)",
   "the Preview controller must reuse one typed payload data source",
 );
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/52_module_instance_timeline_data_boundary_contract.md",
-  "AGENTS must require the Module Instance timeline data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "52_module_instance_timeline_data_boundary_contract.md",
-  "the architecture index must include contract 52",
-);
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimeline.cs",
   "SpikeDatabase",
@@ -298,16 +322,6 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
   "_timelineDataSource = new ModuleInstanceTimelineDataSource(database)",
   "the Preview payload data source must reuse the typed timeline boundary",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/53_actor_preview_data_boundary_contract.md",
-  "AGENTS must require the Actor Preview data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "53_actor_preview_data_boundary_contract.md",
-  "the architecture index must include contract 53",
 );
 for (const actorPreviewConsumer of [
   "spikes/desktop-editor-shell/EditorShell/ActorPreviewInputFactory.cs",
@@ -341,16 +355,6 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorInlinePreviewControllerFactory.cs",
   "new ActorPreviewDataSource(database)",
   "the inline Actor avatar route must compose the typed Actor Preview source",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/54_production_shot_context_data_boundary_contract.md",
-  "AGENTS must require the Production Shot context data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "54_production_shot_context_data_boundary_contract.md",
-  "the architecture index must include contract 54",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/ProductionShotContextService.cs",
@@ -400,16 +404,6 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
   "RequiredProductionActorContext(node)",
   "Preview payload Production context must require the exact Shot owner Actor route",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/55_runtime_input_options_data_boundary_contract.md",
-  "AGENTS must require the Runtime Input options data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "55_runtime_input_options_data_boundary_contract.md",
-  "the architecture index must include contract 55",
 );
 for (const runtimeInputOptionFactory of [
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
@@ -480,16 +474,6 @@ assertContains(
   "Runtime option action normalization must consume the shared strict option projection",
 );
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/56_preview_visual_context_data_boundary_contract.md",
-  "AGENTS must require the Preview visual context data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "56_preview_visual_context_data_boundary_contract.md",
-  "the architecture index must include contract 56",
-);
-assertContains(
   "spikes/desktop-editor-shell/Common/DevicePreviewMetrics.cs",
   "internal sealed record DevicePreviewMetrics(",
   "resolved Device Preview metrics must be a common top-level DTO",
@@ -538,16 +522,6 @@ for (const forbiddenPreviewControllerRead of [
     `the Preview controller must use its typed visual context boundary (${forbiddenPreviewControllerRead})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/57_production_preview_session_data_boundary_contract.md",
-  "AGENTS must require the Production Preview session data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "57_production_preview_session_data_boundary_contract.md",
-  "the architecture index must include contract 57",
-);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ProductionPreviewSessionDataSource.cs",
   "private readonly SpikeDatabase _database",
@@ -715,16 +689,6 @@ assertContains(
   "the resident Preview pane must own immediate loading presentation",
 );
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/58_component_preview_input_data_boundary_contract.md",
-  "AGENTS must require the Component Preview input data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "58_component_preview_input_data_boundary_contract.md",
-  "the architecture index must include contract 58",
-);
-assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentPreviewInputDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Component Preview input data source must own that route's database dependency",
@@ -778,16 +742,6 @@ for (const componentPreviewActionConsumer of [
     "Preview action consumers must use the typed embedded Component contract boundary",
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/59_module_instance_animation_document_boundary_contract.md",
-  "AGENTS must require the Module Instance animation document boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "59_module_instance_animation_document_boundary_contract.md",
-  "the architecture index must include contract 59",
-);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
   "private readonly SpikeDatabase _database",
@@ -860,16 +814,6 @@ for (const forbiddenTimelineMutation of ["SaveAnimationJson", "UpdateModuleInsta
   );
 }
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/60_runtime_input_owner_document_boundary_contract.md",
-  "AGENTS must require the Runtime Input owner document boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "60_runtime_input_owner_document_boundary_contract.md",
-  "the architecture index must include contract 60",
-);
-assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input owner store must own that route's database dependency",
@@ -933,26 +877,6 @@ for (const forbiddenRuntimeInputOwnerRead of [
   );
 }
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/61_runtime_input_instance_document_boundary_contract.md",
-  "AGENTS must require the Runtime Input instance document boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "61_runtime_input_instance_document_boundary_contract.md",
-  "the architecture index must include contract 61",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/62_animation_keyframe_drag_interaction_contract.md",
-  "AGENTS must require the animation keyframe drag interaction contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "62_animation_keyframe_drag_interaction_contract.md",
-  "the architecture index must include contract 62",
-);
-assertContains(
   "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
   "var frameUpdateGate = new TimelineFrameUpdateGate()",
   "the animation editor must gate its own synchronous Preview frame feedback",
@@ -976,16 +900,6 @@ for (const forbiddenTimelineFrameGateDependency of [
     `the timeline frame update gate must remain a generic synchronous boundary (${forbiddenTimelineFrameGateDependency})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/63_dictionary_field_context_data_boundary_contract.md",
-  "AGENTS must require the dictionary field context data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "63_dictionary_field_context_data_boundary_contract.md",
-  "the architecture index must include contract 63",
-);
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
   "_contextData = new DictionaryFieldContextDataSource(database)",
@@ -1027,16 +941,6 @@ for (const forbiddenDictionaryContextDependency of [
     `the dictionary context source must remain a read-only data boundary (${forbiddenDictionaryContextDependency})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/64_embedded_component_document_boundary_contract.md",
-  "AGENTS must require the embedded Component document boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "64_embedded_component_document_boundary_contract.md",
-  "the architecture index must include contract 64",
-);
 for (const forbiddenEmbeddedContextDependency of [
   "Mockups.DesktopEditorShell.Data",
   "SpikeDatabase",
@@ -1095,16 +999,6 @@ for (const forbiddenEmbeddedDocumentStoreDependency of [
     `the embedded Component document store must remain a narrow domain boundary (${forbiddenEmbeddedDocumentStoreDependency})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/65_editor_presentation_context_data_boundary_contract.md",
-  "AGENTS must require the editor presentation context data boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "65_editor_presentation_context_data_boundary_contract.md",
-  "the architecture index must include contract 65",
-);
 for (const editorPresentationContextConsumer of [
   "spikes/desktop-editor-shell/EditorShell/EditorPathBrowser.cs",
   "spikes/desktop-editor-shell/EditorShell/EditorFieldPostCommitEffects.cs",
@@ -1146,26 +1040,6 @@ for (const forbiddenEditorPresentationContextDependency of [
     `the editor presentation context source must remain a narrow read boundary (${forbiddenEditorPresentationContextDependency})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/66_simplified_editor_retirement_contract.md",
-  "AGENTS must require the Simplified Editor retirement contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "66_simplified_editor_retirement_contract.md",
-  "the architecture index must include contract 66",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/67_system_bar_item_authoring_contract.md",
-  "AGENTS must require the system bar item authoring contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "67_system_bar_item_authoring_contract.md",
-  "the architecture index must include contract 67",
-);
 for (const retiredSystemBarItemEditorPath of [
   "spikes/desktop-editor-shell/EditorShell/StatusBarItemsCollectionEditor.cs",
   "spikes/desktop-editor-shell/EditorShell/NavigationBarItemsCollectionEditor.cs",
@@ -1309,86 +1183,6 @@ for (const retiredComponentVariantTerm of [
     `active Component Variant code must not contain retired vocabulary (${retiredComponentVariantTerm})`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/69_component_variant_storage_vocabulary_contract.md",
-  "AGENTS must require the Component Variant storage vocabulary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "69_component_variant_storage_vocabulary_contract.md",
-  "the architecture index must include contract 69",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/70_conversation_message_actor_ownership_contract.md",
-  "AGENTS must require the Conversation message Actor ownership contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "70_conversation_message_actor_ownership_contract.md",
-  "the architecture index must include contract 70",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/71_active_code_retirement_contract.md",
-  "AGENTS must require the active code retirement contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "71_active_code_retirement_contract.md",
-  "the architecture index must include contract 71",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/72_single_semantic_rule_ownership_contract.md",
-  "AGENTS must require the phase 0C semantic ownership contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "72_single_semantic_rule_ownership_contract.md",
-  "the architecture index must include contract 72",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md",
-  "AGENTS must require the owner validation and Preview document boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "73_owner_validation_and_preview_document_boundary_contract.md",
-  "the architecture index must include contract 73",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/74_cleanup_verification_and_baseline_closure_contract.md",
-  "AGENTS must require the cleanup verification and baseline closure contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "74_cleanup_verification_and_baseline_closure_contract.md",
-  "the architecture index must include contract 74",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/75_action_duration_field_identity_contract.md",
-  "AGENTS must require the action duration field identity contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "75_action_duration_field_identity_contract.md",
-  "the architecture index must include contract 75",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/76_preview_frame_clock_boundary_contract.md",
-  "AGENTS must require the Preview frame clock boundary contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "76_preview_frame_clock_boundary_contract.md",
-  "the architecture index must include contract 76",
-);
 for (const requiredPreviewObjectDocument of [
   "configJson",
   "designPreviewJson",
@@ -1889,16 +1683,6 @@ assertFilesDoNotContain(
   "variant.ConfigJson == \"{}\"",
   "a selected Component Variant config must not fall back to class config",
 );
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/35_current_json_and_variant_contract.md",
-  "AGENTS must require the current JSON and Variant contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "35_current_json_and_variant_contract.md",
-  "the architecture index must include contract 35",
-);
 const jsonRootInventorySource = readText("spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs");
 const executableJsonRoots = new Map(
   [...jsonRootInventorySource.matchAll(/\("([a-z_]+)", "([a-z_]+)", "(object|array)"\)/g)]
@@ -1906,7 +1690,7 @@ const executableJsonRoots = new Map(
 );
 const documentedJsonRoots = new Map<string, string>();
 let documentedRootKind = "";
-for (const line of readText("docs/architecture/35_current_json_and_variant_contract.md").split(/\r?\n/)) {
+for (const line of readText("docs/architecture/data_persistence.md").split(/\r?\n/)) {
   if (line === "object" || line === "array") {
     documentedRootKind = line;
     continue;
@@ -1917,7 +1701,7 @@ for (const line of readText("docs/architecture/35_current_json_and_variant_contr
 for (const [entry, rootKind] of executableJsonRoots) {
   if (documentedJsonRoots.get(entry) !== rootKind) {
     addViolation(
-      "docs/architecture/35_current_json_and_variant_contract.md",
+      "docs/architecture/data_persistence.md",
       `${entry} must document its executable ${rootKind} root`,
     );
   }
@@ -3933,16 +3717,6 @@ for (const requiredProductionFontDocumentTerm of [
     `Production Font file documents must require ${requiredProductionFontDocumentTerm}`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/42_production_font_persistence_contract.md",
-  "AGENTS must require the Production Font persistence contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "42_production_font_persistence_contract.md",
-  "the active architecture index must include the Production Font persistence contract",
-);
 for (const forbiddenIconThemeRepositoryConcern of [
   "System.IO",
   "File.",
@@ -4008,26 +3782,6 @@ assertContains(
   "Module definition persistence must reject metadata without the protected current default Variant id",
 );
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/44_app_module_definition_persistence_contract.md",
-  "AGENTS must require the App and Module definition persistence contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "44_app_module_definition_persistence_contract.md",
-  "the active architecture index must include the App and Module definition persistence contract",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/45_editor_session_view_state_contract.md",
-  "AGENTS must require the editor session view state contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "45_editor_session_view_state_contract.md",
-  "the active architecture index must include the editor session view state contract",
-);
-assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "new ComponentClassRepository(_context)",
   "SpikeDatabase must construct the focused Component Class repository",
@@ -4085,16 +3839,6 @@ assertContains(
   "Component Class persistence must reject metadata without an explicit current default Variant id",
 );
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/46_component_class_definition_persistence_contract.md",
-  "AGENTS must require the Component Class definition persistence contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "46_component_class_definition_persistence_contract.md",
-  "the active architecture index must include the Component Class definition persistence contract",
-);
-assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
   "new ModuleInstanceRepository(_context)",
   "SpikeDatabase must construct the focused Module Instance repository",
@@ -4144,16 +3888,6 @@ for (const forbiddenModuleInstanceRepositoryConcern of [
   );
 }
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/47_module_instance_persistence_contract.md",
-  "AGENTS must require the Module Instance persistence contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "47_module_instance_persistence_contract.md",
-  "the active architecture index must include the Module Instance persistence contract",
-);
-assertContains(
   "spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs",
   "_shotRepository.DuplicateForEpisode(",
   "Episode duplication must delegate complete child Shot rows to ShotRepository",
@@ -4201,29 +3935,9 @@ for (const forbiddenShotRepositoryConcern of [
   );
 }
 assertContains(
-  "AGENTS.md",
-  "docs/architecture/48_shot_persistence_contract.md",
-  "AGENTS must require the Shot persistence contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "48_shot_persistence_contract.md",
-  "the active architecture index must include the Shot persistence contract",
-);
-assertContains(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/43_icon_theme_persistence_and_asset_contract.md",
-  "AGENTS must require the Icon Theme persistence and asset contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "43_icon_theme_persistence_and_asset_contract.md",
-  "the active architecture index must include the Icon Theme persistence and asset contract",
 );
 assertContains(
   "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
@@ -4283,26 +3997,6 @@ for (const [relativePath, explicitShotCreationTerm] of [
     `${relativePath} must retain explicit non-empty Shot Actor selection`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/40_theme_persistence_and_context_contract.md",
-  "AGENTS must require the Theme persistence and context contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "40_theme_persistence_and_context_contract.md",
-  "the architecture index must include contract 40",
-);
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/41_explicit_shot_production_context_contract.md",
-  "AGENTS must require the explicit Shot Production context contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "41_explicit_shot_production_context_contract.md",
-  "the architecture index must include contract 41",
-);
 for (const retiredUsageInference of [
   "LIKE $needle",
   " LIKE ",
@@ -4437,21 +4131,11 @@ for (const resourceNavigationContract of [
   "never fall back to records from another Project",
 ]) {
   assertContains(
-    "docs/architecture/39_design_production_resource_navigation_contract.md",
+    "docs/architecture/production.md",
     resourceNavigationContract,
     `resource navigation contract must retain ${resourceNavigationContract}`,
   );
 }
-assertContains(
-  "AGENTS.md",
-  "docs/architecture/39_design_production_resource_navigation_contract.md",
-  "AGENTS must require the current Design/Production resource navigation contract",
-);
-assertContains(
-  "docs/architecture/README.md",
-  "39_design_production_resource_navigation_contract.md",
-  "the architecture index must include contract 39",
-);
 assertContains(
   "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",
@@ -7304,35 +6988,15 @@ for (const deadProductionAction of [
     `the Production shell must not wire retired ${deadProductionAction} placeholders`,
   );
 }
-for (const lifecycleContractIndex of [
-  "AGENTS.md",
-  "docs/architecture/README.md",
-]) {
-  assertContains(
-    lifecycleContractIndex,
-    "85_consistent_lifecycle_action_presentation_contract.md",
-    `${lifecycleContractIndex} must require the consistent lifecycle action presentation contract`,
-  );
-}
 assertContains(
-  "docs/architecture/85_consistent_lifecycle_action_presentation_contract.md",
+  "docs/architecture/ux_ui.md",
   "An action may be available in more than one useful context.",
-  "the lifecycle action contract must preserve consistent repeated actions",
+  "the current UX contract must preserve consistent repeated actions",
 );
-for (const payloadPresentationContractIndex of [
-  "AGENTS.md",
-  "docs/architecture/README.md",
-]) {
-  assertContains(
-    payloadPresentationContractIndex,
-    "86_production_preview_payload_presentation_contract.md",
-    `${payloadPresentationContractIndex} must require the Production Preview payload presentation contract`,
-  );
-}
 assertContains(
-  "docs/architecture/86_production_preview_payload_presentation_contract.md",
+  "docs/architecture/production.md",
   "The first Preview tab is an authoring host, not a Preview-owned data store.",
-  "the Production payload presentation contract must preserve exact Screen ownership",
+  "the current Production contract must preserve exact Screen payload ownership",
 );
 for (const renameableKind of [
   "Project",
