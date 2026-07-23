@@ -1,12 +1,11 @@
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   optionalString,
   parseObject,
   requiredNumberPair,
+  requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -37,7 +36,7 @@ export function resolveIconBarComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): IconBarDesignContract {
-  const iconBar = asRecord(config.iconBar);
+  const iconBar = requiredRecord(config, "iconBar", "component.iconBar");
   const state = iconBarState(optionalString(inputs, "state") || "idle");
   const sizePair = requiredNumberPair(inputs, "size", "component.iconBar.input.size");
   const sizeSource = requiredString(iconBar, "sizeSource", "component.iconBar.sizeSource");
@@ -100,15 +99,13 @@ function resolveIconBarRow(
 ) {
   const slotKey = `${state}${capitalize(zone)}IconRowSlot`;
   const inputsKey = `${state}${capitalize(zone)}IconRowInputs`;
-  const slot = asRecord(iconBar[slotKey]);
-  const inputs = asRecord(iconBar[inputsKey]);
-  const config = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "iconRow",
-      requiredString(slot, "variantReference", `component.iconBar.${slotKey}.variantReference`),
-    ),
-    asRecord(slot.overrides),
+  const slot = requiredRecord(iconBar, slotKey, `component.iconBar.${slotKey}`);
+  const inputs = requiredRecord(iconBar, inputsKey, `component.iconBar.${inputsKey}`);
+  const config = embeddedComponentConfig(
+    componentBaseConfigs,
+    slot,
+    "iconRow",
+    `component.iconBar.${slotKey}`,
   );
   return resolveIconRowComponentFromRecords(config, { ...inputs, ...sharedSizes }, componentBaseConfigs, id);
 }

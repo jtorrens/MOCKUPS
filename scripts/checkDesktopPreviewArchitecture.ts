@@ -7480,6 +7480,60 @@ for (const permissiveButtonDocument of [
   );
 }
 assertContains(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  'requiredRecord(config, "iconRow", "component.iconRow")',
+  "Icon Row must require its config object",
+);
+assertContains(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  'requiredObjectArray(inputs, "items", "component.iconRow input")',
+  "Icon Row must require exact Runtime item objects",
+);
+assertContains(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  'requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`)',
+  "Icon Row items must retain explicit local Button Overrides",
+);
+for (const permissiveIconRowDocument of [
+  "asRecord(config.iconRow)",
+  "asRecord(rawItem)",
+  "asRecord(item.buttonOverrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/iconRowComponentResolver.ts",
+    permissiveIconRowDocument,
+    `Icon Row must not coerce required documents (${permissiveIconRowDocument})`,
+  );
+}
+for (const requiredIconBarObject of [
+  'requiredRecord(config, "iconBar", "component.iconBar")',
+  'requiredRecord(iconBar, slotKey, `component.iconBar.${slotKey}`)',
+  'requiredRecord(iconBar, inputsKey, `component.iconBar.${inputsKey}`)',
+] as const) {
+  assertContains(
+    "src/desktop-preview/iconBarComponentResolver.ts",
+    requiredIconBarObject,
+    `Icon Bar must preserve its required object boundary (${requiredIconBarObject})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/iconBarComponentResolver.ts",
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    slot,\n    "iconRow",',
+  "Icon Bar zones must consume the shared embedded Component owner",
+);
+for (const permissiveIconBarDocument of [
+  "asRecord(config.iconBar)",
+  "asRecord(iconBar[slotKey])",
+  "asRecord(iconBar[inputsKey])",
+  "asRecord(slot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/iconBarComponentResolver.ts",
+    permissiveIconBarDocument,
+    `Icon Bar must not coerce required zone documents (${permissiveIconBarDocument})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

@@ -1,8 +1,9 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, parseObject, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 
 export function resolveIconRowComponent(payload: DesignPreviewPayload): IconRowDesignContract {
   return resolveIconRowComponentFromRecords(
@@ -19,28 +20,24 @@ export function resolveIconRowComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): IconRowDesignContract {
-  const iconRow = asRecord(config.iconRow);
+  const iconRow = requiredRecord(config, "iconRow", "component.iconRow");
   const orientation = requiredString(inputs, "orientation", "component.iconRow.input.orientation");
   if (orientation !== "horizontal" && orientation !== "vertical") {
     throw new Error(`Unsupported icon row orientation ${orientation}`);
   }
-  const rawItems = inputs.items;
-  if (!Array.isArray(rawItems)) {
-    throw new Error("Missing icon row runtime collection component.iconRow.input.items");
-  }
+  const rawItems = requiredObjectArray(inputs, "items", "component.iconRow input");
   const sizeSource = requiredString(iconRow, "sizeSource", "component.iconRow.sizeSource");
   if (sizeSource !== "shared" && sizeSource !== "perButton") throw new Error(`Unsupported icon row size source ${sizeSource}`);
   const inheritedIconSize = typeof inputs.iconSizeToken === "string" ? inputs.iconSizeToken : "";
   const inheritedTextSize = typeof inputs.textSizeToken === "string" ? inputs.textSizeToken : "";
   const sharedIconSize = inheritedIconSize || requiredString(iconRow, "iconSizeToken", "component.iconRow.iconSizeToken");
   const sharedTextSize = inheritedTextSize || requiredString(iconRow, "textSizeToken", "component.iconRow.textSizeToken");
-  const items = rawItems.map((rawItem, index) => {
-    const item = asRecord(rawItem);
+  const items = rawItems.map((item, index) => {
     const itemId = requiredString(item, "id", `component.iconRow.items[${index}].id`);
     const buttonVariantReference = requiredString(item, "buttonVariantReference", `component.iconRow.items[${index}].buttonVariantReference`);
     const buttonConfig = mergeComponentDefaults(
       componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
-      asRecord(item.buttonOverrides),
+      requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`),
     );
     return {
       id: itemId,

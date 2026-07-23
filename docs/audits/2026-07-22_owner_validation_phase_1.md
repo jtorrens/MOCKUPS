@@ -827,3 +827,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Roots y tres adopciones del helper fijadas; casts y merges locales retirados prohibidos. |
 | Datos | Sin migración. Los estados/slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia el estado, contenido ni visibilidad válidos; solo se impide perder un Override local por raíz incorrecta. |
+
+## Slice 1.61 — Items de Icon Row y zonas de Icon Bar
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Icon Row aceptaba config vacía, items no objeto y `buttonOverrides` wrong-root como `{}`. Icon Bar convertía config, slot e Inputs de cada zona en vacíos y repetía el merge tolerante. |
+| Owner | La colección Icon Row posee items con id/referencia/Overrides explícitos; el estado+zona cerrado de Icon Bar nombra su slot e Inputs y el slot usa el owner embebido común. |
+| Cambio mínimo | Exigir config/array/entries/Overrides en Icon Row y config/slot/Inputs en Icon Bar; migrar el merge Icon Row embebido al helper compartido. |
+| Rutas eliminadas | Cuatro casts de Icon Row, tres de Icon Bar y el merge local de zona. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Icon Row, Icon Bar, Keyboard, Keypad y Password current conservan composición y orden. |
+| Enforcement | Readers exactos, Button Overrides requerido y slot/Inputs/owner de Icon Bar fijados; casts tolerantes prohibidos. |
+| Datos | Sin migración. Los items y zonas current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia orden, estado ni tamaño; solo deja de fabricarse un Button/zona parcial desde datos inválidos. |
