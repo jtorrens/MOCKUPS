@@ -17,6 +17,16 @@ test("Component Variant references require the exact stable full-reference gramm
   ]) {
     assert.throws(() => componentVariantConfig(bases, "stub", malformed));
   }
+  for (const invalidBases of [
+    {},
+    { variants: null },
+    { variants: [] },
+    { variants: { "stub::variant::default": null } },
+    { variants: { "stub::variant::default": [] } },
+    { variants: { "stub::variant::default": "default" } },
+  ]) {
+    assert.throws(() => componentVariantConfig(invalidBases, "stub", "stub::variant::default"));
+  }
 });
 
 const motion = {

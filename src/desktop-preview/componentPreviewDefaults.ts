@@ -1,4 +1,5 @@
 import { asRecord } from "./previewJsonHelpers.js";
+import { requiredRecord } from "./previewValueHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -16,13 +17,15 @@ export function componentVariantConfig(
     throw new Error(`Unsupported component variant reference ${reference}`);
   }
 
-  const variants = asRecord(componentBaseConfigs.variants);
-  const config = variants[reference];
-  if (config === undefined) {
+  const variants = requiredRecord(
+    componentBaseConfigs,
+    "variants",
+    "componentBaseConfigs.variants",
+  );
+  if (!Object.hasOwn(variants, reference)) {
     throw new Error(`Missing component variant config ${reference}`);
   }
-
-  return asRecord(config);
+  return requiredRecord(variants, reference, `component variant config ${reference}`);
 }
 
 export function mergeComponentDefaults(

@@ -7260,6 +7260,31 @@ for (const permissiveNotificationsTransition of [
   );
 }
 assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  'requiredRecord(\n    componentBaseConfigs,\n    "variants",\n    "componentBaseConfigs.variants",\n  )',
+  "Component Variant lookup must require the prepared variants catalog object",
+);
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "if (!Object.hasOwn(variants, reference))",
+  "Component Variant lookup must preserve exact reference presence",
+);
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  "return requiredRecord(variants, reference, `component variant config ${reference}`);",
+  "Component Variant lookup must require the referenced config object",
+);
+for (const permissiveComponentVariantLookup of [
+  "asRecord(componentBaseConfigs.variants)",
+  "return asRecord(config);",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/componentPreviewDefaults.ts",
+    permissiveComponentVariantLookup,
+    `Component Variant lookup must not fabricate an empty base config (${permissiveComponentVariantLookup})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

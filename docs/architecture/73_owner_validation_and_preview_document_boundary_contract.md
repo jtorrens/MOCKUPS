@@ -252,6 +252,13 @@ then apply their own closed value vocabulary. The owner does not choose between
 an explicit local animation track and forwarded metadata or change transition
 precedence.
 
+Prepared Component base configs expose one required `variants` object keyed by
+complete stable Component Variant reference. A referenced member must exist and
+must itself be a complete config object before local Overrides are merged.
+Missing/wrong-root catalogs or Variant configs do not become an empty base
+config. Lookup preserves the exact full-reference grammar and never selects a
+class default or short id.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -532,6 +539,8 @@ Architecture enforcement must verify:
 - transient forwarded Runtime transitions distinguish structural absence from
   a present incomplete object and retain a positive integer source frame plus
   explicit previous value.
+- Component Variant base lookup requires an exact variants object and exact
+  referenced config object before applying local Overrides.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

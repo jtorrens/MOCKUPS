@@ -762,3 +762,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner común obligatorio, uso en Notifications fijado y parsers tolerantes concretos prohibidos. |
 | Datos | Sin migración. El metadata se genera en memoria con ambos miembros completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia la transición válida ni su precedencia; solo se deja de completar un sobre interno contradictorio. |
+
+## Slice 1.56 — Lookup estricto de Component Variant preparada
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `componentVariantConfig` ya exigía la referencia completa, pero convertía un catálogo `variants` con raíz incorrecta en `{}` y una config referenciada null/array/scalar en base vacía. |
+| Owner | El payload preparado posee el catálogo por referencia estable; cada referencia exacta identifica una config objeto completa antes de Overrides locales. |
+| Cambio mínimo | Exigir raíz objeto para el catálogo y para el miembro referenciado, conservando el error explícito de referencia ausente, la gramática y el merge recursivo actual. |
+| Rutas eliminadas | `asRecord(componentBaseConfigs.variants)` y `asRecord(config)` como reparación de bases inválidas. |
+| Pruebas | 99/99 Preview ampliadas con catálogo ausente/null/array y config null/array/scalar; 116/116 escritorio y todas las referencias current conservadas. |
+| Enforcement | Los dos `requiredRecord` y la comprobación exacta de presencia quedan fijados; los casts tolerantes de lookup quedan prohibidos. |
+| Datos | Sin migración. Todos los catálogos preparados current contienen configs objeto completas; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia ninguna referencia ni Variant válida; solo deja de renderizarse una base vacía inventada. |
