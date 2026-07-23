@@ -43,8 +43,12 @@ internal static class DesignPreviewTestValues
     public static string RuntimeJson(string previewJson)
     {
         var preview = Parse(previewJson);
-        ApplyCollectionSources(preview);
-        var sourcedCollectionKeys = SourcedCollectionKeys(preview);
+        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(
+            preview,
+            new JsonObject(),
+            includeHidden: true);
+        ApplyCollectionSources(preview, collections);
+        var sourcedCollectionKeys = SourcedCollectionKeys(collections);
         if (TestValues(preview) is not { } testValues)
         {
             return preview.ToJsonString();
@@ -106,6 +110,24 @@ internal static class DesignPreviewTestValues
                   $"Design Test Values collection '{collection.JsonKey}' must be an array.")
             : OptionalArray(preview, collection.JsonKey, "Design Preview collection");
         return CloneItems(source, $"Design Preview collection '{collection.JsonKey}'");
+    }
+
+    public static IReadOnlyList<JsonObject> CurrentCollectionItems(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var items = OptionalArray(
+            preview,
+            collection.JsonKey,
+            "Design Preview current collection");
+        if (items is null) return [];
+        RuntimeCollectionDocumentContract.Validate(
+            items,
+            $"Design Preview current collection '{collection.JsonKey}'");
+        return ObjectItems(
+                items,
+                $"Design Preview current collection '{collection.JsonKey}'")
+            .ToList();
     }
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
@@ -190,18 +212,14 @@ internal static class DesignPreviewTestValues
         preview.Remove("testValues");
     }
 
-    private static void ApplyCollectionSources(JsonObject preview)
+    private static void ApplyCollectionSources(
+        JsonObject preview,
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
-        var collections = OptionalArray(preview, "collections", "Design Preview Runtime collections");
-        if (collections is null) return;
-        foreach (var collectionNode in ObjectItems(collections, "Design Preview Runtime collections"))
+        foreach (var collection in collections)
         {
-            var jsonKey = JsonString(collectionNode, "jsonKey");
-            var sourceKey = JsonString(collectionNode, "sourceCollectionJsonKey");
-            if (string.IsNullOrWhiteSpace(jsonKey))
-            {
-                throw new InvalidOperationException("Runtime collection definition requires a non-empty jsonKey.");
-            }
+            var jsonKey = collection.JsonKey;
+            var sourceKey = collection.SourceCollectionJsonKey;
             if (string.IsNullOrWhiteSpace(sourceKey)) continue;
 
             var sourceItems = MergeCollectionSource(
@@ -212,21 +230,16 @@ internal static class DesignPreviewTestValues
         }
     }
 
-    private static HashSet<string> SourcedCollectionKeys(JsonObject preview)
+    private static HashSet<string> SourcedCollectionKeys(
+        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
-        var collections = OptionalArray(preview, "collections", "Design Preview Runtime collections");
-        foreach (var collectionNode in collections is null
-                     ? []
-                     : ObjectItems(collections, "Design Preview Runtime collections"))
+        foreach (var collection in collections)
         {
-            var jsonKey = JsonString(collectionNode, "jsonKey");
-            var sourceKey = JsonString(collectionNode, "sourceCollectionJsonKey");
-            if (string.IsNullOrWhiteSpace(jsonKey))
+            if (!string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey))
             {
-                throw new InvalidOperationException("Runtime collection definition requires a non-empty jsonKey.");
+                keys.Add(collection.JsonKey);
             }
-            if (!string.IsNullOrWhiteSpace(sourceKey)) keys.Add(jsonKey);
         }
         return keys;
     }
@@ -384,9 +397,10 @@ internal static class DesignPreviewTestValues
 
     private static string JsonString(JsonObject owner, string key)
     {
-        return owner[key] is JsonValue value && value.TryGetValue<string>(out var text)
+        if (!owner.TryGetPropertyValue(key, out var node)) return "";
+        return node is JsonValue value && value.TryGetValue<string>(out var text)
             ? text
-            : "";
+            : throw new InvalidOperationException($"{key} must be a string when present.");
     }
 
     internal static JsonNode? ValueNode(ComponentInputDefinition input, string value)

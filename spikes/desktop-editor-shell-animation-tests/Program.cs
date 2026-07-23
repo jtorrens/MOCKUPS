@@ -1302,6 +1302,34 @@ static void DesignTestValuesPreserveStrictDocuments()
             },
         },
         collection));
+    var invalidCollectionSourceDefinition = new JsonObject
+    {
+        ["collections"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "items",
+                ["label"] = "Items",
+                ["jsonKey"] = "items",
+                ["itemLabel"] = "Item",
+                ["fields"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "title",
+                        ["label"] = "Title",
+                        ["jsonKey"] = "title",
+                        ["kind"] = "text",
+                        ["valueKind"] = "StringSingleLine",
+                        ["defaultValue"] = "Default",
+                    },
+                },
+                ["sourceCollectionJsonKey"] = false,
+            },
+        },
+    };
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.RuntimeJson(
+        invalidCollectionSourceDefinition.ToJsonString()));
     Equal("Default", DesignPreviewTestValues.Value(new JsonObject(), input));
     Throws<InvalidOperationException>(() => DesignPreviewTestValues.Value(
         new JsonObject { ["title"] = false },

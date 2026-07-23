@@ -5344,6 +5344,36 @@ assertContains(
   "RuntimeCollectionDocumentContract.Validate(",
   "Design Test Value collections must reuse the stable collection document owner",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "ComponentPreviewInputSession.ReadRuntimeCollections(",
+  "Design Test Values must consume the one complete Runtime collection definition reader",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "includeHidden: true",
+  "collection source application must validate definitions hidden by current presentation conditions",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  'OptionalArray(preview, "collections", "Design Preview Runtime collections")',
+  "Design Test Values must not retain a raw collection metadata reader",
+);
+const strictRuntimeCollectionConsumerSource = readText(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+);
+assertSourceMatches(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  strictRuntimeCollectionConsumerSource,
+  /ResolveCollectionRecordReferences[\s\S]*DesignPreviewTestValues\.CurrentCollectionItems\(preview, collection\)/,
+  "nested record resolution must consume strict effective collection items",
+);
+assertSourceMatches(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  strictRuntimeCollectionConsumerSource,
+  /NormalizeCollectionOptionActionTargets[\s\S]*DesignPreviewTestValues\.CurrentCollectionItems\(preview, collection\)/,
+  "action target normalization must consume strict effective collection items",
+);
 for (const currentRuntimeValueConsumer of [
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",

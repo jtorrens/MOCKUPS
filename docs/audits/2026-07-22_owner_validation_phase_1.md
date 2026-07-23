@@ -411,3 +411,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los tres consumidores de valores de presentación deben usar `CurrentStorageText`; Play/tiempo de sesión deben delegar en el owner action; el catch-all a `input.DefaultValue` queda prohibido. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia un valor válido ni el inicio de una action sin estado materializado; solo deja de ocultarse un valor presente corrupto. |
+
+## Slice 1.29 — Una sola lectura de colecciones para Test Values y actions
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El lector principal de colecciones ya exigía definiciones completas, pero la aplicación de Test Values volvía a recorrer metadata raw y convertía un `sourceCollectionJsonKey` presente con tipo incorrecto en ausencia. La resolución de records y el lookup de actions mantenían además recorridos directos que omitían una colección ausente o filtraban items no objeto. |
+| Owner | `ComponentPreviewInputSession.ReadRuntimeCollections` materializa todas las definiciones, también las ocultas cuando el consumidor lo pide; `DesignPreviewTestValues.CollectionItems` conserva la proyección lógica de Test Values y `CurrentCollectionItems` conserva la identidad mutable del documento efectivo ya preparado. |
+| Cambio mínimo | Aplicar sources desde definiciones tipadas completas; obtener las keys sourced de esas mismas definiciones; resolver records y targets de actions desde los items current estrictos sin clonarlos; leer el record actual mediante su `ValueKind` en lugar de otro acceso raw. |
+| Rutas eliminadas | Segundo reader de `collections`, metadata source incorrecta → ausente, colección wrong-root → omitida, `OfType<JsonObject>` sobre items y record ausente → string vacío aunque tuviera default declarado. |
+| Pruebas | 115/115 escritorio y 88/88 Preview, incluyendo source metadata con tipo incorrecto y todos los escenarios current de forwarding, Component Stack, Collection Stack y Lock Screen. |
+| Enforcement | Test Values debe invocar el lector completo con `includeHidden`; los consumidores que preparan Preview deben usar `DesignPreviewTestValues.CurrentCollectionItems`; el walker raw retirado queda prohibido. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Las colecciones válidas conservan orden, ids y overrides; solo deja de interpretarse como colección vacía una definición o raíz inválida. |

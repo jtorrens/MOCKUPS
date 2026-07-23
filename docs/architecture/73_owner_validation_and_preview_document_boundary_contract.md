@@ -171,6 +171,14 @@ override array only as the direct result of an explicit Test Value edit. It
 must not repair a present wrong root, filter malformed items or derive an id
 from collection position.
 
+Collection source application consumes the same complete
+`RuntimeInputCollectionDefinition` reader used by presentation, including
+definitions hidden by current UI conditions. It does not maintain a second raw
+metadata reader. Record-reference resolution and action option lookup consume
+the effective current collection-item owner without cloning it, so wrong roots
+or filtered entries cannot disappear and record-resolution mutations stay in
+the prepared document that reaches final Preview.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -334,6 +342,9 @@ Architecture enforcement must verify:
   collection owners without local empty-document parsers.
 - transient Test Values preserve strict roots and stable collection ids without
   becoming persisted Production payload.
+- collection source application, record resolution and action lookup reuse the
+  complete collection-definition and effective-item owners without raw
+  metadata or `OfType` filtering.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

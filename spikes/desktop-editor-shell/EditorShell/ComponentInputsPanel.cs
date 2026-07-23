@@ -448,8 +448,7 @@ internal sealed class ComponentPreviewInputSession
     {
         foreach (var collection in ReadRuntimeCollections(preview, config))
         {
-            if (preview[collection.JsonKey] is not JsonArray items) continue;
-            foreach (var item in items.OfType<JsonObject>())
+            foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(preview, collection))
             {
                 ResolveRecordReferenceInputs(item, collection.Fields, themeMode, paletteColors);
                 if (collection.ComponentItems is not { } componentItems
@@ -480,7 +479,7 @@ internal sealed class ComponentPreviewInputSession
         foreach (var input in inputs.Where((field) => field.Kind == ComponentInputKind.RecordReference))
         {
             if (string.IsNullOrWhiteSpace(input.ResolvedJsonKey)) continue;
-            var recordId = values[input.JsonKey]?.GetValue<string>() ?? "";
+            var recordId = DesignPreviewTestValues.Value(values, input);
             values[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
                 input.TableId,
                 recordId,
@@ -607,7 +606,7 @@ internal sealed class ComponentPreviewInputSession
             var input = collection.Fields.FirstOrDefault((field) =>
                 field.JsonKey.Equals(action.TargetInputId, StringComparison.Ordinal));
             if (input is null || string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)) continue;
-            var item = (preview[collection.JsonKey] as JsonArray)?.OfType<JsonObject>()
+            var item = DesignPreviewTestValues.CurrentCollectionItems(preview, collection)
                 .FirstOrDefault((candidate) =>
                     candidate["id"] is JsonValue value
                     && value.TryGetValue<string>(out var id)
@@ -1484,7 +1483,10 @@ internal sealed class ComponentPreviewInputSession
         return definitions;
     }
 
-    internal static IReadOnlyList<RuntimeInputCollectionDefinition> ReadRuntimeCollections(JsonObject preview, JsonObject config)
+    internal static IReadOnlyList<RuntimeInputCollectionDefinition> ReadRuntimeCollections(
+        JsonObject preview,
+        JsonObject config,
+        bool includeHidden = false)
     {
         if (preview["collections"] is null)
         {
@@ -1582,7 +1584,7 @@ internal sealed class ComponentPreviewInputSession
 
             var itemPresentation = ReadItemPresentation(collection);
             var componentItems = ReadComponentItems(collection);
-            if (!isVisible) continue;
+            if (!isVisible && !includeHidden) continue;
             definitions.Add(new RuntimeInputCollectionDefinition(
                 id,
                 label,
