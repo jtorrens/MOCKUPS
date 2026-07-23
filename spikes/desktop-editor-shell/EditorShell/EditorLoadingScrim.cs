@@ -80,10 +80,15 @@ internal sealed class EditorLoadingScrim : Border
 
     public void Show(string message, Action? cancel)
     {
-        _messageText.Text = string.IsNullOrWhiteSpace(message) ? "Loading..." : message;
+        SetMessage(message);
         _cancel = cancel;
         IsVisible = true;
         Focus();
+    }
+
+    public void SetMessage(string message)
+    {
+        _messageText.Text = string.IsNullOrWhiteSpace(message) ? "Loading..." : message;
     }
 
     public void Hide()

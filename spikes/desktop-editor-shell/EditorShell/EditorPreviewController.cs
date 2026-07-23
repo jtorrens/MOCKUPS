@@ -13,6 +13,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -208,6 +211,8 @@ internal sealed class EditorPreviewController
     private string _shotTimelineContextNodeId = "";
     private bool _isUpdatingShotTimeline;
     private long _selectionRefreshGeneration;
+    private CancellationTokenSource? _shotPlaybackPreparationCancellation;
+    private PreparedShotPlayback? _preparedShotPlayback;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
@@ -1142,6 +1147,7 @@ internal sealed class EditorPreviewController
 
     public void BeginSelectionTransition()
     {
+        CancelShotPlaybackPreparation();
         if (_workspace != EditorWorkspace.Production
             || ProductionContextNode() is not { } selected)
         {
@@ -1175,6 +1181,7 @@ internal sealed class EditorPreviewController
     public void Refresh()
     {
         Interlocked.Increment(ref _selectionRefreshGeneration);
+        CancelShotPlaybackPreparation();
         RefreshCore();
     }
 
@@ -1318,9 +1325,17 @@ internal sealed class EditorPreviewController
         return payload is not null && _designInputsPanel.ResetTestValues(payload);
     }
 
-    private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
+    private Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {
-        ReleaseFrameCacheReservation();
+        InvalidatePreparedShotPlayback();
+        return PreparePlaybackFramesAsync(requestedAction, CancellationToken.None);
+    }
+
+    private async Task<bool> PreparePlaybackFramesAsync(
+        ComponentPreviewActionDefinition? requestedAction,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
         EnsureSelectedOptionsExist();
         if (string.IsNullOrWhiteSpace(_projectId))
         {
@@ -1362,6 +1377,7 @@ internal sealed class EditorPreviewController
                 var imageSources = new HashSet<string>(StringComparer.Ordinal);
                 for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
                         metrics,
                         _showDesignMarks,
@@ -1372,14 +1388,18 @@ internal sealed class EditorPreviewController
                     }
                     if ((frameIndex + 1) % 5 == 0 || frameIndex + 1 == frames.Count)
                     {
-                        _designPreviewPane.SetRasterLoading(
-                            true,
+                        UpdatePreviewLoading(
                             $"Preparing HTML {frameIndex + 1} / {frames.Count} frames…");
                     }
                 }
-                _designPreviewPane.SetRasterLoading(true, $"Decoding HTML assets 0 / {imageSources.Count}…");
-                var loadedImages = await _designPreviewPane.PreloadFrameImagesAsync(imageSources, CancellationToken.None);
-                _designPreviewPane.SetRasterLoading(true, $"Decoding HTML assets {loadedImages} / {imageSources.Count}…");
+                UpdatePreviewLoading($"Decoding HTML assets 0 / {imageSources.Count}…");
+                var loadedImages = await _designPreviewPane.PreloadFrameImagesAsync(imageSources, cancellationToken);
+                UpdatePreviewLoading($"Decoding HTML assets {loadedImages} / {imageSources.Count}…");
+            }
+            catch (OperationCanceledException)
+            {
+                ReleaseFrameCacheReservation();
+                return false;
             }
             catch
             {
@@ -1405,7 +1425,7 @@ internal sealed class EditorPreviewController
         {
             try
             {
-                await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, CancellationToken.None);
+                await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellationToken);
                 await _designPreviewPane.SyncRasterViewportAsync();
                 PreviewDebugLog.Write(
                     "preview.playback.raster-cache-hit",
@@ -1427,7 +1447,7 @@ internal sealed class EditorPreviewController
         _aheadPreloadCancellation?.Dispose();
         _aheadPreloadCancellation = null;
         _aheadPreloadedFrameKeys.Clear();
-        var cancellation = new CancellationTokenSource();
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _previewLoadingCancellation = cancellation;
         var totalStopwatch = Stopwatch.StartNew();
         PreviewDebugLog.Write(
@@ -1610,19 +1630,29 @@ internal sealed class EditorPreviewController
 
     private void ShowPreviewLoading(string message)
     {
+        _previewLoadingScrim.Show(message, CancelPreviewLoading);
+        _previewBusyHost.IsVisible = true;
         _designPreviewPane.SetRasterLoading(true, message);
         SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
+    }
+
+    private void UpdatePreviewLoading(string message)
+    {
+        _previewLoadingScrim.SetMessage(message);
+        _designPreviewPane.SetRasterLoading(true, message);
     }
 
     private void UpdateRasterProgress(int completedFrames, int totalFrames)
     {
         var message = $"Rasterizing {completedFrames} / {totalFrames} frames…";
-        _designPreviewPane.SetRasterLoading(true, message);
+        UpdatePreviewLoading(message);
         _messages.Info("Playback", message);
     }
 
     private void HidePreviewLoading()
     {
+        _previewLoadingScrim.Hide();
+        _previewBusyHost.IsVisible = false;
         _designPreviewPane.SetRasterLoading(false, "");
         if (!IsPreviewPlaybackActive && !_shotPlaybackIsPreparing)
         {
@@ -1696,7 +1726,10 @@ internal sealed class EditorPreviewController
 
     private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
-        ReleaseFrameCacheReservation();
+        if (_preparedShotPlayback is null)
+        {
+            ReleaseFrameCacheReservation();
+        }
         if (_playbackPerformanceRun is null) return;
         _playbackPerformanceRun.AcceptsPresentations = false;
         var generation = ++_playbackSummaryGeneration;
@@ -1712,6 +1745,23 @@ internal sealed class EditorPreviewController
     {
         _frameCacheReservation?.Dispose();
         _frameCacheReservation = null;
+    }
+
+    private void CancelShotPlaybackPreparation()
+    {
+        _shotPlaybackPreparationCancellation?.Cancel();
+    }
+
+    private void CancelPreviewLoading()
+    {
+        CancelShotPlaybackPreparation();
+        _previewLoadingCancellation?.Cancel();
+    }
+
+    private void InvalidatePreparedShotPlayback()
+    {
+        _preparedShotPlayback = null;
+        ReleaseFrameCacheReservation();
     }
 
     private double? RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
@@ -1779,6 +1829,10 @@ internal sealed class EditorPreviewController
         public List<double> PresentationFps { get; } = [];
         public Queue<long> RecentPresentationTimestamps { get; } = [];
     }
+
+    private sealed record PreparedShotPlayback(
+        string RequestSignature,
+        IReadOnlyList<DesignPreviewPayload> Frames);
 
     private void SetPreviewPerformanceStatus(PreviewPerformanceStatus status)
     {
@@ -2289,24 +2343,94 @@ internal sealed class EditorPreviewController
         if (payloadNode is null) return;
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
+        var cancellation = new CancellationTokenSource();
+        _shotPlaybackPreparationCancellation = cancellation;
         _shotPlaybackIsPreparing = true;
         PlaybackState.SetPlaying(true);
         PlaybackState.SetBusy(true);
+        ShowPreviewLoading("Preparing playback…");
+        await YieldPreviewPreparationAsync(cancellation.Token);
+        var preparationSucceeded = false;
         try
         {
-            _pendingPlaybackFramesOverride = ShotPlaybackFramePayloads(payloadNode, _shotPreviewFrame, navigationRange.EndFrame).ToList();
-            if (!await PreparePlaybackFramesAsync(null))
+            var requestSignature = await ShotPlaybackRequestSignatureAsync(
+                payloadNode,
+                _shotPreviewFrame,
+                navigationRange.EndFrame,
+                cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (_preparedShotPlayback is { } prepared
+                && prepared.RequestSignature == requestSignature
+                && _frameCacheReservation is not null)
             {
-                PlaybackState.SetPlaying(false);
-                return;
+                preparationSucceeded = true;
+                PreviewDebugLog.Write(
+                    "preview.playback.prepared-cache-hit",
+                    ("kind", payloadNode.Kind),
+                    ("id", payloadNode.Id),
+                    ("frames", prepared.Frames.Count));
             }
+            else
+            {
+                IReadOnlyList<DesignPreviewPayload> frames;
+                if (_preparedShotPlayback is { } reusable
+                    && reusable.RequestSignature == requestSignature)
+                {
+                    frames = reusable.Frames;
+                    PreviewDebugLog.Write(
+                        "preview.playback.payload-cache-hit",
+                        ("kind", payloadNode.Kind),
+                        ("id", payloadNode.Id),
+                        ("frames", frames.Count));
+                }
+                else
+                {
+                    InvalidatePreparedShotPlayback();
+                    frames = await BuildShotPlaybackFramesAsync(
+                        payloadNode,
+                        _shotPreviewFrame,
+                        navigationRange.EndFrame,
+                        cancellation.Token);
+                }
+
+                _pendingPlaybackFramesOverride = frames;
+                preparationSucceeded = await PreparePlaybackFramesAsync(null, cancellation.Token);
+                if (preparationSucceeded)
+                {
+                    _preparedShotPlayback = new PreparedShotPlayback(requestSignature, frames);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.prepare.cancelled",
+                ("kind", payloadNode.Kind),
+                ("id", payloadNode.Id));
+        }
+        catch (Exception error)
+        {
+            InvalidatePreparedShotPlayback();
+            _messages.Error("Playback preparation", error);
         }
         finally
         {
             _pendingPlaybackFramesOverride = null;
             _shotPlaybackIsPreparing = false;
             PlaybackState.SetBusy(false);
+            if (ReferenceEquals(_shotPlaybackPreparationCancellation, cancellation))
+            {
+                _shotPlaybackPreparationCancellation = null;
+            }
+            cancellation.Dispose();
+            HidePreviewLoading();
+            if (!preparationSucceeded)
+            {
+                PlaybackState.SetPlaying(false);
+            }
         }
+        if (!preparationSucceeded) return;
+
         _shotPlaybackStartFrame = _shotPreviewFrame;
         _shotPlaybackStartedTimestamp = Stopwatch.GetTimestamp();
         _shotPlaybackTimer.Start();
@@ -2317,22 +2441,143 @@ internal sealed class EditorPreviewController
         AdvanceShotPlayback();
     }
 
-    private IEnumerable<DesignPreviewPayload> ShotPlaybackFramePayloads(ProjectTreeNode payloadNode, int startFrame, int endFrame)
+    private async Task<IReadOnlyList<DesignPreviewPayload>> BuildShotPlaybackFramesAsync(
+        ProjectTreeNode payloadNode,
+        int startFrame,
+        int endFrame,
+        CancellationToken cancellationToken)
     {
         var lastFrame = Math.Max(startFrame, endFrame);
+        var totalFrames = lastFrame - startFrame + 1;
+        var frames = new List<DesignPreviewPayload>(totalFrames);
         for (var frame = startFrame; frame <= lastFrame; frame++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var payload = DesignPreviewPayloadFactory.Create(
                 _previewPayloadData,
                 payloadNode,
                 _selectedThemeId,
                 _selectedMode,
-                frame);
-            if (payload is not null)
+                frame)
+                ?? throw new InvalidOperationException(
+                    $"Production playback frame {frame} has no complete Preview payload.");
+            frames.Add(ProcessPreviewPayload(payload, "shot-play-sequence", frame) ?? payload);
+            var completedFrames = frame - startFrame + 1;
+            if (completedFrames % 5 == 0 || completedFrames == totalFrames)
             {
-                yield return ProcessPreviewPayload(payload, "shot-play-sequence", frame) ?? payload;
+                UpdatePreviewLoading(
+                    $"Resolving playback frames {completedFrames} / {totalFrames}…");
             }
+            await YieldPreviewPreparationAsync(cancellationToken);
         }
+        return frames;
+    }
+
+    private async Task<string> ShotPlaybackRequestSignatureAsync(
+        ProjectTreeNode payloadNode,
+        int startFrame,
+        int endFrame,
+        CancellationToken cancellationToken)
+    {
+        var payloadFingerprints = new List<string>();
+        foreach (var frame in ShotPlaybackSignatureFrames(payloadNode, startFrame, endFrame))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var payload = DesignPreviewPayloadFactory.Create(
+                _previewPayloadData,
+                payloadNode,
+                _selectedThemeId,
+                _selectedMode,
+                frame)
+                ?? throw new InvalidOperationException(
+                    $"Production playback signature frame {frame} has no complete Preview payload.");
+            var resolved = ProcessPreviewPayload(payload, "shot-play-signature", frame) ?? payload;
+            payloadFingerprints.Add($"{frame}\u001e{PlaybackPayloadFingerprint(resolved)}");
+            await YieldPreviewPreparationAsync(cancellationToken);
+        }
+
+        var signatureJson = JsonSerializer.Serialize(new
+        {
+            Version = 1,
+            NodeKind = payloadNode.Kind.ToString(),
+            NodeId = payloadNode.Id,
+            StartFrame = startFrame,
+            EndFrame = endFrame,
+            PlaybackRoute = _selectedPlaybackRoute,
+            ThemeId = _selectedThemeId,
+            ThemeMode = _selectedMode,
+            DeviceId = SelectedDeviceId,
+            Orientation = _selectedOrientation,
+            Scale = _selectedScale,
+            ShowDesignMarks = _showDesignMarks,
+            ShowCanonicalFrame = _showCanonicalFrame,
+            ShellIsDark = _isDark(),
+            Payloads = payloadFingerprints,
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(signatureJson)));
+    }
+
+    private IReadOnlyList<int> ShotPlaybackSignatureFrames(
+        ProjectTreeNode payloadNode,
+        int startFrame,
+        int endFrame)
+    {
+        if (payloadNode.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            return [startFrame];
+        }
+
+        var shotId = ProductionShotId();
+        var frames = new List<int>();
+        foreach (var moduleInstanceId in _timelineDataSource.ShotSlotIds(shotId))
+        {
+            var screenStart = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId);
+            var screenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId));
+            var screenEnd = screenStart + screenDuration - 1;
+            if (screenEnd < startFrame || screenStart > endFrame)
+            {
+                continue;
+            }
+            frames.Add(Math.Max(startFrame, screenStart));
+        }
+        return frames.Count > 0 ? frames : [startFrame];
+    }
+
+    private static string PlaybackPayloadFingerprint(DesignPreviewPayload payload)
+    {
+        var payloadJson = JsonSerializer.Serialize(new
+        {
+            payload.Kind,
+            payload.Name,
+            payload.ConfigJson,
+            payload.ThemeTokensJson,
+            PaletteColors = payload.PaletteColors.OrderBy((entry) => entry.Key, StringComparer.Ordinal),
+            PaletteNeutralColors = payload.PaletteNeutralColors.OrderBy((entry) => entry.Key, StringComparer.Ordinal),
+            payload.ProjectMediaRoot,
+            payload.IconAssetRoot,
+            payload.IconMappingJson,
+            payload.FontFaces,
+            payload.ComponentType,
+            payload.DesignPreviewJson,
+            payload.RuntimeContractJson,
+            payload.ThemeMode,
+            payload.ComponentBaseConfigsJson,
+            payload.AppConfigJson,
+            payload.InstanceJson,
+            payload.DeviceId,
+            payload.FrameRate,
+            payload.ThemeStatusBarVariantReference,
+            payload.ThemeNavigationBarVariantReference,
+            payload.LocalFrame,
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payloadJson)));
+    }
+
+    private static async Task YieldPreviewPreparationAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     private void AdvanceShotPlayback()
@@ -2361,6 +2606,7 @@ internal sealed class EditorPreviewController
 
     private void StopShotPlayback()
     {
+        CancelShotPlaybackPreparation();
         var wasPlaying = _shotPlaybackTimer.IsEnabled;
         if (wasPlaying) _shotPlaybackTimer.Stop();
         _shotPlaybackStartedTimestamp = 0;
@@ -2368,7 +2614,6 @@ internal sealed class EditorPreviewController
         _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Play, 16);
         if (wasPlaying)
         {
-            ReleaseFrameCacheReservation();
             OnPlaybackStopped(new ComponentPreviewInputSession.PlaybackRunInfo(
                 Math.Max(1, ShotLastFrame() - _shotPlaybackStartFrame + 1),
                 Math.Max(1, ProductionShotId() is { Length: > 0 } shotId

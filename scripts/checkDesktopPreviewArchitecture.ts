@@ -601,6 +601,36 @@ assertContains(
   "the Preview controller must leave a shell render opportunity before resolving a selected Preview",
 );
 assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'ShowPreviewLoading("Preparing playback…")',
+  "Production Play must present immediate loading feedback before resolving its frame sequence",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private sealed record PreparedShotPlayback(",
+  "prepared Production playback must remain explicit session-only controller state",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "SHA256.HashData(Encoding.UTF8.GetBytes(signatureJson))",
+  "prepared Production playback reuse must use an exact cryptographic request fingerprint",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "await YieldPreviewPreparationAsync(cancellationToken);",
+  "Production playback frame resolution must yield to the native Preview host between frames",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_previewLoadingScrim.Show(message, CancelPreviewLoading);",
+  "Production playback feedback must use the native Preview-host loading surface",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private CancellationTokenSource? _shotPlaybackPreparationCancellation;",
+  "stale Production playback preparation must be explicitly cancellable",
+);
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
   "public void BeginContextUpdate(string message)",
   "the resident Preview pane must own immediate loading presentation",
@@ -6686,7 +6716,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "_pendingPlaybackFramesOverride = ShotPlaybackFramePayloads",
+  "_pendingPlaybackFramesOverride = frames;",
   "Shot playback must prepare its frames through the shared HTML/raster playback route",
 );
 assertContains(

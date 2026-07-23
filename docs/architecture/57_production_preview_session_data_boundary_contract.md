@@ -76,6 +76,26 @@ The controller may receive `SpikeDatabase` as a construction/composition
 parameter while the staged shell creates its typed services, but it must not
 retain a database field or perform direct database reads.
 
+Playback preparation is also transient controller-owned session state. Pressing
+Play must present `Preparing playback` and yield one render opportunity before
+enumerating or resolving the frame sequence. This first state is owned by the
+native Preview-host loading surface and must not depend on the resident HTML
+document or a queued WebView script. The controller resolves frames incrementally
+through the same complete Production payload boundary and yields at background
+dispatcher priority between frames so rendering and input remain responsive. A
+new selection, data commit or second Play/Stop action cancels stale preparation;
+cancellation must never produce a partial playable sequence.
+
+The controller may retain one prepared Shot/Screen playback sequence and the
+renderer cache-capacity reservation that supports it for the current
+application session. Reuse is allowed only when an exact cryptographic
+fingerprint still matches. That fingerprint includes the selected stable node,
+requested frame range, Preview presentation context and complete resolved
+payload documents for every participating stable Screen. A mismatch rebuilds
+the sequence through normal payload resolution. The cache is never persisted,
+never becomes payload truth and never permits a renderer to resolve omitted
+data.
+
 Selection feedback is part of this transient orchestration. When a selected
 Production Shot or Screen has an explicit Preview route, the shell delegates
 the transition immediately to the controller before rebuilding editor content.
@@ -99,6 +119,8 @@ shell must not manipulate WebView state directly.
   current config.
 - Payload resolution completes before the generic Preview renderer.
 - Playback and navigation reads never rewrite duration, payload or animation.
+- Prepared playback reuse never changes frame ownership, timing or resolved
+  output and never bypasses complete Production payload resolution.
 
 ## 6. Enforcement and tests
 
@@ -110,6 +132,9 @@ Architecture enforcement must verify:
   database method call;
 - the controller gets ordered Screen ids only from
   `ModuleInstanceTimelineDataSource`;
+- playback presents its loading state before frame enumeration, resolves
+  incrementally with cancellation and keys session-only reuse by an exact
+  cryptographic fingerprint;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare the owning Shot id, fps, complete
@@ -132,5 +157,8 @@ tables, parity data, assets, payloads, durations or animation documents.
 - reading a class default instead of the selected complete Module Variant;
 - calculating duration or owner origins in the data source;
 - caching a derived duration as persisted truth;
+- reusing playback frames by name, type, position, approximate timestamps or a
+  partial payload comparison;
+- persisting prepared playback frames, fingerprints or cache reservations;
 - retaining a general database handle in the Preview controller;
 - adding playback timers or component behavior to the bridge or renderer.
