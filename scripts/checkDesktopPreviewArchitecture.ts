@@ -5096,6 +5096,26 @@ assertContains(
   "NATURAL_PACE_TOKENS.has(paceToken)",
   "web Behavior Timing must require one exact declared natural pace token even in Fixed mode",
 );
+for (const requiredBehaviorCadenceOwner of [
+  'if (!isRecord(timingValue))',
+  'requiredString(timingValue, "mode", "Natural Write On timing.mode")',
+  'if (mode === "fixed") return Math.max(0, elapsedFrame);',
+  'if (mode !== "natural") throw new Error',
+  'requiredString(field, "id", `Behavior timing owner field[${index}].id`)',
+  "current = requiredRecord(current, segment, traversed.join(\".\"));",
+  "requiredNumberValue(current[path.at(-1)!], token)",
+]) {
+  assertContains(
+    "src/desktop-preview/behaviorTiming.ts",
+    requiredBehaviorCadenceOwner,
+    `web Behavior Timing must consume its exact cadence owner (${requiredBehaviorCadenceOwner})`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/behaviorTiming.ts",
+  "asRecord(",
+  "web Behavior Timing must not coerce invalid cadence, sibling or Theme path data",
+);
 for (const themeNumericDurationConsumer of [
   "spikes/desktop-editor-shell/Common/BehaviorTimingResolver.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",

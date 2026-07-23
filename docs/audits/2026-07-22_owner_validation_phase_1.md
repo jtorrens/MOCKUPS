@@ -1107,3 +1107,16 @@ y Overrides por item.
 | Enforcement | Ambos parsers de schema y el acceso tipado quedan fijados; los casts locales del cursor quedan prohibidos. |
 | Datos | Sin migración ni cambio de payload. El Renderable current ya satisface el schema; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia una primitive válida ni añade lógica de Component al renderer; solo unifica la validación final. |
+
+## Slice 1.81 — Cadencia y ruta exactas de Behavior Timing
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Natural Write On convertía timing wrong-root o modo ausente en Fixed; el lookup de Natural Pace atravesaba objetos inválidos como `{}` y los ids dañados de sibling fields se filtraban. |
+| Owner | `BehaviorTiming` posee modo/valor, la definición posee el sibling estable y Theme posee la ruta numérica cerrada de Natural Pace. |
+| Cambio mínimo | Exigir objeto y modo Fixed/Natural en cadencia, ids completos en el catálogo owner y objetos/número exactos en la ruta Theme. |
+| Rutas eliminadas | Dos `asRecord`, modo no-Natural → Fixed, sibling id inválido → omitido y path wrong-root → `NaN`. |
+| Pruebas | Cobertura ampliada conserva cadencia Fixed/Natural y rechaza timing ausente/wrong-root, modo desconocido, sibling id inválido y Theme Motion wrong-root. |
+| Enforcement | Root/modo de cadencia, ids y recorrido Theme exacto quedan fijados; `asRecord` queda prohibido en el helper. |
+| Datos | Sin migración. Los valores, definiciones y Themes current ya satisfacen el contrato; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia duración/cadencia válida; evita que metadata rota se reproduzca plausiblemente como Fixed o pace ausente. |

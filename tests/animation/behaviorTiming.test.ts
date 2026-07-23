@@ -41,6 +41,14 @@ test("Behavior Timing rejects inferred values and incomplete natural metadata", 
   assert.throws(() => resolve(validOwner, { ...fields[1]!, naturalTiming: { sourceFieldId: "text", unit: "grapheme" } }));
   assert.throws(() => resolve(validOwner, { ...fields[1]!, naturalTiming: { sourceFieldId: "text", unit: "grapheme", baseFramesPerUnit: 0 } }));
   assert.throws(() => resolve(validOwner, { ...fields[1]!, naturalTiming: { sourceFieldId: "missing", unit: "grapheme", baseFramesPerUnit: 7 } }));
+  assert.throws(
+    () => resolveBehaviorTimingFrames(validOwner, fields[1]!, fields, { motion: [] }),
+    /Missing object value theme\.motion/,
+  );
+  assert.throws(
+    () => resolveBehaviorTimingFrames(validOwner, fields[1]!, [{}, fields[1]!], theme),
+    /Behavior timing owner field\[0\]\.id/,
+  );
 });
 
 test("natural Write On is deterministic, monotonic and keeps the final duration", () => {
@@ -53,4 +61,11 @@ test("natural Write On is deterministic, monotonic and keeps the final duration"
   assert.ok(frames.every((value, index) => index === 0 || value >= frames[index - 1]!));
   assert.equal(frames.at(-1), 84);
   assert.ok(new Set(frames.slice(1).map((value, index) => value - frames[index]!)).size > 1);
+});
+
+test("natural Write On requires its exact timing mode", () => {
+  assert.equal(naturalWriteOnFrame("Text", { mode: "fixed" }, 4, 12, "fixed"), 4);
+  for (const timing of [undefined, null, [], {}, { mode: "automatic" }]) {
+    assert.throws(() => naturalWriteOnFrame("Text", timing, 4, 12, "invalid"));
+  }
 });

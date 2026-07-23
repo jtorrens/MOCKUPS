@@ -9,17 +9,29 @@ function payload(
   tracks: Array<Record<string, unknown>>,
   messages: Array<Record<string, unknown>>,
 ): DesignPreviewPayload {
-  const completeMessages = messages.map((message) => ({
-    delayAfterPreviousFrames: 0,
-    writeOnDurationFrames: 0,
-    postWriteOnHoldFrames: 0,
-    isPlaying: false,
-    ...message,
-  }));
+  const completeMessages = messages.map((message) => {
+    const { writeOnDurationFrames = 0, ...authoredMessage } = message;
+    return {
+      delayAfterPreviousFrames: 0,
+      writeOnTiming: {
+        mode: "fixed",
+        fixedFrames: writeOnDurationFrames,
+        paceToken: "theme.motion.naturalPace.normal",
+      },
+      postWriteOnHoldFrames: 0,
+      isPlaying: false,
+      ...authoredMessage,
+    };
+  });
   const fields = [
     { id: "text", jsonKey: "text", animationTimeline: { origin: { kind: "ownerStart" }, completion: { baseDurationFieldId: "writeOn", minimumEnabledKeyframes: 2 } } },
     { id: "delay", jsonKey: "delayAfterPreviousFrames" },
-    { id: "writeOn", jsonKey: "writeOnDurationFrames" },
+    {
+      id: "writeOn",
+      jsonKey: "writeOnTiming",
+      valueKind: "BehaviorTiming",
+      naturalTiming: { sourceFieldId: "text", unit: "grapheme", baseFramesPerUnit: 7 },
+    },
     { id: "postWriteOnHold", jsonKey: "postWriteOnHoldFrames" },
     { id: "statusVisible", jsonKey: "statusVisible", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },

@@ -1,4 +1,4 @@
-import { asRecord, optionalString } from "./componentResolverCommon.js";
+import { isRecord } from "./previewJsonHelpers.js";
 import {
   requiredNumberValue,
   requiredPossiblyEmptyString,
@@ -38,7 +38,8 @@ export function resolveBehaviorTimingFrames(
 
   const natural = requiredRecord(definition, "naturalTiming", `Behavior timing '${fieldId}'.naturalTiming`);
   const sourceId = requiredString(natural, "sourceFieldId", `Behavior timing '${fieldId}'.sourceFieldId`);
-  const sources = ownerFields.filter((field) => optionalString(field, "id") === sourceId);
+  const sources = ownerFields.filter((field, index) =>
+    requiredString(field, "id", `Behavior timing owner field[${index}].id`) === sourceId);
   if (sources.length !== 1) throw new Error(`Missing or ambiguous behavior timing source field '${sourceId}'.`);
   const source = sources[0]!;
   if (!source) throw new Error(`Missing behavior timing source field '${sourceId}'.`);
@@ -68,8 +69,12 @@ export function naturalWriteOnFrame(
   durationFrames: number,
   seed: string,
 ) {
-  const timing = asRecord(timingValue);
-  if (optionalString(timing, "mode") !== "natural") return Math.max(0, elapsedFrame);
+  if (!isRecord(timingValue)) {
+    throw new Error("Natural Write On timing must be an object");
+  }
+  const mode = requiredString(timingValue, "mode", "Natural Write On timing.mode");
+  if (mode === "fixed") return Math.max(0, elapsedFrame);
+  if (mode !== "natural") throw new Error(`Invalid behavior timing mode '${mode}'.`);
   const graphemes = textGraphemes(text);
   if (graphemes.length === 0 || durationFrames <= 0) return durationFrames;
   const weights = graphemes.map((grapheme, index) => {
@@ -93,9 +98,14 @@ export function naturalWriteOnFrame(
 
 function tokenNumber(tokens: JsonRecord, token: string) {
   const path = token.startsWith("theme.") ? token.slice("theme.".length).split(".") : token.split(".");
-  let current: unknown = tokens;
-  for (const segment of path) current = asRecord(current)[segment];
-  return typeof current === "number" ? current : Number.NaN;
+  if (path.length === 0) throw new Error(`Invalid Theme token path '${token}'.`);
+  let current = tokens;
+  const traversed = ["theme"];
+  for (const segment of path.slice(0, -1)) {
+    traversed.push(segment);
+    current = requiredRecord(current, segment, traversed.join("."));
+  }
+  return requiredNumberValue(current[path.at(-1)!], token);
 }
 
 function requiredInteger(value: unknown, path: string) {

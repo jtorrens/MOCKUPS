@@ -628,7 +628,11 @@ supported semantic unit and positive numeric base rate. Invalid or incomplete
 values/metadata do not become duration zero, a missing definition or a
 calculated UI fallback. The dictionary control requires the same resolver when
 it is constructed and rejects a missing owner or negative result instead of
-showing calculated zero.
+showing calculated zero. Natural Write On cadence consumes an exact timing
+object and closed Fixed/Natural mode after duration resolution. Its sibling
+field ids and every intermediate Theme Natural Pace object remain explicit,
+and the final pace value is a finite JSON number; invalid shape never selects
+Fixed or degrades into an absent token.
 
 ## 6. Failure and diagnostics
 
@@ -817,8 +821,8 @@ Architecture enforcement must verify:
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.
 - `BehaviorTiming` values, sibling-source metadata and both desktop/web
-  resolvers reject missing members, wrong scalar shapes and zero-rate/default
-  inference.
+  resolvers reject missing members, wrong scalar/object shapes, invalid cadence
+  modes and zero-rate/default inference across the exact Theme pace path.
 - the `BehaviorTiming` dictionary control requires its owner resolver and never
   replaces an unavailable calculation with frame zero.
 
