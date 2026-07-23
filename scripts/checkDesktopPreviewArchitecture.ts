@@ -7728,6 +7728,32 @@ for (const [file, forbidden] of [
     `${file} must not coerce an invalid atomic config root (${forbidden})`,
   );
 }
+for (const systemBarDocument of [
+  ["src/desktop-preview/statusBarComponentResolver.ts", 'requiredObjectArray(config, "items", "status bar")'],
+  ["src/desktop-preview/statusBarComponentResolver.ts", 'requiredRecord(config, "layout", "statusBar.layout")'],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", 'requiredObjectArray(config, "items", "navigation bar")'],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", 'requiredRecord(config, "layout", "navigationBar.layout")'],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", 'requiredRecord(config, "gesture", "navigationBar.gesture")'],
+] as const) {
+  assertContains(
+    systemBarDocument[0],
+    systemBarDocument[1],
+    `${systemBarDocument[0]} must require its complete system bar document (${systemBarDocument[1]})`,
+  );
+}
+for (const [file, forbidden] of [
+  ["src/desktop-preview/statusBarComponentResolver.ts", "const item = asRecord(raw);"],
+  ["src/desktop-preview/statusBarComponentResolver.ts", "asRecord(config.layout)"],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", "const item = asRecord(raw);"],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", "asRecord(config.layout)"],
+  ["src/desktop-preview/navigationBarComponentResolver.ts", "asRecord(config.gesture)"],
+] as const) {
+  assertDoesNotContain(
+    file,
+    forbidden,
+    `${file} must not coerce system bar documents (${forbidden})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

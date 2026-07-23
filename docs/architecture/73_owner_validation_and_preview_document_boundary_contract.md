@@ -323,6 +323,13 @@ is visually disabled. Cursor requires its config object. These atomic resolvers
 consume exact authored configuration; a wrong root is not a blank Tail, default
 style or Cursor awaiting scalar fallbacks.
 
+Status Bar and Navigation Bar require their layout objects and exact `items`
+arrays of objects. Navigation Bar additionally requires its gesture object.
+Every item keeps its stable id, explicit kind, zone and order before zone
+projection/sorting; non-object entries do not become partial items and zone
+order never supplies identity. Existing hidden `off` items remain complete
+authored items rather than being filtered before validation.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -623,6 +630,8 @@ Architecture enforcement must verify:
   also requires and resolves both Surface slots through the shared owner.
 - Surface requires config/Tail/style roots and Cursor requires its config root
   before resolving atomic visuals.
+- Status/Navigation Bar require exact layout/gesture/item documents and retain
+  stable item identity before visibility and zone ordering.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

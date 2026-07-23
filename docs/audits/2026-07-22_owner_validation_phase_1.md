@@ -907,3 +907,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Las cuatro roots requeridas quedan fijadas y sus casts prohibidos. |
 | Datos | Sin migración. Los documentos current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia ningún valor válido; solo se adelanta y precisa el fallo de una raíz incorrecta. |
+
+## Slice 1.66 — Items exactos de Status Bar y Navigation Bar
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Ambos system bars exigían raíz array pero convertían entries no objeto en `{}`; sus layouts usaban cast tolerante y Navigation Bar hacía lo mismo con gesture. |
+| Owner | Cada Component system bar posee su documento v/current, items con id/kind/zone/order y objetos layout/gesture; la proyección por zona ocurre después de validar todos los items. |
+| Cambio mínimo | Usar `requiredObjectArray` desde el config owner, pasar el config completo al projector y exigir layout/gesture con `requiredRecord`. |
+| Rutas eliminadas | Dos `map(asRecord)` de items y tres casts de layout/gesture. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; contratos estrictos Status/Navigation, Variants y system bar item authoring current pasan. |
+| Enforcement | Arrays y roots exactas fijados; casts y parsers array locales tolerantes prohibidos. |
+| Datos | Sin migración. Los system bar items current ya son objetos completos con ids estables; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia zona, orden ni visibilidad válidos; solo se rechaza una entry/raíz incompleta antes de proyectarla. |

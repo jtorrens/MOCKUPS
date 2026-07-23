@@ -5,22 +5,18 @@ import type {
   NavigationBarItemZone,
   NavigationBarZone,
 } from "./navigationBarComponentContract.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { parseObject, requiredObjectArray, type JsonRecord } from "./previewJsonHelpers.js";
 import {
   requiredAlpha,
   requiredBoolean,
   requiredNumber,
+  requiredRecord,
   requiredString,
 } from "./previewValueHelpers.js";
 
-function navigationBarItems(value: unknown): NavigationBarItemContract[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Missing navigation bar items");
-  }
-
+function navigationBarItems(config: JsonRecord): NavigationBarItemContract[] {
   const ids = new Set<string>();
-  return value.map((raw, index) => {
-    const item = asRecord(raw);
+  return requiredObjectArray(config, "items", "navigation bar").map((item, index) => {
     const itemPath = `items.${index}`;
     const id = requiredString(item, "id", `${itemPath}.id`);
     if (ids.has(id)) {
@@ -61,7 +57,7 @@ function requiredInteger(
   return number;
 }
 
-function sortedNavigationBarItems(value: unknown): Record<
+function sortedNavigationBarItems(config: JsonRecord): Record<
   NavigationBarZone,
   NavigationBarItemContract[]
 > {
@@ -71,7 +67,7 @@ function sortedNavigationBarItems(value: unknown): Record<
     center: [],
     right: [],
   };
-  for (const item of navigationBarItems(value)) {
+  for (const item of navigationBarItems(config)) {
     if (item.zone === "off") continue;
     byZone[item.zone].push(item);
   }
@@ -90,8 +86,8 @@ export function resolveNavigationBarComponent(
   if (requiredInteger(config, "schemaVersion", "navigationBar.schemaVersion") !== 1) {
     throw new Error("Unsupported navigation bar schemaVersion");
   }
-  const layout = asRecord(config.layout);
-  const gesture = asRecord(config.gesture);
+  const layout = requiredRecord(config, "layout", "navigationBar.layout");
+  const gesture = requiredRecord(config, "gesture", "navigationBar.gesture");
   const type = requiredString(config, "type", "navigationBar.type");
   if (type !== "buttons" && type !== "gestureBar") {
     throw new Error(`Unsupported navigation bar type ${type}`);
@@ -148,6 +144,6 @@ export function resolveNavigationBarComponent(
         "navigationBar.gesture.cornerRadius",
       ),
     },
-    zones: sortedNavigationBarItems(config.items),
+    zones: sortedNavigationBarItems(config),
   };
 }

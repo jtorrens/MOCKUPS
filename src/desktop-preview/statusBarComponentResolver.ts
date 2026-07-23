@@ -1,10 +1,11 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { parseObject, requiredObjectArray, type JsonRecord } from "./previewJsonHelpers.js";
 import {
   requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredPossiblyEmptyString,
+  requiredRecord,
   requiredString,
 } from "./previewValueHelpers.js";
 import type {
@@ -14,14 +15,9 @@ import type {
   StatusBarZone,
 } from "./statusBarComponentContract.js";
 
-function statusBarItems(value: unknown): StatusBarItemContract[] {
-  if (!Array.isArray(value)) {
-    throw new Error("Missing status bar items");
-  }
-
+function statusBarItems(config: JsonRecord): StatusBarItemContract[] {
   const ids = new Set<string>();
-  return value.map((raw, index) => {
-    const item = asRecord(raw);
+  return requiredObjectArray(config, "items", "status bar").map((item, index) => {
     const itemPath = `items.${index}`;
     const id = requiredString(item, "id", `${itemPath}.id`);
     if (ids.has(id)) {
@@ -95,7 +91,7 @@ function requiredIntegerInRange(
   return number;
 }
 
-function sortedVisibleStatusBarItems(value: unknown): Record<
+function sortedVisibleStatusBarItems(config: JsonRecord): Record<
   StatusBarZone,
   StatusBarItemContract[]
 > {
@@ -104,7 +100,7 @@ function sortedVisibleStatusBarItems(value: unknown): Record<
     left: [],
     right: [],
   };
-  for (const item of statusBarItems(value)) {
+  for (const item of statusBarItems(config)) {
     if (item.zone === "off") continue;
     if (item.kind === "text" && !String(item.value).trim()) continue;
     byZone[item.zone].push(item);
@@ -124,7 +120,7 @@ export function resolveStatusBarComponent(
   if (requiredInteger(config, "schemaVersion", "statusBar.schemaVersion") !== 2) {
     throw new Error("Unsupported status bar schemaVersion");
   }
-  const layout = asRecord(config.layout);
+  const layout = requiredRecord(config, "layout", "statusBar.layout");
   return {
     id: "statusBar",
     fontFamilyId: "theme.system",
@@ -153,6 +149,6 @@ export function resolveStatusBarComponent(
         "statusBar.layout.sidePadding",
       ),
     },
-    zones: sortedVisibleStatusBarItems(config.items),
+    zones: sortedVisibleStatusBarItems(config),
   };
 }
