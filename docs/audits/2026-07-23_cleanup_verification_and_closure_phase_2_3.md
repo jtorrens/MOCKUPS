@@ -1,7 +1,8 @@
 # Verificación y cierre del baseline — Fases 2 y 3
 
 Fecha: 2026-07-23
-Estado: automatización Mac completa; revisión UI y smoke PC pendientes.
+Estado: automatización Mac completa, incluidas las decisiones de cierre;
+revisión UI y smoke PC pendientes.
 
 Norma de ejecución:
 `docs/architecture/74_cleanup_verification_and_baseline_closure_contract.md`.
@@ -20,7 +21,8 @@ posterior separada:
   propio script busca y rechaza; Render Presets no se modificó;
 - no se añadió framework general de validación, reflexión ni manager común.
 
-Resultado actual: 118/118 pruebas Preview y 116/116 pruebas de escritorio.
+Resultado tras cerrar las tres decisiones: 125/125 pruebas Preview y 116/116
+pruebas de escritorio.
 
 ## Fase 3 — Evidencia automática Mac
 
@@ -32,7 +34,7 @@ Resultado actual: 118/118 pruebas Preview y 116/116 pruebas de escritorio.
 | Arquitectura | Correcta. |
 | Build desktop | Correcto, 0 warnings y 0 errores. |
 | Base current | Validación explícita read-only con SQLite 3.53.3. |
-| Hash de base antes/después | `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`, sin cambio. |
+| Hash de base antes/después | `6f13ae36420fb60f55f47738cc563a2b58d3fdadff67211210f38e5aec480cbb` (SHA-256), sin cambio. |
 | `git diff --check` | Correcto. |
 | Assets/parity data | Sin cambios incidentales. |
 
@@ -47,16 +49,17 @@ Resultado actual: 118/118 pruebas Preview y 116/116 pruebas de escritorio.
 La app no se abre todavía porque el usuario pidió agrupar la revisión UI al
 final de todas las fases y no tiene acceso actual al Mac.
 
-## Decisiones pendientes, no implementadas
+## Decisiones de cierre implementadas
 
-| Decisión | Motivo de parada segura |
+| Decisión | Cierre |
 |---|---|
-| Icon Rows de Text Box/Text Input Bar | Requiere migración completa con ids estables, Variant completa y Overrides; no admite inferencia posicional. |
-| `durationInputId` | Debe elegirse field id o JSON key; aceptar ambos crearía compatibilidad permanente. |
-| `localFrame` | Debe elegirse la autoridad antes de retirar una de las dos fuentes actuales. |
+| Icon Rows de Text Box/Text Input Bar | Contrato 77, migración completa y retirada de listas planas, inferencia y helper permisivo residual. |
+| `durationInputId` | Contrato 75: field id estable único, sin alias por JSON key. |
+| `localFrame` | Contrato 76: frame local de frontera separado del `screenFrame` raíz. |
 
 ## Estado del baseline
 
-La limpieza automática disponible está estabilizada. El baseline todavía no
-se declara aceptado ni se habilita scaffolding/nueva expansión: faltan los gates
-manuales y la discusión de las tres decisiones anteriores.
+La limpieza automática disponible y sus decisiones de modelo están
+estabilizadas. El baseline todavía no se declara aceptado ni se habilita
+scaffolding/nueva expansión: faltan los gates manuales de UI y PC y la
+aprobación explícita del usuario.

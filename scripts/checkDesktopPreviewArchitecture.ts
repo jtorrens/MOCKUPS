@@ -1288,6 +1288,16 @@ for (const retiredPreviewObjectFallback of ['json || "{}"', "asRecord(JSON.parse
   );
 }
 assertDoesNotContain(
+  "src/desktop-preview/previewJsonHelpers.ts",
+  "function asRecord(",
+  "Preview JSON helpers must not restore the retired wrong-root-to-empty-object coercion",
+);
+assertDoesNotContain(
+  "src/desktop-preview/componentResolverCommon.ts",
+  "asRecord",
+  "Component resolver exports must not restore the retired permissive object coercion",
+);
+assertDoesNotContain(
   "src/desktop-preview/runtimeInputForwarding.ts",
   "function parseRecord(",
   "Runtime Input forwarding must use the shared strict Preview object parser",

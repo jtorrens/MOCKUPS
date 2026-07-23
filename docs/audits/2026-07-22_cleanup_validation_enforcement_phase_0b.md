@@ -121,3 +121,16 @@ La validación completa cierra con 52/52 pruebas de Preview, 93/93 pruebas de
 escritorio, typecheck estricto, comprobación de arquitectura y build sin
 warnings ni errores. La base canónica y los assets no se modifican en esta
 fase.
+
+## Seguimiento 0B.5 — helper permisivo expuesto por la migración de Icon Rows
+
+La migración posterior de Text Box/Text Input Bar a Icon Rows estructuradas
+retiró los dos últimos consumidores activos de `asRecord`. La segunda pasada
+confirma que solo permanecían la declaración exportada y su reexportación
+común: ninguna ruta de runtime, test, manifest, serialización o asset la
+consumía.
+
+Se elimina el helper completo. No se sustituye por otro wrapper: los documentos
+requeridos usan lectores estrictos y la ausencia opcional usa lectores
+opcionales explícitos. El checker impide que vuelva la coerción
+`wrong root → {}`. No cambian datos, UX, payloads válidos ni assets.

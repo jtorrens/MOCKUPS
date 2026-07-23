@@ -167,6 +167,9 @@ The parity database was migrated once to the current document:
 
 Normal startup, repositories, payload preparation and resolvers contain no
 migration, alias, normalization or compatibility fallback for retired keys.
+The retired permissive `asRecord` helper had no remaining active consumer
+after this migration and was removed rather than retained as a dormant
+compatibility route.
 
 ## 8. Enforcement
 

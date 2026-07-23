@@ -1170,3 +1170,23 @@ conserva el SHA-1 `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`.
 
 Este cierre no equivale a aprobación visual del baseline: revisión final de la
 app y smoke de PC pertenecen al gate separado del contrato 74.
+
+## Cierre posterior de las decisiones diferidas
+
+Las tres decisiones que quedaron fuera de los slices 1.1–1.83 se cerraron
+después mediante contratos independientes y migraciones explícitas:
+
+1. `durationInputId` identifica únicamente el field id estable
+   (contrato 75);
+2. `payload.localFrame` conserva el frame local de la frontera y
+   `instance.context.screenFrame` conserva el frame raíz de Screen
+   (contrato 76);
+3. Text Box usa dos fronteras Icon Row estructuradas completas con items
+   estables, referencias Button Variant completas y Overrides locales
+   (contrato 77).
+
+La tercera retirada dejó `asRecord` sin consumidores activos, por lo que el
+helper permisivo y su reexportación se eliminaron en la pasada final 0B.5. Ya
+no queda una excepción activa al uso de documentos objeto requeridos u
+opcionales explícitos. La aceptación visual y el smoke de PC continúan siendo
+gates separados.

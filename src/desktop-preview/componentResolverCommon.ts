@@ -2,7 +2,7 @@ export type {
   AlignmentPlacementContract,
   SurfaceStyleContract,
 } from "./previewComponentContracts.js";
-export { asRecord, parseObject } from "./previewJsonHelpers.js";
+export { parseObject } from "./previewJsonHelpers.js";
 export {
   optionalNumber,
   optionalBoolean,
