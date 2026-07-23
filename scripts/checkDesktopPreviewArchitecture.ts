@@ -304,11 +304,73 @@ if (desktopBuildIndex < 0
   );
 }
 if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
-  || !(packageScripts["test:cold"] ?? "").includes("npm test")) {
+    || !(packageScripts["test:cold"] ?? "").includes("npm test")) {
   addViolation(
     "package.json",
     "test:cold must clear desktop build outputs before running the complete repository gate",
   );
+}
+if (packageScripts["scaffold:component"] !== "tsx scripts/scaffoldComponent.ts") {
+  addViolation(
+    "package.json",
+    "Component development scaffolding must use the single read-only scaffold command owner",
+  );
+}
+if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.ts"
+    || !(packageScripts.test ?? "").includes("npm run test:scaffolding")) {
+  addViolation(
+    "package.json",
+    "the complete repository gate must execute Component scaffolding contract tests",
+  );
+}
+for (const [scaffoldPath, requiredTerm] of [
+  ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
+  ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
+  ["src/development-scaffolding/componentScaffold.ts", "defaultVariant is the single Variant source"],
+  ["src/development-scaffolding/componentScaffold.ts", "resolveComponentScaffoldSpecPath"],
+  ["scripts/scaffoldComponent.ts", '"dry-run": { type: "boolean"'],
+  ["scripts/scaffoldComponent.ts", "--apply is intentionally unavailable"],
+  ["tests/scaffolding/componentScaffold.test.ts", "opens the database read-only"],
+  ["docs/architecture/development_workflow.md", "This stage has no `apply` mode"],
+] as const) {
+  assertContains(
+    scaffoldPath,
+    requiredTerm,
+    "Component scaffolding must remain an explicit read-only contract plan until semantic owners exist",
+  );
+}
+for (const prohibitedWriteTerm of [
+  "INSERT INTO component_classes",
+  "UPDATE component_classes",
+  "DELETE FROM component_classes",
+  "INSERT INTO editor_layouts",
+  "UPDATE editor_layouts",
+]) {
+  assertDoesNotContain(
+    "src/development-scaffolding/componentScaffold.ts",
+    prohibitedWriteTerm,
+    "Component scaffold planning must not mutate current persistence",
+  );
+}
+for (const scaffoldSource of [
+  "src/development-scaffolding/componentScaffold.ts",
+  "scripts/scaffoldComponent.ts",
+]) {
+  for (const prohibitedMutationTerm of [
+    "writeFile",
+    "appendFile",
+    "copyFile",
+    "renameSync",
+    "mkdirSync",
+    "rmSync",
+    "database.exec(",
+  ]) {
+    assertDoesNotContain(
+      scaffoldSource,
+      prohibitedMutationTerm,
+      "Component scaffold planning must remain filesystem- and database-read-only",
+    );
+  }
 }
 type WorkflowStep = {
   uses?: string;

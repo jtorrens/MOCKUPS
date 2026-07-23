@@ -55,6 +55,38 @@ The user confirms this contract before implementation. Scaffolding then creates
 all declared parts in one coherent development sequence. The application does
 not fill missing parts at startup or through an Add action.
 
+### Component contract planning
+
+The first scaffolding stage is deliberately read-only:
+
+```text
+npm run scaffold:component -- --print-template
+npm run scaffold:component -- --spec <component-contract.json> --dry-run
+```
+
+The printed template is intentionally not a valid authoring contract until all
+of its replacement markers and example identities have been replaced.
+
+The specification explicitly supplies responsibility, visual and temporal
+boundaries, forwarding intent, identity, category, manifest routes, owner
+exports, registry signature, embedded dependencies, current config, complete
+protected Default Variant, Runtime Input/collection/action fixture, dictionary
+fields, editor layout and required asset paths. The planner derives current
+`ValueKind` names from their canonical desktop enum, reads the current manifest
+and opens the parity database read-only.
+
+The resulting plan identifies every owner file, registry and manifest change,
+dictionary descriptor, current database row, editor layout row and validation
+command. It rejects identity collisions, unknown embeds or `ValueKind` values,
+unsafe paths, incomplete Runtime Input definitions, hidden Variant envelopes
+and editor fields that are missing or duplicated.
+
+This stage has no `apply` mode and writes neither source nor database. A valid
+plan means that the authoring contract is ready for its concrete resolver,
+renderable and focused characterization test; it does not register an
+incomplete Component. Applying the plan is a later explicit maintenance
+revision after those semantic owners have been implemented.
+
 ## Module scaffolding
 
 A Module description is converted into:

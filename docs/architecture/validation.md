@@ -22,6 +22,7 @@ It includes:
 - TypeScript type checking;
 - desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
+- read-only Component scaffolding contract and collision tests;
 - Preview and desktop animation tests;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
