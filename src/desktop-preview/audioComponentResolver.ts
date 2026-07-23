@@ -1,20 +1,19 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import {
-  asRecord,
   optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
   requiredPlacement,
+  requiredRecord,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -40,11 +39,11 @@ export function resolveAudioComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): AudioDesignContract {
-  const audio = asRecord(config.audio);
-  const surfaceSlot = asRecord(audio.surfaceSlot);
-  const avatarSlot = asRecord(audio.avatarSlot);
-  const badgeSlot = asRecord(audio.badgeSlot);
-  const durationLabelSlot = asRecord(audio.durationLabelSlot);
+  const audio = requiredRecord(config, "audio", "component.audio");
+  const surfaceSlot = requiredRecord(audio, "surfaceSlot", "component.audio.surfaceSlot");
+  const avatarSlot = requiredRecord(audio, "avatarSlot", "component.audio.avatarSlot");
+  const badgeSlot = requiredRecord(audio, "badgeSlot", "component.audio.badgeSlot");
+  const durationLabelSlot = requiredRecord(audio, "durationLabelSlot", "component.audio.durationLabelSlot");
   const showAvatar = requiredBoolean(
     avatarSlot,
     "showAvatar",
@@ -55,22 +54,10 @@ export function resolveAudioComponentFromRecords(
     "showBadge",
     "component.audio.input.showBadge",
   );
-  const avatarConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "avatar", avatarSlot.variantReference),
-    asRecord(avatarSlot.overrides),
-  );
-  const badgeConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "badge", badgeSlot.variantReference),
-    asRecord(badgeSlot.overrides),
-  );
-  const surfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
-    asRecord(surfaceSlot.overrides),
-  );
-  const durationLabelConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "label", durationLabelSlot.variantReference),
-    asRecord(durationLabelSlot.overrides),
-  );
+  const avatarConfig = embeddedComponentConfig(componentBaseConfigs, avatarSlot, "avatar", "component.audio.avatarSlot");
+  const badgeConfig = embeddedComponentConfig(componentBaseConfigs, badgeSlot, "badge", "component.audio.badgeSlot");
+  const surfaceConfig = embeddedComponentConfig(componentBaseConfigs, surfaceSlot, "surface", "component.audio.surfaceSlot");
+  const durationLabelConfig = embeddedComponentConfig(componentBaseConfigs, durationLabelSlot, "label", "component.audio.durationLabelSlot");
   const durationSeconds = Math.max(
     1,
     Math.round(

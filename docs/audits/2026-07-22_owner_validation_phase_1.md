@@ -775,3 +775,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los dos `requiredRecord` y la comprobación exacta de presencia quedan fijados; los casts tolerantes de lookup quedan prohibidos. |
 | Datos | Sin migración. Todos los catálogos preparados current contienen configs objeto completas; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia ninguna referencia ni Variant válida; solo deja de renderizarse una base vacía inventada. |
+
+## Slice 1.57 — Owner común de slot embebido y adopción en Audio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Cada resolver repetía referencia+merge y podía convertir Overrides null/array/scalar en `{}`. Audio hacía lo mismo en cuatro slots y convertía también su config/slots requeridos en vacíos. |
+| Owner | `embeddedComponentConfig` conserva la referencia completa y los Overrides locales; el parent resolver exige sus slots y decide visibilidad/composición. |
+| Cambio mínimo | Extraer el helper común y migrar Surface, Avatar, Badge y duration Label de Audio; exigir config y cuatro slots objeto aun cuando Avatar/Badge estén ocultos. |
+| Rutas eliminadas | Cuatro secuencias locales `componentVariantConfig + asRecord(overrides)` y cinco casts de config/slot en Audio. |
+| Pruebas | 100/100 Preview: merge válido, referencia incompleta y Overrides ausente/null/array; 116/116 escritorio conserva Audio y su composición current. |
+| Enforcement | Helper compartido, cuatro adopciones Audio y roots requeridas fijados; las secuencias tolerantes retiradas quedan prohibidas. |
+| Datos | Sin migración. Los cuatro slots Audio current ya declaran referencia completa y Overrides objeto; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia el merge ni la visibilidad válida; un slot roto deja de convertirse en child con configuración inventada. |

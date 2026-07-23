@@ -1,5 +1,5 @@
 import { asRecord } from "./previewJsonHelpers.js";
-import { requiredRecord } from "./previewValueHelpers.js";
+import { requiredRecord, requiredString } from "./previewValueHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -46,4 +46,18 @@ export function mergeComponentDefaults(
         : value;
   }
   return merged;
+}
+
+export function embeddedComponentConfig(
+  componentBaseConfigs: JsonRecord,
+  slot: JsonRecord,
+  componentType: string,
+  path: string,
+) {
+  const variantReference = requiredString(slot, "variantReference", `${path}.variantReference`);
+  const overrides = requiredRecord(slot, "overrides", `${path}.overrides`);
+  return mergeComponentDefaults(
+    componentVariantConfig(componentBaseConfigs, componentType, variantReference),
+    overrides,
+  );
 }

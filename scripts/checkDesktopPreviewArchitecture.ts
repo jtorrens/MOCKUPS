@@ -5989,7 +5989,7 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/audioComponentResolver.ts",
-  "componentVariantConfig(componentBaseConfigs, \"badge\", badgeSlot.variantReference)",
+  'embeddedComponentConfig(componentBaseConfigs, badgeSlot, "badge", "component.audio.badgeSlot")',
   "audio badge preview must resolve the selected Badge Variant",
 );
 assertDoesNotContain(
@@ -7282,6 +7282,53 @@ for (const permissiveComponentVariantLookup of [
     "src/desktop-preview/componentPreviewDefaults.ts",
     permissiveComponentVariantLookup,
     `Component Variant lookup must not fabricate an empty base config (${permissiveComponentVariantLookup})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  'const variantReference = requiredString(slot, "variantReference", `${path}.variantReference`);',
+  "embedded Component config must require a complete Variant reference",
+);
+assertContains(
+  "src/desktop-preview/componentPreviewDefaults.ts",
+  'const overrides = requiredRecord(slot, "overrides", `${path}.overrides`);',
+  "embedded Component config must require explicit local Overrides",
+);
+for (const audioSlot of ["avatarSlot", "badgeSlot", "surfaceSlot", "durationLabelSlot"] as const) {
+  assertContains(
+    "src/desktop-preview/audioComponentResolver.ts",
+    `embeddedComponentConfig(componentBaseConfigs, ${audioSlot},`,
+    `Audio ${audioSlot} must consume the shared embedded Component owner`,
+  );
+}
+for (const requiredAudioObject of [
+  'requiredRecord(config, "audio", "component.audio")',
+  'requiredRecord(audio, "surfaceSlot", "component.audio.surfaceSlot")',
+  'requiredRecord(audio, "avatarSlot", "component.audio.avatarSlot")',
+  'requiredRecord(audio, "badgeSlot", "component.audio.badgeSlot")',
+  'requiredRecord(audio, "durationLabelSlot", "component.audio.durationLabelSlot")',
+] as const) {
+  assertContains(
+    "src/desktop-preview/audioComponentResolver.ts",
+    requiredAudioObject,
+    `Audio composition must preserve its required object boundary (${requiredAudioObject})`,
+  );
+}
+for (const permissiveAudioSlot of [
+  "asRecord(config.audio)",
+  "asRecord(audio.surfaceSlot)",
+  "asRecord(audio.avatarSlot)",
+  "asRecord(audio.badgeSlot)",
+  "asRecord(audio.durationLabelSlot)",
+  "asRecord(avatarSlot.overrides)",
+  "asRecord(badgeSlot.overrides)",
+  "asRecord(surfaceSlot.overrides)",
+  "asRecord(durationLabelSlot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/audioComponentResolver.ts",
+    permissiveAudioSlot,
+    `Audio composition must not coerce required slot documents (${permissiveAudioSlot})`,
   );
 }
 assertContains(

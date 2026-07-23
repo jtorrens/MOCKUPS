@@ -259,6 +259,14 @@ Missing/wrong-root catalogs or Variant configs do not become an empty base
 config. Lookup preserves the exact full-reference grammar and never selects a
 class default or short id.
 
+Every embedded Component slot crosses that lookup through one shared prepared
+slot owner: a complete stable `variantReference` and a required local
+`overrides` object. The helper merges only those two validated documents. The
+parent Component remains responsible for requiring its slot object and for
+declaring whether the embedded child is visually enabled. Audio applies this
+owner to its Surface, Avatar, Badge and duration Label slots; hidden children
+do not make their slot document optional.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -541,6 +549,8 @@ Architecture enforcement must verify:
   explicit previous value.
 - Component Variant base lookup requires an exact variants object and exact
   referenced config object before applying local Overrides.
+- embedded Component config uses one shared full-reference plus required local
+  Overrides owner; each parent still requires its declared slot objects.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

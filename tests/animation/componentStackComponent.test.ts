@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { resolveComponentStackComponent } from "../../src/desktop-preview/componentStackComponentResolver.js";
 import { componentStackComponentToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
-import { componentVariantConfig } from "../../src/desktop-preview/componentPreviewDefaults.js";
+import { componentVariantConfig, embeddedComponentConfig } from "../../src/desktop-preview/componentPreviewDefaults.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 
 test("Component Variant references require the exact stable full-reference grammar", () => {
@@ -26,6 +26,32 @@ test("Component Variant references require the exact stable full-reference gramm
     { variants: { "stub::variant::default": "default" } },
   ]) {
     assert.throws(() => componentVariantConfig(invalidBases, "stub", "stub::variant::default"));
+  }
+});
+
+test("embedded Component config requires a complete reference and local Overrides", () => {
+  const bases = {
+    variants: {
+      "stub::variant::default": { stub: { base: true, local: false } },
+    },
+  };
+  assert.deepEqual(
+    embeddedComponentConfig(
+      bases,
+      { variantReference: "stub::variant::default", overrides: { stub: { local: true } } },
+      "stub",
+      "component.parent.slot",
+    ),
+    { stub: { base: true, local: true } },
+  );
+  for (const slot of [
+    {},
+    { variantReference: "default", overrides: {} },
+    { variantReference: "stub::variant::default" },
+    { variantReference: "stub::variant::default", overrides: null },
+    { variantReference: "stub::variant::default", overrides: [] },
+  ]) {
+    assert.throws(() => embeddedComponentConfig(bases, slot, "stub", "component.parent.slot"));
   }
 });
 
