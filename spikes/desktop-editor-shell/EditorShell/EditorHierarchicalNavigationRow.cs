@@ -25,6 +25,7 @@ internal sealed record EditorHierarchicalNavigationMetadata(
     bool IsEnabled,
     string DisabledReason,
     bool IsSelected,
+    bool IsPreviewActive,
     bool ShowActions,
     bool HasChildren,
     bool IsExpanded,
@@ -69,7 +70,11 @@ internal static class EditorHierarchicalNavigationRow
                 ? metadata.DisabledReason
                 : metadata.Status,
             showToolTip: false);
-        AutomationProperties.SetItemStatus(row, metadata.IsSelected ? "Selected" : metadata.Status);
+        AutomationProperties.SetItemStatus(
+            row,
+            metadata.IsSelected
+                ? metadata.IsPreviewActive ? "Selected, active in Preview" : "Selected"
+                : metadata.IsPreviewActive ? "Active in Preview" : metadata.Status);
         if (metadata.ShowTopSeparator)
         {
             row.BorderThickness = new Thickness(0, 1, 0, 0);
@@ -155,7 +160,20 @@ internal static class EditorHierarchicalNavigationRow
             Spacing = 0,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        title.Children.Add(new TextBlock
+        var titleLine = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 5,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        if (metadata.IsPreviewActive)
+        {
+            var activeIcon = EditorIcons.Create(EditorIcons.Play, 11);
+            EditorIcons.ApplyBrush(activeIcon, EditorAnimationVisuals.ActiveTrackBrush);
+            ToolTip.SetTip(activeIcon, "Active Screen at the current Preview frame");
+            titleLine.Children.Add(activeIcon);
+        }
+        titleLine.Children.Add(new TextBlock
         {
             Text = metadata.Title,
             FontWeight = FontWeight.SemiBold,
@@ -167,6 +185,7 @@ internal static class EditorHierarchicalNavigationRow
             TextTrimming = TextTrimming.CharacterEllipsis,
             VerticalAlignment = VerticalAlignment.Center,
         });
+        title.Children.Add(titleLine);
         var detail = !string.IsNullOrWhiteSpace(metadata.Status) ? metadata.Status : metadata.Subtitle;
         if (!metadata.IsGroup && !string.IsNullOrWhiteSpace(detail))
         {
@@ -356,7 +375,13 @@ internal static class EditorHierarchicalNavigationRow
 
     private static string NavigationRowAccessibleName(EditorHierarchicalNavigationMetadata metadata)
     {
-        var details = new[] { metadata.Title, metadata.Status, metadata.Subtitle }
+        var details = new[]
+            {
+                metadata.Title,
+                metadata.IsPreviewActive ? "Active in Preview" : "",
+                metadata.Status,
+                metadata.Subtitle,
+            }
             .Where((value) => !string.IsNullOrWhiteSpace(value));
         return string.Join(", ", details);
     }

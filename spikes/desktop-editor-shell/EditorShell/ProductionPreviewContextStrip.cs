@@ -15,7 +15,8 @@ internal sealed record ProductionPreviewContextMetadata(
     string Actor,
     string Device,
     string Theme,
-    string Mode);
+    string Mode,
+    bool HasShotContext = true);
 
 internal static class ProductionPreviewContextStrip
 {
@@ -54,29 +55,39 @@ internal static class ProductionPreviewContextStrip
         {
             breadcrumb.Children.Add(new TextBlock { Text = "No Episode selected", FontSize = 13, Opacity = 0.68 });
         }
-        var context = new WrapPanel { Orientation = Orientation.Horizontal };
-        context.Children.Add(Item("Actor", metadata.Actor));
-        context.Children.Add(Item("Device", metadata.Device));
-        context.Children.Add(Item("Theme", metadata.Theme));
-        context.Children.Add(Item("Mode", metadata.Mode));
+        var context = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            IsVisible = metadata.HasShotContext,
+        };
+        if (metadata.HasShotContext)
+        {
+            context.Children.Add(Item("Actor", metadata.Actor));
+            context.Children.Add(Item("Device", metadata.Device));
+            context.Children.Add(Item("Theme", metadata.Theme));
+            context.Children.Add(Item("Mode", metadata.Mode));
+        }
         if (trailing is null)
         {
             host.Children.Add(breadcrumb);
-            host.Children.Add(context);
+            if (metadata.HasShotContext) host.Children.Add(context);
             return;
         }
         var row = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            RowDefinitions = new RowDefinitions(metadata.HasShotContext ? "Auto,Auto" : "Auto"),
             ColumnSpacing = 10,
             RowSpacing = 7,
         };
         row.Children.Add(breadcrumb);
-        Grid.SetRow(context, 1);
-        row.Children.Add(context);
+        if (metadata.HasShotContext)
+        {
+            Grid.SetRow(context, 1);
+            row.Children.Add(context);
+        }
         Grid.SetColumn(trailing, 1);
-        Grid.SetRowSpan(trailing, 2);
+        Grid.SetRowSpan(trailing, metadata.HasShotContext ? 2 : 1);
         trailing.HorizontalAlignment = HorizontalAlignment.Right;
         trailing.VerticalAlignment = VerticalAlignment.Stretch;
         row.Children.Add(trailing);

@@ -81,8 +81,9 @@ available; it does not mix that contract with temporary Preview samples.
 
 ## 3. Production remains distinct
 
-A Module Instance is Production data. Its Runtime Values are persisted instance
-payload and remain in the central editor together with its Runtime API. They
+A Module Instance is Production data. Its Runtime Input values are persisted
+instance payload, presented as `Screen Payload`, and remain in the central
+editor together with its Runtime API. They
 must not move into the Design Test Values surface or be described as temporary
 Preview data.
 
@@ -132,7 +133,7 @@ Architecture checks require:
 - separate Design Runtime Contract and Preview Test Values surfaces;
 - exact-class session ownership for selected Preview utility tab;
 - absence of persisted utility/Preview split state;
-- Production Runtime Values to remain in the central Runtime Inputs surface;
+- Production Screen Payload to remain in the central Runtime Inputs surface;
 - `MainWindow` to host and delegate without constructing Runtime fields.
 
 Desktop tests verify the context metadata, exact selector ids, active statuses

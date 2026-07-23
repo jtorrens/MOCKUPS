@@ -185,7 +185,7 @@
                     <Border DockPanel.Dock="Top"
                             Padding="18,16">
                         <StackPanel Spacing="4">
-                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="WEB PREVIEW" />
+                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="PREVIEW" />
                             <StackPanel x:Name="PreviewTitlePanel"
                                         Orientation="Horizontal"
                                         Spacing="4" />
@@ -278,7 +278,7 @@
                                     CornerRadius="8"
                                     Background="#12000000">
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <TextBlock Text="Design"
+                                    <TextBlock Text="Current frame"
                                                FontSize="13"
                                                FontWeight="SemiBold"
                                                VerticalAlignment="Center" />

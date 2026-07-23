@@ -105,6 +105,12 @@ internal sealed class EditorPreviewController
         MinWidth = 70,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    private readonly TextBlock _shotTimelineScopeText = new()
+    {
+        FontSize = 11,
+        Opacity = 0.72,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly Button _shotPreviousSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPreviousKeyframeButton = new() { Content = EditorTimelineTransport.CreateKeyframeStepIcon(next: false), Width = 38, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotAbsoluteStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotStart, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
@@ -173,6 +179,19 @@ internal sealed class EditorPreviewController
     public int ProductionShotFrame() => _shotPreviewFrame;
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
+
+    public string ActiveNavigationNodeId
+    {
+        get
+        {
+            var shotId = ProductionShotId();
+            return string.IsNullOrWhiteSpace(shotId)
+                ? ""
+                : ProductionScreenPlaybackState.ActiveScreenId(
+                    ProductionScreenPlaybackState.FrameRanges(_timelineDataSource, shotId),
+                    _shotPreviewFrame);
+        }
+    }
 
     public void ToggleProductionPlayback() => ToggleShotPlayback();
     private PreviewNodeKey? _lastDesignPreviewNode;
@@ -661,6 +680,7 @@ internal sealed class EditorPreviewController
             _shotFrameSlider,
             "Navigate preview frames",
             "Navigate the shared Shot playhead used by Preview and Animation");
+        _shotHeaderTimelineControls.Children.Add(_shotTimelineScopeText);
         _shotHeaderTimelineControls.Children.Add(_shotFrameSlider);
         _shotHeaderTimelineControls.Children.Add(_shotFrameText);
         var navigationRow = new Border
@@ -2157,6 +2177,15 @@ internal sealed class EditorPreviewController
     {
         var selected = _selectedNode();
         var destination = FirstRenderableDescendant(selected);
+        if (selected?.Kind == ProjectTreeNodeKind.Episode)
+        {
+            return new PreviewContextState(
+                PreviewContextStateKind.NonRenderable,
+                "Select a Shot or Screen to preview",
+                "An Episode organizes the production sequence, but does not produce an image by itself.",
+                destination is null ? "" : "Open first Shot",
+                destination?.Id ?? "");
+        }
         return new PreviewContextState(
             PreviewContextStateKind.NonRenderable,
             selected is null ? "There is no renderable selection" : $"{selected.Name} has no direct preview",
@@ -2213,10 +2242,13 @@ internal sealed class EditorPreviewController
         _isUpdatingShotTimeline = true;
         _shotFrameSlider.Maximum = Math.Max(0, range.DurationFrames - 1);
         _shotFrameSlider.Value = displayedFrame;
+        _shotTimelineScopeText.Text = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
+            ? "Screen local timeline"
+            : "Shot timeline";
         _shotFrameText.Text = $"{displayedFrame}/{Math.Max(0, range.DurationFrames - 1)}";
         EditorAccessibility.Describe(
             _shotFrameText,
-            $"Frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
+            $"{_shotTimelineScopeText.Text}, frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
             showToolTip: false);
         _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
         _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
@@ -2291,14 +2323,9 @@ internal sealed class EditorPreviewController
 
     private int ActiveShotSlotIndex(string shotId)
     {
-        var cursor = 0;
-        var slots = _timelineDataSource.ShotSlotIds(shotId);
-        for (var index = 0; index < slots.Count; index++)
-        {
-            cursor += ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slots[index]);
-            if (_shotPreviewFrame < cursor) return index;
-        }
-        return slots.Count - 1;
+        return ProductionScreenPlaybackState.ActiveScreenIndex(
+            ProductionScreenPlaybackState.FrameRanges(_timelineDataSource, shotId),
+            _shotPreviewFrame);
     }
 
     private void MoveShotSlot(int offset)
@@ -2684,7 +2711,11 @@ internal sealed class EditorPreviewController
     private void UpdateDesignContextChrome(DesignPreviewPayload? payload)
     {
         _activeProductionModuleInstanceId = RuntimeContextValue(payload, "moduleInstanceId");
-        _designContextText.Text = payload?.Name ?? "";
+        _designContextText.Text = _workspace == EditorWorkspace.Production
+            && _selectedNode()?.Kind == ProjectTreeNodeKind.Shot
+            && !string.IsNullOrWhiteSpace(payload?.Name)
+                ? $"Active Screen: {payload.Name}"
+                : payload?.Name ?? "";
         var productionNodes = ProductionNodePath(_selectedNode());
         var previewItems = _workspace == EditorWorkspace.Production
             ? productionNodes.Select((node, index) => new EditorBreadcrumbItem(
@@ -2899,18 +2930,12 @@ internal sealed class EditorPreviewController
             node.Name,
             index == pathNodes.Count - 1 ? null : () => _selectNodeById(node.Id))).ToList();
         var shotId = ProductionShotId();
-        string actorName;
-        string device;
-        string theme;
-        string mode;
-        if (string.IsNullOrWhiteSpace(shotId))
-        {
-            actorName = "No Shot selected";
-            device = "No Shot selected";
-            theme = "No Shot selected";
-            mode = "Inherited";
-        }
-        else
+        var hasShotContext = !string.IsNullOrWhiteSpace(shotId);
+        var actorName = "";
+        var device = "";
+        var theme = "";
+        var mode = "";
+        if (hasShotContext)
         {
             var inherited = _productionShotContext.Resolve(shotId);
             actorName = inherited.Actor;
@@ -2931,7 +2956,7 @@ internal sealed class EditorPreviewController
         }
         ProductionPreviewContextStrip.Render(
             _productionContextHost,
-            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode),
+            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode, hasShotContext),
             orientation);
     }
 

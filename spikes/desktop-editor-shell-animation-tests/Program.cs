@@ -40,6 +40,8 @@ var tests = new (string Name, Action Run)[]
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
     ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
+    ("Production Screen presentation boundary preserves exact current data read-only", ProductionScreenPresentationBoundaryPreservesCurrentData),
+    ("Production active Screen presentation follows exact Shot frame ranges", ProductionActiveScreenPresentationFollowsShotFrames),
     ("Component Preview input boundary preserves current contracts read-only", ComponentPreviewInputBoundaryPreservesCurrentContracts),
     ("Runtime Input owner store preserves current documents and explicit Preview writes", RuntimeInputOwnerStorePreservesCurrentDocuments),
     ("Runtime Input instance store preserves explicit scalar collection and animation writes", RuntimeInputInstanceStorePreservesExplicitWrites),
@@ -3153,6 +3155,34 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
         Equal(
             database.GetProductionFontFieldValue(productionFont.Id, "font.files"),
             dataSource.ProductionFontFiles(productionFont.Id));
+        var after = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionScreenPresentationBoundaryPreservesCurrentData()
+{
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-screen-presentation-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var screen = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var source = new ProductionScreenPresentationDataSource(database).Load(screen.Id);
+
+        Equal(database.GetModuleInstanceModuleName(screen.Id), source.Module);
+        Equal(database.GetModuleInstanceVariantName(screen.Id), source.Variant);
+        Equal(
+            ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database), screen.Id),
+            source.DurationFrames);
+        Equal(database.GetModuleInstanceTransitionType(screen.Id), source.Transition);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
@@ -3161,6 +3191,26 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
     {
         File.Delete(temporary);
     }
+}
+
+static void ProductionActiveScreenPresentationFollowsShotFrames()
+{
+    IReadOnlyList<ProductionScreenFrameRange> ranges =
+    [
+        new("screen_a", 0, 5),
+        new("screen_b", 5, 3),
+        new("screen_c", 8, 4),
+    ];
+
+    Equal("screen_a", ProductionScreenPlaybackState.ActiveScreenId(ranges, 0));
+    Equal("screen_a", ProductionScreenPlaybackState.ActiveScreenId(ranges, 4));
+    Equal("screen_b", ProductionScreenPlaybackState.ActiveScreenId(ranges, 5));
+    Equal("screen_b", ProductionScreenPlaybackState.ActiveScreenId(ranges, 7));
+    Equal("screen_c", ProductionScreenPlaybackState.ActiveScreenId(ranges, 8));
+    Equal("screen_c", ProductionScreenPlaybackState.ActiveScreenId(ranges, 99));
+    Equal(1, ProductionScreenPlaybackState.ActiveScreenIndex(ranges, 5));
+    Equal("", ProductionScreenPlaybackState.ActiveScreenId([], 0));
+    Equal(-1, ProductionScreenPlaybackState.ActiveScreenIndex([], 0));
 }
 
 static void ComponentPreviewInputBoundaryPreservesCurrentContracts()

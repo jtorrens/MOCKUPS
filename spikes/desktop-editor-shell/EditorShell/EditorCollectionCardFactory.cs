@@ -120,7 +120,9 @@ internal sealed class EditorCollectionCardFactory
                     _onChanged,
                     _reloadAndSelect,
                     _domainDialogs.DefineModuleInstanceForShot,
-                    _domainDialogs.ConfirmModuleInstanceDelete).Create(node)],
+                    _domainDialogs.ConfirmModuleInstanceDelete,
+                    _shotFrame,
+                    _previewPlaybackState).Create(node)],
             _ => [],
         };
 

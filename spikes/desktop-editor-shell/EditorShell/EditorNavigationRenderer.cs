@@ -28,6 +28,8 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
     private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
+    private readonly Func<string> _activePreviewNodeId;
+    private string _renderedActivePreviewNodeId = "";
 
     public EditorNavigationRenderer(
         Func<ProjectTreeNode?> selectedNode,
@@ -41,7 +43,8 @@ internal sealed class EditorNavigationRenderer
         Func<ProjectTreeNode, Task> deleteNode,
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Func<ProjectTreeNode, bool> canExposeChildren,
-        Func<ProjectTreeNode, bool> isNodeEnabled)
+        Func<ProjectTreeNode, bool> isNodeEnabled,
+        Func<string> activePreviewNodeId)
     {
         _selectedNode = selectedNode;
         _isDark = isDark;
@@ -55,6 +58,7 @@ internal sealed class EditorNavigationRenderer
         _toggleVariantLock = toggleVariantLock;
         _canExposeChildren = canExposeChildren;
         _isNodeEnabled = isNodeEnabled;
+        _activePreviewNodeId = activePreviewNodeId;
     }
 
     public void Rebuild(
@@ -64,6 +68,7 @@ internal sealed class EditorNavigationRenderer
         string productionId)
     {
         var candidate = new StackPanel();
+        _renderedActivePreviewNodeId = _activePreviewNodeId();
 
         foreach (var project in treeRoots)
         {
@@ -162,6 +167,7 @@ internal sealed class EditorNavigationRenderer
             nodeEnabled,
             nodeEnabled ? "" : "Assign an Actor to the Shot to enable this Screen",
             IsSelected(node),
+            node.Id.Equals(_renderedActivePreviewNodeId, StringComparison.Ordinal),
             ShowsActions(node, _selectedNode()),
             hasChildren,
             expanded,

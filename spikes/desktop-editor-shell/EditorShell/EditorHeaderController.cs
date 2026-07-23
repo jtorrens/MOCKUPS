@@ -17,6 +17,7 @@ internal sealed class EditorHeaderController
     private readonly Panel _contextStripHost;
     private readonly Panel _actionsPanel;
     private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
+    private readonly ProductionScreenPresentationDataSource _screenPresentation;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly EditorNodeSelectionState _nodeSelection;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
@@ -48,6 +49,7 @@ internal sealed class EditorHeaderController
         _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
         _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
+        _screenPresentation = new ProductionScreenPresentationDataSource(database);
         _selectedNode = selectedNode;
         _nodeSelection = nodeSelection;
         _embeddedUsageNavigator = embeddedUsageNavigator;
@@ -162,6 +164,10 @@ internal sealed class EditorHeaderController
     {
         var selected = _selectedNode();
         if (selected is null) return null;
+        if (selected.Kind is ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot)
+        {
+            return null;
+        }
         var variantNode = SelectedVariantNode(selected);
         var identities = variantNode is not null
             ? []
@@ -170,7 +176,7 @@ internal sealed class EditorHeaderController
             ProjectTreeNodeKind.ComponentClass =>
                 new[] { new EditorContextIdentity("Component", selected.Name) },
             ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
-            ProjectTreeNodeKind.ModuleInstance => [new EditorContextIdentity("Screen", selected.Name)],
+            ProjectTreeNodeKind.ModuleInstance => ScreenContextIdentities(selected.Id),
             ProjectTreeNodeKind.App => [new EditorContextIdentity("App", selected.Name)],
             _ => [new EditorContextIdentity(EditorUiText.IdentifierLabel(selected.Kind.ToString()), selected.Name)],
         };
@@ -182,6 +188,18 @@ internal sealed class EditorHeaderController
             statusNode.IsUsed,
             statusNode.IsProtected,
             statusNode.IsLocked);
+    }
+
+    private IReadOnlyList<EditorContextIdentity> ScreenContextIdentities(string moduleInstanceId)
+    {
+        var context = _screenPresentation.Load(moduleInstanceId);
+        return
+        [
+            new EditorContextIdentity("Module", context.Module),
+            new EditorContextIdentity("Variant", context.Variant),
+            new EditorContextIdentity("Duration", $"{context.DurationFrames} frames"),
+            new EditorContextIdentity("Transition", EditorUiText.IdentifierLabel(context.Transition)),
+        ];
     }
 
     private EditorContextStripMetadata ContextMetadataForEmbedded(EditorEmbeddedContext context, string activeVariantName)

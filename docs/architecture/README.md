@@ -176,7 +176,11 @@ this index wins.
 - `83_design_authoring_context_and_preview_test_values_contract.md`: one
   explicit Component/Module Variant breadcrumb and selector in the fixed editor
   header, Design-only temporary Test Values in the horizontal Preview utility
-  tabs and persisted Production Runtime Values in the central editor.
+  tabs and persisted Production Screen Payload in the central editor.
+- `84_production_authoring_context_presentation_contract.md`: explicit
+  Episode/Shot/Screen presentation, persisted Screen Payload terminology,
+  Shot-versus-Screen timeline labels and one session-only active Screen
+  indicator without changing selection or Production data.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

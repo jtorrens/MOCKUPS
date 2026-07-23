@@ -97,7 +97,7 @@ internal sealed class RuntimeInputsCollectionEditor
 
         var valuesTab = new TabItem
         {
-            Header = "Runtime Values",
+            Header = "Screen Payload",
             Content = CreateTestValuesTab(
                 surface.Owner,
                 surface.Preview,
@@ -260,7 +260,7 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         header.Children.Add(new TextBlock
         {
-            Text = owner.IsInstance ? "Runtime Values" : "Temporary Preview data",
+            Text = owner.IsInstance ? "Screen Payload" : "Temporary Preview data",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,
         });
@@ -321,7 +321,17 @@ internal sealed class RuntimeInputsCollectionEditor
         Grid.SetColumn(buttons, 1);
         header.Children.Add(buttons);
         fixedPanel.Children.Add(header);
-        if (!owner.IsInstance)
+        if (owner.IsInstance)
+        {
+            fixedPanel.Children.Add(new TextBlock
+            {
+                Text = "Saved with this Screen instance.",
+                FontSize = 11,
+                Opacity = 0.7,
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
+        else
         {
             fixedPanel.Children.Add(new TextBlock
             {

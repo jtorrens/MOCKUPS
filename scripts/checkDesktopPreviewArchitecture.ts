@@ -7179,8 +7179,13 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  'Header = "Runtime Values"',
-  "Production Module Instance Runtime Values must remain in the central Runtime Inputs editor",
+  'Header = "Screen Payload"',
+  "Production Module Instance Screen Payload must remain in the central Runtime Inputs editor",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  'Text = "Saved with this Screen instance."',
+  "Production Screen Payload must identify its persisted Screen-instance ownership",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
@@ -7191,6 +7196,61 @@ assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateDesignTestValuesSurface(ProjectTreeNode node)",
   "Design Test Values must expose tab content without creating alternate card chrome",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  'Text="PREVIEW"',
+  "the right-hand authoring surface must use the generic Preview title",
+);
+assertContains(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  'Text="Current frame"',
+  "the resolved Preview surface must identify the current frame rather than Design",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  '"Screen local timeline"',
+  "Production Preview must identify the Screen-local authoring scale",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  '"Shot timeline"',
+  "Production Preview must identify the Shot authoring scale",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  '"No Shot selected"',
+  "Episode Preview context must not fabricate inherited Shot values",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "ProductionScreenPlaybackState.ActiveScreenId",
+  "Production Preview must consume the shared active Screen frame-range rule",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ShotModuleInstancesCollectionEditor.cs",
+  "ProductionScreenPlaybackState.ActiveScreenId",
+  "the Shot Modules card must consume the shared active Screen frame-range rule",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorHierarchicalNavigationRow.cs",
+  "IsPreviewActive",
+  "Production navigation must expose active Preview state independently from selection",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "GetModuleInstanceVariantName",
+  "the Production Screen summary must use the exact current Module Variant",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "Sqlite",
+  "the Production Screen presentation boundary must not execute SQL",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "Avalonia",
+  "the Production Screen presentation boundary must not construct UI",
 );
 assertMatches(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",

@@ -60,6 +60,7 @@ public partial class MainWindow : SukiWindow
     private bool _isUpdatingProductionPicker;
     private string _previewUtilityTabStateKey = "";
     private bool _isUpdatingPreviewUtilityTab;
+    private string _renderedPreviewNavigationNodeId = "";
 
     public MainWindow()
         : this(SpikeDatabase.DefaultDatabasePath())
@@ -123,7 +124,9 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.DeleteNode,
             _nodeCommands.ToggleVariantLock,
             _productionShotContext.CanExposeChildren,
-            _productionShotContext.IsNavigationNodeEnabled);
+            _productionShotContext.IsNavigationNodeEnabled,
+            () => _previewController.ActiveNavigationNodeId);
+        _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
             () => _previewController.SelectedDeviceId,
@@ -422,8 +425,19 @@ public partial class MainWindow : SukiWindow
     {
         NavigationWorkspaceTextBlock.Text = EditorWorkspaceNavigation.Title(_workspace);
         RefreshProductionPicker();
+        _renderedPreviewNavigationNodeId = _previewController.ActiveNavigationNodeId;
         _navigationRenderer.Rebuild(NavigationCardsPanel, _treeRoots, _workspace, _selectedProductionId);
         ApplyUiTextScale();
+    }
+
+    private void RefreshPreviewNavigationState()
+    {
+        var activeNodeId = _previewController.ActiveNavigationNodeId;
+        if (activeNodeId.Equals(_renderedPreviewNavigationNodeId, StringComparison.Ordinal))
+        {
+            return;
+        }
+        RebuildNavigationCards();
     }
 
     private void ShowNode(ProjectTreeNode node, bool rebuildTree = true)
