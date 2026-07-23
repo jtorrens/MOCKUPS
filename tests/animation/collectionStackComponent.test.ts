@@ -205,7 +205,7 @@ test("Present keeps an outgoing item through its exit and starts Reflow afterwar
       variants: { "stub::variant::first": {}, "stub::variant::second": {} },
     }),
     instanceJson: JSON.stringify({
-      context: { localFrame: frame },
+      context: { screenFrame: frame },
       animation: { tracks: [{
         fieldId: "present",
         targetId: "first",
@@ -246,7 +246,7 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
       variants: { "stub::variant::notice": {} },
     }),
     instanceJson: JSON.stringify({
-      context: { localFrame: frame },
+      context: { screenFrame: frame },
       animation: { tracks: [{
         fieldId: "display_mode_field",
         targetId: "notice",
@@ -294,7 +294,7 @@ test("embedded Runtime field identities reject malformed or inferred metadata", 
       variantTypes: { "stub::variant::notice": "stub" },
       variants: { "stub::variant::notice": {} },
     }),
-    instanceJson: JSON.stringify({ context: { localFrame: 0 }, animation: { tracks: [] } }),
+    instanceJson: JSON.stringify({ context: { screenFrame: 0 }, animation: { tracks: [] } }),
     designPreviewJson: JSON.stringify({
       distributionMode: "flow", sizingMode: "content",
       startGapToken: "theme.spacing.none", endGapToken: "theme.spacing.none",
@@ -332,7 +332,7 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
       variants: { "stub::variant::notice": {} },
     }),
     instanceJson: JSON.stringify({
-      context: { localFrame: frame },
+      context: { screenFrame: frame },
       animation: { tracks: [{
         fieldId: "forwarded.notice.play",
         targetId: "notice",
@@ -405,7 +405,7 @@ test("embedded Runtime actions reject filtered entries and inferred play identit
       variants: { "stub::variant::notice": {} },
     }),
     instanceJson: JSON.stringify({
-      context: { localFrame: 2 },
+      context: { screenFrame: 2 },
       animation: { tracks: [{
         fieldId: typeof fieldIds === "object" && fieldIds !== null && !Array.isArray(fieldIds)
           ? (fieldIds as Record<string, unknown>).play ?? "play"

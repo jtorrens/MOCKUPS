@@ -68,9 +68,11 @@ not resolved through a compatibility fallback:
   governed by
   [Action Duration Field Identity Contract](75_action_duration_field_identity_contract.md).
   Readers must not support the retired JSON-key spelling.
-- the authoritative relationship between payload `localFrame` and instance
-  context `localFrame` must be decided before one source is removed or made a
-  fallback for the other.
+- payload `localFrame` is now the current recursive boundary clock, while
+  instance context `screenFrame` is the preserved root Screen clock, as
+  governed by
+  [Preview Frame Clock Boundary Contract](76_preview_frame_clock_boundary_contract.md).
+  The retired context `localFrame` name has no fallback.
 
 These items remain documented decisions, not permission to keep expanding the
 old path. No code or data migration begins until the user confirms the chosen

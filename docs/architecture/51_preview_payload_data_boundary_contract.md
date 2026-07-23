@@ -57,6 +57,8 @@ transition. It does not become a repository and must not duplicate table SQL.
 - resolving action durations from owner config and Theme motion tokens;
 - selecting the active ordered Screen for a Shot frame;
 - converting the absolute Shot playhead to the selected Screen-local frame;
+- publishing that root frame as both `payload.localFrame` and
+  `instance.context.screenFrame` before recursive composition;
 - attaching prepared Actor values to their explicit runtime references;
 - producing the complete payload consumed by the Preview route.
 
@@ -74,6 +76,8 @@ repositories or know SQL. It consumes only the typed data source.
   authorities.
 - Shot selection keeps one absolute playhead; owner-local keyframes remain
   relative to stable owners.
+- `instance.context.screenFrame` remains the exact root Screen clock while
+  nested renderable boundaries may explicitly rebase `payload.localFrame`.
 - The complete runtime owner envelope survives recursive composition.
 - Resolvers retain Component/Module semantics and requested-frame state.
 - The bridge and renderer remain generic and receive fully prepared data.

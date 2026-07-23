@@ -46,9 +46,10 @@ The schema/default writer at that historical baseline emitted the same v1 empty 
 - The generic Transition bounds contract keeps the immutable root device Screen
   separate from the current parent frame. `Screen` always translates from the
   physical screen edge; `Parent` translates from the immediate assigned
-  container. Nested component payloads may replace their local frame but must
-  preserve the root Screen. Parents measure and place children before applying
-  Transition, so visual motion bounds never become layout bounds.
+  container. Nested component payloads may rebase `payload.localFrame` but must
+  preserve `instance.context.screenFrame` and the root Screen geometry. Parents
+  measure and place children before applying Transition, so visual motion
+  bounds never become layout bounds.
 - Text Box currently consumes `textAnimationElapsedMs` for its own visual effect. Conversation derives its keyboard/text-input state from frame data. Neither renderer may acquire a timer for parameter animation.
 - Media and Audio contracts already express physical position/duration in seconds. They do not presently define a canonical finite parameter-playback value. That is supplied below as a contract-owned field type, not a renderer event.
 
@@ -360,6 +361,12 @@ changes tree selection, and no scope combo or Production context lock may create
 a second context. Design actions are isolated fixtures: their action frame and
 Test Values do not read Shot navigation and are never persisted into Production
 animation.
+
+The prepared Preview envelope publishes that Screen-local result as
+`instance.context.screenFrame` and as the root `payload.localFrame`. Recursive
+composition preserves `screenFrame` for the complete owner timeline while a
+parent may rebase `payload.localFrame` for an activated child. The retired
+context name `localFrame` is not accepted.
 
 ```text
 ResolvedFrameRequest {

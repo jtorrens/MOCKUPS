@@ -7,6 +7,7 @@ import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHe
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
+import { rootScreenFrame } from "./previewFrameContext.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -41,8 +42,7 @@ export function resolveComponentCollectionItem(
       ?? requiredRecord(bases, "variantTypes", "componentBaseConfigs.variantTypes");
     const rawId = requiredString(item, "id", `${itemPath}.id`);
     const instance = parseObject(payload.instanceJson);
-    const context = optionalObject(instance, "context", "Preview instance envelope");
-    const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+    const frame = rootScreenFrame(payload);
     const animation = optionalObject(instance, "animation", "Preview instance envelope");
     const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);

@@ -53,7 +53,7 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), themeMode, theme),
             ProjectTreeNodeKind.Module => FromModuleSource(dataSource, dataSource.LoadModule(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleVariant => FromModuleSource(dataSource, dataSource.LoadModuleVariant(node), themeMode, theme),
-            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(dataSource, node.Id, theme.DeviceId, themeMode, theme, dataSource.ModuleInstanceLocalFrame(node.Id, timelineFrame)),
+            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(dataSource, node.Id, theme.DeviceId, themeMode, theme, dataSource.ModuleInstanceScreenFrame(node.Id, timelineFrame)),
             ProjectTreeNodeKind.Shot => FromShot(dataSource, node, theme.DeviceId, themeMode, theme, timelineFrame),
             _ => null,
         };
@@ -75,7 +75,7 @@ internal static class DesignPreviewPayloadFactory
         string deviceId,
         string themeMode,
         DesignPreviewThemeContext theme,
-        int? localTimelineFrame = null)
+        int? screenFrame = null)
     {
         var instance = dataSource.LoadModuleInstance(moduleInstanceId);
         var effectiveThemeMode = ResolveEffectiveThemeMode(
@@ -84,10 +84,10 @@ internal static class DesignPreviewPayloadFactory
             $"Module Instance '{moduleInstanceId}' Variant config");
         var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(
             instance.RuntimePreviewJson));
-        if (localTimelineFrame is not null
+        if (screenFrame is not null
             && runtimePreview["timelineFrameJsonKey"]?.GetValue<string>() is { Length: > 0 } timelineFrameJsonKey)
         {
-            runtimePreview[timelineFrameJsonKey] = Math.Max(0, localTimelineFrame.Value);
+            runtimePreview[timelineFrameJsonKey] = Math.Max(0, screenFrame.Value);
         }
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
         var ownerActorId = string.IsNullOrWhiteSpace(runtimeActorId) ? instance.OwnerActorId : runtimeActorId;
@@ -114,7 +114,7 @@ internal static class DesignPreviewPayloadFactory
             {
                 ["shotId"] = instance.ShotId,
                 ["moduleInstanceId"] = moduleInstanceId,
-                ["localFrame"] = Math.Max(0, localTimelineFrame ?? 0),
+                ["screenFrame"] = Math.Max(0, screenFrame ?? 0),
             },
         };
         var runtimePreviewJson = runtimePreview.ToJsonString();
@@ -138,7 +138,7 @@ internal static class DesignPreviewPayloadFactory
             instanceJson.ToJsonString(),
             deviceId,
             instance.FrameRate,
-            LocalFrame: Math.Max(0, localTimelineFrame ?? 0));
+            LocalFrame: Math.Max(0, screenFrame ?? 0));
     }
 
     private static DesignPreviewPayload? FromShot(

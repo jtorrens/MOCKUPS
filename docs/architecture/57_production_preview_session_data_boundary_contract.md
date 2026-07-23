@@ -67,7 +67,8 @@ move between Screen boundaries. It must not reproduce duration formulas.
 - playback preparation, elapsed-time progression and Play/Stop UI;
 - reading the explicit Module Variant `appearanceMode` from the supplied
   complete config;
-- diagnostics that compare payload-local and Shot-absolute frames.
+- diagnostics that distinguish Shot-absolute, root Screen and current-boundary
+  local frames.
 
 The controller may receive `SpikeDatabase` as a construction/composition
 parameter while the staged shell creates its typed services, but it must not

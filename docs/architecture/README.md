@@ -152,6 +152,9 @@ this index wins.
 - `75_action_duration_field_identity_contract.md`: stable runtime field
   identity for finite action durations, explicit storage-key resolution and
   field-id-preserving forwarding across Component and Module boundaries.
+- `76_preview_frame_clock_boundary_contract.md`: distinct current-boundary
+  `payload.localFrame` and root Screen `instance.context.screenFrame` clocks,
+  including strict root equality and recursive preservation.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -1250,6 +1250,16 @@ assertContains(
   "75_action_duration_field_identity_contract.md",
   "the architecture index must include contract 75",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/76_preview_frame_clock_boundary_contract.md",
+  "AGENTS must require the Preview frame clock boundary contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "76_preview_frame_clock_boundary_contract.md",
+  "the architecture index must include contract 76",
+);
 for (const requiredPreviewObjectDocument of [
   "configJson",
   "designPreviewJson",
@@ -6397,8 +6407,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  '["localFrame"] = Math.Max(0, localTimelineFrame ?? 0)',
-  "production Screen payload identity must expose its resolved local frame",
+  '["screenFrame"] = Math.Max(0, screenFrame ?? 0)',
+  "production Screen payload identity must expose its exact root Screen frame",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
@@ -6447,9 +6457,80 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "dataSource.ModuleInstanceLocalFrame(node.Id, timelineFrame)",
-  "module-instance production preview must translate the global Shot frame to a local frame",
+  "dataSource.ModuleInstanceScreenFrame(node.Id, timelineFrame)",
+  "module-instance production preview must translate the global Shot frame to a root Screen frame",
 );
+assertContains(
+  "src/desktop-preview/moduleRenderableBoundary.ts",
+  "validateRootFrameIdentity(resolved)",
+  "the root Module renderable boundary must validate local and Screen frame equality",
+);
+assertContains(
+  "src/desktop-preview/previewFrameContext.ts",
+  'Object.hasOwn(context, "localFrame")',
+  "the shared Preview frame owner must reject the retired context localFrame even when screenFrame is present",
+);
+for (const timelineAwareResolver of [
+  "src/desktop-preview/conversationModuleResolver.ts",
+  "src/desktop-preview/componentCollectionResolverCommon.ts",
+  "src/desktop-preview/componentStackComponentResolver.ts",
+]) {
+  assertContains(
+    timelineAwareResolver,
+    "rootScreenFrame(payload)",
+    `${timelineAwareResolver} must consume the preserved root Screen frame`,
+  );
+  for (const retiredContextFrameRead of [
+    "context.localFrame",
+    'optionalNumber(context, "localFrame"',
+    'Number(context.localFrame)',
+  ]) {
+    assertDoesNotContain(
+      timelineAwareResolver,
+      retiredContextFrameRead,
+      `${timelineAwareResolver} must not read the retired context localFrame clock`,
+    );
+  }
+}
+assertContains(
+  "src/desktop-preview/componentStackComponentRenderable.ts",
+  "{ ...payload, localFrame }",
+  "recursive Component Stack composition must rebase only the current boundary localFrame",
+);
+for (const concreteFrameOwner of ["conversation", "componentStack", "collectionStack"]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewFrameContext.ts",
+    concreteFrameOwner,
+    `the shared Preview frame context must not contain concrete owner ${concreteFrameOwner}`,
+  );
+}
+assertContains(
+  "tests/animation/previewFrameContext.test.ts",
+  "const embedded = { ...payload, localFrame: 5 }",
+  "Preview frame tests must preserve distinct root and embedded clocks",
+);
+assertContains(
+  "tests/animation/previewFrameContext.test.ts",
+  "assert.equal(rootScreenFrame(embedded), 12)",
+  "Preview frame tests must prove recursive root Screen frame preservation",
+);
+for (const retiredDesktopContextFrame of [
+  '["localFrame"] = Math.Max(0,',
+  'RuntimeContextNumber(payload, "localFrame")',
+  "ModuleInstanceLocalFrame(",
+]) {
+  for (const desktopFrameOwner of [
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  ]) {
+    assertDoesNotContain(
+      desktopFrameOwner,
+      retiredDesktopContextFrame,
+      `${desktopFrameOwner} must not retain retired Screen clock route '${retiredDesktopContextFrame}'`,
+    );
+  }
+}
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorTimelineTransport.cs",
   "CreateKeyframeStepIcon(bool next)",
@@ -7208,11 +7289,8 @@ assertDoesNotContain(
   "the web owner timeline must consume already ordered keyframes without sorting",
 );
 for (const [file, member] of [
-  ["src/desktop-preview/componentCollectionResolverCommon.ts", "context"],
   ["src/desktop-preview/componentCollectionResolverCommon.ts", "animation"],
-  ["src/desktop-preview/componentStackComponentResolver.ts", "context"],
   ["src/desktop-preview/componentStackComponentResolver.ts", "animation"],
-  ["src/desktop-preview/conversationModuleResolver.ts", "context"],
   ["src/desktop-preview/conversationModuleResolver.ts", "animation"],
   ["src/desktop-preview/notificationsComponentResolver.ts", "animation"],
 ] as const) {
@@ -7227,6 +7305,16 @@ for (const [file, member] of [
     `${file} must not coerce invalid instance ${member} to an empty object`,
   );
 }
+assertContains(
+  "src/desktop-preview/previewFrameContext.ts",
+  "if (!isRecord(context))",
+  "the shared Preview frame owner must reject a present wrong-root instance context",
+);
+assertDoesNotContain(
+  "src/desktop-preview/previewFrameContext.ts",
+  "asRecord(instance.context)",
+  "the shared Preview frame owner must not coerce invalid context to an empty object",
+);
 assertDoesNotContain(
   "src/desktop-preview/componentStackComponentResolver.ts",
   "asRecord(parseObject(payload.instanceJson).context)",

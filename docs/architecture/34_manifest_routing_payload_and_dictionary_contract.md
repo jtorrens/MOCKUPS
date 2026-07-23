@@ -182,6 +182,13 @@ preserved unchanged through every recursive child boundary. Replacing it with
 the child's local values destroys recursive temporal ownership: the child can
 no longer resolve its first-appearance origin relative to the Screen.
 
+The clocks follow the same ownership split. `payload.localFrame` is the current
+resolver/renderable-boundary frame and may be explicitly rebased for a child.
+`instance.context.screenFrame` is the root selected Screen-local frame and must
+remain unchanged through recursive composition. Both are equal at the root
+Module Instance boundary; an embedded child may intentionally have a smaller
+local frame. The retired context member `localFrame` is invalid.
+
 The owner envelope is consumed by the generic timeline using stable owner and
 target ids. It does not authorize a resolver to infer ownership from indices,
 positions or component names.

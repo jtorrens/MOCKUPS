@@ -4244,6 +4244,15 @@ static void ProductionPayloadPreservesActorAndAnimation()
             True(JsonNode.DeepEquals(
                 JsonPath.ParseRequiredObject(instance.AnimationJson, $"Screen '{screen.Id}' animation_json"),
                 payloadInstance["animation"]));
+            var payloadContext = JsonPath.RequiredObject(
+                payloadInstance,
+                "context",
+                $"Screen '{screen.Id}' Preview instance");
+            Equal(payload.LocalFrame, JsonPath.RequiredInteger(
+                payloadContext,
+                "screenFrame",
+                $"Screen '{screen.Id}' Preview context"));
+            True(!payloadContext.ContainsKey("localFrame"));
         }
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));

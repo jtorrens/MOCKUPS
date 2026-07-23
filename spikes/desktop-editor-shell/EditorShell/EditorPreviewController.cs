@@ -2513,8 +2513,9 @@ internal sealed class EditorPreviewController
         int? productionShotFrame)
     {
         var screenId = RuntimeContextValue(payload, "moduleInstanceId");
-        var localFrame = RuntimeContextNumber(payload, "localFrame");
-        var timelineFrame = ResolvedTimelineFrame(payload);
+        var screenFrame = RuntimeContextNumber(payload, "screenFrame");
+        var currentBoundaryFrame = payload.LocalFrame;
+        var resolvedRuntimeFrame = ResolvedTimelineFrame(payload);
         var startFrame = 0;
         var durationFrames = 0;
         var shotId = ProductionShotId();
@@ -2531,8 +2532,9 @@ internal sealed class EditorPreviewController
             ("screenId", screenId),
             ("screenStartFrame", startFrame),
             ("screenDurationFrames", durationFrames),
-            ("contextLocalFrame", localFrame),
-            ("payloadLocalFrame", timelineFrame));
+            ("screenFrame", screenFrame),
+            ("currentBoundaryLocalFrame", currentBoundaryFrame),
+            ("resolvedRuntimeFrame", resolvedRuntimeFrame));
     }
 
     private static int RuntimeContextNumber(DesignPreviewPayload payload, string key)

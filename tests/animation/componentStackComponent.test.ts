@@ -104,7 +104,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
       variants: Object.fromEntries(references.map((reference) => [reference, {}])),
     }),
     appConfigJson: "{}",
-    instanceJson: JSON.stringify({ context: { localFrame: frame }, animation: { tracks: [] } }),
+    instanceJson: JSON.stringify({ context: { screenFrame: frame }, animation: { tracks: [] } }),
     frameRate: 25,
     localFrame: frame,
     configJson: "{}",
@@ -176,7 +176,12 @@ test("Component Stack rejects malformed slot, State and Overrides documents", ()
 
 test("Component Stack distinguishes absent instance members from invalid present roots", () => {
   const source = payload([alternative("clock", "stub::variant::clock", true)]);
-  assert.doesNotThrow(() => resolveComponentStackComponent({ ...source, instanceJson: "{}" }));
+  assert.throws(() => resolveComponentStackComponent({ ...source, instanceJson: "{}" }));
+  assert.doesNotThrow(() => resolveComponentStackComponent({
+    ...source,
+    kind: "componentClass",
+    instanceJson: "{}",
+  }));
   for (const instance of [
     { context: null },
     { context: [] },
@@ -218,13 +223,13 @@ test("an explicit empty Replace state clears the slot", () => {
   assert.equal(resolved.slots[0]?.alternatives[0]?.component, undefined);
 });
 
-test("Component Stack active tracks use each state stable id", () => {
+test("Component Stack active tracks use stable state ids on the root Screen frame", () => {
   const source = payload([
     alternative("clock", "stub::variant::clock", false),
     alternative("password", "stub::variant::password", false),
   ], 12);
   source.instanceJson = JSON.stringify({
-    context: { localFrame: 12 },
+    context: { screenFrame: 12 },
     animation: {
       tracks: [{
         fieldId: "active",
@@ -233,6 +238,7 @@ test("Component Stack active tracks use each state stable id", () => {
       }],
     },
   });
+  source.localFrame = 2;
   const resolved = resolveComponentStackComponent(source);
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
   assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
@@ -297,7 +303,7 @@ test("Component Stack animatable State keyframes derive the outgoing state and t
     alternative("password", "stub::variant::password", false),
   ], 12);
   source.instanceJson = JSON.stringify({
-    context: { localFrame: 12 },
+    context: { screenFrame: 12 },
     animation: {
       tracks: [{
         fieldId: "runtimeStateId",

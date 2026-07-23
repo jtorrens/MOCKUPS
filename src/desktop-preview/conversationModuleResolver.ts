@@ -7,6 +7,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { naturalWriteOnFrame } from "./behaviorTiming.js";
 
@@ -16,8 +17,7 @@ export function resolveConversationModuleFrame(payload: DesignPreviewPayload): J
   const preview = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
-  const context = optionalObject(instance, "context", "Preview instance envelope");
-  const screenFrame = Math.max(0, Math.floor(optionalNumber(context, "localFrame", 0)));
+  const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
   const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
   preview.headerSubtitle = resolveParameterAnimation(

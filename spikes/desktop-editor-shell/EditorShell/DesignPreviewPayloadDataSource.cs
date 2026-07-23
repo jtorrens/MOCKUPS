@@ -166,7 +166,7 @@ internal sealed class DesignPreviewPayloadDataSource
             .ToList();
     }
 
-    public int ModuleInstanceLocalFrame(string moduleInstanceId, int shotFrame)
+    public int ModuleInstanceScreenFrame(string moduleInstanceId, int shotFrame)
     {
         var startFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId);
         return Math.Max(0, shotFrame - startFrame);

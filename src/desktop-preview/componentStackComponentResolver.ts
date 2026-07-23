@@ -12,6 +12,7 @@ import { optionalObject, optionalObjectArray, requiredObjectArray } from "./prev
 import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
+import { rootScreenFrame } from "./previewFrameContext.js";
 import type {
   ComponentStackAlternativeContract,
   ComponentStackDesignContract,
@@ -58,8 +59,7 @@ function resolveSlot(
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
   ));
   const instance = parseObject(payload.instanceJson);
-  const context = optionalObject(instance, "context", "Preview instance envelope");
-  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+  const frame = rootScreenFrame(payload);
   const authoredRuntimeStateId = optionalString(slot, "runtimeStateId");
   const baseStateId = authoredRuntimeStateId || alternatives[0]?.id || "";
   const animatedState = resolveParameterAnimation(
@@ -115,9 +115,7 @@ function runtimeSelectedAlternatives(
     : animatedTransition;
   if (!transition) return desired.map((item) => ({ ...item, active: true }));
 
-  const instance = parseObject(payload.instanceJson);
-  const context = optionalObject(instance, "context", "Preview instance envelope");
-  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+  const frame = rootScreenFrame(payload);
   const elapsedMs = transition.elapsedMs;
   const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
   const outgoing = alternatives.find((alternative) => alternative.id === transition.fromId);
@@ -158,8 +156,7 @@ function resolveAlternative(
     throw new Error(`Unsupported Component Stack state behavior ${behavior}`);
   }
   const instance = parseObject(payload.instanceJson);
-  const context = optionalObject(instance, "context", "Preview instance envelope");
-  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+  const frame = rootScreenFrame(payload);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const id = requiredString(alternative, "id", `${path}.id`);
   const resolvedActive = index === 0
@@ -204,8 +201,7 @@ function visibleAlternativesWithExits(
 ) {
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
-  const context = optionalObject(instance, "context", "Preview instance envelope");
-  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+  const frame = rootScreenFrame(payload);
   const desired = visibleAlternatives(alternatives);
   const desiredIds = new Set(desired.map((item) => item.id));
   const byId = new Map(alternatives.map((item) => [item.id, item]));
