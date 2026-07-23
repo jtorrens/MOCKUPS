@@ -7,6 +7,7 @@ import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 import { requiredMotionContract } from "./previewMotionHelpers.js";
 import { motionTotalDurationMs } from "./previewMotionHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { optionalObject } from "./previewJsonHelpers.js";
 import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
 
 export function resolveNotificationsComponent(payload: DesignPreviewPayload): NotificationsDesignContract {
@@ -174,7 +175,7 @@ function resolveDistribution(
   const base = requiredString(preview, "distributionMode", "component.notifications.runtime.distributionMode");
   if (base !== "flow" && base !== "stacked") throw new Error(`Unsupported Notifications distribution ${base}`);
   const instance = parseObject(payload.instanceJson);
-  const animation = asRecord(instance.animation);
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const frame = Math.max(0, payload.localFrame);
   const resolved = resolveParameterAnimation(animation, "distributionMode", "", frame, base);
   const mode = resolved.value;

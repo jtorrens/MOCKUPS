@@ -5,6 +5,7 @@ import {
   parseObject,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { optionalObject } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { naturalWriteOnFrame } from "./behaviorTiming.js";
@@ -14,8 +15,8 @@ type JsonRecord = Record<string, unknown>;
 export function resolveConversationModuleFrame(payload: DesignPreviewPayload): JsonRecord {
   const preview = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
-  const animation = asRecord(instance.animation);
-  const context = asRecord(instance.context);
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
+  const context = optionalObject(instance, "context", "Preview instance envelope");
   const screenFrame = Math.max(0, Math.floor(optionalNumber(context, "localFrame", 0)));
   const themeTokens = parseObject(payload.themeTokensJson);
   const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);

@@ -218,6 +218,17 @@ enabled scalars, explicit values, closed interpolation vocabulary and positive
 retime durations. Timeline and interpolation then consume the same validated
 sequence without a second filter, clamp, default or sort.
 
+The required `instanceJson` root contains optional `context` and `animation`
+members. Structural absence means that the prepared isolated Preview has no
+additional context or animation and may be represented to consumers by an
+empty optional object. A present member must be an object; `null`, arrays and
+scalars are invalid and must fail before frame-state resolution. Component
+collection, Component Stack, Conversation and Notifications resolvers consume
+this same distinction and must not use a tolerant object cast for either
+member. This structural rule does not choose between two clock fields or alter
+the owner-relative timing formulas; clock authority remains a separate
+contract decision.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -487,6 +498,9 @@ Architecture enforcement must verify:
   empty fallbacks.
 - the web owner timeline preserves the same complete envelopes and rejects
   `asRecord`/array filtering fallbacks before frame resolution.
+- Preview frame-state resolvers distinguish absent instance `context` and
+  `animation` members from present wrong-root values without changing clock
+  authority or owner-relative formulas.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

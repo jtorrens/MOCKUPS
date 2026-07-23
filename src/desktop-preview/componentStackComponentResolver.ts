@@ -9,7 +9,7 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import type {
   ComponentStackAlternativeContract,
@@ -57,11 +57,12 @@ function resolveSlot(
     Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),
   ));
   const instance = parseObject(payload.instanceJson);
-  const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
+  const context = optionalObject(instance, "context", "Preview instance envelope");
+  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
   const authoredRuntimeStateId = optionalString(slot, "runtimeStateId");
   const baseStateId = authoredRuntimeStateId || alternatives[0]?.id || "";
   const animatedState = resolveParameterAnimation(
-    asRecord(instance.animation),
+    optionalObject(instance, "animation", "Preview instance envelope"),
     "runtimeStateId",
     slotId,
     frame,
@@ -113,7 +114,9 @@ function runtimeSelectedAlternatives(
     : animatedTransition;
   if (!transition) return desired.map((item) => ({ ...item, active: true }));
 
-  const frame = Math.max(0, Math.floor(Number(asRecord(parseObject(payload.instanceJson).context).localFrame) || 0));
+  const instance = parseObject(payload.instanceJson);
+  const context = optionalObject(instance, "context", "Preview instance envelope");
+  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
   const elapsedMs = transition.elapsedMs;
   const eventFrame = Math.max(0, frame - Math.floor(elapsedMs / 1000 * Math.max(1, payload.frameRate)));
   const outgoing = alternatives.find((alternative) => alternative.id === transition.fromId);
@@ -154,9 +157,9 @@ function resolveAlternative(
     throw new Error(`Unsupported Component Stack state behavior ${behavior}`);
   }
   const instance = parseObject(payload.instanceJson);
-  const context = asRecord(instance.context);
+  const context = optionalObject(instance, "context", "Preview instance envelope");
   const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
-  const animation = asRecord(instance.animation);
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const id = requiredString(alternative, "id", `${path}.id`);
   const resolvedActive = index === 0
     ? { value: true, sourceKeyframeFrame: undefined }
@@ -199,8 +202,9 @@ function visibleAlternativesWithExits(
   alternatives: ComponentStackAlternativeContract[],
 ) {
   const instance = parseObject(payload.instanceJson);
-  const animation = asRecord(instance.animation);
-  const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
+  const context = optionalObject(instance, "context", "Preview instance envelope");
+  const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
   const desired = visibleAlternatives(alternatives);
   const desiredIds = new Set(desired.map((item) => item.id));
   const byId = new Map(alternatives.map((item) => [item.id, item]));

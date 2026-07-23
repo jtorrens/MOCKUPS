@@ -7132,6 +7132,31 @@ assertDoesNotContain(
   '.sort((left, right) => optionalNumber(left, "frame", 0) - optionalNumber(right, "frame", 0))',
   "the web owner timeline must consume already ordered keyframes without sorting",
 );
+for (const [file, member] of [
+  ["src/desktop-preview/componentCollectionResolverCommon.ts", "context"],
+  ["src/desktop-preview/componentCollectionResolverCommon.ts", "animation"],
+  ["src/desktop-preview/componentStackComponentResolver.ts", "context"],
+  ["src/desktop-preview/componentStackComponentResolver.ts", "animation"],
+  ["src/desktop-preview/conversationModuleResolver.ts", "context"],
+  ["src/desktop-preview/conversationModuleResolver.ts", "animation"],
+  ["src/desktop-preview/notificationsComponentResolver.ts", "animation"],
+] as const) {
+  assertContains(
+    file,
+    `optionalObject(instance, "${member}", "Preview instance envelope")`,
+    `${file} must distinguish absent instance ${member} from a present wrong-root document`,
+  );
+  assertDoesNotContain(
+    file,
+    `asRecord(instance.${member})`,
+    `${file} must not coerce invalid instance ${member} to an empty object`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/componentStackComponentResolver.ts",
+  "asRecord(parseObject(payload.instanceJson).context)",
+  "Component Stack transitions must not keep a second tolerant instance context reader",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

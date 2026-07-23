@@ -123,6 +123,22 @@ test("Component Stack rejects malformed slot, State and Overrides documents", ()
   }
 });
 
+test("Component Stack distinguishes absent instance members from invalid present roots", () => {
+  const source = payload([alternative("clock", "stub::variant::clock", true)]);
+  assert.doesNotThrow(() => resolveComponentStackComponent({ ...source, instanceJson: "{}" }));
+  for (const instance of [
+    { context: null },
+    { context: [] },
+    { animation: null },
+    { animation: [] },
+  ]) {
+    assert.throws(() => resolveComponentStackComponent({
+      ...source,
+      instanceJson: JSON.stringify(instance),
+    }));
+  }
+});
+
 test("an explicit empty Replace state clears the slot", () => {
   const resolved = resolveComponentStackComponent(payload([
     alternative("clock", "stub::variant::clock", false),

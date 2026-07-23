@@ -710,3 +710,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner compartido obligatorio para timeline/interpolator; guard/identidad/orden/vocabulario fijados y readers/sorts tolerantes prohibidos. |
 | Datos | Sin migración. La animación canónica usa values explícitos e interpolation `hold`/`writeOn`; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Los documentos válidos conservan cada frame; el WeakSet evita revalidar el mismo objeto inmutable durante sus múltiples resoluciones. |
+
+## Slice 1.52 — Ausencia estructural en la instancia de Preview
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `instanceJson` ya exigía raíz objeto, pero cuatro resolvers convertían `context` o `animation` presentes con raíz `null`, array o scalar en `{}`. Component Stack conservaba además una segunda lectura tolerante durante una transición. |
+| Owner | El boundary de documentos Preview conserva la raíz requerida; `previewJsonHelpers.optionalObject` declara la única semántica opcional de sus miembros estructurales. Cada resolver conserva únicamente su cálculo de frame y estado. |
+| Cambio mínimo | Usar el reader exacto en Component Collection, Component Stack, Conversation y Notifications; ausencia real mantiene el objeto opcional vacío y cualquier presencia con raíz incorrecta falla. No se cambia ninguna fórmula temporal ni se elige entre relojes potencialmente solapados. |
+| Rutas eliminadas | `asRecord(instance.context)`, `asRecord(instance.animation)` y la lectura secundaria `asRecord(parseObject(...).context)` que convertían documento inválido en “sin contexto/sin animación”. |
+| Pruebas | 95/95 Preview focales: instancia sin miembros válida y ocho raíces presentes inválidas para `context`/`animation`; toda la matriz de Stacks, collections, actions, timing y Conversation conserva sus resultados. |
+| Enforcement | Los cuatro consumers deben usar `optionalObject`; las tres formas tolerantes retiradas quedan prohibidas. |
+| Datos | Sin migración. Los payloads current ya contienen objetos válidos o ausencia estructural; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. Solo deja de confundirse un envelope roto con ausencia legítima. La autoridad pendiente de `localFrame` queda explícitamente fuera de este slice. |

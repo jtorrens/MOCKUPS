@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
-import { optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
+import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
@@ -41,8 +41,9 @@ export function resolveComponentCollectionItem(
       ?? requiredRecord(bases, "variantTypes", "componentBaseConfigs.variantTypes");
     const rawId = requiredString(item, "id", `${itemPath}.id`);
     const instance = parseObject(payload.instanceJson);
-    const frame = Math.max(0, Math.floor(Number(asRecord(instance.context).localFrame) || 0));
-    const animation = asRecord(instance.animation);
+    const context = optionalObject(instance, "context", "Preview instance envelope");
+    const frame = Math.max(0, Math.floor(Number(context.localFrame) || 0));
+    const animation = optionalObject(instance, "animation", "Preview instance envelope");
     const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);
     const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);
