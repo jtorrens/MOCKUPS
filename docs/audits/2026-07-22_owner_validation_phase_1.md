@@ -946,3 +946,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Root requerida y dos rutas del helper fijadas; cast/merges manuales retirados prohibidos. |
 | Datos | Sin migración. La config current y sus tres slots son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia selección ni visibilidad; solo unifica la frontera ya contractual. |
+
+## Slice 1.69 — Ausencia explícita y owner de Wallpaper
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `runtime.actor` wrong-root se convertía en `{}`; App wallpaper wrong-root se interpretaba como “App no owner” y podía caer al Actor; el wallpaper seleccionado volvía a convertirse en `{}`. |
+| Owner | App conserva `wallpaper: null` como sentinel de delegación; Actor ausente permite Preview aislado. Una presencia no-null identifica un documento owner completo, nunca otro fallback. |
+| Cambio mínimo | Usar object opcional exacto para Actor, validar App wallpaper no-null y exigir wallpaper del Actor presente; requerir de nuevo el objeto en el owner seleccionado. |
+| Rutas eliminadas | Dos `asRecord` y el predicate que confundía raíz incorrecta con ausencia/delegación. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Lock Screen/Conversation, App system null, Actor wallpaper, opacidad e imagen current permanecen correctos. |
+| Enforcement | Sentinel App, Actor opcional exacto y owners requeridos fijados; casts/predicate tolerantes prohibidos. |
+| Datos | Sin migración. App/Actor current ya usan null u objetos según contrato; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia el owner válido; un App/Actor presente roto deja de parecer ausencia y de activar una fuente alternativa. |

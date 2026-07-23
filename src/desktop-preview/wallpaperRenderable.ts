@@ -1,13 +1,13 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  asRecord,
   parseObject,
   requiredNumber,
   requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
+import { optionalObject } from "./previewJsonHelpers.js";
 import { selectedPaletteColor } from "./componentRenderableCommon.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
 
@@ -17,11 +17,12 @@ export function wallpaperRenderable(
 ): RenderableNode | undefined {
   const appConfig = parseObject(payload.appConfigJson);
   const runtime = parseObject(payload.designPreviewJson);
-  const actorConfig = asRecord(runtime.actor);
-  const ownerConfig = isWallpaperOwner(appConfig) ? appConfig : actorConfig;
-  if (!isWallpaperOwner(ownerConfig)) return undefined;
+  const appOwner = appWallpaperOwner(appConfig);
+  const actorConfig = optionalObject(runtime, "actor", "wallpaper runtime");
+  const ownerConfig = appOwner ?? actorWallpaperOwner(actorConfig);
+  if (!ownerConfig) return undefined;
 
-  const wallpaper = asRecord(ownerConfig.wallpaper);
+  const wallpaper = requiredRecord(ownerConfig, "wallpaper", "wallpaper owner");
   const opacity = Math.max(0, Math.min(1, requiredNumber(wallpaper, "opacity", "wallpaper.opacity")));
   if (opacity <= 0) return undefined;
 
@@ -60,8 +61,14 @@ export function wallpaperRenderable(
   };
 }
 
-function isWallpaperOwner(config: Record<string, unknown>): boolean {
-  return config.wallpaper !== null
-    && typeof config.wallpaper === "object"
-    && !Array.isArray(config.wallpaper);
+function appWallpaperOwner(config: Record<string, unknown>) {
+  if (!Object.hasOwn(config, "wallpaper") || config.wallpaper === null) return undefined;
+  requiredRecord(config, "wallpaper", "App wallpaper");
+  return config;
+}
+
+function actorWallpaperOwner(config: Record<string, unknown>) {
+  if (Object.keys(config).length === 0) return undefined;
+  requiredRecord(config, "wallpaper", "Actor wallpaper");
+  return config;
 }

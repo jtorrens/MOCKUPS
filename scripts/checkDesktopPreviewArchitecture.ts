@@ -7790,6 +7790,37 @@ assertDoesNotContain(
   "Lock Screen must not keep a parallel child config merge",
 );
 assertContains(
+  "src/desktop-preview/wallpaperRenderable.ts",
+  'const actorConfig = optionalObject(runtime, "actor", "wallpaper runtime");',
+  "Wallpaper must distinguish an absent Actor from a present wrong-root Actor",
+);
+assertContains(
+  "src/desktop-preview/wallpaperRenderable.ts",
+  'if (!Object.hasOwn(config, "wallpaper") || config.wallpaper === null) return undefined;',
+  "Wallpaper must preserve the App null delegation sentinel",
+);
+assertContains(
+  "src/desktop-preview/wallpaperRenderable.ts",
+  'requiredRecord(config, "wallpaper", "App wallpaper")',
+  "a present App wallpaper must be an object",
+);
+assertContains(
+  "src/desktop-preview/wallpaperRenderable.ts",
+  'requiredRecord(config, "wallpaper", "Actor wallpaper")',
+  "a present fallback Actor must own a wallpaper object",
+);
+for (const permissiveWallpaperDocument of [
+  "asRecord(runtime.actor)",
+  "asRecord(ownerConfig.wallpaper)",
+  "function isWallpaperOwner(",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/wallpaperRenderable.ts",
+    permissiveWallpaperDocument,
+    `Wallpaper must not confuse invalid owner documents with absence (${permissiveWallpaperDocument})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",

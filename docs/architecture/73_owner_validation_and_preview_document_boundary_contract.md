@@ -343,6 +343,14 @@ renderable uses the same shared embedded owner as Components when preparing
 child payloads. Visibility flags omit only final system-bar renderables; they do
 not make the slot documents optional or add a default Variant fallback.
 
+Wallpaper ownership preserves two explicit absence semantics: an App
+`wallpaper: null` sentinel delegates ownership to the Actor, and a structurally
+absent Actor permits an isolated Preview with no wallpaper. Any present
+non-null App wallpaper must be an object. Any present Actor used as fallback
+must contain a wallpaper object. Wrong roots and incomplete present Actors are
+not converted into “no wallpaper”, and the selected owner document remains the
+only source of wallpaper plus Light/Dark mode colors.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -649,6 +657,8 @@ Architecture enforcement must verify:
   calculation without changing its owner-relative item timing.
 - Lock Screen requires its Module config root and prepares all three child
   configs through the shared embedded owner.
+- Wallpaper distinguishes the App null sentinel and absent isolated Actor from
+  invalid present owner documents without adding cross-owner fallback.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope
