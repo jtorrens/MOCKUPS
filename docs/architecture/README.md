@@ -146,6 +146,9 @@ this index wins.
 - `73_owner_validation_and_preview_document_boundary_contract.md`: owner-driven
   validation for cleanup phase 1, including strict serialized Preview object
   roots and authoritative effective Theme mode before generic rendering.
+- `74_cleanup_verification_and_baseline_closure_contract.md`: precise
+  antiregression coverage, automated Mac verification and the separate manual
+  gates required before accepting the cleaned baseline.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -1230,6 +1230,16 @@ assertContains(
   "73_owner_validation_and_preview_document_boundary_contract.md",
   "the architecture index must include contract 73",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/74_cleanup_verification_and_baseline_closure_contract.md",
+  "AGENTS must require the cleanup verification and baseline closure contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "74_cleanup_verification_and_baseline_closure_contract.md",
+  "the architecture index must include contract 74",
+);
 for (const requiredPreviewObjectDocument of [
   "configJson",
   "designPreviewJson",

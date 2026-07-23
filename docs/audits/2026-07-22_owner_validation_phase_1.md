@@ -1,7 +1,7 @@
 # Ownership de validación — Fase 1
 
 Fecha: 2026-07-22
-Estado: implementación en curso.
+Estado: cerrada con decisiones diferidas.
 
 Norma de ejecución:
 `docs/architecture/73_owner_validation_and_preview_document_boundary_contract.md`.
@@ -1146,3 +1146,27 @@ y Overrides por item.
 | Enforcement | Guard y llamada directa quedan fijados; el recast redundante queda prohibido. |
 | Datos | Sin migración ni cambio de resultado; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Nulo. Es una simplificación nominal de una rama ya validada. |
+
+## Cierre de fase
+
+La implementación segura de Fase 1 queda cerrada tras los slices 1.1–1.83.
+Los owners current rechazan documentos incompletos sin reparar persistencia y
+los paths permisivos no bloqueados por una decisión de modelo han sido
+retirados. El Preview mantiene `asRecord` solo en Text Box/Text Input Bar,
+familia cuya retirada forma parte inseparable de la migración estructurada de
+Icon Rows; el helper genérico permanece únicamente porque esos consumers siguen
+activos.
+
+Decisiones expresamente diferidas:
+
+1. migración estructurada de iconos de Text Box/Text Input Bar;
+2. significado único de `durationInputId` (field id o JSON key);
+3. autoridad entre `payload.localFrame` e `instance.context.localFrame`.
+
+No se ha añadido ningún dual reader para estas decisiones. La validación final
+del código de fase pasa con 118/118 pruebas Preview, 116/116 pruebas de
+escritorio, arquitectura y build sin avisos. La base current valida read-only y
+conserva el SHA-1 `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`.
+
+Este cierre no equivale a aprobación visual del baseline: revisión final de la
+app y smoke de PC pertenecen al gate separado del contrato 74.
