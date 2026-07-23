@@ -195,6 +195,13 @@ absent key during an explicit Variant/creation workflow. Present nulls, wrong
 roots, filtered definitions and missing item ids fail; reconciliation does not
 repair them or derive identity from collection position.
 
+Projected collections declaring `itemRuntimeContractJsonKey` also keep one
+exact nested object per stable item. Test Values validate it before returning
+items; embedded action discovery, the Runtime Inputs editor and animation
+target presentation require the same object. Missing/wrong-root nested
+contracts do not remove an item's Runtime API from one surface while leaving it
+active in another.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -366,6 +373,8 @@ Architecture enforcement must verify:
 - embedded component collection items share one metadata/item document owner
   across startup, Test Values, dictionary authoring, Usage and Preview action
   discovery.
+- projected item Runtime contract objects remain required and shared by Test
+  Values, actions, Runtime API presentation and animation targets.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

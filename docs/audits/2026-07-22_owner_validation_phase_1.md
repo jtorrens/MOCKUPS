@@ -450,3 +450,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El coordinador y el cambio de Variant deben usar el reader completo; `OfType<JsonObject>`, id posicional y null-to-default quedan prohibidos en estas rutas. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. La creación explícita de datos nuevos no cambia; solo deja de repararse silenciosamente contenido existente inválido. |
+
+## Slice 1.32 — Runtime contract embebido por item proyectado
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Una colección podía declarar `itemRuntimeContractJsonKey`, pero actions, Runtime API y animación comprobaban localmente `is JsonObject`; si el miembro faltaba o tenía otra raíz, cada superficie omitía los inputs/actions/targets del item sin señalar el documento roto. `collections: null` también se confundía con ausencia en el reader de actions. |
+| Owner | La definición tipada conserva la key explícita; `DesignPreviewTestValues` valida el objeto de cada item efectivo. Actions, `RuntimeInputsCollectionEditor` y `ModuleInstanceAnimationEditor` requieren ese mismo objeto exacto. |
+| Cambio mínimo | Exigir object root cuando la metadata declara la key; distinguir miembro ausente de presente null; conservar colección ausente como “no declarada” y rechazar present wrong-root; usar el id estable en el contexto del error. |
+| Rutas eliminadas | Nested runtime contract ausente/wrong-root → skip, `collections: null` → sin actions, collection current wrong-root → sin embedded actions y target id ausente → string vacío. |
+| Pruebas | 115/115 escritorio y 88/88 Preview: colección/action válida, contract nested ausente/wrong-root, `collections: null`, proyección lógica válida/dañada y todos los escenarios current de Lock Screen/forwarding/animación. |
+| Enforcement | Los cuatro consumidores deben exigir `JsonPath.RequiredObject`; los guards `is JsonObject` que ocultaban el item quedan prohibidos. |
+| Datos | Sin migración. Los projected items current ya contienen sus objetos completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia un input/action/target válido; solo se hace visible una contradicción que antes variaba entre superficies. |

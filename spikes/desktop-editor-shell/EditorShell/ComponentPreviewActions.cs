@@ -19,7 +19,10 @@ internal static class ComponentPreviewActions
         Func<string, JsonObject> componentVariantRuntimeContract)
     {
         var definitions = Read(preview).ToList();
-        if (preview["collections"] is not JsonArray collections) return definitions;
+        if (!preview.TryGetPropertyValue("collections", out var collectionsNode)) return definitions;
+        var collections = collectionsNode as JsonArray
+            ?? throw new InvalidOperationException(
+                "Design Preview embedded action collections must be an array when present.");
         for (var collectionIndex = 0; collectionIndex < collections.Count; collectionIndex++)
         {
             var collection = RequiredObject(
@@ -29,8 +32,11 @@ internal static class ComponentPreviewActions
             var itemRuntimeContractJsonKey = JsonString(collection, "itemRuntimeContractJsonKey");
             if (!string.IsNullOrWhiteSpace(collectionJsonKey)
                 && !string.IsNullOrWhiteSpace(itemRuntimeContractJsonKey)
-                && preview[collectionJsonKey] is JsonArray runtimeItems)
+                && preview.TryGetPropertyValue(collectionJsonKey, out var runtimeItemsNode))
             {
+                var runtimeItems = runtimeItemsNode as JsonArray
+                    ?? throw new InvalidOperationException(
+                        $"Design Preview collection '{collectionJsonKey}' must be an array when present.");
                 RuntimeCollectionDocumentContract.Validate(
                     runtimeItems,
                     $"Design Preview collection '{collectionJsonKey}'");
@@ -39,9 +45,14 @@ internal static class ComponentPreviewActions
                     var item = RequiredObject(
                         runtimeItems[itemIndex],
                         $"Design Preview collection '{collectionJsonKey}' item at index {itemIndex}");
-                    var itemId = JsonString(item, "id");
-                    if (string.IsNullOrWhiteSpace(itemId)
-                        || item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue;
+                    var itemId = JsonPath.RequiredString(
+                        item,
+                        "id",
+                        $"Design Preview collection '{collectionJsonKey}' item at index {itemIndex}");
+                    var itemContract = JsonPath.RequiredObject(
+                        item,
+                        itemRuntimeContractJsonKey,
+                        $"Design Preview collection '{collectionJsonKey}' item '{itemId}'");
                     definitions.AddRange(Read(itemContract)
                         .Where((action) => !action.IsCollectionItemAction)
                         .Select((action) => action with
@@ -58,7 +69,10 @@ internal static class ComponentPreviewActions
                 $"Design Preview collection '{collectionJsonKey}'");
             if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
             var inputsJsonKey = componentItems.InputsJsonKey;
-            if (preview[collectionJsonKey] is not JsonArray items) continue;
+            if (!preview.TryGetPropertyValue(collectionJsonKey, out var itemsNode)) continue;
+            var items = itemsNode as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Design Preview collection '{collectionJsonKey}' must be an array when present.");
             RuntimeCollectionDocumentContract.Validate(
                 items,
                 $"Design Preview collection '{collectionJsonKey}'");
@@ -105,11 +119,8 @@ internal static class ComponentPreviewActions
                 .Select((action) => ParseAction(action)));
         }
 
-        if (preview["collections"] is null)
-        {
-            return definitions;
-        }
-        var collections = preview["collections"] as JsonArray
+        if (!preview.TryGetPropertyValue("collections", out var collectionsNode)) return definitions;
+        var collections = collectionsNode as JsonArray
             ?? throw new InvalidOperationException(
                 "Design Preview action contract collections must be an array when present.");
 

@@ -312,6 +312,12 @@ definition hidden by valid visibility or excluded from the editable Runtime
 surface by its explicit source is still validated before presentation decides
 not to show it.
 
+A collection declaring `itemRuntimeContractJsonKey` requires an object at that
+exact key on every current stable item. Embedded action discovery, Runtime API
+presentation and animation targets consume that same object. Missing or
+wrong-root item contracts are not interpreted as an item without Runtime
+Inputs/actions.
+
 Changing either vocabulary requires an explicit migration of canonical source
 data and the committed desktop database. No alias or compatibility parser may
 remain after that migration.

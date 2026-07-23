@@ -787,7 +787,10 @@ internal sealed class RuntimeInputsCollectionEditor
             ? collection.ItemRuntimeContractJsonKey
             : componentItemDefinition?.InputsJsonKey ?? "";
         var itemRuntimeContract = itemRuntimeContractJsonKey.Length > 0
-            ? item[itemRuntimeContractJsonKey] as JsonObject
+            ? JsonPath.RequiredObject(
+                item,
+                itemRuntimeContractJsonKey,
+                $"Runtime collection '{collection.Id}' item '{itemId}'")
             : null;
         var nestedInputs = new List<ComponentInputDefinition>();
         if (itemRuntimeContract is not null

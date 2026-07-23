@@ -441,13 +441,23 @@ internal static class DesignPreviewTestValues
         IReadOnlyList<JsonObject> items,
         string owner)
     {
-        if (collection.ComponentItems is not { } componentItems) return;
         for (var index = 0; index < items.Count; index++)
         {
-            RuntimeComponentCollectionItemDocumentContract.ValidateItem(
-                items[index],
-                componentItems.DocumentKeys,
-                $"{owner} item at index {index}");
+            var itemOwner = $"{owner} item at index {index}";
+            if (collection.ComponentItems is { } componentItems)
+            {
+                RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                    items[index],
+                    componentItems.DocumentKeys,
+                    itemOwner);
+            }
+            if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
+            {
+                _ = JsonPath.RequiredObject(
+                    items[index],
+                    collection.ItemRuntimeContractJsonKey,
+                    itemOwner);
+            }
         }
     }
 }

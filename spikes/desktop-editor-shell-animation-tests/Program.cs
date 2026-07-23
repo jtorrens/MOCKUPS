@@ -1053,6 +1053,45 @@ static void PreviewActionContractsAreStrict()
             valid,
             parsed,
             absentValue: 0));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.Read(
+        new JsonObject { ["collections"] = null }));
+
+    static JsonObject EmbeddedRuntimeCollection() => new()
+    {
+        ["id"] = "states",
+        ["label"] = "States",
+        ["jsonKey"] = "states",
+        ["itemLabel"] = "State",
+        ["fields"] = new JsonArray(),
+        ["itemRuntimeContractJsonKey"] = "runtimeContract",
+    };
+    var validEmbeddedRuntime = new JsonObject
+    {
+        ["collections"] = new JsonArray(EmbeddedRuntimeCollection()),
+        ["states"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "state_1",
+                ["runtimeContract"] = new JsonObject(),
+            },
+        },
+    };
+    Equal(
+        0,
+        ComponentPreviewActions.ReadWithEmbedded(
+            validEmbeddedRuntime,
+            (_) => new JsonObject()).Count);
+    var wrongEmbeddedRuntime = validEmbeddedRuntime.DeepClone().AsObject();
+    wrongEmbeddedRuntime["states"]![0]!["runtimeContract"] = new JsonArray();
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ReadWithEmbedded(
+        wrongEmbeddedRuntime,
+        (_) => new JsonObject()));
+    var missingEmbeddedRuntime = validEmbeddedRuntime.DeepClone().AsObject();
+    missingEmbeddedRuntime["states"]![0]!.AsObject().Remove("runtimeContract");
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ReadWithEmbedded(
+        missingEmbeddedRuntime,
+        (_) => new JsonObject()));
 
     var validThemeDuration = Action();
     validThemeDuration.Remove("durationSeconds");
@@ -1472,6 +1511,34 @@ static void DesignTestValuesPreserveStrictDocuments()
     Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
         new JsonObject { ["components"] = new JsonArray(wrongInputs) },
         componentCollection));
+
+    var projectedCollection = new RuntimeInputCollectionDefinition(
+        "states",
+        "States",
+        "states",
+        "State",
+        [],
+        ItemRuntimeContractJsonKey: "runtimeContract");
+    var projectedItem = new JsonObject
+    {
+        ["id"] = "state_1",
+        ["runtimeContract"] = new JsonObject(),
+    };
+    Equal(
+        1,
+        DesignPreviewTestValues.CollectionItems(
+            new JsonObject { ["states"] = new JsonArray(projectedItem.DeepClone()) },
+            projectedCollection).Count);
+    var missingProjectedContract = projectedItem.DeepClone().AsObject();
+    missingProjectedContract.Remove("runtimeContract");
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["states"] = new JsonArray(missingProjectedContract) },
+        projectedCollection));
+    var wrongProjectedContract = projectedItem.DeepClone().AsObject();
+    wrongProjectedContract["runtimeContract"] = new JsonArray();
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["states"] = new JsonArray(wrongProjectedContract) },
+        projectedCollection));
 
     var preview = new JsonObject { ["title"] = "Default" };
     DesignPreviewTestValues.SetValue(preview, input, "Test");

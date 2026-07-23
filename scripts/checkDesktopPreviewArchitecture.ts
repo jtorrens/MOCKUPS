@@ -5416,6 +5416,28 @@ for (const embeddedCollectionDocumentConsumer of [
     `${embeddedCollectionDocumentConsumer} must consume the shared embedded collection item document owner`,
   );
 }
+for (const projectedItemRuntimeContractConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+]) {
+  assertContains(
+    projectedItemRuntimeContractConsumer,
+    "JsonPath.RequiredObject(",
+    `${projectedItemRuntimeContractConsumer} must require declared per-item Runtime contract objects`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue",
+  "embedded action discovery must not skip a malformed declared item Runtime contract",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "item[collection.ItemRuntimeContractJsonKey] is JsonObject runtimeContract",
+  "animation target discovery must not skip a malformed declared item Runtime contract",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeComponentCollectionItemDocumentContract.cs",
   "VariantReferenceId.TryParse(reference",

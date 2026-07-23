@@ -986,7 +986,10 @@ internal sealed class ModuleInstanceAnimationEditor
             for (var index = 0; index < items.Count; index++)
             {
                 var item = items[index];
-                var targetId = item["id"]?.GetValue<string>() ?? "";
+                var targetId = JsonPath.RequiredString(
+                    item,
+                    "id",
+                    $"Animation collection '{collection.Id}' item at index {index}");
                 foreach (var input in collection.Fields.Where((input) => input.Animation is not null))
                 {
                     var targetInput = string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
@@ -1005,9 +1008,12 @@ internal sealed class ModuleInstanceAnimationEditor
                         (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
                             preview, preview, animation, targetId, screenFrame, themeTokens)));
                 }
-                if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
-                    && item[collection.ItemRuntimeContractJsonKey] is JsonObject runtimeContract)
+                if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
                 {
+                    var runtimeContract = JsonPath.RequiredObject(
+                        item,
+                        collection.ItemRuntimeContractJsonKey,
+                        $"Animation collection '{collection.Id}' item '{targetId}'");
                     foreach (var input in ComponentPreviewInputSession
                         .ReadRuntimeInputs(runtimeContract, new JsonObject())
                         .Where((input) => input.Animation is not null))
