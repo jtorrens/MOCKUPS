@@ -5227,6 +5227,31 @@ assertContains(
   "requiredNumberValue(",
   "web embedded actions must require an exact numeric duration value",
 );
+for (const requiredEmbeddedRuntimeIdentityTerm of [
+  'optionalObjectArray(inputs, "inputs", "component collection embedded Runtime contract")',
+  "if (ids.has(id))",
+  "if (jsonKeys.has(jsonKey))",
+  "Object.hasOwn(runtimeFieldIds, jsonKey)",
+  "has no local value",
+]) {
+  assertContains(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    requiredEmbeddedRuntimeIdentityTerm,
+    `embedded collection animation must keep explicit Runtime identity rule '${requiredEmbeddedRuntimeIdentityTerm}'`,
+  );
+}
+for (const inferredEmbeddedRuntimeIdentity of [
+  "Array.isArray(inputs.inputs) ? inputs.inputs.map(asRecord) : []",
+  "const runtimeFieldIds = asRecord(inputs.__runtimeFieldIds)",
+  'optionalString(definition, "id") || jsonKey',
+  "...Object.keys(inputs)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    inferredEmbeddedRuntimeIdentity,
+    `embedded collection animation must not infer a field from '${inferredEmbeddedRuntimeIdentity}'`,
+  );
+}
 for (const retiredWebActionDurationFallback of [
   'optionalNumber(item, optionalString(action, "durationInputId"), 1)',
   'Number(values[optionalString(definition, "jsonKey")]) || 0',

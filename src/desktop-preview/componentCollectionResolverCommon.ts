@@ -1,6 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { optionalObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
@@ -116,29 +117,25 @@ function resolveAnimatedInputs(
   themeTokens: Record<string, unknown>,
   frameRate: number,
 ) {
-  const definitions = Array.isArray(inputs.inputs) ? inputs.inputs.map(asRecord) : [];
-  const runtimeFieldIds = asRecord(inputs.__runtimeFieldIds);
-  const declaredFields = definitions.flatMap((definition) => {
-    const jsonKey = optionalString(definition, "jsonKey");
-    if (!jsonKey || !Object.hasOwn(inputs, jsonKey)) return [];
+  const definitions = runtimeInputDefinitions(inputs);
+  const runtimeFieldIds = runtimeFieldIdMap(inputs);
+  const declaredFields = definitions.flatMap(({ id, jsonKey }) => {
+    if (!Object.hasOwn(inputs, jsonKey)) return [];
     return [{
-      definition,
       jsonKey,
-      fieldId: optionalString(runtimeFieldIds, jsonKey) || optionalString(definition, "id") || jsonKey,
+      fieldId: Object.hasOwn(runtimeFieldIds, jsonKey)
+        ? requiredString(runtimeFieldIds, jsonKey, `component collection Runtime field id '${jsonKey}'`)
+        : id,
     }];
   });
-  const declaredKeys = new Set(declaredFields.map((field) => field.jsonKey));
+  const declaredKeys = new Set(definitions.map((definition) => definition.jsonKey));
   const fields = [
     ...declaredFields,
-    ...Object.keys(inputs)
-      .filter((jsonKey) => !declaredKeys.has(jsonKey)
-        && jsonKey !== "inputs"
-        && jsonKey !== "actions"
-        && jsonKey !== "__runtimeFieldIds")
+    ...Object.keys(runtimeFieldIds)
+      .filter((jsonKey) => !declaredKeys.has(jsonKey))
       .map((jsonKey) => ({
-        definition: {},
         jsonKey,
-        fieldId: optionalString(runtimeFieldIds, jsonKey) || jsonKey,
+        fieldId: requiredString(runtimeFieldIds, jsonKey, `component collection Runtime field id '${jsonKey}'`),
       })),
   ];
   const localFrame = (fieldId: string, frame = screenFrame) => timeline.ownsTarget(targetId)
@@ -156,7 +153,7 @@ function resolveAnimatedInputs(
   }
   resolveAnimatedActions(
     resolved,
-    definitions,
+    definitions.map(({ definition }) => definition),
     runtimeFieldIds,
     timeline,
     animation,
@@ -213,6 +210,44 @@ function resolveAnimatedInputs(
     changeFrame,
     previousValues,
   };
+}
+
+type RuntimeInputDefinition = {
+  definition: Record<string, unknown>;
+  id: string;
+  jsonKey: string;
+};
+
+function runtimeInputDefinitions(inputs: Record<string, unknown>): RuntimeInputDefinition[] {
+  const ids = new Set<string>();
+  const jsonKeys = new Set<string>();
+  return optionalObjectArray(inputs, "inputs", "component collection embedded Runtime contract")
+    .map((definition, index) => {
+      const path = `component collection embedded Runtime input[${index}]`;
+      const id = requiredString(definition, "id", `${path}.id`);
+      const jsonKey = requiredString(definition, "jsonKey", `${path}.jsonKey`);
+      if (ids.has(id)) throw new Error(`Duplicate ${path} id '${id}'`);
+      if (jsonKeys.has(jsonKey)) throw new Error(`Duplicate ${path} jsonKey '${jsonKey}'`);
+      ids.add(id);
+      jsonKeys.add(jsonKey);
+      return { definition, id, jsonKey };
+    });
+}
+
+function runtimeFieldIdMap(inputs: Record<string, unknown>) {
+  if (!Object.hasOwn(inputs, "__runtimeFieldIds")) return {};
+  const fieldIds = requiredRecord(
+    inputs,
+    "__runtimeFieldIds",
+    "component collection embedded Runtime field ids",
+  );
+  for (const key of Object.keys(fieldIds)) {
+    requiredString(fieldIds, key, `component collection Runtime field id '${key}'`);
+    if (!Object.hasOwn(inputs, key) || key === "inputs" || key === "actions" || key === "__runtimeFieldIds") {
+      throw new Error(`Component collection Runtime field id '${key}' has no local value`);
+    }
+  }
+  return fieldIds;
 }
 
 function resolveAnimatedActions(

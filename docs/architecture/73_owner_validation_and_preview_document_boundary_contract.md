@@ -230,6 +230,15 @@ shape must preserve structural absence as an empty optional collection while
 rejecting a present wrong root or any non-object entry. Consumers must not
 reintroduce local filtering readers with subtly different acceptance rules.
 
+Embedded Component collection inputs use that exact boundary for their Runtime
+Input definitions. Every definition has a unique non-empty id and JSON key.
+Only a declared value or a value explicitly named by forwarding is eligible for
+parameter-animation resolution; extra payload keys pass through without
+becoming fields. A present `__runtimeFieldIds` map is an object of non-empty
+stable ids whose keys name existing local values. It may promote a value without
+a duplicated child definition. It is explicit forwarding metadata, not
+permission to infer identity from a JSON key.
+
 An animation owner with no authored data may still supply an empty transient
 object. If tracks, keyframes or retime are present, the desktop timeline
 validates their calculation envelope before using it: no wrong array/object

@@ -297,6 +297,16 @@ declared finite duration and completion behavior, and only then invokes the
 child resolver. Field labels and JSON storage keys are never animation
 identities, and the renderer never advances the action clock.
 
+An embedded collection resolver therefore builds its animatable field set only
+from complete Runtime Input definitions or from an explicit forwarding map.
+Each declared field keeps its stable `id`; forwarding may replace that address
+for the corresponding JSON key, and may explicitly promote a local value that
+does not duplicate the child's definition. Payload members with neither owner
+remain ordinary child values and never become animation fields because their
+JSON key resembles a track id. Definition ids and JSON keys are unique within
+the embedded contract, and every forwarding-map key must name an existing
+local value.
+
 Recursive component composition preserves the root effective runtime contract
 separately from each child's local runtime values. Replacing the child payload
 must therefore never replace the owner timeline contract: a KF0 inside a State

@@ -91,8 +91,11 @@ call the general database facade.
   and an Inputs object. Existing items are validated by the shared document
   owner; presentation, Usage and Preview do not filter or manufacture them.
 - Runtime Test Values and Production payload ownership do not change.
-- Forwarding remains explicit and Preview resolves fully before the generic
-  bridge and renderer.
+- Forwarding remains explicit. Embedded Preview animation addresses only
+  complete declared Runtime Input ids or an explicit forwarded id mapped to an
+  existing local value; forwarding may promote a value without duplicating the
+  child definition. A payload key with neither owner is not an animation
+  identity. Preview resolves fully before the generic bridge and renderer.
 
 ## 6. Enforcement and tests
 

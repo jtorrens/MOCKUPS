@@ -216,9 +216,17 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
     instanceJson: JSON.stringify({
       context: { localFrame: frame },
       animation: { tracks: [{
-        fieldId: "displayMode",
+        fieldId: "display_mode_field",
         targetId: "notice",
         keyframes: [{ frame: 0, value: "summary" }, { frame: 5, value: "detail" }],
+      }, {
+        fieldId: "undeclaredMode",
+        targetId: "notice",
+        keyframes: [{ frame: 0, value: "base" }, { frame: 5, value: "changed" }],
+      }, {
+        fieldId: "forwarded_mode_field",
+        targetId: "notice",
+        keyframes: [{ frame: 0, value: "base" }, { frame: 5, value: "changed" }],
       }] },
     }),
     designPreviewJson: JSON.stringify({
@@ -228,7 +236,13 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
       itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
       items: [{
         id: "notice", variantReference: "stub::variant::notice", overrides: {},
-        inputs: { displayMode: "summary" }, present: true,
+        inputs: {
+          inputs: [{ id: "display_mode_field", jsonKey: "displayMode", valueKind: "OptionToken" }],
+          displayMode: "summary",
+          undeclaredMode: "base",
+          forwardedMode: "base",
+          __runtimeFieldIds: { forwardedMode: "forwarded_mode_field" },
+        }, present: true,
         presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
         alignment: "center", gapBeforeMode: "fixed",
         gapBeforeToken: "theme.spacing.none", gapBeforeWeight: 1,
@@ -236,7 +250,44 @@ test("an embedded runtime state change supplies the previous item to Reflow", ()
     }),
   });
   assert.equal(resolved.items[0]?.inputs.displayMode, "detail");
+  assert.equal(resolved.items[0]?.inputs.undeclaredMode, "base");
+  assert.equal(resolved.items[0]?.inputs.forwardedMode, "changed");
   assert.equal(resolved.reflow?.fromItems[0]?.inputs.displayMode, "summary");
+});
+
+test("embedded Runtime field identities reject malformed or inferred metadata", () => {
+  const resolve = (inputs: Record<string, unknown>) => resolveCollectionStackComponent({
+    ...payload,
+    componentBaseConfigsJson: JSON.stringify({
+      variantTypes: { "stub::variant::notice": "stub" },
+      variants: { "stub::variant::notice": {} },
+    }),
+    instanceJson: JSON.stringify({ context: { localFrame: 0 }, animation: { tracks: [] } }),
+    designPreviewJson: JSON.stringify({
+      distributionMode: "flow", sizingMode: "content",
+      startGapToken: "theme.spacing.none", endGapToken: "theme.spacing.none",
+      stackDirection: "down", stackOffsetToken: "theme.spacing.m",
+      itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
+      items: [{
+        id: "notice", variantReference: "stub::variant::notice", overrides: {}, inputs, present: true,
+        presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
+        alignment: "center", gapBeforeMode: "fixed",
+        gapBeforeToken: "theme.spacing.none", gapBeforeWeight: 1,
+      }],
+    }),
+  });
+  const malformed: [string, Record<string, unknown>][] = [
+    ["wrong definitions root", { inputs: {} }],
+    ["non-object definition", { inputs: [null] }],
+    ["missing id", { inputs: [{ jsonKey: "displayMode" }], displayMode: "summary" }],
+    ["missing jsonKey", { inputs: [{ id: "displayMode" }], displayMode: "summary" }],
+    ["duplicate id", { inputs: [{ id: "one", jsonKey: "one" }, { id: "one", jsonKey: "two" }] }],
+    ["duplicate jsonKey", { inputs: [{ id: "one", jsonKey: "same" }, { id: "two", jsonKey: "same" }] }],
+    ["wrong field map root", { inputs: [{ id: "displayMode", jsonKey: "displayMode" }], __runtimeFieldIds: [] }],
+    ["blank mapped id", { inputs: [{ id: "displayMode", jsonKey: "displayMode" }], __runtimeFieldIds: { displayMode: "" } }],
+    ["mapped key without value", { inputs: [{ id: "displayMode", jsonKey: "displayMode" }], __runtimeFieldIds: { unknown: "owner.field" } }],
+  ];
+  for (const [label, inputs] of malformed) assert.throws(() => resolve(inputs), label);
 });
 
 test("a forwarded embedded action derives its requested-frame clock from the stable field track", () => {

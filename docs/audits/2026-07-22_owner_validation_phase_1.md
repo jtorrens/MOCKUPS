@@ -658,3 +658,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El helper común exportado y su import en el timeline son obligatorios; queda prohibida una nueva definición local. |
 | Datos | Sin migración ni cambio de payload. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. Es una extracción pura que prepara la adopción gradual del mismo límite por otros consumers. |
+
+## Slice 1.48 — Identidad explícita de fields embebidos
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El resolver común de Collection/Component Stack filtraba definitions inválidas, convertía un mapa de forwarding mal formado en `{}` y trataba cualquier key local no declarada como `fieldId`. También usaba la key JSON como último fallback de identidad. |
+| Owner | El contrato Runtime Input publica id y JSON key; forwarding publica únicamente la sustitución estable de id al cruzar una frontera. El resolver embebido consume esas direcciones sin inventar otras. |
+| Cambio mínimo | Leer definitions como array exacto, exigir ids/keys únicos y animar solo valores declarados o promovidos por el mapa explícito. El mapa puede ser la autoridad exclusiva al cruzar forwarding, pero su key debe existir como valor local. Las keys auxiliares sin ninguno de esos owners siguen llegando intactas al child resolver. |
+| Rutas eliminadas | Wrong definitions/map → vacío, definition incompleta → omitida, id ausente → jsonKey y payload key no declarada → track implícito. |
+| Pruebas | 90/90 Preview y 116/116 escritorio: id distinto de jsonKey, forwarding explícito con y sin definition local, key no declarada no animada y nueve envelopes/identidades inválidos. Typecheck, arquitectura y build pasan. |
+| Enforcement | Reader común, ids/keys únicos y mapa declarado quedan fijados; los tres fallback/filter anteriores están prohibidos. |
+| Datos | Sin migración. Los inputs embebidos canónicos ya contienen definitions completas; la base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia un track current explícito; impide que metadata auxiliar o dañada adquiera significado temporal por coincidencia de nombre. |
