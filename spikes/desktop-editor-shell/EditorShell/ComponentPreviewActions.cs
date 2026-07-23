@@ -396,19 +396,10 @@ internal static class ComponentPreviewActions
 
     private static double MotionDurationMilliseconds(JsonObject theme, JsonObject motion)
     {
-        var value = MotionVariantValue.Parse(motion.ToJsonString());
-        var transition = value.Transition;
-        var fade = value.Fade;
-        if (transition == "none" && !fade) return 0;
-        var timingKey = transition == "none" ? "fade" : transition;
-        return ThemeNumericTokenValue.RequireNonNegative(
-                   theme,
-                   $"theme.motion.{timingKey}.delayMs",
-                   $"Theme {timingKey} motion")
-               + ThemeNumericTokenValue.RequireNonNegative(
-                   theme,
-                   $"theme.motion.{timingKey}.durationMs",
-                   $"Theme {timingKey} motion");
+        return MotionTimingDuration.ResolveMilliseconds(
+            theme,
+            motion,
+            "Design Preview State Motion");
     }
 
     private static ComponentPreviewActionTargetMode ParseTargetMode(string value)

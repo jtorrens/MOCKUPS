@@ -216,6 +216,10 @@ unknown tokens and invalid ranges never become zero or a one-frame action.
 State-action source and destination ids are transient session values and may be
 absent before a concrete transition; once present, each must resolve to one
 exact authored State whose referenced Motion document remains strict.
+An action-owned `durationMotionConfigPath` likewise resolves to one complete
+Motion in the owner config and uses that same timing owner. Payload preparation
+must materialize a positive duration or fail; downstream playback hosts do not
+reconstruct or default the missing result.
 
 Production Font file lists are also current typed documents. Every entry keeps
 its required file name, normalized safe relative path, explicit normal/italic
@@ -315,6 +319,8 @@ Architecture enforcement must verify:
 - declarative action Theme durations and Behavior Timing pace use one strict
   catalog/path value owner; undeclared, absent, wrong-type or invalid-range
   timing cannot be interpreted as zero/default.
+- action Motion-path durations and State Motion durations share one strict
+  Motion/Theme timing owner before playback.
 - Production Font file entries share one startup/read/projection contract;
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.

@@ -696,6 +696,11 @@ Rules:
 - every action declares non-empty `id`, `label`, `playInputId`, `timeJsonKey`,
   exact `timeUnit`, exact `completionBehavior` and at least one explicit finite
   duration source; none is derived from another field or supplied as `Play`;
+- `durationMotionConfigPath` addresses one exact Motion object in the owner
+  config. The shared Motion-duration owner validates that object and resolves a
+  positive delay+duration from the exact Theme transition tokens; a missing
+  path, `none` Motion, absent timing or wrong scalar type is not converted to
+  zero/one-second playback;
 - optional booleans, finite numbers, string lists and target options retain
   their exact JSON shapes. Numeric/boolean strings, filtered list entries and
   incomplete target/visibility groups are invalid current contracts;

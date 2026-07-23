@@ -5088,6 +5088,38 @@ assertContains(
   'Token("theme.motion.reflowDurationMs",',
   "generic State/Reflow action timing must use the declared numeric Theme-token catalog",
 );
+for (const motionDurationConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+]) {
+  assertContains(
+    motionDurationConsumer,
+    "MotionTimingDuration.",
+    `${motionDurationConsumer} must consume the shared strict Motion/Theme duration owner`,
+  );
+}
+for (const requiredMotionDurationOwnerTerm of [
+  "MotionVariantValue.Parse(",
+  "ThemeNumericTokenValue.RequireNonNegative(",
+  "must resolve to a positive finite Motion duration",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/MotionTimingDuration.cs",
+    requiredMotionDurationOwnerTerm,
+    `Motion duration resolution must keep owner rule '${requiredMotionDurationOwnerTerm}'`,
+  );
+}
+for (const retiredMotionPathDurationFallback of [
+  "motion is null ? \"\"",
+  "JsonPath.NumberDouble(",
+  "if (durationMs <= 0)",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    retiredMotionPathDurationFallback,
+    `action Motion-path duration must not return a plausible missing value (${retiredMotionPathDurationFallback})`,
+  );
+}
 for (const forbiddenDesktopBehaviorTimingFallback of [
   "? Math.Max(0, frames) : 0",
   "catch\n            {\n                return null;",
@@ -6757,8 +6789,8 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "Math.Max(0, delayMs) + durationMs",
-  "motion action duration must include both declared delay and transition duration",
+  "MotionTimingDuration.RequirePositiveMilliseconds(",
+  "motion action duration must resolve both declared delay and transition duration through its shared owner",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/DictionaryMotionTimingControl.cs",

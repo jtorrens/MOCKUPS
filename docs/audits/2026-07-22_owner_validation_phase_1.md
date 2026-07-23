@@ -359,3 +359,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Delegate/resolver requerido y patrones nullable/`?? 0` prohibidos en control y servicio. |
 | Datos | Sin migración. No cambia ningún documento ni cálculo current; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Todos los hosts reales ya suministraban el servicio; solo deja de ocultarse una composición de editor incompleta. |
+
+## Slice 1.25 — Duración de actions derivada de Motion
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `durationMotionConfigPath` tenía un resolver aislado que devolvía “sin cambio” si faltaban path, Motion, transition o Theme timing. El contrato action seguía considerándolo una fuente finita, pero los hosts posteriores acababan usando cero o un segundo. State actions mantenían en paralelo otra implementación ya estricta de la misma duración Motion. |
+| Owner | `MotionTimingDuration` valida el `MotionVariantValue` y resuelve delay+duration mediante `ThemeNumericTokenValue`. Payload preparation exige duración positiva para una action; State transitions permiten Motion explícito `none` y combinan sus lados/Reflow como antes. |
+| Cambio mínimo | Compartir la resolución, exigir objeto en el path exacto y duración positiva, materializar `durationSeconds` y eliminar el walker Theme permisivo de la factory. |
+| Rutas eliminadas | Motion/path ausente → no-op, Theme timing ausente/string → 0, duración no positiva → no-op y algoritmo duplicado en State actions. |
+| Pruebas | 114/114 escritorio: Slide, Fade y `none`; timing ausente/string, Motion no finito y path action roto read-only. Keyboard, Media, Lock Screen y forwarding conservan sus flujos válidos. |
+| Enforcement | Ambos consumidores deben usar el owner compartido; el walker `JsonPath.NumberDouble(..., 0)` y los retornos silenciosos de la factory quedan prohibidos. |
+| Datos | Sin migración. Los Motion paths y Themes current ya son completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Las duraciones válidas son las mismas; solo deja de ejecutarse una action con un tiempo plausible inventado cuando su contrato está roto. |

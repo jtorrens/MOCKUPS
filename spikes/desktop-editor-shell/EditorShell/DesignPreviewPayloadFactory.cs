@@ -287,33 +287,24 @@ internal static class DesignPreviewPayloadFactory
 
     private static bool ResolveActionDuration(JsonObject config, JsonObject themeTokens, JsonObject action)
     {
-        var motionConfigPath = JsonPath.String(action, "durationMotionConfigPath", "");
+        if (action["durationMotionConfigPath"] is null) return false;
+        var motionConfigPath = JsonPath.RequiredString(
+            action,
+            "durationMotionConfigPath",
+            "Design Preview action");
         if (string.IsNullOrWhiteSpace(motionConfigPath))
         {
             return false;
         }
 
-        var motion = JsonPath.Get(config, motionConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries)) as JsonObject;
-        var transition = motion is null ? "" : JsonPath.String(motion, "transition", "");
-        if (string.IsNullOrWhiteSpace(transition))
-        {
-            return false;
-        }
-
-        var durationMs = JsonPath.NumberDouble(
+        var motion = JsonPath.Get(config, motionConfigPath.Split('.', StringSplitOptions.RemoveEmptyEntries)) as JsonObject
+            ?? throw new InvalidOperationException(
+                $"Design Preview action Motion path '{motionConfigPath}' must resolve to an object.");
+        var durationMs = MotionTimingDuration.RequirePositiveMilliseconds(
             themeTokens,
-            ["motion", "transitions", transition, "durationMs"],
-            0);
-        var delayMs = JsonPath.NumberDouble(
-            themeTokens,
-            ["motion", "transitions", transition, "delayMs"],
-            0);
-        if (durationMs <= 0)
-        {
-            return false;
-        }
-
-        action["durationSeconds"] = (Math.Max(0, delayMs) + durationMs) / 1000.0;
+            motion,
+            $"Design Preview action Motion path '{motionConfigPath}'");
+        action["durationSeconds"] = durationMs / 1000.0;
         return true;
     }
 }

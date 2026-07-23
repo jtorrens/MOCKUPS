@@ -374,6 +374,13 @@ action has selected a concrete source or destination, that absent session side
 contributes no Motion; once its stable State id is present, it must resolve to
 one exact State and its declared Enter/Exit Motion must be complete.
 
+An action may instead declare an exact `durationMotionConfigPath` in its owner
+config. Payload preparation resolves that complete Motion through the same
+shared Theme timing owner used by State actions and materializes its positive
+finite duration before either playback host consumes the action. No host keeps
+a second Motion walker or substitutes frame zero/one second when the path or
+Theme timing is invalid.
+
 The structural ownership and Module Instance mapping are specified in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
 

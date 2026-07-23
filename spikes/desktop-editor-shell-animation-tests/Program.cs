@@ -935,6 +935,43 @@ static void PreviewActionContractsAreStrict()
         "progress",
         "invalid"));
 
+    var motionTheme = Object("""
+        {"motion":{"transitions":{"fade":{"delayMs":0,"durationMs":180},"slide":{"delayMs":100,"durationMs":260}}}}
+        """);
+    var slideMotion = Object("""
+        {"transition":"slide","direction":"bottom","bounds":"screen","fade":false,"translate":true,"scale":false}
+        """);
+    Equal(
+        360d,
+        MotionTimingDuration.RequirePositiveMilliseconds(
+            motionTheme,
+            slideMotion,
+            "Slide action"));
+    Equal(
+        180d,
+        MotionTimingDuration.ResolveMilliseconds(
+            motionTheme,
+            Object("""{"transition":"none","direction":"bottom","bounds":"screen","fade":true,"translate":false,"scale":false}"""),
+            "Fade action"));
+    Equal(
+        0d,
+        MotionTimingDuration.ResolveMilliseconds(
+            motionTheme,
+            Object("""{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}"""),
+            "No Motion"));
+    Throws<InvalidOperationException>(() => MotionTimingDuration.RequirePositiveMilliseconds(
+        motionTheme,
+        Object("""{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}"""),
+        "Missing finite Motion"));
+    Throws<InvalidOperationException>(() => MotionTimingDuration.ResolveMilliseconds(
+        Object("""{"motion":{"transitions":{"slide":{"delayMs":0}}}}"""),
+        slideMotion,
+        "Missing duration"));
+    Throws<InvalidOperationException>(() => MotionTimingDuration.ResolveMilliseconds(
+        Object("""{"motion":{"transitions":{"slide":{"delayMs":0,"durationMs":"260"}}}}"""),
+        slideMotion,
+        "Wrong duration type"));
+
     AssertRejectedDatabaseIsReadOnly("preview-action-id", (connection) =>
     {
         using var command = connection.CreateCommand();
@@ -947,6 +984,33 @@ static void PreviewActionContractsAreStrict()
         command.CommandText = "UPDATE component_classes SET design_preview_json = json_set(design_preview_json, '$.actions[0].durationThemeToken', 'theme.motion.missing') WHERE id = 'component_project_foqn_s2_button'";
         command.ExecuteNonQuery();
     });
+
+    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-action-motion-path-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        using (var context = new SqliteProjectContext(temporary).OpenConnection())
+        {
+            SqliteCommandExecutor.Execute(
+                context,
+                "UPDATE component_classes SET design_preview_json = json_set(design_preview_json, '$.actions[0].durationMotionConfigPath', 'keyboard.missing') WHERE id = 'component_project_foqn_s2_keyboard'");
+        }
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        var database = new SpikeDatabase(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var keyboardVariant = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentVariant
+            && node.Parent?.Id == "component_project_foqn_s2_keyboard"
+            && node.IsProtected);
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        Throws<InvalidOperationException>(() => CreatePreviewPayload(database, keyboardVariant, theme.Id));
+        SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void DesignTestValuesPreserveStrictDocuments()
