@@ -295,32 +295,52 @@ export class RuntimeOwnerTimeline {
     fields: JsonRecord[],
   ) {
     let lastEnd = 0;
-    for (const action of itemActions(collection, item)
-      .filter((candidate) => candidate.extendsModuleDuration === true)) {
-      const playFieldId = optionalString(action, "playFieldId") || optionalString(action, "playInputId");
+    for (const action of itemActions(collection, item)) {
+      if (!Object.hasOwn(action, "extendsModuleDuration") || action.extendsModuleDuration !== true) continue;
+      const actionId = requiredString(action, "id", "finite runtime action id");
+      const playFieldId = Object.hasOwn(action, "playFieldId")
+        ? requiredString(action, "playFieldId", `finite runtime action '${actionId}' play field`)
+        : requiredString(action, "playInputId", `finite runtime action '${actionId}' play input`);
       const definition = fields.find((field) => optionalString(field, "id") === playFieldId);
-      if (!definition) continue;
+      if (!definition) {
+        throw new Error(`Finite runtime action '${actionId}' references missing play field '${playFieldId}'`);
+      }
       const origin = this.resolveFieldTiming(definition, item, targetId, fields, new Set()).origin;
       const keyframes = enabledKeyframes(this.track(playFieldId, targetId));
-      const baseEnabled = item[optionalString(action, "durationEnabledInputId")] === true;
-      const hasActiveKeyframe = keyframes.some((keyframe) => keyframe.value === true);
+      const enabledJsonKey = requiredString(
+        action,
+        "durationEnabledInputId",
+        `finite runtime action '${actionId}' enable input`,
+      );
+      const baseEnabled = requiredBooleanValue(
+        item[enabledJsonKey],
+        `finite runtime action '${actionId}' owner '${enabledJsonKey}'`,
+      );
+      const hasActiveKeyframe = keyframes.some((keyframe) => requiredBooleanValue(
+        keyframe.value,
+        `finite runtime action '${actionId}' play keyframe value`,
+      ));
       if (!baseEnabled && !hasActiveKeyframe) continue;
 
-      const durationInputId = optionalString(action, "durationInputId");
-      if (!durationInputId) {
-        throw new Error("A finite runtime action that extends Module duration requires durationInputId.");
-      }
+      const durationInputId = requiredString(
+        action,
+        "durationInputId",
+        `finite runtime action '${actionId}' duration input`,
+      );
       const duration = requiredNumberValue(
         item[durationInputId],
-        `runtime action duration input '${durationInputId}'`,
+        `finite runtime action '${actionId}' duration input '${durationInputId}'`,
       );
       if (duration <= 0) {
-        throw new Error(`Runtime action duration input '${durationInputId}' must be positive.`);
+        throw new Error(`Finite runtime action '${actionId}' duration input '${durationInputId}' must be positive.`);
       }
       if (baseEnabled) lastEnd = Math.max(lastEnd, origin + duration);
       for (let index = 0; index < keyframes.length; index += 1) {
         const keyframe = keyframes[index]!;
-        if (keyframe.value !== true) continue;
+        if (!requiredBooleanValue(
+          keyframe.value,
+          `finite runtime action '${actionId}' play keyframe value`,
+        )) continue;
         const start = origin + Math.max(0, optionalNumber(keyframe, "frame", 0));
         const replacement = keyframes[index + 1]
           ? origin + Math.max(0, optionalNumber(keyframes[index + 1]!, "frame", 0))
@@ -466,6 +486,11 @@ function requiredNonNegativeNumber(value: unknown, path: string) {
   const number = requiredNumberValue(value, path);
   if (number < 0) throw new Error(`${path} must not be negative`);
   return number;
+}
+
+function requiredBooleanValue(value: unknown, path: string) {
+  if (typeof value !== "boolean") throw new Error(`${path} must be a JSON boolean`);
+  return value;
 }
 
 function validateCollectionTimeline(collection: JsonRecord) {
@@ -656,10 +681,39 @@ function itemActions(collection: JsonRecord, item: JsonRecord) {
   const runtime = runtimeContractKey
     ? optionalObjectArray(runtimeContract, "actions", "projected Runtime contract")
     : [];
-  return [
+  return validateTemporalActions([
     ...optionalObjectArray(collection, "itemActions", "runtime owner collection"),
     ...runtime,
-  ];
+  ], "runtime owner item actions");
+}
+
+function validateTemporalActions(actions: JsonRecord[], context: string) {
+  actions.forEach((action, index) => {
+    for (const flag of ["definesModuleDuration", "extendsModuleDuration"]) {
+      if (!Object.hasOwn(action, flag)) continue;
+      requiredBooleanValue(action[flag], `${context}[${index}] '${flag}'`);
+    }
+    if (action.definesModuleDuration === true) {
+      const actionId = requiredString(action, "id", `${context}[${index}] id`);
+      requiredNonNegativeNumber(
+        action.durationBaseFrames,
+        `runtime action '${actionId}' durationBaseFrames`,
+      );
+    }
+    if (action.extendsModuleDuration !== true) return;
+    const actionId = requiredString(action, "id", `${context}[${index}] id`);
+    requiredString(action, "playInputId", `finite runtime action '${actionId}' play input`);
+    if (Object.hasOwn(action, "playFieldId")) {
+      requiredString(action, "playFieldId", `finite runtime action '${actionId}' play field`);
+    }
+    requiredString(action, "durationInputId", `finite runtime action '${actionId}' duration input`);
+    requiredString(
+      action,
+      "durationEnabledInputId",
+      `finite runtime action '${actionId}' enable input`,
+    );
+  });
+  return actions;
 }
 
 function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
@@ -693,7 +747,10 @@ function enabledKeyframes(track?: JsonRecord) {
 }
 
 function declaredBaseDuration(contract: JsonRecord) {
-  return optionalObjectArray(contract, "actions", "runtime owner contract")
+  return validateTemporalActions(
+    optionalObjectArray(contract, "actions", "runtime owner contract"),
+    "runtime owner actions",
+  )
     .filter((action) => action.definesModuleDuration === true)
     .reduce((maximum, action) => {
       const duration = requiredNumberValue(

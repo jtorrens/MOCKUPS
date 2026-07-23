@@ -6868,6 +6868,21 @@ assertContains(
   'validateUniqueFieldIds(fields, "runtime owner item fields")',
   "the web owner timeline must reject ambiguous direct/embedded/projected field ids",
 );
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "validateTemporalActions(",
+  "the web owner timeline must validate present temporal flags and extending-action references",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "const baseEnabled = requiredBooleanValue(",
+  "finite web actions must consume an exact boolean owner trigger",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "references missing play field",
+  "finite web actions must not disappear when their play field is missing",
+);
 for (const permissiveWebRuntimeTimelineEnvelope of [
   "records(contract.collections)",
   "records(runtime[collectionKey(collection)])",
@@ -6879,6 +6894,9 @@ for (const permissiveWebRuntimeTimelineEnvelope of [
   "strings(timeline.preDurationFieldIds)",
   "strings(asRecord(collection.animationTimeline).postDurationFieldIds)",
   'return optionalString(collection, "storageCollectionJsonKey")',
+  ".filter((candidate) => candidate.extendsModuleDuration === true)",
+  "if (!definition) continue;",
+  'item[optionalString(action, "durationEnabledInputId")] === true',
 ]) {
   assertDoesNotContain(
     "src/desktop-preview/runtimeOwnerTimeline.ts",

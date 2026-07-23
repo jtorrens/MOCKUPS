@@ -139,7 +139,8 @@ extending action names its stable action id, play field, duration key and enable
 key explicitly. The play field must exist and its owner/keyframe states are
 JSON booleans. An invalid or missing state cannot be treated as an inactive
 action, while a correctly inactive action still does not require its conditional
-duration value.
+duration value. The web owner timeline applies the identical trigger/reference
+contract before it resolves the requested frame.
 
 The web owner timeline validates the same closed collection/field metadata and
 references before frame resolution. A prepared Preview fixture or payload must

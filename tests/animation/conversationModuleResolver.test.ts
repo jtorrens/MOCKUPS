@@ -13,6 +13,7 @@ function payload(
     delayAfterPreviousFrames: 0,
     writeOnDurationFrames: 0,
     postWriteOnHoldFrames: 0,
+    isPlaying: false,
     ...message,
   }));
   const fields = [
@@ -46,6 +47,7 @@ function payload(
         },
         fields,
         itemActions: [{
+          id: "play",
           extendsModuleDuration: true,
           playInputId: "isPlaying",
           durationInputId: "playDurationFrames",

@@ -593,3 +593,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `ValidateTemporalActions` obligatorio; enable con `RequiredBoolean`; missing play field falla y los dos patrones de skip/coerción quedan prohibidos. |
 | Datos | Sin migración. Las actions current extending de Chat ya declaran ids y referencias completas; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una action válida ni cuándo requiere duration; solo impide que una declaración activa desaparezca por datos contradictorios. |
+
+## Slice 1.43 — Paridad web de actions temporales
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El timeline web repetía la omisión de flags/referencias inválidas: filtraba solo `extends === true`, aceptaba fallback truthy de `playFieldId`, saltaba fields ausentes y convertía enable/value distinto de `true` en action inactiva. |
+| Owner | `RuntimeOwnerTimeline` consume el mismo action owner ya preparado y decide su contribución al frame; no traslada esta semántica al resolver del componente ni al renderer. |
+| Cambio mínimo | Replicar el validator y las referencias de escritorio; requerir trigger/value boolean; actualizar fixtures parciales para materializar `isPlaying: false`, igual que el payload completo. |
+| Rutas eliminadas | Flag inválido → filtered, `playFieldId` inválido → fallback, field ausente → skip y trigger/keyframe inválido → false. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: misma matriz temporal, fixtures Conversation completos, media finita y todos los frames/resolvers current sin regresión. |
+| Enforcement | `validateTemporalActions`, `requiredBooleanValue` y missing-field failure obligatorios; filter, skip y comparación tolerante anteriores prohibidos. |
+| Datos | Sin migración. Los payloads current ya materializan el booleano Runtime; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. La action válida conserva su duración; web deja de calcular una Screen distinta del editor ante el mismo contrato dañado. |

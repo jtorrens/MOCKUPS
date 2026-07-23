@@ -84,6 +84,7 @@ test("finite runtime action durations require positive JSON numbers", () => {
       animationTimeline: { sequenceItems: false },
       fields: [{ id: "play", jsonKey: "isPlaying" }],
       itemActions: [{
+        id: "play",
         extendsModuleDuration: true,
         playInputId: "play",
         durationInputId: "durationFrames",
@@ -190,6 +191,70 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
   for (const [invalidContract, invalidRuntime] of invalidCases) {
     assert.throws(() => new RuntimeOwnerTimeline(invalidContract, invalidRuntime, {}));
   }
+
+  const invalidActionCases: Array<[Record<string, unknown>, Record<string, unknown>]> = [
+    [{ actions: [{ definesModuleDuration: "true" }] }, {}],
+    [{ actions: [{ definesModuleDuration: true, durationBaseFrames: 1 }] }, {}],
+    [{ actions: [{ id: "duration", definesModuleDuration: true, durationBaseFrames: "1" }] }, {}],
+    [{ collections: [{ jsonKey: "items", itemActions: [{ extendsModuleDuration: "true" }] }] }, {
+      items: [{ id: "item", enabled: false }],
+    }],
+    [{ collections: [{
+      jsonKey: "items",
+      fields: [{ id: "play" }],
+      itemActions: [{ id: "play", extendsModuleDuration: true, playInputId: "play", durationInputId: "duration" }],
+    }] }, { items: [{ id: "item", enabled: false }] }],
+    [{ collections: [{
+      jsonKey: "items",
+      fields: [{ id: "play" }],
+      itemActions: [{
+        id: "play", extendsModuleDuration: true, playInputId: "play", playFieldId: "",
+        durationInputId: "duration", durationEnabledInputId: "enabled",
+      }],
+    }] }, { items: [{ id: "item", enabled: false }] }],
+    [{ collections: [{
+      jsonKey: "items",
+      fields: [{ id: "other" }],
+      itemActions: [{
+        id: "play", extendsModuleDuration: true, playInputId: "play",
+        durationInputId: "duration", durationEnabledInputId: "enabled",
+      }],
+    }] }, { items: [{ id: "item", enabled: false }] }],
+  ];
+  for (const [invalidContract, invalidRuntime] of invalidActionCases) {
+    assert.throws(() => new RuntimeOwnerTimeline(invalidContract, invalidRuntime, {}));
+  }
+
+  const finiteActionContract = {
+    collections: [{
+      jsonKey: "items",
+      fields: [{ id: "play" }],
+      itemActions: [{
+        id: "play", extendsModuleDuration: true, playInputId: "play",
+        durationInputId: "duration", durationEnabledInputId: "enabled",
+      }],
+    }],
+  };
+  assert.throws(() => new RuntimeOwnerTimeline(
+    finiteActionContract,
+    { items: [{ id: "item", duration: 4 }] },
+    {},
+  ));
+  assert.throws(() => new RuntimeOwnerTimeline(
+    finiteActionContract,
+    { items: [{ id: "item", enabled: "false", duration: 4 }] },
+    {},
+  ));
+  assert.throws(() => new RuntimeOwnerTimeline(
+    finiteActionContract,
+    { items: [{ id: "item", enabled: false, duration: 4 }] },
+    { tracks: [{ fieldId: "play", targetId: "item", keyframes: [{ frame: 0, value: "true" }] }] },
+  ));
+  assert.equal(new RuntimeOwnerTimeline(
+    finiteActionContract,
+    { items: [{ id: "item", enabled: false }] },
+    {},
+  ).durationFrames, 1);
 
   const invalidTimelineContracts: Array<Record<string, unknown>> = [
     { collections: [{ jsonKey: "items", animationTimeline: { sequence: "parallel" } }] },
