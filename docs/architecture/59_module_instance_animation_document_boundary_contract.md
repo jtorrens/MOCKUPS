@@ -94,6 +94,13 @@ nested object and any present nested input/action list remains an array of
 objects. The desktop calculator must reject a wrong root or malformed entry
 instead of filtering it into an empty timeline.
 
+`RuntimeOwnerTimeline` applies the same envelope contract after the prepared
+payload crosses into web Preview. It preserves only declared structural
+absence and rejects present malformed contract arrays, Runtime collections,
+stable items, embedded/projected Runtime objects and timeline field-id lists.
+This is parity validation for the common temporal owner, not component logic in
+the bridge or renderer.
+
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
 frame.
@@ -121,6 +128,7 @@ Architecture enforcement must verify:
 - the editor still uses the shared timeline and owner-frame utilities;
 - the shared desktop owner timeline rejects present wrong-root or filtered
   Runtime contract collections, items, fields, inputs and actions;
+- the web owner timeline enforces the same envelopes before resolving a frame;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;

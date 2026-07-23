@@ -115,3 +115,43 @@ test("finite runtime action durations require positive JSON numbers", () => {
     finiteAnimation,
   ));
 });
+
+test("runtime owner timeline rejects filtered contract envelopes", () => {
+  assert.doesNotThrow(() => new RuntimeOwnerTimeline({}, {}, {}));
+
+  const invalidCases: Array<[Record<string, unknown>, Record<string, unknown>]> = [
+    [{ collections: null }, {}],
+    [{ collections: [4] }, {}],
+    [{ inputs: {} }, {}],
+    [{ actions: [null] }, {}],
+    [{ collections: [{ jsonKey: "items" }] }, { items: {} }],
+    [{ collections: [{ jsonKey: "items" }] }, { items: [null] }],
+    [{ collections: [{ jsonKey: "items" }] }, { items: [{ id: "" }] }],
+    [{ collections: [{ jsonKey: "items", fields: {} }] }, { items: [{ id: "item" }] }],
+    [{ collections: [{ jsonKey: "items", itemActions: [null] }] }, { items: [{ id: "item" }] }],
+    [{ collections: [{ jsonKey: "items", animationTimeline: null }] }, { items: [{ id: "item" }] }],
+    [{
+      collections: [{ jsonKey: "items", itemRuntimeContractJsonKey: "runtimeContract" }],
+    }, { items: [{ id: "item" }] }],
+    [{
+      collections: [{ jsonKey: "items", itemRuntimeContractJsonKey: "runtimeContract" }],
+    }, { items: [{ id: "item", runtimeContract: { inputs: null } }] }],
+    [{
+      collections: [{
+        jsonKey: "items",
+        componentItems: { inputsJsonKey: "inputs" },
+      }],
+    }, { items: [{ id: "item" }] }],
+    [{
+      collections: [{
+        jsonKey: "items",
+        animationTimeline: { postDurationFieldIds: ["hold", 4] },
+        fields: [{ id: "hold", jsonKey: "hold" }],
+      }],
+    }, { items: [{ id: "item", hold: 0 }] }],
+  ];
+
+  for (const [invalidContract, invalidRuntime] of invalidCases) {
+    assert.throws(() => new RuntimeOwnerTimeline(invalidContract, invalidRuntime, {}));
+  }
+});

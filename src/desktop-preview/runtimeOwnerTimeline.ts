@@ -1,4 +1,5 @@
-import { asRecord, optionalNumber, optionalString } from "./componentResolverCommon.js";
+import { asRecord, optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
+import { isRecord } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 
@@ -29,16 +30,24 @@ export class RuntimeOwnerTimeline {
     storedFallback = 0,
   ) {
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
-    for (const collection of records(contract.collections)) {
-      const values = records(runtime[collectionKey(collection)]);
-      const sequenceItems = asRecord(collection.animationTimeline).sequenceItems !== false;
+    for (const collection of optionalObjectArray(contract, "collections", "runtime owner contract")) {
+      const key = collectionKey(collection);
+      const values = optionalObjectArray(runtime, key, `runtime owner collection '${key}'`);
+      const collectionTimeline = optionalObject(
+        collection,
+        "animationTimeline",
+        "runtime owner collection animation timeline",
+      );
+      const sequenceItems = collectionTimeline.sequenceItems !== false;
       let cursor = 0;
       for (const item of values) {
         const fields = itemFields(collection, item);
-        const targetId = optionalString(item, "id");
-        if (!targetId) continue;
-        const timeline = asRecord(collection.animationTimeline);
-        const pre = strings(timeline.preDurationFieldIds)
+        const targetId = requiredString(item, "id", `runtime owner collection '${key}' item id`);
+        const pre = optionalStringArray(
+          collectionTimeline,
+          "preDurationFieldIds",
+          "runtime collection animation timeline",
+        )
           .reduce((sum, fieldId) => sum + fieldValue(item, fields, fieldId), 0);
         const start = (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
         const durations = this.itemDurations(collection, item, targetId);
@@ -59,14 +68,15 @@ export class RuntimeOwnerTimeline {
       }
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }
-    for (const definition of records(contract.inputs)) {
+    const topInputs = optionalObjectArray(contract, "inputs", "runtime owner contract");
+    for (const definition of topInputs) {
       const fieldId = optionalString(definition, "id");
       if (!fieldId) continue;
       const timing = this.resolveFieldTiming(
         definition,
         runtime,
         "",
-        records(contract.inputs),
+        topInputs,
         new Set(),
       );
       this.topFields.set(fieldId, timing);
@@ -151,7 +161,7 @@ export class RuntimeOwnerTimeline {
   private topField(fieldId: string) {
     const existing = this.topFields.get(fieldId);
     if (existing) return existing;
-    const fields = records(this.contract.inputs);
+    const fields = optionalObjectArray(this.contract, "inputs", "runtime owner contract");
     const definition = fields.find((field) => optionalString(field, "id") === fieldId);
     const timing = definition
       ? this.resolveFieldTiming(definition, this.runtime, "", fields, new Set())
@@ -192,7 +202,11 @@ export class RuntimeOwnerTimeline {
     const actionEnd = this.lastFiniteActionEnd(collection, item, targetId, fields);
     sequenceBodyEnd = Math.max(sequenceBodyEnd, actionEnd);
     spanEnd = Math.max(spanEnd, actionEnd);
-    const post = strings(asRecord(collection.animationTimeline).postDurationFieldIds)
+    const post = optionalStringArray(
+      optionalObject(collection, "animationTimeline", "runtime owner collection animation timeline"),
+      "postDurationFieldIds",
+      "runtime collection animation timeline",
+    )
       .reduce((sum, fieldId) => sum + fieldValue(item, fields, fieldId), 0);
     const sequence = Math.max(1, sequenceBodyEnd + post);
     return { sequence, span: Math.max(sequence, spanEnd) };
@@ -283,7 +297,10 @@ export class RuntimeOwnerTimeline {
   }
 
   private fieldDefinition(fieldId: string, targetId: string) {
-    if (!targetId) return records(this.contract.inputs).find((field) => optionalString(field, "id") === fieldId) ?? {};
+    if (!targetId) {
+      return optionalObjectArray(this.contract, "inputs", "runtime owner contract")
+        .find((field) => optionalString(field, "id") === fieldId) ?? {};
+    }
     const item = this.items.get(targetId);
     return item ? itemFields(item.collection, item.item).find((field) => optionalString(field, "id") === fieldId) ?? {} : {};
   }
@@ -309,7 +326,11 @@ export class RuntimeOwnerTimeline {
       throw new Error("Incomplete firstMatchingValue owner-origin contract");
     }
 
-    const sourceItem = records(this.runtime[sourceCollectionKey])
+    const sourceItem = optionalObjectArray(
+      this.runtime,
+      sourceCollectionKey,
+      `owner-origin source collection '${sourceCollectionKey}'`,
+    )
       .find((candidate) => optionalString(candidate, "id") === sourceTargetId);
     if (!sourceItem) {
       throw new Error(`Owner-origin source item '${sourceTargetId}' is missing from '${sourceCollectionKey}'`);
@@ -337,8 +358,49 @@ function records(value: unknown): JsonRecord[] {
   return Array.isArray(value) ? value.map(asRecord) : [];
 }
 
-function strings(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+function optionalObjectArray(owner: JsonRecord, key: string, path: string): JsonRecord[] {
+  if (!Object.hasOwn(owner, key)) return [];
+  const value = owner[key];
+  if (!Array.isArray(value)) {
+    throw new Error(`${path} '${key}' must be an array when present`);
+  }
+  return value.map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new Error(`${path} '${key}'[${index}] must be an object`);
+    }
+    return entry;
+  });
+}
+
+function optionalObject(owner: JsonRecord, key: string, path: string): JsonRecord {
+  if (!Object.hasOwn(owner, key)) return {};
+  const value = owner[key];
+  if (!isRecord(value)) {
+    throw new Error(`${path} '${key}' must be an object when present`);
+  }
+  return value;
+}
+
+function requiredObject(owner: JsonRecord, key: string, path: string): JsonRecord {
+  const value = owner[key];
+  if (!isRecord(value)) {
+    throw new Error(`${path} must contain object '${key}'`);
+  }
+  return value;
+}
+
+function optionalStringArray(owner: JsonRecord, key: string, path: string): string[] {
+  if (!Object.hasOwn(owner, key)) return [];
+  const value = owner[key];
+  if (!Array.isArray(value)) {
+    throw new Error(`${path} '${key}' must be an array when present`);
+  }
+  return value.map((entry, index) => {
+    if (typeof entry !== "string" || !entry.trim()) {
+      throw new Error(`${path} '${key}'[${index}] must be a non-empty string`);
+    }
+    return entry;
+  });
 }
 
 function collectionKey(collection: JsonRecord) {
@@ -348,18 +410,37 @@ function collectionKey(collection: JsonRecord) {
 }
 
 function itemFields(collection: JsonRecord, item: JsonRecord) {
-  const direct = records(collection.fields);
-  const inputsKey = optionalString(asRecord(collection.componentItems), "inputsJsonKey");
-  const embedded = inputsKey ? records(asRecord(item[inputsKey]).inputs) : [];
+  const direct = optionalObjectArray(collection, "fields", "runtime owner collection");
+  const componentItems = optionalObject(collection, "componentItems", "runtime owner collection");
+  const inputsKey = optionalString(componentItems, "inputsJsonKey");
+  const embeddedInputs = inputsKey
+    ? requiredObject(item, inputsKey, `embedded Runtime collection item '${optionalString(item, "id")}'`)
+    : {};
+  const embedded = inputsKey
+    ? optionalObjectArray(embeddedInputs, "inputs", "embedded Runtime contract")
+    : [];
   const runtimeContractKey = optionalString(collection, "itemRuntimeContractJsonKey");
-  const runtime = runtimeContractKey ? records(asRecord(item[runtimeContractKey]).inputs) : [];
+  const runtimeContract = runtimeContractKey
+    ? requiredObject(item, runtimeContractKey, `projected Runtime collection item '${optionalString(item, "id")}'`)
+    : {};
+  const runtime = runtimeContractKey
+    ? optionalObjectArray(runtimeContract, "inputs", "projected Runtime contract")
+    : [];
   return [...direct, ...embedded, ...runtime];
 }
 
 function itemActions(collection: JsonRecord, item: JsonRecord) {
   const runtimeContractKey = optionalString(collection, "itemRuntimeContractJsonKey");
-  const runtime = runtimeContractKey ? records(asRecord(item[runtimeContractKey]).actions) : [];
-  return [...records(collection.itemActions), ...runtime];
+  const runtimeContract = runtimeContractKey
+    ? requiredObject(item, runtimeContractKey, `projected Runtime collection item '${optionalString(item, "id")}'`)
+    : {};
+  const runtime = runtimeContractKey
+    ? optionalObjectArray(runtimeContract, "actions", "projected Runtime contract")
+    : [];
+  return [
+    ...optionalObjectArray(collection, "itemActions", "runtime owner collection"),
+    ...runtime,
+  ];
 }
 
 function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
@@ -382,7 +463,7 @@ function enabledKeyframes(track?: JsonRecord) {
 }
 
 function declaredBaseDuration(contract: JsonRecord) {
-  return records(contract.actions)
+  return optionalObjectArray(contract, "actions", "runtime owner contract")
     .filter((action) => action.definesModuleDuration === true)
     .reduce((maximum, action) => {
       const duration = requiredNumberValue(

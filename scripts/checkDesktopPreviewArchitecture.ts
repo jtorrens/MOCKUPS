@@ -6796,6 +6796,38 @@ for (const permissiveRuntimeTimelineEnvelope of [
   );
 }
 assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'optionalObjectArray(contract, "collections", "runtime owner contract")',
+  "the web owner timeline must reject a present invalid collections envelope",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'requiredString(item, "id", `runtime owner collection \'${key}\' item id`)',
+  "the web owner timeline must bind collection owners by their stable ids",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  'optionalStringArray(',
+  "the web owner timeline must preserve exact pre/post duration field-id lists",
+);
+for (const permissiveWebRuntimeTimelineEnvelope of [
+  "records(contract.collections)",
+  "records(runtime[collectionKey(collection)])",
+  "records(contract.inputs)",
+  "records(collection.fields)",
+  "records(collection.itemActions)",
+  "records(asRecord(item[runtimeContractKey]).inputs)",
+  "records(asRecord(item[runtimeContractKey]).actions)",
+  "strings(timeline.preDurationFieldIds)",
+  "strings(asRecord(collection.animationTimeline).postDurationFieldIds)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/runtimeOwnerTimeline.ts",
+    permissiveWebRuntimeTimelineEnvelope,
+    `the web owner timeline must not filter malformed contract envelopes (${permissiveWebRuntimeTimelineEnvelope})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

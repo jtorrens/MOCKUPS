@@ -476,3 +476,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El timeline debe consumir los helpers estructurales comunes y quedan prohibidos sus lectores `OfType` concretos de contracts, fields, actions e items. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia ninguna fórmula ni un documento válido; solo deja de calcularse una duración plausible desde un envelope incompleto. |
+
+## Slice 1.34 — Paridad web de los envelopes del owner temporal
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `RuntimeOwnerTimeline` mantenía el equivalente web de los filtros retirados en escritorio: `records` y `strings` convertían roots incorrectas, entries no objeto e ids no string en colecciones vacías; `asRecord` ocultaba metadata timeline y Runtime contracts embebidos/proyectados dañados. |
+| Owner | El timeline web consume el envelope ya preparado y comparte la semántica temporal del owner común; no valida campos concretos de Components ni pinta el resultado. |
+| Cambio mínimo | Añadir lectores locales exactos de miembros opcionales; exigir arrays de objetos, item id estable, objetos de timeline/embedded/projected Runtime y listas pre/post de strings no vacíos. Mantener ausencia opcional como ausencia. |
+| Rutas eliminadas | `records(contract/runtime/fields/actions) → []`, `map(asRecord) → {}`, id vacío → item omitido, `strings.filter` y nested contract wrong-root → `{}`. |
+| Pruebas | 89/89 Preview y 116/116 escritorio: los mismos envelopes válidos/dañados en ambas plataformas y todos los escenarios de timing/forwarding/Stacks/Conversation sin regresión. |
+| Enforcement | El timeline web debe usar sus readers exactos y quedan prohibidas las invocaciones `records`/`asRecord` retiradas sobre contract, runtime collection, fields, itemActions y nested Runtime documents. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. El frame válido no cambia; Preview deja de discrepar silenciosamente del editor ante un envelope inválido. |

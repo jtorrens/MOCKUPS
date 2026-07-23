@@ -211,6 +211,12 @@ object, array and non-empty string shapes. The calculator does not filter a
 malformed entry, convert a wrong root to an empty owner or omit a declared
 projected Runtime contract.
 
+The web `RuntimeOwnerTimeline` mirrors this envelope ownership after payload
+preparation. Its optional object/array readers distinguish absence from invalid
+presence for direct, embedded and projected Runtime data; a malformed Preview
+document cannot therefore produce a different plausible duration from the
+desktop editor.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -387,6 +393,8 @@ Architecture enforcement must verify:
 - the common desktop owner timeline consumes complete Runtime contract arrays,
   stable items and timeline metadata without `OfType` filtering or wrong-root
   empty fallbacks.
+- the web owner timeline preserves the same complete envelopes and rejects
+  `asRecord`/array filtering fallbacks before frame resolution.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.
