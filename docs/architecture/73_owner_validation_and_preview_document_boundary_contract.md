@@ -406,6 +406,14 @@ unavailable” surface. Concrete font ids, `theme` and `theme.system` keep their
 existing selection semantics; Production Font availability remains a separate
 resource boundary.
 
+Production Font requirement collection consumes that same exact Theme
+Typography contract: text/system/emoji ids are non-empty strings, Theme weight
+is a finite JSON number and Theme style is `normal` or `italic`. It must not
+convert a string weight, unknown style or missing member into a plausible
+default. Partial Typography objects inside explicit Component Overrides may
+still inherit weight/style from the already validated Theme; that local merge
+semantics is not a second Theme parser.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -730,6 +738,8 @@ Architecture enforcement must verify:
   projecting one resolved visual primitive.
 - Theme font selection requires its Typography root and exact text/system/emoji
   ids before checking Production Font availability.
+- Production Font requirement collection validates the same Theme ids, numeric
+  weight and closed style before inspecting local Typography Overrides.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

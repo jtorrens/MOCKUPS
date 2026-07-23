@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { fontFacesForPayload } from "../../src/desktop-preview/previewAssetResolver.js";
 import { fontIdsForTypography } from "../../src/desktop-preview/previewFontHelpers.js";
 
 function payload(typography: unknown): DesignPreviewPayload {
@@ -36,5 +37,39 @@ test("Theme font selection requires its exact Typography ids", () => {
       systemFontFamilyId: "system_font",
     }), "theme"),
     /Missing string value theme\.typography\.emojiFontFamilyId/,
+  );
+});
+
+test("Production Font requirements reject an incomplete Theme Typography contract", () => {
+  const requirementsPayload = (typography: unknown) => ({
+    ...payload(typography),
+    configJson: "{}",
+    componentBaseConfigsJson: "{}",
+    fontFaces: [],
+  }) as DesignPreviewPayload;
+
+  assert.throws(
+    () => fontFacesForPayload(requirementsPayload([])),
+    /Missing object value theme\.typography/,
+  );
+  assert.throws(
+    () => fontFacesForPayload(requirementsPayload({
+      fontFamilyId: "text_font",
+      systemFontFamilyId: "system_font",
+      emojiFontFamilyId: "emoji_font",
+      weight: "400",
+      style: "normal",
+    })),
+    /Missing numeric theme value theme\.typography\.weight/,
+  );
+  assert.throws(
+    () => fontFacesForPayload(requirementsPayload({
+      fontFamilyId: "text_font",
+      systemFontFamilyId: "system_font",
+      emojiFontFamilyId: "emoji_font",
+      weight: 400,
+      style: "oblique",
+    })),
+    /Unsupported theme font style theme\.typography\.style/,
   );
 });

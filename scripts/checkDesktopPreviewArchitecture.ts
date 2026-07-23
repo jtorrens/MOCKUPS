@@ -8028,6 +8028,34 @@ assertDoesNotContain(
   "asRecord(root.typography)",
   "Theme font selection must not coerce an invalid Typography root",
 );
+for (const requiredFontRequirementDocument of [
+  'requiredRecord(themeRoot, "typography", "theme.typography")',
+  'requiredString(\n    themeTypography,\n    "fontFamilyId",',
+  'requiredString(\n    themeTypography,\n    "systemFontFamilyId",',
+  'requiredString(\n    themeTypography,\n    "emojiFontFamilyId",',
+  'requiredNumberValue(\n    themeTypography.weight,\n    "theme.typography.weight",',
+  'requiredThemeFontStyle(\n    themeTypography.style,\n    "theme.typography.style",',
+]) {
+  assertContains(
+    "src/desktop-preview/previewAssetResolver.ts",
+    requiredFontRequirementDocument,
+    `Production Font requirements must validate Theme Typography (${requiredFontRequirementDocument})`,
+  );
+}
+for (const permissiveFontRequirement of [
+  "asRecord(parseObject(payload.themeTokensJson).typography)",
+  "stringValue(themeTypography.fontFamilyId).trim()",
+  "stringValue(themeTypography.systemFontFamilyId).trim()",
+  "stringValue(themeTypography.emojiFontFamilyId).trim()",
+  "numberOrStringValue(themeTypography.weight, 400)",
+  "fontStyleValue(themeTypography.style)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewAssetResolver.ts",
+    permissiveFontRequirement,
+    `Production Font requirements must not default Theme Typography (${permissiveFontRequirement})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

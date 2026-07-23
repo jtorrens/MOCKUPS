@@ -11,7 +11,12 @@ import type {
 } from "./designPreviewPayload.js";
 import { previewFontFaceFamily } from "./previewFontHelpers.js";
 import { asRecord, parseObject } from "./previewJsonHelpers.js";
-import { stringValue } from "./previewValueHelpers.js";
+import {
+  requiredNumberValue,
+  requiredRecord,
+  requiredString,
+  stringValue,
+} from "./previewValueHelpers.js";
 
 const videoFrameCache = new Map<string, string>();
 const lastVideoFrameByAsset = new Map<string, string>();
@@ -488,12 +493,31 @@ type FontRequirement = {
 
 function fontRequirementsForPayload(payload: DesignPreviewPayload) {
   const requirements = new Map<string, FontRequirement>();
-  const themeTypography = asRecord(parseObject(payload.themeTokensJson).typography);
-  const themeFontId = stringValue(themeTypography.fontFamilyId).trim();
-  const themeSystemFontId = stringValue(themeTypography.systemFontFamilyId).trim();
-  const themeEmojiFontId = stringValue(themeTypography.emojiFontFamilyId).trim();
-  const themeWeight = numberOrStringValue(themeTypography.weight, 400);
-  const themeStyle = fontStyleValue(themeTypography.style);
+  const themeRoot = parseObject(payload.themeTokensJson);
+  const themeTypography = requiredRecord(themeRoot, "typography", "theme.typography");
+  const themeFontId = requiredString(
+    themeTypography,
+    "fontFamilyId",
+    "theme.typography.fontFamilyId",
+  );
+  const themeSystemFontId = requiredString(
+    themeTypography,
+    "systemFontFamilyId",
+    "theme.typography.systemFontFamilyId",
+  );
+  const themeEmojiFontId = requiredString(
+    themeTypography,
+    "emojiFontFamilyId",
+    "theme.typography.emojiFontFamilyId",
+  );
+  const themeWeight = requiredNumberValue(
+    themeTypography.weight,
+    "theme.typography.weight",
+  );
+  const themeStyle = requiredThemeFontStyle(
+    themeTypography.style,
+    "theme.typography.style",
+  );
 
   if (themeFontId) {
     addFontRequirement(requirements, themeFontId, themeWeight, themeStyle);
@@ -611,6 +635,11 @@ function fontStyleValue(value: unknown, fallback = "normal") {
   const style = stringValue(value);
   if (style === "theme.typography.style") return fallback;
   return style === "italic" ? "italic" : "normal";
+}
+
+function requiredThemeFontStyle(value: unknown, path: string) {
+  if (value === "normal" || value === "italic") return value;
+  throw new Error(`Unsupported theme font style ${path}`);
 }
 
 function fontFileUri(fullPath: string) {

@@ -1055,3 +1055,16 @@ y Overrides por item.
 | Enforcement | Root y lectura `requiredString` fijadas; cast tolerante prohibido. |
 | Datos | Sin migración. Todos los Themes current declaran los tres ids y sus Production Fonts; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia selección válida; separa mejor documento roto de recurso no disponible. |
+
+## Slice 1.77 — Requisitos exactos de Production Fonts
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La ruta que reúne faces convertía Typography wrong-root en `{}`, ids inválidos en vacío, peso Theme en `400` y style desconocido en `normal`. |
+| Owner | Theme posee su contrato Typography completo; el collector determina faces. Overrides parciales pueden heredar únicamente después de validar Theme. |
+| Cambio mínimo | Exigir root, tres ids, peso JSON numérico y style cerrado antes de recorrer configs/Overrides. |
+| Rutas eliminadas | Cast de Theme, `stringValue(...).trim()`, fallback de peso `400` y normalización silenciosa del style Theme. |
+| Pruebas | Cobertura nueva rechaza root array, peso string y style `oblique`; 108/108 Preview, 116/116 escritorio, fronteras y build verifican fonts/assets current. |
+| Enforcement | Lecturas exactas y helper de style Theme fijados; antigua ruta permisiva prohibida. |
+| Datos | Sin migración. Los Themes current ya declaran ids, peso numérico y style soportado; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia faces válidas; documentos Theme rotos ya no pueden aparentar una fuente normal 400. |
