@@ -164,7 +164,26 @@ internal sealed class ShotRepository : IShotRepository
             throw new InvalidOperationException("A Shot requires an explicit owner Actor.");
         }
 
-        _ = Get(connection, shotId);
+        var current = Get(connection, shotId);
+        if (fieldId == "shot.ownerActorId")
+        {
+            ProjectReferenceIntegrity.RequireSameProjectReference(
+                connection,
+                current.ProjectId,
+                ProjectReferenceKind.Actor,
+                value,
+                $"Shot '{shotId}' owner Actor",
+                required: true);
+        }
+        if (fieldId == "shot.renderPresetId")
+        {
+            ProjectReferenceIntegrity.RequireSameProjectReference(
+                connection,
+                current.ProjectId,
+                ProjectReferenceKind.RenderPreset,
+                value,
+                $"Shot '{shotId}' Render Preset");
+        }
         SqliteCommandExecutor.Execute(
             connection,
             $"UPDATE shots SET {column} = $value WHERE id = $id",
@@ -215,6 +234,19 @@ internal sealed class ShotRepository : IShotRepository
             throw new InvalidOperationException(
                 $"Shot '{record.Id}' Project ownership does not match Episode '{record.EpisodeId}'.");
         }
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            record.ProjectId,
+            ProjectReferenceKind.Actor,
+            record.OwnerActorId,
+            $"Shot '{record.Id}' owner Actor",
+            required: true);
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            record.ProjectId,
+            ProjectReferenceKind.RenderPreset,
+            record.RenderPresetId,
+            $"Shot '{record.Id}' Render Preset");
         SqliteCommandExecutor.Execute(
             connection,
             """

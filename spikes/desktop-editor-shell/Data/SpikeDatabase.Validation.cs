@@ -419,28 +419,14 @@ internal sealed partial class SpikeDatabase
             WHERE s.owner_actor_id = '' OR actor.id IS NULL OR actor.default_theme_id = '' OR t.id IS NULL
             """,
             "module instance without explicit Shot owner Theme context");
-        RequireNoRows(connection, "SELECT 1 FROM actors a LEFT JOIN devices d ON d.id = a.default_device_id WHERE a.default_device_id <> '' AND d.id IS NULL", "actor default device missing");
-        RequireNoRows(
-            connection,
-            """
-            SELECT 1
-            FROM actors a
-            LEFT JOIN themes t ON t.id = a.default_theme_id AND t.project_id = a.project_id
-            WHERE a.default_theme_id <> '' AND t.id IS NULL
-            """,
-            "Actor default Theme missing or from another Project");
-        RequireNoRows(
-            connection,
-            """
-            SELECT 1
-            FROM shots s
-            JOIN episodes e ON e.id = s.episode_id
-            LEFT JOIN actors a ON a.id = s.owner_actor_id AND a.project_id = e.project_id
-            WHERE s.owner_actor_id = '' OR a.id IS NULL
-            """,
-            "Shot owner Actor missing or from another Project");
-        RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN render_presets r ON r.id = s.render_preset_id WHERE s.render_preset_id <> '' AND r.id IS NULL", "shot render preset missing");
-        RequireNoRows(connection, "SELECT 1 FROM themes t LEFT JOIN icon_themes i ON i.id = t.icon_theme_id WHERE t.icon_theme_id <> '' AND i.id IS NULL", "Theme icon theme missing");
+        try
+        {
+            ProjectReferenceIntegrity.ValidateCurrentDatabase(connection);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw InvalidCurrentDatabase(exception.Message);
+        }
     }
 
     private void ValidateCurrentComponentVariants(SqliteConnection connection)

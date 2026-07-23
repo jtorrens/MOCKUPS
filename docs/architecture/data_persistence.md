@@ -23,6 +23,14 @@ The current tables are:
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
+`ProjectReferenceIntegrity` is the single cross-domain data guard for
+Project-owned relational references. Focused repositories invoke it before
+writes and startup validation invokes the same owner read-only. Actor Device
+and Theme, Shot Actor and Render Preset, and Theme Icon Theme, Status Bar and
+Navigation Bar references must resolve inside the owner's exact Project.
+Status and Navigation references additionally require a complete existing
+Component Variant of their exact declared type.
+
 ## Repository ownership
 
 Focused repositories own table SQL, row mapping and prepared complete writes:

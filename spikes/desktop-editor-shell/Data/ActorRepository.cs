@@ -25,20 +25,32 @@ internal sealed class ActorRepository : IActorRepository
     public void UpdateField(string actorId, string fieldId, string value)
     {
         using var connection = _context.OpenConnection();
+        var settings = GetSettings(connection, actorId);
         switch (fieldId)
         {
             case "actor.shortName":
                 SqliteCommandExecutor.Execute(connection, "UPDATE actors SET short_name = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
             case "actor.defaultDeviceId":
+                ProjectReferenceIntegrity.RequireSameProjectReference(
+                    connection,
+                    settings.ProjectId,
+                    ProjectReferenceKind.Device,
+                    value,
+                    $"Actor '{actorId}' default Device");
                 SqliteCommandExecutor.Execute(connection, "UPDATE actors SET default_device_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
             case "actor.defaultThemeId":
+                ProjectReferenceIntegrity.RequireSameProjectReference(
+                    connection,
+                    settings.ProjectId,
+                    ProjectReferenceKind.Theme,
+                    value,
+                    $"Actor '{actorId}' default Theme");
                 SqliteCommandExecutor.Execute(connection, "UPDATE actors SET default_theme_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
         }
 
-        var settings = GetSettings(connection, actorId);
         var metadata = JsonPath.ParseRequiredObject(settings.MetadataJson, $"Actor '{actorId}' metadata_json");
         switch (fieldId)
         {

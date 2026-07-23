@@ -13,6 +13,7 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
+    ("Project-owned references reject cross-Project reads and writes", ProjectOwnedReferencesRejectCrossProjectValues),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
@@ -1967,6 +1968,244 @@ static void RejectedDatabaseOpenIsReadOnly()
         command.CommandText = "PRAGMA user_version = 0";
         command.ExecuteNonQuery();
     });
+}
+
+static void ProjectOwnedReferencesRejectCrossProjectValues()
+{
+    AssertRejectedDatabaseIsReadOnly("cross-project-actor-device", (connection) =>
+    {
+        InsertCrossProject(connection);
+        Execute(connection, """
+            UPDATE devices
+            SET project_id = 'project_cross'
+            WHERE id = (SELECT default_device_id FROM actors WHERE id = 'actor_alex')
+            """);
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-actor-theme", (connection) =>
+    {
+        InsertCrossProject(connection);
+        Execute(connection, """
+            UPDATE themes
+            SET project_id = 'project_cross'
+            WHERE id = (SELECT default_theme_id FROM actors WHERE id = 'actor_alex')
+            """);
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-shot-actor", (connection) =>
+    {
+        InsertCrossProject(connection);
+        InsertCrossProjectActor(connection);
+        Execute(connection, "UPDATE shots SET owner_actor_id = 'actor_cross' WHERE id = 'shot_001'");
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-shot-render-preset", (connection) =>
+    {
+        InsertCrossProject(connection);
+        InsertCrossProjectRenderPreset(connection);
+        Execute(connection, "UPDATE shots SET render_preset_id = 'render_preset_cross' WHERE id = 'shot_001'");
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-theme-icon-theme", (connection) =>
+    {
+        InsertCrossProject(connection);
+        Execute(connection, """
+            UPDATE icon_themes
+            SET project_id = 'project_cross'
+            WHERE id = (
+                SELECT icon_theme_id
+                FROM themes
+                WHERE icon_theme_id <> ''
+                ORDER BY id
+                LIMIT 1)
+            """);
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-theme-status-bar", (connection) =>
+    {
+        InsertCrossProject(connection);
+        Execute(connection, """
+            UPDATE component_classes
+            SET project_id = 'project_cross'
+            WHERE id = 'component_project_foqn_s2_status_bar'
+            """);
+    });
+    AssertRejectedDatabaseIsReadOnly("cross-project-theme-navigation-bar", (connection) =>
+    {
+        InsertCrossProject(connection);
+        Execute(connection, """
+            UPDATE component_classes
+            SET project_id = 'project_cross'
+            WHERE id = 'component_project_foqn_s2_navigation_bar'
+            """);
+    });
+
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-cross-project-writes-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        _ = new SpikeDatabase(temporary);
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            InsertCrossProject(connection);
+            InsertCrossProjectActor(connection);
+            InsertCrossProjectRenderPreset(connection);
+            Execute(connection, """
+                INSERT INTO devices (
+                    id, project_id, name, manufacturer, model, os_family, metrics_json)
+                SELECT
+                    'device_cross', 'project_cross', 'Cross Device',
+                    manufacturer, model, os_family, metrics_json
+                FROM devices
+                ORDER BY id
+                LIMIT 1
+                """);
+            Execute(connection, """
+                INSERT INTO themes (
+                    id, project_id, name, family, icon_theme_id,
+                    status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+                SELECT
+                    'theme_cross', 'project_cross', 'Cross Theme', family, '',
+                    '', '', tokens_json, metadata_json
+                FROM themes
+                ORDER BY id
+                LIMIT 1
+                """);
+            Execute(connection, """
+                INSERT INTO icon_themes (
+                    id, project_id, name, asset_root, mapping_json, metadata_json)
+                SELECT
+                    'icon_theme_cross', 'project_cross', 'Cross Icon Theme',
+                    asset_root, mapping_json, metadata_json
+                FROM icon_themes
+                ORDER BY id
+                LIMIT 1
+                """);
+            InsertCrossProjectComponent(
+                connection,
+                "component_cross_status_bar",
+                StatusBarComponentConfigContract.ComponentType,
+                "Cross Status Bar");
+            InsertCrossProjectComponent(
+                connection,
+                "component_cross_navigation_bar",
+                NavigationBarComponentConfigContract.ComponentType,
+                "Cross Navigation Bar");
+        }
+
+        var context = new SqliteProjectContext(temporary);
+        IActorRepository actorRepository = new ActorRepository(context);
+        IShotRepository shotRepository = new ShotRepository(context);
+        IThemeRepository themeRepository = new ThemeRepository(context);
+        const string actorId = "actor_alex";
+        const string shotId = "shot_001";
+        const string themeId = "theme_88126480cb044ecdbdee380aea764a2d";
+
+        var actorBefore = actorRepository.GetSettings(actorId);
+        var shotBefore = shotRepository.Get(shotId);
+        var themeBefore = themeRepository.Get(themeId);
+        Throws<InvalidOperationException>(() =>
+            actorRepository.UpdateField(actorId, "actor.defaultDeviceId", "device_cross"));
+        Throws<InvalidOperationException>(() =>
+            actorRepository.UpdateField(actorId, "actor.defaultThemeId", "theme_cross"));
+        using (var connection = context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(() =>
+                shotRepository.UpdateField(connection, shotId, "shot.ownerActorId", "actor_cross"));
+            Throws<InvalidOperationException>(() =>
+                shotRepository.UpdateField(connection, shotId, "shot.renderPresetId", "render_preset_cross"));
+        }
+        Throws<InvalidOperationException>(() =>
+            themeRepository.UpdateDirectField(themeId, "theme.iconThemeId", "icon_theme_cross"));
+        Throws<InvalidOperationException>(() =>
+            themeRepository.UpdateDirectField(
+                themeId,
+                "theme.statusBarId",
+                "component_cross_status_bar::variant::default"));
+        Throws<InvalidOperationException>(() =>
+            themeRepository.UpdateDirectField(
+                themeId,
+                "theme.navigationBarId",
+                "component_cross_navigation_bar::variant::default"));
+
+        Equal(actorBefore, actorRepository.GetSettings(actorId));
+        Equal(shotBefore, shotRepository.Get(shotId));
+        Equal(themeBefore, themeRepository.Get(themeId));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+
+    static void InsertCrossProject(SqliteConnection connection)
+    {
+        Execute(connection, """
+            INSERT INTO projects (
+                id, name, slug, default_fps, notes, media_root, metadata_json)
+            VALUES (
+                'project_cross', 'Cross Project', 'cross-project', 25, '', '', '{}')
+            """);
+    }
+
+    static void InsertCrossProjectActor(SqliteConnection connection)
+    {
+        Execute(connection, """
+            INSERT INTO actors (
+                id, project_id, display_name, short_name,
+                default_device_id, default_theme_id, metadata_json)
+            SELECT
+                'actor_cross', 'project_cross', 'Cross Actor', 'CA',
+                '', '', metadata_json
+            FROM actors
+            ORDER BY id
+            LIMIT 1
+            """);
+    }
+
+    static void InsertCrossProjectRenderPreset(SqliteConnection connection)
+    {
+        Execute(connection, """
+            INSERT INTO render_presets (
+                id, project_id, name, width, height, fps, format,
+                codec_json, color_json, quality_json, export_json, metadata_json)
+            SELECT
+                'render_preset_cross', 'project_cross', 'Cross Render Preset',
+                width, height, fps, format,
+                codec_json, color_json, quality_json, export_json, metadata_json
+            FROM render_presets
+            ORDER BY id
+            LIMIT 1
+            """);
+    }
+
+    static void InsertCrossProjectComponent(
+        SqliteConnection connection,
+        string id,
+        string componentType,
+        string name)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO component_classes (
+                id, project_id, component_type, record_class_id, name, notes,
+                config_json, design_preview_json, metadata_json)
+            SELECT
+                $id, 'project_cross', component_type, record_class_id, $name, notes,
+                config_json, design_preview_json, metadata_json
+            FROM component_classes
+            WHERE component_type = $componentType
+            ORDER BY id
+            LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$componentType", componentType);
+        command.Parameters.AddWithValue("$name", name);
+        Equal(1, command.ExecuteNonQuery());
+    }
+
+    static void Execute(SqliteConnection connection, string sql)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.ExecuteNonQuery();
+    }
 }
 
 static void CurrentEditorLayoutContractFailsReadOnly()

@@ -3999,6 +3999,42 @@ for (const [relativePath, requiredGuard] of [
     `${relativePath} must preserve explicit Shot owner Theme context`,
   );
 }
+for (const [relativePath, requiredProjectReferenceGuard] of [
+  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["spikes/desktop-editor-shell/Data/ShotRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "ProjectReferenceIntegrity.RequireComponentVariantReference("],
+  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs", "ProjectReferenceIntegrity.ValidateCurrentDatabase(connection)"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "ProjectOwnedReferencesRejectCrossProjectValues"],
+] as const) {
+  assertContains(
+    relativePath,
+    requiredProjectReferenceGuard,
+    `${relativePath} must preserve the shared same-Project reference invariant`,
+  );
+}
+for (const requiredProjectReferenceKind of [
+  "ProjectReferenceKind.Actor",
+  "ProjectReferenceKind.Device",
+  "ProjectReferenceKind.IconTheme",
+  "ProjectReferenceKind.RenderPreset",
+  "ProjectReferenceKind.Theme",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/ProjectReferenceIntegrity.cs",
+    requiredProjectReferenceKind,
+    `same-Project integrity must cover ${requiredProjectReferenceKind}`,
+  );
+}
+for (const requiredThemeComponentType of [
+  "StatusBarComponentConfigContract.ComponentType",
+  "NavigationBarComponentConfigContract.ComponentType",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Data/ProjectReferenceIntegrity.cs",
+    requiredThemeComponentType,
+    `Theme Component Variant integrity must require ${requiredThemeComponentType}`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "ORDER BY t.name, t.id",

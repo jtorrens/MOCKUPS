@@ -77,7 +77,8 @@ Database validation is read-only and confirms:
 - schema version and expected tables, columns, indexes and foreign keys;
 - exact JSON root kinds;
 - complete Component and Module Variants;
-- full reference formats and same-Project integrity;
+- full reference formats and same-Project integrity through the same guard used
+  by repository writes;
 - required Shot Actor and Production context;
 - declared font, icon and media assets;
 - manifest-to-row agreement.
