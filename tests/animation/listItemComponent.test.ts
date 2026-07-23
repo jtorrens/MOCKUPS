@@ -27,7 +27,7 @@ test("List Item Calls and Chats Variants share the element model boundary", () =
   assert.equal(calls.selectedSetId, "set_a");
 });
 
-test("List Item animates selected content set and the selected set state independently", () => {
+test("List Item animates selected content set and current state independently", () => {
   const source = fixture("calls");
   source.localFrame = 10;
   source.instanceJson = JSON.stringify({
@@ -41,10 +41,10 @@ test("List Item animates selected content set and the selected set state indepen
           keyframes: [{ id: "selected-set-10", frame: 10, value: "set_b", interpolation: "hold" }],
         },
         {
-          id: "set-state",
+          id: "item-state",
           fieldId: "state",
-          targetId: "set_b",
-          keyframes: [{ id: "set-state-10", frame: 10, value: "inactive", interpolation: "hold" }],
+          targetId: "",
+          keyframes: [{ id: "item-state-10", frame: 10, value: "inactive", interpolation: "hold" }],
         },
       ],
     },

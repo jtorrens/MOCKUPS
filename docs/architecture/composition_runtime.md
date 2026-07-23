@@ -99,12 +99,14 @@ A List Item Variant is one complete item model. It owns:
 - Normal, Pressed and Inactive appearances.
 
 Elements may be reordered or omitted by a Variant. Runtime never changes that
-structure. Runtime owns a collection of stable content sets, the selected set
-id and each set's state. Every content set supplies the Actor/avatar, primary
+structure. Runtime owns a collection of stable content sets plus the selected
+set id and current item state. Every content set supplies the Actor/avatar, primary
 and secondary text, text color tokens and values for the stable Icon Row item
 ids required by the active Variant.
 
-The selected set and the selected set's state are separate animatable fields.
+The selected set and current state are separate animatable fields. At a List
+boundary both are resolved against the stable List Item instance id; the
+content sets remain values of that item and never become temporal owners.
 The state appearance contains exactly one Surface Variant slot and one
 `elementsOpacity` multiplier between zero and one. The multiplier applies to
 Avatar, Label and Icon Row as a group; it never changes the state Surface.

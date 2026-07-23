@@ -31,7 +31,6 @@ const elementTypes = new Set(["avatar", "label", "iconRow"]);
 const contentSetKeys = new Set([
   "id",
   "name",
-  "state",
   "actorId",
   "actor",
   "text",
@@ -89,13 +88,15 @@ export function resolveListItemComponent(
     );
   }
   const selectedSet = selectedSets[0]!;
-  const baseState = listItemState(
-    requiredString(selectedSet, "state", `component.listItem.contentSets.${selectedSetId}.state`),
-  );
+  const baseState = listItemState(requiredString(
+    preview,
+    "state",
+    "component.listItem.runtime.state",
+  ));
   const state = listItemState(resolveParameterAnimation(
     animation,
     "state",
-    selectedSetId,
+    "",
     payload.localFrame,
     baseState,
   ).value);

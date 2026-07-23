@@ -18,6 +18,7 @@ const listItemKeys = new Set([
   "name",
   "present",
   "selectedSetId",
+  "state",
   "contentSets",
   "presenceTransition",
   "presenceElapsedMs",
@@ -121,8 +122,12 @@ function listStackItem(
     overrides,
     inputs: {
       selectedSetId: requiredString(item, "selectedSetId", `${path}.selectedSetId`),
+      state: requiredString(item, "state", `${path}.state`),
       contentSets: requiredObjectArray(item, "contentSets", path),
-      __runtimeFieldIds: { selectedSetId: "selectedSetId" },
+      __runtimeFieldIds: {
+        selectedSetId: "selectedSetId",
+        state: "state",
+      },
     },
     present: item.present,
     presenceMotion: requiredRecord(

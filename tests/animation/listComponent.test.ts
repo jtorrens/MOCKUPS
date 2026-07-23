@@ -29,12 +29,13 @@ test("List Calls and Chats Variants select one exact List Item Variant", () => {
     && item.variantReference.endsWith("::variant::chats")));
 });
 
-test("List forwards selectedSetId by stable List item target and keeps nested state ownership", () => {
+test("List forwards selectedSetId and state through the stable List item target", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as {
     items: Array<{
       id: string;
       selectedSetId: string;
+      state: string;
       contentSets: Array<Record<string, unknown>>;
     }>;
   };
@@ -63,11 +64,11 @@ test("List forwards selectedSetId by stable List item target and keeps nested st
           }],
         },
         {
-          id: "nested-state",
+          id: "item-state",
           fieldId: "state",
-          targetId: next.id,
+          targetId: first.id,
           keyframes: [{
-            id: "nested-state-12",
+            id: "item-state-12",
             frame: 12,
             value: "pressed",
             interpolation: "hold",
@@ -79,6 +80,7 @@ test("List forwards selectedSetId by stable List item target and keeps nested st
 
   const resolved = resolveListComponent(source);
   assert.equal(resolved.stack.items[0]?.inputs.selectedSetId, next.id);
+  assert.equal(resolved.stack.items[0]?.inputs.state, "pressed");
   const node = listComponentToRenderable(source, resolved, renderChild);
   const firstItem = node.children?.[0];
   assert.equal(firstItem?.id, "component.listItem");
