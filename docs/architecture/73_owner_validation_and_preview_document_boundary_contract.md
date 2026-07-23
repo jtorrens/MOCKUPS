@@ -361,6 +361,14 @@ is prepared through the shared embedded Component owner from its full Variant
 reference and local Overrides. Retired nested status shapes are not read as an
 alternative to the current direct message fields.
 
+Media requires its config root plus every state-selected child document before
+resolving playback or layout. Surface, inline/full-screen Icon Bars and the
+idle/playing text Label each cross a concrete Component boundary through the
+shared embedded owner. Every slot therefore supplies its full Variant reference
+and explicit local Overrides; Media does not keep a parallel merge or turn an
+invalid slot, overlay or config root into an empty object. Playback state,
+fullscreen transition, placement and frame extraction remain owned by Media.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -672,6 +680,8 @@ Architecture enforcement must verify:
 - Conversation requires its config/messages/headers, validates the closed
   direction vocabulary and routes both Header Icon Rows through the shared
   embedded owner without changing per-message Actor ownership.
+- Media requires its root, state overlays and selected Surface/Icon Bar/Label
+  slots and resolves every child through the shared embedded owner.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

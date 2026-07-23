@@ -1,8 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  componentVariantConfig,
-  mergeComponentDefaults,
-} from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import type {
   MediaDesignContract,
   MediaDisplayState,
@@ -13,7 +10,6 @@ import type {
   MediaTextOverlayMode,
 } from "./mediaComponentContract.js";
 import {
-  asRecord,
   optionalNumber,
   optionalString,
   parseObject,
@@ -21,6 +17,7 @@ import {
   requiredNumber,
   requiredNumberPair,
   requiredPlacement,
+  requiredRecord,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -49,7 +46,7 @@ export function resolveMediaComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): MediaDesignContract {
-  const media = asRecord(config.media);
+  const media = requiredRecord(config, "media", "component.media");
   const viewportSize = requiredNumberPair(
     inputs,
     "viewportSize",
@@ -126,14 +123,12 @@ export function resolveMediaComponentFromRecords(
     componentBaseConfigs,
     "component.media.bottomIconBar",
   );
-  const surfaceSlot = asRecord(media.surfaceSlot);
-  const surfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "surface",
-      requiredString(surfaceSlot, "variantReference", "component.media.surfaceSlot.variantReference"),
-    ),
-    asRecord(surfaceSlot.overrides),
+  const surfaceSlot = requiredRecord(media, "surfaceSlot", "component.media");
+  const surfaceConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    surfaceSlot,
+    "surface",
+    "component.media.surfaceSlot",
   );
 
   return {
@@ -213,7 +208,7 @@ function resolveMediaTextOverlay(
   durationSeconds: number,
   componentBaseConfigs: Record<string, unknown>,
 ): MediaTextOverlayContract | null {
-  const overlay = asRecord(media[key]);
+  const overlay = requiredRecord(media, key, "component.media");
   const enabled = requiredBoolean(overlay, "enabled", `component.media.${key}.enabled`);
   const mode = mediaTextOverlayMode(
     requiredString(overlay, "mode", `component.media.${key}.mode`),
@@ -230,10 +225,12 @@ function resolveMediaTextOverlay(
     currentTimeSeconds,
     durationSeconds,
   );
-  const labelSlot = asRecord(overlay.labelSlot);
-  const labelConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "label", labelSlot.variantReference),
-    asRecord(labelSlot.overrides),
+  const labelSlot = requiredRecord(overlay, "labelSlot", `component.media.${key}`);
+  const labelConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    labelSlot,
+    "label",
+    `component.media.${key}.labelSlot`,
   );
 
   return {
@@ -286,14 +283,12 @@ function resolveMediaIconBar(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
-  const slot = asRecord(media[slotKey]);
-  const config = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "iconBar",
-      requiredString(slot, "variantReference", `component.media.${slotKey}.variantReference`),
-    ),
-    asRecord(slot.overrides),
+  const slot = requiredRecord(media, slotKey, "component.media");
+  const config = embeddedComponentConfig(
+    componentBaseConfigs,
+    slot,
+    "iconBar",
+    `component.media.${slotKey}`,
   );
   return resolveIconBarComponentFromRecords(config, inputs, componentBaseConfigs, id);
 }

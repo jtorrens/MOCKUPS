@@ -972,3 +972,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Roots, vocabulario y helper compartido fijados; casts, fallback y merges paralelos prohibidos. |
 | Datos | Sin migración. Los documentos current ya tienen colección, ids/direcciones y slots completos; no existe `message.status` en la base comprometida. Base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia timing, Actor, layout ni Variants válidos; documentos incompletos dejan de producir una conversación plausible. |
+
+## Slice 1.71 — Composición exacta de Media
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Media convertía su raíz, Surface, seis slots de Icon Bar, dos overlays y sus Label slots wrong-root en `{}`; además repetía cada merge Variant+Overrides. |
+| Owner | Media posee playback, estado y layout; cada Surface/Icon Bar/Label posee su config tras cruzar una frontera embebida completa. |
+| Cambio mínimo | Exigir todos los documentos seleccionados y preparar sus children mediante `embeddedComponentConfig`. |
+| Rutas eliminadas | `asRecord` de raíz/slots/overlays/Overrides y tres familias de merges locales. |
+| Pruebas | Batería Preview/escritorio completa, fronteras y build; reproducción, fullscreen, overlays y Media embebido en Bubble current permanecen cubiertos. |
+| Enforcement | Root/slots/helper compartido fijados y toda reaparición de cast/merge paralelo prohibida. |
+| Datos | Sin migración. La config y todas sus Variants current contienen los documentos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia un valor ni una selección válida; solo adelanta el error de un owner incompleto. |

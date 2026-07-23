@@ -7868,6 +7868,40 @@ for (const permissiveConversationDocument of [
     `Conversation frame resolution must not keep a permissive document fallback (${permissiveConversationDocument})`,
   );
 }
+for (const requiredMediaDocument of [
+  'requiredRecord(config, "media", "component.media")',
+  'requiredRecord(media, "surfaceSlot", "component.media")',
+  'requiredRecord(media, key, "component.media")',
+  'requiredRecord(overlay, "labelSlot", `component.media.${key}`)',
+  'requiredRecord(media, slotKey, "component.media")',
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    surfaceSlot,\n    "surface",',
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    labelSlot,\n    "label",',
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    slot,\n    "iconBar",',
+]) {
+  assertContains(
+    "src/desktop-preview/mediaComponentResolver.ts",
+    requiredMediaDocument,
+    `Media must require and route its owned documents (${requiredMediaDocument})`,
+  );
+}
+for (const permissiveMediaDocument of [
+  "asRecord(config.media)",
+  "asRecord(media.surfaceSlot)",
+  "asRecord(media[key])",
+  "asRecord(overlay.labelSlot)",
+  "asRecord(media[slotKey])",
+  "asRecord(surfaceSlot.overrides)",
+  "asRecord(labelSlot.overrides)",
+  "asRecord(slot.overrides)",
+  "mergeComponentDefaults(",
+  "componentVariantConfig(",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/mediaComponentResolver.ts",
+    permissiveMediaDocument,
+    `Media must not coerce or merge child documents outside their owner (${permissiveMediaDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
