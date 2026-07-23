@@ -1056,6 +1056,36 @@ static void PreviewActionContractsAreStrict()
             absentValue: 0));
     Throws<InvalidOperationException>(() => ComponentPreviewActions.Read(
         new JsonObject { ["collections"] = null }));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        new JsonObject { ["actions"] = null },
+        "Null action root"));
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+        new JsonObject
+        {
+            ["collections"] = new JsonArray
+            {
+                new JsonObject { ["itemActions"] = null },
+            },
+        },
+        "Null item action root"));
+    foreach (var nullOptionalKey in new[]
+    {
+        "durationThemeToken",
+        "durationBaseFrames",
+        "durationEnabledInputId",
+        "playFieldId",
+        "prewarmFrames",
+        "prewarmWhenJsonKey",
+        "activateInputIds",
+        "targetOptions",
+    })
+    {
+        var nullOptional = Action();
+        nullOptional[nullOptionalKey] = null;
+        Throws<InvalidOperationException>(() => ComponentPreviewActions.ValidateContract(
+            Preview(nullOptional),
+            $"Null optional action member {nullOptionalKey}"));
+    }
 
     static JsonObject EmbeddedRuntimeCollection() => new()
     {

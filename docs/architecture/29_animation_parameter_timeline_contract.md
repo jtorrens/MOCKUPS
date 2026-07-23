@@ -409,6 +409,12 @@ must be booleans, and only then may the active action require its positive
 duration. Missing metadata, missing play fields and string booleans do not turn
 the finite action into an inactive one.
 
+The declarative action document distinguishes optional absence from explicit
+null. Optional strings, numbers, booleans, string lists and option lists use
+their declared default only when the member is absent. A present null has no
+second “not configured” meaning and is rejected together with any other wrong
+root. The same applies to root `actions` and collection `itemActions` arrays.
+
 The structural ownership and Module Instance mapping are specified in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
 

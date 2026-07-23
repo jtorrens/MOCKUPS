@@ -5791,6 +5791,8 @@ for (const strictPreviewActionOwner of [
   'RequiredString(action, "timeUnit"',
   'RequiredString(action, "completionBehavior"',
   "requires one explicit finite duration source",
+  'if (!owner.ContainsKey(key))',
+  'if (!ownerDocument.ContainsKey(key))',
 ]) {
   assertContains(
     "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
@@ -5804,6 +5806,11 @@ for (const retiredPreviewActionFallback of [
   "BooleanText.Parse(text)",
   'text.Replace(",", ".")',
   "itemAction.DeepClone() as JsonObject ?? new JsonObject()",
+  "if (owner[key] is null)",
+  'if (action["targetOptions"] is null)',
+  "if (ownerDocument[key] is null)",
+  'action["durationSeconds"] is not null',
+  'action["durationBaseFrames"] is not null',
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",

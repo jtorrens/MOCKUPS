@@ -250,6 +250,10 @@ complete play/duration/enable references, resolves a real play field and
 consumes boolean owner and keyframe states. The calculator does not skip a
 missing field or reinterpret an invalid trigger as an inactive action.
 
+Design Preview action documents likewise preserve structural absence only.
+Present null action arrays or optional action members are invalid; defaults for
+prewarm, duration, targeting and auxiliary lists are not null-coercion paths.
+
 Web frame resolution mirrors that same metadata and duration-value contract.
 Prepared fixtures and payloads contain every declared Runtime duration value;
 an explicit embedded Runtime object is resolved only through its complete

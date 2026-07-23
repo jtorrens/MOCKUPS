@@ -131,7 +131,7 @@ internal static class ComponentPreviewActions
                 $"Design Preview action contract $.collections[{collectionIndex}]");
             var collectionJsonKey = JsonString(collection, "jsonKey");
             if (string.IsNullOrWhiteSpace(collectionJsonKey)
-                || collection["itemActions"] is null)
+                || !collection.ContainsKey("itemActions"))
             {
                 continue;
             }
@@ -441,7 +441,7 @@ internal static class ComponentPreviewActions
 
     private static IReadOnlyList<FieldOption> ParseTargetOptions(JsonObject action)
     {
-        if (action["targetOptions"] is null)
+        if (!action.ContainsKey("targetOptions"))
         {
             return [];
         }
@@ -484,7 +484,7 @@ internal static class ComponentPreviewActions
 
     private static IReadOnlyList<string> JsonStringArray(JsonObject owner, string key)
     {
-        if (owner[key] is null)
+        if (!owner.ContainsKey(key))
         {
             return [];
         }
@@ -503,7 +503,7 @@ internal static class ComponentPreviewActions
 
     private static string JsonString(JsonObject owner, string key)
     {
-        if (owner[key] is null)
+        if (!owner.ContainsKey(key))
         {
             return "";
         }
@@ -515,7 +515,7 @@ internal static class ComponentPreviewActions
 
     private static double JsonNumber(JsonObject owner, string key, double fallback)
     {
-        if (owner[key] is null)
+        if (!owner.ContainsKey(key))
         {
             return fallback;
         }
@@ -536,7 +536,7 @@ internal static class ComponentPreviewActions
 
     private static bool JsonBoolean(JsonObject owner, string key, bool fallback)
     {
-        if (owner[key] is null)
+        if (!owner.ContainsKey(key))
         {
             return fallback;
         }
@@ -609,7 +609,7 @@ internal static class ComponentPreviewActions
         string owner,
         string path)
     {
-        if (ownerDocument[key] is null)
+        if (!ownerDocument.ContainsKey(key))
         {
             return;
         }
@@ -647,6 +647,11 @@ internal static class ComponentPreviewActions
         var durationStateCollectionJsonKey = JsonString(action, "durationStateCollectionJsonKey");
         var durationMotionConfigPath = JsonString(action, "durationMotionConfigPath");
         var targetInputId = JsonString(action, "targetInputId");
+        _ = JsonString(action, "playFieldId");
+        _ = JsonString(action, "durationEnabledInputId");
+        _ = JsonString(action, "prewarmWhenJsonKey");
+        _ = JsonString(action, "prewarmWhenConfigPath");
+        _ = JsonString(action, "prewarmWhenValue");
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var durationBaseFrames = JsonNumber(action, "durationBaseFrames", 0);
@@ -663,11 +668,11 @@ internal static class ComponentPreviewActions
             throw new InvalidOperationException(
                 $"{owner} requires one explicit finite duration source.");
         }
-        if (action["durationSeconds"] is not null && durationSeconds <= 0)
+        if (action.ContainsKey("durationSeconds") && durationSeconds <= 0)
         {
             throw new InvalidOperationException($"{owner} durationSeconds must be positive when present.");
         }
-        if (action["durationBaseFrames"] is not null && durationBaseFrames < 0)
+        if (action.ContainsKey("durationBaseFrames") && durationBaseFrames < 0)
         {
             throw new InvalidOperationException($"{owner} durationBaseFrames must not be negative.");
         }

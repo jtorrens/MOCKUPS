@@ -632,3 +632,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Set de targets, `frames.has` y comparación con frame previo obligatorios en el guard web. |
 | Datos | Sin migración. Los payloads current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Preview mantiene el resultado válido y deja de divergir del editor ante el mismo track contradictorio. |
+
+## Slice 1.46 — Ausencia estructural en actions declarativas
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El owner de Design Preview actions era estricto con tipos no null, pero sus readers opcionales usaban `owner[key] is null`: miembro ausente y `null` explícito activaban el mismo default. `actions: null` e `itemActions: null` también se aceptaban como listas ausentes. Varias strings temporales ni siquiera se comprobaban durante validación startup. |
+| Owner | `ComponentPreviewActions` valida el documento declarativo completo; los hosts solo presentan/ejecutan sus definiciones ya validadas. |
+| Cambio mínimo | Aplicar defaults solo con `ContainsKey == false`; hacer que null presente llegue al reader exacto y falle; incluir play/enable/prewarm strings en la validación completa. |
+| Rutas eliminadas | Null → string vacío, número/boolean default, lista vacía, options ausentes o action array ausente. |
+| Pruebas | 116/116 escritorio: roots actions/itemActions null y ocho familias opcionales null; contracts válidos, embedded actions, durations, Motion y startup current conservados. |
+| Enforcement | Readers y arrays deben distinguir `ContainsKey`; seis patrones concretos de null-as-absence quedan prohibidos. |
+| Datos | Sin migración. Las actions current omiten opcionales y no persisten null; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia un default declarado por ausencia; solo se rechaza una segunda representación no autorizada. |
