@@ -124,6 +124,10 @@ test("Authored Component scaffold contract produces a deterministic read-only ow
       && (first.persistedDefinition.row.metadata_json.variants[0] as { id?: unknown }).id,
     "default",
   );
+  assert.equal(
+    (first.persistedDefinition.row.metadata_json.variants as unknown[]).length,
+    1,
+  );
   assert.equal(first.editorLayout.row.record_class_id, "component.scaffoldFixture");
   assert.equal(first.dictionaryFields.length, 1);
   assert.deepEqual(first.assets, []);
@@ -263,7 +267,7 @@ test("Component scaffold rejects historical specifications before reading them",
   );
 });
 
-test("Component scaffold requires one complete protected Default Variant", () => {
+test("Component scaffold requires one complete protected Default Variant and complete additional Variants", () => {
   const mismatched = validSpec();
   mismatched.defaultVariant.config = { scaffoldFixture: { size: 101 } };
   expectInvalid(mismatched, "same complete snapshot");
@@ -272,12 +276,61 @@ test("Component scaffold requires one complete protected Default Variant", () =>
   duplicatedEnvelope.metadata.variants = [];
   expectInvalid(duplicatedEnvelope, "must not duplicate variants");
 
+  const withVariants = validSpec();
+  withVariants.additionalVariants = [
+    {
+      id: "calls",
+      name: "Calls",
+      protected: false,
+      locked: false,
+      config: { scaffoldFixture: { size: 88 } },
+    },
+    {
+      id: "chats",
+      name: "Chats",
+      protected: false,
+      locked: false,
+      config: { scaffoldFixture: { size: 96 } },
+    },
+  ];
+  const plan = createComponentScaffoldPlan(withVariants, inventory(), repositoryRoot);
+  assert.deepEqual(
+    (plan.persistedDefinition.row.metadata_json.variants as Array<{ id: string }>)
+      .map((variant) => variant.id),
+    ["default", "calls", "chats"],
+  );
+
+  const duplicateVariant = validSpec();
+  duplicateVariant.additionalVariants = [
+    {
+      id: "default",
+      name: "Duplicate",
+      protected: false,
+      locked: false,
+      config: { scaffoldFixture: { size: 90 } },
+    },
+  ];
+  expectInvalid(duplicateVariant, "Variant id 'default' is duplicated");
+
   const malformed = JSON.parse(JSON.stringify(componentScaffoldTemplate())) as Record<string, unknown>;
   const defaultVariant = malformed.defaultVariant as Record<string, unknown>;
   defaultVariant.protected = false;
   assert.throws(
     () => parseComponentScaffoldSpec(malformed),
     /must be protected/,
+  );
+
+  const protectedAdditional = JSON.parse(JSON.stringify(validSpec())) as Record<string, unknown>;
+  protectedAdditional.additionalVariants = [{
+    id: "calls",
+    name: "Calls",
+    protected: true,
+    locked: false,
+    config: { scaffoldFixture: { size: 88 } },
+  }];
+  assert.throws(
+    () => parseComponentScaffoldSpec(protectedAdditional),
+    /must not be protected/,
   );
 });
 

@@ -70,8 +70,9 @@ of its replacement markers and example identities have been replaced.
 The specification explicitly supplies responsibility, visual and temporal
 boundaries, forwarding intent, identity, category, manifest routes, owner
 exports, registry signature, embedded dependencies, current config, complete
-protected Default Variant, Runtime Input/collection/action fixture, dictionary
-fields, editor layout and required asset paths. The planner derives current
+protected Default Variant, zero or more complete non-protected additional
+Variants, Runtime Input/collection/action fixture, dictionary fields, editor
+layout and required asset paths. The planner derives current
 `ValueKind` names from their canonical desktop enum, reads the current manifest
 and opens the parity database read-only.
 
@@ -79,7 +80,9 @@ The resulting plan identifies every owner file, registry and manifest change,
 dictionary descriptor, current database row, editor layout row and validation
 command. It rejects identity collisions, unknown embeds or `ValueKind` values,
 unsafe paths, incomplete Runtime Input definitions, hidden Variant envelopes
-and editor fields that are missing or duplicated.
+and editor fields that are missing or duplicated. Additional Variant ids are
+stable, unique across the definition and never replace the protected Default
+Variant as the current config snapshot.
 
 This stage has no `apply` mode and writes neither source nor database. A valid
 plan means that the authoring contract is ready for its concrete resolver,

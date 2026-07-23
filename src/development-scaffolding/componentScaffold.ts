@@ -82,6 +82,13 @@ export interface ComponentScaffoldSpec {
     locked: true;
     config: JsonObject;
   };
+  additionalVariants: Array<{
+    id: string;
+    name: string;
+    protected: false;
+    locked: boolean;
+    config: JsonObject;
+  }>;
   designPreview: JsonObject;
   metadata: JsonObject;
   dictionaryFields: ComponentScaffoldField[];
@@ -226,6 +233,7 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
     "owners",
     "config",
     "defaultVariant",
+    "additionalVariants",
     "designPreview",
     "metadata",
     "dictionaryFields",
@@ -314,6 +322,28 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
   ) !== true) {
     throw new Error("Component scaffold defaultVariant must be locked.");
   }
+  const additionalVariants = requiredArray(
+    root.additionalVariants,
+    "Component scaffold additionalVariants",
+  ).map((value, index) => {
+    const owner = `Component scaffold additionalVariants[${index}]`;
+    const variant = requiredObject(value, owner);
+    requireExactKeys(
+      variant,
+      ["id", "name", "protected", "locked", "config"],
+      owner,
+    );
+    if (requiredBoolean(variant.protected, `${owner} protected`) !== false) {
+      throw new Error(`${owner} must not be protected.`);
+    }
+    return {
+      id: requiredString(variant.id, `${owner} id`),
+      name: requiredString(variant.name, `${owner} name`),
+      protected: false as const,
+      locked: requiredBoolean(variant.locked, `${owner} locked`),
+      config: requiredJsonObject(variant.config, `${owner} config`),
+    };
+  });
 
   const fields = requiredArray(
     root.dictionaryFields,
@@ -413,6 +443,7 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
         "Component scaffold defaultVariant config",
       ),
     },
+    additionalVariants,
     designPreview: requiredJsonObject(
       root.designPreview,
       "Component scaffold designPreview",
@@ -641,8 +672,24 @@ export function createComponentScaffoldPlan(
   }
   if (Object.hasOwn(spec.metadata, "variants")) {
     violations.push(
-      "Scaffold metadata must not duplicate variants; defaultVariant is the single Variant source.",
+      "Scaffold metadata must not duplicate variants; Default and additionalVariants are the Variant sources.",
     );
+  }
+  const variantIds = new Set(["default"]);
+  for (const variant of spec.additionalVariants) {
+    validateIdentity(
+      variant.id,
+      /^[a-z][A-Za-z0-9_]*$/,
+      `additional Variant id '${variant.id}'`,
+      violations,
+    );
+    if (variantIds.has(variant.id)) {
+      violations.push(`Variant id '${variant.id}' is duplicated.`);
+    }
+    variantIds.add(variant.id);
+    if (!variant.name.trim()) {
+      violations.push(`Additional Variant '${variant.id}' name must not be blank.`);
+    }
   }
 
   validateDictionaryFields(spec, inventory, violations);
@@ -656,7 +703,7 @@ export function createComponentScaffoldPlan(
 
   const metadata = {
     ...spec.metadata,
-    variants: [spec.defaultVariant],
+    variants: [spec.defaultVariant, ...spec.additionalVariants],
   } satisfies JsonObject;
 
   return {
@@ -779,6 +826,7 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
       locked: true,
       config: structuredClone(config),
     },
+    additionalVariants: [],
     designPreview: {
       componentType: "replaceMe",
       sampleSize: 256,
