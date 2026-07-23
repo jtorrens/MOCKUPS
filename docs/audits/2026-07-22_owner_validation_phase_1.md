@@ -985,3 +985,21 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Root/slots/helper compartido fijados y toda reaparición de cast/merge paralelo prohibida. |
 | Datos | Sin migración. La config y todas sus Variants current contienen los documentos completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia un valor ni una selección válida; solo adelanta el error de un owner incompleto. |
+
+## Slice 1.72 — Composición y Actor visual exactos de Bubble
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Bubble convertía raíz, siete slots, status/icon states y Actor/Avatar wrong-root en `{}`; preparaba children con merges locales. Además resolvía Actor aun cuando Conversation había ocultado la identidad, por lo que un system sin Actor podía fallar y un audio incoming individual podía mostrar identidad. |
+| Owner | Bubble posee la decisión visual recibida del parent y sus patches explícitos de composición; contract 70 posee el Actor semántico por dirección. Los Components children poseen su config tras la frontera embebida. |
+| Cambio mínimo | Exigir documentos/slots, usar `embeddedComponentConfig`, resolver Actor solo para incoming con identidad visible y ocultar también el Avatar de Audio cuando esa identidad no existe. |
+| Rutas eliminadas | Casts de config/slots/status/Actor, merges Variant+Overrides paralelos y resolución visual incondicional del Actor. |
+| Pruebas | La prueba de ownership renderiza ahora el payload real incluyendo un system con Actor vacío y exige HTML sin error; 102/102 Preview, 116/116 escritorio, fronteras y build pasan. |
+| Enforcement | Roots/slots/helper, Actor condicional y Audio sin Avatar fijados; casts y resolución incondicional prohibidos. |
+| Datos | Sin migración. El payload ya implementa la propiedad semántica aprobada y las Variants de Bubble son completas; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Corrige una violación de visual identity sin reescribir mensajes; mantiene el sample solo para inspección aislada cuando el Actor está realmente ausente. |
+
+La migración estructurada de los Icon Rows internos de Text Box/Text Input Bar
+sigue fuera de este slice: Bubble conserva temporalmente su binding vacío
+actual hasta aprobar el documento con ids estables, Variant completa de Button
+y Overrides por item.

@@ -369,6 +369,18 @@ and explicit local Overrides; Media does not keep a parallel merge or turn an
 invalid slot, overlay or config root into an empty object. Playback state,
 fullscreen transition, placement and frame extraction remain owned by Media.
 
+Bubble requires its config root, status states and every declared child slot.
+Surface, Text Box, state-selected Media/Audio, Actor Label and Avatar cross the
+shared embedded Component owner with full Variant references and local
+Overrides. Bubble applies only its explicit parent-owned typography, tail and
+Audio-avatar composition patches after that boundary. Actor resolution is
+visual-context dependent: only an incoming Bubble whose parent explicitly
+enables per-message identity resolves the Actor. Outgoing, system and incoming
+individual messages do not create or require visual Actor data; their semantic
+message ownership remains unchanged under contract 70. A truly absent Actor in
+isolated Bubble inspection may still use the deliberate sample Actor, but a
+present wrong-root Actor or Avatar document fails.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -682,6 +694,9 @@ Architecture enforcement must verify:
   embedded owner without changing per-message Actor ownership.
 - Media requires its root, state overlays and selected Surface/Icon Bar/Label
   slots and resolves every child through the shared embedded owner.
+- Bubble requires its root/status/slots, routes child configs through the
+  shared owner and resolves visual Actor data only for explicitly visible
+  incoming identity.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

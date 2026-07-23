@@ -1,9 +1,8 @@
 import {
-  componentVariantConfig,
+  embeddedComponentConfig,
   mergeComponentDefaults,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   optionalBoolean,
   optionalNumber,
   optionalString,
@@ -11,6 +10,7 @@ import {
   requiredBoolean,
   requiredPlacement,
   requiredPossiblyEmptyString,
+  requiredRecord,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -43,16 +43,15 @@ export function resolveBubbleComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const bubble = asRecord(config.bubble);
-  const surfaceSlot = asRecord(bubble.surfaceSlot);
-  const textBoxSlot = asRecord(bubble.textBoxSlot);
-  const imageMediaSlot = asRecord(bubble.imageMediaSlot);
-  const videoMediaSlot = asRecord(bubble.videoMediaSlot);
-  const audioSlot = asRecord(bubble.audioSlot);
-  const actorLabelSlot = asRecord(bubble.actorLabelSlot);
-  const avatarSlot = asRecord(bubble.avatarSlot);
-  const status = asRecord(bubble.status);
-  const actorPreview = resolveBubbleActorPreview(preview);
+  const bubble = requiredRecord(config, "bubble", "component.bubble");
+  const surfaceSlot = requiredRecord(bubble, "surfaceSlot", "component.bubble");
+  const textBoxSlot = requiredRecord(bubble, "textBoxSlot", "component.bubble");
+  const imageMediaSlot = requiredRecord(bubble, "imageMediaSlot", "component.bubble");
+  const videoMediaSlot = requiredRecord(bubble, "videoMediaSlot", "component.bubble");
+  const audioSlot = requiredRecord(bubble, "audioSlot", "component.bubble");
+  const actorLabelSlot = requiredRecord(bubble, "actorLabelSlot", "component.bubble");
+  const avatarSlot = requiredRecord(bubble, "avatarSlot", "component.bubble");
+  const status = requiredRecord(bubble, "status", "component.bubble");
   const maxWidthPercent = Math.min(
     100,
     Math.max(1, optionalNumber(preview, "maxWidth", 66)),
@@ -60,6 +59,12 @@ export function resolveBubbleComponent(
   const maxWidth = screenPercentToDesignWidth(payload, maxWidthPercent);
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
+  const actorIdentityVisible = typeof preview.actorIdentityVisible === "boolean"
+    ? preview.actorIdentityVisible
+    : true;
+  const actorPreview = actorIdentityVisible && state === "incoming"
+    ? resolveBubbleActorPreview(preview)
+    : undefined;
   const fullText = requiredPossiblyEmptyString(
     preview,
     "sampleText",
@@ -71,25 +76,17 @@ export function resolveBubbleComponent(
     durationFrames: optionalNumber(preview, "writeOnDurationFrames", 30),
   };
   const visibleText = simpleWriteOnFrameText(fullText, writeOnPlan);
-  const actorIdentityVisible = typeof preview.actorIdentityVisible === "boolean"
-    ? preview.actorIdentityVisible
-    : true;
-
-  const surfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "surface",
-      requiredString(surfaceSlot, "variantReference", "component.bubble.surfaceSlot.variantReference"),
-    ),
-    asRecord(surfaceSlot.overrides),
+  const surfaceConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    surfaceSlot,
+    "surface",
+    "component.bubble.surfaceSlot",
   );
-  const textBoxBaseConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "textBox",
-      requiredString(textBoxSlot, "variantReference", "component.bubble.textBoxSlot.variantReference"),
-    ),
-    asRecord(textBoxSlot.overrides),
+  const textBoxBaseConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    textBoxSlot,
+    "textBox",
+    "component.bubble.textBoxSlot",
   );
   // A bubble owns the message's size and weight choices, but not its font
   // family: message text always follows the active theme text face.
@@ -104,44 +101,30 @@ export function resolveBubbleComponent(
       || requiredString(bubble, "mediaType", "component.bubble.mediaType"),
   );
   const imageMediaConfig = mediaType === "image"
-    ? mergeComponentDefaults(
-        componentVariantConfig(
-          componentBaseConfigs,
-          "media",
-          requiredString(
-            imageMediaSlot,
-            "variantReference",
-            "component.bubble.imageMediaSlot.variantReference",
-          ),
-        ),
-        asRecord(imageMediaSlot.overrides),
+    ? embeddedComponentConfig(
+        componentBaseConfigs,
+        imageMediaSlot,
+        "media",
+        "component.bubble.imageMediaSlot",
       )
     : undefined;
   const videoMediaConfig = mediaType === "video"
-    ? mergeComponentDefaults(
-        componentVariantConfig(
-          componentBaseConfigs,
-          "media",
-          requiredString(
-            videoMediaSlot,
-            "variantReference",
-            "component.bubble.videoMediaSlot.variantReference",
-          ),
-        ),
-        asRecord(videoMediaSlot.overrides),
+    ? embeddedComponentConfig(
+        componentBaseConfigs,
+        videoMediaSlot,
+        "media",
+        "component.bubble.videoMediaSlot",
       )
     : undefined;
   let audioConfig = mediaType === "audio"
-    ? mergeComponentDefaults(
-        componentVariantConfig(
-          componentBaseConfigs,
-          "audio",
-          requiredString(audioSlot, "variantReference", "component.bubble.audioSlot.variantReference"),
-        ),
-        asRecord(audioSlot.overrides),
+    ? embeddedComponentConfig(
+        componentBaseConfigs,
+        audioSlot,
+        "audio",
+        "component.bubble.audioSlot",
       )
     : undefined;
-  if (audioConfig && state !== "incoming") {
+  if (audioConfig && !actorPreview) {
     audioConfig = mergeComponentDefaults(audioConfig, {
       audio: {
         avatarSlot: {
@@ -182,17 +165,11 @@ export function resolveBubbleComponent(
     "component.bubble.actorLabel.useActorColor",
   );
   const actorLabelConfig = actorLabelVisible
-    ? mergeComponentDefaults(
-        componentVariantConfig(
-          componentBaseConfigs,
-          "label",
-          requiredString(
-            actorLabelSlot,
-            "variantReference",
-            "component.bubble.actorLabel.variantReference",
-          ),
-        ),
-        asRecord(actorLabelSlot.overrides),
+    ? embeddedComponentConfig(
+        componentBaseConfigs,
+        actorLabelSlot,
+        "label",
+        "component.bubble.actorLabelSlot",
       )
     : undefined;
   const avatarVisible = actorIdentityVisible
@@ -203,17 +180,11 @@ export function resolveBubbleComponent(
       "component.bubble.avatar.showAvatar",
     );
   const avatarConfig = avatarVisible
-    ? mergeComponentDefaults(
-        componentVariantConfig(
-          componentBaseConfigs,
-          "avatar",
-          requiredString(
-            avatarSlot,
-            "variantReference",
-            "component.bubble.avatar.variantReference",
-          ),
-        ),
-        asRecord(avatarSlot.overrides),
+    ? embeddedComponentConfig(
+        componentBaseConfigs,
+        avatarSlot,
+        "avatar",
+        "component.bubble.avatarSlot",
       )
     : undefined;
   const resolvedTextBox = resolveTextBoxComponentFromRecords(
@@ -277,12 +248,12 @@ export function resolveBubbleComponent(
         "component.bubble.actorLabel.placement",
       ),
       textColorOverride: actorLabelVisible && actorLabelUseActorColor
-        ? actorPreview.avatar.backgroundColor
+        ? actorPreview!.avatar.backgroundColor
         : undefined,
       label: actorLabelConfig
         ? resolveLabelComponentFromRecords(
             actorLabelConfig,
-            literalLabelPreview(actorPreview.displayName),
+            literalLabelPreview(actorPreview!.displayName),
             componentBaseConfigs,
             "component.bubble.actorLabel",
             staticLabelFrameContext,
@@ -301,7 +272,7 @@ export function resolveBubbleComponent(
             avatarConfig,
             {
               ...preview,
-              actor: actorPreview,
+              actor: actorPreview!,
               showBadge: false,
               badgeIconToken: "system_check",
               badgeText: "1",
@@ -341,10 +312,10 @@ export function resolveBubbleComponent(
 }
 
 function resolveBubbleActorPreview(preview: Record<string, unknown>) {
-  const actor = asRecord(
-    preview.actor ?? defaultActorPreview(optionalString(preview, "actorName") || "Alex Q"),
-  );
-  const avatar = asRecord(actor.avatar);
+  const actor = Object.hasOwn(preview, "actor")
+    ? requiredRecord(preview, "actor", "component.bubble")
+    : defaultActorPreview(optionalString(preview, "actorName") || "Alex Q");
+  const avatar = requiredRecord(actor, "avatar", "component.bubble.actor");
   return {
     id: requiredString(actor, "id", "component.bubble.actor.id"),
     displayName: requiredString(actor, "displayName", "component.bubble.actor.displayName"),
@@ -375,7 +346,7 @@ function statusIcon(
   state: Exclude<BubbleStatusState, "none">,
   path: string,
 ) {
-  const raw = asRecord(status[state]);
+  const raw = requiredRecord(status, state, "component.bubble.status");
   return {
     iconToken: optionalString(raw, "iconToken"),
     colorToken: requiredString(raw, "colorToken", `${path}.colorToken`),
@@ -439,12 +410,12 @@ function bubbleMediaInputs(
 
 function bubbleAudioInputs(
   preview: Record<string, unknown>,
-  actorPreview: ReturnType<typeof resolveBubbleActorPreview>,
+  actorPreview: ReturnType<typeof resolveBubbleActorPreview> | undefined,
   availableWidth: number,
 ) {
   return {
     ...preview,
-    actor: actorPreview,
+    actor: actorPreview ?? {},
     availableWidth,
     // Bubble owns this child-input binding at its Audio slot boundary.
     // It is explicit composition data, not an Audio resolver fallback.

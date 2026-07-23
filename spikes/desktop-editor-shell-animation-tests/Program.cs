@@ -4336,7 +4336,10 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
 static void ConversationMessageActorsFollowDirectionContract()
 {
     var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
-    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-conversation-message-actors-{Guid.NewGuid():N}.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-conversation-message-actors-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
@@ -4410,6 +4413,21 @@ static void ConversationMessageActorsFollowDirectionContract()
         Equal(0, resolvedSystemActor.Count);
         True(resolvedMessages.OfType<JsonObject>()
             .All((message) => message["actor"]?["id"]?.GetValue<string>() != "sample_actor"));
+
+        var resolvedPreview = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson);
+        resolvedPreview["conversationFrame"] = 100000;
+        var resolvedAtSystemMessage = resolved with
+        {
+            DesignPreviewJson = resolvedPreview.ToJsonString(),
+        };
+        var device = Descendants(database.LoadProjectTree())
+            .First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            false,
+            resolvedAtSystemMessage).GetAwaiter().GetResult();
+        True(!string.IsNullOrWhiteSpace(html));
+        True(!html.Contains("preview-error", StringComparison.Ordinal));
 
         var incomingId = incoming["id"]?.GetValue<string>() ?? "";
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));

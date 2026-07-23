@@ -7902,6 +7902,64 @@ for (const permissiveMediaDocument of [
     `Media must not coerce or merge child documents outside their owner (${permissiveMediaDocument})`,
   );
 }
+for (const requiredBubbleDocument of [
+  'requiredRecord(config, "bubble", "component.bubble")',
+  'requiredRecord(bubble, "surfaceSlot", "component.bubble")',
+  'requiredRecord(bubble, "textBoxSlot", "component.bubble")',
+  'requiredRecord(bubble, "imageMediaSlot", "component.bubble")',
+  'requiredRecord(bubble, "videoMediaSlot", "component.bubble")',
+  'requiredRecord(bubble, "audioSlot", "component.bubble")',
+  'requiredRecord(bubble, "actorLabelSlot", "component.bubble")',
+  'requiredRecord(bubble, "avatarSlot", "component.bubble")',
+  'requiredRecord(bubble, "status", "component.bubble")',
+  'requiredRecord(status, state, "component.bubble.status")',
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    surfaceSlot,\n    "surface",',
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    textBoxSlot,\n    "textBox",',
+  'embeddedComponentConfig(\n        componentBaseConfigs,\n        imageMediaSlot,\n        "media",',
+  'embeddedComponentConfig(\n        componentBaseConfigs,\n        videoMediaSlot,\n        "media",',
+  'embeddedComponentConfig(\n        componentBaseConfigs,\n        audioSlot,\n        "audio",',
+]) {
+  assertContains(
+    "src/desktop-preview/bubbleComponentResolver.ts",
+    requiredBubbleDocument,
+    `Bubble must require and route its owned documents (${requiredBubbleDocument})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  'const actorPreview = actorIdentityVisible && state === "incoming"\n    ? resolveBubbleActorPreview(preview)\n    : undefined;',
+  "Bubble must resolve visual Actor data only for explicitly visible incoming identity",
+);
+assertContains(
+  "src/desktop-preview/bubbleComponentResolver.ts",
+  "if (audioConfig && !actorPreview)",
+  "Bubble Audio must hide its Avatar whenever message identity is not visual",
+);
+assertContains(
+  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  'resolvedPreview["conversationFrame"] = 100000;',
+  "Conversation Actor ownership coverage must render through the blank-system-Actor frame",
+);
+for (const permissiveBubbleDocument of [
+  "asRecord(config.bubble)",
+  "asRecord(bubble.surfaceSlot)",
+  "asRecord(bubble.textBoxSlot)",
+  "asRecord(bubble.imageMediaSlot)",
+  "asRecord(bubble.videoMediaSlot)",
+  "asRecord(bubble.audioSlot)",
+  "asRecord(bubble.actorLabelSlot)",
+  "asRecord(bubble.avatarSlot)",
+  "asRecord(bubble.status)",
+  "asRecord(status[state])",
+  "componentVariantConfig(",
+  "const actorPreview = resolveBubbleActorPreview(preview);",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/bubbleComponentResolver.ts",
+    permissiveBubbleDocument,
+    `Bubble must not keep a permissive owner or Actor route (${permissiveBubbleDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
