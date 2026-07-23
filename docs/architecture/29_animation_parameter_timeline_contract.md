@@ -330,6 +330,16 @@ to the owning resolver for bidirectional Reflow. The component resolver still
 owns every intermediate frame; neither the editor, bridge nor renderer infers
 component transitions.
 
+Embedded Production action documents retain the same complete action envelope
+after forwarding. Their entries are objects with unique stable ids, labels,
+play/time keys, one of the declared time units and an explicit completion
+behavior. A present `playFieldId` is a stable address, not an optional hint. If
+both the lifted action and forwarding map publish it they must agree; otherwise
+the complete local Runtime Input definition supplies the id. Only structural
+absence of the play value makes an action unavailable at that child boundary.
+An animated play value is an exact boolean. Unknown time units never fall
+through to seconds.
+
 ## 8. Context, resolver, and presentation boundaries
 
 Production owns one global Shot cursor and one playback owner. The selected tree

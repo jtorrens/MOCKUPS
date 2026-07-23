@@ -261,16 +261,25 @@ function resolveAnimatedActions(
   themeTokens: Record<string, unknown>,
   frameRate: number,
 ) {
-  const actions = Array.isArray(values.actions) ? values.actions.map(asRecord) : [];
-  for (const action of actions) {
-    const playJsonKey = optionalString(action, "playInputId");
-    const timeJsonKey = optionalString(action, "timeJsonKey");
-    if (!playJsonKey || !timeJsonKey) continue;
+  const actions = embeddedRuntimeActions(values);
+  for (const { action, id, playJsonKey, timeJsonKey, timeUnit, completion } of actions) {
     const playDefinition = definitions.find((definition) => optionalString(definition, "jsonKey") === playJsonKey);
-    const playFieldId = optionalString(runtimeFieldIds, playJsonKey)
-      || optionalString(action, "playFieldId")
-      || optionalString(playDefinition ?? {}, "id")
-      || playJsonKey;
+    const mappedPlayFieldId = Object.hasOwn(runtimeFieldIds, playJsonKey)
+      ? requiredString(runtimeFieldIds, playJsonKey, `embedded runtime action '${id}' forwarded play field`)
+      : "";
+    const actionPlayFieldId = Object.hasOwn(action, "playFieldId")
+      ? requiredString(action, "playFieldId", `embedded runtime action '${id}' play field`)
+      : "";
+    if (mappedPlayFieldId && actionPlayFieldId && mappedPlayFieldId !== actionPlayFieldId) {
+      throw new Error(`Embedded runtime action '${id}' has conflicting forwarded play field ids`);
+    }
+    const playFieldId = mappedPlayFieldId
+      || actionPlayFieldId
+      || optionalString(playDefinition ?? {}, "id");
+    if (!Object.hasOwn(values, playJsonKey)) continue;
+    if (!playFieldId) {
+      throw new Error(`Embedded runtime action '${id}' play value '${playJsonKey}' has no stable field id`);
+    }
     const ownerFrame = timeline.ownsTarget(targetId)
       ? Math.floor(timeline.localFrame(playFieldId, targetId, screenFrame))
       : screenFrame;
@@ -282,6 +291,9 @@ function resolveAnimatedActions(
       values[playJsonKey],
     );
     if (!resolvedPlay.animated) continue;
+    if (typeof resolvedPlay.value !== "boolean") {
+      throw new Error(`Embedded runtime action '${id}' play value must be boolean`);
+    }
     if (resolvedPlay.value !== true || resolvedPlay.sourceKeyframeFrame === undefined) {
       values[playJsonKey] = false;
       values[timeJsonKey] = 0;
@@ -289,10 +301,6 @@ function resolveAnimatedActions(
     }
     const durationFrames = actionDurationFrames(action, values, definitions, themeTokens, frameRate);
     const elapsedFrames = Math.max(0, ownerFrame - resolvedPlay.sourceKeyframeFrame);
-    const completion = optionalString(action, "completionBehavior");
-    if (completion !== "reset" && completion !== "holdFinal") {
-      throw new Error(`Missing or unknown runtime action completionBehavior '${completion}'`);
-    }
     if (completion === "reset" && elapsedFrames >= durationFrames) {
       values[playJsonKey] = false;
       values[timeJsonKey] = 0;
@@ -301,10 +309,42 @@ function resolveAnimatedActions(
     values[playJsonKey] = true;
     values[timeJsonKey] = actionTimeValue(
       Math.min(elapsedFrames, durationFrames),
-      optionalString(action, "timeUnit"),
+      timeUnit,
       frameRate,
     );
   }
+}
+
+type EmbeddedRuntimeAction = {
+  action: Record<string, unknown>;
+  id: string;
+  playJsonKey: string;
+  timeJsonKey: string;
+  timeUnit: "frames" | "milliseconds" | "seconds";
+  completion: "reset" | "holdFinal";
+};
+
+function embeddedRuntimeActions(values: Record<string, unknown>): EmbeddedRuntimeAction[] {
+  const ids = new Set<string>();
+  return optionalObjectArray(values, "actions", "component collection embedded Runtime contract")
+    .map((action, index) => {
+      const path = `component collection embedded Runtime action[${index}]`;
+      const id = requiredString(action, "id", `${path}.id`);
+      requiredString(action, "label", `${path}.label`);
+      const playJsonKey = requiredString(action, "playInputId", `${path}.playInputId`);
+      const timeJsonKey = requiredString(action, "timeJsonKey", `${path}.timeJsonKey`);
+      const timeUnit = requiredString(action, "timeUnit", `${path}.timeUnit`);
+      if (timeUnit !== "frames" && timeUnit !== "milliseconds" && timeUnit !== "seconds") {
+        throw new Error(`Unsupported ${path}.timeUnit '${timeUnit}'`);
+      }
+      const completion = requiredString(action, "completionBehavior", `${path}.completionBehavior`);
+      if (completion !== "reset" && completion !== "holdFinal") {
+        throw new Error(`Unsupported ${path}.completionBehavior '${completion}'`);
+      }
+      if (ids.has(id)) throw new Error(`Duplicate embedded Runtime action id '${id}'`);
+      ids.add(id);
+      return { action, id, playJsonKey, timeJsonKey, timeUnit, completion };
+    });
 }
 
 function actionDurationFrames(
@@ -349,11 +389,13 @@ function actionDurationFrames(
 function actionFrames(value: number, timeUnit: string, frameRate: number) {
   if (timeUnit === "frames") return Math.round(value);
   if (timeUnit === "milliseconds") return Math.round(value / 1000 * Math.max(1, frameRate));
-  return Math.round(value * Math.max(1, frameRate));
+  if (timeUnit === "seconds") return Math.round(value * Math.max(1, frameRate));
+  throw new Error(`Unsupported runtime action timeUnit '${timeUnit}'`);
 }
 
 function actionTimeValue(frames: number, timeUnit: string, frameRate: number) {
   if (timeUnit === "frames") return frames;
   if (timeUnit === "milliseconds") return frames / Math.max(1, frameRate) * 1000;
-  return frames / Math.max(1, frameRate);
+  if (timeUnit === "seconds") return frames / Math.max(1, frameRate);
+  throw new Error(`Unsupported runtime action timeUnit '${timeUnit}'`);
 }

@@ -239,6 +239,16 @@ stable ids whose keys name existing local values. It may promote a value without
 a duplicated child definition. It is explicit forwarding metadata, not
 permission to infer identity from a JSON key.
 
+Embedded action arrays use the same exact object-array boundary. Every action
+entry keeps a unique non-empty id plus its required label, play key, time key,
+closed time unit and completion behavior. A present forwarded/action field id
+must be a non-empty string and two explicit authorities may not disagree. When
+the play value is present it must resolve through one of those explicit ids or
+its complete Runtime Input definition; its JSON key is never the fallback id.
+An animated play value is a boolean. Structural absence may leave an action
+unavailable, but null, wrong roots, incomplete entries and unknown vocabularies
+do not become an empty or inactive action.
+
 An animation owner with no authored data may still supply an empty transient
 object. If tracks, keyframes or retime are present, the desktop timeline
 validates their calculation envelope before using it: no wrong array/object

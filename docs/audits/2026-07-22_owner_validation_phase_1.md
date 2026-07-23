@@ -671,3 +671,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Reader común, ids/keys únicos y mapa declarado quedan fijados; los tres fallback/filter anteriores están prohibidos. |
 | Datos | Sin migración. Los inputs embebidos canónicos ya contienen definitions completas; la base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia un track current explícito; impide que metadata auxiliar o dañada adquiera significado temporal por coincidencia de nombre. |
+
+## Slice 1.49 — Envelope e identidad de actions embebidas
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El resolver embebido convertía `actions` mal formado en vacío, filtraba entradas no objeto, omitía actions sin play/time key y usaba una cadena de fallback que terminaba en la key JSON. Un time unit desconocido se ejecutaba como segundos y un play animado no boolean se apagaba. |
+| Owner | El documento declarativo posee la forma/vocabulario de la action; definition y forwarding poseen su identidad temporal estable; el host embebido solo resuelve la action preparada. |
+| Cambio mínimo | Exigir array/entries completos, ids únicos, time unit y completion cerrados; hacer compatibles pero no contradictorios `playFieldId` y mapa explícito; exigir boolean cuando existe track. Mantener que un play value estructuralmente ausente hace la action no disponible en ese child. |
+| Rutas eliminadas | Wrong root/entry → action ausente, miembro obligatorio ausente → skip, jsonKey → fieldId, time unit desconocido → seconds y play string → false. |
+| Pruebas | 91/91 Preview y 116/116 escritorio: 16 envelopes, vocabularios e identidades inválidos; action forwarded válida y sus frames finales se conservan. Typecheck, unused, arquitectura y build pasan sin avisos. |
+| Enforcement | Reader exacto, required strings, vocabularios, conflicto de ids y booleano quedan fijados; los fallback/filter anteriores están prohibidos. |
+| Datos | Sin migración; las actions canónicas ya son documentos completos. La base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una action válida. Este slice no decide la semántica pendiente de `durationInputId` id frente a JSON key ni añade fuentes de duración. |

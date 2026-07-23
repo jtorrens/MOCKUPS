@@ -320,7 +320,7 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
             { id: "duration", jsonKey: "duration", valueKind: "Number" },
           ],
           actions: [{
-            id: "playOnce", playInputId: "play", timeJsonKey: "actionFrame",
+            id: "playOnce", label: "Play", playInputId: "play", timeJsonKey: "actionFrame",
             durationInputId: "duration", timeUnit: "frames", completionBehavior: "holdFinal",
           }],
           __runtimeFieldIds: { play: "forwarded.notice.play" },
@@ -340,6 +340,95 @@ test("a forwarded embedded action derives its requested-frame clock from the sta
   assert.equal(resolveAt(12)?.actionFrame, 4);
   assert.throws(() => resolveAt(7, "4"));
   assert.throws(() => resolveAt(7, 0));
+});
+
+test("embedded Runtime actions reject filtered entries and inferred play identities", () => {
+  const validAction: Record<string, unknown> = {
+    id: "playOnce", label: "Play", playInputId: "play", timeJsonKey: "actionFrame",
+    durationInputId: "duration", timeUnit: "frames", completionBehavior: "holdFinal",
+  };
+  const without = (key: string) => {
+    const action = { ...validAction };
+    delete action[key];
+    return [action];
+  };
+  const resolve = ({
+    actions = [validAction],
+    definitions = [
+      { id: "play", jsonKey: "play", valueKind: "Boolean" },
+      { id: "duration", jsonKey: "duration", valueKind: "Number" },
+    ],
+    fieldIds,
+    trackValue = true,
+  }: {
+    actions?: unknown;
+    definitions?: unknown;
+    fieldIds?: unknown;
+    trackValue?: unknown;
+  }) => resolveCollectionStackComponent({
+    ...payload,
+    localFrame: 2,
+    componentBaseConfigsJson: JSON.stringify({
+      variantTypes: { "stub::variant::notice": "stub" },
+      variants: { "stub::variant::notice": {} },
+    }),
+    instanceJson: JSON.stringify({
+      context: { localFrame: 2 },
+      animation: { tracks: [{
+        fieldId: typeof fieldIds === "object" && fieldIds !== null && !Array.isArray(fieldIds)
+          ? (fieldIds as Record<string, unknown>).play ?? "play"
+          : "play",
+        targetId: "notice",
+        keyframes: [{ frame: 0, value: trackValue }],
+      }] },
+    }),
+    designPreviewJson: JSON.stringify({
+      distributionMode: "flow", sizingMode: "content",
+      startGapToken: "theme.spacing.none", endGapToken: "theme.spacing.none",
+      stackDirection: "down", stackOffsetToken: "theme.spacing.m",
+      itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
+      items: [{
+        id: "notice", variantReference: "stub::variant::notice", overrides: {},
+        inputs: {
+          inputs: definitions,
+          actions,
+          ...(fieldIds === undefined ? {} : { __runtimeFieldIds: fieldIds }),
+          play: false,
+          actionFrame: 0,
+          duration: 4,
+        },
+        present: true,
+        presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
+        alignment: "center", gapBeforeMode: "fixed",
+        gapBeforeToken: "theme.spacing.none", gapBeforeWeight: 1,
+      }],
+    }),
+  });
+
+  const malformed: [string, Parameters<typeof resolve>[0]][] = [
+    ["null actions", { actions: null }],
+    ["wrong actions root", { actions: {} }],
+    ["non-object action", { actions: [null] }],
+    ["missing id", { actions: without("id") }],
+    ["missing label", { actions: without("label") }],
+    ["missing play input", { actions: without("playInputId") }],
+    ["missing time key", { actions: without("timeJsonKey") }],
+    ["missing time unit", { actions: without("timeUnit") }],
+    ["missing completion", { actions: without("completionBehavior") }],
+    ["duplicate action id", { actions: [validAction, { ...validAction }] }],
+    ["unknown time unit", { actions: [{ ...validAction, timeUnit: "ticks" }] }],
+    ["unknown completion", { actions: [{ ...validAction, completionBehavior: "loop" }] }],
+    ["null explicit play field", { actions: [{ ...validAction, playFieldId: null }] }],
+    ["conflicting forwarded play ids", {
+      actions: [{ ...validAction, playFieldId: "other.play" }],
+      fieldIds: { play: "owner.play" },
+    }],
+    ["play value without identity", {
+      definitions: [{ id: "duration", jsonKey: "duration", valueKind: "Number" }],
+    }],
+    ["non-boolean animated play value", { trackValue: "true" }],
+  ];
+  for (const [label, options] of malformed) assert.throws(() => resolve(options), label);
 });
 
 test("Reflow interpolates the complete stable child geometry instead of scaling its frame", () => {

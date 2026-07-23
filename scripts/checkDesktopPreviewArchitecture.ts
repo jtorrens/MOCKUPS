@@ -5252,6 +5252,36 @@ for (const inferredEmbeddedRuntimeIdentity of [
     `embedded collection animation must not infer a field from '${inferredEmbeddedRuntimeIdentity}'`,
   );
 }
+for (const requiredEmbeddedActionBoundaryTerm of [
+  'optionalObjectArray(values, "actions", "component collection embedded Runtime contract")',
+  'requiredString(action, "label", `${path}.label`)',
+  'requiredString(action, "playInputId", `${path}.playInputId`)',
+  'requiredString(action, "timeJsonKey", `${path}.timeJsonKey`)',
+  'timeUnit !== "frames" && timeUnit !== "milliseconds" && timeUnit !== "seconds"',
+  'completion !== "reset" && completion !== "holdFinal"',
+  "has conflicting forwarded play field ids",
+  "play value must be boolean",
+  'if (timeUnit === "seconds") return Math.round(value * Math.max(1, frameRate));',
+  'if (timeUnit === "seconds") return frames / Math.max(1, frameRate);',
+  "throw new Error(`Unsupported runtime action timeUnit '${timeUnit}'`);",
+]) {
+  assertContains(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    requiredEmbeddedActionBoundaryTerm,
+    `embedded actions must keep exact document rule '${requiredEmbeddedActionBoundaryTerm}'`,
+  );
+}
+for (const inferredEmbeddedActionContract of [
+  "Array.isArray(values.actions) ? values.actions.map(asRecord) : []",
+  "if (!playJsonKey || !timeJsonKey) continue;",
+  "|| playJsonKey;",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    inferredEmbeddedActionContract,
+    `embedded actions must not infer an action contract from '${inferredEmbeddedActionContract}'`,
+  );
+}
 for (const retiredWebActionDurationFallback of [
   'optionalNumber(item, optionalString(action, "durationInputId"), 1)',
   'Number(values[optionalString(definition, "jsonKey")]) || 0',
