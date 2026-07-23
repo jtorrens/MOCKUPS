@@ -1511,6 +1511,10 @@ internal sealed class ComponentPreviewInputSession
                 AllowEmpty = item["allowEmpty"]?.GetValue<bool>() == true,
                 AllowEmptyWhenItemJsonKey = JsonString(item, "allowEmptyWhenItemJsonKey"),
                 AllowEmptyWhenItemValues = JsonStringArray(item, "allowEmptyWhenItemValues"),
+                OptionsSourceCollectionJsonKey = JsonString(item, "optionsSourceCollectionJsonKey"),
+                OptionsSourceValueJsonKey = JsonString(item, "optionsSourceValueJsonKey", "id"),
+                OptionsSourceLabelJsonKey = JsonString(item, "optionsSourceLabelJsonKey"),
+                OptionsSourceFirstItemBadge = JsonString(item, "optionsSourceFirstItemBadge"),
             };
             var completeDefinition = definition with
             {

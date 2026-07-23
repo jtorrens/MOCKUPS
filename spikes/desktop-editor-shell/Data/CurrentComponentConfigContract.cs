@@ -15,6 +15,9 @@ internal static class CurrentComponentConfigContract
             case NavigationBarComponentConfigContract.ComponentType:
                 NavigationBarComponentConfigContract.Validate(config, context);
                 break;
+            case ListItemComponentConfigContract.ComponentType:
+                ListItemComponentConfigContract.Validate(config, context);
+                break;
         }
     }
 }

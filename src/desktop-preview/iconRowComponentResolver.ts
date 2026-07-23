@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { parseObject, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
@@ -52,17 +52,20 @@ export function resolveIconRowComponentFromRecords(
   const items = rawItems.map((item, index) => {
     const itemId = requiredString(item, "id", `component.iconRow.items[${index}].id`);
     const buttonVariantReference = requiredString(item, "buttonVariantReference", `component.iconRow.items[${index}].buttonVariantReference`);
-    const buttonConfig = mergeComponentDefaults(
+    const baseButtonConfig = mergeComponentDefaults(
       componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
       requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`),
     );
+    const state = requiredString(item, "state", `component.iconRow.items[${index}].state`);
+    const buttonConfig = mergeRuntimeColors(baseButtonConfig, item, state);
+    const showBadge = item.showBadge === true;
     return {
       id: itemId,
       button: resolveButtonComponentFromRecords(
         buttonConfig,
         {
           contentMode: requiredString(item, "contentMode", `component.iconRow.items[${index}].contentMode`),
-          state: requiredString(item, "state", `component.iconRow.items[${index}].state`),
+          state,
           iconToken: requiredString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize
             ? requiredString(item, "iconSizeToken", `component.iconRow.items[${index}].iconSizeToken`)
@@ -73,9 +76,25 @@ export function resolveIconRowComponentFromRecords(
           sampleText: typeof item.text === "string" ? item.text : "",
           pushTrigger: item.pushTrigger === true,
           pushElapsedMs: typeof item.pushElapsedMs === "number" ? item.pushElapsedMs : 0,
-          showBadge: false,
-          badgeIconToken: "system_check",
-          badgeText: "1",
+          showBadge,
+          badgeContentMode: showBadge
+            ? requiredString(item, "badgeContentMode", `component.iconRow.items[${index}].badgeContentMode`)
+            : "text",
+          badgeIconToken: showBadge
+            ? requiredString(item, "badgeIconToken", `component.iconRow.items[${index}].badgeIconToken`)
+            : "system_check",
+          badgeText: showBadge
+            ? requiredString(item, "badgeText", `component.iconRow.items[${index}].badgeText`)
+            : "1",
+          badgeSize: showBadge
+            ? requiredNumber(item, "badgeSize", `component.iconRow.items[${index}].badgeSize`)
+            : 20,
+          badgeBackgroundPaletteColor: showBadge
+            ? requiredString(item, "badgeBackgroundPaletteColor", `component.iconRow.items[${index}].badgeBackgroundPaletteColor`)
+            : "blue",
+          badgeContentPaletteColor: showBadge
+            ? requiredString(item, "badgeContentPaletteColor", `component.iconRow.items[${index}].badgeContentPaletteColor`)
+            : "gray_100",
         },
         componentBaseConfigs,
         `${id}.${itemId}`,
@@ -88,4 +107,36 @@ export function resolveIconRowComponentFromRecords(
     gapToken: requiredString(inputs, "gap", "component.iconRow.input.gap"),
     items,
   };
+}
+
+function mergeRuntimeColors(
+  config: Record<string, unknown>,
+  item: Record<string, unknown>,
+  state: string,
+) {
+  const iconColorToken = typeof item.iconColorToken === "string" && item.iconColorToken.trim()
+    ? item.iconColorToken
+    : undefined;
+  const textColorToken = typeof item.textColorToken === "string" && item.textColorToken.trim()
+    ? item.textColorToken
+    : undefined;
+  if (!iconColorToken && !textColorToken) return config;
+  return mergeComponentDefaults(config, {
+    button: {
+      states: {
+        [state]: {
+          ...(iconColorToken ? { iconColorToken } : {}),
+          ...(textColorToken
+            ? {
+                labelSlot: {
+                  overrides: {
+                    label: { textColorToken },
+                  },
+                },
+              }
+            : {}),
+        },
+      },
+    },
+  });
 }

@@ -29,6 +29,7 @@ export const COMPONENT_CLASS_FIELDS = defineFields({
         "badge",
         "notification",
         "notifications",
+        "listItem",
         "codeIndicator",
         "iconRow",
         "keyboard",

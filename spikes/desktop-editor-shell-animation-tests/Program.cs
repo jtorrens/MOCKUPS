@@ -303,6 +303,18 @@ static void RuntimeInputDefinitionReadersAreStrict()
     var valid = ComponentPreviewInputSession.ReadRuntimeInputs(Preview(Input()), new JsonObject()).Single();
     Equal(ComponentInputSource.Runtime, valid.Source);
     Equal(ComponentInputUiOrigin.Self, valid.UiOrigin);
+    var dynamic = Input();
+    dynamic["optionsSourceCollectionJsonKey"] = "contentSets";
+    dynamic["optionsSourceValueJsonKey"] = "id";
+    dynamic["optionsSourceLabelJsonKey"] = "name";
+    dynamic["optionsSourceFirstItemBadge"] = "Default";
+    var dynamicDefinition = ComponentPreviewInputSession
+        .ReadRuntimeInputs(Preview(dynamic), new JsonObject())
+        .Single();
+    Equal("contentSets", dynamicDefinition.OptionsSourceCollectionJsonKey);
+    Equal("id", dynamicDefinition.OptionsSourceValueJsonKey);
+    Equal("name", dynamicDefinition.OptionsSourceLabelJsonKey);
+    Equal("Default", dynamicDefinition.OptionsSourceFirstItemBadge);
     Equal(0, ComponentPreviewInputSession.ReadRuntimeInputs(new JsonObject(), new JsonObject()).Count);
 
     Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(

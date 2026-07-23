@@ -563,6 +563,29 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, StringValue(value), source, fieldLabel, embedded);
             return;
         }
+        if (descriptor.ValueKind == ValueKind.ComponentVariantSlot)
+        {
+            var slot = value as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Reference field '{fieldLabel}' must be a Component Variant Slot object.");
+            var owner = $"Reference field '{fieldLabel}'";
+            AddExact(
+                usages,
+                targets,
+                ProjectTreeNodeKind.ComponentVariant,
+                ComponentVariantSlotDocumentContract.VariantReference(slot, owner),
+                source,
+                fieldLabel,
+                embedded);
+            ScanComponentConfig(
+                ComponentVariantSlotDocumentContract.Overrides(slot, owner),
+                source,
+                targets,
+                usages,
+                componentsByReference,
+                depth: 1);
+            return;
+        }
         if (descriptor.ValueKind == ValueKind.ComponentInputBindings)
         {
             ScanBindings(value, descriptor.ComponentInputBindings ?? [], fieldLabel, source, targets, usages);

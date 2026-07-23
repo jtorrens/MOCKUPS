@@ -82,8 +82,32 @@ navigation to Button and the shared Overrides action. It does not show a
 Component selector.
 
 Icon Row structure is authored in the Variant. It is not a Runtime/Test Value.
+An owning parent may explicitly project Runtime content into those stable item
+ids, including icon, label, Button state, colors and Badge values. This never
+adds, removes or reorders the Icon Row items.
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
+
+## List Item
+
+A List Item Variant is one complete item model. It owns:
+
+- the item size;
+- an ordered element model containing at most one Avatar, Label and Icon Row;
+- each element's exact Component Variant slot, local Overrides, size and
+  placement;
+- Normal, Pressed and Inactive appearances.
+
+Elements may be reordered or omitted by a Variant. Runtime never changes that
+structure. Runtime owns a collection of stable content sets, the selected set
+id and each set's state. Every content set supplies the Actor/avatar, primary
+and secondary text, text color tokens and values for the stable Icon Row item
+ids required by the active Variant.
+
+The selected set and the selected set's state are separate animatable fields.
+The state appearance contains exactly one Surface Variant slot and one
+`elementsOpacity` multiplier between zero and one. The multiplier applies to
+Avatar, Label and Icon Row as a group; it never changes the state Surface.
 
 ## Structural stacks
 

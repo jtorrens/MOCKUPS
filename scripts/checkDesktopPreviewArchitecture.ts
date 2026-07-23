@@ -326,7 +326,7 @@ if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.
 for (const [scaffoldPath, requiredTerm] of [
   ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
   ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
-  ["src/development-scaffolding/componentScaffold.ts", "defaultVariant is the single Variant source"],
+  ["src/development-scaffolding/componentScaffold.ts", "Default and additionalVariants are the Variant sources"],
   ["src/development-scaffolding/componentScaffold.ts", "resolveComponentScaffoldSpecPath"],
   ["scripts/scaffoldComponent.ts", '"dry-run": { type: "boolean"'],
   ["scripts/scaffoldComponent.ts", "--apply is intentionally unavailable"],

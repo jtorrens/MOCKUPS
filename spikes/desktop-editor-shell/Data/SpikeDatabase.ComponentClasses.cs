@@ -753,6 +753,7 @@ internal sealed partial class SpikeDatabase
                 or ValueKind.IconTokenList
                 or ValueKind.IconSlots
                 or ValueKind.ComponentInputBindings
+                or ValueKind.ComponentVariantSlot
                 or ValueKind.StructuredCollection
                 or ValueKind.BehaviorTiming => node.ToJsonString(),
             _ => node.GetValue<string>(),
