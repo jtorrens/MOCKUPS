@@ -612,6 +612,13 @@ Motion in the owner config and uses that same timing owner. Payload preparation
 must materialize a positive duration or fail; downstream playback hosts do not
 reconstruct or default the missing result.
 
+The path never crosses an embedded Component Variant boundary. Parent config
+contains only the child's full Variant reference and explicit local Overrides,
+not the child's config as a parent-owned subtree. A parent Preview action must
+therefore own its Motion locally, use another explicit duration source or
+delegate the action to the child boundary. Committed parity validation resolves
+every declared Motion path against every complete Variant of its exact owner.
+
 Action runtime values remain strict after declaration validation. A direct
 duration is a positive finite JSON number on the action's exact owner; a
 collection-derived duration requires its declared array, stable object items

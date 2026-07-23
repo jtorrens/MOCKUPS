@@ -673,7 +673,8 @@ inspection. These actions are not component behavior in the renderer. They are
 only declarative controls that mutate declared preview input/time keys and then
 request frames through the same resolver path.
 
-The preview action contract lives under `designPreviewJson.actions`:
+The preview action contract lives under `designPreviewJson.actions`. For
+example, a Media-owned action may declare:
 
 ```json
 {
@@ -701,6 +702,10 @@ Rules:
   positive delay+duration from the exact Theme transition tokens; a missing
   path, `none` Motion, absent timing or wrong scalar type is not converted to
   zero/one-second playback;
+- an owner must not address Motion inside an embedded child through that path.
+  The parent action either owns an exact local Motion object, declares another
+  explicit finite duration source, or delegates the action to the child
+  boundary; embedding a Component does not merge its config into the parent;
 - a `durationInputId` is the exact stable `id` of a field in the action's
   runtime owner. The consumer resolves that field's explicit `jsonKey`, then
   requires a positive finite JSON number at that key; a JSON-key spelling used

@@ -2666,11 +2666,42 @@ function assertDesktopPreviewActionsAreDeclarative() {
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
     const rows = database
-      .prepare("SELECT id, design_preview_json FROM modules UNION ALL SELECT id, design_preview_json FROM component_classes")
-      .all() as { id: string; design_preview_json: string }[];
+      .prepare(`
+        SELECT id, 'module' AS owner_kind, config_json, design_preview_json, metadata_json
+        FROM modules
+        UNION ALL
+        SELECT id, 'component class' AS owner_kind, config_json, design_preview_json, metadata_json
+        FROM component_classes
+      `)
+      .all() as {
+        id: string;
+        owner_kind: string;
+        config_json: string;
+        design_preview_json: string;
+        metadata_json: string;
+      }[];
     const actionInventory = new Set<string>();
     for (const row of rows) {
       const preview = jsonRecord(jsonParse(row.design_preview_json));
+      const configOwners = [
+        {
+          label: `${row.owner_kind} ${row.id} config`,
+          config: parseRequiredJsonObject(row.config_json, `${row.owner_kind} ${row.id}.config_json`),
+        },
+      ];
+      const metadata = parseRequiredJsonObject(
+        row.metadata_json,
+        `${row.owner_kind} ${row.id}.metadata_json`,
+      );
+      for (const variant of completeVariantEnvelopes(
+        metadata.variants,
+        `${row.owner_kind} ${row.id}.metadata_json.variants`,
+      )) {
+        configOwners.push({
+          label: `${row.owner_kind} ${row.id} Variant ${String(variant.id)}`,
+          config: jsonRecord(variant.config),
+        });
+      }
       const assertAction = (action: JsonRecord, path: string, isItemAction: boolean) => {
         const id = typeof action.id === "string" ? action.id : "";
         const label = typeof action.label === "string" ? action.label : "";
@@ -2706,6 +2737,35 @@ function assertDesktopPreviewActionsAreDeclarative() {
             "data/desktop-editor-spike.sqlite",
             `${row.id}.design_preview_json.${path}.durationThemeToken must be a theme.* token`,
           );
+        }
+        if ("durationMotionConfigPath" in action) {
+          const motionPath = typeof action.durationMotionConfigPath === "string"
+            ? action.durationMotionConfigPath.trim()
+            : "";
+          const segments = motionPath.split(".").filter(Boolean);
+          if (!motionPath || segments.length === 0) {
+            addViolation(
+              "data/desktop-editor-spike.sqlite",
+              `${row.id}.design_preview_json.${path}.durationMotionConfigPath must be a non-empty owner-config path`,
+            );
+          } else {
+            for (const owner of configOwners) {
+              let value: unknown = owner.config;
+              for (const segment of segments) {
+                value = typeof value === "object"
+                  && value !== null
+                  && !Array.isArray(value)
+                  ? (value as JsonRecord)[segment]
+                  : undefined;
+              }
+              if (typeof value !== "object" || value === null || Array.isArray(value)) {
+                addViolation(
+                  "data/desktop-editor-spike.sqlite",
+                  `${row.id}.design_preview_json.${path}.durationMotionConfigPath "${motionPath}" does not resolve to an object in ${owner.label}`,
+                );
+              }
+            }
+          }
         }
         if ("durationBehaviorTimingInputId" in action) {
           const inputId = typeof action.durationBehaviorTimingInputId === "string"

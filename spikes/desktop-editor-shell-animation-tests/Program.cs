@@ -1596,6 +1596,25 @@ static void PreviewActionContractsAreStrict()
     {
         File.Delete(temporary);
     }
+
+    var currentDatabase = new SpikeDatabase(sourcePath);
+    var currentNodes = Descendants(currentDatabase.LoadProjectTree()).ToList();
+    var bubbleVariant = currentNodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Parent?.Id == "component_project_foqn_s2_bubble"
+        && node.IsProtected);
+    var currentTheme = currentNodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var bubblePayload = Required(CreatePreviewPayload(
+        currentDatabase,
+        bubbleVariant,
+        currentTheme.Id));
+    var bubblePreview = Object(bubblePayload.DesignPreviewJson);
+    var bubbleFullScreenAction = bubblePreview["actions"]?.AsArray()
+        .OfType<JsonObject>()
+        .Single((action) => action["id"]?.GetValue<string>() == "fullScreen")
+        ?? throw new InvalidOperationException("Missing Bubble Full screen action.");
+    Equal(0.3d, bubbleFullScreenAction["durationSeconds"]?.GetValue<double>() ?? 0);
+    True(bubbleFullScreenAction["durationMotionConfigPath"] is null);
 }
 
 static void DesignTestValuesPreserveStrictDocuments()
