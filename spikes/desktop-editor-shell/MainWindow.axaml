@@ -191,10 +191,11 @@
                                         Spacing="4" />
                         </StackPanel>
                     </Border>
-                    <Grid Margin="22"
-                          RowDefinitions="Auto,*,Auto"
-                          RowSpacing="14">
+                    <Grid x:Name="PreviewPanelGrid"
+                          Margin="22"
+                          RowDefinitions="240,10,*,Auto">
                         <Border Grid.Row="0"
+                                MinHeight="132"
                                 Padding="8"
                                 CornerRadius="12"
                                 Background="#18000000">
@@ -259,7 +260,16 @@
                                 </TabItem>
                             </TabControl>
                         </Border>
-                        <Grid Grid.Row="1"
+                        <GridSplitter x:Name="PreviewUtilitySplitter"
+                                      Grid.Row="1"
+                                      Height="6"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Center"
+                                      ResizeDirection="Rows"
+                                      ResizeBehavior="PreviousAndNext" />
+                        <Grid Grid.Row="2"
+                              MinHeight="180"
+                              Margin="0,14,0,14"
                               RowDefinitions="Auto,*"
                               RowSpacing="6">
                             <Border Padding="10,6"
@@ -320,7 +330,7 @@
                                 </Grid>
                             </Border>
                         </Grid>
-                        <Border Grid.Row="2"
+                        <Border Grid.Row="3"
                                 Padding="10,6"
                                 CornerRadius="8"
                                 Background="#14000000">

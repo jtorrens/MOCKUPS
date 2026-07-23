@@ -7142,6 +7142,16 @@ assertMatches(
   /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewTestValuesTab"[\s\S]*?Header="Test Values"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
   "the upper Preview utility surface must keep the agreed horizontal Test Values, Setup and Controls tab order",
 );
+assertMatches(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  /x:Name="PreviewPanelGrid"[\s\S]*?x:Name="PreviewUtilitySplitter"[\s\S]*?ResizeDirection="Rows"[\s\S]*?ResizeBehavior="PreviousAndNext"/,
+  "the Preview utility surface must use one standard horizontal adjacent-row splitter",
+);
+assertMatches(
+  "spikes/desktop-editor-shell/MainWindow.axaml",
+  /x:Name="PreviewPanelGrid"[\s\S]*?<Border Grid\.Row="0"[\s\S]*?MinHeight="132"[\s\S]*?<GridSplitter x:Name="PreviewUtilitySplitter"[\s\S]*?<Grid Grid\.Row="2"[\s\S]*?MinHeight="180"/,
+  "the Preview utility splitter must preserve usable minimum heights for both adjacent surfaces",
+);
 assertContains(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",
   "_collectionCards.CreateDesignTestValues(node)",

@@ -151,7 +151,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
         return new ScrollViewer
         {
-            MaxHeight = 320,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Padding = new Thickness(12),

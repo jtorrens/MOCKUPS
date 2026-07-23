@@ -50,6 +50,12 @@ Only the selected tab's content is shown. `Test Values` is absent when the
 selected definition exposes no Test Values or Preview actions. The other two
 tabs remain available.
 
+One standard horizontal splitter separates this utility surface from the
+Preview itself. It resizes only those two adjacent rows, keeps a usable minimum
+height for both, and lets the selected utility content scroll inside its
+assigned height. Expanding the utility surface therefore never changes the
+Preview document or introduces editor-specific sizing behavior.
+
 That surface retains the existing:
 
 - scalar and structured Test Value controls;
@@ -81,6 +87,12 @@ layout `recordClassId`; it is not written to `data/window-state.json`. A Design
 definition with Test Values opens that tab by default. A definition without
 Test Values and every Production context opens `Preview Setup` by default.
 
+The horizontal utility/Preview split is also session-only, but it is one
+window-level presentation value rather than per-record authoring state. The
+live Grid rows retain it while the window exists and a fresh process restores
+the declared default. It is not added to shell window persistence, editor view
+state, Variant history or Preview history.
+
 `MainWindow` owns only the generic Preview host and delegates construction to
 the shared collection-card factory. Runtime input controls, documents, actions
 and persistence remain in their existing owners.
@@ -105,8 +117,11 @@ Architecture checks require:
 - absence of the retired permanent `Saved` state;
 - the `New Variant…` clone presentation;
 - the ordered horizontal Preview utility tabs and dedicated Test Values host;
+- the standard row splitter, its adjacent-row behavior and minimum utility and
+  Preview heights;
 - separate Design Runtime Contract and Preview Test Values surfaces;
 - exact-class session ownership for selected Preview utility tab;
+- absence of persisted utility/Preview split state;
 - Production Runtime Values to remain in the central Runtime Inputs surface;
 - `MainWindow` to host and delegate without constructing Runtime fields.
 
