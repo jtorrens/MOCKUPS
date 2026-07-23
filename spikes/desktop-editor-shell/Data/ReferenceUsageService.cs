@@ -685,37 +685,54 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         ICollection<ReferenceUsageRecord> usages,
         IReadOnlyDictionary<string, ComponentVariantOwner> componentsByReference)
     {
-        var items = value as JsonArray;
-        if (items is null) return;
-        foreach (var item in items.OfType<JsonObject>())
+        var items = value as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Reference collection '{fieldLabel}' must be an array.");
+        RuntimeCollectionDocumentContract.Validate(items, $"Reference collection '{fieldLabel}'");
+        for (var index = 0; index < items.Count; index++)
         {
-            var stableItemId = JsonPath.String(item, "id", "");
-            var itemLabel = string.IsNullOrWhiteSpace(stableItemId) ? fieldLabel : $"{fieldLabel} · {stableItemId}";
+            var item = items[index] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Reference collection '{fieldLabel}' item at index {index} must be an object.");
+            var stableItemId = JsonPath.RequiredString(
+                item,
+                "id",
+                $"Reference collection '{fieldLabel}' item at index {index}");
+            var itemLabel = $"{fieldLabel} · {stableItemId}";
             foreach (var field in collection.Fields)
             {
                 AddInputReference(field, item[field.JsonKey], source, $"{itemLabel} · {field.Label}", targets, usages, componentsByReference);
             }
 
             if (collection.ComponentItems is not { } componentItems) continue;
-            var reference = JsonPath.String(item, componentItems.VariantReferenceJsonKey, "");
+            RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                item,
+                componentItems.DocumentKeys,
+                $"Reference collection '{fieldLabel}' item '{stableItemId}'");
+            var reference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                item,
+                componentItems.DocumentKeys,
+                $"Reference collection '{fieldLabel}' item '{stableItemId}'");
             AddExact(usages, targets, ProjectTreeNodeKind.ComponentVariant, reference, source, $"{itemLabel} · Component variant");
             if (!componentsByReference.TryGetValue(reference, out var component)) continue;
-            if (item[componentItems.OverridesJsonKey] is JsonObject overrides)
-            {
-                ScanComponentConfig(overrides, source, targets, usages, componentsByReference, depth: 1);
-            }
-            if (item[componentItems.InputsJsonKey] is JsonObject inputs)
-            {
-                AddRuntimeDocumentReferences(
-                    component.Owner.DesignPreview,
-                    component.Variant.Config,
-                    inputs,
-                    source,
-                    targets,
-                    usages,
-                    componentsByReference,
-                    RuntimeValueSource.ExplicitValues);
-            }
+            var overrides = RuntimeComponentCollectionItemDocumentContract.RequireOverrides(
+                item,
+                componentItems.DocumentKeys,
+                $"Reference collection '{fieldLabel}' item '{stableItemId}'");
+            ScanComponentConfig(overrides, source, targets, usages, componentsByReference, depth: 1);
+            var inputs = RuntimeComponentCollectionItemDocumentContract.RequireInputs(
+                item,
+                componentItems.DocumentKeys,
+                $"Reference collection '{fieldLabel}' item '{stableItemId}'");
+            AddRuntimeDocumentReferences(
+                component.Owner.DesignPreview,
+                component.Variant.Config,
+                inputs,
+                source,
+                targets,
+                usages,
+                componentsByReference,
+                RuntimeValueSource.ExplicitValues);
         }
     }
 

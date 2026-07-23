@@ -5374,6 +5374,46 @@ assertSourceMatches(
   /NormalizeCollectionOptionActionTargets[\s\S]*DesignPreviewTestValues\.CurrentCollectionItems\(preview, collection\)/,
   "action target normalization must consume strict effective collection items",
 );
+for (const embeddedCollectionDocumentConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+]) {
+  assertContains(
+    embeddedCollectionDocumentConsumer,
+    "RuntimeComponentCollectionItemDocumentContract.",
+    `${embeddedCollectionDocumentConsumer} must consume the shared embedded collection item document owner`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "VariantReferenceId.TryParse(reference",
+  "non-empty embedded collection references must use the full stable Variant grammar",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "if (reference.Length == 0) return reference;",
+  "the explicit empty Component State sentinel must remain distinct from malformed references",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  '$"item-{index}"',
+  "runtime collection item identity must never be inferred from position",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "_items.OfType<JsonObject>()",
+  "structured collection authoring must not filter malformed current items",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "overrides = new JsonObject();",
+  "opening embedded Runtime Overrides must not repair a missing current object",
+);
 for (const currentRuntimeValueConsumer of [
   "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",

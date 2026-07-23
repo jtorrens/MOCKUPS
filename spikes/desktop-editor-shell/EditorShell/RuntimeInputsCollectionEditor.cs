@@ -853,9 +853,7 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private static string ItemId(JsonObject item, int index)
     {
-        return item["id"] is JsonValue value && value.TryGetValue<string>(out var id)
-            ? id
-            : $"item-{index}";
+        return JsonPath.RequiredString(item, "id", $"Runtime collection item at index {index}");
     }
 
     private static bool IsVisibleRuntimeValue(RuntimeInputOwner owner, ComponentInputDefinition input) =>
@@ -908,12 +906,10 @@ internal sealed class RuntimeInputsCollectionEditor
         var variantField = collection.Fields.Single((field) => field.JsonKey == componentItems.VariantReferenceJsonKey);
         var variantReference = DesignPreviewTestValues.CollectionValue(item, variantField);
         if (string.IsNullOrWhiteSpace(variantReference)) return;
-        var overrides = item[componentItems.OverridesJsonKey] as JsonObject;
-        if (overrides is null)
-        {
-            overrides = new JsonObject();
-            item[componentItems.OverridesJsonKey] = overrides;
-        }
+        var overrides = RuntimeComponentCollectionItemDocumentContract.RequireOverrides(
+            item,
+            componentItems.DocumentKeys,
+            $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
         var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
         void ApplyOverrides(JsonObject nextOverrides)
         {

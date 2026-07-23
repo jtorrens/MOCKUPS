@@ -366,6 +366,57 @@ static void RuntimeInputDefinitionReadersAreStrict()
     Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
         CollectionPreview(incompleteComponentItems),
         new JsonObject()));
+    var nullComponentItems = Collection();
+    nullComponentItems["componentItems"] = null;
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(nullComponentItems),
+        new JsonObject()));
+    static JsonObject ComponentField() => new()
+    {
+        ["id"] = "componentVariant",
+        ["label"] = "Component Variant",
+        ["jsonKey"] = "variantReference",
+        ["kind"] = "componentVariant",
+        ["valueKind"] = "ComponentVariant",
+        ["defaultValue"] = "component_example::variant::default",
+        ["componentType"] = "*",
+    };
+    static JsonObject ComponentItems() => new()
+    {
+        ["variantReferenceJsonKey"] = "variantReference",
+        ["overridesJsonKey"] = "overrides",
+        ["inputsJsonKey"] = "inputs",
+    };
+    var validComponentCollection = Collection();
+    validComponentCollection["fields"] = new JsonArray(ComponentField());
+    validComponentCollection["componentItems"] = ComponentItems();
+    Equal(
+        "variantReference",
+        ComponentPreviewInputSession.ReadRuntimeCollections(
+            CollectionPreview(validComponentCollection),
+            new JsonObject()).Single().ComponentItems?.VariantReferenceJsonKey ?? "");
+    var missingComponentField = Collection();
+    missingComponentField["componentItems"] = ComponentItems();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(missingComponentField),
+        new JsonObject()));
+    var wrongComponentField = ComponentField();
+    wrongComponentField["kind"] = "text";
+    wrongComponentField["valueKind"] = "StringSingleLine";
+    var wrongComponentFieldCollection = Collection();
+    wrongComponentFieldCollection["fields"] = new JsonArray(wrongComponentField);
+    wrongComponentFieldCollection["componentItems"] = ComponentItems();
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(wrongComponentFieldCollection),
+        new JsonObject()));
+    var overlappingComponentKeys = ComponentItems();
+    overlappingComponentKeys["inputsJsonKey"] = "overrides";
+    var overlappingComponentCollection = Collection();
+    overlappingComponentCollection["fields"] = new JsonArray(ComponentField());
+    overlappingComponentCollection["componentItems"] = overlappingComponentKeys;
+    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+        CollectionPreview(overlappingComponentCollection),
+        new JsonObject()));
     var wrongPresentation = Collection();
     wrongPresentation["itemPresentation"] = new JsonArray();
     Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
@@ -1361,6 +1412,66 @@ static void DesignTestValuesPreserveStrictDocuments()
     Throws<InvalidOperationException>(() => DesignPreviewTestValues.Value(
         new JsonObject { ["opacity"] = "0.35" },
         decimalInput));
+
+    var variantInput = new ComponentInputDefinition(
+        "componentVariant",
+        "Component Variant",
+        "variantReference",
+        ComponentInputKind.ComponentVariant,
+        ValueKind.ComponentVariant,
+        "component_example::variant::default");
+    var componentItems = new RuntimeComponentCollectionItemDefinition(
+        "variantReference",
+        "overrides",
+        "inputs");
+    var componentCollection = new RuntimeInputCollectionDefinition(
+        "components",
+        "Components",
+        "components",
+        "Component",
+        [variantInput],
+        ComponentItems: componentItems);
+    static JsonObject ComponentItem() => new()
+    {
+        ["id"] = "component_item_1",
+        ["variantReference"] = "component_example::variant::default",
+        ["overrides"] = new JsonObject(),
+        ["inputs"] = new JsonObject(),
+    };
+    var componentPreview = new JsonObject
+    {
+        ["components"] = new JsonArray(ComponentItem()),
+    };
+    Equal(
+        1,
+        DesignPreviewTestValues.CollectionItems(componentPreview, componentCollection).Count);
+    var explicitEmptyComponent = ComponentItem();
+    explicitEmptyComponent["variantReference"] = "";
+    Equal(
+        "",
+        DesignPreviewTestValues.CollectionItems(
+            new JsonObject { ["components"] = new JsonArray(explicitEmptyComponent) },
+            componentCollection).Single()["variantReference"]?.GetValue<string>() ?? "missing");
+    var currentComponentItem = DesignPreviewTestValues.CurrentCollectionItems(
+        componentPreview,
+        componentCollection).Single();
+    currentComponentItem["resolved"] = true;
+    True(componentPreview["components"]?[0]?["resolved"]?.GetValue<bool>() == true);
+    var shortReference = ComponentItem();
+    shortReference["variantReference"] = "default";
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["components"] = new JsonArray(shortReference) },
+        componentCollection));
+    var missingOverrides = ComponentItem();
+    missingOverrides.Remove("overrides");
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["components"] = new JsonArray(missingOverrides) },
+        componentCollection));
+    var wrongInputs = ComponentItem();
+    wrongInputs["inputs"] = new JsonArray();
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
+        new JsonObject { ["components"] = new JsonArray(wrongInputs) },
+        componentCollection));
 
     var preview = new JsonObject { ["title"] = "Default" };
     DesignPreviewTestValues.SetValue(preview, input, "Test");

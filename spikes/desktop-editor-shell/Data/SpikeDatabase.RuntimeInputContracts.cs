@@ -313,13 +313,29 @@ internal sealed partial class SpikeDatabase
             }
             var items = RequiredRuntimeCollection(content, storageKey, owner);
             RuntimeCollectionDocumentContract.Validate(items, $"{owner} runtime collection '{storageKey}'");
+            var componentItems = RuntimeComponentCollectionItemDocumentContract.ReadDefinition(
+                collection,
+                $"{owner} runtime collection '{storageKey}'");
             if (collection["fields"] is null) continue;
             var fields = collection["fields"] as JsonArray
                 ?? throw new InvalidOperationException(
                     $"{owner} runtime collection '{storageKey}' fields must be an array.");
-            foreach (var item in items.OfType<JsonObject>())
+            for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
             {
-                var itemId = item["id"]!.GetValue<string>();
+                var item = items[itemIndex] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"{owner} runtime collection '{storageKey}' item at index {itemIndex} must be an object.");
+                var itemId = JsonPath.RequiredString(
+                    item,
+                    "id",
+                    $"{owner} runtime collection '{storageKey}' item at index {itemIndex}");
+                if (componentItems is not null)
+                {
+                    RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                        item,
+                        componentItems,
+                        $"{owner} runtime collection '{storageKey}' item '{itemId}'");
+                }
                 for (var fieldIndex = 0; fieldIndex < fields.Count; fieldIndex++)
                 {
                     var field = fields[fieldIndex] as JsonObject

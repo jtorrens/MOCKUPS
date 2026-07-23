@@ -179,6 +179,15 @@ the effective current collection-item owner without cloning it, so wrong roots
 or filtered entries cannot disappear and record-resolution mutations stay in
 the prepared document that reaches final Preview.
 
+Collections declaring `componentItems` use one shared embedded-item document
+owner. The metadata names three distinct keys and its Variant key identifies
+exactly one declared `ComponentVariant` field. Every existing stable item keeps
+an explicit Variant string plus object roots for local Overrides and Inputs. A
+non-empty Variant string uses the full stable reference grammar. The empty
+string remains an explicit sentinel only for a State that intentionally has no
+visual Component; it does not authorize a short id, Default inference or an
+omitted Inputs/Overrides document.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -345,6 +354,9 @@ Architecture enforcement must verify:
 - collection source application, record resolution and action lookup reuse the
   complete collection-definition and effective-item owners without raw
   metadata or `OfType` filtering.
+- embedded component collection items share one metadata/item document owner
+  across startup, Test Values, dictionary authoring, Usage and Preview action
+  discovery.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

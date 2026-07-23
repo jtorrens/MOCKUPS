@@ -85,6 +85,11 @@ call the general database facade.
 - A missing slot/Overrides object may be created only by the explicit authoring
   action that crosses or edits that boundary; a present wrong-root slot or
   Overrides document fails without repair.
+- A structured collection with explicit `componentItems` metadata stores three
+  distinct members per stable item: a full Component Variant reference (or the
+  explicit empty sentinel used by a visual-empty State), an Overrides object
+  and an Inputs object. Existing items are validated by the shared document
+  owner; presentation, Usage and Preview do not filter or manufacture them.
 - Runtime Test Values and Production payload ownership do not change.
 - Forwarding remains explicit and Preview resolves fully before the generic
   bridge and renderer.

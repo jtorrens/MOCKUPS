@@ -53,11 +53,11 @@ internal static class ComponentPreviewActions
                         }));
                 }
             }
-            var componentItems = collection["componentItems"] as JsonObject;
+            var componentItems = RuntimeComponentCollectionItemDocumentContract.ReadDefinition(
+                collection,
+                $"Design Preview collection '{collectionJsonKey}'");
             if (string.IsNullOrWhiteSpace(collectionJsonKey) || componentItems is null) continue;
-            var variantReferenceJsonKey = JsonString(componentItems, "variantReferenceJsonKey");
-            var inputsJsonKey = JsonString(componentItems, "inputsJsonKey");
-            if (string.IsNullOrWhiteSpace(variantReferenceJsonKey) || string.IsNullOrWhiteSpace(inputsJsonKey)) continue;
+            var inputsJsonKey = componentItems.InputsJsonKey;
             if (preview[collectionJsonKey] is not JsonArray items) continue;
             RuntimeCollectionDocumentContract.Validate(
                 items,
@@ -68,8 +68,15 @@ internal static class ComponentPreviewActions
                     items[itemIndex],
                     $"Design Preview collection '{collectionJsonKey}' item at index {itemIndex}");
                 var itemId = JsonString(item, "id");
-                var variantReference = JsonString(item, variantReferenceJsonKey);
-                if (string.IsNullOrWhiteSpace(itemId) || string.IsNullOrWhiteSpace(variantReference)) continue;
+                RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                    item,
+                    componentItems,
+                    $"Design Preview collection '{collectionJsonKey}' item '{itemId}'");
+                var variantReference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                    item,
+                    componentItems,
+                    $"Design Preview collection '{collectionJsonKey}' item '{itemId}'");
+                if (variantReference.Length == 0) continue;
                 var childContract = componentVariantRuntimeContract(variantReference);
                 definitions.AddRange(Read(childContract)
                     .Where((action) => !action.IsCollectionItemAction)

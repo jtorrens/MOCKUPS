@@ -424,3 +424,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Test Values debe invocar el lector completo con `includeHidden`; los consumidores que preparan Preview deben usar `DesignPreviewTestValues.CurrentCollectionItems`; el walker raw retirado queda prohibido. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Las colecciones válidas conservan orden, ids y overrides; solo deja de interpretarse como colección vacía una definición o raíz inválida. |
+
+## Slice 1.30 — Documento completo de items con Component embebido
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `componentItems` declaraba las keys, pero cada consumidor volvía a interpretar el item. Una referencia corta, Inputs/Overrides ausentes o wrong-root podían omitirse en Preview y Usage, aparentar que no había Overrides o crearse al abrir el editor. Dos editores aún filtraban items o fabricaban un id por posición. |
+| Owner | `RuntimeComponentCollectionItemDocumentContract` común posee metadata, keys distintas, referencia y raíces Inputs/Overrides. El reader tipado exige un único field `ComponentVariant`; startup, Test Values, editor, Usage y actions consumen el mismo owner. |
+| Cambio mínimo | Validar cada item estable antes de presentarlo o resolverlo; aceptar solo referencia completa o el string vacío explícito de un State visualmente vacío; exigir siempre objetos Inputs y Overrides; mantener identidad mutable en la preparación de Preview; retirar filtros e ids posicionales. |
+| Rutas eliminadas | Referencia corta → lookup, ref/input/override incorrecto → skip/null, Overrides ausente → `{}` al abrir, `OfType<JsonObject>` y `item-{index}`. |
+| Pruebas | 115/115 escritorio y 88/88 Preview: metadata ausente/null/incompleta, keys solapadas, field inexistente/wrong kind, item válido, sentinel vacío, referencia corta, Overrides ausente, Inputs wrong-root e identidad mutable. Component Stack conserva su State Replace vacío y todos los escenarios current pasan. |
+| Enforcement | El owner común debe estar presente en startup, Test Values, actions, editor estructurado y Usage; los filtros/ids posicionales y la creación de Overrides al abrir quedan prohibidos. |
+| Datos | Sin migración. Los items current ya conservan sus tres miembros; la base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Las referencias completas y el sentinel vacío explícito no cambian; únicamente fallan documentos embebidos incompletos o ambiguos. |

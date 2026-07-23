@@ -48,7 +48,23 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             };
             return;
         }
-        var items = _items.OfType<JsonObject>().ToList();
+        RuntimeCollectionDocumentContract.Validate(
+            _items,
+            $"Structured collection '{collection.Id}'");
+        var items = _items.Select((node, index) => node as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Structured collection '{collection.Id}' item at index {index} must be an object."))
+            .ToList();
+        if (collection.ComponentItems is { } componentItemDefinition)
+        {
+            for (var index = 0; index < items.Count; index++)
+            {
+                RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                    items[index],
+                    componentItemDefinition.DocumentKeys,
+                    $"Structured collection '{collection.Id}' item at index {index}");
+            }
+        }
         StructuredCollectionEditor? editor = null;
         void Commit(bool runtimeContractChanged = false)
         {
@@ -170,16 +186,20 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var subcards = new List<EditorInternalNavigationSection>();
         if (collection.ComponentItems is { } componentItems)
         {
-            var variantReference = JsonText(item[componentItems.VariantReferenceJsonKey]);
-            var bindings = string.IsNullOrWhiteSpace(variantReference)
+            var variantReference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                item,
+                componentItems.DocumentKeys,
+                $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
+            var bindings = variantReference.Length == 0
                 ? []
                 : _services.GetComponentVariantRuntimeInputs?.Invoke(variantReference) ?? [];
             if (bindings.Count > 0)
             {
                 var itemId = ItemId(item, itemIndex);
-                var inputs = item[componentItems.InputsJsonKey] as JsonObject
-                    ?? throw new InvalidOperationException(
-                        $"{collection.ItemLabel} '{itemId}' requires object '{componentItems.InputsJsonKey}'.");
+                var inputs = RuntimeComponentCollectionItemDocumentContract.RequireInputs(
+                    item,
+                    componentItems.DocumentKeys,
+                    $"{collection.ItemLabel} '{itemId}'");
                 var field = new DictionaryFieldControl(
                     new FieldValue(
                         new FieldDefinition(
@@ -238,11 +258,15 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             {
                 OpenEmbeddedComponent = async (_) =>
                 {
-                    var reference = JsonText(item[componentItems.VariantReferenceJsonKey]);
-                    if (string.IsNullOrWhiteSpace(reference) || _services.OpenRuntimeComponentOverrides is null) return;
-                    var currentOverrides = item[componentItems.OverridesJsonKey] as JsonObject
-                        ?? throw new InvalidOperationException(
-                            $"{collection.ItemLabel} '{ItemId(item, itemIndex)}' requires object '{componentItems.OverridesJsonKey}'.");
+                    if (_services.OpenRuntimeComponentOverrides is null) return;
+                    var reference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                        item,
+                        componentItems.DocumentKeys,
+                        $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
+                    var currentOverrides = RuntimeComponentCollectionItemDocumentContract.RequireOverrides(
+                        item,
+                        componentItems.DocumentKeys,
+                        $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
                     await _services.OpenRuntimeComponentOverrides(reference, currentOverrides, (next) =>
                     {
                         item[componentItems.OverridesJsonKey] = next.DeepClone();
@@ -367,9 +391,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     private void InitializeComponentItem(RuntimeInputCollectionDefinition collection, JsonObject item)
     {
         if (collection.ComponentItems is not { } componentItems) return;
-        var reference = JsonText(item[componentItems.VariantReferenceJsonKey]);
+        var variantField = collection.Fields.Single((field) =>
+            field.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal));
+        var reference = DesignPreviewTestValues.CollectionValue(item, variantField);
         item[componentItems.OverridesJsonKey] = new JsonObject();
-        item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
+        item[componentItems.InputsJsonKey] = reference.Length == 0
             ? new JsonObject()
             : _services.GetComponentVariantRuntimeValues?.Invoke(reference)
               ?? throw new InvalidOperationException(
@@ -378,9 +404,6 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private static string ItemId(JsonObject item, int index) =>
         JsonPath.RequiredString(item, "id", $"Structured collection item at index {index}");
-
-    private static string JsonText(JsonNode? node) =>
-        node is JsonValue value && value.TryGetValue<string>(out var text) ? text : "";
 
     private static string ComponentCategory(IReadOnlyList<FieldOption> options, string reference)
     {

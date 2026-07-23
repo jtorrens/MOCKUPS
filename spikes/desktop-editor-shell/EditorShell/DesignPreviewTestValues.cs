@@ -97,19 +97,27 @@ internal static class DesignPreviewTestValues
         JsonObject preview,
         RuntimeInputCollectionDefinition collection)
     {
+        IReadOnlyList<JsonObject> result;
         if (!string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey))
         {
-            return SourceCollectionItems(preview, collection).ToList();
+            result = SourceCollectionItems(preview, collection).ToList();
         }
-
-        var testValues = TestValues(preview);
-        var source = testValues is not null
-                     && testValues.TryGetPropertyValue(collection.JsonKey, out var testNode)
-            ? testNode as JsonArray
-              ?? throw new InvalidOperationException(
-                  $"Design Test Values collection '{collection.JsonKey}' must be an array.")
-            : OptionalArray(preview, collection.JsonKey, "Design Preview collection");
-        return CloneItems(source, $"Design Preview collection '{collection.JsonKey}'");
+        else
+        {
+            var testValues = TestValues(preview);
+            var source = testValues is not null
+                         && testValues.TryGetPropertyValue(collection.JsonKey, out var testNode)
+                ? testNode as JsonArray
+                  ?? throw new InvalidOperationException(
+                      $"Design Test Values collection '{collection.JsonKey}' must be an array.")
+                : OptionalArray(preview, collection.JsonKey, "Design Preview collection");
+            result = CloneItems(source, $"Design Preview collection '{collection.JsonKey}'");
+        }
+        ValidateComponentItems(
+            collection,
+            result,
+            $"Design Preview collection '{collection.JsonKey}'");
+        return result;
     }
 
     public static IReadOnlyList<JsonObject> CurrentCollectionItems(
@@ -124,10 +132,15 @@ internal static class DesignPreviewTestValues
         RuntimeCollectionDocumentContract.Validate(
             items,
             $"Design Preview current collection '{collection.JsonKey}'");
-        return ObjectItems(
+        var result = ObjectItems(
                 items,
                 $"Design Preview current collection '{collection.JsonKey}'")
             .ToList();
+        ValidateComponentItems(
+            collection,
+            result,
+            $"Design Preview current collection '{collection.JsonKey}'");
+        return result;
     }
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
@@ -421,5 +434,20 @@ internal static class DesignPreviewTestValues
             throw new InvalidOperationException($"{owner} cannot be null.");
         }
         return RuntimeInputValueKindContract.CurrentStorageText(input.ValueKind, value, owner);
+    }
+
+    private static void ValidateComponentItems(
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<JsonObject> items,
+        string owner)
+    {
+        if (collection.ComponentItems is not { } componentItems) return;
+        for (var index = 0; index < items.Count; index++)
+        {
+            RuntimeComponentCollectionItemDocumentContract.ValidateItem(
+                items[index],
+                componentItems.DocumentKeys,
+                $"{owner} item at index {index}");
+        }
     }
 }

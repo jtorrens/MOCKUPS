@@ -451,14 +451,19 @@ internal sealed class ComponentPreviewInputSession
             foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(preview, collection))
             {
                 ResolveRecordReferenceInputs(item, collection.Fields, themeMode, paletteColors);
-                if (collection.ComponentItems is not { } componentItems
-                    || item[componentItems.VariantReferenceJsonKey] is not JsonValue variantValue
-                    || !variantValue.TryGetValue<string>(out var variantReference)
-                    || string.IsNullOrWhiteSpace(variantReference)
-                    || item[componentItems.InputsJsonKey] is not JsonObject componentInputs)
+                if (collection.ComponentItems is not { } componentItems)
                 {
                     continue;
                 }
+                var variantReference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                    item,
+                    componentItems.DocumentKeys,
+                    $"Design Preview collection '{collection.JsonKey}' item");
+                var componentInputs = RuntimeComponentCollectionItemDocumentContract.RequireInputs(
+                    item,
+                    componentItems.DocumentKeys,
+                    $"Design Preview collection '{collection.JsonKey}' item");
+                if (variantReference.Length == 0) continue;
 
                 var componentConfig = _previewInputData.ComponentVariantConfig(variantReference);
                 ResolveRecordReferenceInputs(
@@ -1584,6 +1589,27 @@ internal sealed class ComponentPreviewInputSession
 
             var itemPresentation = ReadItemPresentation(collection);
             var componentItems = ReadComponentItems(collection);
+            if (componentItems is not null)
+            {
+                var matchingFields = itemFields.Where((field) =>
+                        field.JsonKey.Equals(
+                            componentItems.VariantReferenceJsonKey,
+                            StringComparison.Ordinal))
+                    .ToList();
+                if (matchingFields.Count != 1
+                    || matchingFields[0].ValueKind != ValueKind.ComponentVariant)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' componentItems must reference one ComponentVariant field.");
+                }
+                if (itemFields.Any((field) =>
+                        field.JsonKey.Equals(componentItems.OverridesJsonKey, StringComparison.Ordinal)
+                        || field.JsonKey.Equals(componentItems.InputsJsonKey, StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' componentItems object keys must not overlap field keys.");
+                }
+            }
             if (!isVisible && !includeHidden) continue;
             definitions.Add(new RuntimeInputCollectionDefinition(
                 id,
@@ -1651,25 +1677,15 @@ internal sealed class ComponentPreviewInputSession
 
     private static RuntimeComponentCollectionItemDefinition? ReadComponentItems(JsonObject collection)
     {
-        var componentItems = OptionalObject(
+        var keys = RuntimeComponentCollectionItemDocumentContract.ReadDefinition(
             collection,
-            "componentItems",
             $"Runtime Input collection '{JsonString(collection, "id")}'");
-        if (componentItems is null) return null;
-
-        return new RuntimeComponentCollectionItemDefinition(
-            JsonPath.RequiredString(
-                componentItems,
-                "variantReferenceJsonKey",
-                "Runtime Input componentItems"),
-            JsonPath.RequiredString(
-                componentItems,
-                "overridesJsonKey",
-                "Runtime Input componentItems"),
-            JsonPath.RequiredString(
-                componentItems,
-                "inputsJsonKey",
-                "Runtime Input componentItems"));
+        return keys is null
+            ? null
+            : new RuntimeComponentCollectionItemDefinition(
+                keys.VariantReferenceJsonKey,
+                keys.OverridesJsonKey,
+                keys.InputsJsonKey);
     }
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field)
@@ -2042,7 +2058,13 @@ internal sealed record RuntimeInputCollectionDefinition(
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,
     string OverridesJsonKey,
-    string InputsJsonKey);
+    string InputsJsonKey)
+{
+    public RuntimeComponentCollectionDocumentKeys DocumentKeys => new(
+        VariantReferenceJsonKey,
+        OverridesJsonKey,
+        InputsJsonKey);
+}
 
 internal sealed record RuntimeInputCollectionItemPresentation(
     string TitleFieldId,
