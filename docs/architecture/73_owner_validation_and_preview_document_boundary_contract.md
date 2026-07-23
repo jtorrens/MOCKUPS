@@ -434,6 +434,14 @@ become an empty icon and filenames are never derived from token ids. A valid
 mapping whose referenced asset is unavailable keeps the existing generic empty
 asset result; filesystem availability is separate from document validity.
 
+Both generic final renderers consume the same exact `RenderableNodeSchema`
+before painting. Optional Renderable metadata remains optional, but present
+metadata is validated once for the complete recursive tree. In particular,
+`inlineCursor` must contain its resolved color, positive width and optional
+bounded opacity. HTML and SVG consume that typed visual primitive directly;
+they do not convert a wrong-root cursor into absence or add Component-specific
+interpretation. An absent cursor remains the only no-cursor sentinel.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -765,6 +773,8 @@ Architecture enforcement must verify:
   preserving only the declared mode-to-global absence precedence.
 - Icon resolution distinguishes an absent mapping or token from invalid
   present mapping/token/file documents and never fabricates an SVG filename.
+- HTML and SVG validate the same recursive Renderable schema and consume exact
+  optional inline-cursor metadata without a second permissive parser.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

@@ -1094,3 +1094,16 @@ y Overrides por item.
 | Enforcement | Owners y validación del file quedan fijados; casts, mapping fabricado y filename derivado quedan prohibidos. |
 | Datos | Sin migración. Los Icon Themes current ya tienen tabla, files SVG locales y asset roots explícitos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia un icono válido ni el placeholder de un token realmente no mapeado; un documento presente roto deja de parecer ausencia. |
+
+## Slice 1.80 — Frontera Renderable común para HTML y SVG
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | SVG validaba el árbol Renderable antes de pintar, pero HTML dependía de la validación del caller; ambos volvían a convertir `inlineCursor` wrong-root en `{}`. |
+| Owner | El schema Renderable posee la forma recursiva y metadata visual final; los adapters genéricos solo pintan primitives resueltas. |
+| Cambio mínimo | Validar el root también dentro del adapter HTML y consumir el cursor tipado directamente en HTML/SVG. |
+| Rutas eliminadas | Dependencia implícita del caller HTML y dos `asRecord(node.metadata?.inlineCursor)`. |
+| Pruebas | La cobertura común pinta el mismo cursor en HTML/SVG y exige que ambos rechacen una metadata wrong-root. |
+| Enforcement | Ambos parsers de schema y el acceso tipado quedan fijados; los casts locales del cursor quedan prohibidos. |
+| Datos | Sin migración ni cambio de payload. El Renderable current ya satisface el schema; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia una primitive válida ni añade lógica de Component al renderer; solo unifica la validación final. |

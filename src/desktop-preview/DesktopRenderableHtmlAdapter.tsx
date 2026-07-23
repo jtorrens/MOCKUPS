@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import {
   renderableNodeTypes,
   type RenderableBox,
@@ -327,10 +328,8 @@ function iconContent(node: RenderableNode): ReactNode {
 }
 
 function textContent(node: RenderableNode): ReactNode {
-  const inlineCursor = asRecord(node.metadata?.inlineCursor);
-  const cursorColor = optionalStringValue(inlineCursor.color);
-  const cursorWidth = optionalNumberValue(inlineCursor.width);
-  if (!cursorColor || !cursorWidth) return node.text;
+  const inlineCursor = node.metadata?.inlineCursor;
+  if (!inlineCursor) return node.text;
 
   return (
     <>
@@ -338,16 +337,16 @@ function textContent(node: RenderableNode): ReactNode {
       <span
         aria-hidden="true"
         style={{
-          background: cursorColor,
-          borderRadius: Math.min(cursorWidth * 0.5, 2),
+          background: inlineCursor.color,
+          borderRadius: Math.min(inlineCursor.width * 0.5, 2),
           display: "inline-block",
           flex: "0 0 auto",
           height: "1.05em",
           marginLeft: "0.01em",
-          minWidth: cursorWidth,
-          opacity: optionalNumberValue(inlineCursor.opacity) ?? 1,
+          minWidth: inlineCursor.width,
+          opacity: inlineCursor.opacity ?? 1,
           verticalAlign: "text-bottom",
-          width: cursorWidth,
+          width: inlineCursor.width,
         }}
       />
     </>
@@ -469,12 +468,13 @@ export function DesktopRenderableHtmlAdapter({
   tree,
   showBounds = false,
 }: DesktopRenderableHtmlAdapterProps) {
-  const css = fontFaceCss(tree);
+  const root = RenderableNodeSchema.parse(tree);
+  const css = fontFaceCss(root);
   return (
     <>
       {css ? <style>{css}</style> : null}
       <RenderNode
-        node={tree}
+        node={root}
         parentOrigin={{ x: 0, y: 0 }}
         showBounds={showBounds}
       />

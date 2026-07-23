@@ -2,7 +2,6 @@ import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import { fileURLToPath } from "node:url";
 import * as fontkit from "fontkit";
 import type { RenderableBox, RenderableFontFace, RenderableNode } from "../visual/renderable/types.js";
-import { asRecord } from "./previewJsonHelpers.js";
 import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 import { emojiRasterDataUri } from "./previewAssetResolver.js";
@@ -182,20 +181,20 @@ function outlineFont(fontFamilyValue: unknown, fontFaces: RenderableFontFace[]) 
 }
 
 function inlineCursorMarkup(node: RenderableNode, x: number, baseline: number, fontSize: number, textAlign: string) {
-  const cursor = asRecord(node.metadata?.inlineCursor);
-  const width = finite(cursor.width);
+  const cursor = node.metadata?.inlineCursor;
+  if (!cursor) return "";
   const cursorColor = color(cursor.color);
-  if (!width || !cursorColor) return "";
+  if (!cursorColor) return "";
   const estimate = (node.text ?? "").length * fontSize * 0.52;
   const cursorX = textAlign === "right" ? x - estimate : textAlign === "center" ? x + estimate / 2 : x + estimate;
   return `<rect ${attributes({
     x: cursorX,
     y: baseline - fontSize,
-    width,
+    width: cursor.width,
     height: fontSize * 1.05,
-    rx: Math.min(width / 2, 2),
+    rx: Math.min(cursor.width / 2, 2),
     fill: cursorColor,
-    opacity: finite(cursor.opacity) ?? 1,
+    opacity: cursor.opacity ?? 1,
   })}/>`;
 }
 

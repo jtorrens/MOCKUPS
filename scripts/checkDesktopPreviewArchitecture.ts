@@ -8113,6 +8113,26 @@ for (const permissivePreviewIconDocument of [
     `Preview Icon Theme resolution must not infer current mapping data (${permissivePreviewIconDocument})`,
   );
 }
+for (const [renderer, requiredRenderableBoundary] of [
+  ["src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", "const root = RenderableNodeSchema.parse(tree);"],
+  ["src/desktop-preview/RenderableSvgAdapter.ts", "const root = RenderableNodeSchema.parse(tree);"],
+] as const) {
+  assertContains(
+    renderer,
+    requiredRenderableBoundary,
+    `${renderer} must validate the exact Renderable tree before painting`,
+  );
+}
+for (const [renderer, permissiveCursorMetadata] of [
+  ["src/desktop-preview/DesktopRenderableHtmlAdapter.tsx", "asRecord(node.metadata?.inlineCursor)"],
+  ["src/desktop-preview/RenderableSvgAdapter.ts", "asRecord(node.metadata?.inlineCursor)"],
+] as const) {
+  assertDoesNotContain(
+    renderer,
+    permissiveCursorMetadata,
+    `${renderer} must consume schema-validated inline cursor metadata`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
