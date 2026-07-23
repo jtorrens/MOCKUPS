@@ -22,7 +22,7 @@ The popup is one continuous silhouette containing:
 
 - a head whose target width is `1.3 ×` the resolved key width;
 - a connector whose upper edge occupies the complete lower width of the head
-  and narrows towards the pressed key;
+  and narrows to the complete upper width of the pressed key;
 - the pressed key's complete base box.
 
 The pressed key's normal background, glyph and shadow are omitted while this
@@ -30,6 +30,10 @@ silhouette is active. The enlarged glyph appears once in the popup head. One
 outer path owns fill, optional border and the single shared shadow; no seam,
 horizontal shelf beside the connector, second key shadow or duplicated lower
 glyph remains.
+
+The connector's lower edge and the pressed key's upper edge are the same
+resolved segment. The key has no upper corner radii while the popup is active;
+only its two lower corners retain the resolved key radius.
 
 Keys without an active popup retain their existing background, glyph, border
 and optional shadow.
@@ -59,9 +63,9 @@ positions to choose a special case.
 
 ## 5. Enforcement
 
-Automated tests verify centered width, full-width connector origin, continuous
-extent through the base key, left/right frame containment, connector targeting
-and narrow-frame capping.
+Automated tests verify centered width, full-width connector origin, complete
+key-width connector destination, continuous extent through the base key,
+left/right frame containment, connector targeting and narrow-frame capping.
 Architecture checks require the component-owned geometry helper, the early
 popup composition that replaces the normal key nodes and the absence of the
 retired separate popup/tail append.

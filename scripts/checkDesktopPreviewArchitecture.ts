@@ -8808,6 +8808,8 @@ for (const requiredKeyboardPopupBoundary of [
   "const connectorCenterX = keyBox.x + keyBox.width / 2 - headX;",
   "const connectorTopLeft = 0;",
   "const connectorTopRight = headWidth;",
+  "const connectorBottomLeft = baseLeft;",
+  "const connectorBottomRight = baseRight;",
   "if (showPopup) {\n      return keyboardPopoverNodes(",
   "filter: dropShadowFilter(keyShadow)",
 ]) {
@@ -8823,6 +8825,7 @@ for (const retiredKeyboardPopupComposition of [
   "const tailHeight = keyBox.height * 0.44;",
   "const gap = tailHeight;",
   "KeyboardPopupConnectorTopWidthRatio",
+  "KeyboardPopupConnectorBottomWidthRatio",
 ]) {
   assertDoesNotContain(
     "src/desktop-preview/keyboardComponentRenderable.ts",

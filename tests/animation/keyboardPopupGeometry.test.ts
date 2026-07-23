@@ -38,6 +38,15 @@ test("Keyboard popup forms one wider silhouette through the pressed key", () => 
     geometry.connectorTopRightX - geometry.connectorTopLeftX,
     geometry.shapeBox.width,
   );
+  close(geometry.connectorBottomLeftX, keyBox.x - geometry.shapeBox.x);
+  close(
+    geometry.connectorBottomRightX,
+    keyBox.x - geometry.shapeBox.x + keyBox.width,
+  );
+  close(
+    geometry.connectorBottomRightX - geometry.connectorBottomLeftX,
+    keyBox.width,
+  );
   assert.equal(geometry.labelBox.width, geometry.shapeBox.width);
   assert.ok(geometry.labelBox.y + geometry.labelBox.height < keyBox.y);
   assert.match(geometry.pathData, /^M/u);

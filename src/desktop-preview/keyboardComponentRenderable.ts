@@ -19,7 +19,6 @@ import { wrapMotionFrame } from "./previewMotionHelpers.js";
 
 export const KeyboardPopupWidthRatio = 1.3;
 export const KeyboardPopupConnectorHeightRatio = 0.34;
-const KeyboardPopupConnectorBottomWidthRatio = 0.36;
 
 export interface KeyboardPopupGeometry {
   shapeBox: RenderableBox;
@@ -29,6 +28,8 @@ export interface KeyboardPopupGeometry {
   connectorCenterX: number;
   connectorTopLeftX: number;
   connectorTopRightX: number;
+  connectorBottomLeftX: number;
+  connectorBottomRightX: number;
 }
 
 export function keyboardComponentToRenderable(
@@ -371,15 +372,10 @@ export function keyboardPopupGeometry(
   const baseLeft = keyBox.x - headX;
   const baseRight = baseLeft + keyBox.width;
   const connectorCenterX = keyBox.x + keyBox.width / 2 - headX;
-  const connectorBottomHalfWidth = Math.min(
-    keyBox.width * KeyboardPopupConnectorBottomWidthRatio / 2,
-    connectorCenterX - baseLeft,
-    baseRight - connectorCenterX,
-  );
   const connectorTopLeft = 0;
   const connectorTopRight = headWidth;
-  const connectorBottomLeft = connectorCenterX - connectorBottomHalfWidth;
-  const connectorBottomRight = connectorCenterX + connectorBottomHalfWidth;
+  const connectorBottomLeft = baseLeft;
+  const connectorBottomRight = baseRight;
   const headRadius = Math.max(0, Math.min(radius, headWidth / 2, headHeight / 2));
   const keyRadius = Math.max(0, Math.min(radius, keyBox.width / 2, keyBox.height / 2));
   const shapeBox = {
@@ -394,15 +390,11 @@ export function keyboardPopupGeometry(
     `Q${headWidth} 0 ${headWidth} ${headRadius}`,
     `V${headHeight}`,
     `L${connectorBottomRight} ${baseTop}`,
-    `H${baseRight - keyRadius}`,
-    `Q${baseRight} ${baseTop} ${baseRight} ${baseTop + keyRadius}`,
     `V${totalHeight - keyRadius}`,
     `Q${baseRight} ${totalHeight} ${baseRight - keyRadius} ${totalHeight}`,
     `H${baseLeft + keyRadius}`,
     `Q${baseLeft} ${totalHeight} ${baseLeft} ${totalHeight - keyRadius}`,
-    `V${baseTop + keyRadius}`,
-    `Q${baseLeft} ${baseTop} ${baseLeft + keyRadius} ${baseTop}`,
-    `H${connectorBottomLeft}`,
+    `V${baseTop}`,
     `L${connectorTopLeft} ${headHeight}`,
     `V${headRadius}`,
     `Q0 0 ${headRadius} 0`,
@@ -421,6 +413,8 @@ export function keyboardPopupGeometry(
     connectorCenterX,
     connectorTopLeftX: connectorTopLeft,
     connectorTopRightX: connectorTopRight,
+    connectorBottomLeftX: connectorBottomLeft,
+    connectorBottomRightX: connectorBottomRight,
   };
 }
 
