@@ -5103,6 +5103,33 @@ for (const forbiddenDesktopBehaviorTimingFallback of [
     `desktop Behavior Timing must surface invalid current resolution (${forbiddenDesktopBehaviorTimingFallback})`,
   );
 }
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+  "Behavior Timing field '{definition.Id}' requires its frame resolver.",
+  "Behavior Timing controls must require their owner-provided calculated-duration resolver",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "is missing its natural timing definition.",
+  "Behavior Timing editor services must reject missing owner metadata",
+);
+for (const retiredBehaviorTimingPresentationFallback of [
+  "_resolveFrames?.Invoke(_definition, _value.ToJson()) ?? 0",
+  "Func<FieldDefinition, string, int?>? _resolveFrames",
+  "if (definition.BehaviorTiming is not { } timing) return null;",
+  "Math.Max(0, frames)",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+    retiredBehaviorTimingPresentationFallback,
+    `Behavior Timing presentation must not infer frame zero (${retiredBehaviorTimingPresentationFallback})`,
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+    retiredBehaviorTimingPresentationFallback,
+    `Behavior Timing editor services must not hide missing metadata (${retiredBehaviorTimingPresentationFallback})`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
   "CurrentRuntimeInputKinds",

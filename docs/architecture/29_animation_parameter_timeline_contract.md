@@ -266,6 +266,11 @@ them into frame zero or an absent calculated duration.
 
 The dictionary keeps `Duration (frames)` visible in both modes. It is editable in Fixed mode and read-only in Natural mode, where it displays the live derived value from the same shared resolver used by the owner timeline. The calculated number is not persisted and changes when its semantic source, module rate, selected pace token, or effective Theme changes.
 
+Creating a `BehaviorTiming` dictionary control therefore requires that shared
+frame resolver and complete natural-timing metadata, even when the current mode
+is Fixed. A missing resolver/definition or negative result is an invalid editor
+composition; the control must not display calculated frame zero as a substitute.
+
 Conversation Write On is the first consumer. Its semantic unit is a grapheme, its base rate is 7 frames per grapheme, and its module resolver produces a deterministic, monotonic typing plan with small contextual variations and no corrections. It always reaches the complete text at the resolved final frame. Password uses the same generic value kind with a component-owned rate of 4 frames per digit and a deterministic keypad sequence, without adding a special case to the dictionary, bridge or renderer.
 
 Generic Design Preview actions may name a `BehaviorTiming` runtime input as

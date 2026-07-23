@@ -16,7 +16,7 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
     private readonly Control _durationRow;
     private readonly Control _paceRow;
     private readonly TextBlock _durationLabel;
-    private readonly Func<FieldDefinition, string, int?>? _resolveFrames;
+    private readonly Func<FieldDefinition, string, int> _resolveFrames;
     private readonly FieldDefinition _definition;
     private BehaviorTimingValue _value;
     private bool _updating;
@@ -25,10 +25,12 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
         FieldDefinition definition,
         string value,
         Func<string, IReadOnlyList<FieldOption>?, Task<string?>>? showThemeTokenPicker,
-        Func<FieldDefinition, string, int?>? resolveFrames)
+        Func<FieldDefinition, string, int>? resolveFrames)
     {
         _definition = definition;
-        _resolveFrames = resolveFrames;
+        _resolveFrames = resolveFrames
+            ?? throw new InvalidOperationException(
+                $"Behavior Timing field '{definition.Id}' requires its frame resolver.");
         _value = BehaviorTimingValue.Parse(value);
         RowDefinitions = new RowDefinitions("Auto,Auto,Auto");
         RowSpacing = 6;
@@ -111,8 +113,13 @@ internal sealed class DictionaryBehaviorTimingControl : Grid, IDictionaryValueCo
         _durationLabel.Text = natural ? "Calculated duration" : "Duration";
         if (natural)
         {
-            var frames = _resolveFrames?.Invoke(_definition, _value.ToJson()) ?? 0;
-            _fixedFrames.SetValue(Math.Max(0, frames).ToString());
+            var frames = _resolveFrames(_definition, _value.ToJson());
+            if (frames < 0)
+            {
+                throw new InvalidOperationException(
+                    $"Behavior Timing field '{_definition.Id}' resolved a negative duration.");
+            }
+            _fixedFrames.SetValue(frames.ToString());
             Grid.SetRow(_paceRow, 1);
             Grid.SetRow(_durationRow, 2);
         }

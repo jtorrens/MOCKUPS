@@ -46,9 +46,13 @@ internal sealed class EditorDictionaryFieldServices
         {
             return _contextData.ThemeTokens(node, _selectedThemeId());
         }
-        int? ResolveBehaviorTimingFrames(FieldDefinition definition, string json)
+        int ResolveBehaviorTimingFrames(FieldDefinition definition, string json)
         {
-            if (definition.BehaviorTiming is not { } timing) return null;
+            if (definition.BehaviorTiming is not { } timing)
+            {
+                throw new InvalidOperationException(
+                    $"Behavior Timing field '{definition.Id}' is missing its natural timing definition.");
+            }
             var value = BehaviorTimingValue.Parse(json);
             if (value.Mode == "fixed") return value.FixedFrames;
             return BehaviorTimingResolver.ResolveNaturalFrames(

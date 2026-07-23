@@ -346,3 +346,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Owner de colección y strings requerido; filtros/fallbacks/label posicional prohibidos; normalización action debe llamar al resolver común. |
 | Datos | Sin migración. Las opciones dinámicas current ya declaran `alternatives`, `id` y `name`; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Las opciones y selección válidas conservan ids, orden y labels; solo deja de ocultarse un contrato o referencia rota. |
+
+## Slice 1.24 — Dependencia calculada de `BehaviorTiming`
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El value, metadata y resolver ya eran estrictos, pero el control todavía hacía `resolver?.Invoke(...) ?? 0`; un servicio de diccionario incompleto aparentaba una duración natural calculada de cero. El servicio devolvía además `null` si faltaba metadata. |
+| Owner | `EditorDictionaryFieldServices` compone el resolver desde el `FieldDefinition`; `DictionaryBehaviorTimingControl` lo requiere para presentar el mismo cálculo del owner timeline. |
+| Cambio mínimo | Hacer no-null el resultado del delegate, fallar al crear el control sin resolver, fallar si el FieldDefinition carece de metadata o el resultado es negativo y mostrar el entero exacto válido. |
+| Rutas eliminadas | Resolver ausente → frame 0, definición sin `BehaviorTiming` → `null` y clamp de un resultado negativo a cero. |
+| Pruebas | 114/114 escritorio: el control rechaza construcción sin resolver; los escenarios Natural/Fix, Password y timeline conservan sus duraciones válidas. |
+| Enforcement | Delegate/resolver requerido y patrones nullable/`?? 0` prohibidos en control y servicio. |
+| Datos | Sin migración. No cambia ningún documento ni cálculo current; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Todos los hosts reales ya suministraban el servicio; solo deja de ocultarse una composición de editor incompleta. |

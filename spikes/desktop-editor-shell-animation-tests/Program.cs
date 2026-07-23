@@ -6336,6 +6336,17 @@ static void ScreenTreeNodesKeepActionsInEditor()
 
 static void NaturalBehaviorTimingUsesGraphemesAndThemePace()
 {
+    var dictionaryDefinition = new FieldDefinition(
+        "test.timing",
+        "Timing",
+        ValueKind.BehaviorTiming,
+        BehaviorTiming: new BehaviorTimingDefinition("text", "grapheme", 7));
+    Throws<InvalidOperationException>(() => new DictionaryBehaviorTimingControl(
+        dictionaryDefinition,
+        "{\"mode\":\"natural\",\"fixedFrames\":12,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+        showThemeTokenPicker: null,
+        resolveFrames: null));
+
     var contract = Object("""
         {"collections":[{"jsonKey":"messages","animationTimeline":{"sequence":"serial","preDurationFieldIds":[],"postDurationFieldIds":[]},"fields":[
           {"id":"text","jsonKey":"text","animationTimeline":{"origin":{"kind":"ownerStart"},"completion":{"baseDurationFieldId":"writeOn","minimumEnabledKeyframes":2}}},

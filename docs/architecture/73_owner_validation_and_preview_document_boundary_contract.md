@@ -231,7 +231,9 @@ its explicit mode, non-negative integer fixed duration and declared natural
 pace token. A natural definition keeps one exact sibling string source,
 supported semantic unit and positive numeric base rate. Invalid or incomplete
 values/metadata do not become duration zero, a missing definition or a
-calculated UI fallback.
+calculated UI fallback. The dictionary control requires the same resolver when
+it is constructed and rejects a missing owner or negative result instead of
+showing calculated zero.
 
 ## 6. Failure and diagnostics
 
@@ -319,6 +321,8 @@ Architecture enforcement must verify:
 - `BehaviorTiming` values, sibling-source metadata and both desktop/web
   resolvers reject missing members, wrong scalar shapes and zero-rate/default
   inference.
+- the `BehaviorTiming` dictionary control requires its owner resolver and never
+  replaces an unavailable calculation with frame zero.
 
 Tests cover every required payload root with valid, malformed and wrong-root
 input; optional icon mapping absence and invalid presence; explicit light,
