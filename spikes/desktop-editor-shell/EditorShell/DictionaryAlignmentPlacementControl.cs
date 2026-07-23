@@ -363,13 +363,13 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
 
     private static TextBox CreateDecimalBox(double value, bool isEditable)
     {
-        return EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
+        return EditorNumericTextStyle.Apply(new TextBox
         {
             Text = FormatAlign(value),
             Width = EditorUiDensity.TextAwareWidth(78),
             IsReadOnly = !isEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
-        }));
+        });
     }
 
     private static void AddSliderRow(Grid grid, int row, string label, Slider slider, TextBox box)

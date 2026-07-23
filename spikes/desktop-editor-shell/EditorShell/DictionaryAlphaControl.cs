@@ -135,13 +135,13 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public static TextBox CreateAlphaBox(double value, bool isEditable)
     {
-        return EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
+        return EditorNumericTextStyle.Apply(new TextBox
         {
             Text = PaletteAlphaPair.FormatAlpha(value),
             Width = EditorUiDensity.TextAwareWidth(78),
             IsReadOnly = !isEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
-        }));
+        });
     }
 
     public static void SetAlpha(Slider slider, TextBox box, double value)

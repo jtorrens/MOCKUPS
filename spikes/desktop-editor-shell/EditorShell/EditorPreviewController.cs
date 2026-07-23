@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
@@ -194,7 +195,7 @@ internal sealed class EditorPreviewController
     private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
-    private CancellationTokenSource? _previewLoadingCancellation;
+    private readonly PreviewPreparationCancellation _designPlaybackPreparation = new();
     private CancellationTokenSource? _aheadPreloadCancellation;
     private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
     private bool _isAheadPreloading;
@@ -211,7 +212,7 @@ internal sealed class EditorPreviewController
     private string _shotTimelineContextNodeId = "";
     private bool _isUpdatingShotTimeline;
     private long _selectionRefreshGeneration;
-    private CancellationTokenSource? _shotPlaybackPreparationCancellation;
+    private readonly PreviewPreparationCancellation _shotPlaybackPreparation = new();
     private PreparedShotPlayback? _preparedShotPlayback;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
@@ -970,6 +971,11 @@ internal sealed class EditorPreviewController
 
     private void AttachControlEvents()
     {
+        _owner.AddHandler(
+            InputElement.KeyDownEvent,
+            OnOwnerKeyDown,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
         var shotFrameMagnet = new TimelineSliderMagnet(
             _shotFrameSlider,
             () =>
@@ -1147,7 +1153,7 @@ internal sealed class EditorPreviewController
 
     public void BeginSelectionTransition()
     {
-        CancelShotPlaybackPreparation();
+        CancelPlaybackPreparation();
         if (_workspace != EditorWorkspace.Production
             || ProductionContextNode() is not { } selected)
         {
@@ -1181,7 +1187,7 @@ internal sealed class EditorPreviewController
     public void Refresh()
     {
         Interlocked.Increment(ref _selectionRefreshGeneration);
-        CancelShotPlaybackPreparation();
+        CancelPlaybackPreparation();
         RefreshCore();
     }
 
@@ -1325,10 +1331,26 @@ internal sealed class EditorPreviewController
         return payload is not null && _designInputsPanel.ResetTestValues(payload);
     }
 
-    private Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
+    private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {
         InvalidatePreparedShotPlayback();
-        return PreparePlaybackFramesAsync(requestedAction, CancellationToken.None);
+        var operation = _designPlaybackPreparation.Begin();
+        try
+        {
+            var prepared = await PreparePlaybackFramesAsync(requestedAction, operation.Token);
+            return prepared && _designPlaybackPreparation.IsCurrent(operation);
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        finally
+        {
+            if (_designPlaybackPreparation.Complete(operation))
+            {
+                HidePreviewLoading();
+            }
+        }
     }
 
     private async Task<bool> PreparePlaybackFramesAsync(
@@ -1406,10 +1428,6 @@ internal sealed class EditorPreviewController
                 ReleaseFrameCacheReservation();
                 throw;
             }
-            finally
-            {
-                HidePreviewLoading();
-            }
             PreviewDebugLog.Write(
                 "preview.playback.prepare.html",
                 ("route", _selectedPlaybackRoute),
@@ -1441,14 +1459,10 @@ internal sealed class EditorPreviewController
             }
         }
 
-        _previewLoadingCancellation?.Cancel();
-        _previewLoadingCancellation?.Dispose();
         _aheadPreloadCancellation?.Cancel();
         _aheadPreloadCancellation?.Dispose();
         _aheadPreloadCancellation = null;
         _aheadPreloadedFrameKeys.Clear();
-        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _previewLoadingCancellation = cancellation;
         var totalStopwatch = Stopwatch.StartNew();
         PreviewDebugLog.Write(
             "preview.playback.frames.start",
@@ -1483,7 +1497,7 @@ internal sealed class EditorPreviewController
                 var frame = frames[frameIndex];
                 UpdateRasterProgress(frameIndex, frames.Count);
                 _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
-                cancellation.Token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 var rasterHtml = await _designPreviewPane.BuildRasterHtmlAsync(metrics, frame);
                 var rasterPath = Path.Combine(_rasterCacheDirectory, $"frame-{frameIndex:D6}.webp");
                 await _chromiumRasterizer.RasterizeAsync(
@@ -1494,13 +1508,13 @@ internal sealed class EditorPreviewController
                     "webp",
                     quality: 95,
                     captureScale: 1,
-                    cancellation.Token);
+                    cancellationToken);
                 _rasterPlaybackFrames[PlaybackFrameKey(frame)] = rasterPath;
                 _rasterPlaybackOrder.Add(rasterPath);
                 UpdateRasterProgress(frameIndex + 1, frames.Count);
             }
             _rasterPlaybackSignature = rasterSignature;
-            await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellation.Token);
+            await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellationToken);
             await _designPreviewPane.SyncRasterViewportAsync();
             PreviewDebugLog.Write(
                 "preview.playback.frames.end",
@@ -1537,16 +1551,6 @@ internal sealed class EditorPreviewController
             _rasterPlaybackOrder.Clear();
             _rasterPlaybackSignature = "";
             return false;
-        }
-        finally
-        {
-            if (ReferenceEquals(_previewLoadingCancellation, cancellation))
-            {
-                _previewLoadingCancellation = null;
-                HidePreviewLoading();
-            }
-
-            cancellation.Dispose();
         }
     }
 
@@ -1630,8 +1634,8 @@ internal sealed class EditorPreviewController
 
     private void ShowPreviewLoading(string message)
     {
-        _previewLoadingScrim.Show(message, CancelPreviewLoading);
         _previewBusyHost.IsVisible = true;
+        _previewLoadingScrim.Show(message, CancelPreviewLoading);
         _designPreviewPane.SetRasterLoading(true, message);
         SetPreviewPerformanceStatus(PreviewPerformanceStatus.Loading);
     }
@@ -1749,13 +1753,49 @@ internal sealed class EditorPreviewController
 
     private void CancelShotPlaybackPreparation()
     {
-        _shotPlaybackPreparationCancellation?.Cancel();
+        _shotPlaybackPreparation.Cancel();
+    }
+
+    private void CancelPlaybackPreparation()
+    {
+        CancelShotPlaybackPreparation();
+        _designPlaybackPreparation.Cancel();
     }
 
     private void CancelPreviewLoading()
     {
-        CancelShotPlaybackPreparation();
-        _previewLoadingCancellation?.Cancel();
+        CancelPlaybackPreparation();
+    }
+
+    private void OnOwnerKeyDown(object? sender, KeyEventArgs args)
+    {
+        if (args.Key != Key.Escape || !StopPreviewFromEscape())
+        {
+            return;
+        }
+
+        args.Handled = true;
+    }
+
+    private bool StopPreviewFromEscape()
+    {
+        var stopShot = _shotPlaybackIsPreparing || _shotPlaybackTimer.IsEnabled;
+        var stopDesign = _designInputsPanel.IsPreparingPlayback || _designInputsPanel.IsPlaybackActive;
+        if (!stopShot && !stopDesign)
+        {
+            return false;
+        }
+
+        CancelPlaybackPreparation();
+        if (stopShot)
+        {
+            StopShotPlayback();
+        }
+        if (stopDesign)
+        {
+            _designInputsPanel.StopActivePlayback();
+        }
+        return true;
     }
 
     private void InvalidatePreparedShotPlayback()
@@ -2343,40 +2383,41 @@ internal sealed class EditorPreviewController
         if (payloadNode is null) return;
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
-        var cancellation = new CancellationTokenSource();
-        _shotPlaybackPreparationCancellation = cancellation;
+        var cancellation = _shotPlaybackPreparation.Begin();
         _shotPlaybackIsPreparing = true;
         PlaybackState.SetPlaying(true);
         PlaybackState.SetBusy(true);
-        ShowPreviewLoading("Preparing playback…");
-        await YieldPreviewPreparationAsync(cancellation.Token);
         var preparationSucceeded = false;
         try
         {
+            ShowPreviewLoading("Preparing playback…");
+            await YieldPreviewPreparationAsync(cancellation.Token);
             var requestSignature = await ShotPlaybackRequestSignatureAsync(
                 payloadNode,
                 _shotPreviewFrame,
                 navigationRange.EndFrame,
                 cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
-            if (_preparedShotPlayback is { } prepared
-                && prepared.RequestSignature == requestSignature
-                && _frameCacheReservation is not null)
+            var prepared = _preparedShotPlayback;
+            var reuse = PreparedPlaybackReusePolicy.Decide(
+                prepared?.RequestSignature,
+                requestSignature,
+                _frameCacheReservation is not null);
+            if (reuse == PreparedPlaybackReuse.Complete)
             {
                 preparationSucceeded = true;
                 PreviewDebugLog.Write(
                     "preview.playback.prepared-cache-hit",
                     ("kind", payloadNode.Kind),
                     ("id", payloadNode.Id),
-                    ("frames", prepared.Frames.Count));
+                    ("frames", prepared!.Frames.Count));
             }
             else
             {
                 IReadOnlyList<DesignPreviewPayload> frames;
-                if (_preparedShotPlayback is { } reusable
-                    && reusable.RequestSignature == requestSignature)
+                if (reuse == PreparedPlaybackReuse.Frames && prepared is not null)
                 {
-                    frames = reusable.Frames;
+                    frames = prepared.Frames;
                     PreviewDebugLog.Write(
                         "preview.playback.payload-cache-hit",
                         ("kind", payloadNode.Kind),
@@ -2415,18 +2456,16 @@ internal sealed class EditorPreviewController
         }
         finally
         {
-            _pendingPlaybackFramesOverride = null;
-            _shotPlaybackIsPreparing = false;
-            PlaybackState.SetBusy(false);
-            if (ReferenceEquals(_shotPlaybackPreparationCancellation, cancellation))
+            if (_shotPlaybackPreparation.Complete(cancellation))
             {
-                _shotPlaybackPreparationCancellation = null;
-            }
-            cancellation.Dispose();
-            HidePreviewLoading();
-            if (!preparationSucceeded)
-            {
-                PlaybackState.SetPlaying(false);
+                _pendingPlaybackFramesOverride = null;
+                _shotPlaybackIsPreparing = false;
+                PlaybackState.SetBusy(false);
+                HidePreviewLoading();
+                if (!preparationSucceeded)
+                {
+                    PlaybackState.SetPlaying(false);
+                }
             }
         }
         if (!preparationSucceeded) return;

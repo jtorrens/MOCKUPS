@@ -44,13 +44,13 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             IsEnabled = definition.IsEditable,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        _box = EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
+        _box = EditorNumericTextStyle.Apply(new TextBox
         {
             Text = _value,
             Width = boxWidth,
             IsReadOnly = !definition.IsEditable,
             VerticalContentAlignment = VerticalAlignment.Center,
-        }));
+        });
         SetColumn(_box, 1);
         Children.Add(_slider);
         Children.Add(_box);

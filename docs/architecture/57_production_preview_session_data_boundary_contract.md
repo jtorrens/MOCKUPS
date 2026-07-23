@@ -86,6 +86,20 @@ dispatcher priority between frames so rendering and input remain responsive. A
 new selection, data commit or second Play/Stop action cancels stale preparation;
 cancellation must never produce a partial playable sequence.
 
+Every visible preparation surface that offers `Esc to stop`, in isolated Design
+Preview as well as Production Preview, owns a current cancellable operation and
+passes its token through HTML preparation, asset preloading and raster
+preparation. Starting a replacement operation cancels the previous one, and
+only the current operation may clear the loading surface. The first Production
+render yield is inside the same guarded cleanup scope as frame preparation, so
+an immediate cancel cannot escape cleanup or leave Play/Busy state behind.
+`Esc` is the shared Preview transport stop: while a preparation is visible it
+cancels that operation, and while isolated Design or Production playback is
+active it stops playback. When neither is active it remains unhandled for the
+rest of the editor. The Preview controller owns this window-level routed action
+so it remains reliable when focus moves between native editor controls and the
+resident Preview surface; `MainWindow` does not implement the behavior.
+
 The controller may retain one prepared Shot/Screen playback sequence and the
 renderer cache-capacity reservation that supports it for the current
 application session. Reuse is allowed only when an exact cryptographic
@@ -135,6 +149,11 @@ Architecture enforcement must verify:
 - playback presents its loading state before frame enumeration, resolves
   incrementally with cancellation and keys session-only reuse by an exact
   cryptographic fingerprint;
+- immediate cancellation is cleanup-safe, isolated Design preparation uses the
+  same real cancellation semantics and only the current operation may dismiss
+  the loading surface;
+- routed `Esc` stops the current Design or Production preparation/playback and
+  remains unhandled when Preview transport is idle;
 - this contract is linked from `AGENTS.md` and the architecture index.
 
 A disposable-database test must compare the owning Shot id, fps, complete

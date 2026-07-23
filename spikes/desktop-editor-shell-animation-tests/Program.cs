@@ -106,6 +106,8 @@ var tests = new (string Name, Action Run)[]
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
+    ("Preview preparation cancellation retains only the latest operation", PreviewPreparationCancellationRetainsLatestOperation),
+    ("prepared playback reuse requires an exact current signature", PreparedPlaybackReuseRequiresExactSignature),
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
@@ -6225,6 +6227,43 @@ static void PlaybackStatePublishesChanges()
     Equal(4, changes);
 }
 
+static void PreviewPreparationCancellationRetainsLatestOperation()
+{
+    using var cancellation = new PreviewPreparationCancellation();
+    var first = cancellation.Begin();
+    var firstToken = first.Token;
+    True(cancellation.IsCurrent(first));
+    True(!firstToken.IsCancellationRequested);
+
+    var second = cancellation.Begin();
+    var secondToken = second.Token;
+    True(firstToken.IsCancellationRequested);
+    True(!cancellation.IsCurrent(first));
+    True(cancellation.IsCurrent(second));
+    True(!secondToken.IsCancellationRequested);
+    True(!cancellation.Complete(first));
+
+    cancellation.Cancel();
+    True(secondToken.IsCancellationRequested);
+    True(cancellation.Complete(second));
+}
+
+static void PreparedPlaybackReuseRequiresExactSignature()
+{
+    Equal(
+        PreparedPlaybackReuse.Complete,
+        PreparedPlaybackReusePolicy.Decide("exact", "exact", hasFrameCacheReservation: true));
+    Equal(
+        PreparedPlaybackReuse.Frames,
+        PreparedPlaybackReusePolicy.Decide("exact", "exact", hasFrameCacheReservation: false));
+    Equal(
+        PreparedPlaybackReuse.None,
+        PreparedPlaybackReusePolicy.Decide("stale", "exact", hasFrameCacheReservation: true));
+    Equal(
+        PreparedPlaybackReuse.None,
+        PreparedPlaybackReusePolicy.Decide(null, "exact", hasFrameCacheReservation: true));
+}
+
 static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()
 {
     var state = new PreviewPlaybackState();
@@ -7128,6 +7167,10 @@ static void PasswordSeedOpensAndRenders()
         True(inputSession.TriggerAction(action.Id));
         Equal(0, inputSession.CurrentPreviewFrame);
         True(inputSession.IsPlaybackActive);
+        True(inputSession.StopActivePlayback());
+        True(!inputSession.IsPlaybackActive);
+        True(!playbackBusy);
+        True(!inputSession.StopActivePlayback());
         True(inputSession.ResetCurrentTestValues());
 
         foreach (var componentType in new[] { "fingerprint", "faceRecognition", "drawPassword" })

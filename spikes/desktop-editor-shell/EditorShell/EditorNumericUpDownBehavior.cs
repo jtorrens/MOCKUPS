@@ -24,7 +24,6 @@ internal static class EditorNumericUpDownBehavior
     {
         foreach (var textBox in numeric.GetVisualDescendants().OfType<TextBox>())
         {
-            EditorTextBoxBehavior.Configure(textBox);
             EditorNumericTextStyle.Apply(textBox);
         }
     }

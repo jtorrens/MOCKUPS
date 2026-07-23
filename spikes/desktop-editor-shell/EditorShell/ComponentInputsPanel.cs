@@ -186,6 +186,8 @@ internal sealed class ComponentPreviewInputSession
         && IsPlaying(activeAction)
         && _heldFinalActionId != activeAction.Id;
 
+    public bool IsPreparingPlayback => !string.IsNullOrWhiteSpace(_preparingActionId);
+
     public int PlaybackFrameRate => _playbackFrameRate;
 
     public int CurrentPreviewFrame => ActiveAction() is { } action && SupportsPlayback()
@@ -986,7 +988,25 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
-    private void StopPlayback()
+    public bool StopActivePlayback()
+    {
+        var wasPreparing = IsPreparingPlayback;
+        var wasPlaying = IsPlaybackActive;
+        if (!wasPreparing && !wasPlaying)
+        {
+            return false;
+        }
+
+        StopPlayback(clearPlayingState: true);
+        if (wasPreparing && !wasPlaying)
+        {
+            PlaybackBusyChanged?.Invoke(false);
+        }
+        _refreshPreview();
+        return true;
+    }
+
+    private void StopPlayback(bool clearPlayingState = false)
     {
         var wasEnabled = _playbackTimer.IsEnabled;
         if (wasEnabled)
@@ -996,6 +1016,10 @@ internal sealed class ComponentPreviewInputSession
         var hasPlayback = SupportsPlayback();
         var activeAction = ActiveAction();
         var wasPlaying = hasPlayback && activeAction is not null && IsPlaying(activeAction);
+        if (clearPlayingState && wasPlaying && activeAction is not null)
+        {
+            SetPlaybackState(activeAction, false);
+        }
         if (wasEnabled || wasPlaying)
         {
             PreviewDebugLog.Write(

@@ -175,12 +175,12 @@ internal sealed class EditorShellSettingsDialog
             LargeChange = 0.1,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        var box = EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure(new TextBox
+        var box = EditorNumericTextStyle.Apply(new TextBox
         {
             Text = Format(value),
             Width = 68,
             VerticalContentAlignment = VerticalAlignment.Center,
-        }));
+        });
 
         void SetValue(double nextValue, bool updateBox)
         {

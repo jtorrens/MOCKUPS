@@ -607,6 +607,11 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  'try\n        {\n            ShowPreviewLoading("Preparing playback…");\n            await YieldPreviewPreparationAsync(cancellation.Token);',
+  "the first Production preparation yield must remain inside cancellation cleanup",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
   "private sealed record PreparedShotPlayback(",
   "prepared Production playback must remain explicit session-only controller state",
 );
@@ -627,8 +632,82 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "private CancellationTokenSource? _shotPlaybackPreparationCancellation;",
-  "stale Production playback preparation must be explicitly cancellable",
+  "private readonly PreviewPreparationCancellation _shotPlaybackPreparation = new();",
+  "stale Production playback preparation must use the shared latest-operation cancellation owner",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "var operation = _designPlaybackPreparation.Begin();",
+  "isolated Design playback preparation must have an explicit cancellable operation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "PreparePlaybackFramesAsync(requestedAction, operation.Token)",
+  "isolated Design HTML and raster preparation must receive the active cancellation token",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "private void CancelPlaybackPreparation()",
+  "selection and data refresh must cancel stale Design or Production playback preparation",
+);
+for (const requiredPreviewEscapeRoute of [
+  "InputElement.KeyDownEvent,\n            OnOwnerKeyDown,\n            RoutingStrategies.Tunnel,\n            handledEventsToo: true",
+  "args.Key != Key.Escape || !StopPreviewFromEscape()",
+  "_shotPlaybackIsPreparing || _shotPlaybackTimer.IsEnabled",
+  "_designInputsPanel.IsPreparingPlayback || _designInputsPanel.IsPlaybackActive",
+  "_designInputsPanel.StopActivePlayback();",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    requiredPreviewEscapeRoute,
+    `Esc must stop current Preview preparation or playback regardless of focused editor control (${requiredPreviewEscapeRoute})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "_previewBusyHost.IsVisible = true;\n        _previewLoadingScrim.Show(message, CancelPreviewLoading);",
+  "the native loading scrim must become visible before it requests keyboard focus",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "public bool StopActivePlayback()",
+  "isolated Design playback must expose one controller-owned stop operation",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "PreparePlaybackFramesAsync(requestedAction, CancellationToken.None)",
+  "visible isolated Design preparation must not advertise cancellation while using a non-cancellable token",
+);
+for (const requiredPreviewPreparationState of [
+  "internal sealed class PreviewPreparationCancellation",
+  "_current?.Cancel();",
+  "ReferenceEquals(_current, operation)",
+  "internal static class PreparedPlaybackReusePolicy",
+  "preparedSignature.Equals(requestSignature, StringComparison.Ordinal)",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/PreviewPreparationSessionState.cs",
+    requiredPreviewPreparationState,
+    `Preview preparation session state must retain exact latest-operation semantics (${requiredPreviewPreparationState})`,
+  );
+}
+for (const redundantNumericTextConfigurationFile of [
+  "spikes/desktop-editor-shell/EditorShell/DictionaryTextBoxFactory.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/DictionaryAlignmentPlacementControl.cs",
+  "spikes/desktop-editor-shell/EditorShell/EditorShellSettingsDialog.cs",
+]) {
+  assertDoesNotContain(
+    redundantNumericTextConfigurationFile,
+    "EditorNumericTextStyle.Apply(EditorTextBoxBehavior.Configure",
+    "numeric text surfaces must use the one shared numeric-style configuration route",
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/EditorNumericUpDownBehavior.cs",
+  "EditorTextBoxBehavior.Configure(textBox);",
+  "NumericUpDown inner text surfaces must not repeat configuration already owned by the numeric style",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
