@@ -1,5 +1,8 @@
-import { asRecord, optionalNumber, optionalString } from "./componentResolverCommon.js";
+import { optionalString, requiredString } from "./componentResolverCommon.js";
+import { optionalObjectArray } from "./previewJsonHelpers.js";
+import { requiredNumberValue } from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
+import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -17,22 +20,22 @@ export function resolveParameterAnimation(
   frame: number,
   baseValue: unknown,
 ): ResolvedParameterAnimation {
-  const track = (Array.isArray(animation.tracks) ? animation.tracks : [])
-    .map(asRecord)
+  validateTransientAnimationDocument(animation);
+  const track = optionalObjectArray(animation, "tracks", "runtime owner animation")
     .find((candidate) =>
       optionalString(candidate, "fieldId") === fieldId
       && optionalString(candidate, "targetId") === targetId);
   if (!track) return { value: baseValue, animated: false };
 
-  const keyframes = (Array.isArray(track.keyframes) ? track.keyframes : [])
-    .map(asRecord)
+  const keyframes = optionalObjectArray(track, "keyframes", "runtime animation track")
     .filter((keyframe) => keyframe.enabled !== false)
     .map((keyframe) => ({
-      frame: Math.max(0, Math.floor(optionalNumber(keyframe, "frame", 0))),
+      frame: requiredNumberValue(keyframe.frame, "runtime animation keyframe frame"),
       value: keyframe.value,
-      interpolation: optionalString(keyframe, "interpolation") || "hold",
-    }))
-    .sort((a, b) => a.frame - b.frame);
+      interpolation: Object.hasOwn(keyframe, "interpolation")
+        ? requiredString(keyframe, "interpolation", "runtime animation keyframe interpolation")
+        : "hold",
+    }));
   if (keyframes.length === 0 || frame < keyframes[0]!.frame) {
     return { value: baseValue, animated: true };
   }

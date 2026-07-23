@@ -93,6 +93,14 @@ There is at most one track for a `(fieldId, targetId)` pair and at most one keyf
 
 `parameterId` and `itemId` are v1 migration input only. The v2 reader accepts only `fieldId` and `targetId`; there are no aliases or fallback parsing paths.
 
+Web frame resolution uses one shared transient-animation document owner before
+either timeline calculation or parameter interpolation. It preserves only
+structural absence of optional `tracks`, `keyframes`, `enabled`, interpolation
+and retime members. Present arrays keep object entries, frames remain ordered
+non-negative integers, values are explicit and interpolation uses only `hold`,
+`linear`, `easeInOut` or `writeOn`. A consumer never filters an invalid entry,
+sorts keyframes or turns an unknown interpolation into Hold.
+
 ### Target and type validation
 
 The owning module/component contract publishes generic `FieldDefinition` metadata for every possible target:

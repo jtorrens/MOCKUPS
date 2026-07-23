@@ -25,6 +25,19 @@ export function parseObject(json: string | undefined, label = "JSON object"): Js
   return value;
 }
 
+export function optionalObject(
+  owner: JsonRecord,
+  key: string,
+  path: string,
+): JsonRecord {
+  if (!Object.hasOwn(owner, key)) return {};
+  const value = owner[key];
+  if (!isRecord(value)) {
+    throw new Error(`${path} '${key}' must be an object when present`);
+  }
+  return value;
+}
+
 export function optionalObjectArray(
   owner: JsonRecord,
   key: string,

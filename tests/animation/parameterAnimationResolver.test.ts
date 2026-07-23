@@ -91,3 +91,27 @@ test("fieldId and targetId select one exact track", () => {
   assert.equal(resolveParameterAnimation(data, "text", "m2", 0, "base").value, "two");
   assert.equal(resolveParameterAnimation(data, "text", "m3", 0, "base").value, "base");
 });
+
+test("parameter resolution rejects malformed transient animation documents", () => {
+  const malformed = [
+    { tracks: null },
+    { tracks: {} },
+    { tracks: [null] },
+    { tracks: [{ fieldId: "", keyframes: [] }] },
+    { tracks: [{ fieldId: "value", targetId: null, keyframes: [] }] },
+    { tracks: [
+      { fieldId: "value", keyframes: [] },
+      { fieldId: "value", targetId: "", keyframes: [] },
+    ] },
+    { tracks: [{ fieldId: "value", keyframes: {} }] },
+    { tracks: [{ fieldId: "value", keyframes: [null] }] },
+    { tracks: [{ fieldId: "value", keyframes: [{ frame: 0 }] }] },
+    { tracks: [{ fieldId: "value", keyframes: [{ frame: 0, value: 1, enabled: "true" }] }] },
+    { tracks: [{ fieldId: "value", keyframes: [{ frame: 0, value: 1, interpolation: null }] }] },
+    { tracks: [{ fieldId: "value", keyframes: [{ frame: 0, value: 1, interpolation: "spline" }] }] },
+    { tracks: [{ fieldId: "value", keyframes: [{ frame: 2, value: 1 }, { frame: 1, value: 2 }] }] },
+  ];
+  for (const value of malformed) {
+    assert.throws(() => resolveParameterAnimation(value, "value", "", 0, "base"));
+  }
+});

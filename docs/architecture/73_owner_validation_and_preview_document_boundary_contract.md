@@ -211,6 +211,13 @@ object, array and non-empty string shapes. The calculator does not filter a
 malformed entry, convert a wrong root to an empty owner or omit a declared
 projected Runtime contract.
 
+The web transient-animation envelope has one shared document owner used by
+`RuntimeOwnerTimeline` and `resolveParameterAnimation`. It validates track and
+keyframe object arrays, unique addresses/frames, authored order, exact frame and
+enabled scalars, explicit values, closed interpolation vocabulary and positive
+retime durations. Timeline and interpolation then consume the same validated
+sequence without a second filter, clamp, default or sort.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across

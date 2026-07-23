@@ -6943,7 +6943,7 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/runtimeOwnerTimeline.ts",
-  'import { isRecord, optionalObjectArray } from "./previewJsonHelpers.js";',
+  'import { isRecord, optionalObject, optionalObjectArray } from "./previewJsonHelpers.js";',
   "the web owner timeline must consume the shared strict object-array boundary",
 );
 assertDoesNotContain(
@@ -7060,7 +7060,7 @@ for (const permissiveDesktopAnimationEnvelope of [
 }
 assertContains(
   "src/desktop-preview/runtimeOwnerTimeline.ts",
-  "validateAnimationEnvelope(animation);",
+  "validateTransientAnimationDocument(animation);",
   "the web timeline must validate every present transient animation calculation envelope",
 );
 assertContains(
@@ -7069,24 +7069,39 @@ assertContains(
   "the web timeline must read present tracks as an exact object array",
 );
 assertContains(
-  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "src/desktop-preview/transientAnimationDocument.ts",
   'validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime")',
   "the web timeline must reject invalid present root retime durations",
 );
 assertContains(
-  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "src/desktop-preview/transientAnimationDocument.ts",
   "const trackTargets = new Set<string>();",
   "the web transient timeline must keep each field/target track address unique",
 );
 assertContains(
-  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "src/desktop-preview/transientAnimationDocument.ts",
   "if (frames.has(frame))",
   "the web transient timeline must reject duplicate frames within a track",
 );
 assertContains(
-  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "src/desktop-preview/transientAnimationDocument.ts",
   "if (frame < previousFrame)",
   "the web transient timeline must reject out-of-order frames instead of sorting them into plausibility",
+);
+assertContains(
+  "src/desktop-preview/parameterAnimationResolver.ts",
+  "validateTransientAnimationDocument(animation);",
+  "generic parameter interpolation must consume the shared transient animation owner",
+);
+assertContains(
+  "src/desktop-preview/transientAnimationDocument.ts",
+  "runtime animation keyframe requires an explicit value",
+  "transient keyframes must retain their explicit values",
+);
+assertContains(
+  "src/desktop-preview/transientAnimationDocument.ts",
+  "Unsupported runtime animation keyframe interpolation",
+  "transient keyframe interpolation must use the closed animation vocabulary",
 );
 for (const permissiveWebAnimationEnvelope of [
   "records(this.animation.tracks)",
@@ -7100,6 +7115,23 @@ for (const permissiveWebAnimationEnvelope of [
     `the web timeline must not filter malformed animation entries (${permissiveWebAnimationEnvelope})`,
   );
 }
+for (const permissiveParameterAnimationEnvelope of [
+  "Array.isArray(animation.tracks) ? animation.tracks : []",
+  "Array.isArray(track.keyframes) ? track.keyframes : []",
+  ".map(asRecord)",
+  ".sort((a, b) => a.frame - b.frame)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/parameterAnimationResolver.ts",
+    permissiveParameterAnimationEnvelope,
+    `generic parameter interpolation must not normalize animation data (${permissiveParameterAnimationEnvelope})`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  '.sort((left, right) => optionalNumber(left, "frame", 0) - optionalNumber(right, "frame", 0))',
+  "the web owner timeline must consume already ordered keyframes without sorting",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

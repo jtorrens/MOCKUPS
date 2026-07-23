@@ -1,7 +1,8 @@
 import { optionalNumber, optionalString, requiredString } from "./componentResolverCommon.js";
-import { isRecord, optionalObjectArray } from "./previewJsonHelpers.js";
+import { isRecord, optionalObject, optionalObjectArray } from "./previewJsonHelpers.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
+import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 
 type JsonRecord = Record<string, unknown>;
 type FieldTiming = { origin: number; completion: number; endExclusive: number };
@@ -29,7 +30,7 @@ export class RuntimeOwnerTimeline {
     private readonly themeTokens: JsonRecord = {},
     storedFallback = 0,
   ) {
-    validateAnimationEnvelope(animation);
+    validateTransientAnimationDocument(animation);
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
     const collections = optionalObjectArray(contract, "collections", "runtime owner contract");
     const collectionKeys = new Set<string>();
@@ -284,7 +285,10 @@ export class RuntimeOwnerTimeline {
       };
     }
     if (keyframes.length === 0) return { origin, completion: origin, endExclusive: 0 };
-    const last = Math.max(0, optionalNumber(keyframes[keyframes.length - 1]!, "frame", 0));
+    const last = requiredNumberValue(
+      keyframes[keyframes.length - 1]!.frame,
+      "runtime animation keyframe frame",
+    );
     return { origin, completion: origin + last, endExclusive: origin + last + 1 };
   }
 
@@ -341,9 +345,15 @@ export class RuntimeOwnerTimeline {
           keyframe.value,
           `finite runtime action '${actionId}' play keyframe value`,
         )) continue;
-        const start = origin + Math.max(0, optionalNumber(keyframe, "frame", 0));
+        const start = origin + requiredNumberValue(
+          keyframe.frame,
+          "runtime animation keyframe frame",
+        );
         const replacement = keyframes[index + 1]
-          ? origin + Math.max(0, optionalNumber(keyframes[index + 1]!, "frame", 0))
+          ? origin + requiredNumberValue(
+              keyframes[index + 1]!.frame,
+              "runtime animation keyframe frame",
+            )
           : Number.POSITIVE_INFINITY;
         lastEnd = Math.max(lastEnd, Math.min(start + duration, replacement));
       }
@@ -397,7 +407,10 @@ export class RuntimeOwnerTimeline {
     if (optionalString(sourceItem, sourceValueJsonKey) === matchValue) return 0;
     const matchingFrames = enabledKeyframes(this.track(sourceFieldId, sourceTargetId))
       .filter((keyframe) => optionalString(keyframe, "value") === matchValue)
-      .map((keyframe) => Math.max(0, optionalNumber(keyframe, "frame", 0)));
+      .map((keyframe) => requiredNumberValue(
+        keyframe.frame,
+        "runtime animation keyframe frame",
+      ));
     return matchingFrames.length ? Math.min(...matchingFrames) : 0;
   }
 
@@ -417,15 +430,6 @@ export class RuntimeOwnerTimeline {
     );
     return duration > 0 ? duration : natural;
   }
-}
-
-function optionalObject(owner: JsonRecord, key: string, path: string): JsonRecord {
-  if (!Object.hasOwn(owner, key)) return {};
-  const value = owner[key];
-  if (!isRecord(value)) {
-    throw new Error(`${path} '${key}' must be an object when present`);
-  }
-  return value;
 }
 
 function optionalFieldTimeline(field: JsonRecord, path: string): JsonRecord {
@@ -574,66 +578,6 @@ function validateFieldTimeline(field: JsonRecord) {
   }
 }
 
-function validateAnimationEnvelope(animation: JsonRecord) {
-  const trackTargets = new Set<string>();
-  for (const track of optionalObjectArray(animation, "tracks", "runtime owner animation")) {
-    const fieldId = requiredString(track, "fieldId", "runtime animation track field id");
-    let targetId = "";
-    if (Object.hasOwn(track, "targetId")) {
-      if (typeof track.targetId !== "string" || (track.targetId.length > 0 && !track.targetId.trim())) {
-        throw new Error("runtime animation track target id must be a stable string or the Screen sentinel");
-      }
-      targetId = track.targetId;
-    }
-    const trackTarget = JSON.stringify([fieldId, targetId]);
-    if (trackTargets.has(trackTarget)) {
-      throw new Error(`runtime animation contains duplicate track target '${fieldId}'/'${targetId}'`);
-    }
-    trackTargets.add(trackTarget);
-    const frames = new Set<number>();
-    let previousFrame = -1;
-    for (const keyframe of optionalObjectArray(track, "keyframes", "runtime animation track")) {
-      const frame = requiredNumberValue(keyframe.frame, "runtime animation keyframe frame");
-      if (!Number.isInteger(frame) || frame < 0) {
-        throw new Error("runtime animation keyframe frame must be a non-negative integer");
-      }
-      if (frames.has(frame)) {
-        throw new Error(`runtime animation track '${fieldId}'/'${targetId}' contains duplicate frame ${frame}`);
-      }
-      frames.add(frame);
-      if (frame < previousFrame) {
-        throw new Error(`runtime animation track '${fieldId}'/'${targetId}' keyframes must be ordered by frame`);
-      }
-      previousFrame = frame;
-      if (Object.hasOwn(keyframe, "enabled") && typeof keyframe.enabled !== "boolean") {
-        throw new Error("runtime animation keyframe enabled must be a boolean when present");
-      }
-    }
-  }
-
-  const retime = optionalObject(animation, "retime", "runtime owner animation");
-  validateOptionalPositiveFrameCount(retime, "targetDurationFrames", "runtime animation retime");
-  const targets = optionalObject(retime, "targets", "runtime animation retime");
-  for (const [targetId, value] of Object.entries(targets)) {
-    if (!targetId.trim() || !isRecord(value)) {
-      throw new Error("runtime animation retime target must be a named object");
-    }
-    validateOptionalPositiveFrameCount(
-      value,
-      "targetDurationFrames",
-      `runtime animation retime target '${targetId}'`,
-    );
-  }
-}
-
-function validateOptionalPositiveFrameCount(owner: JsonRecord, key: string, path: string) {
-  if (!Object.hasOwn(owner, key)) return;
-  const value = requiredNumberValue(owner[key], `${path} '${key}'`);
-  if (!Number.isInteger(value) || value <= 0) {
-    throw new Error(`${path} '${key}' must be a positive integer`);
-  }
-}
-
 function collectionKey(collection: JsonRecord) {
   for (const key of ["storageCollectionJsonKey", "sourceCollectionJsonKey", "jsonKey"]) {
     if (!Object.hasOwn(collection, key)) continue;
@@ -745,8 +689,7 @@ function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
 function enabledKeyframes(track?: JsonRecord) {
   if (!track) return [];
   return optionalObjectArray(track, "keyframes", "runtime animation track")
-    .filter((keyframe) => keyframe.enabled !== false)
-    .sort((left, right) => optionalNumber(left, "frame", 0) - optionalNumber(right, "frame", 0));
+    .filter((keyframe) => keyframe.enabled !== false);
 }
 
 function declaredBaseDuration(contract: JsonRecord) {

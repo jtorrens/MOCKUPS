@@ -697,3 +697,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Helper requerido y sus tres consumers quedan fijados; los maps con `asRecord` y el Override tolerante quedan prohibidos. |
 | Datos | Sin migración. Los items/States canónicos ya contienen objetos explícitos. La base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. Un documento válido produce exactamente el mismo child payload; solo desaparece la reparación silenciosa. |
+
+## Slice 1.51 — Owner web único de animación transitoria
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `RuntimeOwnerTimeline` poseía un guard estricto, pero `resolveParameterAnimation` mantenía otro reader que convertía tracks/keyframes inválidos en vacíos, clampaba frames y ordenaba el documento. Interpolation ausente/null/desconocida acababa en Hold. |
+| Owner | El nuevo `transientAnimationDocument` posee una sola validación estructural web; timeline e interpolador solo consumen su secuencia validada. |
+| Cambio mínimo | Extraer el guard existente, compartir también el object reader, añadir valor explícito y vocabulario de interpolation cerrado; retirar maps/clamp/sort del interpolador y el sort redundante del timeline. |
+| Rutas eliminadas | Wrong root/entry → vacío, frame inválido → cero, lista desordenada → sorted y interpolation inválida → Hold. |
+| Pruebas | 94/94 Preview y 116/116 escritorio: acceso directo al interpolador con trece envelopes inválidos, además de toda la matriz temporal previa. Typecheck, unused, arquitectura y build pasan sin avisos. |
+| Enforcement | Owner compartido obligatorio para timeline/interpolator; guard/identidad/orden/vocabulario fijados y readers/sorts tolerantes prohibidos. |
+| Datos | Sin migración. La animación canónica usa values explícitos e interpolation `hold`/`writeOn`; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Los documentos válidos conservan cada frame; el WeakSet evita revalidar el mismo objeto inmutable durante sus múltiples resoluciones. |
