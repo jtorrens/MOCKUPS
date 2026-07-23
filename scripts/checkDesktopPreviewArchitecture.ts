@@ -7331,6 +7331,60 @@ for (const permissiveAudioSlot of [
     `Audio composition must not coerce required slot documents (${permissiveAudioSlot})`,
   );
 }
+for (const requiredAvatarObject of [
+  'requiredRecord(config, "avatar", "component.avatar")',
+  'requiredRecord(avatar, "labelSlot", "component.avatar.labelSlot")',
+  'requiredRecord(avatar, "badgeSlot", "component.avatar.badgeSlot")',
+  'requiredRecord(config, "style", "component.avatar.style")',
+] as const) {
+  assertContains(
+    "src/desktop-preview/avatarComponentResolver.ts",
+    requiredAvatarObject,
+    `Avatar composition must preserve its required object boundary (${requiredAvatarObject})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/avatarComponentResolver.ts",
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    labelSlot,\n    "label",\n    "component.avatar.labelSlot",',
+  "Avatar Label must consume the shared embedded Component owner",
+);
+assertContains(
+  "src/desktop-preview/avatarComponentResolver.ts",
+  'embeddedComponentConfig(\n          componentBaseConfigs,\n          badgeSlot,\n          "badge",\n          "component.avatar.badgeSlot",',
+  "Avatar Badge must consume the shared embedded Component owner",
+);
+assertContains(
+  "src/desktop-preview/labelComponentResolver.ts",
+  'requiredRecord(config, "label", "component.label")',
+  "Label composition must require its config object",
+);
+assertContains(
+  "src/desktop-preview/labelComponentResolver.ts",
+  'requiredRecord(label, "surfaceSlot", "component.label.surfaceSlot")',
+  "Label composition must require its Surface slot object",
+);
+assertContains(
+  "src/desktop-preview/labelComponentResolver.ts",
+  "embeddedComponentConfig(\n    componentBaseConfigs,\n    surfaceSlot,",
+  "Label Surface must consume the shared embedded Component owner",
+);
+for (const [file, forbidden] of [
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(config.avatar)"],
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(avatar.labelSlot)"],
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(avatar.badgeSlot)"],
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(config.style)"],
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(labelSlot.overrides)"],
+  ["src/desktop-preview/avatarComponentResolver.ts", "asRecord(badgeSlot.overrides)"],
+  ["src/desktop-preview/labelComponentResolver.ts", "asRecord(config.label)"],
+  ["src/desktop-preview/labelComponentResolver.ts", "asRecord(label.surfaceSlot)"],
+  ["src/desktop-preview/labelComponentResolver.ts", "asRecord(surfaceSlot.overrides)"],
+] as const) {
+  assertDoesNotContain(
+    file,
+    forbidden,
+    `${file} must not coerce required embedded documents (${forbidden})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

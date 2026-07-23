@@ -788,3 +788,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Helper compartido, cuatro adopciones Audio y roots requeridas fijados; las secuencias tolerantes retiradas quedan prohibidas. |
 | Datos | Sin migración. Los cuatro slots Audio current ya declaran referencia completa y Overrides objeto; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia el merge ni la visibilidad válida; un slot roto deja de convertirse en child con configuración inventada. |
+
+## Slice 1.58 — Adopción de slots exactos en Avatar y Label
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Avatar convertía su config, style, Label/Badge slots y Overrides en objetos vacíos; Label repetía el patrón con su Surface. Las raíces principales solían fallar más tarde por un scalar requerido, pero un Override dañado seguía desapareciendo. |
+| Owner | Cada parent exige sus objetos declarados y `embeddedComponentConfig` conserva referencia completa + Override local antes de componer el child. |
+| Cambio mínimo | Migrar Avatar → Label/Badge y Label → Surface al helper compartido; exigir config/style/slots aun cuando Label o Badge estén ocultos. |
+| Rutas eliminadas | Siete casts tolerantes de config/slot y tres merges locales de referencias/Overrides. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; tests de owner común, Actor/Avatar, Label layout y composición current pasan sin cambios. |
+| Enforcement | Roots requeridas y tres adopciones del helper fijadas; casts y merges tolerantes concretos prohibidos. |
+| Datos | Sin migración. Todos los documentos current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia visibilidad, estilo ni contenido; solo se rechaza composición incompleta que antes podía perder Overrides. |

@@ -267,6 +267,12 @@ declaring whether the embedded child is visually enabled. Audio applies this
 owner to its Surface, Avatar, Badge and duration Label slots; hidden children
 do not make their slot document optional.
 
+Avatar and Label use the same rule through their explicit composition chain.
+Avatar requires its own config, shared style, Label slot and Badge slot; Label
+requires its config and Surface slot. Child visibility affects only whether a
+validated child is included in the renderable result. It never turns the
+parent's current slot/reference/Overrides document into optional data.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -551,6 +557,8 @@ Architecture enforcement must verify:
   referenced config object before applying local Overrides.
 - embedded Component config uses one shared full-reference plus required local
   Overrides owner; each parent still requires its declared slot objects.
+- Avatar and Label require their declared config/style/slot objects and route
+  every child through the shared embedded Component owner.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

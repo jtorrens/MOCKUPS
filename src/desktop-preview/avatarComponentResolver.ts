@@ -1,10 +1,8 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredBoolean,
   requiredNumber,
@@ -54,10 +52,10 @@ export function resolveAvatarComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): AvatarDesignContract {
-  const avatar = asRecord(config.avatar);
-  const labelSlot = asRecord(avatar.labelSlot);
-  const badgeSlot = asRecord(avatar.badgeSlot);
-  const style = asRecord(config.style);
+  const avatar = requiredRecord(config, "avatar", "component.avatar");
+  const labelSlot = requiredRecord(avatar, "labelSlot", "component.avatar.labelSlot");
+  const badgeSlot = requiredRecord(avatar, "badgeSlot", "component.avatar.badgeSlot");
+  const style = requiredRecord(config, "style", "component.avatar.style");
   const showLabel = requiredBoolean(
     labelSlot,
     "showLabel",
@@ -68,10 +66,11 @@ export function resolveAvatarComponentFromRecords(
     "showSubtext",
     "component.avatar.label.showSubtext",
   );
-  const overrides = asRecord(labelSlot.overrides);
-  const embeddedLabelConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "label", labelSlot.variantReference),
-    overrides,
+  const embeddedLabelConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    labelSlot,
+    "label",
+    "component.avatar.labelSlot",
   );
   const actor = resolveActorPreview(preview);
   const showBadge = requiredBoolean(preview, "showBadge", "component.avatar.input.showBadge");
@@ -105,9 +104,11 @@ export function resolveAvatarComponentFromRecords(
     },
     badge: showBadge ? {
       ...resolveBadgeComponentFromRecords(
-        mergeComponentDefaults(
-          componentVariantConfig(componentBaseConfigs, "badge", requiredString(badgeSlot, "variantReference", "component.avatar.badgeSlot.variantReference")),
-          asRecord(badgeSlot.overrides),
+        embeddedComponentConfig(
+          componentBaseConfigs,
+          badgeSlot,
+          "badge",
+          "component.avatar.badgeSlot",
         ),
         {
           contentMode: requiredString(preview, "badgeContentMode", "component.avatar.input.badgeContentMode"),

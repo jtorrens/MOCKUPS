@@ -1,13 +1,12 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredBoolean,
   requiredNumber,
+  requiredRecord,
   requiredString,
   requiredStringPair,
   requiredTypographyStyle,
@@ -87,11 +86,13 @@ export function resolveLabelComponentFromRecords(
   id: string,
   frame: LabelFrameContext,
 ): LabelDesignContract {
-  const label = asRecord(config.label);
-  const surfaceSlot = asRecord(label.surfaceSlot);
-  const embeddedSurfaceConfig = mergeComponentDefaults(
-    componentVariantConfig(componentBaseConfigs, "surface", surfaceSlot.variantReference),
-    asRecord(surfaceSlot.overrides),
+  const label = requiredRecord(config, "label", "component.label");
+  const surfaceSlot = requiredRecord(label, "surfaceSlot", "component.label.surfaceSlot");
+  const embeddedSurfaceConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    surfaceSlot,
+    "surface",
+    "component.label.surfaceSlot",
   );
   const size = requiredPair(label, "size", "component.label.size");
   const padding = requiredStringPair(label, "padding", "component.label.padding");
