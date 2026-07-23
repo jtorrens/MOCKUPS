@@ -50,6 +50,17 @@ internal static class ComponentPreviewActionRuntimeValue
             ComponentPreviewActions.Value(preview, action, action.TimeJsonKey),
             $"Design Preview action '{action.Id}' time input '{action.TimeJsonKey}'");
 
+    public static double TimeOrDefault(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        double absentValue)
+    {
+        var owner = ComponentPreviewActions.RequiredOwner(preview, action);
+        return owner.TryGetPropertyValue(action.TimeJsonKey, out _)
+            ? RequireTime(preview, action)
+            : absentValue;
+    }
+
     public static double RequireTime(string value, ComponentPreviewActionDefinition action)
     {
         var time = ParseFiniteSessionNumber(
@@ -76,6 +87,18 @@ internal static class ComponentPreviewActionRuntimeValue
 
         throw new InvalidOperationException(
             $"Design Preview action '{action.Id}' input '{inputId}' must be a JSON boolean.");
+    }
+
+    public static bool BooleanOrDefault(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        string inputId,
+        bool absentValue)
+    {
+        var owner = ComponentPreviewActions.RequiredOwner(preview, action);
+        return owner.TryGetPropertyValue(inputId, out _)
+            ? RequireBoolean(preview, action, inputId)
+            : absentValue;
     }
 
     public static IReadOnlyList<JsonObject> RequireInputDefinitions(

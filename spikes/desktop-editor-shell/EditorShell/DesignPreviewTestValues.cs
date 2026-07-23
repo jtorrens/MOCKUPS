@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
@@ -66,17 +65,22 @@ internal static class DesignPreviewTestValues
     public static string Value(JsonObject preview, ComponentInputDefinition input)
     {
         var testValues = TestValues(preview);
-        var value = testValues?[input.JsonKey] ?? preview[input.JsonKey];
-        return value switch
+        if (testValues is not null
+            && testValues.TryGetPropertyValue(input.JsonKey, out var testValue))
         {
-            JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-            JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-            JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-            JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
-            JsonArray array => array.ToJsonString(),
-            JsonObject objectValue => objectValue.ToJsonString(),
-            _ => input.DefaultValue,
-        };
+            return CurrentValueText(
+                testValue,
+                input,
+                $"Design Test Value '{input.JsonKey}'");
+        }
+        if (preview.TryGetPropertyValue(input.JsonKey, out var currentValue))
+        {
+            return CurrentValueText(
+                currentValue,
+                input,
+                $"Design Preview Runtime value '{input.JsonKey}'");
+        }
+        return input.DefaultValue;
     }
 
     public static void SetValue(JsonObject preview, ComponentInputDefinition input, string value)
@@ -106,17 +110,14 @@ internal static class DesignPreviewTestValues
 
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
     {
-        var value = item[input.JsonKey];
-        return value switch
+        if (!item.TryGetPropertyValue(input.JsonKey, out var value))
         {
-            JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-            JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-            JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-            JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
-            JsonArray array => array.ToJsonString(),
-            JsonObject objectValue => objectValue.ToJsonString(),
-            _ => input.DefaultValue,
-        };
+            return input.DefaultValue;
+        }
+        return CurrentValueText(
+            value,
+            input,
+            $"Runtime collection value '{input.JsonKey}'");
     }
 
     public static void SetCollectionValue(
@@ -394,5 +395,17 @@ internal static class DesignPreviewTestValues
             input.ValueKind,
             value,
             $"Runtime Input '{input.Id}' value");
+    }
+
+    private static string CurrentValueText(
+        JsonNode? value,
+        ComponentInputDefinition input,
+        string owner)
+    {
+        if (value is null)
+        {
+            throw new InvalidOperationException($"{owner} cannot be null.");
+        }
+        return RuntimeInputValueKindContract.CurrentStorageText(input.ValueKind, value, owner);
     }
 }

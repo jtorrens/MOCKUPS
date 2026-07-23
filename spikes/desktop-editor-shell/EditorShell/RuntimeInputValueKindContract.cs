@@ -296,6 +296,20 @@ internal static class RuntimeInputValueKindContract
         }
     }
 
+    public static string CurrentStorageText(ValueKind valueKind, JsonNode value, string owner)
+    {
+        ValidateValue(valueKind, value, owner);
+        return value switch
+        {
+            JsonValue scalar when scalar.TryGetValue<string>(out var text) => text,
+            JsonValue scalar when scalar.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
+            JsonValue scalar when scalar.GetValueKind() == System.Text.Json.JsonValueKind.Number =>
+                scalar.ToJsonString(),
+            JsonArray or JsonObject => value.ToJsonString(),
+            _ => throw new InvalidOperationException($"{owner} has no supported storage representation."),
+        };
+    }
+
     private static int ParseInteger(string value, string owner)
     {
         if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))

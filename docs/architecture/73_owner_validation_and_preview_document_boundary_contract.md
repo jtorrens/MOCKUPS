@@ -134,6 +134,14 @@ owns both editor serialization and persisted shape validation. Parent-owned or
 undeclared keys do not become Runtime data, and invalid booleans, numbers,
 arrays or semantic objects do not become plausible values.
 
+Runtime presentation and session-only Test Values distinguish an absent field
+from a present invalid field. Only absence may expose the definition's explicit
+`defaultValue`; a present value is validated by its exact `ValueKind` before it
+is converted to dictionary storage text. Design Preview action play and time
+state follow the same rule: structural absence initializes the session-owned
+state to `false` and zero, while a present value must be a JSON boolean or a
+finite non-negative JSON number respectively.
+
 Declared dynamic Runtime options also preserve that collection owner. Their
 source collection, value key and label key are exact metadata; items remain
 objects with stable ids and option values are unique non-empty strings. The UI
@@ -318,6 +326,8 @@ Architecture enforcement must verify:
   strict source projection without filtering or positional labels.
 - persisted Runtime scalars, collection fields, Test Values and keyframe values
   share exact `ValueKind` serialization and validation.
+- Runtime presentation and Test Values use the shared current-value serializer;
+  only an absent field may use its explicit definition default.
 - forwarding envelopes and projected child Runtime documents reject wrong
   roots before registry dispatch.
 - compound dictionary controls reuse the exact Runtime value and stable
@@ -348,6 +358,8 @@ Architecture enforcement must verify:
 - direct and collection-derived action duration, time and state values use one
   strict runtime owner in both Design hosts and the Production owner timeline;
   malformed values never become zero, one frame or one second.
+- session initialization distinguishes absent action play/time state from a
+  present wrong scalar; only the former initializes to false/zero.
 - Production Font file entries share one startup/read/projection contract;
   malformed entries, unsafe/duplicate paths and inferred style/weight defaults
   are rejected.

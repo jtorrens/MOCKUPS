@@ -537,17 +537,20 @@ internal sealed class ComponentPreviewInputSession
         _inputDefaults[key] = input.DefaultValue;
         if (_values.ContainsKey(key)) return;
 
-        var stored = preview[input.JsonKey];
-        _values[key] = stored switch
+        if (!preview.TryGetPropertyValue(input.JsonKey, out var stored))
         {
-            JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-            JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-            JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
-            JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-            JsonArray jsonArray => jsonArray.ToJsonString(),
-            JsonObject jsonObject => jsonObject.ToJsonString(),
-            _ => input.DefaultValue,
-        };
+            _values[key] = input.DefaultValue;
+            return;
+        }
+        if (stored is null)
+        {
+            throw new InvalidOperationException(
+                $"Design Preview Runtime value '{input.JsonKey}' cannot be null.");
+        }
+        _values[key] = RuntimeInputValueKindContract.CurrentStorageText(
+            input.ValueKind,
+            stored,
+            $"Design Preview Runtime value '{input.JsonKey}'");
     }
 
     private void EnsureActionValues(JsonObject preview)
@@ -557,24 +560,23 @@ internal sealed class ComponentPreviewInputSession
             var stateKey = ActionStateKey(action);
             if (!_values.ContainsKey(stateKey))
             {
-                _values[stateKey] = ComponentPreviewActions.Value(preview, action, action.PlayInputId) switch
-                {
-                    JsonValue jsonValue when jsonValue.TryGetValue<bool>(out var boolean) => boolean ? "true" : "false",
-                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-                    _ => "false",
-                };
+                _values[stateKey] = ComponentPreviewActionRuntimeValue.BooleanOrDefault(
+                    preview,
+                    action,
+                    action.PlayInputId,
+                    absentValue: false)
+                    ? "true"
+                    : "false";
             }
 
             var timeKey = ActionTimeKey(action);
             if (!_values.ContainsKey(timeKey))
             {
-                _values[timeKey] = ComponentPreviewActions.Value(preview, action, action.TimeJsonKey) switch
-                {
-                    JsonValue jsonValue when jsonValue.TryGetValue<double>(out var number) => number.ToString(CultureInfo.InvariantCulture),
-                    JsonValue jsonValue when jsonValue.TryGetValue<int>(out var integer) => integer.ToString(CultureInfo.InvariantCulture),
-                    JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-                    _ => "0",
-                };
+                _values[timeKey] = ComponentPreviewActionRuntimeValue.TimeOrDefault(
+                        preview,
+                        action,
+                        absentValue: 0)
+                    .ToString(CultureInfo.InvariantCulture);
             }
             if (action.IsCollectionItemAction
                 && !string.IsNullOrWhiteSpace(action.TargetInputId)

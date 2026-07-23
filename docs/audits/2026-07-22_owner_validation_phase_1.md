@@ -398,3 +398,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los readers deben exigir arrays/objects y conservar los defaults solo por ausencia; quedan prohibidos los filtros y ramas catch-all retiradas. |
 | Datos | Sin migración. Las 257 definiciones y cinco colecciones current cumplen; las ausencias existentes de `source`/`uiOrigin` son formas estructurales declaradas. Base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. La presentación válida no cambia; un contrato incompleto deja de aparentar que el campo o colección simplemente no existe. |
+
+## Slice 1.28 — Valores Runtime actuales y estado de sesión de actions
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | La definición Runtime ya era estricta, pero el panel y los Test Values convertían cualquier valor presente con tipo o raíz incorrectos en el `defaultValue`. El estado Play y el tiempo de una action aceptaban además strings y los reducían a valores de sesión plausibles. |
+| Owner | `RuntimeInputValueKindContract` valida el nodo actual y produce su representación de almacenamiento; `DesignPreviewTestValues` y `ComponentPreviewInputSession` distinguen ausencia de valor inválido. `ComponentPreviewActionRuntimeValue` posee la lectura Play/tiempo. |
+| Cambio mínimo | Compartir una serialización current posterior a la validación `ValueKind`; usar el default solo si la key no existe; exigir boolean/number JSON cuando Play/tiempo están presentes y conservar `false`/`0` únicamente como inicio explícito cuando faltan. |
+| Rutas eliminadas | Wrong scalar/object/array → `defaultValue`, Test Value inválido → valor persistido/default, action boolean/number string → texto aceptado y action wrong-root → `false`/`0`. |
+| Pruebas | 115/115 escritorio y 88/88 Preview: ausencia válida, scalar Runtime/Test Value/collection incorrecto, decimal JSON frente a string y action Play/tiempo ausente/presente incorrecto. Todos los escenarios current conservan sus valores. |
+| Enforcement | Los tres consumidores de valores de presentación deben usar `CurrentStorageText`; Play/tiempo de sesión deben delegar en el owner action; el catch-all a `input.DefaultValue` queda prohibido. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia un valor válido ni el inicio de una action sin estado materializado; solo deja de ocultarse un valor presente corrupto. |

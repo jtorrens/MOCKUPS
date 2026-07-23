@@ -5344,6 +5344,44 @@ assertContains(
   "RuntimeCollectionDocumentContract.Validate(",
   "Design Test Value collections must reuse the stable collection document owner",
 );
+for (const currentRuntimeValueConsumer of [
+  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+]) {
+  assertContains(
+    currentRuntimeValueConsumer,
+    "RuntimeInputValueKindContract.CurrentStorageText(",
+    `${currentRuntimeValueConsumer} must validate current Runtime values before presenting storage text`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "public static string CurrentStorageText(",
+  "the Runtime ValueKind owner must provide the one current-value storage representation",
+);
+for (const actionSessionValueOwner of ["BooleanOrDefault(", "TimeOrDefault("]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    `ComponentPreviewActionRuntimeValue.${actionSessionValueOwner}`,
+    `Design action session initialization must distinguish absent state from invalid current state (${actionSessionValueOwner})`,
+  );
+}
+for (const retiredCurrentRuntimeFallback of [
+  [
+    "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+    "_ => input.DefaultValue,",
+  ],
+  [
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "_ => input.DefaultValue,",
+  ],
+] as const) {
+  assertDoesNotContain(
+    retiredCurrentRuntimeFallback[0],
+    retiredCurrentRuntimeFallback[1],
+    `${retiredCurrentRuntimeFallback[0]} must not turn a present invalid Runtime value into its default`,
+  );
+}
 for (const transientTestValueFallback of [
   'preview["testValues"] as JsonObject ?? new JsonObject()',
   "testValues[collection.JsonKey] as JsonArray ?? new JsonArray()",

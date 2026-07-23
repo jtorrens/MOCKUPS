@@ -991,6 +991,17 @@ static void PreviewActionContractsAreStrict()
     Equal("play", parsed.Id);
     Equal("Play", parsed.Label);
     Equal(ComponentPreviewActionTimeUnit.Seconds, parsed.TimeUnit);
+    True(!ComponentPreviewActionRuntimeValue.BooleanOrDefault(
+        valid,
+        parsed,
+        parsed.PlayInputId,
+        absentValue: false));
+    Equal(
+        0d,
+        ComponentPreviewActionRuntimeValue.TimeOrDefault(
+            valid,
+            parsed,
+            absentValue: 0));
 
     var validThemeDuration = Action();
     validThemeDuration.Remove("durationSeconds");
@@ -1039,12 +1050,21 @@ static void PreviewActionContractsAreStrict()
     Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireTime(
         durationInputPreview,
         parsedDurationInputAction));
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.TimeOrDefault(
+        durationInputPreview,
+        parsedDurationInputAction,
+        absentValue: 0));
     durationInputPreview["currentTimeSeconds"] = 0;
     durationInputPreview["isPlaying"] = "false";
     Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireBoolean(
         durationInputPreview,
         parsedDurationInputAction,
         parsedDurationInputAction.PlayInputId));
+    Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.BooleanOrDefault(
+        durationInputPreview,
+        parsedDurationInputAction,
+        parsedDurationInputAction.PlayInputId,
+        absentValue: false));
 
     var collectionDurationAction = Action();
     collectionDurationAction.Remove("durationSeconds");
@@ -1282,6 +1302,37 @@ static void DesignTestValuesPreserveStrictDocuments()
             },
         },
         collection));
+    Equal("Default", DesignPreviewTestValues.Value(new JsonObject(), input));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.Value(
+        new JsonObject { ["title"] = false },
+        input));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.Value(
+        new JsonObject
+        {
+            ["title"] = "Persisted",
+            ["testValues"] = new JsonObject { ["title"] = false },
+        },
+        input));
+    Equal("Default", DesignPreviewTestValues.CollectionValue(new JsonObject(), input));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionValue(
+        new JsonObject { ["title"] = false },
+        input));
+
+    var decimalInput = new ComponentInputDefinition(
+        "opacity",
+        "Opacity",
+        "opacity",
+        ComponentInputKind.Number,
+        ValueKind.Decimal,
+        "1");
+    Equal(
+        "0.35",
+        DesignPreviewTestValues.Value(
+            new JsonObject { ["opacity"] = 0.35 },
+            decimalInput));
+    Throws<InvalidOperationException>(() => DesignPreviewTestValues.Value(
+        new JsonObject { ["opacity"] = "0.35" },
+        decimalInput));
 
     var preview = new JsonObject { ["title"] = "Default" };
     DesignPreviewTestValues.SetValue(preview, input, "Test");
