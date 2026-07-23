@@ -49,8 +49,9 @@ transition. It is not a repository.
 declared `ValueKind` and input metadata to generic `FieldDefinition`:
 
 - `RecordReference` with explicit `tableId: actors` requests Actor options;
-- `ComponentVariant` with explicit `componentType` requests complete Variant
-  references;
+- `ComponentVariant` and `ComponentVariantSlot` with explicit `componentType`
+  request complete Variant references; the latter retains its Overrides object
+  through its own ValueKind contract;
 - the generic `AllowEmpty` policy controls whether an empty option is exposed;
   a collection may refine it through explicit sibling-key/value metadata, never
   from a label, type or position;

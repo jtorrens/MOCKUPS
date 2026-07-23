@@ -17,6 +17,7 @@ internal static class RuntimeInputValueKindContract
         ValueKind.OptionToken => "option",
         ValueKind.RecordReference => "recordReference",
         ValueKind.ComponentVariant => "componentVariant",
+        ValueKind.ComponentVariantSlot => "componentVariantSlot",
         ValueKind.ThemeToken => "themeToken",
         ValueKind.IconToken => "icon",
         ValueKind.IconTokenList or ValueKind.IconSlots => "iconList",
@@ -207,6 +208,7 @@ internal static class RuntimeInputValueKindContract
         ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
             TypographyStyleValue.Parse(value),
         ValueKind.ComponentInputBindings => ParseComponentInputBindings(value, owner),
+        ValueKind.ComponentVariantSlot => ComponentVariantSlotDocumentContract.Parse(value, owner),
         ValueKind.BehaviorTiming => JsonPath.ParseRequiredObject(
             BehaviorTimingValue.Parse(value).ToJson(),
             owner),
@@ -286,6 +288,9 @@ internal static class RuntimeInputValueKindContract
                 return;
             case ValueKind.ComponentInputBindings:
                 _ = RuntimeInputForwardingContract.Labels(RequireObject(value, owner));
+                return;
+            case ValueKind.ComponentVariantSlot:
+                ComponentVariantSlotDocumentContract.Validate(RequireObject(value, owner), owner);
                 return;
             case ValueKind.BehaviorTiming:
                 _ = BehaviorTimingValue.Parse(RequireObject(value, owner).ToJsonString());

@@ -90,12 +90,21 @@ internal static class ComponentIconRowCompositionContract
 
         foreach (var side in new[] { "left", "right" })
         {
-            RequireInput(byId, $"{side}IconRowSlot", nameof(ValueKind.ComponentVariant), owner);
-            RequireInput(byId, $"{side}IconRowItems", nameof(ValueKind.IconSlots), owner);
-            RequireInput(byId, $"{side}IconRowGap", nameof(ValueKind.ThemeToken), owner);
-            RequireInput(byId, $"{side}IconRowOrientation", nameof(ValueKind.OptionToken), owner);
+            var slotDefinition = RequireInput(
+                byId,
+                $"{side}IconRowSlot",
+                nameof(ValueKind.ComponentVariantSlot),
+                owner);
+            ComponentVariantSlotDocumentContract.Validate(
+                RuntimeInputValueKindContract.CreateDefaultValue(
+                    slotDefinition,
+                    $"{owner} Runtime Input '{side}IconRowSlot'").AsObject(),
+                $"{owner} Runtime Input '{side}IconRowSlot' defaultValue");
+            _ = RequireInput(byId, $"{side}IconRowItems", nameof(ValueKind.IconSlots), owner);
+            _ = RequireInput(byId, $"{side}IconRowGap", nameof(ValueKind.ThemeToken), owner);
+            _ = RequireInput(byId, $"{side}IconRowOrientation", nameof(ValueKind.OptionToken), owner);
         }
-        RequireInput(byId, "iconGap", nameof(ValueKind.ThemeToken), owner);
+        _ = RequireInput(byId, "iconGap", nameof(ValueKind.ThemeToken), owner);
     }
 
     private static void ValidateTextBoxInputs(JsonObject inputs, string owner)
@@ -112,13 +121,8 @@ internal static class ComponentIconRowCompositionContract
         foreach (var side in new[] { "left", "right" })
         {
             var slot = JsonPath.RequiredObject(inputs, $"{side}IconRowSlot", owner);
-            _ = JsonPath.RequiredString(
+            ComponentVariantSlotDocumentContract.Validate(
                 slot,
-                "variantReference",
-                $"{owner}.{side}IconRowSlot");
-            _ = JsonPath.RequiredObject(
-                slot,
-                "overrides",
                 $"{owner}.{side}IconRowSlot");
             IconSlotsDocumentContract.Validate(
                 JsonPath.RequiredArray(inputs, $"{side}IconRowItems", owner),
@@ -137,7 +141,7 @@ internal static class ComponentIconRowCompositionContract
         _ = JsonPath.RequiredString(inputs, "iconGap", owner);
     }
 
-    private static void RequireInput(
+    private static JsonObject RequireInput(
         IReadOnlyDictionary<string, JsonObject> definitions,
         string id,
         string valueKind,
@@ -152,5 +156,6 @@ internal static class ComponentIconRowCompositionContract
             throw new InvalidOperationException(
                 $"{owner} requires exact Runtime Input '{id}' with ValueKind '{valueKind}'.");
         }
+        return definition;
     }
 }

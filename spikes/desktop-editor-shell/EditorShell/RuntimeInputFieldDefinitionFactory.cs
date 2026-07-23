@@ -15,7 +15,8 @@ internal static class RuntimeInputFieldDefinitionFactory
         var options = input.ValueKind switch
         {
             ValueKind.RecordReference when input.TableId == "actors" => optionsDataSource.ActorOptions(projectId, permitsEmpty),
-            ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(input.ComponentType) =>
+            ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+                when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),
             ValueKind.PaletteColorToken => optionsDataSource.PaletteColorOptions(projectId),
             _ => input.Options,
@@ -36,7 +37,7 @@ internal static class RuntimeInputFieldDefinitionFactory
             RecordReference: input.ValueKind == ValueKind.RecordReference
                 ? new RecordReferenceDefinition(input.TableId)
                 : null,
-            SelectComponentClass: input.ValueKind == ValueKind.ComponentVariant
+            SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Contains("*", StringComparer.Ordinal),
             StructuredCollection: input.StructuredCollection,

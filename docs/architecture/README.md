@@ -158,6 +158,9 @@ this index wins.
 - `77_text_box_icon_row_composition_contract.md`: exact structured Left/Right
   Icon Row inputs for Text Box, stable Button item identity, complete Variant
   references, local Overrides and explicit parent forwarding.
+- `78_component_variant_slot_value_kind_contract.md`: exact shared dictionary
+  value for a full Component Variant reference plus local Overrides, including
+  strict Runtime/Test Value materialization, Usage and Text Box migration.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

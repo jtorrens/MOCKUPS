@@ -674,7 +674,7 @@ internal sealed class ComponentPreviewInputSession
     private void EnsureComponentVariantReferenceValues(IReadOnlyList<ComponentInputDefinition> inputs, string projectId)
     {
         var variantInputs = inputs
-            .Where((input) => input.Kind == ComponentInputKind.ComponentVariant)
+            .Where((input) => input.Kind is ComponentInputKind.ComponentVariant or ComponentInputKind.ComponentVariantSlot)
             .ToList();
         if (variantInputs.Count == 0)
         {
@@ -684,7 +684,21 @@ internal sealed class ComponentPreviewInputSession
         foreach (var input in variantInputs)
         {
             var key = StorageKey(input);
-            var reference = _values.GetValueOrDefault(key, input.DefaultValue);
+            var storedValue = _values.GetValueOrDefault(key, input.DefaultValue);
+            if (input.Kind == ComponentInputKind.ComponentVariantSlot)
+            {
+                var owner = $"Design Preview Runtime value '{input.JsonKey}'";
+                var slot = ComponentVariantSlotDocumentContract.Parse(storedValue, owner);
+                var slotReference = ComponentVariantSlotDocumentContract.VariantReference(slot, owner);
+                slot["variantReference"] = _previewInputData.ValidateComponentVariantReference(
+                    projectId,
+                    input.ComponentType,
+                    slotReference);
+                _values[key] = slot.ToJsonString();
+                continue;
+            }
+
+            var reference = storedValue;
             if (!string.IsNullOrWhiteSpace(reference))
             {
                 _values[key] = _previewInputData.ValidateComponentVariantReference(
@@ -1887,6 +1901,7 @@ internal sealed class ComponentPreviewInputSession
             "option" => ComponentInputKind.Option,
             "recordreference" => ComponentInputKind.RecordReference,
             "componentvariant" => ComponentInputKind.ComponentVariant,
+            "componentvariantslot" => ComponentInputKind.ComponentVariantSlot,
             "themetoken" => ComponentInputKind.ThemeToken,
             "icon" => ComponentInputKind.Icon,
             "iconlist" => ComponentInputKind.IconList,
@@ -1979,6 +1994,7 @@ internal enum ComponentInputKind
     Option,
     RecordReference,
     ComponentVariant,
+    ComponentVariantSlot,
     ThemeToken,
     Icon,
     IconList,

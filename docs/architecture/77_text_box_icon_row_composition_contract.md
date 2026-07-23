@@ -51,6 +51,12 @@ does not own or duplicate a shared Button-size field.
 An empty row is still a complete boundary. Its item array is empty, but its
 Icon Row Variant slot, local Overrides, gap and orientation remain required.
 
+The two slot Runtime Inputs use the shared `ComponentVariantSlot` ValueKind
+defined by
+[Component Variant Slot ValueKind Contract](78_component_variant_slot_value_kind_contract.md).
+Their serialized defaults are complete slot objects, never Variant-reference
+strings that a later resolver must expand.
+
 ## 3. Current Icon Slots item
 
 Every item is one exact current object containing:
@@ -112,6 +118,10 @@ navigation to the selected Button Variant and editing its explicit local
 Overrides. Test Values do not introduce a reduced or preview-only Icon Row
 document.
 
+Changing an Icon Row Component or Variant through the slot control clears that
+slot's previous local Overrides. This prevents an Override document owned by
+one concrete Variant from leaking across a different boundary.
+
 ## 5. Parent composition
 
 Text Input Bar persists one complete `textInput.textBoxInputs` document using
@@ -164,6 +174,8 @@ The parity database was migrated once to the current document:
 - Bubble received complete empty Text Box Icon Row inputs.
 - affected local Variant history snapshots were migrated once so Restore cannot
   reintroduce the retired foreign config.
+- the two isolated Text Box Icon Row Runtime defaults became complete
+  `ComponentVariantSlot` documents.
 
 Normal startup, repositories, payload preparation and resolvers contain no
 migration, alias, normalization or compatibility fallback for retired keys.

@@ -132,6 +132,16 @@ test("Text Box requires complete Icon Row slots even when their item lists are e
   const source = inputs();
   for (const invalidSlot of [undefined, null, [], {}, {
     variantReference: iconRowVariantReference,
+  }, {
+    variantReference: "default",
+    overrides: {},
+  }, {
+    variantReference: iconRowVariantReference,
+    overrides: null,
+  }, {
+    variantReference: iconRowVariantReference,
+    overrides: {},
+    componentType: "iconRow",
   }]) {
     assert.throws(() => resolveTextBoxComponentFromRecords(
       config,

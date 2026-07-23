@@ -11,6 +11,7 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
+  requiredComponentVariantSlot,
   requiredNumber,
   requiredNumberPair,
   requiredRecord,
@@ -194,16 +195,16 @@ function resolveTextBoxIconRowComponentFromRecords(
   const gapInputKey = `${side}IconRowGap`;
   const orientationInputKey = `${side}IconRowOrientation`;
   const slotPath = `component.textBox.input.${slotInputKey}`;
-  const iconRowSlot = requiredRecord(parentInputs, slotInputKey, slotPath);
+  const iconRowSlot = requiredComponentVariantSlot(parentInputs, slotInputKey, slotPath);
   const iconRowConfig = componentVariantConfig(
     componentBaseConfigs,
     "iconRow",
-    requiredString(iconRowSlot, "variantReference", `${slotPath}.variantReference`),
+    iconRowSlot.variantReference,
   );
   return resolveIconRowComponentFromRecords(
     mergeComponentDefaults(
       iconRowConfig,
-      requiredRecord(iconRowSlot, "overrides", `${slotPath}.overrides`),
+      iconRowSlot.overrides,
     ),
     {
       items: requiredObjectArray(

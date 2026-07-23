@@ -230,7 +230,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
         var options = input.ValueKind switch
         {
-            ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(input.ComponentType) =>
+            ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+                when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 ComponentVariantOptions(input),
             ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
             _ => input.Options ?? [],
@@ -246,7 +247,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
-            SelectComponentClass: input.ValueKind == ValueKind.ComponentVariant
+            SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Contains("*", StringComparer.Ordinal),
             StructuredCollection: input.StructuredCollection);

@@ -2186,6 +2186,7 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
     "option",
     "recordReference",
     "componentVariant",
+    "componentVariantSlot",
     "themeToken",
     "icon",
     "iconList",
@@ -2201,6 +2202,7 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
   kindForValueKind.set("OptionToken", "option");
   kindForValueKind.set("RecordReference", "recordReference");
   kindForValueKind.set("ComponentVariant", "componentVariant");
+  kindForValueKind.set("ComponentVariantSlot", "componentVariantSlot");
   kindForValueKind.set("ThemeToken", "themeToken");
   kindForValueKind.set("IconToken", "icon");
   for (const valueKind of ["IconTokenList", "IconSlots"]) kindForValueKind.set(valueKind, "iconList");
@@ -9090,9 +9092,9 @@ function assertConversationMessageActorOwnership() {
 function assertStructuredTextBoxIconRowsAreCanonical() {
   for (const requiredTextBoxBoundary of [
     'requiredRecord(config, "textBox", "component.textBox")',
-    'requiredRecord(parentInputs, slotInputKey, slotPath)',
+    "requiredComponentVariantSlot(parentInputs, slotInputKey, slotPath)",
     "requiredObjectArray(",
-    'requiredRecord(iconRowSlot, "overrides", `${slotPath}.overrides`)',
+    "iconRowSlot.overrides",
     "rejectRetiredIconRowInputs(inputs)",
   ]) {
     assertContains(
@@ -9177,6 +9179,27 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       `Runtime/Test Values Icon Slots must retain Variant navigation and local Overrides (${requiredRuntimeIconSlotsService})`,
     );
   }
+  for (const requiredVariantSlotBoundary of [
+    "ComponentVariantSlotDocumentContract.Parse(",
+    "ComponentVariantSlotDocumentContract.Validate(",
+    "_openRuntimeComponentOverrides(",
+  ]) {
+    assertContains(
+      "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantSlotControl.cs",
+      requiredVariantSlotBoundary,
+      `Component Variant Slot authoring must preserve its exact reference and Overrides boundary (${requiredVariantSlotBoundary})`,
+    );
+  }
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+    "[ValueKind.ComponentVariantSlot]",
+    "Component Variant Slot must be registered through the shared dictionary",
+  );
+  assertContains(
+    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+    "input.ValueKind == ValueKind.ComponentVariantSlot",
+    "Usage must discover exact references and Overrides owned by Component Variant Slot values",
+  );
 
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
@@ -9291,7 +9314,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
         const byId = new Map(inputs.map((input) => [String(input.id), input]));
         for (const side of ["left", "right"]) {
           for (const [suffix, valueKind] of [
-            ["IconRowSlot", "ComponentVariant"],
+            ["IconRowSlot", "ComponentVariantSlot"],
             ["IconRowItems", "IconSlots"],
             ["IconRowGap", "ThemeToken"],
             ["IconRowOrientation", "OptionToken"],
@@ -9300,6 +9323,24 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
             const input = byId.get(id);
             if (!input || input.jsonKey !== id || input.valueKind !== valueKind) {
               addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview has no exact ${id} Runtime Input`);
+            }
+            if (suffix === "IconRowSlot") {
+              const defaultSlot = jsonRecord(jsonParse(String(input?.defaultValue ?? "")));
+              const keys = Object.keys(defaultSlot).sort();
+              if (input?.kind !== "componentVariantSlot"
+                  || keys.length !== 2
+                  || keys[0] !== "overrides"
+                  || keys[1] !== "variantReference"
+                  || typeof defaultSlot.variantReference !== "string"
+                  || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(defaultSlot.variantReference)
+                  || !defaultSlot.overrides
+                  || Array.isArray(defaultSlot.overrides)
+                  || typeof defaultSlot.overrides !== "object") {
+                addViolation(
+                  "data/desktop-editor-spike.sqlite",
+                  `Text Box Design Preview ${id} must use one exact Component Variant Slot default`,
+                );
+              }
             }
           }
         }

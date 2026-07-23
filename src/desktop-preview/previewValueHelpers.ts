@@ -31,6 +31,34 @@ export function requiredRecord(
   throw new Error(`Missing object value ${path}`);
 }
 
+export function requiredComponentVariantSlot(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+) {
+  const slot = requiredRecord(value, key, path);
+  const keys = Object.keys(slot).sort();
+  if (
+    keys.length !== 2 ||
+    keys[0] !== "overrides" ||
+    keys[1] !== "variantReference"
+  ) {
+    throw new Error(`Invalid Component Variant Slot ${path}`);
+  }
+  const variantReference = requiredString(
+    slot,
+    "variantReference",
+    `${path}.variantReference`,
+  );
+  if (!/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(variantReference)) {
+    throw new Error(`Unsupported Component Variant reference ${variantReference}`);
+  }
+  return {
+    variantReference,
+    overrides: requiredRecord(slot, "overrides", `${path}.overrides`),
+  };
+}
+
 export function requiredString(
   value: Record<string, unknown>,
   key: string,

@@ -51,6 +51,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/75_action_duration_field_identity_contract.md`
 - `docs/architecture/76_preview_frame_clock_boundary_contract.md`
 - `docs/architecture/77_text_box_icon_row_composition_contract.md`
+- `docs/architecture/78_component_variant_slot_value_kind_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -243,6 +244,14 @@ suffix/type/position lookup, generated positional ids, optional empty-row
 slots or a compatibility translation. Text Input Bar and Bubble persist and
 forward complete Text Box child inputs; they do not reconstruct Icon Row
 defaults in their resolvers.
+
+Any editable Runtime Input that owns both a concrete Component Variant
+reference and local Overrides uses the exact `ComponentVariantSlot` ValueKind
+from `docs/architecture/78_component_variant_slot_value_kind_contract.md`.
+Its current value and serialized default are the complete
+`{ variantReference, overrides }` object. Do not represent that boundary as a
+`ComponentVariant` string and manufacture Overrides later, accept both shapes
+or choose a Variant through type, order or position.
 
 ## Hard rule: manifest, routing and payload contracts are strict
 

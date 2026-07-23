@@ -673,6 +673,28 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             ScanCollection(value, input.StructuredCollection, fieldLabel, source, targets, usages, componentsByReference);
             return;
         }
+        if (input.ValueKind == ValueKind.ComponentVariantSlot)
+        {
+            var slot = value as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Reference field '{fieldLabel}' must be a Component Variant Slot object.");
+            var reference = ComponentVariantSlotDocumentContract.VariantReference(slot, $"Reference field '{fieldLabel}'");
+            AddExact(
+                usages,
+                targets,
+                ProjectTreeNodeKind.ComponentVariant,
+                reference,
+                source,
+                fieldLabel);
+            ScanComponentConfig(
+                ComponentVariantSlotDocumentContract.Overrides(slot, $"Reference field '{fieldLabel}'"),
+                source,
+                targets,
+                usages,
+                componentsByReference,
+                depth: 1);
+            return;
+        }
         AddTypedValue(input.ValueKind, input.TableId, value, source, fieldLabel, targets, usages);
     }
 
@@ -801,6 +823,7 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         if (valueKind is ValueKind.StructuredCollection or ValueKind.ComponentInputBindings
+            or ValueKind.ComponentVariantSlot
             or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle)
         {
             return JsonNode.Parse(value);

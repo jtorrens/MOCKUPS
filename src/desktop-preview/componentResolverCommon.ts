@@ -9,6 +9,7 @@ export {
   optionalString,
   requiredAlpha,
   requiredBoolean,
+  requiredComponentVariantSlot,
   requiredFontFamilyId,
   requiredIconSlots,
   requiredNumber,

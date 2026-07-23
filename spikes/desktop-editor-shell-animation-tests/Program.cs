@@ -28,6 +28,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
+    ("Text Box Preview materializes complete Icon Row slots", TextBoxPreviewMaterializesCompleteIconRowSlots),
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
@@ -214,6 +215,12 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         RuntimeInputValueKindContract.RequireCompatible(
             "collection",
             "StructuredCollection",
+            "Test Runtime Input"));
+    Equal(
+        ValueKind.ComponentVariantSlot,
+        RuntimeInputValueKindContract.RequireCompatible(
+            "componentVariantSlot",
+            "ComponentVariantSlot",
             "Test Runtime Input"));
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.RequireCompatible(
         "text",
@@ -764,6 +771,19 @@ static void RuntimeInputDefaultsUseValueKindOwner()
                 "BehaviorTiming",
                 "{\"mode\":\"natural\",\"fixedFrames\":20,\"paceToken\":\"theme.motion.naturalPace.normal\"}"),
             "Test Runtime Input")["mode"]?.GetValue<string>());
+    const string componentVariantSlot = """
+        {"variantReference":"component_icon_row::variant::default","overrides":{}}
+        """;
+    Equal(
+        "component_icon_row::variant::default",
+        ComponentVariantSlotDocumentContract.VariantReference(
+            RuntimeInputValueKindContract.CreateDefaultValue(
+                Definition(
+                    "componentVariantSlot",
+                    "ComponentVariantSlot",
+                    componentVariantSlot),
+                "Test Runtime Input").AsObject(),
+            "Test Runtime Input"));
 
     var behaviorSource = Definition("text", "StringSingleLine", "Sample");
     behaviorSource["id"] = "text";
@@ -878,6 +898,20 @@ static void RuntimeInputDefaultsUseValueKindOwner()
             invalidIconSlot,
             "Test Runtime Input"));
     }
+    foreach (var invalidComponentVariantSlot in new[]
+    {
+        "\"component_icon_row::variant::default\"",
+        "{\"variantReference\":\"component_icon_row::variant::default\"}",
+        "{\"variantReference\":\"default\",\"overrides\":{}}",
+        "{\"variantReference\":\"component_icon_row::variant::default\",\"overrides\":null}",
+        "{\"variantReference\":\"component_icon_row::variant::default\",\"overrides\":{},\"componentType\":\"iconRow\"}",
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
+            ValueKind.ComponentVariantSlot,
+            invalidComponentVariantSlot,
+            "Test Runtime Input"));
+    }
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
         ValueKind.IntegerPair,
         "10|1.5",
@@ -971,6 +1005,89 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         command.CommandText = "UPDATE modules SET design_preview_json = json_remove(design_preview_json, '$.collections[0].fields[11].pairFirstLabel') WHERE id = 'module_core_chat'";
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("runtime-component-variant-slot-string", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET design_preview_json = json_set(
+                design_preview_json,
+                '$.inputs[' || (
+                    SELECT input.key
+                    FROM json_each(component_classes.design_preview_json, '$.inputs') AS input
+                    WHERE json_extract(input.value, '$.id') = 'leftIconRowSlot'
+                ) || '].defaultValue',
+                'component_project_foqn_s2_iconRow::variant::default')
+            WHERE component_type = 'textBox'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-component-variant-slot-missing-overrides", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET design_preview_json = json_set(
+                design_preview_json,
+                '$.inputs[' || (
+                    SELECT input.key
+                    FROM json_each(component_classes.design_preview_json, '$.inputs') AS input
+                    WHERE json_extract(input.value, '$.id') = 'rightIconRowSlot'
+                ) || '].defaultValue',
+                '{"variantReference":"component_project_foqn_s2_iconRow::variant::default"}')
+            WHERE component_type = 'textBox'
+            """;
+        command.ExecuteNonQuery();
+    });
+}
+
+static void TextBoxPreviewMaterializesCompleteIconRowSlots()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var textBox = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+        && database.GetComponentClassSettings(node.Id).ComponentType == "textBox");
+    var textBoxVariant = textBox.Children.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.IsProtected);
+    var settings = database.GetComponentClassSettings(textBox.Id);
+    var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+    var payload = Required(CreatePreviewPayload(database, textBoxVariant, theme.Id));
+    var session = new ComponentPreviewInputSession(database, () => { });
+    session.UpdateForPayload(payload, settings.ProjectId);
+    var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+    var preview = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson);
+
+    foreach (var side in new[] { "left", "right" })
+    {
+        var key = $"{side}IconRowSlot";
+        var slot = preview[key] as JsonObject
+            ?? throw new InvalidOperationException($"Text Box Preview requires object '{key}'.");
+        ComponentVariantSlotDocumentContract.Validate(slot, $"Text Box Preview '{key}'");
+        Equal(
+            "component_project_foqn_s2_iconRow::variant::default",
+            ComponentVariantSlotDocumentContract.VariantReference(slot, $"Text Box Preview '{key}'"));
+        Equal(0, ComponentVariantSlotDocumentContract.Overrides(slot, $"Text Box Preview '{key}'").Count);
+    }
+    var iconRowVariant = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id == "component_project_foqn_s2_iconRow::variant::default");
+    True(database.GetReferenceUsageDetails(iconRowVariant).Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.ComponentClass
+        && usage.SourceNodeId == textBox.Id
+        && usage.Field == "Variant · Default"));
+
+    var html = WebDesignPreviewRenderer.RenderBodyAsync(
+        database.GetDevicePreviewMetrics(device.Id),
+        false,
+        resolved).GetAwaiter().GetResult();
+    True(!string.IsNullOrWhiteSpace(html));
+    True(!html.Contains("preview-error", StringComparison.Ordinal));
 }
 
 static void PairFieldsRequireExplicitLabels()

@@ -30,6 +30,7 @@ internal enum ValueKind
     IconSlots,
     EmbeddedComponent,
     ComponentVariant,
+    ComponentVariantSlot,
     ComponentInputBindings,
     StructuredCollection,
     AlignmentPlacement,

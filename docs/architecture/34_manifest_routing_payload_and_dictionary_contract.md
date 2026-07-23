@@ -253,6 +253,11 @@ boolean, numeric, string, array or object shape. Animation keyframe authoring
 uses the same value serializer; it cannot turn invalid input into false or
 zero.
 
+A Runtime boundary that owns both a concrete Component Variant reference and
+local Overrides uses the exact `ComponentVariantSlot` object governed by
+[contract 78](78_component_variant_slot_value_kind_contract.md). It is not a
+`ComponentVariant` string with an object manufactured later.
+
 Compound dictionary values use the same rule before controls render or commit.
 
 Component Class config, every complete Component Variant config and explicit

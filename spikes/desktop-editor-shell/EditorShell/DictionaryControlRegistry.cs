@@ -92,6 +92,11 @@ internal static class DictionaryControlRegistry
                 request.IsHighlighted,
                 request.Services.OpenComponentVariantReference,
                 request.Services.OpenEmbeddedComponent),
+            [ValueKind.ComponentVariantSlot] = (request) => new DictionaryComponentVariantSlotControl(
+                request.Definition,
+                request.Value,
+                request.Services.OpenComponentVariantReference,
+                request.Services.OpenRuntimeComponentOverrides),
             [ValueKind.ComponentInputBindings] = (request) => new DictionaryComponentInputBindingsControl(
                 request.Definition,
                 request.Value,
