@@ -866,3 +866,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Set explícito de nueve slots, definitions exactas y siete rutas del helper fijadas; parser/casts tolerantes prohibidos. |
 | Datos | Sin migración. La Variant Password current ya contiene el set completo; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una rama válida; una rama inactive rota deja de quedar oculta hasta que el usuario cambie de método/estado. |
+
+## Slice 1.64 — Estados exactos de los children de Password
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Code Indicator, Fingerprint, Face Recognition y Draw Password convertían config, catálogo y estado seleccionado dañados en `{}`. Code Indicator hacía lo mismo con sus dos Surface slots y Overrides. |
+| Owner | Cada child conserva su vocabulario cerrado y estado seleccionado; Code Indicator declara los Surface slots y el owner embebido conserva sus referencias/Overrides. |
+| Cambio mínimo | Exigir config/states/state en los cuatro resolvers; exigir slot por key explícita y usar el helper común para ambos glyph Surfaces. |
+| Rutas eliminadas | Once `asRecord` estructurales y el merge local Surface de Code Indicator. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Password, estados biométricos/draw, Code Indicator y Surfaces current pasan. |
+| Enforcement | Roots/state y slot/helper exactos fijados en cuatro archivos; casts tolerantes prohibidos. |
+| Datos | Sin migración. Todos los estados/slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia progreso, estado ni color válido; solo se rechaza una rama incompleta. |

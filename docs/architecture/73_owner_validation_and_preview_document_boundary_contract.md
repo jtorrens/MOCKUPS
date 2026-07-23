@@ -311,6 +311,13 @@ child crosses the shared embedded owner. An inactive method is still complete
 current Variant configuration; it is not optional data and no slot is derived
 from its display label, list position or payload type.
 
+Code Indicator, Fingerprint, Face Recognition and Draw Password each require
+their config root, state catalog and selected state object after validating the
+closed state vocabulary. Code Indicator additionally requires its explicitly
+named empty/filled Surface slots and routes both through the shared embedded
+owner. A missing state/slot cannot become an empty style whose later fields
+happen to fail or a Surface with discarded local Overrides.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -607,6 +614,8 @@ Architecture enforcement must verify:
   key entries and selected state objects without positional identity.
 - Password validates its complete explicitly named state/method slot set and
   exact Runtime definitions before resolving the selected mode.
+- Password state children require exact config/state objects; Code Indicator
+  also requires and resolves both Surface slots through the shared owner.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

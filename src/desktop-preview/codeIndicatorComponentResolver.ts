@@ -1,12 +1,11 @@
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredNumber,
   requiredNumberPair,
+  requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import type {
@@ -33,7 +32,7 @@ export function resolveCodeIndicatorComponentFromRecords(
   bases: Record<string, unknown>,
   id: string,
 ): CodeIndicatorDesignContract {
-  const indicator = asRecord(config.codeIndicator);
+  const indicator = requiredRecord(config, "codeIndicator", `${id}.codeIndicator`);
   const count = positiveInteger(requiredNumber(inputs, "count", `${id}.runtime.count`), "count");
   const filledCount = nonNegativeInteger(
     requiredNumber(inputs, "filledCount", `${id}.runtime.filledCount`),
@@ -47,7 +46,8 @@ export function resolveCodeIndicatorComponentFromRecords(
   }
   const size = requiredNumberPair(indicator, "glyphSize", `${id}.glyphSize`);
   if (size.first <= 0 || size.second <= 0) throw new Error(`${id}.glyphSize must be positive`);
-  const stateConfig = asRecord(asRecord(indicator.states)[state]);
+  const states = requiredRecord(indicator, "states", `${id}.states`);
+  const stateConfig = requiredRecord(states, state, `${id}.states.${state}`);
   return {
     id,
     count,
@@ -68,15 +68,8 @@ function resolveGlyphSurface(
   bases: Record<string, unknown>,
   id: string,
 ) {
-  const slot = asRecord(state[slotKey]);
-  const config = mergeComponentDefaults(
-    componentVariantConfig(
-      bases,
-      "surface",
-      requiredString(slot, "variantReference", `${id}.variantReference`),
-    ),
-    asRecord(slot.overrides),
-  );
+  const slot = requiredRecord(state, slotKey, `${id}.${slotKey}`);
+  const config = embeddedComponentConfig(bases, slot, "surface", `${id}.${slotKey}`);
   return resolveSurfaceComponentAtSize(config, { width: size.first, height: size.second }, id);
 }
 

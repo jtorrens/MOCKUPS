@@ -7656,6 +7656,54 @@ for (const permissivePasswordDocument of [
     `Password must not coerce required documents (${permissivePasswordDocument})`,
   );
 }
+for (const requiredPasswordChildDocument of [
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", 'requiredRecord(config, "codeIndicator", `${id}.codeIndicator`)'],
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", 'requiredRecord(indicator, "states", `${id}.states`)'],
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", 'requiredRecord(states, state, `${id}.states.${state}`)'],
+  ["src/desktop-preview/fingerprintComponentResolver.ts", 'requiredRecord(config, "fingerprint", `${id}.fingerprint`)'],
+  ["src/desktop-preview/fingerprintComponentResolver.ts", 'requiredRecord(fingerprint, "states", `${id}.states`)'],
+  ["src/desktop-preview/fingerprintComponentResolver.ts", 'requiredRecord(states, state, `${id}.states.${state}`)'],
+  ["src/desktop-preview/faceRecognitionComponentResolver.ts", 'requiredRecord(config, "faceRecognition", `${id}.faceRecognition`)'],
+  ["src/desktop-preview/faceRecognitionComponentResolver.ts", 'requiredRecord(face, "states", `${id}.states`)'],
+  ["src/desktop-preview/faceRecognitionComponentResolver.ts", 'requiredRecord(states, state, `${id}.states.${state}`)'],
+  ["src/desktop-preview/drawPasswordComponentResolver.ts", 'requiredRecord(config, "drawPassword", `${id}.drawPassword`)'],
+  ["src/desktop-preview/drawPasswordComponentResolver.ts", 'requiredRecord(draw, "states", `${id}.states`)'],
+  ["src/desktop-preview/drawPasswordComponentResolver.ts", 'requiredRecord(states, state, `${id}.states.${state}`)'],
+] as const) {
+  assertContains(
+    requiredPasswordChildDocument[0],
+    requiredPasswordChildDocument[1],
+    `${requiredPasswordChildDocument[0]} must require its current state document`,
+  );
+}
+assertContains(
+  "src/desktop-preview/codeIndicatorComponentResolver.ts",
+  'requiredRecord(state, slotKey, `${id}.${slotKey}`)',
+  "Code Indicator must require each declared glyph Surface slot",
+);
+assertContains(
+  "src/desktop-preview/codeIndicatorComponentResolver.ts",
+  'embeddedComponentConfig(bases, slot, "surface", `${id}.${slotKey}`)',
+  "Code Indicator glyph Surfaces must consume the shared embedded Component owner",
+);
+for (const [file, forbidden] of [
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", "asRecord(config.codeIndicator)"],
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", "asRecord(asRecord(indicator.states)[state])"],
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", "asRecord(state[slotKey])"],
+  ["src/desktop-preview/codeIndicatorComponentResolver.ts", "asRecord(slot.overrides)"],
+  ["src/desktop-preview/fingerprintComponentResolver.ts", "asRecord(config.fingerprint)"],
+  ["src/desktop-preview/fingerprintComponentResolver.ts", "asRecord(asRecord(fingerprint.states)[state])"],
+  ["src/desktop-preview/faceRecognitionComponentResolver.ts", "asRecord(config.faceRecognition)"],
+  ["src/desktop-preview/faceRecognitionComponentResolver.ts", "asRecord(asRecord(face.states)[state])"],
+  ["src/desktop-preview/drawPasswordComponentResolver.ts", "asRecord(config.drawPassword)"],
+  ["src/desktop-preview/drawPasswordComponentResolver.ts", "asRecord(asRecord(draw.states)[state])"],
+] as const) {
+  assertDoesNotContain(
+    file,
+    forbidden,
+    `${file} must not coerce required state documents (${forbidden})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

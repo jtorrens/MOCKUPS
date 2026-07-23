@@ -1,4 +1,4 @@
-import { asRecord, parseObject, requiredNumber, requiredNumberPair, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredNumber, requiredNumberPair, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { FingerprintDesignContract, FingerprintState } from "./fingerprintComponentContract.js";
 
@@ -15,13 +15,14 @@ export function resolveFingerprintComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): FingerprintDesignContract {
-  const fingerprint = asRecord(config.fingerprint);
+  const fingerprint = requiredRecord(config, "fingerprint", `${id}.fingerprint`);
   const size = requiredNumberPair(fingerprint, "size", `${id}.size`);
   const state = recognitionState(requiredString(inputs, "state", `${id}.runtime.state`));
   const progress = requiredNumber(inputs, "progress", `${id}.runtime.progress`);
   if (size.first <= 0 || size.second <= 0) throw new Error(`${id}.size must be positive`);
   if (progress < 0 || progress > 1) throw new Error(`${id}.runtime.progress must be between 0 and 1`);
-  const stateConfig = asRecord(asRecord(fingerprint.states)[state]);
+  const states = requiredRecord(fingerprint, "states", `${id}.states`);
+  const stateConfig = requiredRecord(states, state, `${id}.states.${state}`);
   const scanLineThickness = requiredNumber(fingerprint, "scanLineThickness", `${id}.scanLineThickness`);
   const iconSizeMultiplier = requiredNumber(fingerprint, "iconSizeMultiplier", `${id}.iconSizeMultiplier`);
   if (scanLineThickness <= 0 || iconSizeMultiplier <= 0) throw new Error(`${id} scanLineThickness and iconSizeMultiplier must be positive`);

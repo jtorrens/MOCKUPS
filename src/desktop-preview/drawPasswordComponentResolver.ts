@@ -1,4 +1,4 @@
-import { asRecord, parseObject, requiredNumber, requiredNumberPair, requiredString } from "./componentResolverCommon.js";
+import { parseObject, requiredNumber, requiredNumberPair, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { DrawPasswordDesignContract, DrawPasswordState } from "./drawPasswordComponentContract.js";
 
@@ -11,7 +11,7 @@ export function resolveDrawPasswordComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): DrawPasswordDesignContract {
-  const draw = asRecord(config.drawPassword);
+  const draw = requiredRecord(config, "drawPassword", `${id}.drawPassword`);
   const grid = requiredNumberPair(draw, "grid", `${id}.grid`);
   const columns = positiveInteger(grid.first, `${id}.grid.columns`);
   const rows = positiveInteger(grid.second, `${id}.grid.rows`);
@@ -20,7 +20,8 @@ export function resolveDrawPasswordComponentFromRecords(
   const visibleCount = nonNegativeInteger(requiredNumber(inputs, "visibleCount", `${id}.runtime.visibleCount`), `${id}.runtime.visibleCount`);
   if (visibleCount > pattern.length) throw new Error(`${id}.runtime.visibleCount must not exceed pattern length`);
   const state = drawState(requiredString(inputs, "state", `${id}.runtime.state`));
-  const stateConfig = asRecord(asRecord(draw.states)[state]);
+  const states = requiredRecord(draw, "states", `${id}.states`);
+  const stateConfig = requiredRecord(states, state, `${id}.states.${state}`);
   const nodeSize = requiredNumber(draw, "nodeSize", `${id}.nodeSize`);
   const lineWidth = requiredNumber(draw, "lineWidth", `${id}.lineWidth`);
   if (nodeSize <= 0 || lineWidth <= 0) throw new Error(`${id} nodeSize and lineWidth must be positive`);
