@@ -5229,6 +5229,40 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
         new JsonObject(),
         emptyAnimation,
         0));
+    foreach (var invalidKeyContract in new[]
+    {
+        """{"collections":[{}]}""",
+        """{"collections":[{"jsonKey":4}]}""",
+        """{"collections":[{"storageCollectionJsonKey":"","jsonKey":"items"}]}""",
+        """{"collections":[{"sourceCollectionJsonKey":4,"jsonKey":"items"}]}""",
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+            Object(invalidKeyContract),
+            new JsonObject(),
+            emptyAnimation,
+            0));
+    }
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"collections":[{"jsonKey":"items"},{"storageCollectionJsonKey":"items"}]}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"collections":[{"jsonKey":"first"},{"jsonKey":"second"}]}"""),
+        Object("""{"first":[{"id":"item"}],"second":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"inputs":[{"id":"value"},{"id":"value"}]}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"collections":[{"jsonKey":"items","fields":[{"id":"value"},{"id":"value"}]}]}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
 
     var collection = Object("""
         {"collections":[{

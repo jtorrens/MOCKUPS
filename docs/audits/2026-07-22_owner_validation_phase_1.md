@@ -554,3 +554,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `JsonPath.OptionalObject`/`RequiredInteger` obligatorios; casts opcionales y `GetValue<int>() ?? 0` prohibidos en el owner. |
 | Datos | Sin migración. Lock Screen ya declara objeto, `explicit` y 240; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Calculated y explicit válidos no cambian; solo deja de reinterpretarse metadata raíz dañada. |
+
+## Slice 1.40 — Identidad temporal explícita en escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El owner temporal elegía la primera key no vacía mediante conversión tolerante: una `storageCollectionJsonKey` presente pero inválida podía caer en source/json. Collections con la misma key, items con el mismo `targetId` y fields con el mismo id se sobrescribían o se resolvían por primer orden. |
+| Owner | El Runtime contract declara las keys y scopes; `RuntimeAnimationFrameOrigin` conserva el índice temporal. Un track solo contiene `fieldId`/`targetId`, por lo que la identidad de target debe ser única en todo el owner. |
+| Cambio mínimo | Validar la primera key explícitamente presente; exigir keys efectivas únicas; insertar targets sin overwrite; exigir ids de input y fields únicos, también después de combinar fields directos y proyectados. |
+| Rutas eliminadas | Key inválida → siguiente key, key duplicada → doble lectura, target duplicado → último item y field duplicado → primer field por posición. |
+| Pruebas | 116/116 escritorio: key ausente/wrong-root/vacía, precedencia inválida, key efectiva duplicada, target duplicado entre collections e ids duplicados de input/field; todos los escenarios temporales current siguen pasando. |
+| Enforcement | Key leída con `RequiredString`; `HashSet` para keys, `TryAdd` para targets y validator de ids de field; overwrite directo de `_items[targetId]` prohibido. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia ninguna identidad válida; únicamente deja de depender del orden una dirección temporal contradictoria. |

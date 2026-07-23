@@ -211,6 +211,13 @@ object, array and non-empty string shapes. The calculator does not filter a
 malformed entry, convert a wrong root to an empty owner or omit a declared
 projected Runtime contract.
 
+Temporal lookup identity is never selected by a permissive fallback. The first
+declared collection key in the explicit storage/source/json precedence must be
+valid, collection storage keys are unique, stable target ids are unique across
+the owner's collections, and field ids are unique within their exact owner
+scope. A later member, item or projected field cannot silently overwrite an
+earlier temporal owner.
+
 The web `RuntimeOwnerTimeline` mirrors this envelope ownership after payload
 preparation. Its optional object/array readers distinguish absence from invalid
 presence for direct, embedded and projected Runtime data; a malformed Preview

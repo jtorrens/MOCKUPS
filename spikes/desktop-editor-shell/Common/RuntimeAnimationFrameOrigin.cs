@@ -131,9 +131,15 @@ internal static class RuntimeAnimationFrameOrigin
             _animation = animation;
             _themeTokens = themeTokens;
             var naturalEnd = (double)Math.Max(1, DeclaredBaseDuration(contract));
+            var collectionKeys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var collection in Collections(contract))
             {
                 var key = CollectionKey(collection);
+                if (!collectionKeys.Add(key))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime owner contract contains duplicate collection key '{key}'.");
+                }
                 if (!runtime.TryGetPropertyValue(key, out var collectionNode)) continue;
                 if (collectionNode is not JsonArray values)
                 {
@@ -155,26 +161,34 @@ internal static class RuntimeAnimationFrameOrigin
                     var durations = CalculateItemDurations(collection, item, targetId);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
-                    _items[targetId] = new ItemTiming(
+                    if (!_items.TryAdd(targetId, new ItemTiming(
                         collection,
                         item,
                         start,
                         durations.Span,
                         effectiveSpan,
                         durations.Sequence,
-                        effectiveSequence);
+                        effectiveSequence)))
+                    {
+                        throw new InvalidOperationException(
+                            $"Runtime owner collections contain duplicate target id '{targetId}'.");
+                    }
                     if (sequenceItems) cursor = start + effectiveSequence;
                     naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
                 }
                 if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
             }
 
-            foreach (var definition in Inputs(contract))
+            var inputs = Inputs(contract);
+            foreach (var definition in inputs)
             {
-                var fieldId = Text(definition["id"]);
-                if (string.IsNullOrWhiteSpace(fieldId)) continue;
-                var timing = ResolveFieldTiming(definition, runtime, "", Inputs(contract), new HashSet<string>(StringComparer.Ordinal));
-                _topFields[fieldId] = timing;
+                var fieldId = JsonPath.RequiredString(definition, "id", "Runtime owner input");
+                var timing = ResolveFieldTiming(definition, runtime, "", inputs, new HashSet<string>(StringComparer.Ordinal));
+                if (!_topFields.TryAdd(fieldId, timing))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime owner contract contains duplicate input id '{fieldId}'.");
+                }
                 naturalEnd = Math.Max(naturalEnd, timing.EndExclusive);
             }
             if (naturalEnd <= 1 && storedFallback > 0) naturalEnd = storedFallback;
@@ -632,13 +646,15 @@ internal static class RuntimeAnimationFrameOrigin
         foreach (var collection in collections)
         {
             ValidateCollectionTimeline(collection);
-            foreach (var field in JsonPath.OptionalObjectArray(
+            var fields = JsonPath.OptionalObjectArray(
                 collection,
                 "fields",
-                "Runtime owner collection"))
+                "Runtime owner collection");
+            foreach (var field in fields)
             {
                 ValidateFieldTimeline(field);
             }
+            ValidateUniqueFieldIds(fields, "Runtime owner collection fields");
         }
         return collections;
     }
@@ -647,6 +663,7 @@ internal static class RuntimeAnimationFrameOrigin
     {
         var inputs = JsonPath.OptionalObjectArray(contract, "inputs", "Runtime owner contract");
         foreach (var input in inputs) ValidateFieldTimeline(input);
+        ValidateUniqueFieldIds(inputs, "Runtime owner inputs");
         return inputs;
     }
 
@@ -670,6 +687,7 @@ internal static class RuntimeAnimationFrameOrigin
                 $"Projected Runtime contract '{targetId}'"));
         }
         foreach (var field in fields) ValidateFieldTimeline(field);
+        ValidateUniqueFieldIds(fields, "Runtime owner item fields");
         return fields;
     }
 
@@ -836,12 +854,30 @@ internal static class RuntimeAnimationFrameOrigin
         }
     }
 
-    private static string CollectionKey(JsonObject collection) =>
-        Text(collection["storageCollectionJsonKey"]) is { Length: > 0 } storage
-            ? storage
-            : Text(collection["sourceCollectionJsonKey"]) is { Length: > 0 } source
-                ? source
-                : Text(collection["jsonKey"]);
+    private static string CollectionKey(JsonObject collection)
+    {
+        foreach (var key in new[] { "storageCollectionJsonKey", "sourceCollectionJsonKey", "jsonKey" })
+        {
+            if (!collection.ContainsKey(key)) continue;
+            return JsonPath.RequiredString(collection, key, "Runtime owner collection");
+        }
+        throw new InvalidOperationException("Runtime owner collection requires an explicit storage key.");
+    }
+
+    private static void ValidateUniqueFieldIds(
+        IReadOnlyList<JsonObject> fields,
+        string context)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var field in fields)
+        {
+            var fieldId = JsonPath.RequiredString(field, "id", context);
+            if (!ids.Add(fieldId))
+            {
+                throw new InvalidOperationException($"{context} contain duplicate id '{fieldId}'.");
+            }
+        }
+    }
 
     private static IReadOnlyList<string> StringArray(JsonObject collection, string key) =>
         JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline");

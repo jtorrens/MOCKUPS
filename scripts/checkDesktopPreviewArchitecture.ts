@@ -6781,6 +6781,26 @@ assertContains(
   'JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline")',
   "the desktop owner timeline must preserve exact pre/post duration field-id lists",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "if (!collectionKeys.Add(key))",
+  "the desktop owner timeline must reject duplicate effective collection keys",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "if (!_items.TryAdd(targetId, new ItemTiming(",
+  "the desktop owner timeline must reject duplicate stable target ids instead of overwriting owners",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'return JsonPath.RequiredString(collection, key, "Runtime owner collection");',
+  "the desktop owner timeline must validate the first explicitly declared collection key",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'ValidateUniqueFieldIds(fields, "Runtime owner item fields")',
+  "the desktop owner timeline must reject ambiguous direct/projected field ids",
+);
 for (const permissiveRuntimeTimelineEnvelope of [
   '(contract["collections"] as JsonArray)?.OfType<JsonObject>()',
   '(contract["inputs"] as JsonArray)?.OfType<JsonObject>()',
@@ -6788,6 +6808,7 @@ for (const permissiveRuntimeTimelineEnvelope of [
   '(collection["itemActions"] as JsonArray)?.OfType<JsonObject>()',
   'values.OfType<JsonObject>()',
   'runtimeInputs.OfType<JsonObject>()',
+  '_items[targetId] =',
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",

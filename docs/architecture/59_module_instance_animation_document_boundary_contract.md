@@ -94,12 +94,23 @@ nested object and any present nested input/action list remains an array of
 objects. The desktop calculator must reject a wrong root or malformed entry
 instead of filtering it into an empty timeline.
 
+The effective collection storage key is also part of this exact envelope. The
+first explicitly present member in `storageCollectionJsonKey`,
+`sourceCollectionJsonKey`, `jsonKey` order must itself be a non-empty string;
+an invalid higher-priority member does not fall through to another key.
+Effective collection keys are unique within one owner contract. Runtime item
+ids are unique across all its collections because animation tracks address an
+item only by stable `targetId`, without a collection-position fallback. Input
+ids are unique at Screen level and field ids are unique within each effective
+item field set, including projected Runtime inputs.
+
 `RuntimeOwnerTimeline` applies the same envelope contract after the prepared
 payload crosses into web Preview. It preserves only declared structural
 absence and rejects present malformed contract arrays, Runtime collections,
 stable items, embedded/projected Runtime objects and timeline field-id lists.
-This is parity validation for the common temporal owner, not component logic in
-the bridge or renderer.
+It applies the same explicit-key and stable-id uniqueness rules. This is parity
+validation for the common temporal owner, not component logic in the bridge or
+renderer.
 
 The desktop common timeline also accepts an explicit empty transient animation
 object for an owner with no authored tracks. Once `tracks` or `retime` is
