@@ -248,8 +248,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
             SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-                && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Contains("*", StringComparer.Ordinal),
+                && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),
             StructuredCollection: input.StructuredCollection);
         var overrides = componentItems is null
             ? null
@@ -375,8 +374,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         {
             return input.DefaultValue;
         }
-        return _services.GetComponentVariantOptions?.Invoke(input.ComponentType)
-            .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))?.Value ?? "";
+        if (ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType))
+        {
+            return "";
+        }
+        var boundary = ComponentVariantOptionContract.RequireFixedBoundary(
+            _services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? [],
+            $"Structured collection field '{input.Id}'");
+        return boundary.DefaultVariantReference;
     }
 
     private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input)

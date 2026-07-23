@@ -52,6 +52,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/76_preview_frame_clock_boundary_contract.md`
 - `docs/architecture/77_text_box_icon_row_composition_contract.md`
 - `docs/architecture/78_component_variant_slot_value_kind_contract.md`
+- `docs/architecture/79_fixed_and_polymorphic_component_authoring_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -255,6 +256,16 @@ Its current value and serialized default are the complete
 `{ variantReference, overrides }` object. Do not represent that boundary as a
 `ComponentVariant` string and manufacture Overrides later, accept both shapes
 or choose a Variant through type, order or position.
+
+Fixed and polymorphic Component authoring follows
+`docs/architecture/79_fixed_and_polymorphic_component_authoring_contract.md`.
+A fixed boundary shows Variant, navigation and local Overrides but never a
+Component selector. A polymorphic boundary shows Component selection only when
+its declared selector explicitly contains `*`. New fixed boundaries use the
+one exact class's protected Default Variant; zero or multiple classes fail.
+New polymorphic boundaries remain unselected until the user chooses a Component
+and then cross into that class's Default Variant. Never choose the first option
+or reconstruct these actions inside a component-specific collection control.
 
 ## Hard rule: manifest, routing and payload contracts are strict
 

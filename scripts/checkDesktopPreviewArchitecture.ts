@@ -9156,21 +9156,27 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     );
   }
   for (const requiredIconSlotsEditorBoundary of [
-    "CreateButtonVariantControl(",
-    "_openRuntimeComponentOverrides(",
-    "_pendingFirstButtonVariantReference",
+    "new DictionaryComponentVariantSlotControl(",
+    "ComponentVariantOptionContract.RequireFixedBoundary(",
+    "_buttonBoundary.DefaultVariantReference",
   ]) {
     assertContains(
       "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
       requiredIconSlotsEditorBoundary,
-      `Icon Slots authoring must expose explicit Button Variant and local Overrides (${requiredIconSlotsEditorBoundary})`,
+      `Icon Slots authoring must reuse the fixed embedded Variant and local Overrides surface (${requiredIconSlotsEditorBoundary})`,
     );
   }
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
-    "_defaultButtonVariantReference",
-    "Icon Slots authoring must not infer the first Button Variant",
-  );
+  for (const forbiddenIconSlotsEditorBoundary of [
+    "_pendingFirstButtonVariantReference",
+    "SelectComponentClass: true",
+    "Choose the Button Component",
+  ]) {
+    assertDoesNotContain(
+      "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+      forbiddenIconSlotsEditorBoundary,
+      `fixed Icon Slots Button boundaries must not expose a provisional Component selector (${forbiddenIconSlotsEditorBoundary})`,
+    );
+  }
   assertDoesNotContain(
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
     "button::variant::default",
@@ -9181,6 +9187,28 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))",
     "embedded Component bindings must wait for explicit Component selection instead of taking the first Variant option",
   );
+  for (const fixedBoundaryConsumer of [
+    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  ]) {
+    assertContains(
+      fixedBoundaryConsumer,
+      "ComponentVariantOptionContract.RequireFixedBoundary(",
+      `${fixedBoundaryConsumer} must materialize the explicit Default Variant only for one exact fixed Component boundary`,
+    );
+  }
+  for (const componentSelectorConsumer of [
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
+    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  ]) {
+    assertContains(
+      componentSelectorConsumer,
+      "ComponentVariantOptionContract.SelectsComponentClass(",
+      `${componentSelectorConsumer} must expose Component selection only for an explicitly polymorphic selector`,
+    );
+  }
   for (const requiredRuntimeIconSlotsService of [
     "openComponentVariantReference: (reference) =>",
     "openRuntimeComponentOverrides: _openEmbeddedContext",

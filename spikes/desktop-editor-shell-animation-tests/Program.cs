@@ -26,6 +26,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
+    ("fixed Component boundaries use one exact class and its Default Variant", FixedComponentBoundariesUseExactDefaultVariant),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("Text Box Preview resolves Variant-owned Icon Row slots", TextBoxPreviewResolvesVariantOwnedIconRowSlots),
@@ -2825,6 +2826,47 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
     {
         File.Delete(temporary);
     }
+}
+
+static void FixedComponentBoundariesUseExactDefaultVariant()
+{
+    var componentClassId = "component_project_button";
+    var options = new[]
+    {
+        new FieldOption(
+            $"{componentClassId}::variant::default",
+            "Default",
+            GroupValue: componentClassId,
+            GroupLabel: "Button",
+            LocalLabel: "Default"),
+        new FieldOption(
+            $"{componentClassId}::variant::compact",
+            "Compact",
+            GroupValue: componentClassId,
+            GroupLabel: "Button",
+            LocalLabel: "Compact"),
+    };
+    var boundary = ComponentVariantOptionContract.RequireFixedBoundary(options, "Test Button boundary");
+    Equal(componentClassId, boundary.ComponentClassId);
+    Equal($"{componentClassId}::variant::default", boundary.DefaultVariantReference);
+    Equal(2, boundary.VariantOptions.Count);
+    True(!ComponentVariantOptionContract.SelectsComponentClass("button"));
+    True(ComponentVariantOptionContract.SelectsComponentClass("*,-componentStack"));
+
+    Throws<InvalidOperationException>(() => ComponentVariantOptionContract.RequireFixedBoundary(
+        options.Where((option) => !option.Value.EndsWith("::default", StringComparison.Ordinal)).ToList(),
+        "Missing Default boundary"));
+    Throws<InvalidOperationException>(() => ComponentVariantOptionContract.RequireFixedBoundary(
+        [
+            .. options,
+            new FieldOption(
+                "component_project_badge::variant::default",
+                "Badge · Default",
+                GroupValue: "component_project_badge",
+                GroupLabel: "Badge",
+                LocalLabel: "Default"),
+        ],
+        "Ambiguous boundary"));
 }
 
 static void DictionaryFieldContextBoundaryPreservesCurrentData()

@@ -708,11 +708,11 @@ internal sealed class ComponentPreviewInputSession
                 continue;
             }
 
-            var firstVariant = ComponentVariantOptions(input, projectId)
-                .FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value));
-            if (firstVariant is not null)
+            if (!ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType))
             {
-                _values[key] = firstVariant.Value;
+                _values[key] = ComponentVariantOptionContract.RequireFixedBoundary(
+                    ComponentVariantOptions(input, projectId),
+                    $"Design Preview Runtime Input '{input.Id}'").DefaultVariantReference;
             }
         }
     }

@@ -63,9 +63,12 @@ duplicate any child Variant value.
 The Text Box editor presents Left Icon Row and Right Icon Row through the
 ordinary embedded Component surface:
 
-- explicit Component/Variant selection;
+- Variant selection limited to the already fixed Icon Row Component Class;
 - navigation to the selected Icon Row Variant;
 - local `Overrides…`.
+
+It does not show a Component selector. The complete stored Variant reference
+already identifies the exact Icon Row Component Class.
 
 No Buttons, row Gap or Orientation fields appear beneath those selectors.
 Those values are edited in the selected Icon Row Variant or in its explicit
@@ -74,7 +77,11 @@ local Overrides.
 The Icon Row editor owns the shared `IconSlots` dictionary control for Buttons,
 followed by its own layout and size fields. The control preserves stable item
 ids, full Button Variant references, explicit Button Overrides, reorder,
-duplication and deletion.
+duplication and deletion. Each item uses the shared fixed Component Variant
+surface from [contract 79](79_fixed_and_polymorphic_component_authoring_contract.md):
+Variant, navigation and `Overrides…`, without a Component selector. Creating the
+first Button creates the real stable item immediately on the exact fixed Button
+class's Default Variant; there is no provisional pre-item selector.
 
 ## 4. Parent composition
 

@@ -38,8 +38,7 @@ internal static class RuntimeInputFieldDefinitionFactory
                 ? new RecordReferenceDefinition(input.TableId)
                 : null,
             SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-                && input.ComponentType.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .Contains("*", StringComparer.Ordinal),
+                && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),
             StructuredCollection: input.StructuredCollection,
             Unit: input.Unit,
             Animation: input.Animation,

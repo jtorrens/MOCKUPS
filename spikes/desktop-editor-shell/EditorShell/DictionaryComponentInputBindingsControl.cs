@@ -250,7 +250,9 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 Number: input.Number,
                 RecordReference: input.ValueKind == ValueKind.RecordReference
                     ? new RecordReferenceDefinition(input.TableId)
-                    : null),
+                    : null,
+                SelectComponentClass: input.ValueKind == ValueKind.ComponentVariant
+                    && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType)),
             value);
     }
 

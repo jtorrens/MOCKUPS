@@ -879,13 +879,11 @@ internal sealed class RuntimeInputsCollectionEditor
             if (field.ValueKind == ValueKind.ComponentVariant && string.IsNullOrWhiteSpace(value))
             {
                 var options = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, field).Options ?? [];
-                var componentId = options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.GroupValue))?.GroupValue ?? "";
-                value = string.IsNullOrWhiteSpace(componentId)
+                value = ComponentVariantOptionContract.SelectsComponentClass(field.ComponentType)
                     ? ""
-                    : options.SingleOrDefault((option) =>
-                        option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                        && option.Value.Equals(VariantReferenceId.Format(componentId, VariantEnvelopeContract.DefaultId), StringComparison.Ordinal))?.Value
-                      ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
+                    : ComponentVariantOptionContract.RequireFixedBoundary(
+                        options,
+                        $"Runtime collection field '{field.Id}'").DefaultVariantReference;
             }
             item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);
         }

@@ -189,10 +189,10 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         var componentId = DictionaryOptionSelector.Value(_componentCombo!);
         var defaultReference = string.IsNullOrWhiteSpace(componentId)
             ? ""
-            : _references.SingleOrDefault((option) =>
-                option.GroupValue.Equals(componentId, StringComparison.Ordinal)
-                && option.Value.Equals(VariantReferenceId.Format(componentId, VariantEnvelopeContract.DefaultId), StringComparison.Ordinal))?.Value
-              ?? throw new InvalidOperationException($"Component '{componentId}' has no explicit default Variant.");
+            : ComponentVariantOptionContract.RequiredDefaultReference(
+                _references,
+                componentId,
+                $"Dictionary field '{_definition.Id}'");
         SetVariantOptions(componentId, defaultReference);
         _isUpdating = false;
         Publish(defaultReference);

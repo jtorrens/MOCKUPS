@@ -20,9 +20,8 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private readonly Func<string, Task>? _openComponentVariantReference;
     private readonly Func<string, JsonObject, Action<JsonObject>, Task>? _openRuntimeComponentOverrides;
     private readonly bool _isEditable;
-    private readonly IReadOnlyList<FieldOption> _buttonVariantOptions;
+    private readonly FixedComponentVariantBoundary _buttonBoundary;
     private List<JsonObject> _items = [];
-    private string _pendingFirstButtonVariantReference = "";
     private int _selectedIndex;
     private string _value;
 
@@ -38,7 +37,9 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         _isEditable = isEditable;
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
-        _buttonVariantOptions = buttonVariantOptions;
+        _buttonBoundary = ComponentVariantOptionContract.RequireFixedBoundary(
+            buttonVariantOptions,
+            "Icon Slots Button boundary");
         _openComponentVariantReference = openComponentVariantReference;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
         _value = Normalize(value);
@@ -96,43 +97,24 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     private Control BuildFirstSlotCreator()
     {
-        if (_buttonVariantOptions.Count == 0)
+        var panel = new Grid
         {
-            return new TextBlock
-            {
-                Text = "No Button Variants are available.",
-                Opacity = 0.72,
-            };
-        }
-
-        var variant = CreateButtonVariantControl(
-            "iconSlots.new.buttonVariantReference",
-            _pendingFirstButtonVariantReference);
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8,
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = "No Buttons.",
+            Opacity = 0.72,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
         var add = ActionButton(
             EditorIcons.Add,
             "Create first Button",
-            _isEditable && !string.IsNullOrWhiteSpace(_pendingFirstButtonVariantReference),
+            _isEditable,
             AddFirstItem);
-        variant.ValueChanged += (_, reference) =>
-        {
-            _pendingFirstButtonVariantReference = reference;
-            add.IsEnabled = _isEditable && !string.IsNullOrWhiteSpace(reference);
-        };
-
-        var panel = new StackPanel { Spacing = 8 };
-        panel.Children.Add(new TextBlock
-        {
-            Text = "Choose the Button Component and Variant for the first row item.",
-            Opacity = 0.72,
-            TextWrapping = TextWrapping.Wrap,
-        });
-        panel.Children.Add(variant);
-        panel.Children.Add(new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { add },
-        });
+        Grid.SetColumn(add, 1);
+        panel.Children.Add(add);
         return panel;
     }
 
@@ -141,44 +123,31 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         var item = _items[_selectedIndex];
         var editor = new StackPanel { Spacing = 8 };
 
-        var buttonVariant = CreateButtonVariantControl(
-            $"iconSlots.{String(item, "id", "")}.buttonVariantReference",
-            String(item, "buttonVariantReference", ""));
-        buttonVariant.ValueCommitted += (_, reference) =>
+        var buttonSlot = ComponentVariantSlotDocumentContract.Create(
+            String(item, "buttonVariantReference", ""),
+            item["buttonOverrides"]?.AsObject()?.DeepClone().AsObject()
+            ?? throw new InvalidOperationException("Icon Row Button item requires local Overrides."),
+            $"Icon Row Button '{String(item, "id", "")}'");
+        var buttonVariant = new DictionaryComponentVariantSlotControl(
+            new FieldDefinition(
+                $"iconSlots.{String(item, "id", "")}.buttonSlot",
+                "Button Variant",
+                ValueKind.ComponentVariantSlot,
+                _isEditable,
+                Options: _buttonBoundary.VariantOptions,
+                SelectComponentClass: false),
+            buttonSlot.ToJsonString(),
+            _openComponentVariantReference,
+            _openRuntimeComponentOverrides);
+        buttonVariant.ValueCommitted += (_, value) =>
         {
-            item["buttonVariantReference"] = reference;
-            item["buttonOverrides"] = new JsonObject();
+            var owner = $"Icon Row Button '{String(item, "id", "")}'";
+            var next = ComponentVariantSlotDocumentContract.Parse(value, owner);
+            item["buttonVariantReference"] = ComponentVariantSlotDocumentContract.VariantReference(next, owner);
+            item["buttonOverrides"] = ComponentVariantSlotDocumentContract.Overrides(next, owner).DeepClone();
             Commit();
         };
         editor.Children.Add(FieldRow("Button", buttonVariant));
-
-        if (_openRuntimeComponentOverrides is not null)
-        {
-            var overrides = new Button
-            {
-                Content = "Overrides…",
-                HorizontalAlignment = HorizontalAlignment.Right,
-                IsEnabled = _isEditable,
-            };
-            EditorOverrideVisuals.ApplyActionButton(
-                overrides,
-                item["buttonOverrides"] is JsonObject currentOverrides && currentOverrides.Count > 0);
-            overrides.Click += async (_, _) =>
-            {
-                var reference = String(item, "buttonVariantReference", "");
-                var current = item["buttonOverrides"]?.AsObject()
-                    ?? throw new InvalidOperationException("Icon Row Button item requires local Overrides.");
-                await _openRuntimeComponentOverrides(
-                    reference,
-                    Clone(current),
-                    (next) =>
-                    {
-                        item["buttonOverrides"] = Clone(next);
-                        Commit();
-                    });
-            };
-            editor.Children.Add(overrides);
-        }
 
         var contentMode = OptionControl(
             String(item, "contentMode", "icon"),
@@ -308,9 +277,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     private void AddFirstItem()
     {
-        if (string.IsNullOrWhiteSpace(_pendingFirstButtonVariantReference)) return;
-        _items.Add(NewItem(null, _pendingFirstButtonVariantReference));
-        _pendingFirstButtonVariantReference = "";
+        _items.Add(NewItem(null));
         _selectedIndex = 0;
         Commit();
     }
@@ -331,14 +298,12 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         ValueCommitted?.Invoke(this, _value);
     }
 
-    private JsonObject NewItem(JsonObject? template, string explicitVariantReference = "")
+    private JsonObject NewItem(JsonObject? template)
     {
         var item = template is null ? new JsonObject() : Clone(template);
         item["id"] = $"button_{Guid.NewGuid():N}";
         item["buttonVariantReference"] = template?["buttonVariantReference"]?.GetValue<string>()
-            ?? (string.IsNullOrWhiteSpace(explicitVariantReference)
-                ? throw new InvalidOperationException("A Button Variant must be selected before creating an Icon Row item.")
-                : explicitVariantReference);
+            ?? _buttonBoundary.DefaultVariantReference;
         item["contentMode"] ??= "icon";
         item["state"] ??= "normal";
         item["iconToken"] ??= "media_mic";
@@ -349,22 +314,6 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         item["pushElapsedMs"] = 0;
         item["buttonOverrides"] ??= new JsonObject();
         return item;
-    }
-
-    private DictionaryComponentVariantControl CreateButtonVariantControl(string id, string value)
-    {
-        return new DictionaryComponentVariantControl(
-            new FieldDefinition(
-                id,
-                "Button Variant",
-                ValueKind.ComponentVariant,
-                _isEditable,
-                Options: _buttonVariantOptions,
-                SelectComponentClass: true),
-            value,
-            isHighlighted: false,
-            _openComponentVariantReference,
-            openEmbeddedComponent: null);
     }
 
     private static string String(JsonObject item, string key, string fallback) => item[key]?.GetValue<string>() ?? fallback;

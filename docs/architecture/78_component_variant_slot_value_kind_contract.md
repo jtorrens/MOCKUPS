@@ -42,7 +42,9 @@ restore a missing Overrides object.
 
 The shared `ComponentVariantSlot` dictionary control owns:
 
-- explicit Component and Variant selection;
+- Variant selection for a fixed Component Class;
+- explicit Component then Default Variant selection only when the field
+  declares a genuinely polymorphic `*` selector;
 - navigation to the selected Variant;
 - opening and committing local Overrides;
 - clearing local Overrides when the selected Component or Variant changes.
@@ -50,6 +52,10 @@ The shared `ComponentVariantSlot` dictionary control owns:
 Runtime/Test Values, ordinary editors and future users of this ValueKind use
 the same control and commit route. The Preview shell does not add a local
 selector or reduced preview-only value.
+
+The fixed-versus-polymorphic presentation and new-boundary Default behavior are
+governed by
+[contract 79](79_fixed_and_polymorphic_component_authoring_contract.md).
 
 ## 4. Runtime and Preview boundary
 
