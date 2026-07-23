@@ -399,6 +399,13 @@ alpha. A wrong-root level never becomes an empty shadow that fails at a later
 leaf, and Surface/Avatar/Label/Keyboard continue to consume the same fully
 resolved generic shadow primitive.
 
+Theme font selection requires the exact `typography` object and its explicit
+text, system and emoji font ids. A wrong root or missing/non-string id fails at
+the Theme boundary rather than becoming an empty id and a later “font
+unavailable” surface. Concrete font ids, `theme` and `theme.system` keep their
+existing selection semantics; Production Font availability remains a separate
+resource boundary.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -721,6 +728,8 @@ Architecture enforcement must verify:
   required typography member.
 - generic Shadow requires its exact Theme root/default/color objects before
   projecting one resolved visual primitive.
+- Theme font selection requires its Typography root and exact text/system/emoji
+  ids before checking Production Font availability.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

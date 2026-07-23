@@ -1042,3 +1042,16 @@ y Overrides por item.
 | Enforcement | Los tres `requiredRecord` quedan fijados y los casts anteriores prohibidos. |
 | Datos | Sin migración. Todos los Themes current contienen Shadow completo; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia geometría/color válidos ni el renderer. |
+
+## Slice 1.76 — Selección exacta de fuentes Theme
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El selector de familias convertía `theme.typography` wrong-root en `{}` y cualquier id ausente/wrong-kind en cadena vacía. |
+| Owner | Theme posee los ids text/system/emoji; la disponibilidad de archivos sigue perteneciendo a Production Fonts y al asset boundary. |
+| Cambio mínimo | Requerir el objeto Typography y la string no vacía seleccionada para cada id. |
+| Rutas eliminadas | `asRecord(root.typography)` y retorno `""` ante id inválido. |
+| Pruebas | Cobertura nueva verifica selección `theme`/`theme.system` y rechazo de raíz array o emoji id ausente; 107/107 Preview, 116/116 escritorio, fronteras y build pasan. |
+| Enforcement | Root y lectura `requiredString` fijadas; cast tolerante prohibido. |
+| Datos | Sin migración. Todos los Themes current declaran los tres ids y sus Production Fonts; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia selección válida; separa mejor documento roto de recurso no disponible. |

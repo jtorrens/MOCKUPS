@@ -1,5 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { parseObject } from "./previewJsonHelpers.js";
+import { requiredRecord, requiredString } from "./previewValueHelpers.js";
 
 export function previewFontFaceFamily(fontId: string) {
   const normalized = fontId.trim().replace(/[^a-zA-Z0-9_-]/g, "_");
@@ -12,9 +13,8 @@ function quoteFamily(family: string) {
 
 function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
   const root = parseObject(payload.themeTokensJson);
-  const typography = asRecord(root.typography);
-  const value = typography[key];
-  return typeof value === "string" ? value : "";
+  const typography = requiredRecord(root, "typography", "theme.typography");
+  return requiredString(typography, key, `theme.typography.${key}`);
 }
 
 export function fontIdsForTypography(

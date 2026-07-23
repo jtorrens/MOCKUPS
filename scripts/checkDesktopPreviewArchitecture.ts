@@ -8014,6 +8014,21 @@ for (const permissiveShadowDocument of [
   );
 }
 assertContains(
+  "src/desktop-preview/previewFontHelpers.ts",
+  'requiredRecord(root, "typography", "theme.typography")',
+  "Theme font selection must require its Typography object",
+);
+assertContains(
+  "src/desktop-preview/previewFontHelpers.ts",
+  'requiredString(typography, key, `theme.typography.${key}`)',
+  "Theme font selection must require each selected font id",
+);
+assertDoesNotContain(
+  "src/desktop-preview/previewFontHelpers.ts",
+  "asRecord(root.typography)",
+  "Theme font selection must not coerce an invalid Typography root",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
