@@ -247,6 +247,12 @@ a field without authored animation metadata. This is a field-level absence
 sentinel shared by the desktop and web timelines; a collection timeline null or
 any other present wrong root remains invalid.
 
+`RuntimeDurationContract` likewise distinguishes structural absence from an
+invalid root Screen timeline. Only absence defaults to calculated duration;
+present policy and explicit default frames use their exact string and positive
+integer shapes. Root Screen metadata never consumes the forwarded-field null
+sentinel.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -435,6 +441,8 @@ Architecture enforcement must verify:
   follow the same exact contract before frame resolution.
 - the explicit forwarded field `animationTimeline: null` sentinel remains
   distinct from an invalid collection timeline or wrong-root field value.
+- root Screen duration policy defaults to calculated only by absence and keeps
+  explicit duration as a positive integer contract.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

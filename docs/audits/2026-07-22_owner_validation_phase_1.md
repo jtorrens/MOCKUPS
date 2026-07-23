@@ -541,3 +541,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Validators web requeridos para contracts/direct/projected fields; duration lookup exacto; `asRecord`, `records` y clamps de metadata quedan prohibidos en el timeline. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Payload current completo conserva cada frame y el null explícito de forwarding; solo dejan de aceptarse fixtures o payloads parciales que nunca debían cruzar la frontera. |
+
+## Slice 1.39 — Política de duración de Screen estricta
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | `RuntimeDurationContract.Policy` hacía cast opcional de `animationTimeline`; null/array se convertían en `calculated`. `defaultDurationFrames` usaba `GetValue<int>() ?? 0`, mezclando miembro ausente con tipo incorrecto. |
+| Owner | `RuntimeDurationContract` posee `calculated`/`explicit` y el default inicial de una Screen explícita; el timeline común conserva después el cálculo o límite correspondiente. |
+| Cambio mínimo | Aplicar default calculated solo por ausencia; exigir timeline objeto, policy string conocida y default explícito entero positivo. Mantener el sentinel null únicamente para fields projected, no para metadata raíz. |
+| Rutas eliminadas | Root null/array → calculated y default ausente/wrong scalar → cero genérico. |
+| Pruebas | 116/116 escritorio: calculated ausente, explicit 240, policy desconocida, timeline null/array, policy number y default ausente/string/fraccional/cero. 89/89 Preview se conserva. |
+| Enforcement | `JsonPath.OptionalObject`/`RequiredInteger` obligatorios; casts opcionales y `GetValue<int>() ?? 0` prohibidos en el owner. |
+| Datos | Sin migración. Lock Screen ya declara objeto, `explicit` y 240; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. Calculated y explicit válidos no cambian; solo deja de reinterpretarse metadata raíz dañada. |

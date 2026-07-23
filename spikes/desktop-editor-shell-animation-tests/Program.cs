@@ -5380,6 +5380,18 @@ static void ScreenDurationPolicyIsContractOwned()
         "{\"animationTimeline\":{\"durationPolicy\":\"explicit\"}}"));
     Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
         "{\"animationTimeline\":{\"durationPolicy\":\"legacy\"}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
+        "{\"animationTimeline\":null}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
+        "{\"animationTimeline\":[]}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
+        "{\"animationTimeline\":{\"durationPolicy\":4}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
+        "{\"animationTimeline\":{\"durationPolicy\":\"explicit\",\"defaultDurationFrames\":\"240\"}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
+        "{\"animationTimeline\":{\"durationPolicy\":\"explicit\",\"defaultDurationFrames\":1.5}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
+        "{\"animationTimeline\":{\"durationPolicy\":\"explicit\",\"defaultDurationFrames\":0}}"));
 }
 
 static void TargetFieldsUseRelativeOrigins()

@@ -6953,6 +6953,26 @@ for (const permissiveWebTimingMetadata of [
   );
 }
 assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  'JsonPath.OptionalObject(\n            contract,\n            "animationTimeline",\n            "Runtime duration contract")',
+  "Screen duration policy must default to calculated only by structural absence",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  'JsonPath.RequiredInteger(\n            timeline,\n            "defaultDurationFrames"',
+  "explicit Screen duration must require an exact integer default",
+);
+for (const permissiveDurationPolicyRead of [
+  '(contract["animationTimeline"] as JsonObject)?["durationPolicy"]?.GetValue<string>()',
+  '(contract["animationTimeline"] as JsonObject)?["defaultDurationFrames"]?.GetValue<int>() ?? 0',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+    permissiveDurationPolicyRead,
+    `Screen duration policy must not coerce a present invalid timeline (${permissiveDurationPolicyRead})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

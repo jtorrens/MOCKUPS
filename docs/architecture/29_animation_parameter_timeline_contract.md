@@ -230,6 +230,12 @@ explicit range remains authored and is shown as out of range in Animation; it
 does not become visible until the user increases Duration. Lock Screen is the
 first explicit-duration module; Conversation remains calculated.
 
+The default applies only when `animationTimeline` or `durationPolicy` is absent.
+A present timeline is an object, a present policy is one of the two declared
+strings, and an explicit `defaultDurationFrames` is a positive JSON integer.
+Null, an array, a numeric string or a fractional/zero value is invalid rather
+than another spelling of calculated duration.
+
 Conversation timing remains Screen-local and serial. For message `i`, `start(i) = sequenceEnd(i-1) + delay(i)`. Text completion is `writeOn(i)` when its active track contains only mandatory KF0, otherwise the last enabled text keyframe. Delivery/status, Playing and Full screen are relative to that text completion. Text, finite Playing and Full screen extend the serial item extent; delivery/status fields do not. Consequently a status may resolve after another Message has begun, while still extending the Screen's visual span. `sequenceEnd(i) = start(i) + sequencingBodyExtent(i) + postWriteOnHold(i)`. A true media keyframe contributes only its finite authored window or until a replacing keyframe, whichever comes first. Disabled keyframes do not contribute.
 
 For the current cut-only model, Shot duration is the sum of ordered Screen durations. The navigator, resolver selection, slider ranges, playback cache, and export all call this service; no control owns a private duration formula. The `+` authoring horizon remains session-only and never edits an explicit Duration.

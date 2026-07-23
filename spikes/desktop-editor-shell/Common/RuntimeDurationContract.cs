@@ -16,8 +16,13 @@ internal static class RuntimeDurationContract
 
     public static RuntimeDurationPolicy Policy(JsonObject contract)
     {
-        var value = (contract["animationTimeline"] as JsonObject)?["durationPolicy"]?.GetValue<string>()
-            ?? "calculated";
+        var timeline = JsonPath.OptionalObject(
+            contract,
+            "animationTimeline",
+            "Runtime duration contract");
+        var value = timeline is null || !timeline.TryGetPropertyValue("durationPolicy", out _)
+            ? "calculated"
+            : JsonPath.RequiredString(timeline, "durationPolicy", "Runtime duration contract animationTimeline");
         return value switch
         {
             "calculated" => RuntimeDurationPolicy.Calculated,
@@ -30,7 +35,11 @@ internal static class RuntimeDurationContract
     {
         var contract = Parse(contractJson);
         if (Policy(contract) == RuntimeDurationPolicy.Calculated) return 1;
-        var duration = (contract["animationTimeline"] as JsonObject)?["defaultDurationFrames"]?.GetValue<int>() ?? 0;
+        var timeline = JsonPath.RequiredObject(contract, "animationTimeline", "Runtime duration contract");
+        var duration = JsonPath.RequiredInteger(
+            timeline,
+            "defaultDurationFrames",
+            "Explicit runtime duration contract");
         if (duration <= 0)
             throw new InvalidOperationException("An explicit runtime duration requires a positive defaultDurationFrames value.");
         return duration;

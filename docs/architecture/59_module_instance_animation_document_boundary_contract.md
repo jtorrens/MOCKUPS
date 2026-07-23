@@ -134,6 +134,12 @@ no authored timeline. That exact null is a declared field-level absence sentinel
 in both desktop and web consumers. It does not make null valid for collection
 timeline metadata, nor permit another scalar/array root for a field timeline.
 
+Root Screen duration policy has a separate strict owner. Structural absence of
+the root timeline or `durationPolicy` means calculated; a present timeline is an
+object and an explicit policy requires a positive integer
+`defaultDurationFrames`. This root contract does not reuse the projected-field
+null sentinel.
+
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
 frame.
@@ -172,6 +178,8 @@ Architecture enforcement must verify:
   duration-value lookup;
 - both consumers preserve the explicit forwarded field timeline null sentinel
   without generalizing it to collection metadata;
+- root Screen duration policy defaults only by absence and rejects present
+  wrong roots or invalid explicit frame counts;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;
