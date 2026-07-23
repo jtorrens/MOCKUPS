@@ -42,7 +42,7 @@ internal static class PreviewPanelLayoutPolicy
         {
             return PreviewSetupLayoutMode.FourColumns;
         }
-        if (availableWidth <= 0 || availableWidth >= TwoColumnSetupWidth)
+        if (availableWidth >= TwoColumnSetupWidth)
         {
             return PreviewSetupLayoutMode.TwoColumns;
         }

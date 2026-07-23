@@ -163,6 +163,18 @@ internal sealed class ActorRepository : IActorRepository
     {
         var source = QueryAll(connection).SingleOrDefault((actor) => actor.Id == sourceId)
             ?? throw new InvalidOperationException($"Missing actor '{sourceId}'.");
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            source.ProjectId,
+            ProjectReferenceKind.Device,
+            source.DefaultDeviceId,
+            $"Actor '{sourceId}' default Device");
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            source.ProjectId,
+            ProjectReferenceKind.Theme,
+            source.DefaultThemeId,
+            $"Actor '{sourceId}' default Theme");
         var copy = source with { Id = $"actor_{Guid.NewGuid():N}", DisplayName = copyName };
         SqliteCommandExecutor.Execute(
             connection,

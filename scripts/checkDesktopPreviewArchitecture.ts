@@ -55,16 +55,75 @@ function relative(filePath: string) {
   return path.relative(root, filePath).replace(/\\/g, "/");
 }
 
-function readText(relativePath: string) {
-  const normalizedPath = relativePath.replace(/\\/g, "/");
+function resolveRepositoryPath(relativePath: string) {
+  if (path.isAbsolute(relativePath) || path.win32.isAbsolute(relativePath)) {
+    throw new Error(`Absolute repository paths are prohibited: ${relativePath}`);
+  }
+  const normalizedPath = path.posix.normalize(relativePath.replace(/\\/g, "/"))
+    .replace(/^(?:\.\/)+/, "");
+  if (!normalizedPath
+      || normalizedPath === ".."
+      || normalizedPath.startsWith("../")) {
+    throw new Error(`Repository path escapes are prohibited: ${relativePath}`);
+  }
   if (normalizedPath === "docs/old" || normalizedPath.startsWith("docs/old/")) {
     throw new Error(`Historical archive access is prohibited: ${normalizedPath}`);
   }
-  return readFileSync(path.join(root, normalizedPath), "utf8");
+  const fullPath = path.resolve(root, ...normalizedPath.split("/"));
+  if (fullPath !== root && !fullPath.startsWith(`${root}${path.sep}`)) {
+    throw new Error(`Repository path escapes are prohibited: ${relativePath}`);
+  }
+  return { fullPath, normalizedPath };
+}
+
+function readText(relativePath: string) {
+  const { fullPath } = resolveRepositoryPath(relativePath);
+  return readFileSync(fullPath, "utf8");
 }
 
 function addViolation(filePath: string, message: string) {
   violations.push(`${filePath}: ${message}`);
+}
+
+function repositoryFileExists(relativePath: string) {
+  try {
+    return existsSync(resolveRepositoryPath(relativePath).fullPath);
+  } catch (error) {
+    addViolation(
+      "scripts/checkDesktopPreviewArchitecture.ts",
+      error instanceof Error ? error.message : `Invalid repository path: ${relativePath}`,
+    );
+    return false;
+  }
+}
+
+{
+  const checkerSource = readText("scripts/checkDesktopPreviewArchitecture.ts");
+  const directSyncReads = [...checkerSource.matchAll(/\breadFileSync\s*\(/g)];
+  if (directSyncReads.length !== 1
+      || /\bfs\s*\.\s*readFile\s*\(/.test(checkerSource)
+      || /\bfs\s*\.\s*promises\s*\.\s*readFile\s*\(/.test(checkerSource)) {
+    addViolation(
+      "scripts/checkDesktopPreviewArchitecture.ts",
+      "all architecture-checker file reads must pass through the guarded readText boundary",
+    );
+  }
+  for (const rejectedPath of [
+    "../outside.txt",
+    "/absolute.txt",
+    "C:\\absolute.txt",
+    "docs\\old\\sealed.md",
+  ]) {
+    try {
+      resolveRepositoryPath(rejectedPath);
+      addViolation(
+        "scripts/checkDesktopPreviewArchitecture.ts",
+        `guarded file access accepted prohibited path "${rejectedPath}"`,
+      );
+    } catch {
+      // Expected: validation stops before any filesystem read.
+    }
+  }
 }
 
 function walkFiles(directory: string): string[] {
@@ -87,7 +146,7 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
 
 for (const directory of ["src/desktop-preview", "spikes/desktop-editor-shell/Common", "spikes/desktop-editor-shell/Data", "spikes/desktop-editor-shell/EditorShell"]) {
   for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
-    const source = readFileSync(filePath, "utf8");
+    const source = readText(relative(filePath));
     for (const retired of retiredTimeFields) {
       if (source.includes(retired)) addViolation(relative(filePath), `retired time field remains: ${retired}`);
     }
@@ -251,11 +310,85 @@ if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
     "test:cold must clear desktop build outputs before running the complete repository gate",
   );
 }
-assertContains(
-  ".github/workflows/validate.yml",
-  "npm run test:cold",
-  "repository CI must exercise the complete gate from a cold desktop build state",
-);
+type WorkflowStep = {
+  uses?: string;
+  run?: string;
+};
+function workflowSteps(relativePath: string): WorkflowStep[] {
+  const lines = readText(relativePath).split(/\r?\n/);
+  const stepsLine = lines.findIndex((line) => /^\s*steps:\s*$/.test(line));
+  if (stepsLine < 0) return [];
+  const stepsIndent = lines[stepsLine]!.match(/^\s*/)?.[0].length ?? 0;
+  const steps: WorkflowStep[] = [];
+  let current: WorkflowStep | undefined;
+  for (const line of lines.slice(stepsLine + 1)) {
+    if (!line.trim() || line.trimStart().startsWith("#")) continue;
+    const indent = line.match(/^\s*/)?.[0].length ?? 0;
+    if (indent <= stepsIndent) break;
+    const item = line.match(/^\s*-\s+([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
+    if (item) {
+      if (current) steps.push(current);
+      current = {};
+      const key = item[1] ?? "";
+      const value = (item[2] ?? "").trim().replace(/^["']|["']$/g, "");
+      if (key === "uses" || key === "run") current[key] = value;
+      continue;
+    }
+    const property = line.match(/^\s+([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
+    if (!current || !property) continue;
+    const key = property[1] ?? "";
+    const value = (property[2] ?? "").trim().replace(/^["']|["']$/g, "");
+    if (key === "uses" || key === "run") current[key] = value;
+  }
+  if (current) steps.push(current);
+  return steps;
+}
+{
+  const workflowPath = ".github/workflows/validate.yml";
+  const steps = workflowSteps(workflowPath);
+  const supportedCheckoutActions = new Set([
+    "actions/checkout@v6",
+    "actions/checkout@v7",
+  ]);
+  const checkoutIndexes = steps
+    .map((step, index) => step.uses?.startsWith("actions/checkout@") ? index : -1)
+    .filter((index) => index >= 0);
+  const checkoutIndex = checkoutIndexes[0] ?? -1;
+  const checkoutAction = checkoutIndex >= 0 ? steps[checkoutIndex]?.uses ?? "" : "";
+  const setupNodeIndex = steps.findIndex((step) => step.uses === "actions/setup-node@v6");
+  const setupDotnetIndex = steps.findIndex((step) => step.uses === "actions/setup-dotnet@v5");
+  const npmCiIndex = steps.findIndex((step) => step.run === "npm ci");
+  const coldGateIndex = steps.findIndex((step) => step.run === "npm run test:cold");
+  if (checkoutIndexes.length !== 1 || !supportedCheckoutActions.has(checkoutAction)) {
+    addViolation(
+      workflowPath,
+      "repository CI must contain one checkout step using an admitted actions/checkout major",
+    );
+  }
+  if (setupNodeIndex < 0 || setupDotnetIndex < 0) {
+    addViolation(
+      workflowPath,
+      "repository CI must configure the admitted Node and .NET setup actions",
+    );
+  }
+  if (npmCiIndex < 0 || coldGateIndex < 0) {
+    addViolation(
+      workflowPath,
+      "repository CI must install the lockfile with npm ci before running test:cold",
+    );
+  }
+  const setupCompleteIndex = Math.max(setupNodeIndex, setupDotnetIndex);
+  if (checkoutIndex < 0
+      || setupNodeIndex <= checkoutIndex
+      || setupDotnetIndex <= checkoutIndex
+      || npmCiIndex <= setupCompleteIndex
+      || coldGateIndex <= npmCiIndex) {
+    addViolation(
+      workflowPath,
+      "repository CI steps must be ordered checkout, setup, npm ci, then npm run test:cold",
+    );
+  }
+}
 
 const currentRepositoryFiles = walkFilesByExtension(
   path.join(root, "spikes", "desktop-editor-shell", "Data"),
@@ -2656,9 +2789,8 @@ function assertDesktopPreviewActionsAreDeclarative() {
 function assertComponentEditorLayoutsUseKnownFields() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
-  const catalog = readFileSync(
-    path.join(root, "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs"),
-    "utf8",
+  const catalog = readText(
+    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
   );
   const knownFields = new Set(
     [...catalog.matchAll(/^\s*\["([^"]+)"\]\s*=/gm)].map((match) => match[1]),
@@ -2808,7 +2940,7 @@ assertGenericTextWrappingIsConservative();
 for (const filePath of walkFiles(previewRoot)) {
   const file = relative(filePath);
   if (file !== "src/desktop-preview/previewTextHelpers.ts"
-      && readFileSync(filePath, "utf8").includes("approximateText")) {
+      && readText(file).includes("approximateText")) {
     addViolation(file, "production preview layout must use resolved production-font measurement");
   }
 }
@@ -2869,7 +3001,7 @@ for (const removedLegacyPath of [
 }
 
 for (const filePath of walkFiles(previewRoot)) {
-  const source = readFileSync(filePath, "utf8");
+  const source = readText(relative(filePath));
   for (const legacyImport of ["../domain/", "../persistence/"]) {
     if (source.includes(legacyImport)) {
       addViolation(
@@ -3133,8 +3265,8 @@ function moduleEntrypointImport(entry: DesktopPreviewModuleManifestEntry, kind: 
 
 for (const [componentClass, entry] of manifestEntries) {
   for (const kind of ["contract", "resolver", "renderable"] as const) {
-    const filePath = path.join(previewRoot, `${entry[kind].replace(/^\.\//, "")}.ts`);
-    if (!existsSync(filePath)) {
+    const filePath = `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
+    if (!repositoryFileExists(filePath)) {
       addViolation(
         "src/desktop-preview/desktopPreviewManifest.json",
         `manifest entry "${componentClass}" points to missing ${kind} file "${entry[kind]}"`,
@@ -3154,8 +3286,8 @@ for (const [componentClass, entry] of manifestEntries) {
 
 for (const [moduleClass, entry] of moduleManifestEntries) {
   for (const kind of ["resolver", "renderable"] as const) {
-    const filePath = path.join(previewRoot, `${entry[kind].replace(/^\.\//, "")}.ts`);
-    if (!existsSync(filePath)) {
+    const filePath = `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
+    if (!repositoryFileExists(filePath)) {
       addViolation(
         "src/desktop-preview/desktopPreviewManifest.json",
         `module manifest entry "${moduleClass}" points to missing ${kind} file "${entry[kind]}"`,
@@ -3370,7 +3502,7 @@ for (const [, entry] of moduleManifestEntries) {
 
 for (const filePath of walkFiles(previewRoot)) {
   const relativePath = relative(filePath);
-  const source = readFileSync(filePath, "utf8");
+  const source = readText(relativePath);
   if (!sharedPreviewHelperFiles.has(relativePath)) {
     for (const helperName of [
       "applyNeutralTint",
@@ -4251,6 +4383,9 @@ type CurrentComponentClassRow = {
 type CurrentModuleClassRow = {
   id: string;
   record_class_id: string;
+  config_json: string;
+  design_preview_json: string;
+  metadata_json: string;
 };
 let currentComponentClassRows: CurrentComponentClassRow[] = [];
 let currentModuleClassRows: CurrentModuleClassRow[] = [];
@@ -4292,7 +4427,7 @@ if (!existsSync(desktopDatabasePath)) {
       .flatMap((row) => [row.config_json, row.design_preview_json, row.metadata_json])
       .join("\n");
     currentModuleClassRows = database
-      .prepare("SELECT id, record_class_id FROM modules")
+      .prepare("SELECT id, record_class_id, config_json, design_preview_json, metadata_json FROM modules")
       .all() as CurrentModuleClassRow[];
     const layouts = database
       .prepare("SELECT record_class_id, layout_json FROM editor_layouts ORDER BY record_class_id")
@@ -4383,6 +4518,74 @@ for (const moduleClass of Object.keys(desktopPreviewModules)) {
       "src/desktop-preview/desktopPreviewManifest.json",
       `manifest module class "${moduleClass}" is absent from the committed current database`,
     );
+  }
+}
+
+{
+  const coverageTestPath = "spikes/desktop-editor-shell-animation-tests/Program.cs";
+  const coverageTestSource = readText(coverageTestPath);
+  const componentHarness = [
+    "ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime",
+    "DesktopPreviewManifest.Components.Keys",
+    "WebDesignPreviewRenderer.RenderBodyAsync",
+    'html.Contains("data-renderable-id="',
+  ].every((term) => coverageTestSource.includes(term));
+  const moduleHarness = [
+    "ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime",
+    "DesktopPreviewManifest.Modules.Keys",
+    "foreach (var frame in new[] { 0, 1 })",
+    "Equal(frame, payload.LocalFrame)",
+    "WebDesignPreviewRenderer.RenderBodyAsync",
+    'html.Contains("data-renderable-id="',
+  ].every((term) => coverageTestSource.includes(term));
+
+  const functionalCoverageMatrix = [
+    ...manifestEntries.map(([owner, entry]) => ({
+      kind: "Component",
+      owner,
+      contract: repositoryFileExists(
+        `src/desktop-preview/${entry.contract.replace(/^\.\//, "")}.ts`,
+      ),
+      resolver: repositoryFileExists(moduleFile(entry, "resolver")),
+      renderable: repositoryFileExists(moduleFile(entry, "renderable")),
+      fixture: currentComponentClassRows.some((row) =>
+        row.component_type === owner
+        && row.config_json.trim().startsWith("{")
+        && row.design_preview_json.trim().startsWith("{")
+        && row.metadata_json.trim().startsWith("{")),
+      focusedTest: componentHarness,
+      embeds: Array.isArray(entry.embeds)
+        && entry.embeds.every((child) => Object.hasOwn(desktopPreviewComponents, child)),
+      registry: routedComponentClasses.has(owner),
+    })),
+    ...moduleManifestEntries.map(([owner, entry]) => ({
+      kind: "Module",
+      owner,
+      contract: currentModuleClassRows.some((row) =>
+        row.record_class_id === owner
+        && row.config_json.trim().startsWith("{")
+        && row.metadata_json.trim().startsWith("{")),
+      resolver: repositoryFileExists(moduleEntrypointFile(entry, "resolver")),
+      renderable: repositoryFileExists(moduleEntrypointFile(entry, "renderable")),
+      fixture: currentModuleClassRows.some((row) =>
+        row.record_class_id === owner
+        && row.design_preview_json.trim().startsWith("{")),
+      focusedTest: moduleHarness,
+      embeds: Array.isArray(entry.embeds)
+        && entry.embeds.every((child) => Object.hasOwn(desktopPreviewComponents, child)),
+      registry: routedModuleClasses.has(owner),
+    })),
+  ];
+  for (const coverage of functionalCoverageMatrix) {
+    const missing = Object.entries(coverage)
+      .filter(([key, value]) => key !== "kind" && key !== "owner" && value !== true)
+      .map(([key]) => key);
+    if (missing.length > 0) {
+      addViolation(
+        "src/desktop-preview/desktopPreviewManifest.json",
+        `${coverage.kind} "${coverage.owner}" lacks derived functional coverage: ${missing.join(", ")}`,
+      );
+    }
   }
 }
 
@@ -6920,13 +7123,18 @@ assertMatches(
   "the upper Preview utility surface must keep the agreed horizontal authoring-data, Setup and Controls tab order",
 );
 for (const [relativePath, responsivePreviewTerm] of [
-  ["spikes/desktop-editor-shell/MainWindow.axaml", 'ColumnDefinitions="300,6,2*,6,*"'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="300" MinWidth="240" />'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="2*" MinWidth="280" />'],
+  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="*" MinWidth="420" />'],
   ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewPanelBorder"'],
   ["spikes/desktop-editor-shell/MainWindow.axaml", 'MinWidth="400"'],
   ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewSetupGrid"'],
   ["spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs", "PreviewPanelLayoutPolicy.SetupMode(availableWidth)"],
   ["spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs", "PreviewPanelLayoutPolicy.ClampRestoredColumns("],
   ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellLayoutIsResponsive"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellVisualTreeIsResponsive"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "HeadlessUnitTestSession.StartNew(typeof(App))"],
+  ["spikes/desktop-editor-shell-animation-tests/Mockups.DesktopEditorShell.AnimationTests.csproj", 'PackageReference Include="Avalonia.Headless"'],
   ["docs/architecture/ux_ui.md", "1040 px minimum"],
 ] as const) {
   assertContains(

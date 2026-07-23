@@ -1,5 +1,13 @@
 using Microsoft.Data.Sqlite;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Mockups.DesktopEditorShell;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
@@ -78,6 +86,8 @@ var tests = new (string Name, Action Run)[]
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
+    ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
+    ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
@@ -1985,6 +1995,13 @@ static void PreviewShellLayoutIsResponsive()
     Equal(
         PreviewSetupLayoutMode.OneColumn,
         PreviewPanelLayoutPolicy.SetupMode(PreviewPanelLayoutPolicy.TwoColumnSetupWidth - 1));
+    Equal(PreviewSetupLayoutMode.OneColumn, PreviewPanelLayoutPolicy.SetupMode(-1));
+    Equal(PreviewSetupLayoutMode.OneColumn, PreviewPanelLayoutPolicy.SetupMode(0));
+    Equal(PreviewSetupLayoutMode.OneColumn, PreviewPanelLayoutPolicy.SetupMode(1));
+    Equal(PreviewSetupLayoutMode.OneColumn, PreviewPanelLayoutPolicy.SetupMode(279));
+    Equal(PreviewSetupLayoutMode.TwoColumns, PreviewPanelLayoutPolicy.SetupMode(280));
+    Equal(PreviewSetupLayoutMode.TwoColumns, PreviewPanelLayoutPolicy.SetupMode(579));
+    Equal(PreviewSetupLayoutMode.FourColumns, PreviewPanelLayoutPolicy.SetupMode(580));
 
     var restored = PreviewPanelLayoutPolicy.ClampRestoredColumns(
         PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
@@ -1996,6 +2013,284 @@ static void PreviewShellLayoutIsResponsive()
         + restored.EditorPanelWidth
         + PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth
         <= PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth - 32);
+}
+
+static void PreviewShellVisualTreeIsResponsive()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-layout-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        session.Dispatch(() =>
+        {
+            var window = new MainWindow(temporary);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var shell = Required(window.FindControl<Grid>("ShellColumns"));
+            var navigation = Required(window.FindControl<Border>("NavigationPanelBorder"));
+            var editor = Required(window.FindControl<Border>("EditorPanelBorder"));
+            var preview = Required(window.FindControl<Border>("PreviewPanelBorder"));
+            var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
+            var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
+            var setupTab = Required(window.FindControl<TabItem>("PreviewSetupTab"));
+            var controlsTab = Required(window.FindControl<TabItem>("PreviewControlsTab"));
+            var setupGrid = Required(window.FindControl<Grid>("PreviewSetupGrid"));
+            var setupHost = Required(window.FindControl<ContentControl>("PreviewSetupHost"));
+            var setupScroll = setupHost.GetVisualAncestors().OfType<ScrollViewer>().First();
+
+            if (!authoringTab.IsVisible)
+            {
+                var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
+                    .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(window)
+                    ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+                var component = treeRoots
+                    .SelectMany(DescendantsAndSelf)
+                    .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+                LayoutCheck(
+                    (bool)(selectNode.Invoke(window, [component.Id]) ?? false),
+                    "could not select a Design Component fixture");
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            tabs.SelectedItem = setupTab;
+            Dispatcher.UIThread.RunJobs();
+            var selectedTab = tabs.SelectedItem;
+
+            foreach (var size in new[]
+                     {
+                         new Size(1040, 680),
+                         new Size(1440, 900),
+                     })
+            {
+                window.Width = size.Width;
+                window.Height = size.Height;
+                Dispatcher.UIThread.RunJobs();
+                window.Measure(size);
+                window.Arrange(new Rect(size));
+                Dispatcher.UIThread.RunJobs();
+
+                LayoutCheck(window.ClientSize.Width <= size.Width + 0.5, $"{size}: Client width escaped the window");
+                LayoutCheck(shell.Bounds.Width > 0, $"{size}: shell has no width");
+                LayoutCheck(navigation.Bounds.Width >= navigation.MinWidth, $"{size}: Navigation is below its minimum");
+                LayoutCheck(editor.Bounds.Width >= editor.MinWidth, $"{size}: Editor is below its minimum");
+                LayoutCheck(preview.Bounds.Width >= preview.MinWidth, $"{size}: Preview is below its visual minimum");
+                LayoutCheck(
+                    shell.ColumnDefinitions[4].ActualWidth >= PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth,
+                    $"{size}: Preview column is below its shell minimum "
+                    + $"({shell.ColumnDefinitions[4].ActualWidth:0.##} < {PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth:0.##})");
+
+                var navigationRect = BoundsInWindow(navigation, window);
+                var editorRect = BoundsInWindow(editor, window);
+                var previewRect = BoundsInWindow(preview, window);
+                LayoutCheck(
+                    navigationRect.Width >= 0 && editorRect.Width >= 0 && previewRect.Width >= 0,
+                    $"{size}: a shell panel has negative width");
+                LayoutCheck(navigationRect.Right <= editorRect.Left + 0.5, $"{size}: Navigation overlaps Editor");
+                LayoutCheck(editorRect.Right <= previewRect.Left + 0.5, $"{size}: Editor overlaps Preview");
+                LayoutCheck(previewRect.Left >= -0.5, $"{size}: Preview starts outside the window");
+                LayoutCheck(
+                    previewRect.Right <= window.ClientSize.Width + 0.5,
+                    $"{size}: Preview ends outside the window ({previewRect.Right:0.##} > {window.ClientSize.Width:0.##})");
+
+                var visibleTabs = new[] { authoringTab, setupTab, controlsTab };
+                LayoutCheck(
+                    visibleTabs.All((tab) => tab.IsVisible && tab.Bounds.Width > 0),
+                    $"{size}: one of the three Preview tabs is not visible");
+                var tabRects = visibleTabs.Select((tab) => BoundsInWindow(tab, window)).ToList();
+                LayoutCheck(
+                    tabRects.Max((rect) => rect.Top) - tabRects.Min((rect) => rect.Top) <= 0.5,
+                    $"{size}: Preview tabs do not share one row "
+                    + $"({string.Join("; ", tabRects.Select((rect) => $"{rect.X:0.##},{rect.Y:0.##},{rect.Width:0.##},{rect.Height:0.##}"))})");
+                LayoutCheck(tabRects[0].Right <= tabRects[1].Left + 0.5, $"{size}: first and second tabs overlap");
+                LayoutCheck(tabRects[1].Right <= tabRects[2].Left + 0.5, $"{size}: second and third tabs overlap");
+                var tabsRect = BoundsInWindow(tabs, window);
+                LayoutCheck(
+                    tabRects.All((rect) =>
+                        rect.Left >= tabsRect.Left - 0.5
+                        && rect.Right <= tabsRect.Right + 0.5),
+                    $"{size}: Preview tabs clip horizontally "
+                    + $"(host={tabsRect.X:0.##},{tabsRect.Y:0.##},{tabsRect.Width:0.##},{tabsRect.Height:0.##}; "
+                    + $"tabs={string.Join("; ", tabRects.Select((rect) => $"{rect.X:0.##},{rect.Y:0.##},{rect.Width:0.##},{rect.Height:0.##}"))})");
+
+                Equal(2, setupGrid.ColumnDefinitions.Count);
+                Equal(2, setupGrid.RowDefinitions.Count);
+                Equal(ScrollBarVisibility.Auto, setupScroll.VerticalScrollBarVisibility);
+                Equal(ScrollBarVisibility.Disabled, setupScroll.HorizontalScrollBarVisibility);
+                LayoutCheck(
+                    setupScroll.Extent.Width <= setupScroll.Viewport.Width + 0.5,
+                    $"{size}: Preview Setup content clips horizontally");
+                Equal(selectedTab, tabs.SelectedItem);
+            }
+
+            shell.ColumnDefinitions[0].Width = new GridLength(240);
+            shell.ColumnDefinitions[2].Width = new GridLength(280);
+            shell.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
+            Dispatcher.UIThread.RunJobs();
+            Equal(4, setupGrid.ColumnDefinitions.Count);
+            Equal(1, setupGrid.RowDefinitions.Count);
+            setupGrid.Width = 260;
+            setupGrid.HorizontalAlignment = HorizontalAlignment.Left;
+            Dispatcher.UIThread.RunJobs();
+            Equal(1, setupGrid.ColumnDefinitions.Count);
+            Equal(4, setupGrid.RowDefinitions.Count);
+            setupGrid.Width = 400;
+            Dispatcher.UIThread.RunJobs();
+            LayoutCheck(
+                setupGrid.ColumnDefinitions.Count == 2
+                && setupGrid.RowDefinitions.Count == 2,
+                $"resized Preview Setup did not return to two columns "
+                + $"(width={setupGrid.Bounds.Width:0.##}, columns={setupGrid.ColumnDefinitions.Count}, rows={setupGrid.RowDefinitions.Count})");
+
+            Required(window.FindControl<Button>("ProductionWorkspaceButton"))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(!Required(Required(window.FindControl<Control>("PreviewDeviceComboBox")).Parent as Visual).IsVisible);
+            True(!Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
+            True(!Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
+            True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
+            Equal(selectedTab, tabs.SelectedItem);
+
+            Required(window.FindControl<Button>("DesignWorkspaceButton"))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(Required(Required(window.FindControl<Control>("PreviewDeviceComboBox")).Parent as Visual).IsVisible);
+            True(Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
+            True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
+            True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
+            Equal(2, setupGrid.ColumnDefinitions.Count);
+            Equal(2, setupGrid.RowDefinitions.Count);
+            Equal(selectedTab, tabs.SelectedItem);
+            setupGrid.Width = double.NaN;
+            setupGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+
+    static Rect BoundsInWindow(Control control, Visual window)
+    {
+        var origin = control.TranslatePoint(default, window)
+            ?? throw new InvalidOperationException($"Could not translate {control.Name ?? control.GetType().Name} bounds.");
+        return new Rect(origin, control.Bounds.Size);
+    }
+
+    static void LayoutCheck(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+}
+
+static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-manifest-owner-coverage-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var metrics = database.GetDevicePreviewMetrics(device.Id);
+
+        foreach (var componentType in DesktopPreviewManifest.Components.Keys.Order(StringComparer.Ordinal))
+        {
+            try
+            {
+                var components = nodes.Where((node) =>
+                        node.Kind == ProjectTreeNodeKind.ComponentClass
+                        && database.GetComponentClassSettings(node.Id).ComponentType == componentType)
+                    .ToList();
+                True(components.Count > 0);
+                foreach (var component in components)
+                {
+                    var fixture = component.Children.Single((node) =>
+                        node.Kind == ProjectTreeNodeKind.ComponentVariant
+                        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+                    var payload = Required(CreatePreviewPayload(database, fixture, theme.Id));
+                    var inputSession = new ComponentPreviewInputSession(database, () => { });
+                    var projectId = database.GetComponentClassSettings(component.Id).ProjectId;
+                    inputSession.UpdateForPayload(payload, projectId);
+                    payload = inputSession.ApplyInputs(payload, "light", projectId);
+                    var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
+                        .GetAwaiter()
+                        .GetResult();
+                    True(!string.IsNullOrWhiteSpace(html));
+                    True(!html.Contains("preview-error", StringComparison.Ordinal));
+                    True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                }
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    $"Manifest Component '{componentType}' has no observable committed fixture coverage: {exception.Message}",
+                    exception);
+            }
+        }
+
+        foreach (var moduleClass in DesktopPreviewManifest.Modules.Keys.Order(StringComparer.Ordinal))
+        {
+            try
+            {
+                var modules = nodes.Where((node) =>
+                        node.Kind == ProjectTreeNodeKind.Module
+                        && node.RecordClassId == moduleClass)
+                    .ToList();
+                True(modules.Count > 0);
+                foreach (var module in modules)
+                {
+                    var fixture = module.Children.Single((node) =>
+                        node.Kind == ProjectTreeNodeKind.ModuleVariant
+                        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+                    foreach (var frame in new[] { 0, 1 })
+                    {
+                        var payload = Required(CreatePreviewPayload(
+                            database,
+                            fixture,
+                            theme.Id,
+                            timelineFrame: frame));
+                        Equal(frame, payload.LocalFrame);
+                        var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
+                            .GetAwaiter()
+                            .GetResult();
+                        True(!string.IsNullOrWhiteSpace(html));
+                        True(!html.Contains("preview-error", StringComparison.Ordinal));
+                        True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    $"Manifest Module '{moduleClass}' has no observable committed timing fixture coverage: {exception.Message}",
+                    exception);
+            }
+        }
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void RejectedDatabaseOpenIsReadOnly()
@@ -2166,6 +2461,53 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         Equal(actorBefore, actorRepository.GetSettings(actorId));
         Equal(shotBefore, shotRepository.Get(shotId));
         Equal(themeBefore, themeRepository.Get(themeId));
+
+        using (var connection = context.OpenConnection())
+        {
+            var actorCountBefore = SqliteCommandExecutor.ScalarLong(
+                connection,
+                "SELECT COUNT(*) FROM actors");
+            var duplicate = actorRepository.Duplicate(
+                connection,
+                actorId,
+                "Valid Actor copy");
+            Equal(actorBefore.DefaultDeviceId, duplicate.DefaultDeviceId);
+            Equal(actorBefore.DefaultThemeId, duplicate.DefaultThemeId);
+            Equal(actorBefore, actorRepository.GetSettings(actorId));
+            actorRepository.Delete(connection, duplicate.Id);
+            Equal(
+                actorCountBefore,
+                SqliteCommandExecutor.ScalarLong(connection, "SELECT COUNT(*) FROM actors"));
+
+            Execute(
+                connection,
+                "UPDATE actors SET default_device_id = 'device_cross' WHERE id = 'actor_alex'");
+            var invalidDeviceSource = actorRepository.GetSettings(actorId);
+            Throws<InvalidOperationException>(() =>
+                actorRepository.Duplicate(connection, actorId, "Invalid Device Actor copy"));
+            Equal(invalidDeviceSource, actorRepository.GetSettings(actorId));
+            Equal(
+                actorCountBefore,
+                SqliteCommandExecutor.ScalarLong(connection, "SELECT COUNT(*) FROM actors"));
+
+            Execute(
+                connection,
+                "UPDATE actors SET default_device_id = $defaultDeviceId, default_theme_id = 'theme_cross' WHERE id = 'actor_alex'",
+                ("$defaultDeviceId", actorBefore.DefaultDeviceId));
+            var invalidThemeSource = actorRepository.GetSettings(actorId);
+            Throws<InvalidOperationException>(() =>
+                actorRepository.Duplicate(connection, actorId, "Invalid Theme Actor copy"));
+            Equal(invalidThemeSource, actorRepository.GetSettings(actorId));
+            Equal(
+                actorCountBefore,
+                SqliteCommandExecutor.ScalarLong(connection, "SELECT COUNT(*) FROM actors"));
+
+            Execute(
+                connection,
+                "UPDATE actors SET default_theme_id = $defaultThemeId WHERE id = 'actor_alex'",
+                ("$defaultThemeId", actorBefore.DefaultThemeId));
+            Equal(actorBefore, actorRepository.GetSettings(actorId));
+        }
     }
     finally
     {
@@ -2238,10 +2580,17 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         Equal(1, command.ExecuteNonQuery());
     }
 
-    static void Execute(SqliteConnection connection, string sql)
+    static void Execute(
+        SqliteConnection connection,
+        string sql,
+        params (string Name, object? Value)[] parameters)
     {
         using var command = connection.CreateCommand();
         command.CommandText = sql;
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        }
         command.ExecuteNonQuery();
     }
 }

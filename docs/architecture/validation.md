@@ -23,15 +23,20 @@ It includes:
 - desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
 - Preview and desktop animation tests;
-- deterministic Preview shell layout smoke at 1040 and 1440 px;
+- headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
+  including real measure/arrange, panel bounds, tab headers, responsive Setup
+  reflow and workspace restoration;
 - architecture enforcement;
 - desktop application build.
 
 Architecture enforcement treats the Preview manifest as the complete executable
 Component and Module catalog. It checks exact owner files, registry routes,
-declared embedded dependencies and committed database parity. The manifest is a
-current contract rather than a migration ledger; inert migration-state fields
-are rejected.
+declared embedded dependencies and committed database parity. A matrix derived
+from that manifest requires each owner contract, resolver, renderable, declared
+embeds, registry route and committed fixture. The desktop integration test
+renders every current Component fixture and exercises every Module fixture at
+more than one local frame. The manifest is a current contract rather than a
+migration ledger; inert migration-state fields are rejected.
 
 The clean-checkout gate is:
 
@@ -70,9 +75,11 @@ including:
 - shared UI action and input behavior;
 - absence of startup persistence writes and compatibility paths.
 
-Architecture enforcement reads only active documentation. Its file reader
-rejects every path below `docs/old`; archive isolation is checked from active
-rules and active links without consulting the sealed archive.
+Architecture enforcement reads only active documentation through one guarded
+repository reader. It rejects absolute paths, parent traversal, alternate
+separators that resolve outside the repository and every path below `docs/old`;
+archive isolation is checked from active rules and active links without
+consulting the sealed archive.
 
 The check must fail when a concrete Component name, resolver or layout rule
 leaks into a common Preview helper, central bridge or generic renderer.

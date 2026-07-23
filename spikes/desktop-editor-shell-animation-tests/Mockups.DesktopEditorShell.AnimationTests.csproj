@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.0.5" />
     <ProjectReference Include="../desktop-editor-shell/Mockups.DesktopEditorShell.csproj" />
   </ItemGroup>
 </Project>

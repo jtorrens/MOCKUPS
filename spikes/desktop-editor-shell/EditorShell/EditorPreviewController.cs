@@ -648,7 +648,6 @@ internal sealed class EditorPreviewController
         if (_previewSetupGrid is { } setupGrid)
         {
             setupGrid.SizeChanged += (_, args) => ApplyPreviewSetupLayout(args.NewSize.Width);
-            setupGrid.LayoutUpdated += (_, _) => ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
             ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
         }
     }

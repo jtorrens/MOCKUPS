@@ -70,8 +70,14 @@
         </Border>
 
         <Grid x:Name="ShellColumns"
-              Grid.Row="1"
-              ColumnDefinitions="300,6,2*,6,*">
+              Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="240" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="2*" MinWidth="280" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" MinWidth="420" />
+            </Grid.ColumnDefinitions>
             <Border x:Name="NavigationPanelBorder"
                     Grid.Column="0"
                     Margin="10"
@@ -174,17 +180,22 @@
                         </StackPanel>
                     </Border>
                     <Grid x:Name="PreviewPanelGrid"
-                          Margin="22"
+                          Margin="10"
                           RowDefinitions="240,10,*,Auto">
                         <Border Grid.Row="0"
                                 MinHeight="132"
-                                Padding="8"
+                                Padding="0"
                                 CornerRadius="12"
                                 Background="#18000000">
                             <TabControl x:Name="PreviewUtilityTabs"
                                         TabStripPlacement="Top"
                                         HorizontalContentAlignment="Stretch"
                                         VerticalContentAlignment="Stretch">
+                                <TabControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </TabControl.ItemsPanel>
                                 <TabItem x:Name="PreviewAuthoringDataTab"
                                          Header="Test Values"
                                          IsVisible="False">
