@@ -7704,6 +7704,30 @@ for (const [file, forbidden] of [
     `${file} must not coerce required state documents (${forbidden})`,
   );
 }
+for (const requiredAtomicDocument of [
+  ["src/desktop-preview/surfaceComponentResolver.ts", 'requiredRecord(config, "surface", "component.surface")'],
+  ["src/desktop-preview/surfaceComponentResolver.ts", 'requiredRecord(surface, "tail", "component.surface.tail")'],
+  ["src/desktop-preview/surfaceComponentResolver.ts", 'requiredRecord(config, "style", "component.surface.style")'],
+  ["src/desktop-preview/cursorComponentResolver.ts", 'requiredRecord(config, "cursor", "component.cursor")'],
+] as const) {
+  assertContains(
+    requiredAtomicDocument[0],
+    requiredAtomicDocument[1],
+    `${requiredAtomicDocument[0]} must require its atomic config document`,
+  );
+}
+for (const [file, forbidden] of [
+  ["src/desktop-preview/surfaceComponentResolver.ts", "asRecord(config.surface)"],
+  ["src/desktop-preview/surfaceComponentResolver.ts", "asRecord(surface.tail)"],
+  ["src/desktop-preview/surfaceComponentResolver.ts", "asRecord(config.style)"],
+  ["src/desktop-preview/cursorComponentResolver.ts", "asRecord(config.cursor)"],
+] as const) {
+  assertDoesNotContain(
+    file,
+    forbidden,
+    `${file} must not coerce an invalid atomic config root (${forbidden})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

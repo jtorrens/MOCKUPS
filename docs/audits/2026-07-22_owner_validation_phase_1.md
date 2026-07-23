@@ -879,3 +879,31 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Roots/state y slot/helper exactos fijados en cuatro archivos; casts tolerantes prohibidos. |
 | Datos | Sin migración. Todos los estados/slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia progreso, estado ni color válido; solo se rechaza una rama incompleta. |
+
+## Decisión pendiente — Iconos estructurados de Text Box
+
+El resolver Text Box actual recibe listas planas `leftIcons`/`rightIcons`, busca
+una Button Variant por el sufijo de su referencia y genera ids `button_001`,
+`button_002`, etc. El catálogo/control conserva además defaults cortos. Esto
+contradice ids estables, referencias completas y la prohibición de inferir por
+nombre o posición.
+
+La corrección segura requiere una migración explícita a items estructurados de
+Icon Row, cada uno con id estable, referencia completa de Button y Overrides
+objeto. Deben migrarse los documentos Text Box/Text Input Bar current, sus
+FieldDefinitions/controles y los parents que fabrican icon lists. No se aplicará
+un `buttonVariantReference` compartido ni se conservará el generador posicional,
+porque ambos dejarían parte de la ambigüedad vigente.
+
+## Slice 1.65 — Raíces atómicas de Surface y Cursor
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Surface convertía config, Tail y style wrong-root en `{}`; Cursor hacía lo mismo con su config. Aunque los scalars requeridos solían fallar después, el boundary seguía teniendo una segunda forma tolerante. |
+| Owner | Surface posee config/Tail/style completos y Cursor posee su config; sus resolvers atómicos consumen esos documentos sin composición adicional. |
+| Cambio mínimo | Sustituir cuatro casts por `requiredRecord`, incluida Tail aunque esté disabled. |
+| Rutas eliminadas | `asRecord(config.surface)`, `asRecord(surface.tail)`, `asRecord(config.style)` y `asRecord(config.cursor)`. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; todos los parents embebidos, Tail y Cursor current conservan su salida. |
+| Enforcement | Las cuatro roots requeridas quedan fijadas y sus casts prohibidos. |
+| Datos | Sin migración. Los documentos current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia ningún valor válido; solo se adelanta y precisa el fallo de una raíz incorrecta. |

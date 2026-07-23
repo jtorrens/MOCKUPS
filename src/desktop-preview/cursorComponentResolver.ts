@@ -1,9 +1,9 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  asRecord,
   parseObject,
   requiredAlpha,
   requiredNumber,
+  requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
 import type { CursorDesignContract } from "./cursorComponentContract.js";
@@ -21,7 +21,7 @@ export function resolveCursorComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): CursorDesignContract {
-  const cursor = asRecord(config.cursor);
+  const cursor = requiredRecord(config, "cursor", "component.cursor");
 
   return {
     id,

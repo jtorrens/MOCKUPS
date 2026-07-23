@@ -1,11 +1,11 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  asRecord,
   parseObject,
   requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredRecord,
   requiredString,
   resolveSurfaceStyle,
 } from "./componentResolverCommon.js";
@@ -27,9 +27,9 @@ export function resolveSurfaceComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): SurfaceDesignContract {
-  const surface = asRecord(config.surface);
-  const tail = asRecord(surface.tail);
-  const style = asRecord(config.style);
+  const surface = requiredRecord(config, "surface", "component.surface");
+  const tail = requiredRecord(surface, "tail", "component.surface.tail");
+  const style = requiredRecord(config, "style", "component.surface.style");
   const size = requiredNumberPair(inputs, "size", "component.surface.input.size");
 
   return {

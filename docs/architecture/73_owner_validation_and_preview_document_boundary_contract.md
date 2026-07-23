@@ -318,6 +318,11 @@ named empty/filled Surface slots and routes both through the shared embedded
 owner. A missing state/slot cannot become an empty style whose later fields
 happen to fail or a Surface with discarded local Overrides.
 
+Surface requires its config, Tail and shared style objects even when the Tail
+is visually disabled. Cursor requires its config object. These atomic resolvers
+consume exact authored configuration; a wrong root is not a blank Tail, default
+style or Cursor awaiting scalar fallbacks.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -616,6 +621,8 @@ Architecture enforcement must verify:
   exact Runtime definitions before resolving the selected mode.
 - Password state children require exact config/state objects; Code Indicator
   also requires and resolves both Surface slots through the shared owner.
+- Surface requires config/Tail/style roots and Cursor requires its config root
+  before resolving atomic visuals.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope
