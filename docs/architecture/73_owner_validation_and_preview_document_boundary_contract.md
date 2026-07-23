@@ -280,6 +280,13 @@ visible. Its Theme motion root and the Badge config root are required objects;
 wrong-root configuration is never treated as an empty visual style. The shared
 embedded owner replaces local copies of reference/Override merging.
 
+Button requires its config, Badge slot and state catalog. The selected state is
+an exact object with Surface and Label slots, and all three children cross the
+shared embedded owner. Content mode may omit the resolved Label from the final
+renderable, and `showBadge` may omit Badge, but neither flag makes the authored
+slot/reference/Overrides document optional. State selection remains explicit
+and uses the existing closed state vocabulary.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -568,6 +575,8 @@ Architecture enforcement must verify:
   every child through the shared embedded Component owner.
 - Notification requires both mode slots plus Avatar/Surface composition and
   uses no local embedded-config parser; Badge requires its config object.
+- Button requires its selected State and declared Label/Surface/Badge slots and
+  routes each child through the shared embedded Component owner.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

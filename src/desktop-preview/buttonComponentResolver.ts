@@ -1,12 +1,12 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredNumber,
   requiredNumberPair,
   requiredStringPair,
   requiredString,
+  requiredRecord,
 } from "./componentResolverCommon.js";
 import type { ButtonContentMode, ButtonDesignContract, ButtonState, ButtonStateDesignContract } from "./buttonComponentContract.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
@@ -27,7 +27,7 @@ export function resolveButtonComponentFromRecords(
   bases: Record<string, unknown>,
   id: string,
 ): ButtonDesignContract {
-  const button = asRecord(config.button);
+  const button = requiredRecord(config, "button", "component.button");
   const contentMode = buttonContentMode(requiredString(preview, "contentMode", "component.button.input.contentMode"));
   const state = typeof preview.pushTrigger === "boolean" && preview.pushTrigger
     ? "pushed"
@@ -40,7 +40,7 @@ export function resolveButtonComponentFromRecords(
   const size = { width: rawSize.first, height: rawSize.second };
   const rawPadding = requiredStringPair(button, "padding", "component.button.padding");
   const text = typeof preview.sampleText === "string" ? preview.sampleText : "";
-  const badgeSlot = asRecord(button.badgeSlot);
+  const badgeSlot = requiredRecord(button, "badgeSlot", "component.button.badgeSlot");
   const showBadge = requiredBoolean(preview, "showBadge", "component.button.input.showBadge");
 
   return {
@@ -58,10 +58,7 @@ export function resolveButtonComponentFromRecords(
     pushedDurationToken: requiredString(button, "pushedDurationToken", "component.button.pushedDurationToken"),
     stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
     badge: showBadge ? resolveBadgeComponentFromRecords(
-      mergeComponentDefaults(
-        componentVariantConfig(bases, "badge", requiredString(badgeSlot, "variantReference", "component.button.badgeSlot.variantReference")),
-        asRecord(badgeSlot.overrides),
-      ),
+      embeddedComponentConfig(bases, badgeSlot, "badge", "component.button.badgeSlot"),
       {
         contentMode: requiredString(preview, "badgeContentMode", "component.button.input.badgeContentMode"),
         iconToken: requiredString(preview, "badgeIconToken", "component.button.input.badgeIconToken"),
@@ -84,27 +81,21 @@ function resolveButtonStateStyle(
   bases: Record<string, unknown>,
   size: { width: number; height: number },
 ): ButtonStateDesignContract {
-  const states = asRecord(button.states);
-  const style = asRecord(states[state]);
-  const surfaceSlot = asRecord(style.surfaceSlot);
-  const labelSlot = asRecord(style.labelSlot);
+  const states = requiredRecord(button, "states", "component.button.states");
+  const style = requiredRecord(states, state, `component.button.states.${state}`);
+  const surfaceSlot = requiredRecord(style, "surfaceSlot", `component.button.states.${state}.surfaceSlot`);
+  const labelSlot = requiredRecord(style, "labelSlot", `component.button.states.${state}.labelSlot`);
   return {
     iconColorToken: requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
     label: contentMode === "icon" ? undefined : resolveLabelComponentFromRecords(
-      mergeComponentDefaults(
-        componentVariantConfig(bases, "label", requiredString(labelSlot, "variantReference", `component.button.states.${state}.label.variantReference`)),
-        asRecord(labelSlot.overrides),
-      ),
+      embeddedComponentConfig(bases, labelSlot, "label", `component.button.states.${state}.labelSlot`),
       { ...literalLabelPreview(text), textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
       bases,
       `component.button.${state}.label`,
       staticLabelFrameContext,
     ),
     surface: resolveSurfaceComponentAtSize(
-      mergeComponentDefaults(
-        componentVariantConfig(bases, "surface", requiredString(surfaceSlot, "variantReference", `component.button.states.${state}.surface.variantReference`)),
-        asRecord(surfaceSlot.overrides),
-      ),
+      embeddedComponentConfig(bases, surfaceSlot, "surface", `component.button.states.${state}.surfaceSlot`),
       size,
       `component.button.${state}.surface`,
     ),

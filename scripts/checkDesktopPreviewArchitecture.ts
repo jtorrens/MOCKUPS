@@ -7437,6 +7437,48 @@ assertDoesNotContain(
   "asRecord(config.badge)",
   "Badge must not coerce an invalid config root to an empty object",
 );
+for (const requiredButtonObject of [
+  'requiredRecord(config, "button", "component.button")',
+  'requiredRecord(button, "badgeSlot", "component.button.badgeSlot")',
+  'requiredRecord(button, "states", "component.button.states")',
+  "requiredRecord(states, state, `component.button.states.${state}`)",
+  'requiredRecord(style, "surfaceSlot", `component.button.states.${state}.surfaceSlot`)',
+  'requiredRecord(style, "labelSlot", `component.button.states.${state}.labelSlot`)',
+] as const) {
+  assertContains(
+    "src/desktop-preview/buttonComponentResolver.ts",
+    requiredButtonObject,
+    `Button composition must preserve its required object boundary (${requiredButtonObject})`,
+  );
+}
+for (const embeddedButtonConfig of [
+  'embeddedComponentConfig(bases, badgeSlot, "badge", "component.button.badgeSlot")',
+  'embeddedComponentConfig(bases, labelSlot, "label", `component.button.states.${state}.labelSlot`)',
+  'embeddedComponentConfig(bases, surfaceSlot, "surface", `component.button.states.${state}.surfaceSlot`)',
+] as const) {
+  assertContains(
+    "src/desktop-preview/buttonComponentResolver.ts",
+    embeddedButtonConfig,
+    `Button children must consume the shared embedded Component owner (${embeddedButtonConfig})`,
+  );
+}
+for (const permissiveButtonDocument of [
+  "asRecord(config.button)",
+  "asRecord(button.badgeSlot)",
+  "asRecord(button.states)",
+  "asRecord(states[state])",
+  "asRecord(style.surfaceSlot)",
+  "asRecord(style.labelSlot)",
+  "asRecord(badgeSlot.overrides)",
+  "asRecord(labelSlot.overrides)",
+  "asRecord(surfaceSlot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/buttonComponentResolver.ts",
+    permissiveButtonDocument,
+    `Button composition must not coerce required documents (${permissiveButtonDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

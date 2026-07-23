@@ -814,3 +814,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Cinco roots/slots y cuatro adopciones del helper fijadas, helper local y casts tolerantes prohibidos. |
 | Datos | Sin migración. Los documentos current ya declaran ambas ramas y todos los Overrides; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia el modo activo ni el reflow; una rama inactive dañada deja de permanecer latente hasta su selección. |
+
+## Slice 1.60 — Slots exactos del estado de Button
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Button convertía config, catálogo/estado, Surface/Label/Badge slots y Overrides dañados en objetos vacíos. Scalars posteriores solían fallar, pero Overrides podían desaparecer y children ocultos no exigían su slot. |
+| Owner | Button conserva su vocabulario de estados y selección; el estado elegido posee slots explícitos y `embeddedComponentConfig` resuelve cada referencia+Override. |
+| Cambio mínimo | Exigir config, states, estado seleccionado y tres slots; migrar Label, Surface y Badge al helper compartido aun cuando content mode/showBadge oculten el child. |
+| Rutas eliminadas | Seis casts estructurales y tres merges locales con Overrides tolerantes. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Keypad/Icon Row/Button, estados y Badge current conservan su salida. |
+| Enforcement | Roots y tres adopciones del helper fijadas; casts y merges locales retirados prohibidos. |
+| Datos | Sin migración. Los estados/slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia el estado, contenido ni visibilidad válidos; solo se impide perder un Override local por raíz incorrecta. |
