@@ -5023,6 +5023,33 @@ assertDoesNotContain(
   "RuntimeDefaultValue(",
   "runtime reconciliation must not retain a second permissive default parser",
 );
+for (const strictRuntimePersistenceDefinitionConsumer of [
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+]) {
+  assertContains(
+    strictRuntimePersistenceDefinitionConsumer,
+    "RuntimeDefinitionObjects(",
+    `${strictRuntimePersistenceDefinitionConsumer} must preserve complete Runtime definition arrays`,
+  );
+  assertDoesNotContain(
+    strictRuntimePersistenceDefinitionConsumer,
+    ".OfType<JsonObject>()",
+    `${strictRuntimePersistenceDefinitionConsumer} must not filter malformed Runtime definitions or items`,
+  );
+}
+for (const retiredRuntimeReconciliationRepair of [
+  'item["id"] ??=',
+  'input["jsonKey"]?.GetValue<string>() ?? ""',
+  'field["jsonKey"]?.GetValue<string>() ?? ""',
+  'content[jsonKey] is null',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+    retiredRuntimeReconciliationRepair,
+    `Runtime reconciliation must not filter or repair current data (${retiredRuntimeReconciliationRepair})`,
+  );
+}
 assertDoesNotContain(
   "spikes/desktop-editor-shell/Common/BehaviorTimingValue.cs",
   "catch",

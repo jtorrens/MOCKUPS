@@ -155,26 +155,41 @@ internal sealed partial class SpikeDatabase
     private static JsonObject RuntimeContentForContract(JsonObject current, JsonObject contract)
     {
         var next = new JsonObject { ["schemaVersion"] = current["schemaVersion"]?.DeepClone() ?? JsonValue.Create(2) };
-        foreach (var input in (contract["inputs"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        foreach (var input in RuntimeDefinitionObjects(
+                     contract,
+                     "inputs",
+                     "Effective Module Runtime contract"))
         {
             if (!RuntimeInputDefinition(input)) continue;
-            var jsonKey = input["jsonKey"]?.GetValue<string>() ?? "";
-            if (string.IsNullOrWhiteSpace(jsonKey)) continue;
-            next[jsonKey] = current[jsonKey]?.DeepClone()
-                ?? RuntimeInputValueKindContract.CreateDefaultValue(
+            var inputId = JsonPath.RequiredString(input, "id", "Runtime Input definition");
+            var jsonKey = JsonPath.RequiredString(input, "jsonKey", $"Runtime Input '{inputId}'");
+            if (current.TryGetPropertyValue(jsonKey, out var currentValue))
+            {
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
                     input,
-                    $"Runtime Input '{input["id"]?.GetValue<string>() ?? jsonKey}'");
+                    currentValue,
+                    $"Current Runtime Input '{inputId}'");
+                next[jsonKey] = currentValue!.DeepClone();
+            }
+            else
+            {
+                next[jsonKey] = RuntimeInputValueKindContract.CreateDefaultValue(
+                    input,
+                    $"Runtime Input '{inputId}'");
+            }
         }
-        foreach (var collection in (contract["collections"] as JsonArray)?.OfType<JsonObject>() ?? [])
+        foreach (var collection in RuntimeDefinitionObjects(
+                     contract,
+                     "collections",
+                     "Effective Module Runtime contract"))
         {
             var storageKey = RuntimeCollectionStorageKey(collection);
-            if (string.IsNullOrWhiteSpace(storageKey)) continue;
-            next[storageKey] = collection["storageCollectionJsonKey"] is JsonValue
+            next[storageKey] = collection.ContainsKey("storageCollectionJsonKey")
                 ? ReconcileProjectedRuntimeCollection(
                     OptionalRuntimeCollection(current, storageKey, "Current Module Instance content"),
                     OptionalRuntimeCollection(
                         contract,
-                        collection["jsonKey"]?.GetValue<string>() ?? "",
+                        JsonPath.RequiredString(collection, "jsonKey", "Runtime collection definition"),
                         "Effective Module Runtime contract"))
                 : (OptionalRuntimeCollection(current, storageKey, "Current Module Instance content")
                     ?? new JsonArray()).DeepClone();
@@ -184,11 +199,13 @@ internal sealed partial class SpikeDatabase
 
     private static JsonObject RemoveOrphanedAnimationTracks(JsonObject animation, JsonObject contract, JsonObject content)
     {
-        var topLevelFields = (contract["inputs"] as JsonArray)?.OfType<JsonObject>()
+        var topLevelFields = RuntimeDefinitionObjects(
+                contract,
+                "inputs",
+                "Effective Module Runtime contract")
             .Where(RuntimeInputDefinition)
-            .Select((input) => input["id"]?.GetValue<string>() ?? "")
-            .Where((id) => !string.IsNullOrWhiteSpace(id))
-            .ToHashSet(StringComparer.Ordinal) ?? [];
+            .Select((input) => JsonPath.RequiredString(input, "id", "Runtime Input definition"))
+            .ToHashSet(StringComparer.Ordinal);
         var targetIds = new HashSet<string>(StringComparer.Ordinal);
         CollectObjectIds(content, targetIds);
         if (animation["tracks"] is JsonArray tracks)

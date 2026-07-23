@@ -64,6 +64,12 @@ Explicit reconciliation after a Module Variant change may create an empty
 array for a newly declared collection. It must still reject a present
 wrong-root collection and malformed or duplicate item ids; normal editor
 mutations are not reconciliation and never create the collection root.
+Reconciliation consumes complete definition arrays without filtering entries,
+uses the exact declared storage key and may add an explicitly declared default
+only when a field key is absent. A present null/wrong-shape value is invalid,
+and an existing collection item without a stable id is never assigned one from
+its position. Projected defaults and current items are matched only by their
+already valid stable ids.
 
 The store composes current facade/domain operations and contract 59. It is not a
 repository and does not replace the coordinated content/animation operations
@@ -160,6 +166,7 @@ or JSON, migrate data, add Render Mode/export or modify parity assets.
 - saving a partial animation track or absolute Shot frame;
 - treating Test Values as persisted instance content;
 - creating ids or choosing Variants inside the store;
+- assigning an id from collection order during Variant reconciliation;
 - creating a missing collection root or appending after a missing stable id;
 - accepting an undeclared Runtime key or coercing an invalid value to a
   plausible false, zero, string, object or array;

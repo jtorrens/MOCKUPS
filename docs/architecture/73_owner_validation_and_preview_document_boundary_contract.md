@@ -188,6 +188,13 @@ string remains an explicit sentinel only for a State that intentionally has no
 visual Component; it does not authorize a short id, Default inference or an
 omitted Inputs/Overrides document.
 
+Module Instance Runtime reconciliation uses the same strict definition, value
+and stable-collection owners as ordinary persistence validation. It may
+materialize a declared default or a newly declared empty collection only for an
+absent key during an explicit Variant/creation workflow. Present nulls, wrong
+roots, filtered definitions and missing item ids fail; reconciliation does not
+repair them or derive identity from collection position.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -343,6 +350,8 @@ Architecture enforcement must verify:
   strict source projection without filtering or positional labels.
 - persisted Runtime scalars, collection fields, Test Values and keyframe values
   share exact `ValueKind` serialization and validation.
+- explicit Module Instance reconciliation shares complete definition readers
+  and never repairs a present invalid value or missing stable item id.
 - Runtime presentation and Test Values use the shared current-value serializer;
   only an absent field may use its explicit definition default.
 - forwarding envelopes and projected child Runtime documents reject wrong

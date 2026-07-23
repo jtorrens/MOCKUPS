@@ -437,3 +437,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | El owner común debe estar presente en startup, Test Values, actions, editor estructurado y Usage; los filtros/ids posicionales y la creación de Overrides al abrir quedan prohibidos. |
 | Datos | Sin migración. Los items current ya conservan sus tres miembros; la base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Las referencias completas y el sentinel vacío explícito no cambian; únicamente fallan documentos embebidos incompletos o ambiguos. |
+
+## Slice 1.31 — Reconciliación Runtime sin filtros ni reparación posicional
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Las escrituras ordinarias ya eran estrictas, pero los coordinadores de cambio de Module Variant recorrían definitions con `OfType`, omitían ids/keys incompletos, convertían un valor presente null en default y asignaban ids a items por posición. Los lookups de escritura repetían esos filtros. |
+| Owner | `RuntimeDefinitionObjects` conserva arrays y entradas completas; `RuntimeInputValueKindContract`, `RuntimeCollectionDocumentContract` y la key explícita conservan valor, items e identidad. La reconciliación sigue siendo un workflow explícito del facade, no startup ni repository. |
+| Cambio mínimo | Distinguir ausencia de null; validar valores existentes antes de clonarlos; exigir source/key/id exactos; recorrer definitions/items sin filtros; casar projected items solo por id estable; conservar creación de default/array vacío exclusivamente para keys nuevas ausentes. |
+| Rutas eliminadas | Definition/item no objeto → omitido, source desconocido → non-runtime, key vacía → skip, current null → default, item sin id → `{storageKey}_{posición}` y lookup parcial → “no declarado” plausible. |
+| Pruebas | 115/115 escritorio y 88/88 Preview; workflows de Module Variant y todas las mutaciones Runtime siguen pasando; corrupción con id ausente y scalar null falla byte-for-byte read-only. |
+| Enforcement | El coordinador y el cambio de Variant deben usar el reader completo; `OfType<JsonObject>`, id posicional y null-to-default quedan prohibidos en estas rutas. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. La creación explícita de datos nuevos no cambia; solo deja de repararse silenciosamente contenido existente inválido. |

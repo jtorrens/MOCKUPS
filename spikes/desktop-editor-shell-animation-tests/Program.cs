@@ -3049,12 +3049,32 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             """;
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("runtime-collection-missing-stable-id", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_remove(content_json, '$.messages[0].id')
+            WHERE module_id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
     AssertRejectedDatabaseIsReadOnly("runtime-scalar-wrong-type", (connection) =>
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE module_instances
             SET content_json = json_set(content_json, '$.headerSubtitle', 42)
+            WHERE module_id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("runtime-scalar-present-null", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET content_json = json_set(content_json, '$.headerSubtitle', json('null'))
             WHERE module_id = 'module_core_chat'
             """;
         command.ExecuteNonQuery();
