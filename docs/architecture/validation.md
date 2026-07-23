@@ -20,10 +20,21 @@ It includes:
 
 - desktop Preview bundle build;
 - TypeScript type checking;
+- desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
 - Preview and desktop animation tests;
 - architecture enforcement;
 - desktop application build.
+
+The clean-checkout gate is:
+
+```text
+npm run test:cold
+```
+
+It removes desktop build outputs before running the complete validation. The
+repository CI executes this cold gate so analyzer results cannot depend on a
+previous local build.
 
 Use focused checks while iterating:
 
@@ -51,6 +62,10 @@ including:
 - recursive timing and animation contracts;
 - shared UI action and input behavior;
 - absence of startup persistence writes and compatibility paths.
+
+Architecture enforcement reads only active documentation. Its file reader
+rejects every path below `docs/old`; archive isolation is checked from active
+rules and active links without consulting the sealed archive.
 
 The check must fail when a concrete Component name, resolver or layout rule
 leaks into a common Preview helper, central bridge or generic renderer.

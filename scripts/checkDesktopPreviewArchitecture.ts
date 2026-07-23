@@ -56,7 +56,11 @@ function relative(filePath: string) {
 }
 
 function readText(relativePath: string) {
-  return readFileSync(path.join(root, relativePath), "utf8");
+  const normalizedPath = relativePath.replace(/\\/g, "/");
+  if (normalizedPath === "docs/old" || normalizedPath.startsWith("docs/old/")) {
+    throw new Error(`Historical archive access is prohibited: ${normalizedPath}`);
+  }
+  return readFileSync(path.join(root, normalizedPath), "utf8");
 }
 
 function addViolation(filePath: string, message: string) {
@@ -204,7 +208,7 @@ for (const document of canonicalArchitectureDocuments) {
     `the architecture index must include ${document}`,
   );
 }
-for (const archiveRuleOwner of ["AGENTS.md", "docs/README.md", "docs/old/README.md"]) {
+for (const archiveRuleOwner of ["AGENTS.md", "docs/README.md"]) {
   assertContains(
     archiveRuleOwner,
     "open, search, read, quote, summarize, cite",
@@ -225,6 +229,33 @@ for (const activeMarkdownPath of [
     }
   }
 }
+
+const packageScripts = (JSON.parse(readText("package.json")) as {
+  scripts?: Record<string, string>;
+}).scripts ?? {};
+const fullTestScript = packageScripts.test ?? "";
+const desktopBuildIndex = fullTestScript.indexOf("npm run desktop:build");
+const unusedAnalysisIndex = fullTestScript.indexOf("npm run check:unused:desktop");
+if (desktopBuildIndex < 0
+  || unusedAnalysisIndex < 0
+  || desktopBuildIndex > unusedAnalysisIndex) {
+  addViolation(
+    "package.json",
+    "the full test gate must build the desktop project before unused-parameter analysis",
+  );
+}
+if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
+  || !(packageScripts["test:cold"] ?? "").includes("npm test")) {
+  addViolation(
+    "package.json",
+    "test:cold must clear desktop build outputs before running the complete repository gate",
+  );
+}
+assertContains(
+  ".github/workflows/validate.yml",
+  "npm run test:cold",
+  "repository CI must exercise the complete gate from a cold desktop build state",
+);
 
 const currentRepositoryFiles = walkFilesByExtension(
   path.join(root, "spikes", "desktop-editor-shell", "Data"),

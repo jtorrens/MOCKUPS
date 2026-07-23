@@ -31,7 +31,8 @@
     "animation:test:preview": "tsx --test tests/animation/*.test.ts",
     "animation:test:desktop": "dotnet run --project spikes/desktop-editor-shell-animation-tests/Mockups.DesktopEditorShell.AnimationTests.csproj",
     "animation:test": "npm run animation:test:preview && npm run animation:test:desktop",
-    "test": "npm run desktop-preview:build && npm run typecheck && npm run check:unused:desktop && npm run animation:test && npm run check:architecture && npm run desktop:build"
+    "test": "npm run desktop-preview:build && npm run typecheck && npm run desktop:build && npm run check:unused:desktop && npm run animation:test && npm run check:architecture",
+    "test:cold": "dotnet clean spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj && npm test"
   },
   "dependencies": {
     "better-sqlite3": "^12.11.1",
