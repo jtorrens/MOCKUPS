@@ -6919,6 +6919,21 @@ assertContains(
   'ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime")',
   "the desktop timeline must reject invalid present root retime durations",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "var trackTargets = new HashSet<(string FieldId, string TargetId)>();",
+  "the desktop transient timeline must keep each field/target track address unique",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "if (!frames.Add(frame))",
+  "the desktop transient timeline must reject duplicate frames within a track",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "if (frame < previousFrame)",
+  "the desktop transient timeline must reject out-of-order frames instead of sorting them into plausibility",
+);
 for (const permissiveDesktopAnimationEnvelope of [
   '(_animation["tracks"] as JsonArray)?.OfType<JsonObject>()',
   '(Track(playFieldId, targetId)?["keyframes"] as JsonArray)?.OfType<JsonObject>()',

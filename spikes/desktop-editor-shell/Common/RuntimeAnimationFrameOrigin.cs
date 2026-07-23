@@ -598,12 +598,14 @@ internal static class RuntimeAnimationFrameOrigin
     private static void ValidateAnimationEnvelope(JsonObject animation)
     {
         var tracks = JsonPath.OptionalObjectArray(animation, "tracks", "Runtime owner animation");
+        var trackTargets = new HashSet<(string FieldId, string TargetId)>();
         foreach (var track in tracks)
         {
-            _ = JsonPath.RequiredString(track, "fieldId", "Runtime animation track");
+            var fieldId = JsonPath.RequiredString(track, "fieldId", "Runtime animation track");
+            var targetId = "";
             if (track.TryGetPropertyValue("targetId", out _))
             {
-                var targetId = JsonPath.RequiredString(
+                targetId = JsonPath.RequiredString(
                     track,
                     "targetId",
                     "Runtime animation track",
@@ -614,6 +616,13 @@ internal static class RuntimeAnimationFrameOrigin
                         "Runtime animation track targetId must be stable or the empty Screen sentinel.");
                 }
             }
+            if (!trackTargets.Add((fieldId, targetId)))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime animation contains duplicate track target '{fieldId}'/'{targetId}'.");
+            }
+            var frames = new HashSet<int>();
+            var previousFrame = -1;
             foreach (var keyframe in JsonPath.OptionalObjectArray(
                 track,
                 "keyframes",
@@ -624,6 +633,17 @@ internal static class RuntimeAnimationFrameOrigin
                 {
                     throw new InvalidOperationException("Runtime animation keyframe frame must not be negative.");
                 }
+                if (!frames.Add(frame))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime animation track '{fieldId}'/'{targetId}' contains duplicate frame {frame}.");
+                }
+                if (frame < previousFrame)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime animation track '{fieldId}'/'{targetId}' keyframes must be ordered by frame.");
+                }
+                previousFrame = frame;
                 if (keyframe.TryGetPropertyValue("enabled", out _))
                 {
                     _ = JsonPath.RequiredBoolean(keyframe, "enabled", "Runtime animation keyframe");

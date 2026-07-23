@@ -230,9 +230,10 @@ validates their calculation envelope before using it: no wrong array/object
 root, filtered entry, empty track field id, invalid target-id scalar, invalid
 frame/enabled scalar or non-positive retime duration may be interpreted as “no
 animation” or “Retime off”. A target id is a stable string or the explicit
-empty Screen-owner sentinel. Persisted Module Instance animation retains the
-stricter complete v2 document owner. The web timeline enforces the same
-transient calculation envelope.
+empty Screen-owner sentinel. Track addresses are unique and their frame lists
+are strictly ordered without duplicates. Persisted Module Instance animation
+retains the stricter complete v2 document owner. The web timeline enforces the
+same transient calculation envelope.
 
 The temporal metadata itself is also current owner data. Collection sequencing,
 pre/post duration ids and `firstMatchingValue` origin use their closed declared

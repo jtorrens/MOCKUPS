@@ -606,3 +606,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | `validateTemporalActions`, `requiredBooleanValue` y missing-field failure obligatorios; filter, skip y comparación tolerante anteriores prohibidos. |
 | Datos | Sin migración. Los payloads current ya materializan el booleano Runtime; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. La action válida conserva su duración; web deja de calcular una Screen distinta del editor ante el mismo contrato dañado. |
+
+## Slice 1.44 — Identidad de tracks transitorios en escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El documento persistido v2 ya prohíbe targets/frames ambiguos, pero el envelope transitorio del calculator aceptaba dos tracks para el mismo `fieldId`/`targetId`, frames repetidos y frames desordenados. `FirstOrDefault` y `OrderBy` elegían un resultado plausible. |
+| Owner | La pareja estable field/target identifica un track; el frame owner-relative identifica un keyframe dentro de él. El timeline calcula, no normaliza esos dos índices. |
+| Cambio mínimo | Registrar addresses al validar; exigir frame único y orden estrictamente ascendente antes de resolver. Conservar el target vacío como sentinel Screen, equivalente a target ausente. |
+| Rutas eliminadas | Track duplicado → primero; frame duplicado → orden incidental y lista desordenada → sorted silencioso. |
+| Pruebas | 116/116 escritorio: duplicado target explícito, target ausente/vacío equivalente, frame repetido y orden descendente; todos los tracks v2 current y escenarios owner-relative pasan. |
+| Enforcement | `HashSet<(field,target)>`, `frames.Add` y comparación con frame previo obligatorios en el guard transitorio. |
+| Datos | Sin migración. Los documentos persistidos y payloads current ya cumplen; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No se reordena ni modifica animación válida; solo deja de elegirse por posición una dirección contradictoria. |

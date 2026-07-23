@@ -120,8 +120,10 @@ strings or the explicit empty Screen-owner sentinel. Keyframe frames are
 non-negative integers, optional enabled state is boolean, and all authored
 root/target retime durations are positive integers. This consumption guard
 complements, but does not replace, the complete persisted v2 document contract
-above. The web owner timeline applies the same transient-animation guard before
-resolving frames.
+above. Each transient `fieldId`/`targetId` address is unique and each track's
+frames are strictly increasing and unique; calculation never selects the first
+duplicate or reorders an ambiguous track. The web owner timeline applies the
+same transient-animation guard before resolving frames.
 
 Owner-authored timeline metadata is a closed temporal vocabulary. Collections
 may declare serial sequencing, explicit `sequenceItems`, pre/post duration field
