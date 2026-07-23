@@ -295,6 +295,14 @@ selected state, the named Icon Row slot plus its named Inputs object. The slot
 uses the shared embedded owner. Zone/state keys remain the declared closed
 Icon Bar contract and are never derived from item position.
 
+Keyboard requires its config and explicit Icon Bar slot, routed through the
+same embedded owner. Its keyboard rows remain module-owned standard layout
+data; the slot is not inferred from that layout. Keypad requires its config,
+exact `keys` object array, state catalog and Label slot before resolving keys.
+Each key keeps its explicit stable id/kind/value and duplicate checks. The
+selected visual state is an exact state object and the Label slot keeps its
+full Variant reference and local Overrides even when a key is a spacer.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -587,6 +595,8 @@ Architecture enforcement must verify:
   routes each child through the shared embedded Component owner.
 - Icon Row preserves exact item objects, stable ids, full Button references and
   local Overrides; Icon Bar requires each selected state/zone slot and Inputs.
+- Keyboard and Keypad require their config/slot documents; Keypad keeps exact
+  key entries and selected state objects without positional identity.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

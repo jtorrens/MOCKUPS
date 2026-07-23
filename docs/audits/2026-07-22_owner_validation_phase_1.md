@@ -840,3 +840,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Readers exactos, Button Overrides requerido y slot/Inputs/owner de Icon Bar fijados; casts tolerantes prohibidos. |
 | Datos | Sin migración. Los items y zonas current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia orden, estado ni tamaño; solo deja de fabricarse un Button/zona parcial desde datos inválidos. |
+
+## Slice 1.62 — Composición exacta de Keyboard y Keypad
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Keyboard convertía config, Icon Bar slot y Overrides en vacíos. Keypad filtraba de hecho keys no objeto mediante `{}`, convertía states/estado/Label slot/Overrides en vacíos y solo validaba el slot si existía una key no spacer. |
+| Owner | Keyboard declara su Icon Bar; Keypad posee la colección ordenada con ids estables, catálogo de estados y Label slot común. El helper embebido conserva referencia y Overrides. |
+| Cambio mínimo | Exigir roots y slot Keyboard; exigir keys array/entries, states y Label slot Keypad antes del recorrido; pasar state/slot ya validados al resolver de estilo. |
+| Rutas eliminadas | Tres casts/merge de Keyboard y cinco casts/merge de Keypad. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; layouts Keyboard, emojis, Keypad, Password y Button/Label current permanecen correctos. |
+| Enforcement | Roots, array exacto, states/Label slot y dos adopciones del helper fijados; casts tolerantes prohibidos. |
+| Datos | Sin migración. Las teclas, estados y slots current son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una tecla, estado o fila válida; solo deja de crearse identidad/apariencia plausible desde un entry roto. |

@@ -5,17 +5,16 @@ import {
 } from "../shared/keyboard/standardKeyboardLayout.js";
 import type { KeyboardDesignContract, KeyboardMode } from "./keyboardComponentContract.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   optionalBoolean,
   optionalString,
   parseObject,
   requiredBoolean,
   optionalNumber,
   requiredNumber,
+  requiredRecord,
   requiredString,
   requiredTypographyStyle,
 } from "./componentResolverCommon.js";
@@ -29,7 +28,7 @@ export function resolveKeyboardComponent(
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const keyboard = asRecord(config.keyboard);
+  const keyboard = requiredRecord(config, "keyboard", "component.keyboard");
   const pressedEffect = requiredString(
     keyboard,
     "pressedEffect",
@@ -56,14 +55,12 @@ export function resolveKeyboardComponent(
   if (iconRowPlacement !== "top" && iconRowPlacement !== "bottom") {
     throw new Error(`Unsupported keyboard icon row placement ${iconRowPlacement}`);
   }
-  const iconBarSlot = asRecord(keyboard.iconBarSlot);
-  const embeddedIconBarConfig = mergeComponentDefaults(
-    componentVariantConfig(
-      componentBaseConfigs,
-      "iconBar",
-      requiredString(iconBarSlot, "variantReference", "component.keyboard.iconBarSlot.variantReference"),
-    ),
-    asRecord(iconBarSlot.overrides),
+  const iconBarSlot = requiredRecord(keyboard, "iconBarSlot", "component.keyboard.iconBarSlot");
+  const embeddedIconBarConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    iconBarSlot,
+    "iconBar",
+    "component.keyboard.iconBarSlot",
   );
   const parsedRows = parseKeyboardRows(STANDARD_IOS_KEYBOARD_LAYOUT, mode, language);
   const extraEmojis = keyboardExtraEmojis(fullText, currentCharacter);

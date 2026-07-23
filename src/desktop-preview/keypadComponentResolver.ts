@@ -1,16 +1,15 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
-  componentVariantConfig,
-  mergeComponentDefaults,
+  embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  asRecord,
   parseObject,
   requiredAlpha,
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
   requiredPossiblyEmptyString,
+  requiredRecord,
   requiredString,
   requiredStringPair,
 } from "./componentResolverCommon.js";
@@ -25,6 +24,7 @@ import {
   resolveLabelComponentFromRecords,
   staticLabelFrameContext,
 } from "./labelComponentResolver.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 
 export function resolveKeypadComponent(payload: DesignPreviewPayload): KeypadDesignContract {
   return resolveKeypadComponentFromRecords(
@@ -41,7 +41,7 @@ export function resolveKeypadComponentFromRecords(
   bases: Record<string, unknown>,
   id: string,
 ): KeypadDesignContract {
-  const keypad = asRecord(config.keypad);
+  const keypad = requiredRecord(config, "keypad", "component.keypad");
   const sizingMode = requiredString(keypad, "sizingMode", "component.keypad.sizingMode");
   if (sizingMode !== "content" && sizingMode !== "fill") {
     throw new Error(`Unsupported keypad sizing mode ${sizingMode}`);
@@ -58,13 +58,12 @@ export function resolveKeypadComponentFromRecords(
   const activeKey = requiredPossiblyEmptyString(preview, "activeKey", "component.keypad.runtime.activeKey");
   const pushedKey = requiredPossiblyEmptyString(preview, "pushedKey", "component.keypad.runtime.pushedKey");
   const enabled = requiredBoolean(preview, "enabled", "component.keypad.runtime.enabled");
-  if (!Array.isArray(keypad.keys)) {
-    throw new Error("Missing component.keypad.keys collection");
-  }
+  const keyDocuments = requiredObjectArray(keypad, "keys", "component.keypad");
+  const states = requiredRecord(keypad, "states", "component.keypad.states");
+  const labelSlot = requiredRecord(keypad, "labelSlot", "component.keypad.labelSlot");
   const ids = new Set<string>();
   const values = new Set<string>();
-  const keys = keypad.keys.map((rawKey, index) => {
-    const key = asRecord(rawKey);
+  const keys = keyDocuments.map((key, index) => {
     const id = requiredString(key, "id", `component.keypad.keys[${index}].id`);
     if (!ids.add(id)) throw new Error(`Duplicate keypad key id ${id}`);
     const kind = keypadKeyKind(requiredString(key, "kind", `component.keypad.keys[${index}].kind`));
@@ -89,7 +88,8 @@ export function resolveKeypadComponentFromRecords(
     const stateStyle = kind === "spacer"
       ? undefined
       : resolveKeyStateStyle(
-          keypad,
+          states,
+          labelSlot,
           state,
           kind === "text" ? text : "",
           kind === "text" ? subtext : "",
@@ -127,16 +127,15 @@ export function resolveKeypadComponentFromRecords(
 }
 
 function resolveKeyStateStyle(
-  keypad: Record<string, unknown>,
+  states: Record<string, unknown>,
+  labelSlot: Record<string, unknown>,
   state: KeypadKeyState,
   text: string,
   subtext: string,
   bases: Record<string, unknown>,
   index: number,
 ) {
-  const states = asRecord(keypad.states);
-  const style = asRecord(states[state]);
-  const labelSlot = asRecord(keypad.labelSlot);
+  const style = requiredRecord(states, state, `component.keypad.states.${state}`);
   return {
     backgroundColorToken: requiredString(
       style,
@@ -159,14 +158,7 @@ function resolveKeyStateStyle(
       `component.keypad.states.${state}.borderAlpha`,
     ),
     label: resolveLabelComponentFromRecords(
-      mergeComponentDefaults(
-        componentVariantConfig(
-          bases,
-          "label",
-          requiredString(labelSlot, "variantReference", "component.keypad.labelSlot.variantReference"),
-        ),
-        asRecord(labelSlot.overrides),
-      ),
+      embeddedComponentConfig(bases, labelSlot, "label", "component.keypad.labelSlot"),
       literalLabelPreview(text, subtext),
       bases,
       `component.keypad.key.${index}.label`,

@@ -7533,6 +7533,64 @@ for (const permissiveIconBarDocument of [
     `Icon Bar must not coerce required zone documents (${permissiveIconBarDocument})`,
   );
 }
+for (const requiredKeyboardObject of [
+  'requiredRecord(config, "keyboard", "component.keyboard")',
+  'requiredRecord(keyboard, "iconBarSlot", "component.keyboard.iconBarSlot")',
+] as const) {
+  assertContains(
+    "src/desktop-preview/keyboardComponentResolver.ts",
+    requiredKeyboardObject,
+    `Keyboard must preserve its required object boundary (${requiredKeyboardObject})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/keyboardComponentResolver.ts",
+  'embeddedComponentConfig(\n    componentBaseConfigs,\n    iconBarSlot,\n    "iconBar",',
+  "Keyboard Icon Bar must consume the shared embedded Component owner",
+);
+for (const permissiveKeyboardDocument of [
+  "asRecord(config.keyboard)",
+  "asRecord(keyboard.iconBarSlot)",
+  "asRecord(iconBarSlot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/keyboardComponentResolver.ts",
+    permissiveKeyboardDocument,
+    `Keyboard must not coerce required documents (${permissiveKeyboardDocument})`,
+  );
+}
+for (const requiredKeypadObject of [
+  'requiredRecord(config, "keypad", "component.keypad")',
+  'requiredObjectArray(keypad, "keys", "component.keypad")',
+  'requiredRecord(keypad, "states", "component.keypad.states")',
+  'requiredRecord(keypad, "labelSlot", "component.keypad.labelSlot")',
+  "requiredRecord(states, state, `component.keypad.states.${state}`)",
+] as const) {
+  assertContains(
+    "src/desktop-preview/keypadComponentResolver.ts",
+    requiredKeypadObject,
+    `Keypad must preserve its required document boundary (${requiredKeypadObject})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/keypadComponentResolver.ts",
+  'embeddedComponentConfig(bases, labelSlot, "label", "component.keypad.labelSlot")',
+  "Keypad Label must consume the shared embedded Component owner",
+);
+for (const permissiveKeypadDocument of [
+  "asRecord(config.keypad)",
+  "asRecord(rawKey)",
+  "asRecord(keypad.states)",
+  "asRecord(states[state])",
+  "asRecord(keypad.labelSlot)",
+  "asRecord(labelSlot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/keypadComponentResolver.ts",
+    permissiveKeypadDocument,
+    `Keypad must not coerce required documents (${permissiveKeypadDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
