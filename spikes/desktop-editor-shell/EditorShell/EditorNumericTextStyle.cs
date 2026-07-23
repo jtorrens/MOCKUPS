@@ -9,6 +9,8 @@ internal static class EditorNumericTextStyle
 
     public static TextBox Apply(TextBox textBox)
     {
+        EditorTextBoxBehavior.Configure(textBox);
+        EditorTextBoxBehavior.EnableSelectAllOnDoubleClick(textBox);
         textBox.FontFamily = NumericFontFamily;
         textBox.TextAlignment = TextAlignment.Left;
         return textBox;

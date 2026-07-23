@@ -8833,6 +8833,39 @@ for (const retiredKeyboardPopupComposition of [
     `Keyboard must not restore the separate popup-over-normal-key composition (${retiredKeyboardPopupComposition})`,
   );
 }
+for (const requiredStandardTextInputBehavior of [
+  "ConditionalWeakTable<TextBox, TextBoxInteractionState>",
+  "InputElement.PointerPressedEvent",
+  "InputElement.PointerMovedEvent",
+  "InputElement.PointerReleasedEvent",
+  "InputElement.PointerCaptureLostEvent",
+  "args.Pointer.Type != PointerType.Pen",
+  "args.Pointer.Capture(presenter);",
+  "SetCurrentValue(TextBox.SelectionStartProperty, _selectionAnchor);",
+  "SetCurrentValue(TextBox.SelectionEndProperty, caretIndex);",
+  "SelectAllOnDoubleClick",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorTextBoxBehavior.cs",
+    requiredStandardTextInputBehavior,
+    `configured editor text inputs must retain shared native-style pointer selection (${requiredStandardTextInputBehavior})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/EditorNumericTextStyle.cs",
+  "EditorTextBoxBehavior.EnableSelectAllOnDoubleClick(textBox);",
+  "numeric text surfaces must opt into complete-value double-click selection through the shared behavior",
+);
+for (const retiredNumericPointerInterception of [
+  "InputElement.PointerPressedEvent",
+  "args.ClickCount > 1",
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/EditorNumericUpDownBehavior.cs",
+    retiredNumericPointerInterception,
+    `NumericUpDown must not intercept standard inner TextBox clicks (${retiredNumericPointerInterception})`,
+  );
+}
 
 function assertDesktopSystemTypographyData() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");

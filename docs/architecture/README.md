@@ -170,6 +170,9 @@ this index wins.
 - `81_keyboard_pressed_popup_composition_contract.md`: component-owned
   continuous pressed-key popup, single exterior shadow and Keyboard-frame edge
   containment without renderer knowledge.
+- `82_standard_editor_text_input_interaction_contract.md`: shared native-style
+  text selection, Pen/Wacom drag adaptation and complete numeric-value
+  selection on double-click.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

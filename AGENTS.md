@@ -55,6 +55,7 @@ Before changing the Avalonia/Suki desktop editor spike, read and follow:
 - `docs/architecture/79_fixed_and_polymorphic_component_authoring_contract.md`
 - `docs/architecture/80_forward_action_presentation_contract.md`
 - `docs/architecture/81_keyboard_pressed_popup_composition_contract.md`
+- `docs/architecture/82_standard_editor_text_input_interaction_contract.md`
 
 ## Hard rule: `MainWindow` is shell-only
 
@@ -250,6 +251,14 @@ Keyboard owns one continuous head/connector/pressed-key path, one exterior
 shadow and horizontal containment inside its resolved frame. Do not restore a
 separate popup tail over a normally rendered key, duplicate the pressed glyph,
 or move edge handling into a generic bridge or renderer.
+
+Desktop text-input interaction additionally follows
+`docs/architecture/82_standard_editor_text_input_interaction_contract.md`.
+Configure editor `TextBox` controls through the shared behavior, preserve native
+mouse/touch/keyboard selection, adapt primary Pen drag only at that common
+boundary and declare complete numeric-value double-click selection through the
+shared numeric style. Do not add editor-local selection handlers or restore
+`NumericUpDown` multiple-click interception.
 
 ## Hard rule: Text Box Icon Rows are exact structured boundaries
 
