@@ -580,3 +580,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Set de collection keys, guard antes de `items.set`, `requiredString` en la precedencia y validator de fields; cadena truthy anterior prohibida. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. Preview conserva todas las direcciones válidas y deja de elegir un owner diferente por orden del documento. |
+
+## Slice 1.42 — Referencias de actions temporales en escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El timeline filtraba `extendsModuleDuration` por igualdad, omitía una action cuyo play field no existía, trataba enable ausente/string como false e ignoraba keyframes de play con value no boolean. Una action dañada aparentaba estar inactiva y dejaba de extender la Screen. |
+| Owner | La action declara si participa en duración y sus referencias; el timeline común resuelve el field owner-relative y solo exige la duración condicional cuando el trigger boolean está activo. |
+| Cambio mínimo | Validar flags presentes; exigir id y referencias completas para una action extending; respetar `playFieldId` explícito al cruzar forwarding; exigir play field real, enable boolean y values booleanos en el track. Mantener que una action válidamente inactiva no exige duration. |
+| Rutas eliminadas | Flag wrong-root → false, field ausente → skip, enable inválido → false y keyframe string → no activo. |
+| Pruebas | 116/116 escritorio: flags, id, base duration, referencias, field, enable y keyframe inválidos; action inactiva sin duration válida; media finita, Conversation y ownership temporal current conservados. |
+| Enforcement | `ValidateTemporalActions` obligatorio; enable con `RequiredBoolean`; missing play field falla y los dos patrones de skip/coerción quedan prohibidos. |
+| Datos | Sin migración. Las actions current extending de Chat ya declaran ids y referencias completas; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una action válida ni cuándo requiere duration; solo impide que una declaración activa desaparezca por datos contradictorios. |

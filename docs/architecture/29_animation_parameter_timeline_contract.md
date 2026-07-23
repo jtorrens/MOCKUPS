@@ -399,6 +399,16 @@ replace it with a private one-second clock. An inactive conditional finite
 action contributes no duration and therefore does not require a value that its
 item contract does not currently expose.
 
+Temporal action flags are exact optional booleans. An item action that declares
+`extendsModuleDuration: true` requires a stable action id plus explicit
+`playInputId`, `durationInputId` and `durationEnabledInputId`. A present
+`playFieldId` is the explicit forwarded field identity and must be valid; it
+does not fall back to `playInputId` when malformed. The selected play field
+must exist, the owner enable value and every enabled play-track keyframe value
+must be booleans, and only then may the active action require its positive
+duration. Missing metadata, missing play fields and string booleans do not turn
+the finite action into an inactive one.
+
 The structural ownership and Module Instance mapping are specified in
 [Structural Stacks, Slots, States and Module Instances](31_structural_stacks_slots_and_module_instances.md).
 

@@ -243,6 +243,12 @@ Referenced pre/post/completion Runtime values must exist as non-negative JSON
 numbers or their declared `BehaviorTiming` owner. Missing fields, strings in
 place of numbers and negative values do not become frame zero.
 
+Finite action participation is equally explicit. `definesModuleDuration` and
+`extendsModuleDuration` are booleans when present. An extending item action has
+complete play/duration/enable references, resolves a real play field and
+consumes boolean owner and keyframe states. The calculator does not skip a
+missing field or reinterpret an invalid trigger as an inactive action.
+
 Web frame resolution mirrors that same metadata and duration-value contract.
 Prepared fixtures and payloads contain every declared Runtime duration value;
 an explicit embedded Runtime object is resolved only through its complete

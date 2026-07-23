@@ -5369,6 +5369,55 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
             0));
     }
 
+    foreach (var invalidActionContract in new[]
+    {
+        """{"actions":[{"definesModuleDuration":"true"}]}""",
+        """{"actions":[{"definesModuleDuration":true,"durationBaseFrames":1}]}""",
+        """{"actions":[{"id":"duration","definesModuleDuration":true,"durationBaseFrames":"1"}]}""",
+        """{"collections":[{"jsonKey":"items","itemActions":[{"extendsModuleDuration":"true"}]}]}""",
+        """{"collections":[{"jsonKey":"items","fields":[{"id":"play"}],"itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"play","durationInputId":"duration"}]}]}""",
+        """{"collections":[{"jsonKey":"items","fields":[{"id":"play"}],"itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"play","playFieldId":"","durationInputId":"duration","durationEnabledInputId":"enabled"}]}]}""",
+        """{"collections":[{"jsonKey":"items","fields":[{"id":"other"}],"itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"play","durationInputId":"duration","durationEnabledInputId":"enabled"}]}]}""",
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+            Object(invalidActionContract),
+            Object("""{"items":[{"id":"item","enabled":false}]}"""),
+            emptyAnimation,
+            0));
+    }
+
+    var finiteActionContract = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "fields":[{"id":"play"}],
+          "itemActions":[{
+            "id":"play","extendsModuleDuration":true,"playInputId":"play",
+            "durationInputId":"duration","durationEnabledInputId":"enabled"
+          }]
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        finiteActionContract,
+        Object("""{"items":[{"id":"item","duration":4}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        finiteActionContract,
+        Object("""{"items":[{"id":"item","enabled":"false","duration":4}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        finiteActionContract,
+        Object("""{"items":[{"id":"item","enabled":false,"duration":4}]}"""),
+        Object("""{"tracks":[{"fieldId":"play","targetId":"item","keyframes":[{"frame":0,"value":"true"}]}]}"""),
+        0));
+    Equal(1, RuntimeAnimationFrameOrigin.DurationFrames(
+        finiteActionContract,
+        Object("""{"items":[{"id":"item","enabled":false}]}"""),
+        emptyAnimation,
+        0));
+
     var missingDurationField = Object("""
         {"collections":[{
           "jsonKey":"items",
@@ -5602,7 +5651,7 @@ static void LaterTargetsFollowAnimatedExtent()
 static void LaterTargetsFollowFiniteMedia()
 {
     var contract = SequenceContract(withMediaAction: true);
-    var runtime = Object("""{"messages":[{"id":"m1","delay":0,"write":2,"hold":1,"playDuration":5},{"id":"m2","delay":3,"write":1,"hold":0,"playDuration":1}]}""");
+    var runtime = Object("""{"messages":[{"id":"m1","delay":0,"write":2,"hold":1,"isPlaying":false,"playDuration":5},{"id":"m2","delay":3,"write":1,"hold":0,"isPlaying":false,"playDuration":1}]}""");
     var animation = Object("""
         {"schemaVersion":2,"tracks":[{"id":"p","fieldId":"isPlaying","targetId":"m1","keyframes":[
           {"id":"k0","frame":0,"value":false},
@@ -5662,10 +5711,10 @@ static void AnimatedMediaActionsAreFinite()
           "jsonKey":"messages",
           "animationTimeline":{"sequence":"serial","preDurationFieldIds":[],"postDurationFieldIds":[]},
           "fields":[{"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"ownerStart"}}}],
-          "itemActions":[{"extendsModuleDuration":true,"playInputId":"isPlaying","durationInputId":"playDurationFrames"}]
+          "itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"isPlaying","durationInputId":"playDurationFrames","durationEnabledInputId":"isPlaying"}]
         }]}
         """;
-    var runtime = """{"messages":[{"id":"m1","playDurationFrames":3}]}""";
+    var runtime = """{"messages":[{"id":"m1","isPlaying":false,"playDurationFrames":3}]}""";
     var animation = """
         {"schemaVersion":2,"tracks":[{"id":"play","fieldId":"isPlaying","targetId":"m1","keyframes":[
           {"id":"p0","frame":0,"value":false},
@@ -7282,7 +7331,7 @@ static JsonObject SequenceContract(bool withMediaAction = false) => Object($$$$"
           {"id":"write","jsonKey":"write"},
           {"id":"hold","jsonKey":"hold"},
           {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text","offsetFrames":0}}}
-        ]{{{{(withMediaAction ? ",\n        \"itemActions\": [{\"extendsModuleDuration\":true,\"playInputId\":\"isPlaying\",\"durationInputId\":\"playDuration\"}]" : "")}}}}
+        ]{{{{(withMediaAction ? ",\n        \"itemActions\": [{\"id\":\"play\",\"extendsModuleDuration\":true,\"playInputId\":\"isPlaying\",\"durationInputId\":\"playDuration\",\"durationEnabledInputId\":\"isPlaying\"}]" : "")}}}}
       }]
     }
     """);

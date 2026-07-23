@@ -434,49 +434,68 @@ internal static class RuntimeAnimationFrameOrigin
             IReadOnlyList<JsonObject> fields)
         {
             var lastEnd = 0d;
-            foreach (var action in ItemActions(collection, item)
-                .Where((candidate) => candidate["extendsModuleDuration"]?.GetValue<bool>() == true))
+            foreach (var action in ItemActions(collection, item))
             {
-                var playFieldId = Text(action["playInputId"]);
+                if (!action.ContainsKey("extendsModuleDuration")) continue;
+                if (!JsonPath.RequiredBoolean(
+                        action,
+                        "extendsModuleDuration",
+                        "Finite runtime action"))
+                {
+                    continue;
+                }
+                var actionId = JsonPath.RequiredString(action, "id", "Finite runtime action");
+                var playFieldId = action.ContainsKey("playFieldId")
+                    ? JsonPath.RequiredString(action, "playFieldId", $"Finite runtime action '{actionId}'")
+                    : JsonPath.RequiredString(action, "playInputId", $"Finite runtime action '{actionId}'");
                 var definition = fields.FirstOrDefault((field) => Text(field["id"]) == playFieldId);
-                if (definition is null) continue;
+                if (definition is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Finite runtime action '{actionId}' references missing play field '{playFieldId}'.");
+                }
                 var fieldOrigin = ResolveFieldTiming(
                     definition,
                     item,
                     targetId,
                     fields,
                     new HashSet<string>(StringComparer.Ordinal)).Origin;
-                var baseEnabled = item[Text(action["durationEnabledInputId"])] is JsonValue enabled
-                    && enabled.TryGetValue<bool>(out var enabledValue)
-                    && enabledValue;
+                var enabledJsonKey = JsonPath.RequiredString(
+                    action,
+                    "durationEnabledInputId",
+                    $"Finite runtime action '{actionId}'");
+                var baseEnabled = JsonPath.RequiredBoolean(
+                    item,
+                    enabledJsonKey,
+                    $"Finite runtime action '{actionId}' owner");
                 var keyframes = EnabledKeyframes(Track(playFieldId, targetId));
                 var hasActiveKeyframe = keyframes.Any((keyframe) =>
-                    keyframe["value"] is JsonValue value
-                    && value.TryGetValue<bool>(out var playing)
-                    && playing);
+                    JsonPath.RequiredBoolean(
+                        keyframe,
+                        "value",
+                        $"Finite runtime action '{actionId}' play keyframe"));
                 if (!baseEnabled && !hasActiveKeyframe)
                 {
                     continue;
                 }
 
-                var durationInputId = Text(action["durationInputId"]);
-                if (string.IsNullOrWhiteSpace(durationInputId))
-                {
-                    throw new InvalidOperationException(
-                        "A finite runtime action that extends Module duration requires durationInputId.");
-                }
+                var durationInputId = JsonPath.RequiredString(
+                    action,
+                    "durationInputId",
+                    $"Finite runtime action '{actionId}'");
                 var duration = JsonPath.RequiredPositiveNumber(
                     item[durationInputId],
-                    $"Runtime action duration input '{durationInputId}'");
+                    $"Finite runtime action '{actionId}' duration input '{durationInputId}'");
                 if (baseEnabled)
                 {
                     lastEnd = Math.Max(lastEnd, fieldOrigin + duration);
                 }
                 for (var index = 0; index < keyframes.Count; index++)
                 {
-                    if (keyframes[index]["value"] is not JsonValue value
-                        || !value.TryGetValue<bool>(out var playing)
-                        || !playing) continue;
+                    if (!JsonPath.RequiredBoolean(
+                            keyframes[index],
+                            "value",
+                            $"Finite runtime action '{actionId}' play keyframe")) continue;
                     var start = fieldOrigin + Number(keyframes[index]["frame"]);
                     var replacement = index + 1 < keyframes.Count
                         ? fieldOrigin + Number(keyframes[index + 1]["frame"])
@@ -668,7 +687,9 @@ internal static class RuntimeAnimationFrameOrigin
     }
 
     private static IReadOnlyList<JsonObject> Actions(JsonObject contract) =>
-        JsonPath.OptionalObjectArray(contract, "actions", "Runtime owner contract");
+        ValidateTemporalActions(
+            JsonPath.OptionalObjectArray(contract, "actions", "Runtime owner contract"),
+            "Runtime owner actions");
 
     private static IReadOnlyList<JsonObject> Fields(JsonObject collection, JsonObject item)
     {
@@ -709,6 +730,50 @@ internal static class RuntimeAnimationFrameOrigin
                 runtimeContract,
                 "actions",
                 $"Projected Runtime contract '{targetId}'"));
+        }
+        return ValidateTemporalActions(actions, "Runtime owner item actions");
+    }
+
+    private static IReadOnlyList<JsonObject> ValidateTemporalActions(
+        IReadOnlyList<JsonObject> actions,
+        string context)
+    {
+        for (var index = 0; index < actions.Count; index++)
+        {
+            var action = actions[index];
+            foreach (var flag in new[] { "definesModuleDuration", "extendsModuleDuration" })
+            {
+                if (!action.ContainsKey(flag)) continue;
+                _ = JsonPath.RequiredBoolean(action, flag, $"{context}[{index}]");
+            }
+            if (action["definesModuleDuration"]?.GetValue<bool>() == true)
+            {
+                var actionId = JsonPath.RequiredString(action, "id", $"{context}[{index}]");
+                _ = JsonPath.RequiredNonNegativeNumber(
+                    action["durationBaseFrames"],
+                    $"Runtime action '{actionId}' durationBaseFrames");
+            }
+            if (action["extendsModuleDuration"]?.GetValue<bool>() != true) continue;
+            var finiteActionId = JsonPath.RequiredString(action, "id", $"{context}[{index}]");
+            _ = JsonPath.RequiredString(
+                action,
+                "playInputId",
+                $"Finite runtime action '{finiteActionId}'");
+            if (action.ContainsKey("playFieldId"))
+            {
+                _ = JsonPath.RequiredString(
+                    action,
+                    "playFieldId",
+                    $"Finite runtime action '{finiteActionId}'");
+            }
+            _ = JsonPath.RequiredString(
+                action,
+                "durationInputId",
+                $"Finite runtime action '{finiteActionId}'");
+            _ = JsonPath.RequiredString(
+                action,
+                "durationEnabledInputId",
+                $"Finite runtime action '{finiteActionId}'");
         }
         return actions;
     }

@@ -6159,7 +6159,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
-  'candidate["extendsModuleDuration"]?.GetValue<bool>() == true',
+  'if (action["extendsModuleDuration"]?.GetValue<bool>() != true) continue;',
   "finite collection-item actions must be able to extend module duration through their declarative contract",
 );
 assertContains(
@@ -6801,6 +6801,21 @@ assertContains(
   'ValidateUniqueFieldIds(fields, "Runtime owner item fields")',
   "the desktop owner timeline must reject ambiguous direct/projected field ids",
 );
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "ValidateTemporalActions(",
+  "the desktop owner timeline must validate every present temporal action flag and reference",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  '"durationEnabledInputId",',
+  "finite desktop actions must declare the exact owner boolean used for base activation",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "references missing play field",
+  "finite desktop actions must not disappear when their play field is missing",
+);
 for (const permissiveRuntimeTimelineEnvelope of [
   '(contract["collections"] as JsonArray)?.OfType<JsonObject>()',
   '(contract["inputs"] as JsonArray)?.OfType<JsonObject>()',
@@ -6809,6 +6824,8 @@ for (const permissiveRuntimeTimelineEnvelope of [
   'values.OfType<JsonObject>()',
   'runtimeInputs.OfType<JsonObject>()',
   '_items[targetId] =',
+  'if (definition is null) continue;',
+  'enabled.TryGetValue<bool>(out var enabledValue)',
 ]) {
   assertDoesNotContain(
     "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
