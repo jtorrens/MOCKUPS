@@ -424,6 +424,16 @@ never substitutes Light for an absent or unknown mode. Neutral Palette tinting
 additionally requires the exact `neutralTint` object with finite numeric
 `hueDeg` and `saturation`; numeric strings and invalid roots are not defaults.
 
+Icon resolution preserves only two explicit absence cases: the optional web
+payload has no Icon Theme mapping, or a valid mapping has no entry for the
+requested token. Once a mapping is present it requires its `tokens` object; an
+entry that is present requires its exact object and non-empty `file`. The file
+must be one local `.svg` filename with no path separators, and resolving that
+entry requires a non-empty Icon Theme asset root. Invalid current entries never
+become an empty icon and filenames are never derived from token ids. A valid
+mapping whose referenced asset is unavailable keeps the existing generic empty
+asset result; filesystem availability is separate from document validity.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -753,6 +763,8 @@ Architecture enforcement must verify:
 - Theme token/color resolution requires non-empty modes, the exact selected
   Light/Dark owner, strict present object paths and numeric Neutral Tint while
   preserving only the declared mode-to-global absence precedence.
+- Icon resolution distinguishes an absent mapping or token from invalid
+  present mapping/token/file documents and never fabricates an SVG filename.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

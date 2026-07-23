@@ -8085,6 +8085,34 @@ for (const permissiveThemeColorDocument of [
     `Theme color resolution must not default its owner (${permissiveThemeColorDocument})`,
   );
 }
+for (const requiredPreviewIconDocument of [
+  "if (payload.iconMappingJson === undefined) return \"\";",
+  'parseObject(payload.iconMappingJson, "icon mapping")',
+  'requiredRecord(mapping, "tokens", "icon mapping.tokens")',
+  "if (!Object.hasOwn(tokens, token)) return \"\";",
+  'requiredRecord(tokens, token, `icon mapping.tokens.${token}`)',
+  'requiredString(iconToken, "file", `icon mapping.tokens.${token}.file`)',
+  'if (!/^[^/\\\\]+\\.svg$/i.test(file))',
+  'typeof payload.iconAssetRoot !== "string" || !payload.iconAssetRoot.trim()',
+]) {
+  assertContains(
+    "src/desktop-preview/previewAssetResolver.ts",
+    requiredPreviewIconDocument,
+    `Preview Icon Theme resolution must validate its exact owner (${requiredPreviewIconDocument})`,
+  );
+}
+for (const permissivePreviewIconDocument of [
+  'parseObject(payload.iconMappingJson ?? "{}")',
+  "asRecord(mapping.tokens)",
+  "asRecord(tokens[token])",
+  'const file = typeof iconToken.file === "string" ? iconToken.file : "";',
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/previewAssetResolver.ts",
+    permissivePreviewIconDocument,
+    `Preview Icon Theme resolution must not infer current mapping data (${permissivePreviewIconDocument})`,
+  );
+}
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

@@ -10,7 +10,7 @@ import type {
   DesignPreviewPayload,
 } from "./designPreviewPayload.js";
 import { previewFontFaceFamily } from "./previewFontHelpers.js";
-import { asRecord, parseObject } from "./previewJsonHelpers.js";
+import { parseObject } from "./previewJsonHelpers.js";
 import {
   requiredNumberValue,
   requiredRecord,
@@ -57,12 +57,19 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
   const systemIcon = systemIconUri(token);
   if (systemIcon) return systemIcon;
 
-  const mapping = parseObject(payload.iconMappingJson ?? "{}");
-  const tokens = asRecord(mapping.tokens);
-  const iconToken = asRecord(tokens[token]);
-  const file = typeof iconToken.file === "string" ? iconToken.file : "";
-  const assetRoot = payload.iconAssetRoot?.replace(/\/+$/g, "") ?? "";
-  if (!file || !assetRoot) return "";
+  if (payload.iconMappingJson === undefined) return "";
+  const mapping = parseObject(payload.iconMappingJson, "icon mapping");
+  const tokens = requiredRecord(mapping, "tokens", "icon mapping.tokens");
+  if (!Object.hasOwn(tokens, token)) return "";
+  const iconToken = requiredRecord(tokens, token, `icon mapping.tokens.${token}`);
+  const file = requiredString(iconToken, "file", `icon mapping.tokens.${token}.file`);
+  if (!/^[^/\\]+\.svg$/i.test(file)) {
+    throw new Error(`Invalid local SVG file ${file} for icon token ${token}`);
+  }
+  if (typeof payload.iconAssetRoot !== "string" || !payload.iconAssetRoot.trim()) {
+    throw new Error(`Missing Icon Theme asset root for token ${token}`);
+  }
+  const assetRoot = payload.iconAssetRoot.replace(/\/+$/g, "");
 
   const candidates = [
     path.resolve(payload.projectMediaRoot ?? "", assetRoot, file),

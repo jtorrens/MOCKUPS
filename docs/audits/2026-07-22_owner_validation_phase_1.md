@@ -1081,3 +1081,16 @@ y Overrides por item.
 | Enforcement | Modos, selected mode, paths opcionales estrictos y Neutral Tint quedan fijados; casts y Light por defecto quedan prohibidos. |
 | Datos | Sin migración. Los Themes current ya declaran Light/Dark, roots de color y Neutral Tint numérico; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia la precedencia ni los colores válidos; evita que un documento roto produzca un Preview plausible bajo otro modo o sin tint contractual. |
+
+## Slice 1.79 — Mapping exacto de Icon Themes en Preview
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El resolver convertía `tokens` y la entrada solicitada wrong-root en `{}`, y trataba file inválido o asset root ausente como icono no mapeado. |
+| Owner | Icon Theme posee mapping, tabla de tokens, file SVG explícito y asset root; la disponibilidad física del SVG sigue siendo un resultado separado. |
+| Cambio mínimo | Conservar mapping/token estructuralmente ausentes como icono vacío, pero exigir roots exactas, file local `.svg` sin separadores y asset root cuando la entrada existe. |
+| Rutas eliminadas | Dos `asRecord`, file vacío inferido, asset root vacío silencioso y aceptación de paths/extensiones no SVG. No se genera `${token}.svg`. |
+| Pruebas | Cobertura nueva acepta las dos ausencias declaradas y rechaza `tokens`/entry wrong-root, file ausente/inseguro y asset root ausente. |
+| Enforcement | Owners y validación del file quedan fijados; casts, mapping fabricado y filename derivado quedan prohibidos. |
+| Datos | Sin migración. Los Icon Themes current ya tienen tabla, files SVG locales y asset roots explícitos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia un icono válido ni el placeholder de un token realmente no mapeado; un documento presente roto deja de parecer ausencia. |
