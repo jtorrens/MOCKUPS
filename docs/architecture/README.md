@@ -149,6 +149,9 @@ this index wins.
 - `74_cleanup_verification_and_baseline_closure_contract.md`: precise
   antiregression coverage, automated Mac verification and the separate manual
   gates required before accepting the cleaned baseline.
+- `75_action_duration_field_identity_contract.md`: stable runtime field
+  identity for finite action durations, explicit storage-key resolution and
+  field-id-preserving forwarding across Component and Module boundaries.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

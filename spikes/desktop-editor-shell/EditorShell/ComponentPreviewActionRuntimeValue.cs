@@ -19,8 +19,9 @@ internal static class ComponentPreviewActionRuntimeValue
                 $"Design Preview action '{action.Id}' has no durationInputId.");
         }
 
+        var durationJsonKey = ComponentPreviewActions.DurationJsonKey(preview, action);
         return JsonPath.RequiredPositiveNumber(
-            ComponentPreviewActions.Value(preview, action, action.DurationInputId),
+            ComponentPreviewActions.Value(preview, action, durationJsonKey),
             $"Design Preview action '{action.Id}' duration input '{action.DurationInputId}'");
     }
 

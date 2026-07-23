@@ -701,9 +701,10 @@ Rules:
   positive delay+duration from the exact Theme transition tokens; a missing
   path, `none` Motion, absent timing or wrong scalar type is not converted to
   zero/one-second playback;
-- a `durationInputId` resolves against the action's exact runtime owner. Its
-  current value is a positive finite JSON number; session text is parsed
-  strictly before use. Numeric strings in payload JSON, absent values and
+- a `durationInputId` is the exact stable `id` of a field in the action's
+  runtime owner. The consumer resolves that field's explicit `jsonKey`, then
+  requires a positive finite JSON number at that key; a JSON-key spelling used
+  as `durationInputId`, numeric strings in payload JSON, absent values and
   non-positive values are not converted to zero or one;
 - a collection-derived duration requires the declared array, stable object
   items and every declared non-negative numeric contributor. An absent/wrong

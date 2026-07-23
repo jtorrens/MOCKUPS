@@ -64,8 +64,10 @@ not resolved through a compatibility fallback:
   to structured Icon Row items with stable ids, complete Button Variant
   references and local Overrides. Names, types and positions must not generate
   identity or select a Variant.
-- `durationInputId` must receive one approved meaning—declared field id or JSON
-  key—before consumers are changed. Readers must not support both spellings.
+- `durationInputId` was approved as the declared stable field id and is now
+  governed by
+  [Action Duration Field Identity Contract](75_action_duration_field_identity_contract.md).
+  Readers must not support the retired JSON-key spelling.
 - the authoritative relationship between payload `localFrame` and instance
   context `localFrame` must be decided before one source is removed or made a
   fallback for the other.

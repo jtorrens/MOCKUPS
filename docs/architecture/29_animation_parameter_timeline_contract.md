@@ -416,12 +416,14 @@ a second Motion walker or substitutes frame zero/one second when the path or
 Theme timing is invalid.
 
 Direct and collection-derived action duration values follow the same rule in
-Design and Production. `durationInputId` addresses the exact action owner and
-requires a positive finite JSON number when that finite action is active;
-numeric strings, missing values and zero are invalid. Collection duration
-sources keep their declared array, stable items and non-negative numeric
-contributors. The Design panel and frame-preparation controller share that
-owner instead of applying independent zero/one fallbacks. A Module action with
+Design and Production. `durationInputId` is the exact stable `id` of a declared
+field in the action owner. Its definition supplies the explicit `jsonKey` used
+to read the current positive finite JSON number when that finite action is
+active; a JSON-key spelling used as the id, numeric strings, missing values and
+zero are invalid. Collection duration sources keep their declared array,
+stable items and non-negative numeric contributors. The Design panel and
+frame-preparation controller share that owner instead of applying independent
+zero/one fallbacks. A Module action with
 `durationOwnerTimeline` consumes the common owner timeline; the panel does not
 replace it with a private one-second clock. An inactive conditional finite
 action contributes no duration and therefore does not require a value that its

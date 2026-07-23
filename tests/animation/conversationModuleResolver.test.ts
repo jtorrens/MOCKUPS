@@ -62,7 +62,7 @@ function payload(
           id: "play",
           extendsModuleDuration: true,
           playInputId: "isPlaying",
-          durationInputId: "playDurationFrames",
+          durationInputId: "playDuration",
           durationEnabledInputId: "isPlaying",
         }],
       }],

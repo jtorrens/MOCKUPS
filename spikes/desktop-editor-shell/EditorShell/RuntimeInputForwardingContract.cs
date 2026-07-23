@@ -229,7 +229,7 @@ internal static class RuntimeInputForwardingContract
             if (source.Length == 0) continue;
             var mapped = Forward(source);
             if (mapped is null) return null;
-            lifted[key] = key == "durationBehaviorTimingInputId"
+            lifted[key] = key is "durationInputId" or "durationBehaviorTimingInputId"
                 ? Text(mapped["id"])
                 : Text(mapped["jsonKey"]);
         }

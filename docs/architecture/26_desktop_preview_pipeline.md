@@ -318,11 +318,13 @@ The architecture check validates the seeded Test Values inventory: Conversation
 `Play audio`. Collection actions are addressed by the item's stable `id` and
 their `mediaType` applicability, never by array index or editor-owned rules.
 
-An action clock reads its declared `durationInputId` from the same runtime Test
-Values state applied to the payload. It must not use a separate action-private
-duration fallback. Motion-derived actions run for the complete resolved motion
-interval (`delayMs + durationMs`), and a non-frame-aligned duration always emits
-one explicit terminal frame before playback state and controls are released.
+An action clock resolves its declared stable field `durationInputId` to that
+field's explicit `jsonKey`, then reads the value from the same runtime Test
+Values state applied to the payload. It must not treat `durationInputId` as a
+storage key or use a separate action-private duration fallback. Motion-derived
+actions run for the complete resolved motion interval (`delayMs + durationMs`),
+and a non-frame-aligned duration always emits one explicit terminal frame
+before playback state and controls are released.
 
 For frame playback:
 

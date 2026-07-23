@@ -82,12 +82,15 @@ test("finite runtime action durations require positive JSON numbers", () => {
     collections: [{
       jsonKey: "items",
       animationTimeline: { sequenceItems: false },
-      fields: [{ id: "play", jsonKey: "isPlaying" }],
+      fields: [
+        { id: "play", jsonKey: "isPlaying" },
+        { id: "duration", jsonKey: "durationFrames" },
+      ],
       itemActions: [{
         id: "play",
         extendsModuleDuration: true,
         playInputId: "play",
-        durationInputId: "durationFrames",
+        durationInputId: "duration",
         durationEnabledInputId: "isPlaying",
       }],
     }],
@@ -113,6 +116,19 @@ test("finite runtime action durations require positive JSON numbers", () => {
   assert.throws(() => new RuntimeOwnerTimeline(
     finiteContract,
     { items: [{ id: "item", isPlaying: false, durationFrames: 0 }] },
+    finiteAnimation,
+  ));
+  assert.throws(() => new RuntimeOwnerTimeline(
+    {
+      collections: [{
+        ...finiteContract.collections[0],
+        itemActions: [{
+          ...finiteContract.collections[0].itemActions[0],
+          durationInputId: "durationFrames",
+        }],
+      }],
+    },
+    { items: [{ id: "item", isPlaying: false, durationFrames: 4 }] },
     finiteAnimation,
   ));
 });
@@ -211,7 +227,10 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
     }],
     [{ collections: [{
       jsonKey: "items",
-      fields: [{ id: "play" }],
+      fields: [
+        { id: "play" },
+        { id: "duration", jsonKey: "durationFrames" },
+      ],
       itemActions: [{ id: "play", extendsModuleDuration: true, playInputId: "play", durationInputId: "duration" }],
     }] }, { items: [{ id: "item", enabled: false }] }],
     [{ collections: [{
@@ -238,7 +257,10 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
   const finiteActionContract = {
     collections: [{
       jsonKey: "items",
-      fields: [{ id: "play" }],
+      fields: [
+        { id: "play" },
+        { id: "duration", jsonKey: "durationFrames" },
+      ],
       itemActions: [{
         id: "play", extendsModuleDuration: true, playInputId: "play",
         durationInputId: "duration", durationEnabledInputId: "enabled",
@@ -247,17 +269,17 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
   };
   assert.throws(() => new RuntimeOwnerTimeline(
     finiteActionContract,
-    { items: [{ id: "item", duration: 4 }] },
+    { items: [{ id: "item", durationFrames: 4 }] },
     {},
   ));
   assert.throws(() => new RuntimeOwnerTimeline(
     finiteActionContract,
-    { items: [{ id: "item", enabled: "false", duration: 4 }] },
+    { items: [{ id: "item", enabled: "false", durationFrames: 4 }] },
     {},
   ));
   assert.throws(() => new RuntimeOwnerTimeline(
     finiteActionContract,
-    { items: [{ id: "item", enabled: false, duration: 4 }] },
+    { items: [{ id: "item", enabled: false, durationFrames: 4 }] },
     { tracks: [{ fieldId: "play", targetId: "item", keyframes: [{ frame: 0, value: "true" }] }] },
   ));
   assert.equal(new RuntimeOwnerTimeline(

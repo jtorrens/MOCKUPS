@@ -1218,7 +1218,8 @@ internal sealed class ComponentPreviewInputSession
             return ComponentPreviewActionRuntimeValue.RequireDurationInput(_runtimePreview, action);
         }
 
-        var inputKey = $"{_scopeKey}:{action.DurationInputId}";
+        var durationJsonKey = ComponentPreviewActions.DurationJsonKey(_runtimePreview, action);
+        var inputKey = $"{_scopeKey}:{durationJsonKey}";
         if (_values.TryGetValue(inputKey, out var value))
         {
             return ComponentPreviewActionRuntimeValue.RequireDurationInput(value, action);
@@ -1806,6 +1807,7 @@ internal sealed class ComponentPreviewInputSession
             action.Label,
             action.PlayInputId,
             action.DurationInputId,
+            action.DurationJsonKey,
             action.DurationBehaviorTimingInputId,
             action.DurationSeconds.ToString(CultureInfo.InvariantCulture),
             action.DurationCollectionJsonKey,

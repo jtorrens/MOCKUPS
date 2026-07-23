@@ -302,6 +302,16 @@ export class RuntimeOwnerTimeline {
     for (const action of itemActions(collection, item)) {
       if (!Object.hasOwn(action, "extendsModuleDuration") || action.extendsModuleDuration !== true) continue;
       const actionId = requiredString(action, "id", "finite runtime action id");
+      const durationInputId = requiredString(
+        action,
+        "durationInputId",
+        `finite runtime action '${actionId}' duration input`,
+      );
+      if (!fields.some((field) => optionalString(field, "id") === durationInputId)) {
+        throw new Error(
+          `Finite runtime action '${actionId}' references missing duration field '${durationInputId}'`,
+        );
+      }
       const playFieldId = Object.hasOwn(action, "playFieldId")
         ? requiredString(action, "playFieldId", `finite runtime action '${actionId}' play field`)
         : requiredString(action, "playInputId", `finite runtime action '${actionId}' play input`);
@@ -326,15 +336,7 @@ export class RuntimeOwnerTimeline {
       ));
       if (!baseEnabled && !hasActiveKeyframe) continue;
 
-      const durationInputId = requiredString(
-        action,
-        "durationInputId",
-        `finite runtime action '${actionId}' duration input`,
-      );
-      const duration = requiredNumberValue(
-        item[durationInputId],
-        `finite runtime action '${actionId}' duration input '${durationInputId}'`,
-      );
+      const duration = fieldValue(item, fields, durationInputId);
       if (duration <= 0) {
         throw new Error(`Finite runtime action '${actionId}' duration input '${durationInputId}' must be positive.`);
       }

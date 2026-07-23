@@ -1133,9 +1133,17 @@ static void PreviewActionContractsAreStrict()
 
     var durationInputAction = Action();
     durationInputAction.Remove("durationSeconds");
-    durationInputAction["durationInputId"] = "duration";
+    durationInputAction["durationInputId"] = "durationField";
     var durationInputPreview = Preview(durationInputAction);
-    durationInputPreview["duration"] = 2.5;
+    durationInputPreview["inputs"] = new JsonArray
+    {
+        new JsonObject
+        {
+            ["id"] = "durationField",
+            ["jsonKey"] = "durationValue",
+        },
+    };
+    durationInputPreview["durationValue"] = 2.5;
     durationInputPreview["currentTimeSeconds"] = 0;
     durationInputPreview["isPlaying"] = false;
     var parsedDurationInputAction = ComponentPreviewActions.Read(durationInputPreview).Single();
@@ -1158,15 +1166,18 @@ static void PreviewActionContractsAreStrict()
         durationInputPreview,
         parsedDurationInputAction,
         parsedDurationInputAction.PlayInputId));
-    durationInputPreview["duration"] = "2.5";
+    var wrongDurationReference = durationInputPreview.DeepClone().AsObject();
+    wrongDurationReference["actions"]![0]!["durationInputId"] = "durationValue";
+    Throws<InvalidOperationException>(() => ComponentPreviewActions.Read(wrongDurationReference));
+    durationInputPreview["durationValue"] = "2.5";
     Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireDurationInput(
         durationInputPreview,
         parsedDurationInputAction));
-    durationInputPreview["duration"] = 0;
+    durationInputPreview["durationValue"] = 0;
     Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireDurationInput(
         durationInputPreview,
         parsedDurationInputAction));
-    durationInputPreview["duration"] = 2.5;
+    durationInputPreview["durationValue"] = 2.5;
     durationInputPreview["currentTimeSeconds"] = "0";
     Throws<InvalidOperationException>(() => ComponentPreviewActionRuntimeValue.RequireTime(
         durationInputPreview,
@@ -5442,7 +5453,10 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
     var finiteActionContract = Object("""
         {"collections":[{
           "jsonKey":"items",
-          "fields":[{"id":"play"}],
+          "fields":[
+            {"id":"play"},
+            {"id":"duration","jsonKey":"durationFrames"}
+          ],
           "itemActions":[{
             "id":"play","extendsModuleDuration":true,"playInputId":"play",
             "durationInputId":"duration","durationEnabledInputId":"enabled"
@@ -5451,17 +5465,17 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
         """);
     Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
         finiteActionContract,
-        Object("""{"items":[{"id":"item","duration":4}]}"""),
+        Object("""{"items":[{"id":"item","durationFrames":4}]}"""),
         emptyAnimation,
         0));
     Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
         finiteActionContract,
-        Object("""{"items":[{"id":"item","enabled":"false","duration":4}]}"""),
+        Object("""{"items":[{"id":"item","enabled":"false","durationFrames":4}]}"""),
         emptyAnimation,
         0));
     Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
         finiteActionContract,
-        Object("""{"items":[{"id":"item","enabled":false,"duration":4}]}"""),
+        Object("""{"items":[{"id":"item","enabled":false,"durationFrames":4}]}"""),
         Object("""{"tracks":[{"fieldId":"play","targetId":"item","keyframes":[{"frame":0,"value":"true"}]}]}"""),
         0));
     Equal(1, RuntimeAnimationFrameOrigin.DurationFrames(
@@ -5762,8 +5776,11 @@ static void AnimatedMediaActionsAreFinite()
         {"collections":[{
           "jsonKey":"messages",
           "animationTimeline":{"sequence":"serial","preDurationFieldIds":[],"postDurationFieldIds":[]},
-          "fields":[{"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"ownerStart"}}}],
-          "itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"isPlaying","durationInputId":"playDurationFrames","durationEnabledInputId":"isPlaying"}]
+          "fields":[
+            {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"ownerStart"}}},
+            {"id":"playDuration","jsonKey":"playDurationFrames"}
+          ],
+          "itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"isPlaying","durationInputId":"playDuration","durationEnabledInputId":"isPlaying"}]
         }]}
         """;
     var runtime = """{"messages":[{"id":"m1","isPlaying":false,"playDurationFrames":3}]}""";
@@ -7382,7 +7399,8 @@ static JsonObject SequenceContract(bool withMediaAction = false) => Object($$$$"
           {"id":"delay","jsonKey":"delay"},
           {"id":"write","jsonKey":"write"},
           {"id":"hold","jsonKey":"hold"},
-          {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text","offsetFrames":0}}}
+          {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text","offsetFrames":0}}},
+          {"id":"playDuration","jsonKey":"playDuration"}
         ]{{{{(withMediaAction ? ",\n        \"itemActions\": [{\"id\":\"play\",\"extendsModuleDuration\":true,\"playInputId\":\"isPlaying\",\"durationInputId\":\"playDuration\",\"durationEnabledInputId\":\"isPlaying\"}]" : "")}}}}
       }]
     }

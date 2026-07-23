@@ -19,7 +19,10 @@ internal static class ComponentPreviewActions
         Func<string, JsonObject> componentVariantRuntimeContract)
     {
         var definitions = Read(preview).ToList();
-        if (!preview.TryGetPropertyValue("collections", out var collectionsNode)) return definitions;
+        if (!preview.TryGetPropertyValue("collections", out var collectionsNode))
+        {
+            return ValidateDurationInputReferences(preview, definitions);
+        }
         var collections = collectionsNode as JsonArray
             ?? throw new InvalidOperationException(
                 "Design Preview embedded action collections must be an array when present.");
@@ -103,7 +106,7 @@ internal static class ComponentPreviewActions
                     }));
             }
         }
-        return definitions;
+        return ValidateDurationInputReferences(preview, definitions);
     }
 
     public static IReadOnlyList<ComponentPreviewActionDefinition> Read(JsonObject preview)
@@ -119,7 +122,10 @@ internal static class ComponentPreviewActions
                 .Select((action) => ParseAction(action)));
         }
 
-        if (!preview.TryGetPropertyValue("collections", out var collectionsNode)) return definitions;
+        if (!preview.TryGetPropertyValue("collections", out var collectionsNode))
+        {
+            return ValidateDurationInputReferences(preview, definitions);
+        }
         var collections = collectionsNode as JsonArray
             ?? throw new InvalidOperationException(
                 "Design Preview action contract collections must be an array when present.");
@@ -171,7 +177,7 @@ internal static class ComponentPreviewActions
             }
         }
 
-        return definitions;
+        return ValidateDurationInputReferences(preview, definitions);
     }
 
     public static JsonNode? Value(
@@ -188,6 +194,35 @@ internal static class ComponentPreviewActions
         Target(preview, action)
         ?? throw new InvalidOperationException(
             $"Design Preview action '{action.Id}' has no current runtime owner.");
+
+    public static string DurationJsonKey(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action)
+    {
+        if (string.IsNullOrWhiteSpace(action.DurationInputId))
+        {
+            throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' has no durationInputId.");
+        }
+        if (!string.IsNullOrWhiteSpace(action.DurationJsonKey))
+        {
+            return action.DurationJsonKey;
+        }
+
+        var definitions = DurationInputDefinitions(preview, action);
+        var definition = definitions
+            .Select((node, index) => RequiredObject(
+                node,
+                $"Design Preview action '{action.Id}' duration definition at index {index}"))
+            .SingleOrDefault((candidate) =>
+                JsonString(candidate, "id").Equals(action.DurationInputId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' references missing duration field id '{action.DurationInputId}'.");
+        return RequiredString(
+            definition,
+            "jsonKey",
+            $"Design Preview action '{action.Id}' duration field '{action.DurationInputId}'");
+    }
 
     public static void SetValue(
         JsonObject preview,
@@ -287,6 +322,52 @@ internal static class ComponentPreviewActions
         return target as JsonObject;
     }
 
+    private static JsonArray DurationInputDefinitions(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action)
+    {
+        if (!string.IsNullOrWhiteSpace(action.TargetJsonPath))
+        {
+            var owner = RequiredOwner(preview, action);
+            return owner["inputs"] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Design Preview action '{action.Id}' embedded owner requires an inputs array.");
+        }
+
+        if (!action.IsCollectionItemAction)
+        {
+            return preview["inputs"] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Design Preview action '{action.Id}' owner requires an inputs array.");
+        }
+
+        var collections = preview["collections"] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' owner requires a collections array.");
+        var collection = collections
+            .Select((node, index) => RequiredObject(
+                node,
+                $"Design Preview action '{action.Id}' collection at index {index}"))
+            .SingleOrDefault((candidate) =>
+                JsonString(candidate, "jsonKey").Equals(action.CollectionJsonKey, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' collection '{action.CollectionJsonKey}' is missing.");
+        return collection["fields"] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' collection '{action.CollectionJsonKey}' requires a fields array.");
+    }
+
+    private static IReadOnlyList<ComponentPreviewActionDefinition> ValidateDurationInputReferences(
+        JsonObject preview,
+        IReadOnlyList<ComponentPreviewActionDefinition> definitions)
+    {
+        return definitions.Select((action) =>
+            string.IsNullOrWhiteSpace(action.DurationInputId)
+                ? action
+                : action with { DurationJsonKey = DurationJsonKey(preview, action) })
+            .ToList();
+    }
+
     private static ComponentPreviewActionDefinition ParseAction(
         JsonObject action,
         string collectionJsonKey = "",
@@ -310,6 +391,7 @@ internal static class ComponentPreviewActions
             label,
             playInputId,
             durationInputId,
+            "",
             durationBehaviorTimingInputId,
             durationSeconds,
             durationCollectionJsonKey,
@@ -775,6 +857,7 @@ internal sealed record ComponentPreviewActionDefinition(
     string Label,
     string PlayInputId,
     string DurationInputId,
+    string DurationJsonKey,
     string DurationBehaviorTimingInputId,
     double DurationSeconds,
     string DurationCollectionJsonKey,

@@ -1240,6 +1240,16 @@ assertContains(
   "74_cleanup_verification_and_baseline_closure_contract.md",
   "the architecture index must include contract 74",
 );
+assertContains(
+  "AGENTS.md",
+  "docs/architecture/75_action_duration_field_identity_contract.md",
+  "AGENTS must require the action duration field identity contract",
+);
+assertContains(
+  "docs/architecture/README.md",
+  "75_action_duration_field_identity_contract.md",
+  "the architecture index must include contract 75",
+);
 for (const requiredPreviewObjectDocument of [
   "configJson",
   "designPreviewJson",
@@ -5244,13 +5254,48 @@ for (const retiredActionRuntimeFallback of [
 }
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
-  "JsonPath.RequiredPositiveNumber(",
+  "must be positive.",
   "desktop runtime owner timeline must reject non-positive active finite action durations",
 );
 assertContains(
   "src/desktop-preview/runtimeOwnerTimeline.ts",
   "must be positive",
   "web runtime owner timeline must reject non-positive active finite action durations",
+);
+assertContains(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "fieldValue(item, fields, durationInputId)",
+  "web runtime owner timeline must resolve durationInputId through its stable field definition",
+);
+assertDoesNotContain(
+  "src/desktop-preview/runtimeOwnerTimeline.ts",
+  "item[durationInputId]",
+  "web runtime owner timeline must not treat durationInputId as a JSON storage key",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "FieldValue(item, fields, durationInputId)",
+  "desktop runtime owner timeline must resolve durationInputId through its stable field definition",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "item[durationInputId]",
+  "desktop runtime owner timeline must not treat durationInputId as a JSON storage key",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "action with { DurationJsonKey = DurationJsonKey(preview, action) }",
+  "Design Preview actions must prepare the storage key from their exact duration field id",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActionRuntimeValue.cs",
+  "ComponentPreviewActions.DurationJsonKey(preview, action)",
+  "Design Preview duration values must read through the prepared field storage key",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+  'key is "durationInputId" or "durationBehaviorTimingInputId"',
+  "forwarded durationInputId must remain a stable forwarded field id",
 );
 assertContains(
   "src/desktop-preview/componentCollectionResolverCommon.ts",
@@ -8796,6 +8841,71 @@ function assertModuleInstanceRuntimePayloadsMatchContracts() {
   }
 }
 
+function assertActionDurationFieldIdsAreCanonical() {
+  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  if (!existsSync(databasePath)) return;
+  const database = new Database(databasePath, { readonly: true, fileMustExist: true });
+  try {
+    const owners = database.prepare(`
+      SELECT 'Component' AS kind, id, design_preview_json FROM component_classes
+      UNION ALL
+      SELECT 'Module' AS kind, id, design_preview_json FROM modules
+      ORDER BY kind, id
+    `).all() as { kind: string; id: string; design_preview_json: string }[];
+
+    const validateActions = (
+      owner: string,
+      definitionsValue: unknown,
+      actionsValue: unknown,
+    ) => {
+      const definitions = jsonArray(definitionsValue).map(jsonRecord);
+      for (const [index, action] of jsonArray(actionsValue).map(jsonRecord).entries()) {
+        if (!Object.hasOwn(action, "durationInputId")) continue;
+        const durationInputId = action.durationInputId;
+        if (typeof durationInputId !== "string" || !durationInputId.trim()) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner} action ${index} has no valid stable durationInputId`,
+          );
+          continue;
+        }
+        const matches = definitions.filter((definition) => definition.id === durationInputId);
+        if (matches.length !== 1) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner} action ${index} durationInputId ${durationInputId} does not resolve to one exact field id`,
+          );
+          continue;
+        }
+        const durationField = matches[0]!;
+        if (typeof durationField.jsonKey !== "string" || !durationField.jsonKey.trim()) {
+          addViolation(
+            "data/desktop-editor-spike.sqlite",
+            `${owner} duration field ${durationInputId} has no explicit jsonKey`,
+          );
+        }
+      }
+    };
+
+    for (const row of owners) {
+      const preview = jsonRecord(jsonParse(row.design_preview_json));
+      validateActions(`${row.kind} ${row.id}`, preview.inputs, preview.actions);
+      for (const [index, collection] of jsonArray(preview.collections).map(jsonRecord).entries()) {
+        const collectionId = typeof collection.id === "string"
+          ? collection.id
+          : typeof collection.jsonKey === "string" ? collection.jsonKey : String(index);
+        validateActions(
+          `${row.kind} ${row.id} collection ${collectionId}`,
+          collection.fields,
+          collection.itemActions,
+        );
+      }
+    }
+  } finally {
+    database.close();
+  }
+}
+
 function assertConversationMessageActorOwnership() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
@@ -8887,6 +8997,7 @@ assertDesktopDatabaseHasNoRetiredEditorLayouts();
 assertDesktopDatabaseHasCurrentDefinitionLifecycle();
 assertDesktopRuntimeInputValueKindsAreCanonical();
 assertModuleInstanceRuntimePayloadsMatchContracts();
+assertActionDurationFieldIdsAreCanonical();
 assertConversationMessageActorOwnership();
 
 if (violations.length > 0) {

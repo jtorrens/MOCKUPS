@@ -445,6 +445,15 @@ internal static class RuntimeAnimationFrameOrigin
                     continue;
                 }
                 var actionId = JsonPath.RequiredString(action, "id", "Finite runtime action");
+                var durationInputId = JsonPath.RequiredString(
+                    action,
+                    "durationInputId",
+                    $"Finite runtime action '{actionId}'");
+                if (!fields.Any((field) => Text(field["id"]) == durationInputId))
+                {
+                    throw new InvalidOperationException(
+                        $"Finite runtime action '{actionId}' references missing duration field '{durationInputId}'.");
+                }
                 var playFieldId = action.ContainsKey("playFieldId")
                     ? JsonPath.RequiredString(action, "playFieldId", $"Finite runtime action '{actionId}'")
                     : JsonPath.RequiredString(action, "playInputId", $"Finite runtime action '{actionId}'");
@@ -479,13 +488,12 @@ internal static class RuntimeAnimationFrameOrigin
                     continue;
                 }
 
-                var durationInputId = JsonPath.RequiredString(
-                    action,
-                    "durationInputId",
-                    $"Finite runtime action '{actionId}'");
-                var duration = JsonPath.RequiredPositiveNumber(
-                    item[durationInputId],
-                    $"Finite runtime action '{actionId}' duration input '{durationInputId}'");
+                var duration = FieldValue(item, fields, durationInputId);
+                if (duration <= 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Finite runtime action '{actionId}' duration input '{durationInputId}' must be positive.");
+                }
                 if (baseEnabled)
                 {
                     lastEnd = Math.Max(lastEnd, fieldOrigin + duration);
