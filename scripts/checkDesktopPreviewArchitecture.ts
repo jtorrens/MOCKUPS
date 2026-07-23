@@ -5888,6 +5888,21 @@ assertContains(
   "public static PairFieldLabels? ReadPairLabels(",
   "Runtime Input pair labels must be validated by the shared current-definition owner",
 );
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  "NumberDefinition? Number = null,\n    PairFieldLabels? PairLabels = null,\n    string ComponentType = \"\",",
+  "Component Input binding projections must retain explicit pair labels",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "new NumberDefinition(input.Minimum, input.Maximum, input.Increment),\n                input.PairLabels,\n                input.ComponentType,",
+  "Component Variant Runtime Input bindings must retain explicit pair labels",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "PairLabels: input.PairLabels,",
+  "embedded Component Input dictionary fields must retain explicit pair labels",
+);
 for (const retiredRuntimePairLabelFallback of [
   'JsonString(item, "pairFirstLabel", "W")',
   'JsonString(item, "pairSecondLabel", "H")',

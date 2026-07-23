@@ -247,6 +247,7 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 _definition.IsEditable && Forwarding(input) is null,
                 input.DefaultValue,
                 Options: options,
+                PairLabels: input.PairLabels,
                 Number: input.Number,
                 RecordReference: input.ValueKind == ValueKind.RecordReference
                     ? new RecordReferenceDefinition(input.TableId)

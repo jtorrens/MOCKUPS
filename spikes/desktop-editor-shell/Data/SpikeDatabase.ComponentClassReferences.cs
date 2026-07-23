@@ -386,6 +386,7 @@ internal sealed partial class SpikeDatabase
                 input.DefaultValue,
                 input.Options,
                 new NumberDefinition(input.Minimum, input.Maximum, input.Increment),
+                input.PairLabels,
                 input.ComponentType,
                 input.UiGroupId,
                 input.UiGroupLabel,

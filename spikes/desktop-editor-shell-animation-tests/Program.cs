@@ -1106,7 +1106,41 @@ static void PairFieldsRequireExplicitLabels()
     foreach (var field in ComponentClassFieldCatalog.All())
     {
         AssertExplicit(field.ValueKind, field.PairLabels, $"Component field '{field.Id}'");
+        foreach (var input in field.ComponentInputBindings ?? [])
+        {
+            AssertExplicit(
+                input.ValueKind,
+                input.PairLabels,
+                $"Component field '{field.Id}' input '{input.Id}'");
+        }
     }
+
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    foreach (var variant in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant))
+    {
+        foreach (var input in database.GetComponentVariantRuntimeInputBindings(variant.Id))
+        {
+            AssertExplicit(
+                input.ValueKind,
+                input.PairLabels,
+                $"Component Variant '{variant.Id}' input '{input.Id}'");
+        }
+    }
+
+    var media = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+        && database.GetComponentClassSettings(node.Id).ComponentType == "media");
+    var mediaDefaultVariant = media.Children.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.IsProtected);
+    var viewportSize = database.GetComponentVariantRuntimeInputBindings(mediaDefaultVariant.Id)
+        .Single((input) => input.Id == "viewportSize");
+    Equal("W", Required(viewportSize.PairLabels).First);
+    Equal("H", Required(viewportSize.PairLabels).Second);
 
     var labels = PairFieldLabelsContract.Require(new PairFieldLabels("X", "Y"), "Test pair");
     Equal("X", labels.First);

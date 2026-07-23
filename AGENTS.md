@@ -131,6 +131,11 @@ If a needed control does not exist, add or extend the dictionary value kind/cont
 
 Collection editors are allowed for structured lists, but simple fields inside those collections must still use dictionary definitions and dictionary controls.
 
+Pair labels are explicit field metadata. Every generic Runtime Input or embedded
+Component binding projection must preserve them unchanged through
+`ComponentInputBindingDefinition` into the final `FieldDefinition`; do not infer
+or replace them from an id, name, type, hierarchy or position.
+
 ## Hard rule: use common UI surfaces
 
 Unless the user explicitly asks for a special treatment, new editor UI must use

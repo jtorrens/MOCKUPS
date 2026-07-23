@@ -277,6 +277,7 @@ internal static class ComponentClassFieldCatalog
             ValueKind.IntegerPair,
             ComponentInputBindingSource.Calculated,
             "220|44",
+            PairLabels: new PairFieldLabels("W", "H"),
             Number: new NumberDefinition(1, 9999, 1, 0)),
         new(
             "contentMaxWidth",
@@ -293,6 +294,7 @@ internal static class ComponentClassFieldCatalog
             ValueKind.IntegerPair,
             ComponentInputBindingSource.Calculated,
             "220|44",
+            PairLabels: new PairFieldLabels("W", "Min H"),
             Number: new NumberDefinition(1, 9999, 1, 0)),
     ];
 

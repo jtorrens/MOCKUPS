@@ -96,7 +96,9 @@ service query persistence or interpret Icon Theme records.
   invalid or incomplete interactive text remains a draft and is never committed
   as zero or a clamped boundary value.
 - pair labels are explicit `FieldDefinition`/Runtime contract metadata and are
-  never inferred from field ids, JSON keys, kinds, hierarchy or position.
+  never inferred from field ids, JSON keys, kinds, hierarchy or position;
+  every generic projection through `ComponentInputBindingDefinition` preserves
+  those labels unchanged before constructing the nested dictionary field.
 - Preview resolution still completes before the generic bridge and renderer.
 
 ## 5. Enforcement and tests

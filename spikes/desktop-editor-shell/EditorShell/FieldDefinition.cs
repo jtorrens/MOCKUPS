@@ -104,6 +104,7 @@ internal sealed record ComponentInputBindingDefinition(
     string DefaultValue = "",
     IReadOnlyList<FieldOption>? Options = null,
     NumberDefinition? Number = null,
+    PairFieldLabels? PairLabels = null,
     string ComponentType = "",
     string UiGroupId = "",
     string UiGroupLabel = "",
