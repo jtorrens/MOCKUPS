@@ -920,3 +920,16 @@ porque ambos dejarían parte de la ambigüedad vigente.
 | Enforcement | Arrays y roots exactas fijados; casts y parsers array locales tolerantes prohibidos. |
 | Datos | Sin migración. Los system bar items current ya son objetos completos con ids estables; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Muy bajo. No cambia zona, orden ni visibilidad válidos; solo se rechaza una entry/raíz incompleta antes de proyectarla. |
+
+## Slice 1.67 — Theme Motion exacto en Collection Stack
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Las dos rutas de Reflow convertían `theme.motion` wrong-root en `{}` y fallaban después por un miembro, manteniendo una frontera tolerante duplicada. |
+| Owner | El Theme payload posee `motion`; Collection Stack solo consume reflow duration/easing/intensity para su proyección válida. |
+| Cambio mínimo | Requerir el objeto en distribución explícita y Reflow automático con el mismo path. |
+| Rutas eliminadas | Dos `asRecord(root.motion)`. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Flow/Stacked, exits, Reflow y Notifications current conservan sus frames. |
+| Enforcement | Ambas lecturas `requiredRecord` fijadas y el cast tolerante prohibido. |
+| Datos | Sin migración. Todos los Themes current declaran motion; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. No cambia timing válido; solo se elimina una segunda aceptación de raíz incorrecta. |

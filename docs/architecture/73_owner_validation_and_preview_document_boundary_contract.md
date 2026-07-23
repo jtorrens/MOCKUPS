@@ -330,6 +330,12 @@ projection/sorting; non-object entries do not become partial items and zone
 order never supplies identity. Existing hidden `off` items remain complete
 authored items rather than being filtered before validation.
 
+Collection Stack Reflow requires the current Theme `motion` object in both
+explicit distribution transitions and automatic item reflow. A missing or
+wrong-root motion document is not an empty Theme awaiting duration/easing
+fallbacks. Collection Stack continues to own only Reflow selection; Theme
+timing vocabulary remains in the shared motion helpers/contracts.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -632,6 +638,8 @@ Architecture enforcement must verify:
   before resolving atomic visuals.
 - Status/Navigation Bar require exact layout/gesture/item documents and retain
   stable item identity before visibility and zone ordering.
+- Collection Stack requires the exact Theme motion object for every Reflow
+  calculation without changing its owner-relative item timing.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

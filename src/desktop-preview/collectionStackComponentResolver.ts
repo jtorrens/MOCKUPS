@@ -1,6 +1,6 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveComponentCollectionItems } from "./componentCollectionResolverCommon.js";
-import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredString } from "./componentResolverCommon.js";
+import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type {
   CollectionStackDesignContract,
   CollectionStackDirection,
@@ -8,7 +8,6 @@ import type {
   CollectionStackItemSizingMode,
 } from "./collectionStackComponentContract.js";
 import type { ComponentCollectionSizingMode } from "./componentCollectionContract.js";
-import { asRecord } from "./componentResolverCommon.js";
 import { easingProgress } from "./previewMotionHelpers.js";
 
 export function resolveCollectionStackComponent(payload: DesignPreviewPayload): CollectionStackDesignContract {
@@ -61,7 +60,7 @@ function resolveDistributionReflow(
   const fromDistributionMode = optionalString(preview, "distributionFrom");
   if (fromDistributionMode !== "flow" && fromDistributionMode !== "stacked") return undefined;
   const root = parseObject(payload.themeTokensJson);
-  const motion = asRecord(root.motion);
+  const motion = requiredRecord(root, "motion", "theme.motion");
   const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
   const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
   const intensity = optionalNumber(motion, "reflowIntensity", 1);
@@ -78,7 +77,7 @@ function resolveReflow(
   allItems: CollectionStackDesignContract["items"],
 ) {
   const root = parseObject(payload.themeTokensJson);
-  const motion = asRecord(root.motion);
+  const motion = requiredRecord(root, "motion", "theme.motion");
   const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
   const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
   const durationFrames = Math.max(0, durationMs / 1000 * Math.max(1, payload.frameRate));

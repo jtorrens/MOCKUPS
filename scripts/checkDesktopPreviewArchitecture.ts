@@ -7755,6 +7755,16 @@ for (const [file, forbidden] of [
   );
 }
 assertContains(
+  "src/desktop-preview/collectionStackComponentResolver.ts",
+  'const motion = requiredRecord(root, "motion", "theme.motion");',
+  "Collection Stack Reflow must require the Theme motion object",
+);
+assertDoesNotContain(
+  "src/desktop-preview/collectionStackComponentResolver.ts",
+  "asRecord(root.motion)",
+  "Collection Stack Reflow must not coerce an invalid Theme motion root",
+);
+assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
