@@ -5252,6 +5252,37 @@ for (const inferredEmbeddedRuntimeIdentity of [
     `embedded collection animation must not infer a field from '${inferredEmbeddedRuntimeIdentity}'`,
   );
 }
+for (const requiredEmbeddedCollectionDocumentTerm of [
+  'requiredObjectArray(preview, "items", `${ownerPath} runtime`)',
+  'requiredRecord(item, "overrides", `${itemPath}.overrides`)',
+]) {
+  assertContains(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    requiredEmbeddedCollectionDocumentTerm,
+    `embedded collection items must keep exact document rule '${requiredEmbeddedCollectionDocumentTerm}'`,
+  );
+}
+for (const requiredComponentStackDocumentTerm of [
+  'requiredObjectArray(preview, "items", "componentStack runtime")',
+  'requiredObjectArray(slot, "alternatives", `${path} states`)',
+]) {
+  assertContains(
+    "src/desktop-preview/componentStackComponentResolver.ts",
+    requiredComponentStackDocumentTerm,
+    `Component Stack must keep exact document rule '${requiredComponentStackDocumentTerm}'`,
+  );
+}
+for (const filteredEmbeddedCollectionDocument of [
+  ["src/desktop-preview/componentCollectionResolverCommon.ts", "asRecord(rawItem)"],
+  ["src/desktop-preview/componentCollectionResolverCommon.ts", "asRecord(item.overrides)"],
+  ["src/desktop-preview/componentStackComponentResolver.ts", "slot.alternatives.map(asRecord)"],
+] as const) {
+  assertDoesNotContain(
+    filteredEmbeddedCollectionDocument[0],
+    filteredEmbeddedCollectionDocument[1],
+    `${filteredEmbeddedCollectionDocument[0]} must not repair '${filteredEmbeddedCollectionDocument[1]}'`,
+  );
+}
 for (const requiredEmbeddedActionBoundaryTerm of [
   'optionalObjectArray(values, "actions", "component collection embedded Runtime contract")',
   'requiredString(action, "label", `${path}.label`)',
@@ -6904,6 +6935,11 @@ assertContains(
   "src/desktop-preview/previewJsonHelpers.ts",
   "export function optionalObjectArray(",
   "web payload consumers must share one strict optional object-array boundary",
+);
+assertContains(
+  "src/desktop-preview/previewJsonHelpers.ts",
+  "export function requiredObjectArray(",
+  "required web object arrays must reuse the strict shared Preview JSON boundary",
 );
 assertContains(
   "src/desktop-preview/runtimeOwnerTimeline.ts",

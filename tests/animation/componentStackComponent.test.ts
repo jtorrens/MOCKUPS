@@ -101,6 +101,28 @@ test("Component Stack resolves ordered Replace and Overlay states deterministica
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "notification"]);
 });
 
+test("Component Stack rejects malformed slot, State and Overrides documents", () => {
+  const source = payload([alternative("clock", "stub::variant::clock", true)]);
+  const original = JSON.parse(source.designPreviewJson) as { items: Record<string, unknown>[] };
+  const resolveItems = (items: unknown) => resolveComponentStackComponent({
+    ...source,
+    designPreviewJson: JSON.stringify({ ...original, items }),
+  });
+  const slot = original.items[0]!;
+  const state = (slot.alternatives as Record<string, unknown>[])[0]!;
+  for (const [label, slotItems] of [
+    ["null slots", null],
+    ["wrong slots root", {}],
+    ["non-object slot", [null]],
+    ["null States", [{ ...slot, alternatives: null }]],
+    ["wrong States root", [{ ...slot, alternatives: {} }]],
+    ["non-object State", [{ ...slot, alternatives: [null] }]],
+    ["wrong State Overrides root", [{ ...slot, alternatives: [{ ...state, overrides: [] }] }]],
+  ] as const) {
+    assert.throws(() => resolveItems(slotItems), label);
+  }
+});
+
 test("an explicit empty Replace state clears the slot", () => {
   const resolved = resolveComponentStackComponent(payload([
     alternative("clock", "stub::variant::clock", false),

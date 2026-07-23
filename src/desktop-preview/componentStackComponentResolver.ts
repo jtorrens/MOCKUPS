@@ -9,6 +9,7 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import type {
   ComponentStackAlternativeContract,
@@ -24,13 +25,13 @@ export function resolveComponentStackComponent(payload: DesignPreviewPayload): C
   if (sizingMode !== "fill" && sizingMode !== "content") {
     throw new Error(`Unsupported component stack sizing mode ${sizingMode}`);
   }
-  if (!Array.isArray(preview.items)) throw new Error("Missing componentStack runtime slots");
   return {
     id: "componentStack",
     sizingMode: sizingMode as ComponentStackSizingMode,
     startGapToken: requiredString(preview, "startGapToken", "componentStack.runtime.startGapToken"),
     endGapToken: requiredString(preview, "endGapToken", "componentStack.runtime.endGapToken"),
-    slots: preview.items.map((rawSlot, index) => resolveSlot(payload, asRecord(rawSlot), index)),
+    slots: requiredObjectArray(preview, "items", "componentStack runtime")
+      .map((slot, index) => resolveSlot(payload, slot, index)),
   };
 }
 
@@ -45,11 +46,10 @@ function resolveSlot(
   if (gapBeforeMode !== "fixed" && gapBeforeMode !== "reflow") {
     throw new Error(`Unsupported componentStack gap-before mode ${gapBeforeMode}`);
   }
-  if (!Array.isArray(slot.alternatives)) throw new Error(`Missing Component Stack states at ${path}.alternatives`);
-  const rawAlternatives = slot.alternatives.map(asRecord);
+  const rawAlternatives = requiredObjectArray(slot, "alternatives", `${path} states`);
   const alternatives = rawAlternatives.map((rawAlternative, alternativeIndex) => resolveAlternative(
     payload,
-    asRecord(rawAlternative),
+    rawAlternative,
     alternativeIndex,
     path,
     gapBeforeMode as ComponentStackGapMode,

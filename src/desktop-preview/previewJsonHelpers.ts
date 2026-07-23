@@ -42,3 +42,14 @@ export function optionalObjectArray(
     return entry;
   });
 }
+
+export function requiredObjectArray(
+  owner: JsonRecord,
+  key: string,
+  path: string,
+): JsonRecord[] {
+  if (!Object.hasOwn(owner, key)) {
+    throw new Error(`${path} '${key}' is required`);
+  }
+  return optionalObjectArray(owner, key, path);
+}

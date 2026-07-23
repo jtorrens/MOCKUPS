@@ -149,6 +149,37 @@ test("Stacked distribution resolves to fit-content even when stale runtime sizin
   assert.equal(resolved.sizingMode, "content");
 });
 
+test("Collection Stack rejects malformed item and Overrides documents", () => {
+  const item = {
+    id: "notice", variantReference: "stub::variant::notice", overrides: {}, inputs: {}, present: true,
+    presenceMotion: { transition: "none", direction: "bottom", bounds: "parent", fade: false, translate: false, scale: false },
+    alignment: "center", gapBeforeMode: "fixed",
+    gapBeforeToken: "theme.spacing.none", gapBeforeWeight: 1,
+  };
+  const resolve = (runtimeItems: unknown) => resolveCollectionStackComponent({
+    ...payload,
+    componentBaseConfigsJson: JSON.stringify({
+      variantTypes: { "stub::variant::notice": "stub" },
+      variants: { "stub::variant::notice": {} },
+    }),
+    designPreviewJson: JSON.stringify({
+      distributionMode: "flow", sizingMode: "content",
+      startGapToken: "theme.spacing.none", endGapToken: "theme.spacing.none",
+      stackDirection: "down", stackOffsetToken: "theme.spacing.m",
+      itemSizingMode: "intrinsic", scaleRatio: 1, opacityRatio: 1,
+      items: runtimeItems,
+    }),
+  });
+  for (const [label, runtimeItems] of [
+    ["null items", null],
+    ["wrong items root", {}],
+    ["non-object item", [null]],
+    ["wrong Overrides root", [{ ...item, overrides: [] }]],
+  ] as const) {
+    assert.throws(() => resolve(runtimeItems), label);
+  }
+});
+
 test("Present keeps an outgoing item through its exit and starts Reflow afterwards", () => {
   const item = (id: string) => ({
     id,

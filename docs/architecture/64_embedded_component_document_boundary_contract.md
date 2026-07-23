@@ -90,6 +90,10 @@ call the general database facade.
   explicit empty sentinel used by a visual-empty State), an Overrides object
   and an Inputs object. Existing items are validated by the shared document
   owner; presentation, Usage and Preview do not filter or manufacture them.
+- Preview uses the same exact array-of-object boundary for Collection Stack
+  items, Component Stack slots and their nested States. Every non-empty visual
+  State retains object Inputs and Overrides; a wrong array entry or Overrides
+  root never becomes an empty local override at the resolver.
 - Runtime Test Values and Production payload ownership do not change.
 - Forwarding remains explicit. Embedded Preview animation addresses only
   complete declared Runtime Input ids or an explicit forwarded id mapped to an

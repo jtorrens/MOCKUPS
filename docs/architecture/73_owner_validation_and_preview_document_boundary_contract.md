@@ -230,6 +230,12 @@ shape must preserve structural absence as an empty optional collection while
 rejecting a present wrong root or any non-object entry. Consumers must not
 reintroduce local filtering readers with subtly different acceptance rules.
 
+Required arrays of objects use the same shared reader after first requiring the
+member's structural presence. Collection Stack items, Component Stack slots and
+nested States use that boundary. Their visual Component Inputs and Overrides
+remain required objects; neither an invalid collection entry nor a wrong-root
+Overrides member is converted to `{}` before Variant resolution.
+
 Embedded Component collection inputs use that exact boundary for their Runtime
 Input definitions. Every definition has a unique non-empty id and JSON key.
 Only a declared value or a value explicitly named by forwarding is eligible for

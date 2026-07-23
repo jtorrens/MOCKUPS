@@ -684,3 +684,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Reader exacto, required strings, vocabularios, conflicto de ids y booleano quedan fijados; los fallback/filter anteriores están prohibidos. |
 | Datos | Sin migración; las actions canónicas ya son documentos completos. La base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia una action válida. Este slice no decide la semántica pendiente de `durationInputId` id frente a JSON key ni añade fuentes de duración. |
+
+## Slice 1.50 — Items, Slots, States y Overrides exactos en Preview
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Collection Stack y Component Stack comprobaban la raíz de sus listas, pero convertían cada entrada no objeto con `asRecord`. Los Overrides de un Component embebido también convertían null/array/scalar en `{}`, perdiendo silenciosamente el documento local. |
+| Owner | El array estructurado posee sus entradas objeto y el embedded item owner posee Inputs/Overrides; el resolver consume esos documentos, no los repara. |
+| Cambio mínimo | Añadir el reader común required array-of-objects; aplicarlo a items, slots y States; exigir Overrides objeto antes de mezclarlo con la Variant. |
+| Rutas eliminadas | Entrada inválida → `{}` y Overrides wrong-root → ausencia de Override. |
+| Pruebas | 93/93 Preview y 116/116 escritorio: raíces null/objeto, entradas null, States inválidos y Overrides array. Typecheck, unused, arquitectura y build pasan sin avisos. |
+| Enforcement | Helper requerido y sus tres consumers quedan fijados; los maps con `asRecord` y el Override tolerante quedan prohibidos. |
+| Datos | Sin migración. Los items/States canónicos ya contienen objetos explícitos. La base permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Muy bajo. Un documento válido produce exactamente el mismo child payload; solo desaparece la reparación silenciosa. |

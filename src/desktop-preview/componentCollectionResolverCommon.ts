@@ -1,7 +1,7 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
-import { optionalObjectArray } from "./previewJsonHelpers.js";
+import { optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
@@ -18,12 +18,12 @@ export function resolveComponentCollectionItems(
   preview: Record<string, unknown>,
   ownerPath: string,
 ): ComponentCollectionItemContract[] {
-  if (!Array.isArray(preview.items)) throw new Error(`Missing ${ownerPath} runtime items`);
   const bases = parseObject(payload.componentBaseConfigsJson);
   const variantTypes = requiredRecord(bases, "variantTypes", "componentBaseConfigs.variantTypes");
-  return preview.items.map((rawItem, index) => resolveComponentCollectionItem(
+  return requiredObjectArray(preview, "items", `${ownerPath} runtime`)
+    .map((item, index) => resolveComponentCollectionItem(
     payload,
-    asRecord(rawItem),
+    item,
     `${ownerPath}.items[${index}]`,
     variantTypes,
   ));
@@ -90,7 +90,7 @@ export function resolveComponentCollectionItem(
       variantReference,
       config: mergeComponentDefaults(
         componentVariantConfig(bases, componentType, variantReference),
-        asRecord(item.overrides),
+        requiredRecord(item, "overrides", `${itemPath}.overrides`),
       ),
       alignment: alignment as ComponentCollectionAlignment,
       gapBeforeMode: gapBeforeMode as ComponentCollectionGapMode,
