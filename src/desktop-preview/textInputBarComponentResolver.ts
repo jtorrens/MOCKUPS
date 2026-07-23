@@ -46,7 +46,7 @@ export function resolveTextInputBarComponent(
   const sampleText = requiredPossiblyEmptyString(
     textBoxInputs,
     "sampleText",
-    "component.textInput.textBox.sampleText",
+    "component.textInput.textBoxInputs.sampleText",
   );
   const availableWidth = Math.max(
     1,
@@ -102,7 +102,6 @@ export function resolveTextInputBarComponent(
   const resolvedTextBox = resolveTextBoxComponentFromRecords(
     embeddedTextBoxConfig,
     {
-      ...textBoxInputs,
       sampleText,
       size: `${availableWidth}|${height}`,
       maxWidth: availableWidth,

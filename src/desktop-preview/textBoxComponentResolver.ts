@@ -14,15 +14,15 @@ import {
   requiredComponentVariantSlot,
   requiredNumber,
   requiredNumberPair,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
   requiredStringPair,
   requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveCursorComponentAtHeight } from "./cursorComponentResolver.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import { resolveConfiguredIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveTextBoxComponent(
@@ -45,10 +45,20 @@ export function resolveTextBoxComponentFromRecords(
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ): TextBoxDesignContract {
-  rejectRetiredIconRowInputs(inputs);
+  rejectVariantOwnedTextBoxInputs(inputs);
   const textBox = requiredRecord(config, "textBox", "component.textBox");
   const surfaceSlot = requiredRecord(textBox, "surfaceSlot", "component.textBox.surfaceSlot");
   const cursorSlot = requiredRecord(textBox, "cursorSlot", "component.textBox.cursorSlot");
+  const leftIconRowSlot = requiredComponentVariantSlot(
+    textBox,
+    "leftIconRowSlot",
+    "component.textBox.leftIconRowSlot",
+  );
+  const rightIconRowSlot = requiredComponentVariantSlot(
+    textBox,
+    "rightIconRowSlot",
+    "component.textBox.rightIconRowSlot",
+  );
   const dimensionMode = requiredString(
     textBox,
     "dimensionMode",
@@ -122,11 +132,15 @@ export function resolveTextBoxComponentFromRecords(
     size: { width: size.first, height: size.second },
     maxLines: Math.max(
       1,
-      Math.floor(requiredNumber(inputs, "maxLines", "component.textBox.input.maxLines")),
+      Math.floor(requiredNumber(textBox, "maxLines", "component.textBox.maxLines")),
     ),
     padding: { xToken: padding.first, yToken: padding.second },
     text: optionalString(inputs, "sampleText"),
-    placeholder: optionalString(inputs, "placeholder"),
+    placeholder: requiredPossiblyEmptyString(
+      textBox,
+      "placeholder",
+      "component.textBox.placeholder",
+    ),
     textColorToken: requiredString(
       textBox,
       "textColorToken",
@@ -151,16 +165,14 @@ export function resolveTextBoxComponentFromRecords(
       `${id}.surface`,
     ),
     cursor: resolveCursorComponentAtHeight(embeddedCursorConfig, 1, `${id}.cursor`),
-    iconGapToken: requiredString(inputs, "iconGap", "component.textBox.input.iconGap"),
+    iconGapToken: requiredString(textBox, "iconGap", "component.textBox.iconGap"),
     leftIconRow: resolveTextBoxIconRowComponentFromRecords(
-      inputs,
-      "left",
+      leftIconRowSlot,
       componentBaseConfigs,
       `${id}.leftIconRow`,
     ),
     rightIconRow: resolveTextBoxIconRowComponentFromRecords(
-      inputs,
-      "right",
+      rightIconRowSlot,
       componentBaseConfigs,
       `${id}.rightIconRow`,
     ),
@@ -185,66 +197,38 @@ function textAnimationMode(value: string | undefined): TextBoxDesignContract["te
 }
 
 function resolveTextBoxIconRowComponentFromRecords(
-  parentInputs: Record<string, unknown>,
-  side: "left" | "right",
+  iconRowSlot: { variantReference: string; overrides: Record<string, unknown> },
   componentBaseConfigs: Record<string, unknown>,
   id: string,
 ) {
-  const slotInputKey = `${side}IconRowSlot`;
-  const itemInputKey = `${side}IconRowItems`;
-  const gapInputKey = `${side}IconRowGap`;
-  const orientationInputKey = `${side}IconRowOrientation`;
-  const slotPath = `component.textBox.input.${slotInputKey}`;
-  const iconRowSlot = requiredComponentVariantSlot(parentInputs, slotInputKey, slotPath);
   const iconRowConfig = componentVariantConfig(
     componentBaseConfigs,
     "iconRow",
     iconRowSlot.variantReference,
   );
-  return resolveIconRowComponentFromRecords(
+  return resolveConfiguredIconRowComponentFromRecords(
     mergeComponentDefaults(
       iconRowConfig,
       iconRowSlot.overrides,
     ),
-    {
-      items: requiredObjectArray(
-        parentInputs,
-        itemInputKey,
-        "component.textBox input",
-      ),
-      gap: requiredString(
-        parentInputs,
-        gapInputKey,
-        `component.textBox.input.${gapInputKey}`,
-      ),
-      orientation: requiredIconRowOrientation(
-        parentInputs,
-        orientationInputKey,
-      ),
-    },
     componentBaseConfigs,
     id,
   );
 }
 
-function requiredIconRowOrientation(
-  inputs: Record<string, unknown>,
-  key: string,
-): "horizontal" | "vertical" {
-  const orientation = requiredString(
-    inputs,
-    key,
-    `component.textBox.input.${key}`,
-  );
-  if (orientation === "horizontal" || orientation === "vertical") {
-    return orientation;
-  }
-
-  throw new Error(`Unsupported icon row orientation ${orientation}`);
-}
-
-function rejectRetiredIconRowInputs(inputs: Record<string, unknown>) {
+function rejectVariantOwnedTextBoxInputs(inputs: Record<string, unknown>) {
   for (const key of [
+    "placeholder",
+    "maxLines",
+    "leftIconRowSlot",
+    "leftIconRowItems",
+    "leftIconRowGap",
+    "leftIconRowOrientation",
+    "rightIconRowSlot",
+    "rightIconRowItems",
+    "rightIconRowGap",
+    "rightIconRowOrientation",
+    "iconGap",
     "leftIcons",
     "rightIcons",
     "leftIconRowInputs",
@@ -254,7 +238,7 @@ function rejectRetiredIconRowInputs(inputs: Record<string, unknown>) {
     "iconRowOrientation",
   ]) {
     if (Object.hasOwn(inputs, key)) {
-      throw new Error(`Retired Text Box Runtime Input '${key}' is not supported`);
+      throw new Error(`Text Box Variant-owned input '${key}' is not supported at Runtime`);
     }
   }
 }

@@ -8,6 +8,21 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal static class ComponentIconRowCompositionContract
 {
+    private static readonly HashSet<string> TextBoxVariantOwnedInputKeys = new(StringComparer.Ordinal)
+    {
+        "placeholder",
+        "maxLines",
+        "leftIconRowSlot",
+        "leftIconRowItems",
+        "leftIconRowGap",
+        "leftIconRowOrientation",
+        "rightIconRowSlot",
+        "rightIconRowItems",
+        "rightIconRowGap",
+        "rightIconRowOrientation",
+        "iconGap",
+    };
+
     private static readonly HashSet<string> RetiredTextBoxInputKeys = new(StringComparer.Ordinal)
     {
         "leftIcons",
@@ -31,19 +46,36 @@ internal static class ComponentIconRowCompositionContract
                 $"{owner} contains retired Text Input Bar config outside its owning component.");
         }
 
+        if (componentType.Equals("iconRow", StringComparison.Ordinal))
+        {
+            ValidateIconRow(
+                JsonPath.RequiredObject(config, "iconRow", owner),
+                $"{owner}.iconRow");
+            return;
+        }
+
+        if (componentType.Equals("textBox", StringComparison.Ordinal))
+        {
+            ValidateTextBox(
+                JsonPath.RequiredObject(config, "textBox", owner),
+                $"{owner}.textBox");
+            return;
+        }
+
         if (componentType.Equals("textInputBar", StringComparison.Ordinal))
         {
             var textInput = JsonPath.RequiredObject(config, "textInput", owner);
-            ValidateTextBoxInputs(
+            ValidateTextBoxRuntimeForwarding(
                 JsonPath.RequiredObject(textInput, "textBoxInputs", $"{owner}.textInput"),
                 $"{owner}.textInput.textBoxInputs");
+            return;
         }
-        else if (componentType.Equals("bubble", StringComparison.Ordinal))
+
+        if (componentType.Equals("bubble", StringComparison.Ordinal)
+            && JsonPath.RequiredObject(config, "bubble", owner).ContainsKey("textBoxInputs"))
         {
-            var bubble = JsonPath.RequiredObject(config, "bubble", owner);
-            ValidateTextBoxInputs(
-                JsonPath.RequiredObject(bubble, "textBoxInputs", $"{owner}.bubble"),
-                $"{owner}.bubble.textBoxInputs");
+            throw new InvalidOperationException(
+                $"{owner} contains retired duplicated Text Box Variant inputs.");
         }
     }
 
@@ -52,19 +84,11 @@ internal static class ComponentIconRowCompositionContract
         JsonObject preview,
         string owner)
     {
-        if (componentType.Equals("textInputBar", StringComparison.Ordinal))
+        if (!componentType.Equals("textBox", StringComparison.Ordinal)
+            && !componentType.Equals("iconRow", StringComparison.Ordinal))
         {
-            foreach (var key in RetiredTextBoxInputKeys)
-            {
-                if (preview.ContainsKey(key))
-                {
-                    throw new InvalidOperationException(
-                        $"{owner} contains retired Text Box Runtime Input '{key}'.");
-                }
-            }
             return;
         }
-        if (!componentType.Equals("textBox", StringComparison.Ordinal)) return;
 
         var definitions = JsonPath.ObjectItems(
             JsonPath.RequiredArray(preview, "inputs", owner),
@@ -79,66 +103,90 @@ internal static class ComponentIconRowCompositionContract
                     $"{owner} contains duplicate Runtime Input id '{id}'.");
             }
         }
-        foreach (var key in RetiredTextBoxInputKeys)
+
+        if (componentType.Equals("textBox", StringComparison.Ordinal))
+        {
+            _ = RequireInput(byId, "sampleText", nameof(ValueKind.StringMultiline), owner);
+            foreach (var key in TextBoxVariantOwnedInputKeys)
+            {
+                if (byId.ContainsKey(key) || preview.ContainsKey(key))
+                {
+                    throw new InvalidOperationException(
+                        $"{owner} exposes Variant-owned Text Box value '{key}' as Runtime.");
+                }
+            }
+            foreach (var key in RetiredTextBoxInputKeys)
+            {
+                if (byId.ContainsKey(key) || preview.ContainsKey(key))
+                {
+                    throw new InvalidOperationException(
+                        $"{owner} contains retired Text Box Runtime Input '{key}'.");
+                }
+            }
+            return;
+        }
+
+        foreach (var key in new[] { "items", "gap", "orientation" })
         {
             if (byId.ContainsKey(key) || preview.ContainsKey(key))
             {
                 throw new InvalidOperationException(
-                    $"{owner} contains retired Text Box Runtime Input '{key}'.");
+                    $"{owner} exposes Variant-owned Icon Row value '{key}' as Runtime.");
             }
         }
-
-        foreach (var side in new[] { "left", "right" })
+        if (preview.ContainsKey("collections"))
         {
-            var slotDefinition = RequireInput(
-                byId,
-                $"{side}IconRowSlot",
-                nameof(ValueKind.ComponentVariantSlot),
-                owner);
-            ComponentVariantSlotDocumentContract.Validate(
-                RuntimeInputValueKindContract.CreateDefaultValue(
-                    slotDefinition,
-                    $"{owner} Runtime Input '{side}IconRowSlot'").AsObject(),
-                $"{owner} Runtime Input '{side}IconRowSlot' defaultValue");
-            _ = RequireInput(byId, $"{side}IconRowItems", nameof(ValueKind.IconSlots), owner);
-            _ = RequireInput(byId, $"{side}IconRowGap", nameof(ValueKind.ThemeToken), owner);
-            _ = RequireInput(byId, $"{side}IconRowOrientation", nameof(ValueKind.OptionToken), owner);
+            throw new InvalidOperationException(
+                $"{owner} exposes Variant-owned Icon Row Buttons as a Runtime collection.");
         }
-        _ = RequireInput(byId, "iconGap", nameof(ValueKind.ThemeToken), owner);
     }
 
-    private static void ValidateTextBoxInputs(JsonObject inputs, string owner)
+    private static void ValidateTextBox(JsonObject textBox, string owner)
     {
+        foreach (var side in new[] { "left", "right" })
+        {
+            ComponentVariantSlotDocumentContract.Validate(
+                JsonPath.RequiredObject(textBox, $"{side}IconRowSlot", owner),
+                $"{owner}.{side}IconRowSlot");
+        }
+        _ = JsonPath.RequiredString(textBox, "placeholder", owner);
+        _ = JsonPath.RequiredInteger(textBox, "maxLines", owner);
+        _ = JsonPath.RequiredString(textBox, "iconGap", owner);
+    }
+
+    private static void ValidateIconRow(JsonObject iconRow, string owner)
+    {
+        IconSlotsDocumentContract.Validate(
+            JsonPath.RequiredArray(iconRow, "items", owner),
+            $"{owner}.items");
+        _ = JsonPath.RequiredString(iconRow, "gap", owner);
+        var orientation = JsonPath.RequiredString(iconRow, "orientation", owner);
+        if (orientation is not "horizontal" and not "vertical")
+        {
+            throw new InvalidOperationException(
+                $"{owner} has unsupported orientation '{orientation}'.");
+        }
+    }
+
+    private static void ValidateTextBoxRuntimeForwarding(JsonObject inputs, string owner)
+    {
+        foreach (var key in TextBoxVariantOwnedInputKeys)
+        {
+            if (inputs.ContainsKey(key))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} duplicates Variant-owned Text Box value '{key}'.");
+            }
+        }
         foreach (var key in RetiredTextBoxInputKeys)
         {
             if (inputs.ContainsKey(key))
             {
                 throw new InvalidOperationException(
-                    $"{owner} contains retired Text Box Runtime Input '{key}'.");
+                    $"{owner} contains retired Text Box input '{key}'.");
             }
         }
-
-        foreach (var side in new[] { "left", "right" })
-        {
-            var slot = JsonPath.RequiredObject(inputs, $"{side}IconRowSlot", owner);
-            ComponentVariantSlotDocumentContract.Validate(
-                slot,
-                $"{owner}.{side}IconRowSlot");
-            IconSlotsDocumentContract.Validate(
-                JsonPath.RequiredArray(inputs, $"{side}IconRowItems", owner),
-                $"{owner}.{side}IconRowItems");
-            _ = JsonPath.RequiredString(inputs, $"{side}IconRowGap", owner);
-            var orientation = JsonPath.RequiredString(
-                inputs,
-                $"{side}IconRowOrientation",
-                owner);
-            if (orientation is not "horizontal" and not "vertical")
-            {
-                throw new InvalidOperationException(
-                    $"{owner} has unsupported {side} Icon Row orientation '{orientation}'.");
-            }
-        }
-        _ = JsonPath.RequiredString(inputs, "iconGap", owner);
+        _ = JsonPath.RequiredString(inputs, "sampleText", owner);
     }
 
     private static JsonObject RequireInput(

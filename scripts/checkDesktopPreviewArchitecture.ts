@@ -9092,21 +9092,23 @@ function assertConversationMessageActorOwnership() {
 function assertStructuredTextBoxIconRowsAreCanonical() {
   for (const requiredTextBoxBoundary of [
     'requiredRecord(config, "textBox", "component.textBox")',
-    "requiredComponentVariantSlot(parentInputs, slotInputKey, slotPath)",
-    "requiredObjectArray(",
-    "iconRowSlot.overrides",
-    "rejectRetiredIconRowInputs(inputs)",
+    '"leftIconRowSlot"',
+    '"rightIconRowSlot"',
+    "resolveConfiguredIconRowComponentFromRecords(",
+    "rejectVariantOwnedTextBoxInputs(inputs)",
   ]) {
     assertContains(
       "src/desktop-preview/textBoxComponentResolver.ts",
       requiredTextBoxBoundary,
-      `Text Box Icon Rows must preserve the exact structured boundary (${requiredTextBoxBoundary})`,
+      `Text Box must resolve Icon Rows from its exact Variant boundary (${requiredTextBoxBoundary})`,
     );
   }
   for (const retiredTextBoxInference of [
     "iconRowInputsFromParent",
     "textBoxIconRowInputs",
     "resolveOptionalIconRowComponentFromRecords",
+    "leftIconRowItems:",
+    "rightIconRowItems:",
     ".endsWith(",
     "button_${String(index",
   ]) {
@@ -9119,30 +9121,40 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
   for (const requiredTextInputBoundary of [
     'requiredRecord(config, "textInput", "component.textInput")',
     'requiredRecord(\n    textInput,\n    "textBoxInputs",',
-    "...textBoxInputs",
+    '"sampleText"',
   ]) {
     assertContains(
       "src/desktop-preview/textInputBarComponentResolver.ts",
       requiredTextInputBoundary,
-      `Text Input Bar must forward the exact Text Box input document (${requiredTextInputBoundary})`,
+      `Text Input Bar must keep only its explicit Text runtime forwarding (${requiredTextInputBoundary})`,
     );
   }
-  for (const retiredTextInputTranslation of [
+  for (const retiredParentDuplication of [
     "iconRowInputsForTextBox",
-    "requiredIconList",
-    "asRecord(",
+    "...textBoxInputs",
+    '"textBoxInputs",\n    "component.bubble.textBoxInputs"',
   ]) {
     assertDoesNotContain(
-      "src/desktop-preview/textInputBarComponentResolver.ts",
-      retiredTextInputTranslation,
-      `Text Input Bar must not rebuild or coerce Text Box Icon Rows (${retiredTextInputTranslation})`,
+      retiredParentDuplication.includes("component.bubble")
+        ? "src/desktop-preview/bubbleComponentResolver.ts"
+        : "src/desktop-preview/textInputBarComponentResolver.ts",
+      retiredParentDuplication,
+      `parents must not duplicate Text Box Variant values (${retiredParentDuplication})`,
     );
   }
-  assertContains(
-    "src/desktop-preview/bubbleComponentResolver.ts",
-    'requiredRecord(\n    bubble,\n    "textBoxInputs",',
-    "Bubble must own complete explicit Text Box child inputs",
-  );
+  for (const requiredVariantField of [
+    '"component.textBox.leftIconRow.editor"',
+    '"component.textBox.rightIconRow.editor"',
+    '"component.textBox.iconGap"',
+    '"component.textBox.maxLines"',
+    '"component.iconRow.items"',
+  ]) {
+    assertContains(
+      "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+      requiredVariantField,
+      `Text Box and Icon Row Variant ownership requires ${requiredVariantField}`,
+    );
+  }
   for (const requiredIconSlotsEditorBoundary of [
     "CreateButtonVariantControl(",
     "_openRuntimeComponentOverrides(",
@@ -9198,7 +9210,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
   assertContains(
     "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
     "input.ValueKind == ValueKind.ComponentVariantSlot",
-    "Usage must discover exact references and Overrides owned by Component Variant Slot values",
+    "Usage must retain generic exact references and Overrides for Component Variant Slot values",
   );
 
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
@@ -9214,7 +9226,18 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       design_preview_json: string;
       metadata_json: string;
     }[];
-    const retiredKeys = [
+    const variantOwnedInputKeys = [
+      "placeholder",
+      "maxLines",
+      "leftIconRowSlot",
+      "leftIconRowItems",
+      "leftIconRowGap",
+      "leftIconRowOrientation",
+      "rightIconRowSlot",
+      "rightIconRowItems",
+      "rightIconRowGap",
+      "rightIconRowOrientation",
+      "iconGap",
       "leftIcons",
       "rightIcons",
       "leftIconRowInputs",
@@ -9236,65 +9259,89 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       "text",
       "textSizeToken",
     ];
-    const validateTextBoxInputs = (owner: string, value: unknown) => {
-      const inputs = jsonRecord(value);
-      for (const key of retiredKeys) {
-        if (Object.hasOwn(inputs, key)) {
-          addViolation("data/desktop-editor-spike.sqlite", `${owner} retains retired Text Box input ${key}`);
+    const validateSlot = (owner: string, value: unknown) => {
+      const slot = jsonRecord(value);
+      const keys = Object.keys(slot).sort();
+      if (keys.length !== 2
+          || keys[0] !== "overrides"
+          || keys[1] !== "variantReference"
+          || typeof slot.variantReference !== "string"
+          || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(slot.variantReference)
+          || !slot.overrides
+          || Array.isArray(slot.overrides)
+          || typeof slot.overrides !== "object") {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} is not an exact Component Variant slot`);
+      }
+    };
+    const validateItems = (owner: string, value: unknown) => {
+      if (!Array.isArray(value)) {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} is not an Icon Slots array`);
+        return;
+      }
+      const ids = new Set<string>();
+      for (const [index, rawItem] of value.entries()) {
+        const item = jsonRecord(rawItem);
+        const keys = Object.keys(item).sort();
+        if (keys.length !== exactItemKeys.length
+            || keys.some((key, keyIndex) => key !== exactItemKeys[keyIndex])) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] is not an exact current item`);
+        }
+        if (typeof item.id !== "string" || !item.id || ids.has(item.id)) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no unique stable id`);
+        } else {
+          ids.add(item.id);
+        }
+        if (typeof item.buttonVariantReference !== "string"
+            || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(item.buttonVariantReference)
+            || !item.buttonOverrides
+            || Array.isArray(item.buttonOverrides)
+            || typeof item.buttonOverrides !== "object") {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner}[${index}] has no full Button Variant and local Overrides`);
         }
       }
+    };
+    const validateTextBoxConfig = (owner: string, value: unknown) => {
+      const textBox = jsonRecord(value);
       for (const side of ["left", "right"]) {
-        const slot = jsonRecord(inputs[`${side}IconRowSlot`]);
-        if (typeof slot.variantReference !== "string"
-            || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(slot.variantReference)
-            || !slot.overrides
-            || Array.isArray(slot.overrides)
-            || typeof slot.overrides !== "object") {
-          addViolation("data/desktop-editor-spike.sqlite", `${owner} has an incomplete ${side} Icon Row slot`);
-        }
-        const items = inputs[`${side}IconRowItems`];
-        if (!Array.isArray(items)) {
-          addViolation("data/desktop-editor-spike.sqlite", `${owner} has no exact ${side} Icon Row items array`);
-          continue;
-        }
-        const ids = new Set<string>();
-        for (const [index, rawItem] of items.entries()) {
-          const item = jsonRecord(rawItem);
-          const keys = Object.keys(item).sort();
-          if (keys.length !== exactItemKeys.length
-              || keys.some((key, keyIndex) => key !== exactItemKeys[keyIndex])) {
-            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} is not an exact current item`);
-          }
-          if (typeof item.id !== "string" || !item.id || ids.has(item.id)) {
-            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} has no unique stable id`);
-          } else {
-            ids.add(item.id);
-          }
-          if (typeof item.buttonVariantReference !== "string"
-              || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(item.buttonVariantReference)
-              || !item.buttonOverrides
-              || Array.isArray(item.buttonOverrides)
-              || typeof item.buttonOverrides !== "object") {
-            addViolation("data/desktop-editor-spike.sqlite", `${owner} ${side} Icon Row item ${index} has no full Button Variant and local Overrides`);
-          }
-        }
-        if (typeof inputs[`${side}IconRowGap`] !== "string"
-            || !["horizontal", "vertical"].includes(String(inputs[`${side}IconRowOrientation`]))) {
-          addViolation("data/desktop-editor-spike.sqlite", `${owner} has incomplete ${side} Icon Row layout inputs`);
-        }
+        validateSlot(`${owner}.${side}IconRowSlot`, textBox[`${side}IconRowSlot`]);
       }
-      if (typeof inputs.iconGap !== "string") {
-        addViolation("data/desktop-editor-spike.sqlite", `${owner} has no explicit gap from Icon Rows to text`);
+      if (typeof textBox.placeholder !== "string"
+          || typeof textBox.maxLines !== "number"
+          || typeof textBox.iconGap !== "string") {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} has incomplete Variant-owned Text Box values`);
+      }
+    };
+    const validateIconRowConfig = (owner: string, value: unknown) => {
+      const iconRow = jsonRecord(value);
+      validateItems(`${owner}.items`, iconRow.items);
+      if (typeof iconRow.gap !== "string"
+          || !["horizontal", "vertical"].includes(String(iconRow.orientation))) {
+        addViolation("data/desktop-editor-spike.sqlite", `${owner} has incomplete Variant-owned layout`);
       }
     };
     const validateConfig = (row: (typeof rows)[number], config: Record<string, unknown>, owner: string) => {
       if (row.component_type !== "textInputBar" && Object.hasOwn(config, "textInput")) {
         addViolation("data/desktop-editor-spike.sqlite", `${owner} retains foreign Text Input Bar config`);
       }
+      if (row.component_type === "textBox") {
+        validateTextBoxConfig(`${owner}.textBox`, config.textBox);
+      } else if (row.component_type === "iconRow") {
+        validateIconRowConfig(`${owner}.iconRow`, config.iconRow);
+      }
       if (row.component_type === "textInputBar") {
-        validateTextBoxInputs(`${owner}.textInput.textBoxInputs`, jsonRecord(config.textInput).textBoxInputs);
+        const inputs = jsonRecord(jsonRecord(config.textInput).textBoxInputs);
+        for (const key of variantOwnedInputKeys) {
+          if (Object.hasOwn(inputs, key)) {
+            addViolation("data/desktop-editor-spike.sqlite", `${owner}.textInput.textBoxInputs duplicates Variant-owned ${key}`);
+          }
+        }
+        if (typeof inputs.sampleText !== "string") {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner}.textInput.textBoxInputs has no Runtime text`);
+        }
       } else if (row.component_type === "bubble") {
-        validateTextBoxInputs(`${owner}.bubble.textBoxInputs`, jsonRecord(config.bubble).textBoxInputs);
+        if (Object.hasOwn(jsonRecord(config.bubble), "textBoxInputs")) {
+          addViolation("data/desktop-editor-spike.sqlite", `${owner}.bubble retains duplicated Text Box inputs`);
+        }
       }
     };
 
@@ -9312,49 +9359,49 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       if (row.component_type === "textBox") {
         const inputs = jsonArray(preview.inputs).map(jsonRecord);
         const byId = new Map(inputs.map((input) => [String(input.id), input]));
-        for (const side of ["left", "right"]) {
-          for (const [suffix, valueKind] of [
-            ["IconRowSlot", "ComponentVariantSlot"],
-            ["IconRowItems", "IconSlots"],
-            ["IconRowGap", "ThemeToken"],
-            ["IconRowOrientation", "OptionToken"],
-          ]) {
-            const id = `${side}${suffix}`;
-            const input = byId.get(id);
-            if (!input || input.jsonKey !== id || input.valueKind !== valueKind) {
-              addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview has no exact ${id} Runtime Input`);
-            }
-            if (suffix === "IconRowSlot") {
-              const defaultSlot = jsonRecord(jsonParse(String(input?.defaultValue ?? "")));
-              const keys = Object.keys(defaultSlot).sort();
-              if (input?.kind !== "componentVariantSlot"
-                  || keys.length !== 2
-                  || keys[0] !== "overrides"
-                  || keys[1] !== "variantReference"
-                  || typeof defaultSlot.variantReference !== "string"
-                  || !/^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(defaultSlot.variantReference)
-                  || !defaultSlot.overrides
-                  || Array.isArray(defaultSlot.overrides)
-                  || typeof defaultSlot.overrides !== "object") {
-                addViolation(
-                  "data/desktop-editor-spike.sqlite",
-                  `Text Box Design Preview ${id} must use one exact Component Variant Slot default`,
-                );
-              }
-            }
-          }
+        const sampleText = byId.get("sampleText");
+        if (!sampleText || sampleText.valueKind !== "StringMultiline") {
+          addViolation("data/desktop-editor-spike.sqlite", "Text Box Design Preview has no Runtime text input");
         }
-        for (const key of retiredKeys) {
+        for (const key of variantOwnedInputKeys) {
           if (byId.has(key) || Object.hasOwn(preview, key)) {
-            addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview retains retired Runtime Input ${key}`);
+            addViolation("data/desktop-editor-spike.sqlite", `Text Box Design Preview exposes Variant-owned ${key} as Runtime`);
           }
         }
       }
-      if (row.component_type === "textInputBar") {
-        for (const key of retiredKeys) {
-          if (Object.hasOwn(preview, key)) {
-            addViolation("data/desktop-editor-spike.sqlite", `Text Input Bar Design Preview retains retired value ${key}`);
+      if (row.component_type === "iconRow") {
+        const inputIds = new Set(jsonArray(preview.inputs).map((input) => String(jsonRecord(input).id)));
+        for (const key of ["items", "gap", "orientation", "collections"]) {
+          if (inputIds.has(key) || Object.hasOwn(preview, key)) {
+            addViolation("data/desktop-editor-spike.sqlite", `Icon Row Design Preview exposes Variant-owned ${key} as Runtime`);
           }
+        }
+      }
+    }
+
+    const layouts = new Map(
+      (database.prepare(
+        "SELECT record_class_id, layout_json FROM editor_layouts WHERE record_class_id IN ('component.textBox', 'component.iconRow')",
+      ).all() as { record_class_id: string; layout_json: string }[])
+        .map((row) => [row.record_class_id, row.layout_json]),
+    );
+    for (const [recordClassId, fieldIds] of [
+      ["component.textBox", [
+        "component.textBox.leftIconRow.editor",
+        "component.textBox.rightIconRow.editor",
+        "component.textBox.iconGap",
+        "component.textBox.maxLines",
+      ]],
+      ["component.iconRow", [
+        "component.iconRow.items",
+        "component.iconRow.gap",
+        "component.iconRow.orientation",
+      ]],
+    ] as const) {
+      const layout = layouts.get(recordClassId) ?? "";
+      for (const fieldId of fieldIds) {
+        if (!layout.includes(`"id": "${fieldId}"`)) {
+          addViolation("data/desktop-editor-spike.sqlite", `${recordClassId} layout is missing ${fieldId}`);
         }
       }
     }

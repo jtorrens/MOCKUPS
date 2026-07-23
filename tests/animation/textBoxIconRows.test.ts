@@ -52,6 +52,7 @@ const bases = {
       iconRow: {
         orientation: "horizontal",
         gap: "theme.spacing.s",
+        items: [],
         sizeSource: "shared",
         iconSizeToken: "theme.iconSizes.m",
         textSizeToken: "theme.typography.sizes.s",
@@ -84,35 +85,41 @@ const config = {
     },
     textAlign: "left",
     overflowMode: "clip",
+    placeholder: "Message",
+    maxLines: 4,
+    iconGap: "theme.spacing.m",
+    leftIconRowSlot: {
+      variantReference: iconRowVariantReference,
+      overrides: {
+        iconRow: {
+          gap: "theme.spacing.s",
+          orientation: "horizontal",
+          items: [],
+        },
+      },
+    },
+    rightIconRowSlot: {
+      variantReference: iconRowVariantReference,
+      overrides: {
+        iconRow: {
+          gap: "theme.spacing.m",
+          orientation: "vertical",
+          items: [],
+        },
+      },
+    },
   },
 };
 
 function inputs() {
   return {
     sampleText: "Message",
-    placeholder: "Message",
-    maxLines: 4,
-    leftIconRowSlot: {
-      variantReference: iconRowVariantReference,
-      overrides: {},
-    },
-    leftIconRowItems: [],
-    leftIconRowGap: "theme.spacing.s",
-    leftIconRowOrientation: "horizontal",
-    rightIconRowSlot: {
-      variantReference: iconRowVariantReference,
-      overrides: {},
-    },
-    rightIconRowItems: [],
-    rightIconRowGap: "theme.spacing.m",
-    rightIconRowOrientation: "vertical",
-    iconGap: "theme.spacing.m",
     size: "220|44",
     maxWidth: 220,
   };
 }
 
-test("Text Box resolves both Icon Row boundaries from exact structured inputs", () => {
+test("Text Box resolves both Icon Row boundaries from its Variant slots", () => {
   const resolved = resolveTextBoxComponentFromRecords(
     config,
     inputs(),
@@ -129,7 +136,6 @@ test("Text Box resolves both Icon Row boundaries from exact structured inputs", 
 });
 
 test("Text Box requires complete Icon Row slots even when their item lists are empty", () => {
-  const source = inputs();
   for (const invalidSlot of [undefined, null, [], {}, {
     variantReference: iconRowVariantReference,
   }, {
@@ -143,17 +149,30 @@ test("Text Box requires complete Icon Row slots even when their item lists are e
     overrides: {},
     componentType: "iconRow",
   }]) {
+    const invalidConfig = structuredClone(config);
+    invalidConfig.textBox.leftIconRowSlot = invalidSlot as never;
     assert.throws(() => resolveTextBoxComponentFromRecords(
-      config,
-      { ...source, leftIconRowSlot: invalidSlot },
+      invalidConfig,
+      inputs(),
       bases,
       "component.textBox",
     ));
   }
 });
 
-test("Text Box rejects every retired flat or compatibility Icon Row input", () => {
+test("Text Box rejects Variant-owned values at its Runtime boundary", () => {
   for (const retired of [
+    "placeholder",
+    "maxLines",
+    "leftIconRowSlot",
+    "leftIconRowItems",
+    "leftIconRowGap",
+    "leftIconRowOrientation",
+    "rightIconRowSlot",
+    "rightIconRowItems",
+    "rightIconRowGap",
+    "rightIconRowOrientation",
+    "iconGap",
     "leftIcons",
     "rightIcons",
     "leftIconRowInputs",

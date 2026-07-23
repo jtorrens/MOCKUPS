@@ -155,12 +155,12 @@ this index wins.
 - `76_preview_frame_clock_boundary_contract.md`: distinct current-boundary
   `payload.localFrame` and root Screen `instance.context.screenFrame` clocks,
   including strict root equality and recursive preservation.
-- `77_text_box_icon_row_composition_contract.md`: exact structured Left/Right
-  Icon Row inputs for Text Box, stable Button item identity, complete Variant
-  references, local Overrides and explicit parent forwarding.
+- `77_text_box_icon_row_composition_contract.md`: Variant-owned Text Box
+  Left/Right Icon Row slots, Icon-Row-owned Buttons/layout and the strict
+  Runtime separation.
 - `78_component_variant_slot_value_kind_contract.md`: exact shared dictionary
-  value for a full Component Variant reference plus local Overrides, including
-  strict Runtime/Test Value materialization, Usage and Text Box migration.
+  Runtime value for a genuine Runtime Component Variant reference plus local
+  Overrides; not a substitute for Variant-owned composition.
 - `27_design_production_ux_separation.md`: UX direction for separating design
   system work from shot-oriented production work.
 - `26_pc_parity_validation.md`: Mac/PC validation process.

@@ -2,155 +2,104 @@
 
 Status: normative.
 
-This contract closes the structured Icon Row decision deferred by contract 74.
-It governs the two Icon Row children embedded by Text Box, their use from Text
-Input Bar and Bubble, and the shared `IconSlots` dictionary control.
+This contract governs Icon Row ownership inside Text Box and the boundary used
+by Text Input Bar and Bubble.
 
 ## 1. Ownership
 
-Text Box owns two explicit child boundaries: Left Icon Row and Right Icon Row.
-Each boundary consists of:
+Icon Row owns its complete reusable Variant configuration:
 
-- one complete Icon Row Variant slot with `variantReference` and `overrides`;
-- one ordered `IconSlots` item array;
-- one spacing-token gap within the row;
-- one explicit `horizontal` or `vertical` orientation.
+- ordered `items`;
+- row `gap`;
+- row `orientation`;
+- shared/per-Button size policy and size tokens.
 
-Text Box also owns one spacing-token gap between its Icon Rows and text.
+Each item keeps one stable id, one full Button Variant reference and explicit
+local `buttonOverrides`. Icon Row resolves every item through that concrete
+Button Variant.
 
-Icon Row owns row distribution and resolves every item through the concrete
-Button Variant stored by that item. Button owns its own appearance and state
-composition. Text Input Bar and Bubble may supply complete Text Box inputs, but
-they do not recreate Button or Icon Row defaults.
+Text Box owns:
 
-## 2. Current Text Box Runtime Input document
+- one complete `leftIconRowSlot`;
+- one complete `rightIconRowSlot`;
+- the spacing-token `iconGap` between its Icon Rows and text;
+- its placeholder and maximum line count.
 
-The current Text Box boundary uses these exact stable keys:
+Each Icon Row slot contains exactly `variantReference` and `overrides`.
+Changing the selected Component or Variant clears the previous local
+Overrides. Text Box never owns a second copy of the child row's Buttons, gap,
+orientation or size settings.
 
-```text
-leftIconRowSlot
-leftIconRowItems
-leftIconRowGap
-leftIconRowOrientation
-rightIconRowSlot
-rightIconRowItems
-rightIconRowGap
-rightIconRowOrientation
-iconGap
-```
+## 2. Variant and Runtime division
 
-The retired `leftIcons`, `rightIcons`, `leftIconRowInputs`,
-`rightIconRowInputs`, `iconRowSize`, `iconRowGap` and `iconRowOrientation`
-keys are not compatibility input. A current reader rejects them.
-
-The two sides intentionally have separate gap and orientation values. Button
-icon and text sizes belong to the selected Icon Row Variant when its
-`sizeSource` is shared, or to each Button item when it is `perButton`. Text Box
-does not own or duplicate a shared Button-size field.
-
-An empty row is still a complete boundary. Its item array is empty, but its
-Icon Row Variant slot, local Overrides, gap and orientation remain required.
-
-The two slot Runtime Inputs use the shared `ComponentVariantSlot` ValueKind
-defined by
-[Component Variant Slot ValueKind Contract](78_component_variant_slot_value_kind_contract.md).
-Their serialized defaults are complete slot objects, never Variant-reference
-strings that a later resolver must expand.
-
-## 3. Current Icon Slots item
-
-Every item is one exact current object containing:
+The following values are Text Box Variant configuration:
 
 ```text
-id
-buttonVariantReference
-contentMode
-state
-iconToken
-text
-iconSizeToken
-textSizeToken
-pushTrigger
-pushElapsedMs
-buttonOverrides
+textBox.placeholder
+textBox.maxLines
+textBox.iconGap
+textBox.leftIconRowSlot
+textBox.rightIconRowSlot
 ```
 
-The `id` is non-empty and unique inside the row. It is generated once when the
-user creates the item and survives reordering.
+The following values are Icon Row Variant configuration:
 
-`buttonVariantReference` uses the full
-`componentClassId::variant::variantId` form. `buttonOverrides` is always an
-explicit object, including when empty. The supported content modes are `icon`,
-`text` and `iconText`; the supported Button states are `normal`, `active`,
-`pushed` and `disabled`.
+```text
+iconRow.items
+iconRow.gap
+iconRow.orientation
+iconRow.sizeSource
+iconRow.iconSizeToken
+iconRow.textSizeToken
+```
 
-Unknown, missing or wrong-root members fail. Readers do not manufacture ids,
-select a Button from a component name or type, search references by suffix, or
-derive identity from item position.
+Text Box Runtime/Test Values contain the actual text plus the isolated
+inspection size or maximum width. Text animation values may also enter from a
+parent Runtime boundary. Runtime does not select either Icon Row and does not
+duplicate any child Variant value.
 
-## 4. Authoring behavior
+## 3. Authoring
 
-The shared `IconSlots` dictionary control owns this structured authoring UI.
-It provides:
+The Text Box editor presents Left Icon Row and Right Icon Row through the
+ordinary embedded Component surface:
 
-- explicit Component and Variant selection for every Button item;
-- navigation to the selected Button Variant;
-- editing of item-local Button Overrides through the ordinary embedded editor;
-- icon, text, content mode and state editing;
-- stable-id-preserving reorder;
-- duplication by inserting after the selected item;
-- explicit deletion.
+- explicit Component/Variant selection;
+- navigation to the selected Icon Row Variant;
+- local `Overrides…`.
 
-Creating the first item starts with no inferred Button. The user first chooses
-the Button Component; crossing that new boundary selects that Component's
-explicit stable Default Variant. The item is persisted only after this
-selection exists.
+No Buttons, row Gap or Orientation fields appear beneath those selectors.
+Those values are edited in the selected Icon Row Variant or in its explicit
+local Overrides.
 
-Inserting after an existing item clones its complete Button Variant and local
-Overrides, then assigns a new stable item id. Changing the Button Component or
-Variant is explicit and clears the previous local Overrides so they cannot leak
-across a different Variant boundary.
+The Icon Row editor owns the shared `IconSlots` dictionary control for Buttons,
+followed by its own layout and size fields. The control preserves stable item
+ids, full Button Variant references, explicit Button Overrides, reorder,
+duplication and deletion.
 
-The control is a dictionary ValueKind owner. Text Box, Text Input Bar and other
-editors do not create local raw scalar controls for these values.
-The same control and services are used in Runtime/Test Values, including
-navigation to the selected Button Variant and editing its explicit local
-Overrides. Test Values do not introduce a reduced or preview-only Icon Row
-document.
+## 4. Parent composition
 
-Changing an Icon Row Component or Variant through the slot control clears that
-slot's previous local Overrides. This prevents an Override document owned by
-one concrete Variant from leaking across a different boundary.
+Text Input Bar selects one Text Box Variant and may customize it only through
+that slot's explicit local Overrides. It keeps one Component Input Bindings
+document for the genuine Runtime text value and its explicit forwarding
+definition; it does not persist Text Box Variant fields in that document.
 
-## 5. Parent composition
+Bubble selects one Text Box Variant and customizes placeholder, maximum lines,
+Icon Rows and spacing through the Text Box slot's local Overrides. Bubble does
+not persist a parallel `textBoxInputs` Variant document.
 
-Text Input Bar persists one complete `textInput.textBoxInputs` document using
-the exact Text Box Runtime Input keys. Its resolver forwards that document
-unchanged, adding only the parent-calculated Text Box size.
+Parents pass actual text, calculated size and animation samples to the Text Box
+Runtime boundary. They do not rebuild Icon Row config in their resolvers.
 
-Bubble persists one complete `bubble.textBoxInputs` document. Empty message
-Icon Rows are represented by complete slots and empty item arrays, not by
-missing slots or hard-coded resolver fallbacks.
+## 5. Resolution
 
-No component other than Text Input Bar may retain a foreign top-level
-`textInput` configuration object. Component-specific configuration remains
-inside its owning root.
+Text Box resolves each side in this order:
 
-## 6. Resolution boundary
+1. read the exact full Icon Row Variant reference from its Variant config;
+2. apply only that slot's explicit local Overrides;
+3. ask the Icon Row resolver to resolve its own complete config;
+4. receive standard resolved atoms.
 
-Text Box requires its config, Surface slot, Cursor slot and both complete Icon
-Row input boundaries. For each side it:
-
-1. resolves the exact Icon Row Variant reference;
-2. applies only that slot's explicit local Overrides;
-3. supplies the exact item array, gap and orientation;
-4. delegates Button resolution to Icon Row.
-
-Text Box never searches the component base-config catalog for a Button,
-converts icon-token lists into Button items, assigns positional ids or skips
-slot validation because a row is empty.
-
-The established boundary remains:
+The boundary remains:
 
 ```text
 Text Box resolver
@@ -161,41 +110,38 @@ Text Box resolver
 → generic renderer
 ```
 
-## 7. Persistence and migration
+Text Box rejects Variant-owned row values if they appear at its Runtime
+boundary. It never accepts flat icon lists, short Variant ids, missing
+Overrides, inferred Buttons or positional identity.
 
-The parity database was migrated once to the current document:
+## 6. Persistence and migration
 
-- flat icon-token lists became explicit stable Button items;
-- every stored Button reference became a full Variant reference;
-- local Button Overrides became explicit;
-- left and right row layout inputs became independent;
-- Text Input Bar's malformed duplicate forwarding member was removed;
-- foreign top-level `textInput` config was removed from non-owning components;
-- Bubble received complete empty Text Box Icon Row inputs.
-- affected local Variant history snapshots were migrated once so Restore cannot
-  reintroduce the retired foreign config.
-- the two isolated Text Box Icon Row Runtime defaults became complete
-  `ComponentVariantSlot` documents.
+The parity database was migrated once so:
 
-Normal startup, repositories, payload preparation and resolvers contain no
-migration, alias, normalization or compatibility fallback for retired keys.
-The retired permissive `asRecord` helper had no remaining active consumer
-after this migration and was removed rather than retained as a dormant
-compatibility route.
+- every Text Box config and complete Variant contains both Icon Row slots and
+  `iconGap`;
+- every Icon Row config and complete Variant contains its exact `items` array;
+- Text Input Bar's attachment Button lives in the right Icon Row local
+  Overrides;
+- Text Input Bar retains only Runtime text forwarding under `textBoxInputs`;
+- Bubble's former duplicated `textBoxInputs` document was folded into its Text
+  Box local Overrides and removed;
+- Text Box and Icon Row Design Preview documents no longer expose
+  Variant-owned values as Runtime controls;
+- the editor layouts show Icon Row selectors in Text Box and Buttons/layout in
+  Icon Row.
 
-## 8. Enforcement
+Normal startup contains no migration, fallback, normalization or dual reader.
 
-The desktop current-database validator checks the owner-specific Text Box,
-Text Input Bar and Bubble documents. `IconSlotsDocumentContract` checks the
-exact item envelope. Preview tests cover complete empty boundaries and retired
-input rejection. Architecture enforcement requires the new resolver/editor
-route, checks committed parity data and rejects the removed inference helpers.
+## 7. Enforcement
 
-The migration is complete only when the full automated suite passes, database
-validation is byte-for-byte read-only, and the final UI review confirms:
+Current database validation, Preview tests, desktop tests and architecture
+checks require the exact ownership above. The phase is complete only when:
 
-- Left and Right row cards expose structured Button items;
-- Component and Variant selection is explicit;
-- Button Overrides open and return correctly;
-- inserting, reordering and deleting preserve stable identity;
-- Text Box, Text Input Bar and Bubble Preview remain visually correct.
+- isolated Text Box, Icon Row, Text Input Bar and Bubble Previews render;
+- Text Box shows only standard Variant/navigation/Overrides controls for each
+  Icon Row;
+- Icon Row owns Buttons, Gap, Orientation and sizes;
+- the attachment Button remains visible in Text Input Bar;
+- Usage discovers the exact Variant and nested Override references;
+- opening and validating the committed database is byte-for-byte read-only.

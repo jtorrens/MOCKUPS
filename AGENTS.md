@@ -233,17 +233,20 @@ If a change appears to require `if componentType == ...` behavior in the bridge 
 
 ## Hard rule: Text Box Icon Rows are exact structured boundaries
 
-Text Box Left and Right Icon Rows use the exact current inputs declared by
-`docs/architecture/77_text_box_icon_row_composition_contract.md`. Every row
-keeps a complete Icon Row Variant slot plus explicit items, gap and
-orientation. Every item keeps a stable id, full Button Variant reference and
-explicit local `buttonOverrides`.
+Text Box Left and Right Icon Rows use the exact current ownership declared by
+`docs/architecture/77_text_box_icon_row_composition_contract.md`. Text Box
+Variants own only the two complete Icon Row slots and their gap to text. Icon
+Row Variants own their ordered items, row gap, orientation and sizes. Every
+item keeps a stable id, full Button Variant reference and explicit local
+`buttonOverrides`.
 
 Do not restore flat icon-token lists, shared Text-Box-owned Button size fields,
 suffix/type/position lookup, generated positional ids, optional empty-row
-slots or a compatibility translation. Text Input Bar and Bubble persist and
-forward complete Text Box child inputs; they do not reconstruct Icon Row
-defaults in their resolvers.
+slots or a compatibility translation. Do not expose Text Box Icon Row
+selection, items, gap or orientation as Runtime/Test Values. Text Input Bar
+keeps only explicit Runtime text forwarding; Bubble and Text Input Bar
+customize Text Box Variant values through the selected slot's explicit local
+Overrides.
 
 Any editable Runtime Input that owns both a concrete Component Variant
 reference and local Overrides uses the exact `ComponentVariantSlot` ValueKind

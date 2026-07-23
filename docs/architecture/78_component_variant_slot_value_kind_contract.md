@@ -2,9 +2,8 @@
 
 Status: normative.
 
-This contract closes the Text Box isolated-Preview failure discovered during
-the final UI review. It governs any dictionary Runtime Input whose value is one
-complete embedded Component Variant boundary rather than a reference alone.
+This contract governs any dictionary Runtime Input whose value is one complete
+embedded Component Variant boundary rather than a reference alone.
 
 ## 1. Two distinct values
 
@@ -76,15 +75,16 @@ It also follows owner-declared references inside the explicit local Overrides.
 Navigation uses the stored full reference; labels, types, suffixes and
 positions do not determine the target.
 
-## 6. Text Box migration
+## 6. Text Box is not a Runtime-slot consumer
 
-The parity database was migrated once so `leftIconRowSlot` and
-`rightIconRowSlot` in the Text Box Design Preview contract use
-`ComponentVariantSlot` and complete serialized defaults.
+Text Box Left and Right Icon Rows are Variant-owned configuration governed by
+[contract 77](77_text_box_icon_row_composition_contract.md). They use the
+ordinary embedded `ComponentVariant` field plus the exact config slot document
+and are intentionally absent from Runtime/Test Values.
 
-Text Input Bar and Bubble already stored complete child-slot objects and remain
-unchanged. No startup migration, compatibility alias or dual string/object
-reader remains.
+`ComponentVariantSlot` remains the contract for a future or existing editable
+Runtime Input that genuinely owns both selection and local Overrides. It must
+not be used to move Variant-owned composition into Runtime.
 
 ## 7. Enforcement
 
@@ -94,8 +94,8 @@ The current database validator, architecture checker and desktop tests require:
 - exact Runtime Input kind/ValueKind pairing;
 - strict slot object validation;
 - typed Usage discovery;
-- complete Left and Right Text Box slots after Test Value materialization;
-- successful isolated Text Box rendering through the ordinary web Preview.
+- strict complete slot objects wherever the Runtime ValueKind is declared;
+- no use of this Runtime ValueKind to duplicate Variant-owned composition.
 
 Validation and application startup must leave the committed database
 byte-for-byte unchanged.

@@ -88,6 +88,18 @@ internal static class EmbeddedComponentSlotCatalog
             "component.cursor",
             ["textBox", "cursorSlot"]),
         new(
+            "component.textBox.leftIconRow.editor",
+            "iconRow",
+            "Left icon row",
+            "component.iconRow",
+            ["textBox", "leftIconRowSlot"]),
+        new(
+            "component.textBox.rightIconRow.editor",
+            "iconRow",
+            "Right icon row",
+            "component.iconRow",
+            ["textBox", "rightIconRowSlot"]),
+        new(
             "component.iconBar.idleLeftIconRow.editor",
             "iconRow",
             "Idle left row",

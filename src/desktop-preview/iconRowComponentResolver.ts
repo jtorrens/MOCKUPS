@@ -6,11 +6,28 @@ import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 
 export function resolveIconRowComponent(payload: DesignPreviewPayload): IconRowDesignContract {
-  return resolveIconRowComponentFromRecords(
+  return resolveConfiguredIconRowComponentFromRecords(
     parseObject(payload.configJson),
-    parseObject(payload.designPreviewJson),
     parseObject(payload.componentBaseConfigsJson),
     "component.iconRow",
+  );
+}
+
+export function resolveConfiguredIconRowComponentFromRecords(
+  config: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  id: string,
+): IconRowDesignContract {
+  const iconRow = requiredRecord(config, "iconRow", "component.iconRow");
+  return resolveIconRowComponentFromRecords(
+    config,
+    {
+      items: requiredObjectArray(iconRow, "items", "component.iconRow"),
+      gap: requiredString(iconRow, "gap", "component.iconRow.gap"),
+      orientation: requiredString(iconRow, "orientation", "component.iconRow.orientation"),
+    },
+    componentBaseConfigs,
+    id,
   );
 }
 
