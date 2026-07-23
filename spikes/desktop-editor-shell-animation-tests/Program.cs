@@ -81,6 +81,7 @@ var tests = new (string Name, Action Run)[]
     ("keyframe drag snaps to the Screen authoring grid", KeyframeDragSnapsToScreenGrid),
     ("keyframes and tracks can be removed", KeyframesAndTracksCanBeRemoved),
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
+    ("runtime owner timeline rejects filtered contract envelopes", RuntimeOwnerTimelineRejectsFilteredEnvelopes),
     ("Screen duration policy distinguishes calculated and explicit ownership", ScreenDurationPolicyIsContractOwned),
     ("target-owned fields use target-relative origins", TargetFieldsUseRelativeOrigins),
     ("parallel collection targets share the Screen origin", ParallelCollectionTargetsShareScreenOrigin),
@@ -5173,6 +5174,111 @@ static void KeyframesAndTracksCanBeRemoved()
 static void ScreenFieldsStartAtZero()
 {
     Equal(0, RuntimeAnimationFrameOrigin.ScreenFrame(new JsonObject(), new JsonObject(), "subtitle", ""));
+}
+
+static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
+{
+    var emptyAnimation = new JsonObject();
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"collections":null}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"collections":[4]}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"inputs":{}}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        Object("""{"actions":[null]}"""),
+        new JsonObject(),
+        emptyAnimation,
+        0));
+
+    var collection = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "animationTimeline":{"preDurationFieldIds":["delay"]},
+          "fields":[{"id":"delay","jsonKey":"delay"}]
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        collection,
+        Object("""{"items":[null]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        collection,
+        Object("""{"items":[{"id":"","delay":0}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        collection,
+        Object("""{"items":{}}"""),
+        emptyAnimation,
+        0));
+
+    var wrongFields = Object("""
+        {"collections":[{"jsonKey":"items","fields":{}}]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        wrongFields,
+        Object("""{"items":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+
+    var wrongItemActions = Object("""
+        {"collections":[{"jsonKey":"items","itemActions":[null]}]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        wrongItemActions,
+        Object("""{"items":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+
+    var wrongTimeline = Object("""
+        {"collections":[{"jsonKey":"items","animationTimeline":null}]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        wrongTimeline,
+        Object("""{"items":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+
+    var projected = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "itemRuntimeContractJsonKey":"runtimeContract"
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        projected,
+        Object("""{"items":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        projected,
+        Object("""{"items":[{"id":"item","runtimeContract":{"inputs":null}}]}"""),
+        emptyAnimation,
+        0));
+
+    var wrongTimelineLists = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "animationTimeline":{"postDurationFieldIds":["hold",4]},
+          "fields":[{"id":"hold","jsonKey":"hold"}]
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        wrongTimelineLists,
+        Object("""{"items":[{"id":"item","hold":0}]}"""),
+        emptyAnimation,
+        0));
 }
 
 static void ScreenDurationPolicyIsContractOwned()

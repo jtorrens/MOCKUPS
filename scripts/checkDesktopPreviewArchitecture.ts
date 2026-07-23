@@ -6767,6 +6767,35 @@ assertContains(
   "the generic preview owner timeline must support late fields that do not advance collection sequencing",
 );
 assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract")',
+  "the desktop owner timeline must preserve optional absence but reject a present invalid collections envelope",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'JsonPath.ObjectItems(values, $"Runtime owner collection \'{key}\'")',
+  "the desktop owner timeline must reject malformed collection items instead of filtering them",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline")',
+  "the desktop owner timeline must preserve exact pre/post duration field-id lists",
+);
+for (const permissiveRuntimeTimelineEnvelope of [
+  '(contract["collections"] as JsonArray)?.OfType<JsonObject>()',
+  '(contract["inputs"] as JsonArray)?.OfType<JsonObject>()',
+  '(collection["fields"] as JsonArray)?.OfType<JsonObject>()',
+  '(collection["itemActions"] as JsonArray)?.OfType<JsonObject>()',
+  'values.OfType<JsonObject>()',
+  'runtimeInputs.OfType<JsonObject>()',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    permissiveRuntimeTimelineEnvelope,
+    `the desktop owner timeline must not filter malformed contract envelopes (${permissiveRuntimeTimelineEnvelope})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",

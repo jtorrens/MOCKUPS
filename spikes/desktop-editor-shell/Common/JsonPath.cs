@@ -57,6 +57,83 @@ internal static class JsonPath
             ?? throw new InvalidOperationException($"{context} must contain an array '{key}'.");
     }
 
+    public static IReadOnlyList<JsonObject> OptionalObjectArray(
+        JsonObject root,
+        string key,
+        string context)
+    {
+        if (!root.TryGetPropertyValue(key, out var node))
+        {
+            return [];
+        }
+
+        if (node is not JsonArray array)
+        {
+            throw new InvalidOperationException($"{context} '{key}' must be a JSON array when present.");
+        }
+
+        return ObjectItems(array, $"{context} '{key}'");
+    }
+
+    public static IReadOnlyList<JsonObject> ObjectItems(JsonArray array, string context)
+    {
+        var result = new List<JsonObject>(array.Count);
+        for (var index = 0; index < array.Count; index++)
+        {
+            if (array[index] is not JsonObject item)
+            {
+                throw new InvalidOperationException($"{context}[{index}] must be a JSON object.");
+            }
+
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    public static JsonObject? OptionalObject(JsonObject root, string key, string context)
+    {
+        if (!root.TryGetPropertyValue(key, out var node))
+        {
+            return null;
+        }
+
+        return node as JsonObject
+            ?? throw new InvalidOperationException($"{context} '{key}' must be a JSON object when present.");
+    }
+
+    public static IReadOnlyList<string> OptionalStringArray(
+        JsonObject root,
+        string key,
+        string context)
+    {
+        if (!root.TryGetPropertyValue(key, out var node))
+        {
+            return [];
+        }
+
+        if (node is not JsonArray array)
+        {
+            throw new InvalidOperationException($"{context} '{key}' must be a JSON array when present.");
+        }
+
+        var result = new List<string>(array.Count);
+        for (var index = 0; index < array.Count; index++)
+        {
+            if (array[index] is not JsonValue value
+                || !value.TryGetValue<string>(out var text)
+                || string.IsNullOrWhiteSpace(text))
+            {
+                throw new InvalidOperationException(
+                    $"{context} '{key}'[{index}] must be a non-empty JSON string.");
+            }
+
+            result.Add(text);
+        }
+
+        return result;
+    }
+
     public static string RequiredString(
         JsonObject root,
         string key,

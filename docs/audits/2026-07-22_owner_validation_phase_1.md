@@ -463,3 +463,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Los cuatro consumidores deben exigir `JsonPath.RequiredObject`; los guards `is JsonObject` que ocultaban el item quedan prohibidos. |
 | Datos | Sin migración. Los projected items current ya contienen sus objetos completos; base canónica `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia un input/action/target válido; solo se hace visible una contradicción que antes variaba entre superficies. |
+
+## Slice 1.33 — Envelopes Runtime del owner temporal de escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | El cálculo temporal C# aún recorría `collections`, `inputs`, `fields`, `itemActions`, actions raíz e items con casts y `OfType`; una raíz o entrada dañada se convertía en timeline vacío. También omitía un Runtime contract proyectado ausente y filtraba ids de pre/post duration inválidos. |
+| Owner | `JsonPath` aporta las lecturas estructurales reutilizables; `RuntimeAnimationFrameOrigin` conserva exclusivamente las fórmulas, la secuencia y la proyección owner-relative. |
+| Cambio mínimo | Distinguir ausencia opcional de presencia inválida; exigir arrays de objetos, items con id estable, metadata timeline objeto y listas de field ids no vacíos; exigir el objeto Runtime proyectado cuando está declarado. |
+| Rutas eliminadas | Wrong root/entrada no objeto → `[]`, item sin id → omitido, nested Runtime contract roto → sin fields/actions, timeline wrong-root → objeto vacío y pre/post id no string → filtrado. |
+| Pruebas | 116/116 escritorio: ausencia válida y casos collections/inputs/actions/items/fields/nested Runtime/timeline list mal formados; todas las duraciones, retime, re-entry y escenarios current conservan sus resultados. |
+| Enforcement | El timeline debe consumir los helpers estructurales comunes y quedan prohibidos sus lectores `OfType` concretos de contracts, fields, actions e items. |
+| Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia ninguna fórmula ni un documento válido; solo deja de calcularse una duración plausible desde un envelope incompleto. |

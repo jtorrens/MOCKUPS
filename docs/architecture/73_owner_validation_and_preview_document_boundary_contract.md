@@ -202,6 +202,15 @@ target presentation require the same object. Missing/wrong-root nested
 contracts do not remove an item's Runtime API from one surface while leaving it
 active in another.
 
+The common desktop owner timeline consumes those same complete envelopes.
+Optional `collections`, `inputs`, `actions`, collection `fields` and
+`itemActions` may be absent; when present they are arrays of objects. A present
+Runtime collection is an array of object items with non-empty stable ids.
+Animation timeline metadata and its pre/post field-id lists retain their exact
+object, array and non-empty string shapes. The calculator does not filter a
+malformed entry, convert a wrong root to an empty owner or omit a declared
+projected Runtime contract.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -375,6 +384,9 @@ Architecture enforcement must verify:
   discovery.
 - projected item Runtime contract objects remain required and shared by Test
   Values, actions, Runtime API presentation and animation targets.
+- the common desktop owner timeline consumes complete Runtime contract arrays,
+  stable items and timeline metadata without `OfType` filtering or wrong-root
+  empty fallbacks.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

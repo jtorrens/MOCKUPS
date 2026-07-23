@@ -84,6 +84,16 @@ contract metadata remain the only authorities for:
 - stable target projection into the Screen authoring scale;
 - retime projection without rewriting authored keyframes.
 
+The common owner timeline consumes optional contract members only by declared
+absence. When `collections`, `inputs`, `actions`, collection `fields` or
+`itemActions` are present, they are arrays of objects; a present Runtime
+collection is an array of stable object items with non-empty ids. Timeline
+metadata objects and their field-id lists keep their exact roots and entries.
+Projected items declaring `itemRuntimeContractJsonKey` keep that required
+nested object and any present nested input/action list remains an array of
+objects. The desktop calculator must reject a wrong root or malformed entry
+instead of filtering it into an empty timeline.
+
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
 frame.
@@ -109,6 +119,8 @@ Architecture enforcement must verify:
 - `ModuleInstanceAnimationEditor` retains no database field and performs no
   direct database call;
 - the editor still uses the shared timeline and owner-frame utilities;
+- the shared desktop owner timeline rejects present wrong-root or filtered
+  Runtime contract collections, items, fields, inputs and actions;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;

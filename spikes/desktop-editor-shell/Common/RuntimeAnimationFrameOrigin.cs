@@ -133,15 +133,22 @@ internal static class RuntimeAnimationFrameOrigin
             foreach (var collection in Collections(contract))
             {
                 var key = CollectionKey(collection);
-                if (runtime[key] is not JsonArray values) continue;
+                if (!runtime.TryGetPropertyValue(key, out var collectionNode)) continue;
+                if (collectionNode is not JsonArray values)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime owner collection '{key}' must be a JSON array when present.");
+                }
                 var sequenceItems = Timeline(collection)["sequenceItems"]?.GetValue<bool>() != false;
                 var cursor = 0d;
-                foreach (var item in values.OfType<JsonObject>())
+                foreach (var item in JsonPath.ObjectItems(values, $"Runtime owner collection '{key}'"))
                 {
-                    var targetId = item["id"]?.GetValue<string>() ?? "";
-                    if (string.IsNullOrWhiteSpace(targetId)) continue;
+                    var targetId = JsonPath.RequiredString(
+                        item,
+                        "id",
+                        $"Runtime owner collection '{key}' item");
                     var fields = Fields(collection, item);
-                    var pre = StringArray(Timeline(collection)["preDurationFieldIds"])
+                    var pre = StringArray(collection, "preDurationFieldIds")
                         .Sum((fieldId) => FieldValue(item, fields, fieldId));
                     var start = (sequenceItems ? cursor : ItemOwnerOrigin(collection, item)) + pre;
                     var durations = CalculateItemDurations(collection, item, targetId);
@@ -211,7 +218,7 @@ internal static class RuntimeAnimationFrameOrigin
             {
                 var fields = Inputs(_contract);
                 var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
-                return definition is null ? 0 : ReferenceDuration(definition, _runtime, fields, _contract["actions"] as JsonArray);
+                return definition is null ? 0 : ReferenceDuration(definition, _runtime, fields, Actions(_contract));
             }
             if (!_items.TryGetValue(targetId, out var item)) return 0;
             var itemFields = Fields(item.Collection, item.Item);
@@ -292,7 +299,7 @@ internal static class RuntimeAnimationFrameOrigin
             var actionEnd = LastFiniteActionEnd(collection, item, targetId, fields);
             sequenceBodyEnd = Math.Max(sequenceBodyEnd, actionEnd);
             spanEnd = Math.Max(spanEnd, actionEnd);
-            var post = StringArray(Timeline(collection)["postDurationFieldIds"])
+            var post = StringArray(collection, "postDurationFieldIds")
                 .Sum((fieldId) => FieldValue(item, fields, fieldId));
             var sequence = Math.Max(1, sequenceBodyEnd + post);
             return new ItemDurations(sequence, Math.Max(sequence, spanEnd));
@@ -350,7 +357,7 @@ internal static class RuntimeAnimationFrameOrigin
             JsonObject definition,
             JsonObject owner,
             IReadOnlyList<JsonObject> ownerFields,
-            JsonArray? actions)
+            IReadOnlyList<JsonObject> actions)
         {
             var baseDurationFieldId = Text((Timeline(definition)["completion"] as JsonObject)?["baseDurationFieldId"]);
             if (!string.IsNullOrWhiteSpace(baseDurationFieldId))
@@ -363,7 +370,7 @@ internal static class RuntimeAnimationFrameOrigin
             }
 
             var fieldId = Text(definition["id"]);
-            return actions?.OfType<JsonObject>()
+            return actions
                 .Where((action) => (Text(action["playFieldId"]) is { Length: > 0 } playFieldId
                     ? playFieldId
                     : Text(action["playInputId"])) == fieldId)
@@ -375,7 +382,7 @@ internal static class RuntimeAnimationFrameOrigin
                     return Math.Max(0, Round(Number(owner[durationJsonKey])));
                 })
                 .DefaultIfEmpty(0)
-                .Max() ?? 0;
+                .Max();
         }
 
         private double LastFiniteActionEnd(
@@ -385,7 +392,7 @@ internal static class RuntimeAnimationFrameOrigin
             IReadOnlyList<JsonObject> fields)
         {
             var lastEnd = 0d;
-            foreach (var action in ItemActions(collection, item).OfType<JsonObject>()
+            foreach (var action in ItemActions(collection, item)
                 .Where((candidate) => candidate["extendsModuleDuration"]?.GetValue<bool>() == true))
             {
                 var playFieldId = Text(action["playInputId"]);
@@ -515,40 +522,57 @@ internal static class RuntimeAnimationFrameOrigin
     }
 
     private static IReadOnlyList<JsonObject> Collections(JsonObject contract) =>
-        (contract["collections"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract");
 
     private static IReadOnlyList<JsonObject> Inputs(JsonObject contract) =>
-        (contract["inputs"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        JsonPath.OptionalObjectArray(contract, "inputs", "Runtime owner contract");
+
+    private static IReadOnlyList<JsonObject> Actions(JsonObject contract) =>
+        JsonPath.OptionalObjectArray(contract, "actions", "Runtime owner contract");
 
     private static IReadOnlyList<JsonObject> Fields(JsonObject collection, JsonObject item)
     {
-        var fields = (collection["fields"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        var fields = JsonPath.OptionalObjectArray(collection, "fields", "Runtime owner collection").ToList();
         var runtimeContractKey = Text(collection["itemRuntimeContractJsonKey"]);
-        if (runtimeContractKey.Length > 0
-            && item[runtimeContractKey] is JsonObject runtimeContract
-            && runtimeContract["inputs"] is JsonArray runtimeInputs)
+        if (runtimeContractKey.Length > 0)
         {
-            fields.AddRange(runtimeInputs.OfType<JsonObject>());
+            var targetId = JsonPath.RequiredString(item, "id", "Projected Runtime collection item");
+            var runtimeContract = JsonPath.RequiredObject(
+                item,
+                runtimeContractKey,
+                $"Projected Runtime collection item '{targetId}'");
+            fields.AddRange(JsonPath.OptionalObjectArray(
+                runtimeContract,
+                "inputs",
+                $"Projected Runtime contract '{targetId}'"));
         }
         return fields;
     }
 
-    private static JsonArray ItemActions(JsonObject collection, JsonObject item)
+    private static IReadOnlyList<JsonObject> ItemActions(JsonObject collection, JsonObject item)
     {
-        var actions = new JsonArray();
-        foreach (var action in (collection["itemActions"] as JsonArray)?.OfType<JsonObject>() ?? [])
-            actions.Add(action.DeepClone());
+        var actions = JsonPath.OptionalObjectArray(
+            collection,
+            "itemActions",
+            "Runtime owner collection").ToList();
         var runtimeContractKey = Text(collection["itemRuntimeContractJsonKey"]);
-        if (runtimeContractKey.Length > 0
-            && item[runtimeContractKey] is JsonObject runtimeContract)
+        if (runtimeContractKey.Length > 0)
         {
-            foreach (var action in (runtimeContract["actions"] as JsonArray)?.OfType<JsonObject>() ?? [])
-                actions.Add(action.DeepClone());
+            var targetId = JsonPath.RequiredString(item, "id", "Projected Runtime collection item");
+            var runtimeContract = JsonPath.RequiredObject(
+                item,
+                runtimeContractKey,
+                $"Projected Runtime collection item '{targetId}'");
+            actions.AddRange(JsonPath.OptionalObjectArray(
+                runtimeContract,
+                "actions",
+                $"Projected Runtime contract '{targetId}'"));
         }
         return actions;
     }
 
-    private static JsonObject Timeline(JsonObject owner) => owner["animationTimeline"] as JsonObject ?? new JsonObject();
+    private static JsonObject Timeline(JsonObject owner) =>
+        JsonPath.OptionalObject(owner, "animationTimeline", "Runtime animation owner") ?? new JsonObject();
 
     private static string CollectionKey(JsonObject collection) =>
         Text(collection["storageCollectionJsonKey"]) is { Length: > 0 } storage
@@ -557,17 +581,17 @@ internal static class RuntimeAnimationFrameOrigin
                 ? source
                 : Text(collection["jsonKey"]);
 
-    private static string[] StringArray(JsonNode? value) =>
-        (value as JsonArray)?.OfType<JsonValue>().Select((item) => item.GetValue<string>()).ToArray() ?? [];
+    private static IReadOnlyList<string> StringArray(JsonObject collection, string key) =>
+        JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline");
 
     private static int DeclaredBaseDuration(JsonObject contract) =>
-        (contract["actions"] as JsonArray)?.OfType<JsonObject>()
+        Actions(contract)
             .Where((action) => action["definesModuleDuration"]?.GetValue<bool>() == true)
             .Select((action) => (int)JsonPath.RequiredNonNegativeNumber(
                 action["durationBaseFrames"],
                 $"Runtime action '{Text(action["id"])}' durationBaseFrames"))
             .DefaultIfEmpty(0)
-            .Max() ?? 0;
+            .Max();
 
     private static double Scale(double value, double natural, double effective) =>
         natural <= 0 ? value : value * effective / natural;
