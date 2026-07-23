@@ -10,8 +10,9 @@ edits a Component Variant boundary.
 A fixed boundary permits one exact Component Class. Its UI contains:
 
 - one Variant selector limited to that class;
-- navigation to the selected full Component Variant reference;
-- `Overrides…` when the boundary owns local Overrides.
+- the shared compact navigation action for the selected full Component Variant
+  reference;
+- the shared compact Overrides action when the boundary owns local Overrides.
 
 It never shows a Component selector.
 
@@ -57,7 +58,10 @@ not rewrite another boundary or infer replacement Runtime values.
 Variant selection, Variant navigation and local Overrides use the shared
 dictionary Component Variant surfaces. A component-specific collection may own
 stable item ids, reordering, duplication and deletion, but it must not recreate
-the Component/Variant/Overrides interaction locally.
+the Component/Variant/Overrides interaction locally. A Component Variant Slot
+must pass its local Override callback and highlight state into that shared row;
+it must not append a textual `Overrides…` button or invent another action
+layout.
 
 `IconSlots` is the current fixed-collection example:
 

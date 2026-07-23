@@ -266,6 +266,9 @@ one exact class's protected Default Variant; zero or multiple classes fail.
 New polymorphic boundaries remain unselected until the user chooses a Component
 and then cross into that class's Default Variant. Never choose the first option
 or reconstruct these actions inside a component-specific collection control.
+Variant navigation and Overrides use the existing compact shared actions in the
+same row. Do not append textual `Overrides…` buttons or create alternate action
+chrome for Component Variant Slots.
 
 ## Hard rule: manifest, routing and payload contracts are strict
 

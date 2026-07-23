@@ -1,10 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -13,7 +13,6 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
     private readonly FieldDefinition _definition;
     private readonly DictionaryComponentVariantControl _variantControl;
     private readonly Func<string, JsonObject, Action<JsonObject>, Task>? _openRuntimeComponentOverrides;
-    private readonly Button? _overridesButton;
     private JsonObject _slot;
 
     public DictionaryComponentVariantSlotControl(
@@ -34,6 +33,9 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         var reference = ComponentVariantSlotDocumentContract.VariantReference(
             _slot,
             $"Dictionary field '{definition.Id}'");
+        Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
+            ? null
+            : async (_) => await OpenOverrides();
         _variantControl = new DictionaryComponentVariantControl(
             definition with
             {
@@ -41,9 +43,11 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
                 DefaultValue = reference,
             },
             reference,
-            isHighlighted: false,
+            isHighlighted: ComponentVariantSlotDocumentContract.Overrides(
+                _slot,
+                $"Dictionary field '{definition.Id}'").Count > 0,
             openComponentVariantReference,
-            openEmbeddedComponent: null);
+            openEmbeddedComponent: openOverrides);
         _variantControl.ValueChanged += (_, next) =>
         {
             SetReference(next);
@@ -55,36 +59,6 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
             ValueCommitted?.Invoke(this, Serialize());
         };
         Children.Add(_variantControl);
-
-        if (_openRuntimeComponentOverrides is not null)
-        {
-            _overridesButton = new Button
-            {
-                Content = "Overrides…",
-                HorizontalAlignment = HorizontalAlignment.Right,
-                IsEnabled = definition.IsEditable,
-            };
-            _overridesButton.Click += async (_, _) =>
-            {
-                var owner = $"Dictionary field '{_definition.Id}'";
-                var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
-                var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
-                await _openRuntimeComponentOverrides(
-                    currentReference,
-                    currentOverrides.DeepClone().AsObject(),
-                    (next) =>
-                    {
-                        _slot["overrides"] = next.DeepClone();
-                        ComponentVariantSlotDocumentContract.Validate(_slot, owner);
-                        RefreshOverrideButton();
-                        var serialized = Serialize();
-                        ValueChanged?.Invoke(this, serialized);
-                        ValueCommitted?.Invoke(this, serialized);
-                    });
-            };
-            Children.Add(_overridesButton);
-            RefreshOverrideButton();
-        }
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -113,11 +87,30 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 
     private void RefreshOverrideButton()
     {
-        if (_overridesButton is null) return;
         var overrides = ComponentVariantSlotDocumentContract.Overrides(
             _slot,
             $"Dictionary field '{_definition.Id}'");
-        EditorOverrideVisuals.ApplyActionButton(_overridesButton, overrides.Count > 0);
+        _variantControl.SetOverrideHighlighted(overrides.Count > 0);
+    }
+
+    private async Task OpenOverrides()
+    {
+        if (_openRuntimeComponentOverrides is null) return;
+        var owner = $"Dictionary field '{_definition.Id}'";
+        var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
+        var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
+        await _openRuntimeComponentOverrides(
+            currentReference,
+            currentOverrides.DeepClone().AsObject(),
+            (next) =>
+            {
+                _slot["overrides"] = next.DeepClone();
+                ComponentVariantSlotDocumentContract.Validate(_slot, owner);
+                RefreshOverrideButton();
+                var serialized = Serialize();
+                ValueChanged?.Invoke(this, serialized);
+                ValueCommitted?.Invoke(this, serialized);
+            });
     }
 
     private string Serialize()

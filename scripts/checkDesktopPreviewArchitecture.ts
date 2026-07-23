@@ -9223,11 +9223,23 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "ComponentVariantSlotDocumentContract.Parse(",
     "ComponentVariantSlotDocumentContract.Validate(",
     "_openRuntimeComponentOverrides(",
+    "openEmbeddedComponent: openOverrides",
+    "_variantControl.SetOverrideHighlighted(",
   ]) {
     assertContains(
       "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantSlotControl.cs",
       requiredVariantSlotBoundary,
       `Component Variant Slot authoring must preserve its exact reference and Overrides boundary (${requiredVariantSlotBoundary})`,
+    );
+  }
+  for (const forbiddenVariantSlotAction of [
+    'Content = "Overrides…"',
+    "new Button",
+  ]) {
+    assertDoesNotContain(
+      "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantSlotControl.cs",
+      forbiddenVariantSlotAction,
+      `Component Variant Slot authoring must reuse the shared compact Overrides action (${forbiddenVariantSlotAction})`,
     );
   }
   assertContains(

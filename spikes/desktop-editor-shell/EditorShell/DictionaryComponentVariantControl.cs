@@ -127,6 +127,14 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
 
     public event EventHandler<string>? ValueCommitted;
 
+    public void SetOverrideHighlighted(bool isHighlighted)
+    {
+        if (_overrideButton is not null)
+        {
+            EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
+        }
+    }
+
     public void SetValue(string value)
     {
         _isUpdating = true;
@@ -230,9 +238,14 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
 
     private void UpdateOpenButton()
     {
+        var hasSelection = !string.IsNullOrWhiteSpace(SelectedReference());
         if (_openButton is not null)
         {
-            _openButton.IsEnabled = !string.IsNullOrWhiteSpace(SelectedReference());
+            _openButton.IsEnabled = hasSelection;
+        }
+        if (_overrideButton is not null)
+        {
+            _overrideButton.IsEnabled = _definition.IsEditable && hasSelection;
         }
     }
 
