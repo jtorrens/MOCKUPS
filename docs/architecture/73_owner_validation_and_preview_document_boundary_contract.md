@@ -273,6 +273,13 @@ requires its config and Surface slot. Child visibility affects only whether a
 validated child is included in the renderable result. It never turns the
 parent's current slot/reference/Overrides document into optional data.
 
+Notification likewise requires its own config, Avatar Inputs and its Avatar,
+Surface, summary Label and detail Label slots before selecting the active
+display mode. Both Label slots remain current composition even when only one is
+visible. Its Theme motion root and the Badge config root are required objects;
+wrong-root configuration is never treated as an empty visual style. The shared
+embedded owner replaces local copies of reference/Override merging.
+
 Temporal lookup identity is never selected by a permissive fallback. The first
 declared collection key in the explicit storage/source/json precedence must be
 valid, collection storage keys are unique, stable target ids are unique across
@@ -559,6 +566,8 @@ Architecture enforcement must verify:
   Overrides owner; each parent still requires its declared slot objects.
 - Avatar and Label require their declared config/style/slot objects and route
   every child through the shared embedded Component owner.
+- Notification requires both mode slots plus Avatar/Surface composition and
+  uses no local embedded-config parser; Badge requires its config object.
 - present desktop track, keyframe and retime envelopes are validated before the
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope

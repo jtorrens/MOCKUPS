@@ -801,3 +801,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Roots requeridas y tres adopciones del helper fijadas; casts y merges tolerantes concretos prohibidos. |
 | Datos | Sin migración. Todos los documentos current ya son completos; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia visibilidad, estilo ni contenido; solo se rechaza composición incompleta que antes podía perder Overrides. |
+
+## Slice 1.59 — Composición exacta de Notification y Badge
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Notification mantenía un tercer parser local de slots que convertía Overrides inválidos en vacío; config, Avatar Inputs, cuatro slots y Theme motion usaban casts tolerantes. Solo el Label activo se comprobaba. Badge convertía su config en `{}`. |
+| Owner | Notification declara todos sus children, aunque seleccione uno de dos Labels por modo; `embeddedComponentConfig` posee referencia/Overrides y Badge posee su config requerida. |
+| Cambio mínimo | Exigir config, Inputs, cuatro slots y motion; preparar ambos Label slots y seleccionar solo después; retirar el helper local y exigir la raíz Badge. |
+| Rutas eliminadas | `embeddedConfig` local, siete casts de Notification y el cast raíz de Badge. |
+| Pruebas | 100/100 Preview y 116/116 escritorio; Notifications → Notification, modos summary/detail, Avatar/Label/Badge y composición seeded conservan el resultado. |
+| Enforcement | Cinco roots/slots y cuatro adopciones del helper fijadas, helper local y casts tolerantes prohibidos. |
+| Datos | Sin migración. Los documentos current ya declaran ambas ramas y todos los Overrides; base `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia el modo activo ni el reflow; una rama inactive dañada deja de permanecer latente hasta su selección. |

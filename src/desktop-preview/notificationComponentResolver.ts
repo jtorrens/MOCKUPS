@@ -1,6 +1,6 @@
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { asRecord, optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
+import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
@@ -12,20 +12,24 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
   const bases = parseObject(payload.componentBaseConfigsJson);
-  const notification = asRecord(config.notification);
+  const notification = requiredRecord(config, "notification", "component.notification");
   const dimensionMode = requiredString(notification, "dimensionMode", "component.notification.dimensionMode");
   if (dimensionMode !== "fixed" && dimensionMode !== "content") {
     throw new Error(`Unsupported Notification dimension mode ${dimensionMode}`);
   }
   const rawSize = requiredNumberPair(notification, "size", "component.notification.size");
   const rawPadding = requiredStringPair(notification, "padding", "component.notification.padding");
-  const avatarInputs = asRecord(notification.avatarInputs);
-  const avatarConfig = embeddedConfig(asRecord(notification.avatarSlot), "avatar", bases, "component.notification.avatarSlot");
+  const avatarInputs = requiredRecord(notification, "avatarInputs", "component.notification.avatarInputs");
+  const avatarSlot = requiredRecord(notification, "avatarSlot", "component.notification.avatarSlot");
+  const surfaceSlot = requiredRecord(notification, "surfaceSlot", "component.notification.surfaceSlot");
+  const summaryLabelSlot = requiredRecord(notification, "summaryLabelSlot", "component.notification.summaryLabelSlot");
+  const detailLabelSlot = requiredRecord(notification, "detailLabelSlot", "component.notification.detailLabelSlot");
+  const avatarConfig = embeddedComponentConfig(bases, avatarSlot, "avatar", "component.notification.avatarSlot");
   const displayMode = requiredString(preview, "displayMode", "component.notification.runtime.displayMode");
   if (displayMode !== "summary" && displayMode !== "detail") {
     throw new Error(`Unsupported Notification display mode ${displayMode}`);
   }
-  const surfaceConfig = embeddedConfig(asRecord(notification.surfaceSlot), "surface", bases, "component.notification.surfaceSlot");
+  const surfaceConfig = embeddedComponentConfig(bases, surfaceSlot, "surface", "component.notification.surfaceSlot");
   const maxWidthPercent = Math.min(
     100,
     Math.max(1, requiredNumber(preview, "maxWidth", "component.notification.runtime.maxWidth")),
@@ -34,8 +38,9 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
     const modeSlotKey = mode === "summary" ? "summaryLabelSlot" : "detailLabelSlot";
     const modeTextKey = mode === "summary" ? "summaryText" : "detailText";
     const modeSubtextKey = mode === "summary" ? "summarySubtext" : "detailSubtext";
+    const modeSlot = mode === "summary" ? summaryLabelSlot : detailLabelSlot;
     return resolveLabelComponentFromRecords(
-      embeddedConfig(asRecord(notification[modeSlotKey]), "label", bases, `component.notification.${modeSlotKey}`),
+      embeddedComponentConfig(bases, modeSlot, "label", `component.notification.${modeSlotKey}`),
       literalLabelPreview(
         requiredString(preview, modeTextKey, `component.notification.runtime.${modeTextKey}`),
         requiredString(preview, modeSubtextKey, `component.notification.runtime.${modeSubtextKey}`),
@@ -50,7 +55,7 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
   const transitionActive = optionalBoolean(preview, "displayModeTransition")
     && (fromMode === "summary" || fromMode === "detail")
     && fromMode !== displayMode;
-  const motion = asRecord(parseObject(payload.themeTokensJson).motion);
+  const motion = requiredRecord(parseObject(payload.themeTokensJson), "motion", "theme.motion");
   const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
   const reflow = transitionActive
     ? {
@@ -93,16 +98,4 @@ export function resolveNotificationComponent(payload: DesignPreviewPayload): Not
     label,
     reflow,
   };
-}
-
-function embeddedConfig(
-  slot: Record<string, unknown>,
-  componentType: string,
-  bases: Record<string, unknown>,
-  path: string,
-) {
-  return mergeComponentDefaults(
-    componentVariantConfig(bases, componentType, requiredString(slot, "variantReference", `${path}.variantReference`)),
-    asRecord(slot.overrides),
-  );
 }

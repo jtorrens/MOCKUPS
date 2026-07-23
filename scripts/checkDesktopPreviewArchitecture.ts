@@ -7385,6 +7385,58 @@ for (const [file, forbidden] of [
     `${file} must not coerce required embedded documents (${forbidden})`,
   );
 }
+for (const requiredNotificationObject of [
+  'requiredRecord(config, "notification", "component.notification")',
+  'requiredRecord(notification, "avatarInputs", "component.notification.avatarInputs")',
+  'requiredRecord(notification, "avatarSlot", "component.notification.avatarSlot")',
+  'requiredRecord(notification, "surfaceSlot", "component.notification.surfaceSlot")',
+  'requiredRecord(notification, "summaryLabelSlot", "component.notification.summaryLabelSlot")',
+  'requiredRecord(notification, "detailLabelSlot", "component.notification.detailLabelSlot")',
+  'requiredRecord(parseObject(payload.themeTokensJson), "motion", "theme.motion")',
+] as const) {
+  assertContains(
+    "src/desktop-preview/notificationComponentResolver.ts",
+    requiredNotificationObject,
+    `Notification composition must preserve its required object boundary (${requiredNotificationObject})`,
+  );
+}
+for (const notificationSlot of ["avatarSlot", "surfaceSlot", "modeSlot"] as const) {
+  assertContains(
+    "src/desktop-preview/notificationComponentResolver.ts",
+    `embeddedComponentConfig(bases, ${notificationSlot},`,
+    `Notification ${notificationSlot} must consume the shared embedded Component owner`,
+  );
+}
+assertDoesNotContain(
+  "src/desktop-preview/notificationComponentResolver.ts",
+  "function embeddedConfig(",
+  "Notification must not keep a local embedded Component config parser",
+);
+for (const permissiveNotificationDocument of [
+  "asRecord(config.notification)",
+  "asRecord(notification.avatarInputs)",
+  "asRecord(notification.avatarSlot)",
+  "asRecord(notification.surfaceSlot)",
+  "asRecord(notification[modeSlotKey])",
+  "asRecord(parseObject(payload.themeTokensJson).motion)",
+  "asRecord(slot.overrides)",
+]) {
+  assertDoesNotContain(
+    "src/desktop-preview/notificationComponentResolver.ts",
+    permissiveNotificationDocument,
+    `Notification composition must not coerce required documents (${permissiveNotificationDocument})`,
+  );
+}
+assertContains(
+  "src/desktop-preview/badgeComponentResolver.ts",
+  'requiredRecord(config, "badge", `${id}.badge`)',
+  "Badge must require its config object",
+);
+assertDoesNotContain(
+  "src/desktop-preview/badgeComponentResolver.ts",
+  "asRecord(config.badge)",
+  "Badge must not coerce an invalid config root to an empty object",
+);
 assertContains(
   "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",

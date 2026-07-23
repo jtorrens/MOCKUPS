@@ -1,5 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { asRecord, parseObject, requiredNumber, requiredPlacement, requiredString, requiredTypographyStyle } from "./componentResolverCommon.js";
+import { parseObject, requiredNumber, requiredPlacement, requiredRecord, requiredString, requiredTypographyStyle } from "./componentResolverCommon.js";
 import type { BadgeDesignContract } from "./badgeComponentContract.js";
 
 export function resolveBadgeComponent(payload: DesignPreviewPayload): BadgeDesignContract {
@@ -15,7 +15,7 @@ export function resolveBadgeComponentFromRecords(
   inputs: Record<string, unknown>,
   id: string,
 ): BadgeDesignContract {
-  const badge = asRecord(config.badge);
+  const badge = requiredRecord(config, "badge", `${id}.badge`);
   const contentMode = requiredString(inputs, "contentMode", `${id}.input.contentMode`);
   if (contentMode !== "icon" && contentMode !== "text") {
     throw new Error(`Unsupported Badge content mode ${contentMode}`);
