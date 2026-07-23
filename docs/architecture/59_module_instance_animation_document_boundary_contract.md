@@ -112,6 +112,16 @@ complements, but does not replace, the complete persisted v2 document contract
 above. The web owner timeline applies the same transient-animation guard before
 resolving frames.
 
+Owner-authored timeline metadata is a closed temporal vocabulary. Collections
+may declare serial sequencing, explicit `sequenceItems`, pre/post duration field
+ids and the complete `firstMatchingValue` owner-origin object. Fields may
+declare `ownerStart` or complete `fieldCompletion` origin, an explicit boolean
+`extendsOwnerDuration`, and a completion object with a real base-duration field,
+the supported `lastEnabledKeyframe` override and a minimum of at least two.
+Offsets and Runtime duration values are non-negative numeric frames. Missing
+referenced fields or values are invalid; the desktop calculator never replaces
+them with frame zero.
+
 The store must not reproduce any of these formulas. A save persists authored
 animation only; it must not persist a calculated Screen extent or absolute Shot
 frame.
@@ -144,6 +154,8 @@ Architecture enforcement must verify:
   calculation envelope without filtering malformed entries;
 - the web timeline mirrors that transient animation envelope, including the
   explicit empty Screen target sentinel;
+- the desktop timeline validates closed collection/field temporal metadata and
+  exact referenced duration values before applying its formulas;
 - the store delegates only a complete animation document write;
 - startup, writes and the animation editor use the one common v2 document
   contract;

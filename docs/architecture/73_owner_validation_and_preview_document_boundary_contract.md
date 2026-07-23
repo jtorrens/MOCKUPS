@@ -227,6 +227,15 @@ empty Screen-owner sentinel. Persisted Module Instance animation retains the
 stricter complete v2 document owner. The web timeline enforces the same
 transient calculation envelope.
 
+The temporal metadata itself is also current owner data. Collection sequencing,
+pre/post duration ids and `firstMatchingValue` origin use their closed declared
+vocabulary. Field origin is `ownerStart` or a complete `fieldCompletion` with a
+non-negative integer offset; completion names a real sibling duration field,
+uses only the supported track override and never clamps an invalid minimum.
+Referenced pre/post/completion Runtime values must exist as non-negative JSON
+numbers or their declared `BehaviorTiming` owner. Missing fields, strings in
+place of numbers and negative values do not become frame zero.
+
 Component Class and Component Variant dictionary fields also use the exact
 `ValueKind` owner for both editor serialization and current-node validation. A
 field that is absent may still expose its explicitly declared descriptor
@@ -409,6 +418,8 @@ Architecture enforcement must verify:
   common timeline calculates duration or frame origins.
 - the web timeline mirrors the exact transient track/keyframe/retime envelope
   and empty Screen target sentinel.
+- desktop collection/field temporal metadata and every referenced duration
+  value are validated without unknown-kind or frame-zero fallbacks.
 - Component Class, Component Variant and local Override field reads/writes use
   their exact dictionary `ValueKind`, and existing embedded slot/Override roots
   are never repaired during an edit.

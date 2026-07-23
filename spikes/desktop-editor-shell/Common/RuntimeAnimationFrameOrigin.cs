@@ -317,7 +317,10 @@ internal static class RuntimeAnimationFrameOrigin
             if (!resolving.Add(fieldId))
                 throw new InvalidOperationException($"Animation timeline dependency cycle at field '{fieldId}'.");
             var fieldTimeline = Timeline(definition);
-            var originDefinition = fieldTimeline["origin"] as JsonObject;
+            var originDefinition = JsonPath.OptionalObject(
+                fieldTimeline,
+                "origin",
+                $"Runtime animation field '{fieldId}' timeline");
             var origin = 0d;
             if (Text(originDefinition?["kind"]) == "fieldCompletion")
             {
@@ -325,22 +328,41 @@ internal static class RuntimeAnimationFrameOrigin
                 var source = ownerFields.FirstOrDefault((field) => Text(field["id"]) == sourceId)
                     ?? throw new InvalidOperationException($"Animation field '{fieldId}' references missing field '{sourceId}'.");
                 origin = ResolveFieldTiming(source, owner, targetId, ownerFields, resolving).Completion
-                    + Number(originDefinition?["offsetFrames"]);
+                    + JsonPath.RequiredInteger(
+                        originDefinition!,
+                        "offsetFrames",
+                        $"Runtime animation field '{fieldId}' origin");
             }
             resolving.Remove(fieldId);
 
             var enabledKeyframes = EnabledKeyframes(Track(fieldId, targetId));
-            var completionDefinition = fieldTimeline["completion"] as JsonObject;
+            var completionDefinition = JsonPath.OptionalObject(
+                fieldTimeline,
+                "completion",
+                $"Runtime animation field '{fieldId}' timeline");
             var baseDurationFieldId = Text(completionDefinition?["baseDurationFieldId"]);
-            var minimumOverrideKeyframes = Math.Max(2, (int)Number(completionDefinition?["minimumEnabledKeyframes"], 2));
+            var minimumOverrideKeyframes = completionDefinition is not null
+                && completionDefinition.TryGetPropertyValue("minimumEnabledKeyframes", out _)
+                    ? JsonPath.RequiredInteger(
+                        completionDefinition,
+                        "minimumEnabledKeyframes",
+                        $"Runtime animation field '{fieldId}' completion")
+                    : 2;
             if (!string.IsNullOrWhiteSpace(baseDurationFieldId)
                 && enabledKeyframes.Count < minimumOverrideKeyframes)
             {
-                var baseDurationDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId);
-                var baseDurationJsonKey = Text(baseDurationDefinition?["jsonKey"]);
-                var completion = origin + (Text(baseDurationDefinition?["valueKind"]) == "BehaviorTiming"
-                    ? BehaviorTimingResolver.ResolveFrames(owner, baseDurationDefinition!, ownerFields, _themeTokens)
-                    : Number(owner[baseDurationJsonKey]));
+                var baseDurationDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId)
+                    ?? throw new InvalidOperationException(
+                        $"Animation field '{fieldId}' references missing duration field '{baseDurationFieldId}'.");
+                var baseDurationJsonKey = JsonPath.RequiredString(
+                    baseDurationDefinition,
+                    "jsonKey",
+                    $"Runtime duration field '{baseDurationFieldId}'");
+                var completion = origin + (Text(baseDurationDefinition["valueKind"]) == "BehaviorTiming"
+                    ? BehaviorTimingResolver.ResolveFrames(owner, baseDurationDefinition, ownerFields, _themeTokens)
+                    : JsonPath.RequiredNonNegativeNumber(
+                        owner[baseDurationJsonKey],
+                        $"Runtime duration field '{baseDurationFieldId}' value"));
                 var end = Math.Max(completion, enabledKeyframes.Count > 0 ? origin + 1 : 0);
                 return new FieldTiming(origin, completion, end);
             }
@@ -355,14 +377,24 @@ internal static class RuntimeAnimationFrameOrigin
             IReadOnlyList<JsonObject> ownerFields,
             IReadOnlyList<JsonObject> actions)
         {
-            var baseDurationFieldId = Text((Timeline(definition)["completion"] as JsonObject)?["baseDurationFieldId"]);
+            var completion = JsonPath.OptionalObject(
+                Timeline(definition),
+                "completion",
+                $"Runtime animation field '{Text(definition["id"])}' timeline");
+            var baseDurationFieldId = Text(completion?["baseDurationFieldId"]);
             if (!string.IsNullOrWhiteSpace(baseDurationFieldId))
             {
-                var baseDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId);
-                if (baseDefinition is null) return 0;
+                var baseDefinition = ownerFields.FirstOrDefault((field) => Text(field["id"]) == baseDurationFieldId)
+                    ?? throw new InvalidOperationException(
+                        $"Animation field '{Text(definition["id"])}' references missing duration field '{baseDurationFieldId}'.");
                 return Text(baseDefinition["valueKind"]) == "BehaviorTiming"
                     ? BehaviorTimingResolver.ResolveFrames(owner, baseDefinition, ownerFields, _themeTokens)
-                    : Math.Max(0, Round(Number(owner[Text(baseDefinition["jsonKey"])])));
+                    : Math.Max(0, Round(JsonPath.RequiredNonNegativeNumber(
+                        owner[JsonPath.RequiredString(
+                            baseDefinition,
+                            "jsonKey",
+                            $"Runtime duration field '{baseDurationFieldId}'")],
+                        $"Runtime duration field '{baseDurationFieldId}' value")));
             }
 
             var fieldId = Text(definition["id"]);
@@ -448,7 +480,10 @@ internal static class RuntimeAnimationFrameOrigin
 
         private double ItemOwnerOrigin(JsonObject collection, JsonObject item)
         {
-            var origin = Timeline(collection)["ownerOrigin"] as JsonObject;
+            var origin = JsonPath.OptionalObject(
+                Timeline(collection),
+                "ownerOrigin",
+                "Runtime collection animation timeline");
             if (Text(origin?["kind"]) != "firstMatchingValue") return 0;
 
             var sourceCollectionKey = Text(origin?["sourceCollectionJsonKey"]);
@@ -591,11 +626,29 @@ internal static class RuntimeAnimationFrameOrigin
         }
     }
 
-    private static IReadOnlyList<JsonObject> Collections(JsonObject contract) =>
-        JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract");
+    private static IReadOnlyList<JsonObject> Collections(JsonObject contract)
+    {
+        var collections = JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract");
+        foreach (var collection in collections)
+        {
+            ValidateCollectionTimeline(collection);
+            foreach (var field in JsonPath.OptionalObjectArray(
+                collection,
+                "fields",
+                "Runtime owner collection"))
+            {
+                ValidateFieldTimeline(field);
+            }
+        }
+        return collections;
+    }
 
-    private static IReadOnlyList<JsonObject> Inputs(JsonObject contract) =>
-        JsonPath.OptionalObjectArray(contract, "inputs", "Runtime owner contract");
+    private static IReadOnlyList<JsonObject> Inputs(JsonObject contract)
+    {
+        var inputs = JsonPath.OptionalObjectArray(contract, "inputs", "Runtime owner contract");
+        foreach (var input in inputs) ValidateFieldTimeline(input);
+        return inputs;
+    }
 
     private static IReadOnlyList<JsonObject> Actions(JsonObject contract) =>
         JsonPath.OptionalObjectArray(contract, "actions", "Runtime owner contract");
@@ -616,6 +669,7 @@ internal static class RuntimeAnimationFrameOrigin
                 "inputs",
                 $"Projected Runtime contract '{targetId}'"));
         }
+        foreach (var field in fields) ValidateFieldTimeline(field);
         return fields;
     }
 
@@ -643,6 +697,133 @@ internal static class RuntimeAnimationFrameOrigin
 
     private static JsonObject Timeline(JsonObject owner) =>
         JsonPath.OptionalObject(owner, "animationTimeline", "Runtime animation owner") ?? new JsonObject();
+
+    private static void ValidateCollectionTimeline(JsonObject collection)
+    {
+        var timeline = Timeline(collection);
+        if (timeline.TryGetPropertyValue("sequence", out _)
+            && !JsonPath.RequiredString(timeline, "sequence", "Runtime collection animation timeline")
+                .Equals("serial", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Runtime collection animation timeline has an unknown sequence mode.");
+        }
+        if (timeline.TryGetPropertyValue("sequenceItems", out _))
+        {
+            _ = JsonPath.RequiredBoolean(
+                timeline,
+                "sequenceItems",
+                "Runtime collection animation timeline");
+        }
+        _ = JsonPath.OptionalStringArray(
+            timeline,
+            "preDurationFieldIds",
+            "Runtime collection animation timeline");
+        _ = JsonPath.OptionalStringArray(
+            timeline,
+            "postDurationFieldIds",
+            "Runtime collection animation timeline");
+
+        var ownerOrigin = JsonPath.OptionalObject(
+            timeline,
+            "ownerOrigin",
+            "Runtime collection animation timeline");
+        if (ownerOrigin is null) return;
+        if (!JsonPath.RequiredString(ownerOrigin, "kind", "Runtime collection owner origin")
+            .Equals("firstMatchingValue", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Runtime collection owner origin has an unknown kind.");
+        }
+        foreach (var key in new[]
+        {
+            "sourceCollectionJsonKey",
+            "sourceTargetIdJsonKey",
+            "sourceFieldId",
+            "sourceValueJsonKey",
+            "matchValueJsonKey",
+        })
+        {
+            _ = JsonPath.RequiredString(ownerOrigin, key, "Runtime collection owner origin");
+        }
+    }
+
+    private static void ValidateFieldTimeline(JsonObject field)
+    {
+        var fieldId = JsonPath.RequiredString(field, "id", "Runtime animation field");
+        var timeline = Timeline(field);
+        if (timeline.TryGetPropertyValue("extendsOwnerDuration", out _))
+        {
+            _ = JsonPath.RequiredBoolean(
+                timeline,
+                "extendsOwnerDuration",
+                $"Runtime animation field '{fieldId}' timeline");
+        }
+
+        var origin = JsonPath.OptionalObject(
+            timeline,
+            "origin",
+            $"Runtime animation field '{fieldId}' timeline");
+        if (origin is not null)
+        {
+            var kind = JsonPath.RequiredString(
+                origin,
+                "kind",
+                $"Runtime animation field '{fieldId}' origin");
+            if (kind.Equals("fieldCompletion", StringComparison.Ordinal))
+            {
+                _ = JsonPath.RequiredString(
+                    origin,
+                    "fieldId",
+                    $"Runtime animation field '{fieldId}' origin");
+                var offset = JsonPath.RequiredInteger(
+                    origin,
+                    "offsetFrames",
+                    $"Runtime animation field '{fieldId}' origin");
+                if (offset < 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime animation field '{fieldId}' origin offsetFrames must not be negative.");
+                }
+            }
+            else if (!kind.Equals("ownerStart", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime animation field '{fieldId}' origin has an unknown kind.");
+            }
+        }
+
+        var completion = JsonPath.OptionalObject(
+            timeline,
+            "completion",
+            $"Runtime animation field '{fieldId}' timeline");
+        if (completion is null) return;
+        _ = JsonPath.RequiredString(
+            completion,
+            "baseDurationFieldId",
+            $"Runtime animation field '{fieldId}' completion");
+        if (completion.TryGetPropertyValue("trackOverride", out _)
+            && !JsonPath.RequiredString(
+                    completion,
+                    "trackOverride",
+                    $"Runtime animation field '{fieldId}' completion")
+                .Equals("lastEnabledKeyframe", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Runtime animation field '{fieldId}' completion has an unknown trackOverride.");
+        }
+        if (completion.TryGetPropertyValue("minimumEnabledKeyframes", out _))
+        {
+            var minimum = JsonPath.RequiredInteger(
+                completion,
+                "minimumEnabledKeyframes",
+                $"Runtime animation field '{fieldId}' completion");
+            if (minimum < 2)
+            {
+                throw new InvalidOperationException(
+                    $"Runtime animation field '{fieldId}' completion minimumEnabledKeyframes must be at least 2.");
+            }
+        }
+    }
 
     private static string CollectionKey(JsonObject collection) =>
         Text(collection["storageCollectionJsonKey"]) is { Length: > 0 } storage
@@ -684,7 +865,15 @@ internal static class RuntimeAnimationFrameOrigin
 
     private static double FieldValue(JsonObject owner, IReadOnlyList<JsonObject> fields, string fieldId)
     {
-        var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId);
-        return Number(owner[Text(definition?["jsonKey"])]);
+        var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId)
+            ?? throw new InvalidOperationException(
+                $"Runtime animation duration references missing field '{fieldId}'.");
+        var jsonKey = JsonPath.RequiredString(
+            definition,
+            "jsonKey",
+            $"Runtime animation duration field '{fieldId}'");
+        return JsonPath.RequiredNonNegativeNumber(
+            owner[jsonKey],
+            $"Runtime animation duration field '{fieldId}' value");
     }
 }

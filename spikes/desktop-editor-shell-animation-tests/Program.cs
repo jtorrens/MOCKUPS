@@ -5309,6 +5309,63 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
         Object("""{"items":[{"id":"item","hold":0}]}"""),
         emptyAnimation,
         0));
+
+    foreach (var invalidTimelineContract in new[]
+    {
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"sequence":"parallel"}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"sequenceItems":"false"}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":null}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":{"kind":"ownerStart"}}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":{"kind":"firstMatchingValue"}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"extendsOwnerDuration":"false"}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"origin":null}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"origin":{"kind":"unknown"}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"source"}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"source","offsetFrames":-1}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"completion":null}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"completion":{}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"completion":{"baseDurationFieldId":"duration","trackOverride":"first"}}}]}""",
+        """{"inputs":[{"id":"field","animationTimeline":{"completion":{"baseDurationFieldId":"duration","minimumEnabledKeyframes":1}}}]}""",
+    })
+    {
+        Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+            Object(invalidTimelineContract),
+            new JsonObject(),
+            emptyAnimation,
+            0));
+    }
+
+    var missingDurationField = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "fields":[{"id":"text","jsonKey":"text","animationTimeline":{
+            "completion":{"baseDurationFieldId":"missing","minimumEnabledKeyframes":2}
+          }}]
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        missingDurationField,
+        Object("""{"items":[{"id":"item","text":"value"}]}"""),
+        emptyAnimation,
+        0));
+
+    var missingPreDurationValue = Object("""
+        {"collections":[{
+          "jsonKey":"items",
+          "animationTimeline":{"preDurationFieldIds":["delay"]},
+          "fields":[{"id":"delay","jsonKey":"delay"}]
+        }]}
+        """);
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        missingPreDurationValue,
+        Object("""{"items":[{"id":"item"}]}"""),
+        emptyAnimation,
+        0));
+    Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.DurationFrames(
+        missingPreDurationValue,
+        Object("""{"items":[{"id":"item","delay":"2"}]}"""),
+        emptyAnimation,
+        0));
 }
 
 static void ScreenDurationPolicyIsContractOwned()
@@ -5576,8 +5633,8 @@ static void FieldCompletionDependenciesRejectCycles()
 {
     var contract = Object("""
         {"inputs":[
-          {"id":"a","jsonKey":"a","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"b"}}},
-          {"id":"b","jsonKey":"b","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"a"}}}
+          {"id":"a","jsonKey":"a","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"b","offsetFrames":0}}},
+          {"id":"b","jsonKey":"b","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"a","offsetFrames":0}}}
         ]}
         """);
     Throws<InvalidOperationException>(() => RuntimeAnimationFrameOrigin.ScreenFrame(
@@ -5617,11 +5674,11 @@ static void NonExtendingFieldsOverlapLaterItems()
             {"id":"text","jsonKey":"text","animationTimeline":{"origin":{"kind":"ownerStart"},"completion":{"baseDurationFieldId":"write","minimumEnabledKeyframes":2}}},
             {"id":"delay","jsonKey":"delay"},
             {"id":"write","jsonKey":"write"},
-            {"id":"status","jsonKey":"status","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text"},"extendsOwnerDuration":false}}
+            {"id":"status","jsonKey":"status","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text","offsetFrames":0},"extendsOwnerDuration":false}}
           ]
         }]}
         """);
-    var runtime = Object("""{"messages":[{"id":"m1","write":2},{"id":"m2","delay":3,"write":1}]}""");
+    var runtime = Object("""{"messages":[{"id":"m1","delay":0,"write":2},{"id":"m2","delay":3,"write":1}]}""");
     var animation = Object("""
         {"schemaVersion":2,"tracks":[{"id":"status","fieldId":"status","targetId":"m1","keyframes":[
           {"id":"k0","frame":0,"value":"sent"},{"id":"k30","frame":30,"value":"read"}
@@ -7178,7 +7235,7 @@ static JsonObject SequenceContract(bool withMediaAction = false) => Object($$$$"
           {"id":"delay","jsonKey":"delay"},
           {"id":"write","jsonKey":"write"},
           {"id":"hold","jsonKey":"hold"},
-          {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text"}}}
+          {"id":"isPlaying","jsonKey":"isPlaying","animationTimeline":{"origin":{"kind":"fieldCompletion","fieldId":"text","offsetFrames":0}}}
         ]{{{{(withMediaAction ? ",\n        \"itemActions\": [{\"extendsModuleDuration\":true,\"playInputId\":\"isPlaying\",\"durationInputId\":\"playDuration\"}]" : "")}}}}
       }]
     }

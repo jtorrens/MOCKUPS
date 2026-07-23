@@ -515,3 +515,16 @@ responsabilidad que permanezca deliberadamente separada.
 | Enforcement | Constructor web con guard obligatorio; tracks/keyframes/retime exactos; patrones `records`/`asRecord` retirados prohibidos. |
 | Datos | Sin migración. La base canónica permanece `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
 | Riesgo | Bajo. No cambia animación válida ni ownership; desaparece únicamente el falso “sin animación/Retime off” ante datos presentes incorrectos. |
+
+## Slice 1.37 — Metadata temporal y valores de duración en escritorio
+
+| Campo | Resultado |
+|---|---|
+| Hallazgo | Las raíces de metadata ya eran objetos, pero el cálculo convertía kind desconocido, origin/completion incompleto, minimum/offset inválido, field de duración inexistente y valor Runtime ausente/string en ownerStart o frame cero. `firstMatchingValue` incompleto se detectaba solo si esa rama llegaba a ejecutarse. |
+| Owner | El contrato 29 define el vocabulario cerrado; `RuntimeAnimationFrameOrigin` posee su validación semántica de cálculo y `BehaviorTimingResolver` conserva el tipo temporal compuesto. |
+| Cambio mínimo | Validar metadata de toda collection/input/field aunque la colección esté vacía; exigir serial/boolean/listas, owner origin completo, origins y completion soportados; resolver referencias por id y valores numéricos exactos. Mantener los defaults estructurales declarados: sin origin = owner zero, sin minimum = 2 y sin `extendsOwnerDuration` = true. |
+| Rutas eliminadas | Unknown kind → ownerStart, `offset/minimum Number(...fallback)`, base field ausente → 0, pre/post field/value ausente o string → 0 y metadata de collection vacía → no validada. |
+| Pruebas | 116/116 escritorio: 14 formas de metadata inválida, base field inexistente y duration value ausente/string; fixtures contractuales actualizados con `offsetFrames: 0`; todo timing current conserva resultados. |
+| Enforcement | `ValidateCollectionTimeline`/`ValidateFieldTimeline` obligatorios; origins/completion exactos y `FieldValue` numérico estricto; casts/fallbacks retirados prohibidos. |
+| Datos | Sin migración. Los documentos canónicos ya declaran metadata y valores completos; base SHA-1 `1191ea88e5b27b81014e3041e232a8c0c8cbdb40`. |
+| Riesgo | Bajo. No cambia una fórmula ni un valor current; solo impide calcular con metadata contradictoria o Runtime incompleto. |

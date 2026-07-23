@@ -6881,6 +6881,35 @@ for (const permissiveWebAnimationEnvelope of [
   );
 }
 assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "ValidateCollectionTimeline(collection);",
+  "the desktop owner timeline must validate closed collection timing metadata",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "foreach (var field in fields) ValidateFieldTimeline(field);",
+  "the desktop owner timeline must validate direct and projected field timing metadata",
+);
+assertContains(
+  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  'owner[jsonKey],\n            $"Runtime animation duration field \'{fieldId}\' value")',
+  "the desktop owner timeline must require exact referenced duration values",
+);
+for (const permissiveDesktopTimingMetadata of [
+  'fieldTimeline["origin"] as JsonObject',
+  'fieldTimeline["completion"] as JsonObject',
+  'Timeline(collection)["ownerOrigin"] as JsonObject',
+  'Number(owner[Text(definition?["jsonKey"])])',
+  "if (baseDefinition is null) return 0;",
+  'Math.Max(2, (int)Number(completionDefinition?["minimumEnabledKeyframes"], 2))',
+]) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    permissiveDesktopTimingMetadata,
+    `the desktop timeline must not default invalid temporal metadata (${permissiveDesktopTimingMetadata})`,
+  );
+}
+assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",
