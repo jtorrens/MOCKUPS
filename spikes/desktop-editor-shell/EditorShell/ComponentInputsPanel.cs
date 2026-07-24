@@ -257,19 +257,36 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
-    public void SetExternalCollectionInputValue(
+    public void SetExternalCollectionItemValues(
         string collectionJsonKey,
         string itemId,
-        ComponentInputDefinition input,
-        string value)
+        IReadOnlyDictionary<string, JsonNode?> values)
     {
         if (string.IsNullOrWhiteSpace(_scopeKey)
             || string.IsNullOrWhiteSpace(collectionJsonKey)
-            || string.IsNullOrWhiteSpace(itemId))
+            || string.IsNullOrWhiteSpace(itemId)
+            || values.Count == 0)
         {
             return;
         }
 
+        var item = ExternalCollectionItem(collectionJsonKey, itemId);
+        foreach (var (itemJsonKey, value) in values)
+        {
+            if (string.IsNullOrWhiteSpace(itemJsonKey))
+            {
+                throw new InvalidOperationException(
+                    "Transient collection item value key cannot be empty.");
+            }
+            item[itemJsonKey] = value?.DeepClone();
+        }
+        _refreshPreview();
+    }
+
+    private JsonObject ExternalCollectionItem(
+        string collectionJsonKey,
+        string itemId)
+    {
         var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey);
         if (testValues is null)
         {
@@ -301,8 +318,7 @@ internal sealed class ComponentPreviewInputSession
             item = new JsonObject { ["id"] = itemId };
             items.Add(item);
         }
-        item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, value);
-        _refreshPreview();
+        return item;
     }
 
     public void SetExternalCollectionItems(

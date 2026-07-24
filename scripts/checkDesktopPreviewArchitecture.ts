@@ -10223,6 +10223,21 @@ function assertListItemRuntimePresentationIsGeneric() {
     "Component persistence must validate fixed Runtime collection counts on reads and writes",
   );
   assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "SetExternalCollectionItemValues",
+    "transient Runtime collection commits must target stable item identity",
+  );
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "candidateId == itemId",
+    "transient Runtime collection commits must resolve their item by stable id",
+  );
+  assertContains(
+    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    "List Runtime updates follow stable item identity after reorder",
+    "List reorder characterization must cover a delayed nested Runtime commit",
+  );
+  assertContains(
     "src/desktop-preview/listComponentResolver.ts",
     'requireComponentVariantType(\n    bases,\n    stackSlot,\n    "collectionStack"',
     "List must require the exact Collection Stack slot type",

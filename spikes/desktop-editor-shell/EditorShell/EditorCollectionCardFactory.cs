@@ -23,7 +23,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action<string> _restorePreviewAction;
     private readonly Func<string, bool> _canRestorePreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
-    private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
+    private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+        _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyPreviewTransientTestValues;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
@@ -48,7 +49,8 @@ internal sealed class EditorCollectionCardFactory
         Action<string> restorePreviewAction,
         Func<string, bool> canRestorePreviewAction,
         Action<string, string> setPreviewTestValue,
-        Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
+        Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+            setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, JsonObject, JsonObject> applyPreviewTransientTestValues,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
@@ -72,7 +74,7 @@ internal sealed class EditorCollectionCardFactory
         _restorePreviewAction = restorePreviewAction;
         _canRestorePreviewAction = canRestorePreviewAction;
         _setPreviewTestValue = setPreviewTestValue;
-        _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
+        _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _applyPreviewTransientTestValues = applyPreviewTransientTestValues;
         _resetPreviewTestValues = resetPreviewTestValues;
@@ -180,7 +182,7 @@ internal sealed class EditorCollectionCardFactory
             _restorePreviewAction,
             _canRestorePreviewAction,
             _setPreviewTestValue,
-            _setPreviewCollectionTestValue,
+            _setPreviewCollectionItemValues,
             _setPreviewCollectionTestItems,
             _applyPreviewTransientTestValues,
             _resetPreviewTestValues,

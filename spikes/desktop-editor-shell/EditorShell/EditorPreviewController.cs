@@ -1300,13 +1300,15 @@ internal sealed class EditorPreviewController
         _designInputsPanel.SetExternalInputValue(jsonKey, value);
     }
 
-    public void SetDesignPreviewCollectionTestValue(
+    public void SetDesignPreviewCollectionItemValues(
         string collectionJsonKey,
         string itemId,
-        ComponentInputDefinition input,
-        string value)
+        IReadOnlyDictionary<string, JsonNode?> values)
     {
-        _designInputsPanel.SetExternalCollectionInputValue(collectionJsonKey, itemId, input, value);
+        _designInputsPanel.SetExternalCollectionItemValues(
+            collectionJsonKey,
+            itemId,
+            values);
     }
 
     public void SetDesignPreviewCollectionTestItems(

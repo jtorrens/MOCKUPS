@@ -213,7 +213,7 @@ public partial class MainWindow : SukiWindow
             _previewController.RestoreDesignPreviewAction,
             _previewController.CanRestoreDesignPreviewAction,
             _previewController.SetDesignPreviewTestValue,
-            _previewController.SetDesignPreviewCollectionTestValue,
+            _previewController.SetDesignPreviewCollectionItemValues,
             _previewController.SetDesignPreviewCollectionTestItems,
             _previewController.ApplyDesignPreviewTransientTestValues,
             _previewController.ResetDesignPreviewTestValues,

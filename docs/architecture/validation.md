@@ -35,8 +35,9 @@ It includes:
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/
   Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
   contracts, absence of duplicated child dimensions, collection add/duplicate/
-  reorder actions, repeated navigation across existing items without
-  reparenting controls, active-set edits resolving the selected embedded Actor,
+  reorder actions, delayed nested commits retaining the moved stable item id,
+  repeated navigation across existing items without reparenting controls,
+  active-set edits resolving the selected embedded Actor,
   horizontal containment with compact Runtime navigation, and collision-free
   rebasing of nested target ids;
 - architecture enforcement;

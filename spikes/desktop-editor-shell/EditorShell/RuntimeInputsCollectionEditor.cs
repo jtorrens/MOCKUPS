@@ -28,7 +28,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string> _restoreAction;
     private readonly Func<string, bool> _canRestoreAction;
     private readonly Action<string, string> _setPreviewTestValue;
-    private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
+    private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+        _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyTransientTestValues;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
@@ -51,7 +52,8 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string> restoreAction,
         Func<string, bool> canRestoreAction,
         Action<string, string> setPreviewTestValue,
-        Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
+        Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+            setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, JsonObject, JsonObject> applyTransientTestValues,
         Func<ProjectTreeNode, bool> resetTestValues,
@@ -75,7 +77,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _restoreAction = restoreAction;
         _canRestoreAction = canRestoreAction;
         _setPreviewTestValue = setPreviewTestValue;
-        _setPreviewCollectionTestValue = setPreviewCollectionTestValue;
+        _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _applyTransientTestValues = applyTransientTestValues;
         _resetTestValues = resetTestValues;
@@ -710,7 +712,6 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             return CreatePromotedRuntimeContractContent(
                 owner,
-                preview,
                 collection,
                 itemIndex,
                 item);
@@ -845,7 +846,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreatePromotedRuntimeContractContent(
         RuntimeInputOwner owner,
-        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
         JsonObject item)
@@ -880,16 +880,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 return;
             }
 
-            var current = DesignPreviewTestValues.CollectionItems(preview, collection)
-                .Select(CloneObject)
-                .ToList();
-            if (itemIndex < 0 || itemIndex >= current.Count)
-            {
-                throw new InvalidOperationException(
-                    $"Runtime collection '{collection.Id}' item index {itemIndex} is outside the current collection.");
-            }
-            current[itemIndex] = CloneObject(item);
-            _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
+            _setPreviewCollectionItemValues(
+                collection.JsonKey,
+                itemId,
+                new Dictionary<string, JsonNode?>
+                {
+                    [runtimeContractJsonKey] = runtimeContract,
+                });
             _testValuesChanged();
         }
 
@@ -902,7 +899,6 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             general.Children.Add(CreateTestValueCollectionControl(
                 owner,
-                preview,
                 collection,
                 itemIndex,
                 item,
@@ -1376,7 +1372,7 @@ internal sealed class RuntimeInputsCollectionEditor
             (item, itemIndex) =>
             {
                 void OpenComponentOverrides() =>
-                    OpenRuntimeComponentOverrides(owner, preview, collection, itemIndex, item);
+                    OpenRuntimeComponentOverrides(owner, collection, itemIndex, item);
                 var content = CreateTestValueCollectionItemContent(
                     owner,
                     preview,
@@ -1530,7 +1526,6 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
-                preview,
                 collection,
                 itemIndex,
                 item,
@@ -1596,7 +1591,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 foreach (var nestedInput in nestedInputs.Where((input) => IsVisibleRuntimeValue(owner, input)))
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
-                        owner, preview, collection, itemIndex, item, itemRuntimeContract, nestedInput));
+                        owner, collection, itemIndex, item, itemRuntimeContract, nestedInput));
                 }
                 groupSubcards.Add(new EditorInternalNavigationSection(
                     "componentInputs",
@@ -1708,7 +1703,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private void OpenRuntimeComponentOverrides(
         RuntimeInputOwner owner,
-        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
         JsonObject item)
@@ -1726,12 +1720,13 @@ internal sealed class RuntimeInputsCollectionEditor
         void ApplyOverrides(JsonObject nextOverrides)
         {
             item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
-            var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-            if (itemIndex >= 0 && itemIndex < current.Count)
-            {
-                current[itemIndex] = CloneObject(item);
-                _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
-            }
+            _setPreviewCollectionItemValues(
+                collection.JsonKey,
+                ItemId(item, itemIndex),
+                new Dictionary<string, JsonNode?>
+                {
+                    [componentItems.OverridesJsonKey] = nextOverrides,
+                });
             if (owner.IsInstance)
             {
                 _instanceDocuments.UpdateCollectionValue(
@@ -1778,7 +1773,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreateTestValueCollectionControl(
         RuntimeInputOwner owner,
-        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
         JsonObject item,
@@ -1886,20 +1880,10 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             else
             {
-                DesignPreviewTestValues.SetCollectionValue(preview, collection, itemIndex, input, next);
-            }
-            if (selectsComponent || transitioned)
-            {
-                var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-                if (itemIndex >= 0 && itemIndex < current.Count)
-                {
-                    current[itemIndex] = CloneObject(item);
-                    _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
-                }
-            }
-            else
-            {
-                _setPreviewCollectionTestValue(collection.JsonKey, itemId, input, next);
+                _setPreviewCollectionItemValues(
+                    collection.JsonKey,
+                    itemId,
+                    updates);
             }
             _testValuesChanged();
             afterCommit?.Invoke();
@@ -1947,7 +1931,6 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreateNestedComponentInputControl(
         RuntimeInputOwner owner,
-        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
         int itemIndex,
         JsonObject item,
@@ -1972,12 +1955,13 @@ internal sealed class RuntimeInputsCollectionEditor
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();
-            var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-            if (itemIndex >= 0 && itemIndex < current.Count)
-            {
-                current[itemIndex] = CloneObject(item);
-                _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
-            }
+            _setPreviewCollectionItemValues(
+                collection.JsonKey,
+                ItemId(item, itemIndex),
+                new Dictionary<string, JsonNode?>
+                {
+                    [inputsJsonKey] = componentInputs,
+                });
             _testValuesChanged();
         }
         control.ValueChanged += (_, next) => ApplyTransientValue(next);
@@ -2123,7 +2107,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 content.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
                 sectionLabel = input.UiSectionLabel;
             }
-            content.Children.Add(CreateTestValueCollectionControl(owner, preview, collection, itemIndex, item, input, afterCommit));
+            content.Children.Add(CreateTestValueCollectionControl(
+                owner,
+                collection,
+                itemIndex,
+                item,
+                input,
+                afterCommit));
         }
 
         var childSubcards = new List<EditorInternalNavigationSection>();

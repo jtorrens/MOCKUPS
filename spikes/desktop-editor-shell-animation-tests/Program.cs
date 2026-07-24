@@ -90,6 +90,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
+    ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -150,6 +151,85 @@ var tests = new (string Name, Action Run)[]
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var listVariant = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id == "component_project_foqn_s2_list::variant::default");
+    var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var payload = Required(CreatePreviewPayload(database, listVariant, theme.Id));
+    var settings = database.GetComponentClassSettings(
+        "component_project_foqn_s2_list");
+    var session = new ComponentPreviewInputSession(database, () => { });
+    session.UpdateForPayload(payload, settings.ProjectId);
+
+    var sourcePreview = JsonPath.ParseRequiredObject(
+        payload.DesignPreviewJson,
+        "List Design Preview");
+    var sourceItems = JsonPath.RequiredArray(
+            sourcePreview,
+            "items",
+            "List Design Preview")
+        .OfType<JsonObject>()
+        .Select((item) => item.DeepClone().AsObject())
+        .ToList();
+    True(sourceItems.Count >= 2);
+    var first = sourceItems[0];
+    var second = sourceItems[1];
+    var firstId = JsonPath.RequiredString(first, "id", "List Runtime item 1");
+    var secondId = JsonPath.RequiredString(second, "id", "List Runtime item 2");
+    var originalSecond = second.DeepClone();
+    sourceItems.RemoveAt(0);
+    sourceItems.Insert(1, first);
+    session.SetExternalCollectionItems(payload, "items", sourceItems);
+
+    var firstRuntime = JsonPath.RequiredObject(
+            first,
+            "listItemInputs",
+            "List Runtime item 1")
+        .DeepClone()
+        .AsObject();
+    firstRuntime["state"] = "inactive";
+    session.SetExternalCollectionItemValues(
+        "items",
+        firstId,
+        new Dictionary<string, JsonNode?>
+        {
+            ["listItemInputs"] = firstRuntime,
+        });
+
+    var effective = session.ApplyTransientTestValues(sourcePreview, payload);
+    var effectiveItems = JsonPath.RequiredArray(
+            effective,
+            "items",
+            "Effective List Design Preview")
+        .OfType<JsonObject>()
+        .ToList();
+    Equal(secondId, JsonPath.RequiredString(
+        effectiveItems[0],
+        "id",
+        "Effective List Runtime item 1"));
+    Equal(firstId, JsonPath.RequiredString(
+        effectiveItems[1],
+        "id",
+        "Effective List Runtime item 2"));
+    True(JsonNode.DeepEquals(originalSecond, effectiveItems[0]));
+    Equal(
+        "inactive",
+        JsonPath.RequiredString(
+            JsonPath.RequiredObject(
+                effectiveItems[1],
+                "listItemInputs",
+                "Effective moved List Runtime item"),
+            "state",
+            "Effective moved List Runtime item"));
+}
 
 static void ExternalNodeProcessesShareExecutableResolution()
 {

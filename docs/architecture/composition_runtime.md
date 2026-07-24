@@ -163,6 +163,9 @@ Variant. Duplicating regenerates every nested Content Set and embedded child
 target id while preserving their explicit references. Deleting removes the
 item and its owner-relative animation tracks. Ordinal editor labels are
 recalculated after every structural operation and are never persisted.
+Every scalar or nested Runtime commit targets the stable item id. A control
+that loses focus while its item is moving may finish after the reorder, but it
+must update that same item and cannot address the former array index.
 
 Session-only collection Test Values are keyed by the exact Preview owner id and
 remain intact when their own structural edit changes the effective Runtime
