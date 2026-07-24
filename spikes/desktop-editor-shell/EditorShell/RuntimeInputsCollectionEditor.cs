@@ -1635,9 +1635,14 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputCollectionDefinition collection)
     {
         var items = DesignPreviewTestValues.CollectionItems(preview, collection);
-        return collection.FixedItemCount > 0
-            ? items.Take(collection.FixedItemCount).ToList()
-            : items;
+        if (collection.FixedItemCount > 0
+            && items.Count != collection.FixedItemCount)
+        {
+            throw new InvalidOperationException(
+                $"Runtime collection '{collection.JsonKey}' requires exactly "
+                + $"{collection.FixedItemCount} items but contains {items.Count}.");
+        }
+        return items;
     }
 
     private static bool IsVisibleRuntimeValue(RuntimeInputOwner owner, ComponentInputDefinition input) =>

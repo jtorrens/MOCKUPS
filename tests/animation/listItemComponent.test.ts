@@ -76,6 +76,20 @@ test("List Item rejects an Icon Row child Runtime that does not match its Varian
   );
 });
 
+test("List Item requires exactly the Variant-owned number of Content Sets", () => {
+  const source = fixture("calls");
+  const preview = JSON.parse(source.designPreviewJson) as {
+    contentSets: Array<Record<string, unknown>>;
+  };
+  preview.contentSets.push({ id: "unexpected_extra_set" });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  assert.throws(
+    () => resolveListItemComponent(source),
+    /requires 3 Runtime content sets but received 4/,
+  );
+});
+
 test("List Item consumes exact child Runtime fields instead of parent-owned copies", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as {

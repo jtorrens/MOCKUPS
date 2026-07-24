@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -26,8 +27,17 @@ import {
 } from "../../src/development-scaffolding/componentScaffold.js";
 import {
   componentScaffoldSemanticMarker,
+  integrateComponentScaffold,
   materializeComponentScaffold,
 } from "../../src/development-scaffolding/componentScaffoldWorkspace.js";
+import {
+  draftComponentSpecRoot,
+  expectedIntegratedComponentScaffoldArtifacts,
+  generatedComponentRegistryPath,
+  generatedDesktopConfigRegistryPath,
+  generatedDesktopFieldCatalogPath,
+  integratedComponentSpecRoot,
+} from "../../src/development-scaffolding/componentScaffoldArtifacts.js";
 
 const repositoryRoot = process.cwd();
 
@@ -156,7 +166,7 @@ test("Component scaffold materializes deterministic unregistered owners without 
     assert.equal(result.created.length, 6);
     assert.ok(existsSync(path.join(
       temporaryDirectory,
-      "scaffolding/components/scaffoldFixture.json",
+      "scaffolding/drafts/scaffoldFixture.json",
     )));
     for (const owner of plan.creates) {
       const source = readFileSync(path.join(temporaryDirectory, owner.path), "utf8");
@@ -170,6 +180,156 @@ test("Component scaffold materializes deterministic unregistered owners without 
       existsSync(path.join(
         temporaryDirectory,
         "src/desktop-preview/desktopPreviewManifest.json",
+      )),
+      false,
+    );
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
+});
+
+test("Integrated scaffold artifacts are deterministic and own registry, dictionary and config routing", () => {
+  const spec = validSpec();
+  const first = expectedIntegratedComponentScaffoldArtifacts([spec]);
+  const second = expectedIntegratedComponentScaffoldArtifacts([structuredClone(spec)]);
+
+  assert.deepEqual(first, second);
+  assert.match(
+    first.get(generatedComponentRegistryPath) ?? "",
+    /scaffoldFixture: \(payload\)/,
+  );
+  assert.match(
+    first.get(generatedDesktopFieldCatalogPath) ?? "",
+    /fields\.Add\("component\.scaffoldFixture\.size"/,
+  );
+  assert.match(
+    first.get(generatedDesktopConfigRegistryPath) ?? "",
+    /ScaffoldFixtureComponentConfigContract\.Validate/,
+  );
+});
+
+test("Component scaffold integrates complete owners, generated routes and parity rows explicitly", () => {
+  const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-integrate-"));
+  const databasePath = path.join(temporaryDirectory, "data", "desktop-editor-spike.sqlite");
+  try {
+    prepareIntegrationFixture(temporaryDirectory, databasePath);
+    const spec = validSpec();
+    const plan = createComponentScaffoldPlan(
+      spec,
+      loadComponentScaffoldInventory(temporaryDirectory, databasePath),
+      temporaryDirectory,
+    );
+    materializeComponentScaffold(spec, plan, temporaryDirectory);
+    for (const owner of plan.creates) {
+      const ownerPath = path.join(temporaryDirectory, owner.path);
+      writeFileSync(
+        ownerPath,
+        readFileSync(ownerPath, "utf8").replace(componentScaffoldSemanticMarker, ""),
+        "utf8",
+      );
+    }
+
+    const result = integrateComponentScaffold(
+      spec,
+      temporaryDirectory,
+      databasePath,
+    );
+
+    assert.equal(result.status, "integrated");
+    assert.equal(
+      existsSync(path.join(
+        temporaryDirectory,
+        draftComponentSpecRoot,
+        "scaffoldFixture.json",
+      )),
+      false,
+    );
+    assert.ok(existsSync(path.join(
+      temporaryDirectory,
+      integratedComponentSpecRoot,
+      "scaffoldFixture.json",
+    )));
+    const manifest = JSON.parse(readFileSync(
+      path.join(
+        temporaryDirectory,
+        "src/desktop-preview/desktopPreviewManifest.json",
+      ),
+      "utf8",
+    )) as {
+      components: Record<string, { embeds: string[] }>;
+    };
+    assert.equal(
+      manifest.components.scaffoldFixture?.embeds.length,
+      0,
+    );
+    assert.ok(manifest.components.componentStack?.embeds.includes("scaffoldFixture"));
+    assert.ok(manifest.components.collectionStack?.embeds.includes("scaffoldFixture"));
+    for (const generatedPath of [
+      generatedComponentRegistryPath,
+      generatedDesktopFieldCatalogPath,
+      generatedDesktopConfigRegistryPath,
+    ]) {
+      assert.ok(existsSync(path.join(temporaryDirectory, generatedPath)));
+    }
+    const database = new Database(databasePath, { readonly: true });
+    try {
+      assert.deepEqual(
+        database.prepare(`
+          SELECT component_type AS componentType,
+                 record_class_id AS recordClassId
+          FROM component_classes
+          WHERE id = ?
+        `).get(spec.component.componentClassId),
+        {
+          componentType: "scaffoldFixture",
+          recordClassId: "component.scaffoldFixture",
+        },
+      );
+      assert.deepEqual(
+        database.prepare(`
+          SELECT record_class_id AS recordClassId
+          FROM editor_layouts
+          WHERE record_class_id = ?
+        `).get(spec.component.recordClassId),
+        { recordClassId: "component.scaffoldFixture" },
+      );
+    } finally {
+      database.close();
+    }
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
+});
+
+test("Component scaffold cannot integrate owners with pending semantics or mutate persistence", () => {
+  const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-pending-"));
+  const databasePath = path.join(temporaryDirectory, "data", "desktop-editor-spike.sqlite");
+  try {
+    prepareIntegrationFixture(temporaryDirectory, databasePath);
+    const spec = validSpec();
+    const plan = createComponentScaffoldPlan(
+      spec,
+      loadComponentScaffoldInventory(temporaryDirectory, databasePath),
+      temporaryDirectory,
+    );
+    materializeComponentScaffold(spec, plan, temporaryDirectory);
+    const before = sha256(databasePath);
+
+    assert.throws(
+      () => integrateComponentScaffold(spec, temporaryDirectory, databasePath),
+      /still requires semantic implementation/,
+    );
+    assert.equal(sha256(databasePath), before);
+    assert.ok(existsSync(path.join(
+      temporaryDirectory,
+      draftComponentSpecRoot,
+      "scaffoldFixture.json",
+    )));
+    assert.equal(
+      existsSync(path.join(
+        temporaryDirectory,
+        integratedComponentSpecRoot,
+        "scaffoldFixture.json",
       )),
       false,
     );
@@ -442,6 +602,88 @@ test("Component scaffold parser rejects unknown top-level data", () => {
     /Unknown: fallbackDefaults/,
   );
 });
+
+function prepareIntegrationFixture(
+  repositoryPath: string,
+  databasePath: string,
+) {
+  const manifestPath = path.join(
+    repositoryPath,
+    "src/desktop-preview/desktopPreviewManifest.json",
+  );
+  const fieldDefinitionPath = path.join(
+    repositoryPath,
+    "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  );
+  mkdirSync(path.dirname(manifestPath), { recursive: true });
+  mkdirSync(path.dirname(fieldDefinitionPath), { recursive: true });
+  mkdirSync(path.dirname(databasePath), { recursive: true });
+  writeFileSync(manifestPath, `${JSON.stringify({
+    schemaVersion: 2,
+    components: {
+      label: {
+        category: "atom",
+        contract: "./labelComponentContract",
+        resolver: "./labelComponentResolver",
+        renderable: "./labelComponentRenderable",
+        embeds: [],
+      },
+      surface: {
+        category: "atom",
+        contract: "./surfaceComponentContract",
+        resolver: "./surfaceComponentResolver",
+        renderable: "./surfaceComponentRenderable",
+        embeds: [],
+      },
+      componentStack: {
+        category: "atom",
+        contract: "./componentStackComponentContract",
+        resolver: "./componentStackComponentResolver",
+        renderable: "./componentStackComponentRenderable",
+        embeds: ["label", "surface"],
+      },
+      collectionStack: {
+        category: "atom",
+        contract: "./collectionStackComponentContract",
+        resolver: "./collectionStackComponentResolver",
+        renderable: "./collectionStackComponentRenderable",
+        embeds: ["label", "surface"],
+      },
+    },
+  }, null, 2)}\n`, "utf8");
+  writeFileSync(
+    fieldDefinitionPath,
+    "namespace Fixture;\ninternal enum ValueKind { Integer }\n",
+    "utf8",
+  );
+
+  const database = new Database(databasePath);
+  try {
+    database.exec(`
+      CREATE TABLE projects (
+        id TEXT PRIMARY KEY
+      );
+      CREATE TABLE component_classes (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        component_type TEXT NOT NULL,
+        record_class_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        notes TEXT NOT NULL DEFAULT '',
+        config_json TEXT NOT NULL DEFAULT '{}',
+        design_preview_json TEXT NOT NULL DEFAULT '{}',
+        metadata_json TEXT NOT NULL DEFAULT '{}'
+      );
+      CREATE TABLE editor_layouts (
+        record_class_id TEXT PRIMARY KEY,
+        layout_json TEXT NOT NULL
+      );
+      INSERT INTO projects VALUES ('project_foqn_s2');
+    `);
+  } finally {
+    database.close();
+  }
+}
 
 function sha256(filePath: string) {
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");

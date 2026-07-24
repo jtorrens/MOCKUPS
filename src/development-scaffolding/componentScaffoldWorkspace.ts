@@ -2,6 +2,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
@@ -10,13 +11,22 @@ import Database from "better-sqlite3";
 
 import {
   ComponentScaffoldValidationError,
+  createComponentScaffoldPlan,
+  loadComponentScaffoldInventory,
   type ComponentScaffoldPlan,
   type ComponentScaffoldSpec,
   type JsonObject,
 } from "./componentScaffold.js";
+import {
+  draftComponentSpecRoot,
+  generatedComponentRegistryPath,
+  generatedDesktopConfigRegistryPath,
+  generatedDesktopFieldCatalogPath,
+  integratedComponentSpecRoot,
+  regenerateIntegratedComponentScaffoldArtifacts,
+} from "./componentScaffoldArtifacts.js";
 
 export const componentScaffoldSemanticMarker = "SCAFFOLD_SEMANTICS_REQUIRED";
-export const integratedComponentSpecRoot = "scaffolding/components";
 
 export interface ComponentScaffoldMaterialization {
   schemaVersion: 1;
@@ -33,12 +43,24 @@ export interface ComponentScaffoldVerification {
   checked: string[];
 }
 
+export interface ComponentScaffoldIntegration {
+  schemaVersion: 1;
+  status: "integrated";
+  componentType: string;
+  specPath: string;
+  generated: string[];
+  persistence: {
+    componentClassId: string;
+    recordClassId: string;
+  };
+}
+
 export function materializeComponentScaffold(
   spec: ComponentScaffoldSpec,
   plan: ComponentScaffoldPlan,
   repositoryRoot: string,
 ): ComponentScaffoldMaterialization {
-  const specPath = `${integratedComponentSpecRoot}/${spec.component.componentType}.json`;
+  const specPath = `${draftComponentSpecRoot}/${spec.component.componentType}.json`;
   const targets = [
     specPath,
     ...plan.creates.map((owner) => owner.path),
@@ -79,6 +101,175 @@ export function materializeComponentScaffold(
     componentType: spec.component.componentType,
     specPath,
     created,
+  };
+}
+
+export function integrateComponentScaffold(
+  spec: ComponentScaffoldSpec,
+  repositoryRoot: string,
+  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+): ComponentScaffoldIntegration {
+  const componentType = spec.component.componentType;
+  const draftSpecPath = `${draftComponentSpecRoot}/${componentType}.json`;
+  const integratedSpecPath = `${integratedComponentSpecRoot}/${componentType}.json`;
+  const resolvedDraftSpecPath = scaffoldTarget(repositoryRoot, draftSpecPath);
+  const resolvedIntegratedSpecPath = scaffoldTarget(repositoryRoot, integratedSpecPath);
+  if (!existsSync(resolvedDraftSpecPath)) {
+    throw new ComponentScaffoldValidationError([
+      `Draft Component spec '${draftSpecPath}' is missing.`,
+    ]);
+  }
+  const persistedDraft = JSON.parse(readFileSync(resolvedDraftSpecPath, "utf8")) as unknown;
+  if (canonicalJson(persistedDraft) !== canonicalJson(spec)) {
+    throw new ComponentScaffoldValidationError([
+      `Draft Component spec '${draftSpecPath}' differs from the integration contract.`,
+    ]);
+  }
+  if (existsSync(resolvedIntegratedSpecPath)) {
+    throw new ComponentScaffoldValidationError([
+      `Integrated Component spec '${integratedSpecPath}' already exists.`,
+    ]);
+  }
+
+  const inventory = loadComponentScaffoldInventory(repositoryRoot, databasePath);
+  const plan = createComponentScaffoldPlan(
+    spec,
+    inventory,
+    repositoryRoot,
+    "mustExist",
+  );
+  const violations: string[] = [];
+  for (const owner of ownerTargets(spec)) {
+    const resolved = scaffoldTarget(repositoryRoot, owner.path);
+    const source = readFileSync(resolved, "utf8");
+    if (!source.includes(owner.requiredTerm)) {
+      violations.push(
+        `${owner.label} owner '${owner.path}' does not expose '${owner.requiredTerm}'.`,
+      );
+    }
+    if (source.includes(componentScaffoldSemanticMarker)) {
+      violations.push(
+        `${owner.label} owner '${owner.path}' still requires semantic implementation.`,
+      );
+    }
+  }
+  for (const asset of plan.assets) {
+    if (asset.status !== "existing") {
+      violations.push(`Required scaffold asset '${asset.path}' must exist before integration.`);
+    }
+  }
+  if (violations.length > 0) {
+    throw new ComponentScaffoldValidationError(violations);
+  }
+
+  const manifestPath = "src/desktop-preview/desktopPreviewManifest.json";
+  const resolvedManifestPath = scaffoldTarget(repositoryRoot, manifestPath);
+  const manifest = jsonObject(
+    JSON.parse(readFileSync(resolvedManifestPath, "utf8")),
+    "Desktop Preview manifest",
+  );
+  const components = jsonObject(
+    manifest.components,
+    "Desktop Preview manifest components",
+  );
+  components[componentType] = {
+    category: spec.component.category,
+    ...spec.manifest,
+  };
+  addPolymorphicEmbed(components, "componentStack", componentType);
+  addPolymorphicEmbed(components, "collectionStack", componentType);
+  const nextManifest = `${JSON.stringify(manifest, null, 2)}\n`;
+
+  const generatedPaths = [
+    generatedComponentRegistryPath,
+    generatedDesktopFieldCatalogPath,
+    generatedDesktopConfigRegistryPath,
+  ];
+  const sourcePaths = [
+    manifestPath,
+    draftSpecPath,
+    integratedSpecPath,
+    ...generatedPaths,
+  ];
+  const before = new Map(sourcePaths.map((relativePath) => {
+    const resolved = scaffoldTarget(repositoryRoot, relativePath);
+    return [
+      relativePath,
+      existsSync(resolved) ? readFileSync(resolved, "utf8") : null,
+    ] as const;
+  }));
+
+  const database = new Database(databasePath, {
+    fileMustExist: true,
+  });
+  try {
+    const apply = database.transaction(() => {
+      database.prepare(`
+        INSERT INTO component_classes (
+          id,
+          project_id,
+          component_type,
+          record_class_id,
+          name,
+          notes,
+          config_json,
+          design_preview_json,
+          metadata_json
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        spec.component.componentClassId,
+        spec.component.projectId,
+        componentType,
+        spec.component.recordClassId,
+        spec.component.name,
+        spec.component.notes,
+        JSON.stringify(spec.config),
+        JSON.stringify(spec.designPreview),
+        JSON.stringify({
+          ...spec.metadata,
+          variants: [spec.defaultVariant, ...spec.additionalVariants],
+        }),
+      );
+      database.prepare(`
+        INSERT INTO editor_layouts (record_class_id, layout_json)
+        VALUES (?, ?)
+      `).run(
+        spec.component.recordClassId,
+        JSON.stringify(spec.editorLayout),
+      );
+
+      writeFileSync(resolvedManifestPath, nextManifest, "utf8");
+      mkdirSync(path.dirname(resolvedIntegratedSpecPath), { recursive: true });
+      writeFileSync(
+        resolvedIntegratedSpecPath,
+        `${JSON.stringify(spec, null, 2)}\n`,
+        { encoding: "utf8", flag: "wx" },
+      );
+      unlinkSync(resolvedDraftSpecPath);
+      regenerateIntegratedComponentScaffoldArtifacts(repositoryRoot);
+    });
+    apply();
+  } catch (error) {
+    restoreFiles(repositoryRoot, before);
+    throw error;
+  } finally {
+    database.close();
+  }
+
+  const generated = generatedPaths.filter((relativePath) =>
+    before.get(relativePath)
+      !== readFileSync(scaffoldTarget(repositoryRoot, relativePath), "utf8"));
+  return {
+    schemaVersion: 1,
+    status: "integrated",
+    componentType,
+    specPath: integratedSpecPath,
+    generated,
+    persistence: {
+      componentClassId: spec.component.componentClassId,
+      recordClassId: spec.component.recordClassId,
+    },
   };
 }
 
@@ -141,8 +332,13 @@ export function verifyComponentScaffoldImplementation(
     checked.push(owner.path);
   }
 
-  const registryPath = "src/desktop-preview/componentClassRenderableRegistry.ts";
-  const registry = readFileSync(scaffoldTarget(repositoryRoot, registryPath), "utf8");
+  const registryPaths = [
+    "src/desktop-preview/componentClassRenderableRegistry.ts",
+    generatedComponentRegistryPath,
+  ];
+  const registry = registryPaths
+    .map((candidate) => readFileSync(scaffoldTarget(repositoryRoot, candidate), "utf8"))
+    .join("\n");
   for (const required of [
     spec.owners.resolverExport,
     spec.owners.renderableExport,
@@ -152,7 +348,7 @@ export function verifyComponentScaffoldImplementation(
       violations.push(`Registry route '${componentType}' is missing '${required}'.`);
     }
   }
-  checked.push(registryPath);
+  checked.push(...registryPaths);
 
   const fieldSources = [
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
@@ -163,7 +359,8 @@ export function verifyComponentScaffoldImplementation(
     .map((candidate) => readFileSync(candidate, "utf8"))
     .join("\n");
   for (const field of spec.dictionaryFields) {
-    if (!fieldSources.includes(`["${field.id}"]`)) {
+    if (!fieldSources.includes(`["${field.id}"]`)
+        && !fieldSources.includes(`fields.Add("${field.id}"`)) {
       violations.push(`Dictionary field '${field.id}' is not registered.`);
       continue;
     }
@@ -179,7 +376,10 @@ export function verifyComponentScaffoldImplementation(
       );
     }
   }
-  checked.push("spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs");
+  checked.push(
+    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    generatedDesktopFieldCatalogPath,
+  );
 
   const database = new Database(databasePath, {
     readonly: true,
@@ -412,6 +612,40 @@ function jsonObject(value: unknown, owner: string): JsonObject {
     throw new Error(`${owner} must be an object.`);
   }
   return value as JsonObject;
+}
+
+function addPolymorphicEmbed(
+  components: JsonObject,
+  ownerType: string,
+  componentType: string,
+) {
+  if (ownerType === componentType) return;
+  const owner = jsonObject(
+    components[ownerType],
+    `Desktop Preview manifest Component '${ownerType}'`,
+  );
+  if (!Array.isArray(owner.embeds)
+      || owner.embeds.some((value) => typeof value !== "string")) {
+    throw new Error(
+      `Desktop Preview manifest Component '${ownerType}' embeds must be a string array.`,
+    );
+  }
+  if (!owner.embeds.includes(componentType)) owner.embeds.push(componentType);
+}
+
+function restoreFiles(
+  repositoryRoot: string,
+  before: ReadonlyMap<string, string | null>,
+) {
+  for (const [relativePath, content] of before) {
+    const resolved = scaffoldTarget(repositoryRoot, relativePath);
+    if (content === null) {
+      if (existsSync(resolved)) unlinkSync(resolved);
+      continue;
+    }
+    mkdirSync(path.dirname(resolved), { recursive: true });
+    writeFileSync(resolved, content, "utf8");
+  }
 }
 
 function canonicalJson(value: unknown): string {

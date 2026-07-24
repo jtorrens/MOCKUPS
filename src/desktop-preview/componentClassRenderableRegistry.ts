@@ -17,10 +17,6 @@ import { notificationComponentToRenderable } from "./notificationComponentRender
 import { resolveNotificationComponent } from "./notificationComponentResolver.js";
 import { notificationsComponentToRenderable } from "./notificationsComponentRenderable.js";
 import { resolveNotificationsComponent } from "./notificationsComponentResolver.js";
-import { listItemComponentToRenderable } from "./listItemComponentRenderable.js";
-import { resolveListItemComponent } from "./listItemComponentResolver.js";
-import { listComponentToRenderable } from "./listComponentRenderable.js";
-import { resolveListComponent } from "./listComponentResolver.js";
 import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import {
@@ -60,19 +56,20 @@ import { mediaComponentToRenderable } from "./mediaComponentRenderable.js";
 import { resolveMediaComponent } from "./mediaComponentResolver.js";
 import { badgeComponentToRenderable } from "./badgeComponentRenderable.js";
 import { resolveBadgeComponent } from "./badgeComponentResolver.js";
+import { generatedComponentScaffoldFactories } from "./generatedComponentScaffoldRegistry.js";
 
 export type ComponentRenderableBoundary = (
   payload: DesignPreviewPayload,
   assignedBox?: RenderableBox,
 ) => RenderableNode;
 
-type ComponentRenderableFactory = (
+export type ComponentRenderableFactory = (
   payload: DesignPreviewPayload,
   assignedBox: RenderableBox | undefined,
   renderChild: ComponentRenderableBoundary,
 ) => RenderableNode;
 
-export const componentRenderableFactories = {
+const builtInComponentRenderableFactories = {
   label: (payload) => labelComponentToRenderable(payload, resolveLabelComponent(payload)),
   surface: (payload) =>
     surfaceComponentToRenderable(payload, resolveSurfaceComponent(payload)),
@@ -93,10 +90,6 @@ export const componentRenderableFactories = {
     notificationComponentToRenderable(payload, resolveNotificationComponent(payload), assignedBox),
   notifications: (payload, _assignedBox, renderChild) =>
     notificationsComponentToRenderable(payload, resolveNotificationsComponent(payload), renderChild),
-  listItem: (payload, assignedBox) =>
-    listItemComponentToRenderable(payload, resolveListItemComponent(payload), assignedBox),
-  list: (payload, _assignedBox, renderChild) =>
-    listComponentToRenderable(payload, resolveListComponent(payload), renderChild),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   avatar: (payload) => avatarComponentToRenderable(payload, resolveAvatarComponent(payload)),
@@ -122,7 +115,15 @@ export const componentRenderableFactories = {
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   navigation_bar: (payload) =>
     navigationBarComponentToRenderable(payload, resolveNavigationBarComponent(payload)),
-} satisfies Record<DesktopPreviewComponentClass, ComponentRenderableFactory>;
+} satisfies Record<string, ComponentRenderableFactory>;
+
+export const componentRenderableFactories: Record<
+  DesktopPreviewComponentClass,
+  ComponentRenderableFactory
+> = {
+  ...builtInComponentRenderableFactories,
+  ...generatedComponentScaffoldFactories,
+};
 
 export function routeComponentClassToRenderable(
   payload: DesignPreviewPayload,

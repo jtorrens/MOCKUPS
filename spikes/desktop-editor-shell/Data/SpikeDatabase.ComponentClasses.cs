@@ -310,6 +310,7 @@ internal sealed partial class SpikeDatabase
                 settings.ComponentType,
                 config,
                 $"Component class '{componentClassId}' config_json");
+            ValidateEmbeddedSlotVariantReferences(connection, settings.ProjectId, config);
             SetDefaultComponentVariantConfig(metadata, config);
             _componentClassRepository.UpdateConfigAndMetadata(
                 connection,
@@ -685,11 +686,12 @@ internal sealed partial class SpikeDatabase
         JsonObject config,
         JsonObject metadata)
     {
-        var componentType = _componentClassRepository.Get(connection, componentClassId).ComponentType;
+        var component = _componentClassRepository.Get(connection, componentClassId);
         CurrentComponentConfigContract.Validate(
-            componentType,
+            component.ComponentType,
             config,
             $"Component class '{componentClassId}' Default Variant config");
+        ValidateEmbeddedSlotVariantReferences(connection, component.ProjectId, config);
         SetDefaultComponentVariantConfig(metadata, config);
         _componentClassRepository.UpdateConfigAndMetadata(
             connection,
@@ -709,11 +711,12 @@ internal sealed partial class SpikeDatabase
         {
             throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
-        var componentType = _componentClassRepository.Get(connection, componentClassId).ComponentType;
+        var component = _componentClassRepository.Get(connection, componentClassId);
         CurrentComponentConfigContract.Validate(
-            componentType,
+            component.ComponentType,
             config,
             $"Component class '{componentClassId}' Variant '{variantId}' config");
+        ValidateEmbeddedSlotVariantReferences(connection, component.ProjectId, config);
         if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
         {
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);

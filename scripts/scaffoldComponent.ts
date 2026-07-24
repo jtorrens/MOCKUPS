@@ -10,6 +10,7 @@ import {
   resolveComponentScaffoldSpecPath,
 } from "../src/development-scaffolding/componentScaffold.js";
 import {
+  integrateComponentScaffold,
   materializeComponentScaffold,
   verifyComponentScaffoldImplementation,
 } from "../src/development-scaffolding/componentScaffoldWorkspace.js";
@@ -22,10 +23,12 @@ const { values } = parseArgs({
   options: {
     spec: { type: "string" },
     database: { type: "string" },
+    "dictionary-catalog": { type: "string" },
     "component-type": { type: "string" },
     intent: { type: "string" },
     "dry-run": { type: "boolean", default: false },
     materialize: { type: "boolean", default: false },
+    integrate: { type: "boolean", default: false },
     verify: { type: "boolean", default: false },
     "adopt-existing": { type: "boolean", default: false },
     "print-template": { type: "boolean", default: false },
@@ -37,14 +40,16 @@ const { values } = parseArgs({
 if (values["print-template"]) {
   if (values.spec
       || values.database
+      || values["dictionary-catalog"]
       || values["dry-run"]
       || values.materialize
+      || values.integrate
       || values.verify
       || values["adopt-existing"]
       || values["component-type"]
       || values.intent) {
     throw new Error(
-      "--print-template cannot be combined with --spec, --database, --dry-run, --materialize or --verify.",
+      "--print-template cannot be combined with another Component scaffold option.",
     );
   }
   console.log(JSON.stringify(componentScaffoldTemplate(), null, 2));
@@ -54,16 +59,20 @@ if (values["print-template"]) {
 const modes = [
   values["dry-run"] ? "dry-run" : "",
   values.materialize ? "materialize" : "",
+  values.integrate ? "integrate" : "",
   values.verify ? "verify" : "",
   values["adopt-existing"] ? "adopt-existing" : "",
 ].filter(Boolean);
 if (modes.length !== 1) {
   throw new Error(
-    "Component scaffolding requires exactly one of --dry-run, --materialize, --verify or --adopt-existing.",
+    "Component scaffolding requires exactly one of --dry-run, --materialize, --integrate, --verify or --adopt-existing.",
   );
 }
 if (!values["adopt-existing"] && !values.spec) {
   throw new Error("Component scaffolding requires an explicit --spec JSON path.");
+}
+if (!values["adopt-existing"] && values["dictionary-catalog"]) {
+  throw new Error("--dictionary-catalog is available only with --adopt-existing.");
 }
 
 const repositoryRoot = process.cwd();
@@ -84,6 +93,9 @@ if (values["adopt-existing"]) {
       intent,
       repositoryRoot,
       databasePath,
+      values["dictionary-catalog"]
+        ? path.resolve(values["dictionary-catalog"])
+        : undefined,
     ),
     null,
     2,
@@ -95,7 +107,13 @@ const specPath = resolveComponentScaffoldSpecPath(repositoryRoot, values.spec!);
 const spec = parseComponentScaffoldSpec(
   JSON.parse(readFileSync(specPath, "utf8")) as unknown,
 );
-if (values.verify) {
+if (values.integrate) {
+  console.log(JSON.stringify(
+    integrateComponentScaffold(spec, repositoryRoot, databasePath),
+    null,
+    2,
+  ));
+} else if (values.verify) {
   console.log(JSON.stringify(
     verifyComponentScaffoldImplementation(spec, repositoryRoot, databasePath),
     null,

@@ -15,6 +15,10 @@ import {
   approximateTextWidth,
   approximateWrappedTextLines,
 } from "../src/desktop-preview/previewTextHelpers.js";
+import {
+  expectedIntegratedComponentScaffoldArtifacts,
+  loadIntegratedComponentScaffoldSpecs,
+} from "../src/development-scaffolding/componentScaffoldArtifacts.js";
 import { renderableNodeTypes } from "../src/visual/renderable/types.js";
 
 const root = process.cwd();
@@ -330,6 +334,13 @@ if (packageScripts["scaffold:verify"] !== "tsx scripts/verifyIntegratedComponent
     "the complete repository gate must verify every integrated Component scaffold spec",
   );
 }
+if (packageScripts["scaffold:generate"]
+    !== "tsx scripts/generateIntegratedComponentScaffoldArtifacts.ts") {
+  addViolation(
+    "package.json",
+    "integrated Component scaffold artifacts must use one deterministic generator",
+  );
+}
 for (const [scaffoldPath, requiredTerm] of [
   ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
   ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
@@ -337,20 +348,34 @@ for (const [scaffoldPath, requiredTerm] of [
   ["src/development-scaffolding/componentScaffold.ts", "resolveComponentScaffoldSpecPath"],
   ["scripts/scaffoldComponent.ts", '"dry-run": { type: "boolean"'],
   ["scripts/scaffoldComponent.ts", 'materialize: { type: "boolean"'],
+  ["scripts/scaffoldComponent.ts", 'integrate: { type: "boolean"'],
   ["scripts/scaffoldComponent.ts", 'verify: { type: "boolean"'],
   ["scripts/scaffoldComponent.ts", '"adopt-existing": { type: "boolean"'],
   ["src/development-scaffolding/componentScaffoldWorkspace.ts", "SCAFFOLD_SEMANTICS_REQUIRED"],
   ["src/development-scaffolding/componentScaffoldWorkspace.ts", "will not overwrite existing target"],
+  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "still requires semantic implementation"],
+  ["src/development-scaffolding/componentScaffoldArtifacts.ts", "Do not edit manually"],
   ["src/development-scaffolding/componentScaffoldAdoption.ts", "will not overwrite"],
   ["scripts/verifyIntegratedComponentScaffolds.ts", "verifyComponentScaffoldImplementation"],
   ["tests/scaffolding/componentScaffold.test.ts", "opens the database read-only"],
   ["docs/architecture/development_workflow.md", "materialization never edits the manifest, registry or database"],
+  ["docs/architecture/development_workflow.md", "Integration rejects missing assets"],
 ] as const) {
   assertContains(
     scaffoldPath,
     requiredTerm,
     "Component scaffolding must keep planning read-only and materialization unregistered until semantic owners exist",
   );
+}
+const integratedScaffoldSpecs = loadIntegratedComponentScaffoldSpecs(root);
+for (const [generatedPath, expected] of
+  expectedIntegratedComponentScaffoldArtifacts(integratedScaffoldSpecs)) {
+  if (readText(generatedPath) !== expected) {
+    addViolation(
+      generatedPath,
+      "generated Component scaffold artifact is stale or was edited manually",
+    );
+  }
 }
 for (const prohibitedWriteTerm of [
   "INSERT INTO component_classes",
@@ -2864,11 +2889,15 @@ function assertDesktopPreviewActionsAreDeclarative() {
 function assertComponentEditorLayoutsUseKnownFields() {
   const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
   if (!existsSync(databasePath)) return;
-  const catalog = readText(
+  const catalog = [
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
-  );
+    "spikes/desktop-editor-shell/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
+  ].map(readText).join("\n");
   const knownFields = new Set(
-    [...catalog.matchAll(/^\s*\["([^"]+)"\]\s*=/gm)].map((match) => match[1]),
+    [
+      ...catalog.matchAll(/^\s*\["([^"]+)"\]\s*=/gm),
+      ...catalog.matchAll(/fields\.Add\("([^"]+)"/g),
+    ].map((match) => match[1]),
   );
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -3274,6 +3303,7 @@ for (const relativePath of centralCommonFiles) {
 
 const registryFiles = new Set([
   "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "src/desktop-preview/generatedComponentScaffoldRegistry.ts",
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
   "src/desktop-preview/moduleRenderableRegistry.ts",
 ]);
@@ -3525,6 +3555,7 @@ for (const componentClass of routedComponentClasses) {
 const allowedComponentImports: Record<string, Set<string>> = {};
 const desktopPreviewPaintTreeSourceFiles = new Set([
   "src/desktop-preview/componentClassRenderableRegistry.ts",
+  "src/desktop-preview/generatedComponentScaffoldRegistry.ts",
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
   "src/desktop-preview/renderDesignPreviewHtml.tsx",
 ]);
@@ -5092,18 +5123,6 @@ for (const legacySeededComponentType of [
     "archive/react-legacy/src/persistence/sqlite/createDatabase.ts",
     `type: "${legacySeededComponentType}"`,
     `legacy component type ${legacySeededComponentType} must not be seeded as component_type`,
-  );
-}
-for (const componentType of Object.keys(desktopPreviewComponents)) {
-  assertContains(
-    "archive/react-legacy/src/domain/schemas/componentClass.ts",
-    `"${componentType}"`,
-    `component class schema must include manifest component type ${componentType}`,
-  );
-  assertContains(
-    "archive/react-legacy/src/domain/fields/componentClassFields.ts",
-    `"${componentType}"`,
-    `component class field options must include manifest component type ${componentType}`,
   );
 }
 for (const legacyComponentRecordClassId of [
@@ -10171,6 +10190,47 @@ function assertListItemRuntimePresentationIsGeneric() {
     "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
     'ComponentType == "listItem"',
     "the generic Runtime editor must not branch on List Item",
+  );
+  for (const fixedSlotField of [
+    "component.listItem.components.avatar.component",
+    "component.listItem.components.label.component",
+    "component.listItem.components.iconRow.component",
+    "component.listItem.states.normal.surface",
+    "component.listItem.states.pressed.surface",
+    "component.listItem.states.inactive.surface",
+    "component.list.collectionStack",
+    "component.list.listItem",
+  ]) {
+    assertContains(
+      "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs",
+      `"${fixedSlotField}"`,
+      `List fixed slot '${fixedSlotField}' must retain one typed reference owner`,
+    );
+  }
+  assertContains(
+    "src/desktop-preview/listItemComponentResolver.ts",
+    "contentSets.length !== contentSetCount",
+    "List Item must require the exact Variant-owned Content Set count",
+  );
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "items.Take(collection.FixedItemCount)",
+    "fixed Runtime collections must fail instead of hiding surplus items",
+  );
+  assertContains(
+    "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+    "DesignPreviewTestValues.ValidateFixedCollectionCounts",
+    "Component persistence must validate fixed Runtime collection counts on reads and writes",
+  );
+  assertContains(
+    "src/desktop-preview/listComponentResolver.ts",
+    'requireComponentVariantType(\n    bases,\n    stackSlot,\n    "collectionStack"',
+    "List must require the exact Collection Stack slot type",
+  );
+  assertContains(
+    "src/desktop-preview/listComponentResolver.ts",
+    'requireComponentVariantType(\n    bases,\n    itemSlot,\n    "listItem"',
+    "List must require the exact List Item slot type",
   );
 
   const database = new Database(path.join(root, "data", "desktop-editor-spike.sqlite"), {

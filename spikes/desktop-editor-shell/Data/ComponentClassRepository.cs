@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -87,8 +88,18 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
 
     public void UpdateDesignPreview(string componentClassId, string designPreviewJson)
     {
-        JsonPath.ParseRequiredObject(designPreviewJson, $"Component class '{componentClassId}' design_preview_json");
+        var preview = JsonPath.ParseRequiredObject(
+            designPreviewJson,
+            $"Component class '{componentClassId}' design_preview_json");
         using var connection = _context.OpenConnection();
+        var current = Get(connection, componentClassId);
+        var config = JsonPath.ParseRequiredObject(
+            current.ConfigJson,
+            $"Component class '{componentClassId}' config_json");
+        DesignPreviewTestValues.ValidateFixedCollectionCounts(
+            preview,
+            config,
+            $"Component class '{componentClassId}' design_preview_json");
         SqliteCommandExecutor.Execute(
             connection,
             "UPDATE component_classes SET design_preview_json = $json WHERE id = $id",
@@ -162,12 +173,18 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             SqliteCommandExecutor.ReadString(reader, 7),
             SqliteCommandExecutor.ReadString(reader, 8));
         var config = JsonPath.ParseRequiredObject(record.ConfigJson, $"Component class '{record.Id}' config_json");
-        JsonPath.ParseRequiredObject(record.DesignPreviewJson, $"Component class '{record.Id}' design_preview_json");
+        var preview = JsonPath.ParseRequiredObject(
+            record.DesignPreviewJson,
+            $"Component class '{record.Id}' design_preview_json");
         var metadata = ValidateMetadata(record.MetadataJson, record.Id);
         CurrentComponentConfigContract.Validate(
             record.ComponentType,
             config,
             $"Component class '{record.Id}' config_json");
+        DesignPreviewTestValues.ValidateFixedCollectionCounts(
+            preview,
+            config,
+            $"Component class '{record.Id}' design_preview_json");
         ValidateVariantConfigs(record.ComponentType, metadata, record.Id);
         return record;
     }

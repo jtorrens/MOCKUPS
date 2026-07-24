@@ -29,6 +29,7 @@
     "desktop:launch:mac": "npm run desktop:package:mac && npm run desktop:open:mac",
     "desktop:publish:win": "npm run desktop-preview:build && dotnet publish spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -c Release -r win-x64 --self-contained true -o out/desktop/win-x64",
     "scaffold:component": "tsx scripts/scaffoldComponent.ts",
+    "scaffold:generate": "tsx scripts/generateIntegratedComponentScaffoldArtifacts.ts",
     "scaffold:verify": "tsx scripts/verifyIntegratedComponentScaffolds.ts",
     "app": "npm run desktop",
     "app:check": "npm run desktop:build",

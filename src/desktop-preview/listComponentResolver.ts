@@ -3,6 +3,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   componentVariantConfig,
   mergeComponentDefaults,
+  requireComponentVariantType,
 } from "./componentPreviewDefaults.js";
 import {
   parseObject,
@@ -36,6 +37,18 @@ export function resolveListComponent(
   const itemSlot = requiredRecord(
     list,
     "listItemSlot",
+    "component.list.listItemSlot",
+  );
+  requireComponentVariantType(
+    bases,
+    stackSlot,
+    "collectionStack",
+    "component.list.collectionStackSlot",
+  );
+  requireComponentVariantType(
+    bases,
+    itemSlot,
+    "listItem",
     "component.list.listItemSlot",
   );
   const stackConfig = mergeComponentDefaults(

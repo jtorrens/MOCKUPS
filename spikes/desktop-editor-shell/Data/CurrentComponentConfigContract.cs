@@ -15,11 +15,11 @@ internal static class CurrentComponentConfigContract
             case NavigationBarComponentConfigContract.ComponentType:
                 NavigationBarComponentConfigContract.Validate(config, context);
                 break;
-            case ListItemComponentConfigContract.ComponentType:
-                ListItemComponentConfigContract.Validate(config, context);
-                break;
-            case ListComponentConfigContract.ComponentType:
-                ListComponentConfigContract.Validate(config, context);
+            default:
+                _ = GeneratedComponentScaffoldConfigRegistry.TryValidate(
+                    componentType,
+                    config,
+                    context);
                 break;
         }
     }

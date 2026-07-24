@@ -136,3 +136,29 @@ test("List rejects undeclared per-item fields", () => {
     /contains undeclared fields: implicitVariant/,
   );
 });
+
+test("List requires exact Collection Stack and List Item slot types", () => {
+  const wrongStack = fixture("calls");
+  const wrongStackConfig = JSON.parse(wrongStack.configJson) as {
+    list: { collectionStackSlot: { variantReference: string } };
+  };
+  wrongStackConfig.list.collectionStackSlot.variantReference =
+    "component_project_foqn_s2_list_item::variant::calls";
+  wrongStack.configJson = JSON.stringify(wrongStackConfig);
+  assert.throws(
+    () => resolveListComponent(wrongStack),
+    /collectionStackSlot.*must resolve to Component 'collectionStack'/,
+  );
+
+  const wrongItem = fixture("calls");
+  const wrongItemConfig = JSON.parse(wrongItem.configJson) as {
+    list: { listItemSlot: { variantReference: string } };
+  };
+  wrongItemConfig.list.listItemSlot.variantReference =
+    "component_project_foqn_s2_button::variant::default";
+  wrongItem.configJson = JSON.stringify(wrongItemConfig);
+  assert.throws(
+    () => resolveListComponent(wrongItem),
+    /listItemSlot.*must resolve to Component 'listItem'/,
+  );
+});

@@ -143,6 +143,27 @@ internal static class DesignPreviewTestValues
         return result;
     }
 
+    public static void ValidateFixedCollectionCounts(
+        JsonObject preview,
+        JsonObject config,
+        string owner)
+    {
+        foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(
+                     preview,
+                     config,
+                     includeHidden: true))
+        {
+            if (collection.FixedItemCount <= 0) continue;
+            var items = CollectionItems(preview, collection);
+            if (items.Count != collection.FixedItemCount)
+            {
+                throw new InvalidOperationException(
+                    $"{owner} collection '{collection.JsonKey}' requires exactly "
+                    + $"{collection.FixedItemCount} items but contains {items.Count}.");
+            }
+        }
+    }
+
     public static string CollectionValue(JsonObject item, ComponentInputDefinition input)
     {
         if (!item.TryGetPropertyValue(input.JsonKey, out var value))

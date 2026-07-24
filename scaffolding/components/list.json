@@ -19144,7 +19144,7 @@
         "list",
         "listItemSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list_item::variant::calls\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list_item::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",

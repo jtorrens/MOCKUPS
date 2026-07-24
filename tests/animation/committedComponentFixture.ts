@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import Database from "better-sqlite3";
@@ -21,11 +22,22 @@ export function committedComponentFixture(
     { readonly: true, fileMustExist: true },
   );
   try {
+    const scaffold = JSON.parse(readFileSync(path.join(
+      process.cwd(),
+      "scaffolding",
+      "components",
+      `${componentType}.json`,
+    ), "utf8")) as {
+      component: { componentClassId: string; componentType: string };
+    };
+    assert.equal(scaffold.component.componentType, componentType);
     const rows = database.prepare(`
       SELECT id, component_type, design_preview_json, metadata_json
       FROM component_classes
     `).all() as ComponentRow[];
-    const component = rows.find((row) => row.component_type === componentType);
+    const component = rows.find((row) =>
+      row.id === scaffold.component.componentClassId
+      && row.component_type === componentType);
     assert.ok(component);
     const variants: Record<string, unknown> = {};
     const variantTypes: Record<string, string> = {};

@@ -28,6 +28,25 @@ export function componentVariantConfig(
   return requiredRecord(variants, reference, `component variant config ${reference}`);
 }
 
+export function requireComponentVariantType(
+  componentBaseConfigs: JsonRecord,
+  slot: JsonRecord,
+  expectedType: string,
+  path: string,
+) {
+  const reference = requiredString(slot, "variantReference", `${path}.variantReference`);
+  const variantTypes = requiredRecord(
+    componentBaseConfigs,
+    "variantTypes",
+    "componentBaseConfigs.variantTypes",
+  );
+  if (variantTypes[reference] !== expectedType) {
+    throw new Error(
+      `${path} Variant '${reference}' must resolve to Component '${expectedType}'`,
+    );
+  }
+}
+
 export function mergeComponentDefaults(
   defaults: JsonRecord,
   overrides: JsonRecord,

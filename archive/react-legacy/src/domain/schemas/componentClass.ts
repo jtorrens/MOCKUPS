@@ -14,8 +14,6 @@ export const ComponentClassTypeSchema = z.enum([
   "badge",
   "notification",
   "notifications",
-  "listItem",
-  "list",
   "codeIndicator",
   "iconRow",
   "keyboard",

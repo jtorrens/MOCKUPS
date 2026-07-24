@@ -267,6 +267,10 @@ internal sealed partial class SpikeDatabase
                 settings.ComponentType,
                 nextConfig,
                 $"Component class '{componentClassId}' Variant '{variantId}' config");
+            ValidateEmbeddedSlotVariantReferences(
+                connection,
+                settings.ProjectId,
+                nextConfig);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
             var variant = VariantEnvelopeContract.FindSource(variants, variantId)

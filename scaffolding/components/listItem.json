@@ -4441,7 +4441,7 @@
         "listItem",
         "contentSetCount"
       ],
-      "defaultValue": "3",
+      "defaultValue": "1",
       "isEditable": true,
       "options": [],
       "optionsSource": "",
@@ -4562,7 +4562,7 @@
         "avatar",
         "componentSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false,\"borderWidth\":0},\"avatar\":{\"defaultSize\":56,\"labelSlot\":{\"showLabel\":false,\"showSubtext\":false}}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",
@@ -4728,7 +4728,7 @@
         "label",
         "componentSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false},\"label\":{\"dimensionMode\":\"fixed\",\"size\":\"196|62\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textAlign\":\"left\",\"textGapToken\":\"theme.spacing.xs\",\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"left\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"600\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.l\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"subtextTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"400\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.m\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::surface_inputbox_copy\",\"overrides\":{}}}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",
@@ -4891,7 +4891,7 @@
         "iconRow",
         "componentSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"orientation\":\"horizontal\",\"gap\":\"theme.spacing.s\",\"sizeSource\":\"shared\",\"iconSizeToken\":\"theme.iconSizes.l\",\"textSizeToken\":\"theme.typography.sizes.s\",\"items\":[{\"id\":\"primary\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"contentMode\":\"icon\",\"state\":\"normal\",\"iconToken\":\"system_check\",\"text\":\"\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"pushTrigger\":false,\"pushElapsedMs\":0,\"buttonOverrides\":{}},{\"id\":\"secondary\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"contentMode\":\"icon\",\"state\":\"normal\",\"iconToken\":\"system_check\",\"text\":\"\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"pushTrigger\":false,\"pushElapsedMs\":0,\"buttonOverrides\":{}}]}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",

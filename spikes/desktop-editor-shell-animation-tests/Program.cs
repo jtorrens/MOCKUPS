@@ -27,6 +27,7 @@ var tests = new (string Name, Action Run)[]
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
     ("Status and Navigation Bar configs fail strictly read-only", SystemBarComponentContractsFailReadOnly),
+    ("List and List Item fixed contracts fail strictly read-only", ListComponentContractsFailReadOnly),
     ("Module definitions and Variants use owner config contracts", ModuleConfigsUseOwnerContracts),
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("system bar items use fixed dictionary collections on every Variant", SystemBarItemsUseFixedDictionaryCollections),
@@ -3292,6 +3293,78 @@ static void SystemBarComponentContractsFailReadOnly()
                 items[0]!["zone"] = "automatic";
             });
     });
+}
+
+static void ListComponentContractsFailReadOnly()
+{
+    AssertRejectedDatabaseIsReadOnly("list-wrong-stack-type", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_list",
+            (config) =>
+            {
+                config["list"]!["collectionStackSlot"]!["variantReference"] =
+                    "component_project_foqn_s2_button::variant::default";
+            });
+    });
+    AssertRejectedDatabaseIsReadOnly("list-item-extra-content-set", (connection) =>
+    {
+        using var select = connection.CreateCommand();
+        select.CommandText = """
+            SELECT design_preview_json
+            FROM component_classes
+            WHERE id = 'component_project_foqn_s2_list_item'
+            """;
+        var preview = JsonPath.ParseRequiredObject(
+            select.ExecuteScalar() as string ?? "",
+            "List Item Design Preview fixture");
+        JsonPath.RequiredArray(preview, "contentSets", "List Item Design Preview fixture")
+            .Add(new JsonObject { ["id"] = "unexpected_extra_set" });
+        using var update = connection.CreateCommand();
+        update.CommandText = """
+            UPDATE component_classes
+            SET design_preview_json = $preview
+            WHERE id = 'component_project_foqn_s2_list_item'
+            """;
+        update.Parameters.AddWithValue("$preview", preview.ToJsonString());
+        update.ExecuteNonQuery();
+    });
+
+    var source = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-list-contracts-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var before = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            "component_project_foqn_s2_list",
+            "component.list.collectionStack",
+            """
+            {"variantReference":"component_project_foqn_s2_button::variant::default","overrides":{}}
+            """));
+        var preview = JsonPath.ParseRequiredObject(
+            database.GetComponentClassSettings(
+                "component_project_foqn_s2_list_item").DesignPreviewJson,
+            "List Item Design Preview");
+        JsonPath.RequiredArray(preview, "contentSets", "List Item Design Preview")
+            .Add(new JsonObject { ["id"] = "unexpected_extra_set" });
+        Throws<InvalidOperationException>(() =>
+            database.UpdateComponentClassDesignPreviewJson(
+                "component_project_foqn_s2_list_item",
+                preview.ToJsonString()));
+        SequenceEqual(before, SHA256.HashData(File.ReadAllBytes(temporary)));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ModuleConfigsUseOwnerContracts()

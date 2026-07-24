@@ -2,6 +2,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   componentVariantConfig,
   mergeComponentDefaults,
+  requireComponentVariantType,
 } from "./componentPreviewDefaults.js";
 import {
   parseObject,
@@ -67,7 +68,7 @@ export function resolveListItemComponent(
     "contentSets",
     "component.listItem runtime",
   );
-  if (contentSets.length < contentSetCount) {
+  if (contentSets.length !== contentSetCount) {
     throw new Error(
       `component.listItem requires ${contentSetCount} Runtime content sets but received ${contentSets.length}`,
     );
@@ -203,7 +204,12 @@ function resolveComponent(
 ): ListItemElement {
   const path = `component.listItem.components.${componentType}`;
   const componentSlot = requiredRecord(slot, "componentSlot", `${path}.componentSlot`);
-  requireSlotType(bases, componentSlot, componentType, `${path}.componentSlot`);
+  requireComponentVariantType(
+    bases,
+    componentSlot,
+    componentType,
+    `${path}.componentSlot`,
+  );
   const childConfig = slotConfig(
     bases,
     componentSlot,
@@ -308,26 +314,6 @@ function exactChildRuntime(
     "runtimeInputs",
     `component.listItem runtime ${collectionKey} '${contentSetId}'`,
   );
-}
-
-function requireSlotType(
-  bases: Record<string, unknown>,
-  slot: Record<string, unknown>,
-  expectedType: string,
-  path: string,
-) {
-  const reference = requiredString(slot, "variantReference", `${path}.variantReference`);
-  const variantTypes = requiredRecord(
-    bases,
-    "variantTypes",
-    "componentBaseConfigs.variantTypes",
-  );
-  const actualType = variantTypes[reference];
-  if (actualType !== expectedType) {
-    throw new Error(
-      `${path} Variant '${reference}' must resolve to Component '${expectedType}'`,
-    );
-  }
 }
 
 function slotConfig(

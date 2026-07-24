@@ -16,7 +16,7 @@ import {
   type JsonObject,
   type JsonValue,
 } from "./componentScaffold.js";
-import { integratedComponentSpecRoot } from "./componentScaffoldWorkspace.js";
+import { integratedComponentSpecRoot } from "./componentScaffoldArtifacts.js";
 
 export type ComponentScaffoldIntent = ComponentScaffoldSpec["intent"];
 
@@ -32,6 +32,10 @@ export function adoptExistingComponentScaffold(
   intent: ComponentScaffoldIntent,
   repositoryRoot: string,
   databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  dictionaryCatalogPath = path.join(
+    repositoryRoot,
+    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  ),
 ): AdoptedComponentScaffold {
   const specPath = `${integratedComponentSpecRoot}/${componentType}.json`;
   const resolvedSpecPath = repositoryPath(repositoryRoot, specPath);
@@ -179,7 +183,7 @@ export function adoptExistingComponentScaffold(
       dictionaryFields: adoptedDictionaryFields(
         component.record_class_id,
         config,
-        repositoryRoot,
+        dictionaryCatalogPath,
       ),
       editorLayout: jsonObject(
         JSON.parse(layoutRow.layout_json),
@@ -207,12 +211,9 @@ export function adoptExistingComponentScaffold(
 function adoptedDictionaryFields(
   recordClassId: string,
   config: JsonObject,
-  repositoryRoot: string,
+  dictionaryCatalogPath: string,
 ) {
-  const source = readFileSync(repositoryPath(
-    repositoryRoot,
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
-  ), "utf8");
+  const source = readFileSync(dictionaryCatalogPath, "utf8");
   const prefix = `${recordClassId}.`;
   const fields: ComponentScaffoldField[] = [];
   for (const line of source.split(/\r?\n/)) {
@@ -248,7 +249,7 @@ function adoptedDictionaryFields(
       label,
       valueKind,
       jsonPath,
-      defaultValue: fieldStringValue(currentValue),
+      defaultValue: csharpDefaultValue(args[4]!, currentValue),
       isEditable: named.get("IsEditable") !== "false",
       options: inlineOptions,
       optionsSource: optionsValue && !optionsValue.startsWith("[") ? optionsValue : "",
@@ -278,10 +279,14 @@ function adoptedDictionaryFields(
 }
 
 function registryMode(repositoryRoot: string, componentType: string) {
-  const source = readFileSync(repositoryPath(
-    repositoryRoot,
+  const source = [
     "src/desktop-preview/componentClassRenderableRegistry.ts",
-  ), "utf8");
+    "src/desktop-preview/generatedComponentScaffoldRegistry.ts",
+  ]
+    .map((candidate) => repositoryPath(repositoryRoot, candidate))
+    .filter(existsSync)
+    .map((candidate) => readFileSync(candidate, "utf8"))
+    .join("\n");
   const match = new RegExp(
     `\\n\\s*${escapeRegex(componentType)}:\\s*\\(([^)]*)\\)\\s*=>`,
   ).exec(source);
@@ -324,6 +329,14 @@ function fieldStringValue(value: JsonValue) {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);
+}
+
+function csharpDefaultValue(expression: string, currentValue: JsonValue) {
+  if ((expression.startsWith('"') && expression.endsWith('"'))
+      || (expression.startsWith('"""') && expression.endsWith('"""'))) {
+    return csharpString(expression);
+  }
+  return fieldStringValue(currentValue);
 }
 
 function splitArguments(source: string) {

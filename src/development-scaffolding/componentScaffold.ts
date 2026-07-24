@@ -542,6 +542,7 @@ export function createComponentScaffoldPlan(
   spec: ComponentScaffoldSpec,
   inventory: ComponentScaffoldInventory,
   repositoryRoot: string,
+  ownerMode: "mustBeAbsent" | "mustExist" = "mustBeAbsent",
 ): ComponentScaffoldPlan {
   const violations: string[] = [];
   const {
@@ -659,8 +660,10 @@ export function createComponentScaffoldPlan(
       violations.push(`Owner target '${owner.path}' is declared more than once.`);
     }
     ownerPaths.add(normalized);
-    if (resolved && existsSync(resolved)) {
+    if (resolved && ownerMode === "mustBeAbsent" && existsSync(resolved)) {
       violations.push(`Owner target '${owner.path}' already exists and will not be overwritten.`);
+    } else if (resolved && ownerMode === "mustExist" && !existsSync(resolved)) {
+      violations.push(`Owner target '${owner.path}' must exist before integration.`);
     }
   }
 

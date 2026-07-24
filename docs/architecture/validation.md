@@ -22,8 +22,9 @@ It includes:
 - TypeScript type checking;
 - desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
-- Component scaffolding contract, collision, no-overwrite materialization,
-  persisted-spec adoption and integrated-owner verification tests;
+- Component scaffolding contract, collision, no-overwrite draft
+  materialization, semantic integration transaction, deterministic generated
+  routes, persisted-spec adoption and integrated-owner verification tests;
 - macOS display-aware launcher ownership and command tests;
 - Preview and desktop animation tests;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
