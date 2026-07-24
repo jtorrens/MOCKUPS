@@ -124,6 +124,12 @@ as compact rows in Variant order, and their shared `…` action reveals the
 child's exact Runtime values directly. The editor does not add an intermediate
 Content Sets section or nested child navigation.
 
+An embedded child edit replaces that exact stable child item in its owning
+Content Set collection before the enclosing List Item Runtime is published.
+The selected `activeSet` therefore resolves the current Avatar, Label and Icon
+Row values from the same transient document shown by the editor; detached
+editor-only copies are invalid.
+
 The state appearance contains exactly one Surface Variant slot and one
 `elementsOpacity` multiplier between zero and one. The multiplier applies to
 Avatar, Label and Icon Row as a group; it never changes the state Surface.

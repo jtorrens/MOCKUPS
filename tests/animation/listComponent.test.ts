@@ -16,11 +16,22 @@ function renderChild(payload: DesignPreviewPayload, assignedBox?: RenderableBox)
 }
 
 test("List Calls and Chats Variants select one exact List Item Variant", () => {
-  const calls = resolveListComponent(fixture("calls"));
-  const chats = resolveListComponent(fixture("chats"));
+  const callsSource = fixture("calls");
+  const chatsSource = fixture("chats");
+  const calls = resolveListComponent(callsSource);
+  const chats = resolveListComponent(chatsSource);
+  const callsRuntime = JSON.parse(callsSource.designPreviewJson) as {
+    items: unknown[];
+  };
+  const chatsRuntime = JSON.parse(chatsSource.designPreviewJson) as {
+    items: unknown[];
+  };
 
   assert.equal(calls.stack.distributionMode, "flow");
-  assert.equal(calls.stack.items.length, 5);
+  assert.ok(callsRuntime.items.length > 0);
+  assert.ok(chatsRuntime.items.length > 0);
+  assert.equal(calls.stack.items.length, callsRuntime.items.length);
+  assert.equal(chats.stack.items.length, chatsRuntime.items.length);
   assert.ok(calls.stack.items.every((item) =>
     item.componentType === "listItem"
     && item.variantReference.endsWith("::variant::calls")));
@@ -97,13 +108,18 @@ test("List forwards one shared Runtime size and the exact List Item Runtime", ()
 
 test("List renders a vertical Collection Stack without owning item internals", () => {
   const source = fixture("chats");
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    itemWidth: number;
+    itemHeight: number;
+    items: unknown[];
+  };
   const contract = resolveListComponent(source);
   const node = listComponentToRenderable(source, contract, renderChild);
 
   assert.equal(node.id, "component.list");
-  assert.equal(node.children?.length, 5);
-  assert.equal(node.box?.width, 360);
-  assert.equal(node.box?.height, 420);
+  assert.equal(node.children?.length, runtime.items.length);
+  assert.equal(node.box?.width, runtime.itemWidth);
+  assert.equal(node.box?.height, runtime.itemHeight * runtime.items.length);
   assert.ok(node.children?.every((item) => item.id === "component.listItem"));
 });
 

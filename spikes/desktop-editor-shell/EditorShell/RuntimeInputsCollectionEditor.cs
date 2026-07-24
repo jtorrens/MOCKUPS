@@ -17,6 +17,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RuntimeInputsCollectionEditor
 {
+    private const double RuntimeNavigationWidth = 160;
     private readonly ComponentPreviewInputDataSource _previewInputData;
     private readonly RuntimeInputOwnerDocumentStore _ownerDocuments;
     private readonly RuntimeInputInstanceDocumentStore _instanceDocuments;
@@ -419,7 +420,8 @@ internal sealed class RuntimeInputsCollectionEditor
             valuesPanel.Children.Add(CreateSessionSubcardLayout(
                 $"{owner.Node.Id}:test-values",
                 sections,
-                EditorSubcardLayout.VerticalCards));
+                EditorSubcardLayout.VerticalCards,
+                RuntimeNavigationWidth));
             foreach (var collectionFooter in promotedCollectionFooters)
             {
                 valuesPanel.Children.Add(collectionFooter);
@@ -973,7 +975,8 @@ internal sealed class RuntimeInputsCollectionEditor
         return CreateSessionSubcardLayout(
             $"{owner.Node.Id}:{collection.Id}:{itemId}:runtime-contract",
             sections,
-            EditorSubcardLayout.VerticalCards);
+            EditorSubcardLayout.VerticalCards,
+            RuntimeNavigationWidth);
     }
 
     private Control CreateEmbeddedRuntimeCollectionItemContent(
@@ -1031,12 +1034,30 @@ internal sealed class RuntimeInputsCollectionEditor
             foreach (var childItem in childItems)
             {
                 var childItemId = ItemId(childItem, 0);
+                var childItemIndex = allChildItems.FindIndex((candidate) =>
+                    ItemId(candidate, 0).Equals(childItemId, StringComparison.Ordinal));
+                if (childItemIndex < 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime child item '{childItemId}' is not present in collection '{childCollection.Id}'.");
+                }
+
+                void PersistChildRuntimeContract(bool committed)
+                {
+                    allChildItems[childItemIndex] = CloneObject(childItem);
+                    runtimeContract[childCollection.JsonKey] = new JsonArray(
+                        allChildItems
+                            .Select((candidate) => (JsonNode?)CloneObject(candidate))
+                            .ToArray());
+                    persistRuntimeContract(committed);
+                }
+
                 Control ChildContent() => CreateEmbeddedChildRuntimeContent(
                     owner,
                     childCollection,
                     childItem,
                     temporalOwnerId,
-                    persistRuntimeContract);
+                    PersistChildRuntimeContract);
                 var button = new Button
                 {
                     Content = "···",
@@ -2142,12 +2163,13 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateSessionSubcardLayout(
         string stateKey,
         IReadOnlyList<EditorInternalNavigationSection> sections,
-        EditorSubcardLayout layout)
+        EditorSubcardLayout layout,
+        double defaultNavigationWidth = EditorInternalNavigation.DefaultNavigationWidth)
     {
         var selectedId = _sessionUiState.Selection(stateKey);
         var navigationWidth = _sessionUiState.NavigationWidth(
             stateKey,
-            EditorInternalNavigation.DefaultNavigationWidth);
+            defaultNavigationWidth);
         return new EditorSubcardLayoutHost(
             sections,
             layout,

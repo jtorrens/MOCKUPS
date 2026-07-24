@@ -34,7 +34,9 @@ It includes:
   Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
   contracts, absence of duplicated child dimensions, collection add/duplicate/
   reorder actions, repeated navigation across existing items without
-  reparenting controls, and collision-free rebasing of nested target ids;
+  reparenting controls, active-set edits resolving the selected embedded Actor,
+  horizontal containment with compact Runtime navigation, and collision-free
+  rebasing of nested target ids;
 - architecture enforcement;
 - desktop application build.
 

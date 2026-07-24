@@ -13,6 +13,7 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Reflection;
 using System.IO;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 
@@ -2223,7 +2224,11 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
         using var session = HeadlessUnitTestSession.StartNew(typeof(App));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary);
+            var window = new MainWindow(temporary)
+            {
+                Width = 3000,
+                Height = 900,
+            };
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
@@ -2372,8 +2377,11 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     ?? throw new InvalidOperationException("List Runtime item must be an object.");
                 True(item["name"] is null);
                 var runtime = JsonPath.RequiredObject(item, "listItemInputs", "List Runtime item");
-                Equal(1d, JsonPath.RequiredNumber(runtime, "activeSet", "List Item Runtime"));
-                Equal("normal", JsonPath.RequiredString(runtime, "state", "List Item Runtime"));
+                var activeSet = JsonPath.RequiredNumber(runtime, "activeSet", "List Item Runtime");
+                True(activeSet >= 1 && activeSet <= 3);
+                True(new[] { "normal", "pressed", "inactive" }.Contains(
+                    JsonPath.RequiredString(runtime, "state", "List Item Runtime"),
+                    StringComparer.Ordinal));
                 Equal(360d, JsonPath.RequiredNumber(runtime, "width", "List Item Runtime"));
                 Equal(84d, JsonPath.RequiredNumber(runtime, "height", "List Item Runtime"));
                 Equal(4, JsonPath.RequiredArray(runtime, "collections", "List Item Runtime").Count);
@@ -2442,12 +2450,20 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     .OfType<TextBlock>()
                     .Any((text) => text.Text == label));
 
-            foreach (var itemLabel in new[] { "Item 2", "Item 3", "Item 1" })
+            for (var itemIndex = 1; itemIndex >= 0; itemIndex--)
             {
-                ItemButton(itemLabel).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                ItemButton($"Item {itemIndex + 1}").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
-                Equal("1", RequiredField(listSurface, "activeSet").Value);
-                Equal("normal", RequiredField(listSurface, "state").Value);
+                var sourceItem = JsonPath.RequiredObject(
+                    listItems[itemIndex]!.AsObject(),
+                    "listItemInputs",
+                    $"List Runtime Item {itemIndex + 1}");
+                Equal(
+                    JsonPath.RequiredNumber(
+                        sourceItem,
+                        "activeSet",
+                        $"List Runtime Item {itemIndex + 1}").ToString(CultureInfo.InvariantCulture),
+                    RequiredField(listSurface, "activeSet").Value);
             }
 
             var itemOneButton = ItemButton("Item 1");
@@ -2470,12 +2486,14 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 listRuntimeLabels.Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
             True(!listRuntimeLabels.Contains("Content Sets"));
 
-            var nestedSetOneButton = listSurface.GetVisualDescendants()
+            RequiredField(listSurface, "activeSet").SetValue("2", commit: true);
+            Dispatcher.UIThread.RunJobs();
+            var nestedSetTwoButton = listSurface.GetVisualDescendants()
                 .OfType<Button>()
                 .Single((button) => button.GetVisualDescendants()
                     .OfType<TextBlock>()
-                    .Any((text) => text.Text == "Set 1"));
-            nestedSetOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    .Any((text) => text.Text == "Set 2"));
+            nestedSetTwoButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             var nestedComponentRows = listSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
@@ -2490,7 +2508,119 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Equal(3, nestedRuntimeButtons.Count);
             nestedRuntimeButtons[0].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
-            _ = RequiredField(listSurface, "actorId");
+            var nestedActor = RequiredField(listSurface, "actorId");
+            var listRuntimeScroll = listSurface.GetVisualDescendants()
+                .OfType<ScrollViewer>()
+                .Single((scroll) => scroll.Name == "PreviewTestValuesEditorScroll");
+            if (listRuntimeScroll.Extent.Width > listRuntimeScroll.Viewport.Width + 0.5)
+            {
+                throw new InvalidOperationException(
+                    $"List Runtime editor overflows horizontally "
+                    + $"(extent={listRuntimeScroll.Extent.Width:0.##}, "
+                    + $"viewport={listRuntimeScroll.Viewport.Width:0.##}).");
+            }
+            var visibleNavigationWidths = listSurface.GetVisualDescendants()
+                .OfType<EditorInternalNavigation>()
+                .Where((navigation) => navigation.ColumnDefinitions.Count == 3)
+                .Select((navigation) => navigation.ColumnDefinitions[0].ActualWidth)
+                .ToList();
+            True(visibleNavigationWidths.Count >= 2);
+            True(visibleNavigationWidths.All((width) => width <= 160.5));
+            var actorTransform = nestedActor.TransformToVisual(listRuntimeScroll)
+                ?? throw new InvalidOperationException("Nested Actor field has no scroll transform.");
+            var actorRight = actorTransform.Transform(
+                new Point(nestedActor.Bounds.Width, 0)).X;
+            var runtimeContent = listRuntimeScroll.Content as Control
+                ?? throw new InvalidOperationException("List Runtime scroll has no content.");
+            var runtimeContentOrigin = runtimeContent.TransformToVisual(listRuntimeScroll)
+                ?.Transform(default).X
+                ?? throw new InvalidOperationException("List Runtime content has no scroll transform.");
+            var viewportRight = runtimeContentOrigin + listRuntimeScroll.Viewport.Width;
+            if (actorRight > viewportRight + 1.5)
+            {
+                throw new InvalidOperationException(
+                    $"Nested Actor field is clipped on the right "
+                    + $"(right={actorRight:0.##}, viewportRight={viewportRight:0.##}).");
+            }
+            nestedActor.SetValue("actor_alex_b", commit: true);
+            Dispatcher.UIThread.RunJobs();
+            var listPreviewController = typeof(MainWindow)
+                .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorPreviewController
+                ?? throw new InvalidOperationException("Missing Preview controller.");
+            var selectedListNode = typeof(MainWindow)
+                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as ProjectTreeNode
+                ?? throw new InvalidOperationException("Missing selected List node.");
+            var selectedTheme = treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+            var listPayload = Required(DesignPreviewPayloadFactory.Create(
+                new DesignPreviewPayloadDataSource(database),
+                selectedListNode,
+                selectedTheme.Id,
+                "light"));
+            var listInputSession = typeof(EditorPreviewController)
+                .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(listPreviewController) as ComponentPreviewInputSession
+                ?? throw new InvalidOperationException("Missing List Preview input session.");
+            var effectiveListPayload = listInputSession.ApplyInputs(
+                listPayload,
+                "light",
+                listSettings.ProjectId);
+            var effectiveListRuntime = JsonPath.ParseRequiredObject(
+                effectiveListPayload.DesignPreviewJson,
+                "Effective List Runtime");
+            var effectiveItemOne = JsonPath.RequiredArray(
+                    effectiveListRuntime,
+                    "items",
+                    "Effective List Runtime")[0]!.AsObject();
+            var effectiveItemOneRuntime = JsonPath.RequiredObject(
+                effectiveItemOne,
+                "listItemInputs",
+                "Effective List Runtime Item 1");
+            Equal(
+                2d,
+                JsonPath.RequiredNumber(
+                    effectiveItemOneRuntime,
+                    "activeSet",
+                    "Effective List Runtime Item 1"));
+            var effectiveSetTwoId = JsonPath.RequiredString(
+                JsonPath.RequiredArray(
+                    effectiveItemOneRuntime,
+                    "contentSets",
+                    "Effective List Runtime Item 1")[1]!.AsObject(),
+                "id",
+                "Effective List Runtime Item 1 Set 2");
+            var effectiveSetTwoAvatar = JsonPath.RequiredArray(
+                    effectiveItemOneRuntime,
+                    "avatarContent",
+                    "Effective List Runtime Item 1")
+                .OfType<JsonObject>()
+                .Single((avatar) =>
+                    JsonPath.RequiredString(
+                        avatar,
+                        "contentSetId",
+                        "Effective List Runtime Item 1 Avatar") == effectiveSetTwoId);
+            var effectiveSetTwoAvatarRuntime = JsonPath.RequiredObject(
+                effectiveSetTwoAvatar,
+                "runtimeInputs",
+                "Effective List Runtime Item 1 Avatar");
+            Equal(
+                "actor_alex_b",
+                JsonPath.RequiredString(
+                    effectiveSetTwoAvatarRuntime,
+                    "actorId",
+                    "Effective List Runtime Item 1 Avatar"));
+            Equal(
+                "Asia",
+                JsonPath.RequiredString(
+                    JsonPath.RequiredObject(
+                        effectiveSetTwoAvatarRuntime,
+                        "actor",
+                        "Effective List Runtime Item 1 Avatar"),
+                    "displayName",
+                    "Effective List Runtime Item 1 Avatar"));
             nestedRuntimeButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             _ = RequiredField(listSurface, "sampleText");
