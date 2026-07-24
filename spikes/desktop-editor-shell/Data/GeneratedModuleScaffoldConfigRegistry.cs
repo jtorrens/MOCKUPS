@@ -11,7 +11,8 @@ internal sealed record GeneratedModuleConfigFieldDescriptor(
     string FieldId,
     ValueKind ValueKind,
     string[] JsonPath,
-    string ComponentVariantType);
+    string ComponentVariantType,
+    string[][] SynchronizedVariantReferenceJsonPaths);
 
 internal static class GeneratedModuleScaffoldConfigRegistry
 {
@@ -23,43 +24,50 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.chatList.bottomIconBar",
             ValueKind.ComponentVariantSlot,
             ["chatList", "bottomIconBarSlot"],
-            "iconBar"),
+            "iconBar",
+            []),
         ["module.core.chatList.list"] = new(
             "module.core.chatList",
             "module.core.chatList.list",
             ValueKind.ComponentVariantSlot,
             ["chatList", "listSlot"],
-            "list"),
+            "list",
+            [["chatList", "runtimeContract", "variantReference"]]),
         ["module.core.chatList.navigationBar"] = new(
             "module.core.chatList",
             "module.core.chatList.navigationBar",
             ValueKind.ComponentVariantSlot,
             ["chatList", "navigationBarSlot"],
-            "navigation_bar"),
+            "navigation_bar",
+            []),
         ["module.core.chatList.stack"] = new(
             "module.core.chatList",
             "module.core.chatList.stack",
             ValueKind.ComponentVariantSlot,
             ["chatList", "stackSlot"],
-            "componentStack"),
+            "componentStack",
+            []),
         ["module.core.chatList.statusBar"] = new(
             "module.core.chatList",
             "module.core.chatList.statusBar",
             ValueKind.ComponentVariantSlot,
             ["chatList", "statusBarSlot"],
-            "status_bar"),
+            "status_bar",
+            []),
         ["module.core.chatList.topIconBar"] = new(
             "module.core.chatList",
             "module.core.chatList.topIconBar",
             ValueKind.ComponentVariantSlot,
             ["chatList", "topIconBarSlot"],
-            "iconBar"),
+            "iconBar",
+            []),
         ["module.core.chatList.wallpaperEnabled"] = new(
             "module.core.chatList",
             "module.core.chatList.wallpaperEnabled",
             ValueKind.Boolean,
             ["chatList", "wallpaperEnabled"],
-            ""),
+            "",
+            []),
     };
 
     public static bool TryValidate(
@@ -88,7 +96,7 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             descriptor = candidate;
             return true;
         }
-        descriptor = new("", "", ValueKind.StringSingleLine, [], "");
+        descriptor = new("", "", ValueKind.StringSingleLine, [], "", []);
         return false;
     }
 }

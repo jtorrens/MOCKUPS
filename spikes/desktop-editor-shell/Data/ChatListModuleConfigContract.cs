@@ -73,6 +73,15 @@ internal static class ChatListModuleConfigContract
             throw new InvalidOperationException(
                 $"{runtimeOwner}.variantReference must be a full Variant reference.");
         }
+        var listSlot = JsonPath.RequiredObject(chatList, "listSlot", owner);
+        var listVariant = ComponentVariantSlotDocumentContract.VariantReference(
+            listSlot,
+            $"{owner}.listSlot");
+        if (!sourceVariant.Equals(listVariant, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{runtimeOwner}.variantReference must match {owner}.listSlot.variantReference.");
+        }
         RequireExactStringArray(
             JsonPath.RequiredArray(runtime, "inputIds", runtimeOwner),
             ["itemWidth", "itemHeight"],

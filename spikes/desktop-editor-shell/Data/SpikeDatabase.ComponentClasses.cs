@@ -120,7 +120,8 @@ internal sealed partial class SpikeDatabase
             ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
+        var isHighlighted = descriptor.ValueKind is
+                ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 
@@ -150,7 +151,8 @@ internal sealed partial class SpikeDatabase
             ? EditorUiText.IdentifierLabel(settings.ComponentType)
             : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
+        var isHighlighted = descriptor.ValueKind is
+                ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
             && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
 

@@ -81,7 +81,10 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         var owner = $"Dictionary field '{_definition.Id}'";
         var current = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
         if (current.Equals(reference, StringComparison.Ordinal)) return;
-        _slot = ComponentVariantSlotDocumentContract.Create(reference, new JsonObject(), owner);
+        var overrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner)
+            .DeepClone()
+            .AsObject();
+        _slot = ComponentVariantSlotDocumentContract.Create(reference, overrides, owner);
         RefreshOverrideButton();
     }
 

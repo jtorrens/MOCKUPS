@@ -2958,6 +2958,116 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 selected.Id.EndsWith("::variant::default", StringComparison.Ordinal),
                 $"Chat List selection resolved to unexpected Variant '{selected.Id}'.");
 
+            var database = new SpikeDatabase(temporary);
+            var fieldValues = new RecordClassFieldValueService(database);
+            var projectId = treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) => node.Kind == ProjectTreeNodeKind.Project)
+                .Id;
+            foreach (var (fieldId, componentType) in new[]
+            {
+                ("module.core.chatList.stack", "componentStack"),
+                ("module.core.chatList.topIconBar", "iconBar"),
+                ("module.core.chatList.list", "list"),
+                ("module.core.chatList.bottomIconBar", "iconBar"),
+                ("module.core.chatList.statusBar", "status_bar"),
+                ("module.core.chatList.navigationBar", "navigation_bar"),
+            })
+            {
+                var actual = fieldValues.CreateFieldValue(selected, fieldId)
+                    .Definition.Options
+                    ?? [];
+                var expected = database.GetComponentVariantReferenceOptionsByType(
+                    projectId,
+                    componentType);
+                SequenceEqual(
+                    expected.Select((option) => option.Value),
+                    actual.Select((option) => option.Value));
+            }
+            var listField = fieldValues.CreateFieldValue(
+                selected,
+                "module.core.chatList.list");
+            var listReferences = listField.Definition.Options ?? [];
+            Check(
+                listReferences.Count >= 2,
+                "Chat List List boundary does not expose every exact List Variant.");
+            var nextListReference = listReferences
+                .Select((option) => option.Value)
+                .First((reference) =>
+                    !reference.Equals(
+                        "component_project_foqn_s2_list::variant::chats",
+                        StringComparison.Ordinal));
+            var slotControl = new DictionaryComponentVariantSlotControl(
+                listField.Definition,
+                """
+                {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"marker":"preserved"}}
+                """,
+                null,
+                null);
+            typeof(DictionaryComponentVariantSlotControl)
+                .GetMethod("SetReference", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(slotControl, [nextListReference]);
+            var serializedSlot = (string)typeof(DictionaryComponentVariantSlotControl)
+                .GetMethod("Serialize", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(slotControl, null)!;
+            var preservedSlot = JsonPath.ParseRequiredObject(
+                serializedSlot,
+                "Changed fixed Component slot");
+            Equal(
+                nextListReference,
+                JsonPath.RequiredString(
+                    preservedSlot,
+                    "variantReference",
+                    "Changed fixed Component slot"));
+            Equal(
+                "preserved",
+                JsonPath.RequiredString(
+                    JsonPath.RequiredObject(
+                        preservedSlot,
+                        "overrides",
+                        "Changed fixed Component slot"),
+                    "marker",
+                    "Changed fixed Component slot Overrides"));
+
+            var editableVariant = database.SaveModuleVariant(
+                selected,
+                "Variant selection test");
+            database.UpdateModuleVariantField(
+                editableVariant,
+                "module.core.chatList.list",
+                new JsonObject
+                {
+                    ["variantReference"] = nextListReference,
+                    ["overrides"] = new JsonObject
+                    {
+                        ["marker"] = "atomic",
+                    },
+                }.ToJsonString());
+            var editedConfig = JsonPath.ParseRequiredObject(
+                database.GetModuleVariantSettings(editableVariant).ConfigJson,
+                "Edited Chat List Variant");
+            var editedChatList = JsonPath.RequiredObject(
+                editedConfig,
+                "chatList",
+                "Edited Chat List Variant");
+            Equal(
+                nextListReference,
+                ComponentVariantSlotDocumentContract.VariantReference(
+                    JsonPath.RequiredObject(
+                        editedChatList,
+                        "listSlot",
+                        "Edited Chat List Variant.chatList"),
+                    "Edited Chat List Variant.chatList.listSlot"));
+            Equal(
+                nextListReference,
+                JsonPath.RequiredString(
+                    JsonPath.RequiredObject(
+                        editedChatList,
+                        "runtimeContract",
+                        "Edited Chat List Variant.chatList"),
+                    "variantReference",
+                    "Edited Chat List Variant.chatList.runtimeContract"));
+
             var configurationFields = window.GetVisualDescendants()
                 .OfType<DictionaryFieldControl>()
                 .Select((field) => field.FieldId)
@@ -3057,10 +3167,6 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(previewController) as ComponentPreviewInputSession
                 ?? throw new InvalidOperationException("Missing Module Preview input session.");
-            var projectId = treeRoots
-                .SelectMany(DescendantsAndSelf)
-                .Single((node) => node.Kind == ProjectTreeNodeKind.Project)
-                .Id;
             var effectivePayload = inputSession.ApplyInputs(
                 selectedPayload,
                 selectedPayload.ThemeMode,
@@ -4558,6 +4664,37 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
     Equal(2, boundary.VariantOptions.Count);
     True(!ComponentVariantOptionContract.SelectsComponentClass("button"));
     True(ComponentVariantOptionContract.SelectsComponentClass("*,-componentStack"));
+
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var list = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentClass
+            && node.Id == "component_project_foqn_s2_list");
+    var listVariant = list.Children.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+    var projectId = database.GetComponentClassSettings(list.Id).ProjectId;
+    foreach (var (fieldId, componentType) in new[]
+    {
+        ("component.list.collectionStack", "collectionStack"),
+        ("component.list.listItem", "listItem"),
+        ("component.list.surface", "surface"),
+    })
+    {
+        var actual = database.CreateComponentVariantFieldValue(listVariant, fieldId)
+            .Definition.Options
+            ?? [];
+        var expected = database.GetComponentVariantReferenceOptionsByType(
+            projectId,
+            componentType);
+        SequenceEqual(
+            expected.Select((option) => option.Value),
+            actual.Select((option) => option.Value));
+    }
 
     Throws<InvalidOperationException>(() => ComponentVariantOptionContract.RequireFixedBoundary(
         options.Where((option) => !option.Value.EndsWith("::default", StringComparison.Ordinal)).ToList(),

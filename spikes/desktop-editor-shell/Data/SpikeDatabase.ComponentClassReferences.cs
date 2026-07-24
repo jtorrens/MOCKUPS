@@ -641,7 +641,8 @@ internal sealed partial class SpikeDatabase
             ValueKind.EmbeddedComponent => EmbeddedComponentOptions(projectId, descriptor.DefaultValue),
             ValueKind.ComponentVariant when EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var slot)
                 => ComponentVariantOptions(projectId, slot.EmbeddedComponentType),
-            ValueKind.ComponentVariant when !string.IsNullOrWhiteSpace(descriptor.ComponentVariantType)
+            ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+                when !string.IsNullOrWhiteSpace(descriptor.ComponentVariantType)
                 => ComponentVariantOptions(projectId, descriptor.ComponentVariantType),
             ValueKind.OptionToken when !string.IsNullOrWhiteSpace(descriptor.ComponentVariantType)
                 => ComponentVariantOptions(projectId, descriptor.ComponentVariantType),

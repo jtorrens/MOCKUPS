@@ -402,11 +402,16 @@ internal sealed partial class SpikeDatabase
                 {
                     var slot = next.AsObject();
                     var owner = $"Module field '{fieldId}'";
-                    slot["variantReference"] = ValidateComponentVariantReference(
+                    var reference = ValidateComponentVariantReference(
                         connection,
                         projectId,
                         generated.ComponentVariantType,
                         ComponentVariantSlotDocumentContract.VariantReference(slot, owner));
+                    slot["variantReference"] = reference;
+                    foreach (var path in generated.SynchronizedVariantReferenceJsonPaths)
+                    {
+                        JsonPath.Set(config, path, JsonValue.Create(reference)!);
+                    }
                 }
             }
             JsonPath.Set(config, generated.JsonPath, next);

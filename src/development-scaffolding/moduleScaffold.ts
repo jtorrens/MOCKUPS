@@ -25,6 +25,7 @@ export interface ModuleScaffoldField {
     useSlider: boolean;
   } | null;
   componentVariantType: string;
+  synchronizedVariantReferenceJsonPaths: string[][];
   runtimeInputComponentVariantFieldId: string;
   runtimeCollectionComponentVariantFieldId: string;
   componentInputBindingsSource: string;
@@ -914,6 +915,29 @@ function validateFields(
         `Dictionary field '${field.id}' Component type '${field.componentVariantType}' is not a Module embed.`,
       );
     }
+    for (const synchronizedPath of field.synchronizedVariantReferenceJsonPaths) {
+      if (field.valueKind !== "ComponentVariantSlot") {
+        violations.push(
+          `Dictionary field '${field.id}' may synchronize a Variant reference only from a ComponentVariantSlot.`,
+        );
+      }
+      if (synchronizedPath.length === 0 || !jsonPathExists(spec.config, synchronizedPath)) {
+        violations.push(
+          `Dictionary field '${field.id}' synchronized path '${synchronizedPath.join(".")}' is absent from current config.`,
+        );
+        continue;
+      }
+      const slot = jsonPathValue(spec.config, field.jsonPath);
+      const reference = isPlainObject(slot) ? slot.variantReference : undefined;
+      const synchronizedReference = jsonPathValue(spec.config, synchronizedPath);
+      if (typeof reference !== "string"
+          || typeof synchronizedReference !== "string"
+          || synchronizedReference !== reference) {
+        violations.push(
+          `Dictionary field '${field.id}' synchronized path '${synchronizedPath.join(".")}' must equal its exact Variant reference.`,
+        );
+      }
+    }
     if (field.embeddedSlot) {
       if (!field.componentVariantType
           || field.componentVariantType !== field.embeddedSlot.componentType) {
@@ -963,6 +987,7 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     "pairLabels",
     "number",
     "componentVariantType",
+    "synchronizedVariantReferenceJsonPaths",
     "runtimeInputComponentVariantFieldId",
     "runtimeCollectionComponentVariantFieldId",
     "componentInputBindingsSource",
@@ -1022,6 +1047,13 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
       `${owner} componentVariantType`,
       true,
     ),
+    synchronizedVariantReferenceJsonPaths: requiredArray(
+      field.synchronizedVariantReferenceJsonPaths,
+      `${owner} synchronizedVariantReferenceJsonPaths`,
+    ).map((pathValue, index) => stringArray(
+      pathValue,
+      `${owner} synchronizedVariantReferenceJsonPaths[${index}]`,
+    )),
     runtimeInputComponentVariantFieldId: requiredString(
       field.runtimeInputComponentVariantFieldId,
       `${owner} runtimeInputComponentVariantFieldId`,
@@ -1106,6 +1138,15 @@ function jsonPathExists(root: JsonObject, segments: readonly string[]) {
     current = current[segment]!;
   }
   return true;
+}
+
+function jsonPathValue(root: JsonObject, segments: readonly string[]) {
+  let current: JsonValue = root;
+  for (const segment of segments) {
+    if (!isPlainObject(current) || !Object.hasOwn(current, segment)) return undefined;
+    current = current[segment]!;
+  }
+  return current;
 }
 
 function canonicalJson(value: unknown): string {

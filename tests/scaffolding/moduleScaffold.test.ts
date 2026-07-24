@@ -154,6 +154,9 @@ function validSpec(): ModuleScaffoldSpec {
         variantReference: "component_project_foqn_s2_list::variant::chats",
         overrides: {},
       },
+      runtimeContract: {
+        variantReference: "component_project_foqn_s2_list::variant::chats",
+      },
     },
   };
   return {
@@ -221,6 +224,9 @@ function validSpec(): ModuleScaffoldSpec {
         pairLabels: null,
         number: null,
         componentVariantType: "list",
+        synchronizedVariantReferenceJsonPaths: [
+          ["chatList", "runtimeContract", "variantReference"],
+        ],
         runtimeInputComponentVariantFieldId: "",
         runtimeCollectionComponentVariantFieldId: "",
         componentInputBindingsSource: "",

@@ -78,9 +78,14 @@ export function resolveChatListModule(
     "list",
     "module.core.chatList.runtimeContract.componentType",
   );
-  requiredString(
+  const runtimeVariantReference = requiredString(
     runtimeDeclaration,
     "variantReference",
+    "module.core.chatList.runtimeContract.variantReference",
+  );
+  requireExactValue(
+    runtimeVariantReference,
+    listSlot.variantReference,
     "module.core.chatList.runtimeContract.variantReference",
   );
   requireExactStringArray(

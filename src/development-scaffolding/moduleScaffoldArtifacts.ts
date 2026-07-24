@@ -113,7 +113,10 @@ function renderConfigRegistry(specs: readonly ModuleScaffoldSpec[]) {
       + `            ${csharpString(field.id)},\n`
       + `            ValueKind.${field.valueKind},\n`
       + `            [${field.jsonPath.map(csharpString).join(", ")}],\n`
-      + `            ${csharpString(field.componentVariantType)}),`)
+      + `            ${csharpString(field.componentVariantType)},\n`
+      + `            [${field.synchronizedVariantReferenceJsonPaths
+        .map((jsonPath) => `[${jsonPath.map(csharpString).join(", ")}]`)
+        .join(", ")}]),`)
     .join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
     + `using Mockups.DesktopEditorShell.EditorShell;\n`
@@ -126,7 +129,8 @@ function renderConfigRegistry(specs: readonly ModuleScaffoldSpec[]) {
     + `    string FieldId,\n`
     + `    ValueKind ValueKind,\n`
     + `    string[] JsonPath,\n`
-    + `    string ComponentVariantType);\n\n`
+    + `    string ComponentVariantType,\n`
+    + `    string[][] SynchronizedVariantReferenceJsonPaths);\n\n`
     + `internal static class GeneratedModuleScaffoldConfigRegistry\n`
     + `{\n`
     + `    private static readonly Dictionary<string, GeneratedModuleConfigFieldDescriptor> Fields =\n`
@@ -157,7 +161,7 @@ function renderConfigRegistry(specs: readonly ModuleScaffoldSpec[]) {
     + `            descriptor = candidate;\n`
     + `            return true;\n`
     + `        }\n`
-    + `        descriptor = new(\"\", \"\", ValueKind.StringSingleLine, [], \"\");\n`
+    + `        descriptor = new(\"\", \"\", ValueKind.StringSingleLine, [], \"\", []);\n`
     + `        return false;\n`
     + `    }\n`
     + `}\n`;

@@ -155,6 +155,20 @@ test("Chat List rejects a different Component type and a reduced Runtime contrac
     () => resolveChatListModule(reduced),
     /Runtime contract.inputs must be exactly itemWidth, itemHeight/,
   );
+
+  const mismatchedRuntimeVariant = fixture();
+  const mismatchedConfig = JSON.parse(mismatchedRuntimeVariant.configJson) as {
+    chatList: {
+      runtimeContract: { variantReference: string };
+    };
+  };
+  mismatchedConfig.chatList.runtimeContract.variantReference =
+    "component_project_foqn_s2_list::variant::default";
+  mismatchedRuntimeVariant.configJson = JSON.stringify(mismatchedConfig);
+  assert.throws(
+    () => resolveChatListModule(mismatchedRuntimeVariant),
+    /runtimeContract\.variantReference must be 'component_project_foqn_s2_list::variant::chats'/,
+  );
 });
 
 function findNode(root: RenderableNode, id: string): RenderableNode | undefined {

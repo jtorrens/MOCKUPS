@@ -412,7 +412,8 @@ internal sealed class RecordClassFieldValueService
     private IReadOnlyList<FieldOption>? ModuleFieldOptions(string moduleId, RecordClassFieldDescriptor field)
     {
         var settings = _database.GetModuleSettings(moduleId);
-        if (field.ValueKind == ValueKind.ComponentVariant && !string.IsNullOrWhiteSpace(field.ComponentVariantType))
+        if (field.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+            && !string.IsNullOrWhiteSpace(field.ComponentVariantType))
         {
             return _database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, field.ComponentVariantType);
         }
