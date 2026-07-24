@@ -10176,6 +10176,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "CreateTestValueCollectionItemSections(",
     "CreateDirectChildRuntimeContent(",
     "CreatePromotedRuntimeContractContent(",
+    "CreateCollectionItemActionPanel(",
     "CreateTestValueCollectionActions(",
   ]) {
     assertContains(
@@ -10238,6 +10239,31 @@ function assertListItemRuntimePresentationIsGeneric() {
     "List reorder characterization must cover a delayed nested Runtime commit",
   );
   assertContains(
+    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    'ActionButtons(listSurface, "Play Presence")',
+    "promoted List item sections must expose their declared Presence action",
+  );
+  assertContains(
+    "src/desktop-preview/componentCollectionResolverCommon.ts",
+    "optionalComponentBoundaryMotion",
+    "generic collections must consume child Variant boundary Motion",
+  );
+  assertContains(
+    "src/desktop-preview/componentStackComponentResolver.ts",
+    "optionalComponentBoundaryMotion",
+    "Component Stack must consume child Variant boundary Motion generically",
+  );
+  assertContains(
+    "tests/animation/componentStackComponent.test.ts",
+    "Component Stack uses a child Variant boundary Motion for both entry and exit",
+    "Component Stack must characterize generic child-owned boundary Motion",
+  );
+  assertDoesNotContain(
+    "src/desktop-preview/listComponentResolver.ts",
+    "itemPresenceMotion",
+    "List must not own the visual presence Motion of each List Item",
+  );
+  assertContains(
     "src/desktop-preview/listComponentResolver.ts",
     'requireComponentVariantType(\n    bases,\n    stackSlot,\n    "collectionStack"',
     "List must require the exact Collection Stack slot type",
@@ -10254,13 +10280,31 @@ function assertListItemRuntimePresentationIsGeneric() {
   });
   try {
     const row = database.prepare(
-      "SELECT design_preview_json FROM component_classes WHERE component_type = 'listItem'",
-    ).get() as { design_preview_json: string } | undefined;
+      "SELECT config_json, metadata_json, design_preview_json FROM component_classes WHERE component_type = 'listItem'",
+    ).get() as {
+      config_json: string;
+      metadata_json: string;
+      design_preview_json: string;
+    } | undefined;
     if (!row) {
       addViolation("data/desktop-editor-spike.sqlite", "List Item Runtime contract is missing");
       return;
     }
     const preview = jsonRecord(jsonParse(row.design_preview_json));
+    const listItemConfigs = [
+      jsonRecord(jsonParse(row.config_json)),
+      ...jsonArray(jsonRecord(jsonParse(row.metadata_json)).variants)
+        .map(jsonRecord)
+        .map((variant) => jsonRecord(variant.config)),
+    ];
+    for (const [index, config] of listItemConfigs.entries()) {
+      if (Object.keys(jsonRecord(config.boundaryMotion)).length === 0) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `List Item config ${index} must own one boundary Motion`,
+        );
+      }
+    }
     const collections = jsonArray(preview.collections).map(jsonRecord);
     const contentSets = collections.find((collection) => collection.id === "contentSets");
     if (!contentSets || contentSets.uiPresentation !== "itemSections") {
@@ -10271,13 +10315,32 @@ function assertListItemRuntimePresentationIsGeneric() {
     }
 
     const listRow = database.prepare(
-      "SELECT design_preview_json FROM component_classes WHERE component_type = 'list'",
-    ).get() as { design_preview_json: string } | undefined;
+      "SELECT config_json, metadata_json, design_preview_json FROM component_classes WHERE component_type = 'list'",
+    ).get() as {
+      config_json: string;
+      metadata_json: string;
+      design_preview_json: string;
+    } | undefined;
     if (!listRow) {
       addViolation("data/desktop-editor-spike.sqlite", "List Runtime contract is missing");
       return;
     }
     const listPreview = jsonRecord(jsonParse(listRow.design_preview_json));
+    const listConfigs = [
+      jsonRecord(jsonParse(listRow.config_json)),
+      ...jsonArray(jsonRecord(jsonParse(listRow.metadata_json)).variants)
+        .map(jsonRecord)
+        .map((variant) => jsonRecord(variant.config)),
+    ];
+    for (const [index, config] of listConfigs.entries()) {
+      if (Object.keys(jsonRecord(config.boundaryMotion)).length === 0
+          || Object.hasOwn(jsonRecord(config.list), "itemPresenceMotion")) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `List config ${index} must own only the complete List boundary Motion`,
+        );
+      }
+    }
     const listCollection = jsonArray(listPreview.collections)
       .map(jsonRecord)
       .find((collection) => collection.id === "items");

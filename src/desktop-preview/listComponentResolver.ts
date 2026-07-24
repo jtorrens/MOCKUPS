@@ -152,11 +152,6 @@ function listStackItem(
       },
     },
     present: item.present,
-    presenceMotion: requiredRecord(
-      list,
-      "itemPresenceMotion",
-      "component.list.itemPresenceMotion",
-    ),
     ...(item.presenceTransition === undefined
       ? {}
       : { presenceTransition: item.presenceTransition }),

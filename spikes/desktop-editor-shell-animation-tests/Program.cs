@@ -2551,6 +2551,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             itemOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             Equal("true", RequiredField(listSurface, "present").Value);
+            Equal(1, ActionButtons(listSurface, "Play Presence").Count);
+            Equal(1, ActionButtons(listSurface, "Restore Presence").Count);
             Equal("1", RequiredField(listSurface, "activeSet").Value);
             Equal("normal", RequiredField(listSurface, "state").Value);
             Equal(0, listSurface.GetVisualDescendants()
@@ -3377,6 +3379,20 @@ static void SystemBarComponentContractsFailReadOnly()
 
 static void ListComponentContractsFailReadOnly()
 {
+    AssertRejectedDatabaseIsReadOnly("list-missing-boundary-motion", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_list",
+            (config) => config.Remove("boundaryMotion"));
+    });
+    AssertRejectedDatabaseIsReadOnly("list-item-missing-boundary-motion", (connection) =>
+    {
+        MutateComponentClassAndDefaultVariant(
+            connection,
+            "component_project_foqn_s2_list_item",
+            (config) => config.Remove("boundaryMotion"));
+    });
     AssertRejectedDatabaseIsReadOnly("list-wrong-stack-type", (connection) =>
     {
         MutateComponentClassAndDefaultVariant(

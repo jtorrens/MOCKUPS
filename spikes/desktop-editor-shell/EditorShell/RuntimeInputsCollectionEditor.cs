@@ -712,7 +712,9 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             return CreatePromotedRuntimeContractContent(
                 owner,
+                preview,
                 collection,
+                actions,
                 itemIndex,
                 item);
         }
@@ -846,7 +848,9 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private Control CreatePromotedRuntimeContractContent(
         RuntimeInputOwner owner,
+        JsonObject preview,
         RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item)
     {
@@ -892,6 +896,18 @@ internal sealed class RuntimeInputsCollectionEditor
 
         var sections = new List<EditorInternalNavigationSection>();
         var general = new StackPanel { Spacing = 8 };
+        var actionRow = CreateCollectionItemActionPanel(
+            owner,
+            preview,
+            collection,
+            actions,
+            itemId,
+            item,
+            out var refreshActionVisibility);
+        if (actionRow is not null)
+        {
+            general.Children.Add(actionRow);
+        }
         foreach (var input in ComponentInputGrouping.OwnInputs(
                      collection.Fields
                          .Where((candidate) => IsVisibleRuntimeValue(owner, candidate))
@@ -903,7 +919,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 itemIndex,
                 item,
                 input,
-                () => { },
+                refreshActionVisibility,
                 () => { }));
         }
         foreach (var input in ComponentInputGrouping.OwnInputs(
@@ -1486,37 +1502,16 @@ internal sealed class RuntimeInputsCollectionEditor
         var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
             ? id
             : "";
-        var itemActions = actions
-            .Where((action) => action.IsCollectionItemAction
-                && action.CollectionJsonKey == collection.JsonKey
-                && action.CollectionItemId == itemId
-                && string.IsNullOrWhiteSpace(action.TargetJsonPath))
-            .ToList();
-        WrapPanel? actionRow = null;
-        var actionControls = new List<(ComponentPreviewActionDefinition Action, RuntimeTestActionControl Control)>();
-        void RefreshActionVisibility()
+        var actionRow = CreateCollectionItemActionPanel(
+            owner,
+            preview,
+            collection,
+            actions,
+            itemId,
+            item,
+            out var refreshActionVisibility);
+        if (actionRow is not null)
         {
-            var currentItem = DesignPreviewTestValues.CollectionItems(preview, collection)
-                .ElementAtOrDefault(itemIndex) ?? item;
-            foreach (var (action, control) in actionControls)
-            {
-                control.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
-            }
-            if (actionRow is not null)
-            {
-                actionRow.IsVisible = actionControls.Any((entry) => entry.Control.IsVisible);
-            }
-        }
-        if (!owner.IsInstance && itemActions.Count > 0)
-        {
-            actionRow = CreateActionPanel();
-            foreach (var action in itemActions)
-            {
-                var control = CreateActionControl(action, collection.Fields, item);
-                actionControls.Add((action, control));
-                AddActionControl(actionRow, control);
-            }
-            RefreshActionVisibility();
             content.Children.Add(actionRow);
         }
         var visibleCollectionFields = collection.Fields
@@ -1530,7 +1525,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 itemIndex,
                 item,
                 input,
-                RefreshActionVisibility,
+                refreshActionVisibility,
                 openComponentOverrides));
         }
 
@@ -1540,7 +1535,7 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var groupId in topLevelGroupIds)
         {
             groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
-                owner, preview, collection, itemIndex, item, groupId, groups, RefreshActionVisibility));
+                owner, preview, collection, itemIndex, item, groupId, groups, refreshActionVisibility));
         }
         var componentItemDefinition = collection.ComponentItems;
         var componentVariantField = componentItemDefinition is null
@@ -1618,6 +1613,52 @@ internal sealed class RuntimeInputsCollectionEditor
         subcards = groupSubcards;
 
         return content;
+    }
+
+    private WrapPanel? CreateCollectionItemActionPanel(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
+        string itemId,
+        JsonObject item,
+        out Action refreshVisibility)
+    {
+        var itemActions = actions
+            .Where((action) => action.IsCollectionItemAction
+                && action.CollectionJsonKey == collection.JsonKey
+                && action.CollectionItemId == itemId
+                && string.IsNullOrWhiteSpace(action.TargetJsonPath))
+            .ToList();
+        if (owner.IsInstance || itemActions.Count == 0)
+        {
+            refreshVisibility = () => { };
+            return null;
+        }
+
+        var actionRow = CreateActionPanel();
+        var actionControls = new List<(
+            ComponentPreviewActionDefinition Action,
+            RuntimeTestActionControl Control)>();
+        foreach (var action in itemActions)
+        {
+            var control = CreateActionControl(action, collection.Fields, item);
+            actionControls.Add((action, control));
+            AddActionControl(actionRow, control);
+        }
+        refreshVisibility = () =>
+        {
+            var currentItem = DesignPreviewTestValues.CollectionItems(preview, collection)
+                .FirstOrDefault((candidate) => ItemId(candidate, 0) == itemId)
+                ?? item;
+            foreach (var (action, control) in actionControls)
+            {
+                control.IsVisible = ComponentPreviewActions.AppliesToItem(action, currentItem);
+            }
+            actionRow.IsVisible = actionControls.Any((entry) => entry.Control.IsVisible);
+        };
+        refreshVisibility();
+        return actionRow;
     }
 
     private static string ItemId(JsonObject item, int index)

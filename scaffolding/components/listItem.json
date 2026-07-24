@@ -5,7 +5,7 @@
     "visualBoundary": "Own one bounded item surface and the ordered Avatar, Label and Icon Row child composition.",
     "runtimeBehavior": "Resolve one numbered Content Set and one Normal, Pressed or Inactive state from exact Runtime Inputs.",
     "forwarding": "Forward only the active Content Set exact child Runtime contracts to the fixed Avatar, Label and Icon Row boundaries.",
-    "temporalOwnership": "Own activeSet and state tracks relative to the List Item temporal owner."
+    "temporalOwnership": "Own the List Item boundary Motion plus activeSet and state tracks relative to the List Item temporal owner."
   },
   "component": {
     "componentType": "listItem",
@@ -35,6 +35,14 @@
     "focusedTest": "tests/animation/listItemComponent.test.ts"
   },
   "config": {
+    "boundaryMotion": {
+      "transition": "slide",
+      "direction": "bottom",
+      "bounds": "parent",
+      "fade": true,
+      "translate": true,
+      "scale": false
+    },
     "listItem": {
       "contentSetCount": 3,
       "padding": "theme.spacing.m|theme.spacing.s",
@@ -187,6 +195,14 @@
     "protected": true,
     "locked": true,
     "config": {
+      "boundaryMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "parent",
+        "fade": true,
+        "translate": true,
+        "scale": false
+      },
       "listItem": {
         "contentSetCount": 3,
         "padding": "theme.spacing.m|theme.spacing.s",
@@ -341,6 +357,14 @@
       "protected": false,
       "locked": false,
       "config": {
+        "boundaryMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "parent",
+          "fade": true,
+          "translate": true,
+          "scale": false
+        },
         "listItem": {
           "contentSetCount": 3,
           "padding": "theme.spacing.m|theme.spacing.s",
@@ -505,6 +529,14 @@
       "protected": false,
       "locked": false,
       "config": {
+        "boundaryMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "parent",
+          "fade": true,
+          "translate": true,
+          "scale": false
+        },
         "listItem": {
           "contentSetCount": 3,
           "padding": "theme.spacing.m|theme.spacing.s",
@@ -4503,6 +4535,25 @@
       "unit": ""
     },
     {
+      "id": "component.listItem.motion",
+      "label": "Motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "boundaryMotion"
+      ],
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":true,\"translate\":true,\"scale\":false}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": ""
+    },
+    {
       "id": "component.listItem.components.avatar.visible",
       "label": "Visible",
       "valueKind": "Boolean",
@@ -5373,6 +5424,30 @@
               {
                 "id": "component.listItem.states.inactive.elementsOpacity",
                 "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "motion",
+        "label": "Motion",
+        "subtitle": "List Item boundary",
+        "icon": "animation",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "boundary",
+            "label": "Boundary",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.listItem.motion",
+                "order": 10,
                 "visible": true
               }
             ]

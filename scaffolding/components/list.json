@@ -5,7 +5,7 @@
     "visualBoundary": "Delegate vertical item distribution, gaps and reflow to one exact Collection Stack boundary.",
     "runtimeBehavior": "Forward one shared width and height and each item exact Runtime contract to its fixed List Item Variant.",
     "forwarding": "Forward itemWidth and itemHeight explicitly to every List Item and preserve each item runtime document unchanged.",
-    "temporalOwnership": "Own item presence and collection reflow while every List Item retains its owner-relative internal timeline."
+    "temporalOwnership": "Own the List boundary Motion plus item presence timing and collection reflow while every List Item Variant owns its item boundary Motion and owner-relative internal timeline."
   },
   "component": {
     "componentType": "list",
@@ -33,6 +33,14 @@
     "focusedTest": "tests/animation/listComponent.test.ts"
   },
   "config": {
+    "boundaryMotion": {
+      "transition": "slide",
+      "direction": "bottom",
+      "bounds": "screen",
+      "fade": true,
+      "translate": true,
+      "scale": false
+    },
     "list": {
       "collectionStackSlot": {
         "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
@@ -49,15 +57,7 @@
       "itemAlignment": "center",
       "itemGapBeforeMode": "fixed",
       "itemGapBeforeToken": "theme.spacing.none",
-      "itemGapBeforeWeight": 1,
-      "itemPresenceMotion": {
-        "transition": "slide",
-        "direction": "bottom",
-        "bounds": "screen",
-        "fade": true,
-        "translate": true,
-        "scale": false
-      }
+      "itemGapBeforeWeight": 1
     }
   },
   "defaultVariant": {
@@ -66,6 +66,14 @@
     "protected": true,
     "locked": true,
     "config": {
+      "boundaryMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "screen",
+        "fade": true,
+        "translate": true,
+        "scale": false
+      },
       "list": {
         "collectionStackSlot": {
           "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
@@ -82,15 +90,7 @@
         "itemAlignment": "center",
         "itemGapBeforeMode": "fixed",
         "itemGapBeforeToken": "theme.spacing.none",
-        "itemGapBeforeWeight": 1,
-        "itemPresenceMotion": {
-          "transition": "slide",
-          "direction": "bottom",
-          "bounds": "screen",
-          "fade": true,
-          "translate": true,
-          "scale": false
-        }
+        "itemGapBeforeWeight": 1
       }
     }
   },
@@ -101,6 +101,14 @@
       "protected": false,
       "locked": false,
       "config": {
+        "boundaryMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": true,
+          "translate": true,
+          "scale": false
+        },
         "list": {
           "collectionStackSlot": {
             "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
@@ -117,15 +125,7 @@
           "itemAlignment": "center",
           "itemGapBeforeMode": "fixed",
           "itemGapBeforeToken": "theme.spacing.none",
-          "itemGapBeforeWeight": 1,
-          "itemPresenceMotion": {
-            "transition": "slide",
-            "direction": "bottom",
-            "bounds": "screen",
-            "fade": true,
-            "translate": true,
-            "scale": false
-          }
+          "itemGapBeforeWeight": 1
         }
       }
     },
@@ -135,6 +135,14 @@
       "protected": false,
       "locked": false,
       "config": {
+        "boundaryMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": true,
+          "translate": true,
+          "scale": false
+        },
         "list": {
           "collectionStackSlot": {
             "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
@@ -151,15 +159,7 @@
           "itemAlignment": "center",
           "itemGapBeforeMode": "fixed",
           "itemGapBeforeToken": "theme.spacing.none",
-          "itemGapBeforeWeight": 1,
-          "itemPresenceMotion": {
-            "transition": "slide",
-            "direction": "bottom",
-            "bounds": "screen",
-            "fade": true,
-            "translate": true,
-            "scale": false
-          }
+          "itemGapBeforeWeight": 1
         }
       }
     }
@@ -19363,12 +19363,11 @@
       "unit": ""
     },
     {
-      "id": "component.list.itemPresenceMotion",
-      "label": "Item presence",
+      "id": "component.list.motion",
+      "label": "Motion",
       "valueKind": "Motion",
       "jsonPath": [
-        "list",
-        "itemPresenceMotion"
+        "boundaryMotion"
       ],
       "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":true,\"translate\":true,\"scale\":false}",
       "isEditable": true,
@@ -19502,10 +19501,29 @@
                 "id": "component.list.itemGapBeforeWeight",
                 "order": 80,
                 "visible": true
-              },
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "motion",
+        "label": "Motion",
+        "subtitle": "Whole List boundary",
+        "icon": "animation",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "boundary",
+            "label": "Boundary",
+            "order": 10,
+            "visible": true,
+            "fields": [
               {
-                "id": "component.list.itemPresenceMotion",
-                "order": 90,
+                "id": "component.list.motion",
+                "order": 10,
                 "visible": true
               }
             ]

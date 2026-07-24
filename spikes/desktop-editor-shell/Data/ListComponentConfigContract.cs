@@ -13,7 +13,10 @@ internal static class ListComponentConfigContract
 
     public static void Validate(JsonObject config, string context)
     {
-        RequireExactKeys(config, ["list"], context);
+        RequireExactKeys(config, ["boundaryMotion", "list"], context);
+        _ = MotionVariantValue.Parse(
+            JsonPath.RequiredObject(config, "boundaryMotion", context)
+                .ToJsonString());
         var list = JsonPath.RequiredObject(config, "list", context);
         RequireExactKeys(
             list,
@@ -28,7 +31,6 @@ internal static class ListComponentConfigContract
                 "itemGapBeforeMode",
                 "itemGapBeforeToken",
                 "itemGapBeforeWeight",
-                "itemPresenceMotion",
             ],
             $"{context}.list");
         ComponentVariantSlotDocumentContract.Validate(
@@ -61,9 +63,6 @@ internal static class ListComponentConfigContract
             throw new InvalidOperationException(
                 $"{context}.list.itemGapBeforeWeight cannot be negative.");
         }
-        _ = MotionVariantValue.Parse(
-            JsonPath.RequiredObject(list, "itemPresenceMotion", $"{context}.list")
-                .ToJsonString());
     }
 
     private static void RequireExactKeys(

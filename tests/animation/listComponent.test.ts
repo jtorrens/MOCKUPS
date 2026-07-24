@@ -5,6 +5,7 @@ import type { RenderableBox } from "../../src/visual/renderable/types.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import { listComponentToRenderable } from "../../src/desktop-preview/listComponentRenderable.js";
 import { resolveListComponent } from "../../src/desktop-preview/listComponentResolver.js";
+import { resolveComponentCollectionItem } from "../../src/desktop-preview/componentCollectionResolverCommon.js";
 import { routeComponentClassToRenderable } from "../../src/desktop-preview/componentClassRenderableRegistry.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
@@ -38,6 +39,45 @@ test("List Calls and Chats Variants select one exact List Item Variant", () => {
   assert.ok(chats.stack.items.every((item) =>
     item.componentType === "listItem"
     && item.variantReference.endsWith("::variant::chats")));
+});
+
+test("List and List Item Variants own their distinct boundary Motion", () => {
+  const source = fixture("calls");
+  const listConfig = JSON.parse(source.configJson) as {
+    boundaryMotion: Record<string, unknown>;
+  };
+  const listRuntime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  const list = resolveListComponent(source);
+
+  assert.equal(listConfig.boundaryMotion.bounds, "screen");
+  assert.ok(list.stack.items.length > 0);
+  assert.equal(list.stack.items[0]?.presenceMotion.bounds, "parent");
+  assert.notDeepEqual(list.stack.items[0]?.presenceMotion, listConfig.boundaryMotion);
+
+  const embeddedList = resolveComponentCollectionItem(
+    source,
+    {
+      id: "embedded-list",
+      variantReference: "component_project_foqn_s2_list::variant::calls",
+      overrides: {},
+      inputs: listRuntime,
+      present: true,
+      presenceMotion: {
+        transition: "none",
+        direction: "bottom",
+        bounds: "parent",
+        fade: false,
+        translate: false,
+        scale: false,
+      },
+      alignment: "center",
+      gapBeforeMode: "fixed",
+      gapBeforeToken: "theme.spacing.none",
+      gapBeforeWeight: 1,
+    },
+    "test.embeddedList",
+  );
+  assert.deepEqual(embeddedList.presenceMotion, listConfig.boundaryMotion);
 });
 
 test("List forwards one shared Runtime size and the exact List Item Runtime", () => {

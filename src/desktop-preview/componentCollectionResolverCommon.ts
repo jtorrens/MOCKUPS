@@ -8,6 +8,7 @@ import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
+import { optionalComponentBoundaryMotion } from "./componentBoundaryMotion.js";
 import type {
   ComponentCollectionAlignment,
   ComponentCollectionGapMode,
@@ -47,14 +48,24 @@ export function resolveComponentCollectionItem(
     const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);
     const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);
+    const variantReference = requiredString(item, "variantReference", `${itemPath}.variantReference`);
+    const componentType = variantTypes[variantReference];
+    if (typeof componentType !== "string" || !componentType) {
+      throw new Error(`Missing component type for ${itemPath} Variant ${variantReference}`);
+    }
+    const config = mergeComponentDefaults(
+      componentVariantConfig(bases, componentType, variantReference),
+      requiredRecord(item, "overrides", `${itemPath}.overrides`),
+    );
     const presence = ownsPresence
       ? resolveParameterAnimation(animation, "present", rawId, frame, item.present === true)
       : { value: true, animated: false, sourceKeyframeFrame: undefined };
-    const presenceMotion = requiredMotionContract(
-      item,
-      ownsPresence ? "presenceMotion" : "enterMotion",
-      `${itemPath}.${ownsPresence ? "presenceMotion" : "enterMotion"}`,
-    );
+    const presenceMotion = optionalComponentBoundaryMotion(config, `${itemPath}.component`)
+      ?? requiredMotionContract(
+        item,
+        ownsPresence ? "presenceMotion" : "enterMotion",
+        `${itemPath}.${ownsPresence ? "presenceMotion" : "enterMotion"}`,
+      );
     const present = presence.value === true;
     const presenceTransition = optionalBoolean(item, "presenceTransition");
     const presenceElapsedMs = Math.max(0, optionalNumber(item, "presenceElapsedMs", 0));
@@ -72,11 +83,6 @@ export function resolveComponentCollectionItem(
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
     const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame, themeTokens, payload.frameRate);
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
-    const variantReference = requiredString(item, "variantReference", `${itemPath}.variantReference`);
-    const componentType = variantTypes[variantReference];
-    if (typeof componentType !== "string" || !componentType) {
-      throw new Error(`Missing component type for ${itemPath} Variant ${variantReference}`);
-    }
     const alignment = requiredString(item, "alignment", `${itemPath}.alignment`);
     if (alignment !== "start" && alignment !== "center" && alignment !== "end") {
       throw new Error(`Unsupported ${itemPath} alignment ${alignment}`);
@@ -89,10 +95,7 @@ export function resolveComponentCollectionItem(
       id: rawId,
       componentType,
       variantReference,
-      config: mergeComponentDefaults(
-        componentVariantConfig(bases, componentType, variantReference),
-        requiredRecord(item, "overrides", `${itemPath}.overrides`),
-      ),
+      config,
       alignment: alignment as ComponentCollectionAlignment,
       gapBeforeMode: gapBeforeMode as ComponentCollectionGapMode,
       gapBeforeToken: requiredString(item, "gapBeforeToken", `${itemPath}.gapBeforeToken`),

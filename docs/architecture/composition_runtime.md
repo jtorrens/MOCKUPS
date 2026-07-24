@@ -101,7 +101,9 @@ A List Item Variant is one complete item model. It owns:
 - automatic or fixed Avatar sizing, fill or fixed Label sizing, and intrinsic
   or fixed Icon Row sizing;
 - the number of Content Sets;
-- Normal, Pressed and Inactive appearances.
+- Normal, Pressed and Inactive appearances;
+- one boundary Motion used when an owning collection makes this item appear or
+  disappear.
 
 List Item `width` and `height` are Runtime Inputs. The content box subtracts
 the Variant padding. In automatic mode Avatar is a square whose side equals
@@ -138,14 +140,17 @@ Avatar, Label and Icon Row as a group; it never changes the state Surface.
 
 A List is a vertical Collection Stack whose repeated child boundary is one
 exact List Item Variant. Its Variant owns the Collection Stack slot, List Item
-slot, sizing, edge gaps, item alignment, inter-item gap policy and item
-presence motion.
+slot, sizing, edge gaps, item alignment, inter-item gap policy and one boundary
+Motion for the complete List.
 
 Runtime owns `itemWidth`, `itemHeight` and the ordered item collection. List
 forwards the same two dimensions to every child. Each item has a stable id,
 presence and one complete exact List Item Runtime contract. A parent of List
 can therefore provide the shared width and height without bypassing List Item
-ownership. List owns vertical flow, entry, exit and reflow. It does not
+ownership. List owns each item presence event, its parent-relative clock,
+vertical flow and reflow. The selected List Item Variant supplies the visual
+Motion for that item's entry and exit. The List boundary Motion applies only
+when the complete List appears or disappears in its own parent. List does not
 reinterpret Avatar, Label, Icon Row, List Item state or Content Set behavior.
 
 The List Runtime editor identifies collection entries only by their ordinal
@@ -154,7 +159,9 @@ editor title. Selecting an item repeats the exact List Item Runtime sections:
 General plus its numbered Content Sets and their Avatar, Label and Icon Row
 boundaries. List-owned presence remains in General; the shared child `width`
 and `height` are hidden there because `itemWidth` and `itemHeight` already own
-those values in List General.
+those values in List General. General exposes both the static `Present` switch
+and the declarative `Presence` action; the action uses the same stable item id
+and never becomes a List-specific editor control.
 
 `List.items` is an ordinary editable Runtime collection: it supports add,
 duplicate, delete and stable-id reorder. Adding derives one complete child

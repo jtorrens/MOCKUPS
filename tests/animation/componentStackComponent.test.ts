@@ -152,6 +152,29 @@ test("Component Stack resolves ordered Replace and Overlay states deterministica
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "notification"]);
 });
 
+test("Component Stack uses a child Variant boundary Motion for both entry and exit", () => {
+  const source = payload([
+    alternative("list", "stub::variant::list", true),
+  ]);
+  const bases = JSON.parse(source.componentBaseConfigsJson) as {
+    variants: Record<string, Record<string, unknown>>;
+  };
+  const boundaryMotion = {
+    transition: "slide",
+    direction: "left",
+    bounds: "parent",
+    fade: true,
+    translate: true,
+    scale: false,
+  };
+  bases.variants["stub::variant::list"] = { boundaryMotion };
+  source.componentBaseConfigsJson = JSON.stringify(bases);
+
+  const resolved = resolveComponentStackComponent(source);
+  assert.deepEqual(resolved.slots[0]?.alternatives[0]?.enterMotion, boundaryMotion);
+  assert.deepEqual(resolved.slots[0]?.alternatives[0]?.exitMotion, boundaryMotion);
+});
+
 test("Component Stack rejects malformed slot, State and Overrides documents", () => {
   const source = payload([alternative("clock", "stub::variant::clock", true)]);
   const original = JSON.parse(source.designPreviewJson) as { items: Record<string, unknown>[] };

@@ -13,7 +13,10 @@ internal static class ListItemComponentConfigContract
 
     public static void Validate(JsonObject config, string context)
     {
-        RequireExactKeys(config, ["listItem"], context);
+        RequireExactKeys(config, ["boundaryMotion", "listItem"], context);
+        _ = MotionVariantValue.Parse(
+            JsonPath.RequiredObject(config, "boundaryMotion", context)
+                .ToJsonString());
         var listItem = JsonPath.RequiredObject(config, "listItem", context);
         RequireExactKeys(
             listItem,

@@ -20,6 +20,7 @@ import type {
   ComponentStackSizingMode,
   ComponentStackSlotContract,
 } from "./componentStackComponentContract.js";
+import { optionalComponentBoundaryMotion } from "./componentBoundaryMotion.js";
 
 export function resolveComponentStackComponent(payload: DesignPreviewPayload): ComponentStackDesignContract {
   const preview = parseObject(payload.designPreviewJson);
@@ -172,6 +173,9 @@ function resolveAlternative(
         gapBeforeWeight,
       }, path, undefined, false)
     : undefined;
+  const boundaryMotion = component
+    ? optionalComponentBoundaryMotion(component.config, `${path}.component`)
+    : undefined;
   return {
     id,
     component,
@@ -179,8 +183,10 @@ function resolveAlternative(
     behavior,
     active: resolvedActive.value === true,
     isDefault: index === 0,
-    enterMotion: requiredMotionContract(alternative, "enterMotion", `${path}.enterMotion`),
-    exitMotion: requiredMotionContract(alternative, "exitMotion", `${path}.exitMotion`),
+    enterMotion: boundaryMotion
+      ?? requiredMotionContract(alternative, "enterMotion", `${path}.enterMotion`),
+    exitMotion: boundaryMotion
+      ?? requiredMotionContract(alternative, "exitMotion", `${path}.exitMotion`),
     activationFrame: resolvedActive.value === true ? resolvedActive.sourceKeyframeFrame : undefined,
   };
 }

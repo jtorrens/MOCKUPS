@@ -36,6 +36,8 @@ It includes:
   Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
   contracts, absence of duplicated child dimensions, collection add/duplicate/
   reorder actions, delayed nested commits retaining the moved stable item id,
+  static Present plus its Presence playback action, distinct List and List
+  Item boundary Motion ownership,
   repeated navigation across existing items without reparenting controls,
   active-set edits resolving the selected embedded Actor,
   horizontal containment with compact Runtime navigation, and collision-free

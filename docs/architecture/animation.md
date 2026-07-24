@@ -34,6 +34,13 @@ Every temporal entity follows one rule:
 This applies recursively to Shots, Screens, stack slots, States, structured
 collections and nested Components.
 
+The event clock and the visual Motion recipe have distinct owners. A child
+Component Variant may declare its reusable boundary Motion, while the parent
+still owns the appearance or disappearance event, its start frame and any
+resulting collection reflow. List follows this rule: List Item defines how one
+item enters or exits, List times `Present` and reflow, and List defines a
+separate boundary Motion for the complete List.
+
 ## Persisted tracks
 
 Parameter animation is persisted only as version 2 tracks identified by stable
