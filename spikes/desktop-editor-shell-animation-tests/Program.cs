@@ -3010,7 +3010,71 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                     .OfType<Button>()
                     .Count((button) => ToolTip.GetTip(button) as string == "Add item"));
 
+            var previewHost = Required(window.FindControl<ContentControl>("DesignPreviewHost"));
+            Check(
+                previewHost.Content is DesignWebPreviewPane,
+                "Chat List Module is not connected to the generic Design Preview host.");
+            Check(
+                previewHost.Bounds.Width > 0 && previewHost.Bounds.Height > 0,
+                $"Chat List Module Preview has unusable bounds {previewHost.Bounds}.");
+
+            var previewController = typeof(MainWindow)
+                .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorPreviewController
+                ?? throw new InvalidOperationException("Missing Preview controller.");
+            var selectedPayload = typeof(EditorPreviewController)
+                .GetMethod(
+                    "DesignPreviewPayloadForSelection",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.Invoke(previewController, null) as DesignPreviewPayload
+                ?? throw new InvalidOperationException(
+                    "Chat List Module selection did not produce a Design Preview payload.");
+            Equal("module", selectedPayload.Kind);
+            Equal("module.core.chatList", selectedPayload.ComponentType);
+            var previewPane = previewHost.Content as DesignWebPreviewPane
+                ?? throw new InvalidOperationException("Missing generic Design Preview pane.");
+            var initialPreviewSequence = PreviewUpdateSequence(previewPane);
+            Check(
+                initialPreviewSequence > 0,
+                "Chat List Module selection did not request a render from the Preview host.");
+
+            runtimeFields.Single((field) => field.FieldId == "itemWidth")
+                .SetValue("320", commit: true);
+            Dispatcher.UIThread.RunJobs();
+            var inputSession = typeof(EditorPreviewController)
+                .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(previewController) as ComponentPreviewInputSession
+                ?? throw new InvalidOperationException("Missing Module Preview input session.");
+            var projectId = treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) => node.Kind == ProjectTreeNodeKind.Project)
+                .Id;
+            var effectivePayload = inputSession.ApplyInputs(
+                selectedPayload,
+                selectedPayload.ThemeMode,
+                projectId);
+            Equal(
+                320d,
+                JsonPath.RequiredNumber(
+                    JsonPath.ParseRequiredObject(
+                        effectivePayload.DesignPreviewJson,
+                        "Chat List effective Design Preview"),
+                    "itemWidth",
+                    "Chat List effective Design Preview"));
+            Check(
+                PreviewUpdateSequence(previewPane) > initialPreviewSequence,
+                "Changing a Chat List Runtime Input did not request a new Preview render.");
+
             window.Hide();
+
+            static long PreviewUpdateSequence(DesignWebPreviewPane pane)
+            {
+                return typeof(DesignWebPreviewPane)
+                    .GetField("_latestUpdateSequence", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(pane) is long sequence
+                        ? sequence
+                        : 0;
+            }
 
             static void Check(bool condition, string message)
             {
