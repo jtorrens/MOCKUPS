@@ -354,7 +354,23 @@ internal sealed class EditorInternalNavigation : Grid
         if (section is null) return;
         _selectedId = section.Id;
         _content.Content = null;
-        _content.Content = EditorSubcardLayoutHost.ComposeSectionContent(section);
+        var sectionContent = EditorSubcardLayoutHost.ComposeSectionContent(section);
+        if (section.Trailing is null)
+        {
+            _content.Content = sectionContent;
+        }
+        else
+        {
+            var content = new StackPanel { Spacing = EditorUiDensity.Card(8) };
+            var actions = new Border
+            {
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Child = section.Trailing,
+            };
+            content.Children.Add(actions);
+            content.Children.Add(sectionContent);
+            _content.Content = content;
+        }
         RefreshVisuals();
         if (notify) _selectionChanged?.Invoke(section.Id);
     }

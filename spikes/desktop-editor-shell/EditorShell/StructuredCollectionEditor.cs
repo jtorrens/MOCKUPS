@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
@@ -68,23 +67,12 @@ internal sealed class StructuredCollectionEditor
 
     public Control Create()
     {
-        var footer = new StackPanel { Spacing = 8 };
-        if (_items.Count == 0)
-        {
-            footer.Children.Add(new TextBlock { Text = "No active instances in this design.", Opacity = 0.68 });
-        }
-        if (_canEditStructure)
-        {
-            var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()}");
-            add.HorizontalAlignment = HorizontalAlignment.Left;
-            add.Click += (_, args) =>
-            {
-                args.Handled = true;
-                if (_items.Count == 0) _actions.AddFirst();
-                else _actions.AddAfter(_items.Count - 1);
-            };
-            footer.Children.Add(add);
-        }
+        var footer = EditorCollectionItemControls.CreateFooter(
+            _itemLabel,
+            _items.Count,
+            _canEditStructure,
+            _actions.AddFirst,
+            _actions.AddAfter);
 
         var subcards = new List<EditorInternalNavigationSection>();
         for (var index = 0; index < _items.Count; index++)
@@ -102,7 +90,16 @@ internal sealed class StructuredCollectionEditor
                 presentation.Subtitle,
                 presentation.Icon,
                 itemContent.Content,
-                _canEditStructure ? CreateActions(itemIndex) : null,
+                _canEditStructure
+                    ? EditorCollectionItemControls.CreateActions(
+                        _itemLabel,
+                        itemIndex,
+                        _items.Count,
+                        _actions.AddAfter,
+                        _actions.Duplicate,
+                        _actions.Move,
+                        _actions.Delete)
+                    : null,
                 itemContent.Subcards,
                 EditorSubcardLayout.VerticalCards,
                 _sessionUiState.IsExpanded(expansionKey),
@@ -116,7 +113,7 @@ internal sealed class StructuredCollectionEditor
 
         var result = new StackPanel { Spacing = EditorUiDensity.Card(8) };
         result.Children.Add(new EditorSubcardLayoutHost(subcards, EditorSubcardLayout.FlatStack));
-        if (footer.Children.Count > 0) result.Children.Add(footer);
+        if (footer is Panel panel && panel.Children.Count > 0) result.Children.Add(footer);
         return result;
     }
 
@@ -133,52 +130,4 @@ internal sealed class StructuredCollectionEditor
         _sessionUiState.RequestReveal(activeKey);
     }
 
-    private Control CreateActions(int itemIndex)
-    {
-        var controls = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 2,
-        };
-        var add = EditorCollectionItemControls.CreateAddButton($"Add {_itemLabel.ToLowerInvariant()} after this item");
-        add.Click += (_, args) =>
-        {
-            args.Handled = true;
-            _actions.AddAfter(itemIndex);
-        };
-        controls.Children.Add(add);
-
-        var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {_itemLabel.ToLowerInvariant()}");
-        duplicate.Click += (_, args) =>
-        {
-            args.Handled = true;
-            _actions.Duplicate(itemIndex);
-        };
-        controls.Children.Add(duplicate);
-
-        var moveUp = EditorCollectionItemControls.CreateMoveButton(up: true, enabled: itemIndex > 0);
-        moveUp.Click += (_, args) =>
-        {
-            args.Handled = true;
-            _actions.Move(itemIndex, -1);
-        };
-        controls.Children.Add(moveUp);
-
-        var moveDown = EditorCollectionItemControls.CreateMoveButton(up: false, enabled: itemIndex < _items.Count - 1);
-        moveDown.Click += (_, args) =>
-        {
-            args.Handled = true;
-            _actions.Move(itemIndex, 1);
-        };
-        controls.Children.Add(moveDown);
-
-        var delete = EditorCollectionItemControls.CreateDeleteButton();
-        delete.Click += async (_, args) =>
-        {
-            args.Handled = true;
-            await _actions.Delete(itemIndex);
-        };
-        controls.Children.Add(delete);
-        return controls;
-    }
 }

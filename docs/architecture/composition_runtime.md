@@ -150,6 +150,20 @@ boundaries. List-owned presence remains in General; the shared child `width`
 and `height` are hidden there because `itemWidth` and `itemHeight` already own
 those values in List General.
 
+`List.items` is an ordinary editable Runtime collection: it supports add,
+duplicate, delete and stable-id reorder. Adding derives one complete child
+Runtime contract from the List Item Variant selected by the active List
+Variant. Duplicating regenerates every nested Content Set and embedded child
+target id while preserving their explicit references. Deleting removes the
+item and its owner-relative animation tracks. Ordinal editor labels are
+recalculated after every structural operation and are never persisted.
+
+Session-only collection Test Values are keyed by the exact Preview owner id and
+remain intact when their own structural edit changes the effective Runtime
+signature. A signature change still invalidates stale scalar and action
+session values; switching to another Variant selects a different exact owner
+scope.
+
 ## Structural stacks
 
 ### Component Stack

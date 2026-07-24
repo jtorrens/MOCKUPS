@@ -150,7 +150,7 @@ internal sealed class ComponentPreviewInputSession
             && _inputSignature.Length > 0
             && !_inputSignature.Equals(inputSignature, StringComparison.Ordinal))
         {
-            ClearTransientValues(scopeKey);
+            ClearTransientContractValues(scopeKey);
             StopPlayback();
         }
         _scopeKey = scopeKey;
@@ -166,7 +166,7 @@ internal sealed class ComponentPreviewInputSession
         SyncPlaybackTimer();
     }
 
-    private void ClearTransientValues(string scopeKey)
+    private void ClearTransientContractValues(string scopeKey)
     {
         var prefix = $"{scopeKey}:";
         foreach (var key in _values.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
@@ -174,7 +174,6 @@ internal sealed class ComponentPreviewInputSession
             _values.Remove(key);
             _inputDefaults.Remove(key);
         }
-        _transientCollectionTestValuesByScope.Remove(scopeKey);
         foreach (var key in _actionSnapshots.Keys.Where((key) => key.StartsWith(prefix, StringComparison.Ordinal)).ToList())
         {
             _actionSnapshots.Remove(key);
@@ -306,11 +305,15 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
-    public void SetExternalCollectionItems(string collectionJsonKey, IReadOnlyList<JsonObject> items)
+    public void SetExternalCollectionItems(
+        DesignPreviewPayload payload,
+        string collectionJsonKey,
+        IReadOnlyList<JsonObject> items)
     {
-        if (string.IsNullOrWhiteSpace(_scopeKey) || string.IsNullOrWhiteSpace(collectionJsonKey)) return;
-        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey) ?? new JsonObject();
-        _transientCollectionTestValuesByScope[_scopeKey] = testValues;
+        if (!SupportsInputs(payload) || string.IsNullOrWhiteSpace(collectionJsonKey)) return;
+        var scopeKey = ScopeKey(payload);
+        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(scopeKey) ?? new JsonObject();
+        _transientCollectionTestValuesByScope[scopeKey] = testValues;
         testValues[collectionJsonKey] = new JsonArray(items.Select((item) => (JsonNode?)item.DeepClone()).ToArray());
         _refreshPreview();
     }
@@ -493,7 +496,10 @@ internal sealed class ComponentPreviewInputSession
     private static string ScopeKey(DesignPreviewPayload payload)
     {
         var instanceId = ParseJsonObject(payload.InstanceJson)["context"]?["moduleInstanceId"]?.GetValue<string>() ?? "";
-        return $"{payload.Kind}:{payload.ComponentType}:{payload.Name}:{instanceId}";
+        var ownerIdentity = string.IsNullOrWhiteSpace(payload.OwnerId)
+            ? $"{payload.ComponentType}:{payload.Name}"
+            : payload.OwnerId;
+        return $"{payload.Kind}:{ownerIdentity}:{instanceId}";
     }
 
     private JsonObject ApplyTransientTestValues(
@@ -1677,7 +1683,8 @@ internal sealed class ComponentPreviewInputSession
                 FixedCollectionItemCount(collection, config),
                 uiPresentation,
                 itemRuntimePresentation,
-                JsonStringArray(collection, "itemRuntimeHiddenInputIds")));
+                JsonStringArray(collection, "itemRuntimeHiddenInputIds"),
+                JsonString(collection, "itemRuntimeVariantReferencePath")));
         }
 
         return definitions;
@@ -2135,7 +2142,8 @@ internal sealed record RuntimeInputCollectionDefinition(
     int FixedItemCount = 0,
     string UiPresentation = "collection",
     string ItemRuntimePresentation = "card",
-    IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null);
+    IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null,
+    string ItemRuntimeVariantReferencePath = "");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,

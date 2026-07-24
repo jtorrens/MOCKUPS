@@ -24,7 +24,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<string, bool> _canRestorePreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, ComponentInputDefinition, string> _setPreviewCollectionTestValue;
-    private readonly Action<string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
+    private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyPreviewTransientTestValues;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
@@ -49,7 +49,7 @@ internal sealed class EditorCollectionCardFactory
         Func<string, bool> canRestorePreviewAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, ComponentInputDefinition, string> setPreviewCollectionTestValue,
-        Action<string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
+        Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, JsonObject, JsonObject> applyPreviewTransientTestValues,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,

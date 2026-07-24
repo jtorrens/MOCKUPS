@@ -32,7 +32,8 @@ It includes:
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/
   Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
-  contracts and absence of duplicated child dimensions;
+  contracts, absence of duplicated child dimensions, collection add/duplicate/
+  reorder actions and collision-free rebasing of nested target ids;
 - architecture enforcement;
 - desktop application build.
 

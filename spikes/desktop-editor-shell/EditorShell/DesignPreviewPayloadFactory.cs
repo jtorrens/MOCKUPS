@@ -29,7 +29,8 @@ internal sealed record DesignPreviewPayload(
     int FrameRate = 25,
     string ThemeStatusBarVariantReference = "",
     string ThemeNavigationBarVariantReference = "",
-    int LocalFrame = 0);
+    int LocalFrame = 0,
+    string OwnerId = "");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -61,6 +62,7 @@ internal static class DesignPreviewPayloadFactory
             ? null
             : payload with
             {
+                OwnerId = node.Id,
                 ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
                 ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
                 LocalFrame = node.Kind is ProjectTreeNodeKind.ModuleInstance or ProjectTreeNodeKind.Shot

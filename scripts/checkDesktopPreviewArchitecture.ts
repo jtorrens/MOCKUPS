@@ -9144,8 +9144,13 @@ assertDoesNotContain(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "ClearTransientValues(scopeKey);",
-  "runtime contract changes must invalidate stale session-only input values generically",
+  "ClearTransientContractValues(scopeKey);",
+  "runtime contract changes must invalidate stale scalar and action session values generically",
+);
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "payload.OwnerId",
+  "Design Test Value scopes must prefer the exact Preview owner identity over display names",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
@@ -10139,6 +10144,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "CreateTestValueCollectionItemSections(",
     "CreateDirectChildRuntimeContent(",
     "CreatePromotedRuntimeContractContent(",
+    "CreateTestValueCollectionActions(",
   ]) {
     assertContains(
       requiredBoundary.includes("Presentation is")
@@ -10189,10 +10195,13 @@ function assertListItemRuntimePresentationIsGeneric() {
       .find((collection) => collection.id === "items");
     if (!listCollection
       || listCollection.uiPresentation !== "itemSections"
-      || listCollection.itemRuntimePresentation !== "sections") {
+      || listCollection.itemRuntimePresentation !== "sections"
+      || listCollection.canEditStructure !== true
+      || listCollection.itemRuntimeVariantReferencePath
+        !== "list.listItemSlot.variantReference") {
       addViolation(
         "data/desktop-editor-spike.sqlite",
-        "List items must expose ordinal sections containing their exact child Runtime contract",
+        "List items must expose one editable ordinal collection whose new items derive an exact child Runtime contract",
       );
     }
     if (listCollection.itemPresentation !== undefined) {

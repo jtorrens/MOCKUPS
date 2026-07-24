@@ -1309,9 +1309,21 @@ internal sealed class EditorPreviewController
         _designInputsPanel.SetExternalCollectionInputValue(collectionJsonKey, itemId, input, value);
     }
 
-    public void SetDesignPreviewCollectionTestItems(string collectionJsonKey, IReadOnlyList<JsonObject> items)
+    public void SetDesignPreviewCollectionTestItems(
+        ProjectTreeNode node,
+        string collectionJsonKey,
+        IReadOnlyList<JsonObject> items)
     {
-        _designInputsPanel.SetExternalCollectionItems(collectionJsonKey, items);
+        var payload = DesignPreviewPayloadFactory.Create(
+            _previewPayloadData,
+            node,
+            _selectedThemeId,
+            _selectedMode,
+            _shotPreviewFrame);
+        if (payload is not null)
+        {
+            _designInputsPanel.SetExternalCollectionItems(payload, collectionJsonKey, items);
+        }
     }
 
     public JsonObject ApplyDesignPreviewTransientTestValues(ProjectTreeNode node, JsonObject preview)
