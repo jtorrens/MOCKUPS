@@ -156,4 +156,8 @@ Design and Production Preview keep only temporary presentation state:
 - panel split and local controls.
 
 Production payload remains owned by the Screen. Repeated Play with unchanged
-inputs reuses the prepared HTML. Escape cancels both preparation and playback.
+inputs reuses the prepared HTML. Isolated Design actions use the same exact
+reuse rule: the controller retains prepared frames only while their
+cryptographic request signature still matches the resolved payload, action and
+Preview setup. Completion leaves the final frame visible without discarding
+that reusable preparation. Escape cancels both preparation and playback.

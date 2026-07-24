@@ -96,6 +96,12 @@ Preview state is visibly distinct:
 Repeated playback of unchanged input is immediate. Escape works during
 resolution, preparation and playback.
 
+When a finite action completes, its final frame remains visible and Play
+becomes available again. Play repeats the same initial-to-final action without
+repreparing unchanged frames. Restore returns to the captured initial state.
+Moving the authoring surface between visual hosts does not leave either
+transport control disabled.
+
 ## Lifecycle consistency
 
 An action may be available in more than one useful context.

@@ -198,6 +198,7 @@ internal sealed class ComponentPreviewInputSession
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is not null)
         {
+            ResetCompletedActionForReplay(action);
             CaptureActionSnapshot(action);
             ApplyActionTarget(action, targetValue);
             TogglePlayback(action);
@@ -228,17 +229,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         StopPlayback();
-        foreach (var (key, value) in snapshot)
-        {
-            if (value.Exists)
-            {
-                _values[key] = value.Value;
-            }
-            else
-            {
-                _values.Remove(key);
-            }
-        }
+        ApplyActionSnapshot(snapshot);
         _playbackSecondsByActionId.Remove(action.Id);
         if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
         if (_activeActionId == action.Id) _activeActionId = "";
@@ -1395,6 +1386,42 @@ internal sealed class ComponentPreviewInputSession
                 ? new ActionValueSnapshot(true, value)
                 : new ActionValueSnapshot(false, ""),
             StringComparer.Ordinal);
+    }
+
+    private void ResetCompletedActionForReplay(ComponentPreviewActionDefinition action)
+    {
+        if (!_actionSnapshots.TryGetValue(ActionSnapshotKey(action.Id), out var snapshot))
+        {
+            return;
+        }
+        var holdsFinal = _heldFinalActionId == action.Id;
+        var completedReset = !IsPlaying(action)
+            && CurrentPlaybackSeconds(action) >= DurationSeconds(action);
+        if (!holdsFinal && !completedReset)
+        {
+            return;
+        }
+
+        ApplyActionSnapshot(snapshot);
+        _playbackSecondsByActionId.Remove(action.Id);
+        if (holdsFinal) _heldFinalActionId = "";
+        _activeActionId = action.Id;
+    }
+
+    private void ApplyActionSnapshot(
+        IReadOnlyDictionary<string, ActionValueSnapshot> snapshot)
+    {
+        foreach (var (key, value) in snapshot)
+        {
+            if (value.Exists)
+            {
+                _values[key] = value.Value;
+            }
+            else
+            {
+                _values.Remove(key);
+            }
+        }
     }
 
     private string ActionSnapshotKey(string actionId) => $"{_scopeKey}:action-snapshot:{actionId}";

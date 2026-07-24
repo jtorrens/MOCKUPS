@@ -85,6 +85,25 @@ frame.
 Contract-declared finite and base durations use the shared reference-duration
 lane. Retime is disabled when `targetDurationFrames` is absent.
 
+## Action transport
+
+A finite Runtime action captures one temporary origin before its first Play.
+Completion leaves the visible result and playhead at the final frame, returns
+the transport to idle and enables Play again. Repeated Play first restores that
+same captured origin internally and then executes the same initial-to-final
+action; it does not reinterpret a toggle from the previous final value.
+
+Prepared Design frames are session-only and keyed by an exact cryptographic
+request signature containing the resolved payload, complete action and Preview
+setup. An unchanged replay retains and reuses that preparation. A changed
+payload, action, Theme, Device, orientation, route or visual setup produces a
+different signature and prepares a new result.
+
+Restore stops the action, consumes its temporary origin and returns immediately
+to its initial frame and values. Reparenting an editor surface must not detach
+its transport-state observation permanently; Play and Restore follow the
+current common playback state whenever the surface is attached.
+
 ## Keyframe interaction
 
 Keyframes are selected and dragged through the shared timeline interaction.

@@ -529,8 +529,7 @@ internal sealed class ModuleInstanceAnimationEditor
             });
             RefreshVisuals();
         }
-        _playbackState.Changed += OnPlaybackChanged;
-        root.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackChanged;
+        PreviewPlaybackStateBinding.Attach(root, _playbackState, OnPlaybackChanged);
         RefreshVisuals();
         return root;
     }

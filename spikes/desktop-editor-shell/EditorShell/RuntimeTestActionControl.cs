@@ -99,9 +99,7 @@ internal sealed class RuntimeTestActionControl : Border
         layout.Children.Add(_restoreButton);
         Child = layout;
 
-        _playbackState.Changed += OnPlaybackStateChanged;
-        DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
-        RefreshState();
+        PreviewPlaybackStateBinding.Attach(this, _playbackState, OnPlaybackStateChanged);
     }
 
     private static Button CreateButton(string icon, string accessibleName)

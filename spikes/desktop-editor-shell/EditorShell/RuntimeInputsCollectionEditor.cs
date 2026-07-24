@@ -469,10 +469,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             surface.IsEnabled = !_playbackState.IsBusy;
         }
-        void OnPlaybackStateChanged() => UpdatePlaybackState();
-        _playbackState.Changed += OnPlaybackStateChanged;
-        surface.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
-        UpdatePlaybackState();
+        PreviewPlaybackStateBinding.Attach(surface, _playbackState, UpdatePlaybackState);
         return surface;
     }
 
@@ -2120,9 +2117,7 @@ internal sealed class RuntimeInputsCollectionEditor
             control.IsEnabled = false;
             void RefreshResolvedValue() => control.SetPresentedValue(
                 _animationEditor.ResolveRuntimeValue(owner.Node, input, targetId, baseValue));
-            _playbackState.Changed += RefreshResolvedValue;
-            row.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= RefreshResolvedValue;
-            RefreshResolvedValue();
+            PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue);
         }
         return row;
     }

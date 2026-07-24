@@ -228,6 +228,8 @@ internal sealed class EditorPreviewController
     private string _rasterCacheDirectory = "";
     private PlaybackPerformanceRun? _playbackPerformanceRun;
     private IDisposable? _frameCacheReservation;
+    private PlaybackFrameCacheOwner _frameCacheReservationOwner;
+    private PreparedDesignPlayback? _preparedDesignPlayback;
     private int _playbackSummaryGeneration;
     private int _shotPreviewFrame;
     private string _shotTimelineShotId = "";
@@ -1358,7 +1360,10 @@ internal sealed class EditorPreviewController
         var operation = _designPlaybackPreparation.Begin();
         try
         {
-            var prepared = await PreparePlaybackFramesAsync(requestedAction, operation.Token);
+            var prepared = await PreparePlaybackFramesAsync(
+                requestedAction,
+                operation.Token,
+                PlaybackFrameCacheOwner.Design);
             return prepared && _designPlaybackPreparation.IsCurrent(operation);
         }
         catch (OperationCanceledException)
@@ -1376,7 +1381,8 @@ internal sealed class EditorPreviewController
 
     private async Task<bool> PreparePlaybackFramesAsync(
         ComponentPreviewActionDefinition? requestedAction,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        PlaybackFrameCacheOwner cacheOwner)
     {
         cancellationToken.ThrowIfCancellationRequested();
         EnsureSelectedOptionsExist();
@@ -1397,8 +1403,34 @@ internal sealed class EditorPreviewController
         var payload = ProcessPreviewPayload(designPayload, "playback-prepare") ?? designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
+        var designRequestSignature = cacheOwner == PlaybackFrameCacheOwner.Design
+            ? DesignPlaybackRequestSignature(metrics, payload, requestedAction)
+            : "";
+        var designReuse = cacheOwner == PlaybackFrameCacheOwner.Design
+            ? PreparedPlaybackReusePolicy.Decide(
+                _preparedDesignPlayback?.RequestSignature,
+                designRequestSignature,
+                HasFrameCacheReservation(PlaybackFrameCacheOwner.Design))
+            : PreparedPlaybackReuse.None;
+        if (designReuse == PreparedPlaybackReuse.Complete)
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.design-cache-hit",
+                ("component", payload.ComponentType),
+                ("name", payload.Name),
+                ("action", requestedAction?.Id ?? ""),
+                ("frames", _preparedDesignPlayback!.Frames.Count));
+            return true;
+        }
+        if (cacheOwner == PlaybackFrameCacheOwner.Design
+            && designReuse == PreparedPlaybackReuse.None)
+        {
+            InvalidatePreparedDesignPlayback();
+        }
         var frames = _pendingPlaybackFramesOverride?.ToList()
-            ?? PlaybackFramePayloads(payload, projectFps, requestedAction).ToList();
+            ?? (designReuse == PreparedPlaybackReuse.Frames
+                ? _preparedDesignPlayback!.Frames
+                : PlaybackFramePayloads(payload, projectFps, requestedAction).ToList());
         if (frames.Count == 0)
         {
             PreviewDebugLog.Write(
@@ -1410,7 +1442,7 @@ internal sealed class EditorPreviewController
                 ("reason", "no-frames"));
             return true;
         }
-        _frameCacheReservation = WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frames.Count);
+        ReserveFrameCacheCapacity(cacheOwner, frames.Count);
         if (_selectedPlaybackRoute != "raster")
         {
             var prewarmStopwatch = Stopwatch.StartNew();
@@ -1441,14 +1473,18 @@ internal sealed class EditorPreviewController
             }
             catch (OperationCanceledException)
             {
-                ReleaseFrameCacheReservation();
+                InvalidatePlaybackPreparation(cacheOwner);
                 return false;
             }
             catch
             {
-                ReleaseFrameCacheReservation();
+                InvalidatePlaybackPreparation(cacheOwner);
                 throw;
             }
+            RememberPreparedDesignPlayback(
+                cacheOwner,
+                designRequestSignature,
+                frames);
             PreviewDebugLog.Write(
                 "preview.playback.prepare.html",
                 ("route", _selectedPlaybackRoute),
@@ -1466,6 +1502,10 @@ internal sealed class EditorPreviewController
             {
                 await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellationToken);
                 await _designPreviewPane.SyncRasterViewportAsync();
+                RememberPreparedDesignPlayback(
+                    cacheOwner,
+                    designRequestSignature,
+                    frames);
                 PreviewDebugLog.Write(
                     "preview.playback.raster-cache-hit",
                     ("component", payload.ComponentType),
@@ -1475,7 +1515,7 @@ internal sealed class EditorPreviewController
             }
             catch
             {
-                ReleaseFrameCacheReservation();
+                InvalidatePlaybackPreparation(cacheOwner);
                 throw;
             }
         }
@@ -1537,6 +1577,10 @@ internal sealed class EditorPreviewController
             _rasterPlaybackSignature = rasterSignature;
             await _designPreviewPane.PrepareRasterPlaybackAsync(_rasterPlaybackOrder, cancellationToken);
             await _designPreviewPane.SyncRasterViewportAsync();
+            RememberPreparedDesignPlayback(
+                cacheOwner,
+                designRequestSignature,
+                frames);
             PreviewDebugLog.Write(
                 "preview.playback.frames.end",
                 ("component", payload.ComponentType),
@@ -1548,7 +1592,7 @@ internal sealed class EditorPreviewController
         }
         catch (OperationCanceledException)
         {
-            ReleaseFrameCacheReservation();
+            InvalidatePlaybackPreparation(cacheOwner);
             PreviewDebugLog.Write(
                 "preview.playback.frames.cancelled",
                 ("component", payload.ComponentType),
@@ -1559,7 +1603,7 @@ internal sealed class EditorPreviewController
         }
         catch (Exception error)
         {
-            ReleaseFrameCacheReservation();
+            InvalidatePlaybackPreparation(cacheOwner);
             PreviewDebugLog.Write(
                 "preview.playback.frames.error",
                 ("component", payload.ComponentType),
@@ -1749,9 +1793,34 @@ internal sealed class EditorPreviewController
             string.Join("|", frames.Select(PlaybackFrameKey)));
     }
 
+    private string DesignPlaybackRequestSignature(
+        DevicePreviewMetrics metrics,
+        DesignPreviewPayload payload,
+        ComponentPreviewActionDefinition? action)
+    {
+        var signatureJson = JsonSerializer.Serialize(new
+        {
+            Version = 1,
+            PlaybackRoute = _selectedPlaybackRoute,
+            ThemeId = _selectedThemeId,
+            ThemeMode = _selectedMode,
+            DeviceId = SelectedDeviceId,
+            Orientation = _selectedOrientation,
+            Scale = _selectedScale,
+            ShowDesignMarks = _showDesignMarks,
+            ShowCanonicalFrame = _showCanonicalFrame,
+            ShellIsDark = _isDark(),
+            metrics.CanvasWidth,
+            metrics.CanvasHeight,
+            Payload = PlaybackPayloadFingerprint(payload),
+            Action = action,
+        });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(signatureJson)));
+    }
+
     private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
-        if (_preparedShotPlayback is null)
+        if (_preparedShotPlayback is null && _preparedDesignPlayback is null)
         {
             ReleaseFrameCacheReservation();
         }
@@ -1770,6 +1839,41 @@ internal sealed class EditorPreviewController
     {
         _frameCacheReservation?.Dispose();
         _frameCacheReservation = null;
+        _frameCacheReservationOwner = PlaybackFrameCacheOwner.None;
+    }
+
+    private void ReserveFrameCacheCapacity(
+        PlaybackFrameCacheOwner owner,
+        int frameCount)
+    {
+        ReleaseFrameCacheReservation();
+        _frameCacheReservation = WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frameCount);
+        _frameCacheReservationOwner = owner;
+    }
+
+    private bool HasFrameCacheReservation(PlaybackFrameCacheOwner owner) =>
+        _frameCacheReservation is not null && _frameCacheReservationOwner == owner;
+
+    private void RememberPreparedDesignPlayback(
+        PlaybackFrameCacheOwner owner,
+        string requestSignature,
+        IReadOnlyList<DesignPreviewPayload> frames)
+    {
+        if (owner != PlaybackFrameCacheOwner.Design) return;
+        _preparedDesignPlayback = new PreparedDesignPlayback(requestSignature, frames);
+    }
+
+    private void InvalidatePlaybackPreparation(PlaybackFrameCacheOwner owner)
+    {
+        if (owner == PlaybackFrameCacheOwner.Design)
+        {
+            InvalidatePreparedDesignPlayback();
+            return;
+        }
+        if (HasFrameCacheReservation(owner))
+        {
+            ReleaseFrameCacheReservation();
+        }
     }
 
     private void CancelShotPlaybackPreparation()
@@ -1822,7 +1926,19 @@ internal sealed class EditorPreviewController
     private void InvalidatePreparedShotPlayback()
     {
         _preparedShotPlayback = null;
-        ReleaseFrameCacheReservation();
+        if (HasFrameCacheReservation(PlaybackFrameCacheOwner.Shot))
+        {
+            ReleaseFrameCacheReservation();
+        }
+    }
+
+    private void InvalidatePreparedDesignPlayback()
+    {
+        _preparedDesignPlayback = null;
+        if (HasFrameCacheReservation(PlaybackFrameCacheOwner.Design))
+        {
+            ReleaseFrameCacheReservation();
+        }
     }
 
     private double? RecordPresentedPlaybackFrame(DesignWebPreviewPane.DesignPreviewFrameStatus status)
@@ -1894,6 +2010,17 @@ internal sealed class EditorPreviewController
     private sealed record PreparedShotPlayback(
         string RequestSignature,
         IReadOnlyList<DesignPreviewPayload> Frames);
+
+    private sealed record PreparedDesignPlayback(
+        string RequestSignature,
+        IReadOnlyList<DesignPreviewPayload> Frames);
+
+    private enum PlaybackFrameCacheOwner
+    {
+        None,
+        Design,
+        Shot,
+    }
 
     private void SetPreviewPerformanceStatus(PreviewPerformanceStatus status)
     {
@@ -2409,6 +2536,7 @@ internal sealed class EditorPreviewController
         if (string.IsNullOrWhiteSpace(shotId)) return;
         var payloadNode = ProductionPayloadNode();
         if (payloadNode is null) return;
+        InvalidatePreparedDesignPlayback();
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
         var cancellation = _shotPlaybackPreparation.Begin();
@@ -2463,7 +2591,10 @@ internal sealed class EditorPreviewController
                 }
 
                 _pendingPlaybackFramesOverride = frames;
-                preparationSucceeded = await PreparePlaybackFramesAsync(null, cancellation.Token);
+                preparationSucceeded = await PreparePlaybackFramesAsync(
+                    null,
+                    cancellation.Token,
+                    PlaybackFrameCacheOwner.Shot);
                 if (preparationSucceeded)
                 {
                     _preparedShotPlayback = new PreparedShotPlayback(requestSignature, frames);

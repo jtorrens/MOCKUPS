@@ -58,10 +58,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
                 indicator.IsVisible = screenId.Equals(activeId, StringComparison.Ordinal);
             }
         }
-        void OnPlaybackStateChanged() => RefreshActiveScreen();
-        _playbackState.Changed += OnPlaybackStateChanged;
-        body.DetachedFromVisualTree += (_, _) => _playbackState.Changed -= OnPlaybackStateChanged;
-        RefreshActiveScreen();
+        PreviewPlaybackStateBinding.Attach(body, _playbackState, RefreshActiveScreen);
 
         var add = EditorCollectionItemControls.CreateAddButton("Add Screen");
         add.Click += async (_, _) =>

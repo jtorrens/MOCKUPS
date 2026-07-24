@@ -42,6 +42,8 @@ It includes:
   active-set edits resolving the selected embedded Actor,
   horizontal containment with compact Runtime navigation, and collision-free
   rebasing of nested target ids;
+- generic Runtime action completion, visual-tree reattachment, repeat from the
+  captured origin, Restore and exact prepared-frame reuse;
 - architecture enforcement;
 - desktop application build.
 

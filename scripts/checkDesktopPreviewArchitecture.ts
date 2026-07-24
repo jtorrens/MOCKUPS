@@ -880,8 +880,45 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
-  "PreparePlaybackFramesAsync(requestedAction, operation.Token)",
+  "PreparePlaybackFramesAsync(\n                requestedAction,\n                operation.Token,\n                PlaybackFrameCacheOwner.Design)",
   "isolated Design HTML and raster preparation must receive the active cancellation token",
+);
+for (const requiredDesignReplayOwner of [
+  "private PreparedDesignPlayback? _preparedDesignPlayback;",
+  "DesignPlaybackRequestSignature(metrics, payload, requestedAction)",
+  "HasFrameCacheReservation(PlaybackFrameCacheOwner.Design)",
+  '"preview.playback.design-cache-hit"',
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    requiredDesignReplayOwner,
+    `isolated Design replay must retain and reuse only an exact prepared request (${requiredDesignReplayOwner})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "ResetCompletedActionForReplay(action);",
+  "a completed Runtime action must reconstruct its captured origin before replay",
+);
+for (const requiredPlaybackBinding of [
+  "control.AttachedToVisualTree += (_, _) => Subscribe();",
+  "control.DetachedFromVisualTree += (_, _) => Unsubscribe();",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell/Common/PreviewPlaybackStateBinding.cs",
+    requiredPlaybackBinding,
+    `common playback controls must resume state observation after visual-tree reattachment (${requiredPlaybackBinding})`,
+  );
+}
+assertContains(
+  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  "Runtime action controls reactivate after playback and visual-tree reattachment",
+  "desktop characterization must cover generic action-control reactivation",
+);
+assertContains(
+  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  "List Presence replays the same initial-to-final action and restores its origin",
+  "List Presence characterization must cover repeat and Restore semantics",
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
@@ -7588,7 +7625,7 @@ assertContains(
 );
 assertContains(
   "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  "_playbackState.Changed += RefreshResolvedValue",
+  "PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue)",
   "animated Runtime Values must follow the authoritative Preview playhead",
 );
 assertContains(

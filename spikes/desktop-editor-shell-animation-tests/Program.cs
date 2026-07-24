@@ -91,6 +91,7 @@ var tests = new (string Name, Action Run)[]
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
+    ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -125,6 +126,7 @@ var tests = new (string Name, Action Run)[]
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
+    ("Runtime action controls reactivate after playback and visual-tree reattachment", RuntimeActionControlsReactivateAfterPlaybackAndReattachment),
     ("Preview preparation cancellation retains only the latest operation", PreviewPreparationCancellationRetainsLatestOperation),
     ("prepared playback reuse requires an exact current signature", PreparedPlaybackReuseRequiresExactSignature),
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
@@ -229,6 +231,103 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
                 "Effective moved List Runtime item"),
             "state",
             "Effective moved List Runtime item"));
+}
+
+static void ListPresenceReplaysAndRestoresItsOrigin()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var listVariant = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id == "component_project_foqn_s2_list::variant::default");
+    var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var payload = Required(CreatePreviewPayload(database, listVariant, theme.Id));
+    var settings = database.GetComponentClassSettings(
+        "component_project_foqn_s2_list");
+    var preview = JsonPath.ParseRequiredObject(
+        payload.DesignPreviewJson,
+        "List Design Preview");
+    var firstItem = JsonPath.RequiredArray(preview, "items", "List Design Preview")
+        .OfType<JsonObject>()
+        .First();
+    var firstItemId = JsonPath.RequiredString(
+        firstItem,
+        "id",
+        "List Runtime item 1");
+    var action = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
+        .Single((candidate) =>
+            candidate.CollectionItemId == firstItemId
+            && candidate.Label == "Presence");
+    var session = new ComponentPreviewInputSession(database, () => { })
+    {
+        PresentEveryPlaybackFrame = true,
+    };
+    session.UpdateForPayload(payload, settings.ProjectId);
+    var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
+        "DurationFrames",
+        BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("Missing shared preview action duration resolver.");
+    var advanceMethod = typeof(ComponentPreviewInputSession).GetMethod(
+        "AdvancePlaybackFrame",
+        BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("Missing shared preview frame advance.");
+    var durationFrames = (int)(durationMethod.Invoke(session, [action]) ?? -1);
+
+    void CompleteAction()
+    {
+        session.NotifyPlaybackFramePresented();
+        for (var frame = 1; frame <= durationFrames; frame++)
+        {
+            advanceMethod.Invoke(session, null);
+            session.NotifyPlaybackFramePresented();
+        }
+    }
+
+    JsonObject EffectiveItem()
+    {
+        var effectivePayload = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var effectivePreview = JsonPath.ParseRequiredObject(
+            effectivePayload.DesignPreviewJson,
+            "Effective List Design Preview");
+        return JsonPath.RequiredArray(
+                effectivePreview,
+                "items",
+                "Effective List Design Preview")
+            .OfType<JsonObject>()
+            .Single((item) =>
+                JsonPath.RequiredString(item, "id", "Effective List item") == firstItemId);
+    }
+
+    Equal(true, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Initial List item"));
+    True(session.TriggerAction(action.Id));
+    CompleteAction();
+    True(!session.IsPlaybackActive);
+    Equal(durationFrames, session.CurrentPreviewFrame);
+    Equal(false, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Completed List item"));
+    True(session.CanRestoreAction(action.Id));
+
+    True(session.TriggerAction(action.Id));
+    True(session.IsPlaybackActive);
+    Equal(0, session.CurrentPreviewFrame);
+    var replayItem = EffectiveItem();
+    Equal(false, JsonPath.RequiredBoolean(replayItem, "present", "Replayed List item target"));
+    Equal(true, JsonPath.RequiredBoolean(
+        replayItem,
+        action.PlayInputId,
+        "Replayed List item action state"));
+    CompleteAction();
+    True(!session.IsPlaybackActive);
+    Equal(false, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Recompleted List item"));
+
+    True(session.RestoreAction(action.Id));
+    True(!session.CanRestoreAction(action.Id));
+    Equal(0, session.CurrentPreviewFrame);
+    Equal(true, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Restored List item"));
 }
 
 static void ExternalNodeProcessesShareExecutableResolution()
@@ -7641,6 +7740,63 @@ static void PlaybackStatePublishesChanges()
     True(state.IsBusy);
     state.SetPlaying(false);
     Equal(4, changes);
+}
+
+static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
+{
+    using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+    session.Dispatch(() =>
+    {
+        var playbackState = new PreviewPlaybackState();
+        var canRestore = false;
+        var control = new RuntimeTestActionControl(
+            "Test Action",
+            (_) => { },
+            () => { },
+            () => canRestore,
+            playbackState);
+        var window = new Window
+        {
+            Width = 320,
+            Height = 120,
+            Content = control,
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        Button ActionButton(string accessibleName) => control.GetVisualDescendants()
+            .OfType<Button>()
+            .Single((button) => ToolTip.GetTip(button) as string == accessibleName);
+
+        var play = ActionButton("Play Test Action");
+        var restore = ActionButton("Restore Test Action");
+        True(play.IsEnabled);
+        True(!restore.IsEnabled);
+
+        playbackState.SetBusy(true);
+        Dispatcher.UIThread.RunJobs();
+        True(!play.IsEnabled);
+        True(!restore.IsEnabled);
+
+        canRestore = true;
+        playbackState.SetBusy(false);
+        Dispatcher.UIThread.RunJobs();
+        True(play.IsEnabled);
+        True(restore.IsEnabled);
+
+        window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        playbackState.SetBusy(true);
+        window.Content = control;
+        Dispatcher.UIThread.RunJobs();
+        True(!play.IsEnabled);
+
+        playbackState.SetBusy(false);
+        Dispatcher.UIThread.RunJobs();
+        True(play.IsEnabled);
+        True(restore.IsEnabled);
+        window.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void PreviewPreparationCancellationRetainsLatestOperation()
