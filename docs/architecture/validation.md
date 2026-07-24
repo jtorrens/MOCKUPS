@@ -31,7 +31,8 @@ It includes:
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/
-  Icon Row rows and exact nested child Runtime contracts;
+  Icon Row rows, ordinal-only List item navigation, exact nested child Runtime
+  contracts and absence of duplicated child dimensions;
 - architecture enforcement;
 - desktop application build.
 

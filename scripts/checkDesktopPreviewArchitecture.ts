@@ -10133,12 +10133,15 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
 function assertListItemRuntimePresentationIsGeneric() {
   for (const requiredBoundary of [
     'uiPresentation is not "collection" and not "itemSections"',
+    'itemRuntimePresentation is not "card" and not "sections"',
     'collection.UiPresentation.Equals("itemSections", StringComparison.Ordinal)',
+    'collection.ItemRuntimePresentation.Equals("sections", StringComparison.Ordinal)',
     "CreateTestValueCollectionItemSections(",
     "CreateDirectChildRuntimeContent(",
+    "CreatePromotedRuntimeContractContent(",
   ]) {
     assertContains(
-      requiredBoundary.includes("uiPresentation is")
+      requiredBoundary.includes("Presentation is")
         ? "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs"
         : "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
       requiredBoundary,
@@ -10171,6 +10174,50 @@ function assertListItemRuntimePresentationIsGeneric() {
         "data/desktop-editor-spike.sqlite",
         "List Item Content Sets must promote their stable items through generic itemSections metadata",
       );
+    }
+
+    const listRow = database.prepare(
+      "SELECT design_preview_json FROM component_classes WHERE component_type = 'list'",
+    ).get() as { design_preview_json: string } | undefined;
+    if (!listRow) {
+      addViolation("data/desktop-editor-spike.sqlite", "List Runtime contract is missing");
+      return;
+    }
+    const listPreview = jsonRecord(jsonParse(listRow.design_preview_json));
+    const listCollection = jsonArray(listPreview.collections)
+      .map(jsonRecord)
+      .find((collection) => collection.id === "items");
+    if (!listCollection
+      || listCollection.uiPresentation !== "itemSections"
+      || listCollection.itemRuntimePresentation !== "sections") {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "List items must expose ordinal sections containing their exact child Runtime contract",
+      );
+    }
+    if (listCollection.itemPresentation !== undefined) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "List item navigation must not derive titles from Runtime content",
+      );
+    }
+    const hiddenInputIds = jsonArray(listCollection.itemRuntimeHiddenInputIds)
+      .map(String)
+      .sort();
+    if (hiddenInputIds.join(",") !== "height,width") {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "List item sections must hide only the dimensions forwarded by List General",
+      );
+    }
+    for (const [index, itemValue] of jsonArray(listPreview.items).entries()) {
+      const item = jsonRecord(itemValue);
+      if (item.name !== undefined) {
+        addViolation(
+          "data/desktop-editor-spike.sqlite",
+          `List Runtime item ${index + 1} stores a content-derived editor name`,
+        );
+      }
     }
   } finally {
     database.close();

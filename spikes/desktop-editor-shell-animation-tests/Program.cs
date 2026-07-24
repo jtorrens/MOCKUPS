@@ -2362,6 +2362,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             {
                 var item = node as JsonObject
                     ?? throw new InvalidOperationException("List Runtime item must be an object.");
+                True(item["name"] is null);
                 var runtime = JsonPath.RequiredObject(item, "listItemInputs", "List Runtime item");
                 Equal(1d, JsonPath.RequiredNumber(runtime, "activeSet", "List Item Runtime"));
                 Equal("normal", JsonPath.RequiredString(runtime, "state", "List Item Runtime"));
@@ -2369,6 +2370,70 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 Equal(84d, JsonPath.RequiredNumber(runtime, "height", "List Item Runtime"));
                 Equal(4, JsonPath.RequiredArray(runtime, "collections", "List Item Runtime").Count);
             }
+
+            var listRuntimeLabels = listSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .ToList();
+            SequenceEqual(
+                Enumerable.Range(1, listItems.Count).Select((index) => $"Item {index}"),
+                listRuntimeLabels.Where((label) =>
+                    label.StartsWith("Item ", StringComparison.Ordinal)
+                    && int.TryParse(label.AsSpan(5), out _)));
+            True(!listRuntimeLabels.Contains("Diana"));
+            True(!listRuntimeLabels.Contains("Missed call"));
+
+            var itemOneButton = listSurface.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) => button.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Any((text) => text.Text == "Item 1"));
+            itemOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Equal("true", RequiredField(listSurface, "present").Value);
+            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("normal", RequiredField(listSurface, "state").Value);
+            Equal(0, listSurface.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Count((field) => field.FieldId is "width" or "height"));
+
+            listRuntimeLabels = listSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .ToList();
+            True(listRuntimeLabels.Contains("General"));
+            SequenceEqual(
+                ["Set 1", "Set 2", "Set 3"],
+                listRuntimeLabels.Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
+            True(!listRuntimeLabels.Contains("Content Sets"));
+
+            var nestedSetOneButton = listSurface.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) => button.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Any((text) => text.Text == "Set 1"));
+            nestedSetOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            var nestedComponentRows = listSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .Where((text) => text is "Avatar" or "Label" or "Icon Row")
+                .ToList();
+            SequenceEqual(["Avatar", "Label", "Icon Row"], nestedComponentRows);
+            var nestedRuntimeButtons = listSurface.GetVisualDescendants()
+                .OfType<Button>()
+                .Where((button) => button.Content as string == "···")
+                .ToList();
+            Equal(3, nestedRuntimeButtons.Count);
+            nestedRuntimeButtons[0].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listSurface, "actorId");
+            nestedRuntimeButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listSurface, "sampleText");
+            nestedRuntimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listSurface, "buttonInputs");
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();

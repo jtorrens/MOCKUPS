@@ -15,7 +15,6 @@ import type { ListDesignContract } from "./listComponentContract.js";
 
 const listItemKeys = new Set([
   "id",
-  "name",
   "present",
   "listItemInputs",
   "presenceTransition",

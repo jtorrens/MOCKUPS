@@ -142,6 +142,14 @@ can therefore provide the shared width and height without bypassing List Item
 ownership. List owns vertical flow, entry, exit and reflow. It does not
 reinterpret Avatar, Label, Icon Row, List Item state or Content Set behavior.
 
+The List Runtime editor identifies collection entries only by their ordinal
+position: `Item 1`, `Item 2`, and so on. Runtime content is never reused as an
+editor title. Selecting an item repeats the exact List Item Runtime sections:
+General plus its numbered Content Sets and their Avatar, Label and Icon Row
+boundaries. List-owned presence remains in General; the shared child `width`
+and `height` are hidden there because `itemWidth` and `itemHeight` already own
+those values in List General.
+
 ## Structural stacks
 
 ### Component Stack

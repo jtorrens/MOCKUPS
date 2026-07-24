@@ -1653,6 +1653,12 @@ internal sealed class ComponentPreviewInputSession
                 throw new InvalidOperationException(
                     $"Runtime Input collection '{id}' has unsupported uiPresentation '{uiPresentation}'.");
             }
+            var itemRuntimePresentation = JsonString(collection, "itemRuntimePresentation", "card");
+            if (itemRuntimePresentation is not "card" and not "sections")
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input collection '{id}' has unsupported itemRuntimePresentation '{itemRuntimePresentation}'.");
+            }
             definitions.Add(new RuntimeInputCollectionDefinition(
                 id,
                 label,
@@ -1669,7 +1675,9 @@ internal sealed class ComponentPreviewInputSession
                 JsonString(collection, "animationPresentation", "item"),
                 collection["canEditStructure"]?.GetValue<bool>() ?? true,
                 FixedCollectionItemCount(collection, config),
-                uiPresentation));
+                uiPresentation,
+                itemRuntimePresentation,
+                JsonStringArray(collection, "itemRuntimeHiddenInputIds")));
         }
 
         return definitions;
@@ -2125,7 +2133,9 @@ internal sealed record RuntimeInputCollectionDefinition(
     string AnimationPresentation = "item",
     bool CanEditStructure = true,
     int FixedItemCount = 0,
-    string UiPresentation = "collection");
+    string UiPresentation = "collection",
+    string ItemRuntimePresentation = "card",
+    IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null);
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,
