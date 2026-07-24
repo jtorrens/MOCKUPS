@@ -202,10 +202,13 @@ npm run desktop:open:mac
 npm run desktop:launch:mac
 ```
 
-`desktop:mac` runs the development build. `desktop:open:mac` opens the existing
-packaged bundle and fails if it is absent. `desktop:launch:mac` packages the
-current revision first. Automated macOS UI review uses one of these launchers;
-headless checks continue to use the Avalonia headless platform.
+`desktop` and `desktop:build` rebuild the web Preview bundle before invoking
+.NET, so a development output cannot retain a stale Component or Module route.
+`desktop:mac` runs that same prepared development command under the display
+wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
+it is absent. `desktop:launch:mac` packages the current revision first.
+Automated macOS UI review uses one of these launchers; headless checks continue
+to use the Avalonia headless platform.
 
 ## Safe implementation sequence
 

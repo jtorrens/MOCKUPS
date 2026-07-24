@@ -12,16 +12,7 @@ test("macOS development launch wakes the display only for startup", () => {
 
   assert.equal(spec.command, "caffeinate");
   assert.deepEqual(spec.args.slice(0, 3), ["-du", "-t", "10"]);
-  assert.deepEqual(spec.args.slice(3, 6), ["dotnet", "run", "--project"]);
-  assert.equal(
-    spec.args[6],
-    path.join(
-      repositoryRoot,
-      "spikes",
-      "desktop-editor-shell",
-      "Mockups.DesktopEditorShell.csproj",
-    ),
-  );
+  assert.deepEqual(spec.args.slice(3), ["npm", "run", "desktop"]);
   assert.equal(spec.artifactPath, undefined);
 });
 

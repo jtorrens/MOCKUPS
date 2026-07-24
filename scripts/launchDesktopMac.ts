@@ -25,10 +25,9 @@ export function macDesktopLaunchSpec(
         "-du",
         "-t",
         String(displayWakeSeconds),
-        "dotnet",
+        "npm",
         "run",
-        "--project",
-        resolve(root, "spikes", "desktop-editor-shell", "Mockups.DesktopEditorShell.csproj"),
+        "desktop",
       ],
     };
   }
