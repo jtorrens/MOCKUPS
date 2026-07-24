@@ -121,6 +121,12 @@ internal static partial class ComponentClassFieldCatalog
     [
         new("theme.motion.buttonPushedDurationMs", "motion.buttonPushedDurationMs"),
     ];
+    private static readonly FieldOption[] ButtonContentModeOptions =
+    [
+        new("icon", "Icon"),
+        new("text", "Text"),
+        new("iconText", "Icon + text"),
+    ];
     private static readonly FieldOption[] IconRowSizeSourceOptions = [new("shared", "Shared"), new("perButton", "Per button")];
     private static readonly FieldOption[] IconBarSizeSourceOptions = [new("shared", "Shared"), new("perRow", "Per row")];
 
@@ -841,6 +847,7 @@ internal static partial class ComponentClassFieldCatalog
         ["component.badge.paddingToken"] = new("component.badge.paddingToken", "Padding", ValueKind.ThemeToken, ["badge", "paddingToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
         ["component.badge.placement"] = new("component.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["badge", "placement"], """{"mode":"center","alignX":1,"alignY":0,"offsetX":0,"offsetY":0}"""),
 
+        ["component.button.contentMode"] = new("component.button.contentMode", "Content", ValueKind.OptionToken, ["button", "contentMode"], "text", Options: ButtonContentModeOptions),
         ["component.button.dimensionMode"] = new("component.button.dimensionMode", "Dimension mode", ValueKind.OptionToken, ["button", "dimensionMode"], "content", Options: DimensionModeOptions),
         ["component.button.size"] = new("component.button.size", "Fixed size", ValueKind.IntegerPair, ["button", "size"], "120|44", PairLabels: new("W", "H")),
         ["component.button.padding"] = new("component.button.padding", "Padding", ValueKind.ThemeTokenPair, ["button", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),

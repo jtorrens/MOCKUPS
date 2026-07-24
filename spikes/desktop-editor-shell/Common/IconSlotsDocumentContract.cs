@@ -11,7 +11,6 @@ internal static class IconSlotsDocumentContract
     {
         "id",
         "buttonVariantReference",
-        "contentMode",
         "state",
         "iconToken",
         "text",
@@ -20,13 +19,6 @@ internal static class IconSlotsDocumentContract
         "pushTrigger",
         "pushElapsedMs",
         "buttonOverrides",
-    };
-
-    private static readonly HashSet<string> ContentModes = new(StringComparer.Ordinal)
-    {
-        "icon",
-        "text",
-        "iconText",
     };
 
     private static readonly HashSet<string> States = new(StringComparer.Ordinal)
@@ -60,13 +52,6 @@ internal static class IconSlotsDocumentContract
             {
                 throw new InvalidOperationException(
                     $"{context} Button Variant reference '{reference}' is not a full Variant reference.");
-            }
-
-            var contentMode = JsonPath.RequiredString(item, "contentMode", context);
-            if (!ContentModes.Contains(contentMode))
-            {
-                throw new InvalidOperationException(
-                    $"{context} has unsupported content mode '{contentMode}'.");
             }
 
             var state = JsonPath.RequiredString(item, "state", context);

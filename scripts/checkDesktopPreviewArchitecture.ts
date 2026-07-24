@@ -8406,6 +8406,21 @@ assertContains(
   "Icon Row must require its config object",
 );
 assertContains(
+  "src/desktop-preview/buttonComponentResolver.ts",
+  'requiredString(button, "contentMode", "component.button.contentMode")',
+  "Button Variant config must own its content layout",
+);
+assertDoesNotContain(
+  "src/desktop-preview/buttonComponentResolver.ts",
+  'requiredString(preview, "contentMode"',
+  "Button Runtime must not override Variant-owned content layout",
+);
+assertDoesNotContain(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  '"contentMode"',
+  "Icon Row Runtime must not duplicate Button Variant content layout",
+);
+assertContains(
   "src/desktop-preview/iconRowComponentResolver.ts",
   '"buttonInputs",\n    "component.iconRow input"',
   "Icon Row must require exact Button Runtime item objects",
@@ -10101,7 +10116,6 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     const exactItemKeys = [
       "buttonOverrides",
       "buttonVariantReference",
-      "contentMode",
       "iconSizeToken",
       "iconToken",
       "id",

@@ -9,19 +9,20 @@ const fixture = (variantId = "default") =>
   committedComponentFixture("incomingCallNotification", variantId);
 
 test("Incoming Call Notification resolves exact iOS and Android child Variant boundaries", () => {
-  const ios = resolveIncomingCallNotificationComponent(fixture());
+  const iosSource = fixture();
   const androidSource = fixture("android");
-  const androidPreview = JSON.parse(androidSource.designPreviewJson) as {
+  assert.equal(iosSource.designPreviewJson, androidSource.designPreviewJson);
+  const runtime = JSON.parse(iosSource.designPreviewJson) as {
     iconRowRuntime: Array<{
       runtimeInputs: {
         buttonInputs: Array<Record<string, unknown>>;
       };
     }>;
   };
-  for (const button of androidPreview.iconRowRuntime[0]!.runtimeInputs.buttonInputs) {
-    button.contentMode = "iconText";
-  }
-  androidSource.designPreviewJson = JSON.stringify(androidPreview);
+  assert.ok(runtime.iconRowRuntime[0]!.runtimeInputs.buttonInputs.every((button) =>
+    !Object.hasOwn(button, "contentMode")));
+
+  const ios = resolveIncomingCallNotificationComponent(iosSource);
   const android = resolveIncomingCallNotificationComponent(androidSource);
 
   assert.equal(ios.layout, "compact");

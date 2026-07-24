@@ -51,7 +51,6 @@ export function iconRowButtonRuntimeDefaults(
 ) {
   return items.map((item, index) => ({
     id: requiredString(item, "id", `component.iconRow.items[${index}].id`),
-    contentMode: requiredString(item, "contentMode", `component.iconRow.items[${index}].contentMode`),
     state: requiredString(item, "state", `component.iconRow.items[${index}].state`),
     sampleText: typeof item.sampleText === "string"
       ? item.sampleText
@@ -120,7 +119,6 @@ export function resolveIconRowComponentFromRecords(
       button: resolveButtonComponentFromRecords(
         baseButtonConfig,
         {
-          contentMode: requiredString(runtime, "contentMode", `component.iconRow.buttonInputs[${index}].contentMode`),
           state,
           iconToken: requiredString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize

@@ -1074,46 +1074,6 @@
                 "itemLabel": "Button",
                 "fields": [
                   {
-                    "id": "contentMode",
-                    "label": "Content",
-                    "jsonKey": "contentMode",
-                    "kind": "option",
-                    "valueKind": "OptionToken",
-                    "defaultValue": "text",
-                    "minimum": 0,
-                    "maximum": 9999,
-                    "increment": 1,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [
-                      {
-                        "value": "icon",
-                        "label": "Icon"
-                      },
-                      {
-                        "value": "text",
-                        "label": "Text"
-                      },
-                      {
-                        "value": "iconText",
-                        "label": "Icon + text"
-                      }
-                    ],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "runtime",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "content",
-                    "uiGroupLabel": "Content",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "",
-                    "uiOrder": 20
-                  },
-                  {
                     "id": "state",
                     "label": "State",
                     "jsonKey": "state",
@@ -1630,7 +1590,6 @@
           "buttonInputs": [
             {
               "id": "decline",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "Decline",
               "iconToken": "phone_hangup",
@@ -1650,7 +1609,6 @@
             },
             {
               "id": "answer",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "Answer",
               "iconToken": "phone_call",

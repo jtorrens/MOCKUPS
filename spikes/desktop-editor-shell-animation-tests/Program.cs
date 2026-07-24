@@ -1002,7 +1002,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
             Definition("iconList", "IconTokenList", "[\"first\",\"second\"]"),
             "Test Runtime Input").AsArray().Count);
     const string iconSlot = """
-        [{"id":"button_001","buttonVariantReference":"component_button::variant::default","contentMode":"icon","state":"normal","iconToken":"media_mic","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}]
+        [{"id":"button_001","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"media_mic","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}]
         """;
     Equal(
         1,
@@ -1136,6 +1136,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         iconSlot.Replace("component_button::variant::default", "default", StringComparison.Ordinal),
         iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":null", StringComparison.Ordinal),
         iconSlot.Replace("\"pushElapsedMs\":0", "\"pushElapsedMs\":-1", StringComparison.Ordinal),
+        iconSlot.Replace("\"state\":\"normal\"", "\"contentMode\":\"icon\",\"state\":\"normal\"", StringComparison.Ordinal),
         iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":{},\"position\":1", StringComparison.Ordinal),
     })
     {

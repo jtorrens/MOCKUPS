@@ -81,12 +81,16 @@ reference and explicit local `buttonOverrides`. The editor shows Variant,
 navigation to Button and the shared Overrides action. It does not show a
 Component selector.
 
+Button Variants own their content layout: icon, text or icon with text. This
+structural choice is not a Runtime Input and therefore changes with the exact
+Button Variant without rewriting current content values.
+
 Icon Row structure is authored in the Variant. Runtime supplies one exact
-Button Runtime value for every stable Variant item id, including content mode,
-icon or label, Button state, colors, push values and Badge values. Runtime
-never adds, removes or reorders Icon Row items. An owning parent receives and
-forwards that same Icon Row Runtime contract; it does not declare a reduced or
-renamed copy of Button fields.
+Button Runtime value for every stable Variant item id, including icon, label,
+Button state, colors, push values and Badge values. Runtime never adds, removes
+or reorders Icon Row items. An owning parent receives and forwards that same
+Icon Row Runtime contract; it does not declare a reduced or renamed copy of
+Button fields.
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
 

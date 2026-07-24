@@ -149,15 +149,10 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         };
         editor.Children.Add(FieldRow("Button", buttonVariant));
 
-        var contentMode = OptionControl(
-            String(item, "contentMode", "icon"),
-            [("icon", "Icon"), ("text", "Text"), ("iconText", "Icon + text")],
-            (value) => { item["contentMode"] = value; Commit(); });
         var state = OptionControl(
             String(item, "state", "normal"),
             [("normal", "Normal"), ("active", "Active"), ("pushed", "Pushed"), ("disabled", "Disabled")],
             (value) => { item["state"] = value; Commit(); });
-        editor.Children.Add(FieldRow("Content", contentMode));
         editor.Children.Add(FieldRow("State", state));
 
         var iconRow = new Grid { ColumnDefinitions = new ColumnDefinitions("38,*,Auto"), ColumnSpacing = 8 };
@@ -224,9 +219,24 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     private Control SlotPreview(JsonObject item)
     {
-        var mode = String(item, "contentMode", "icon");
-        if (mode == "text") return new TextBlock { Text = String(item, "text", "T"), TextTrimming = TextTrimming.CharacterEllipsis };
-        return _createIconPreview?.Invoke(String(item, "iconToken", "")) ?? new TextBlock { Text = "•" };
+        var preview = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4,
+        };
+        preview.Children.Add(
+            _createIconPreview?.Invoke(String(item, "iconToken", ""))
+            ?? new TextBlock { Text = "•" });
+        var text = String(item, "text", "");
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            preview.Children.Add(new TextBlock
+            {
+                Text = text,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+        }
+        return preview;
     }
 
     private static Control FieldRow(string label, Control control)
@@ -304,7 +314,6 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         item["id"] = $"button_{Guid.NewGuid():N}";
         item["buttonVariantReference"] = template?["buttonVariantReference"]?.GetValue<string>()
             ?? _buttonBoundary.DefaultVariantReference;
-        item["contentMode"] ??= "icon";
         item["state"] ??= "normal";
         item["iconToken"] ??= "media_mic";
         item["text"] ??= "";

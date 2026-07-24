@@ -132,7 +132,6 @@
                   {
                     "id": "primary",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "contentMode": "icon",
                     "state": "normal",
                     "iconToken": "system_check",
                     "text": "",
@@ -145,7 +144,6 @@
                   {
                     "id": "secondary",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "contentMode": "icon",
                     "state": "normal",
                     "iconToken": "system_check",
                     "text": "",
@@ -292,7 +290,6 @@
                     {
                       "id": "primary",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "contentMode": "icon",
                       "state": "normal",
                       "iconToken": "system_check",
                       "text": "",
@@ -305,7 +302,6 @@
                     {
                       "id": "secondary",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "contentMode": "icon",
                       "state": "normal",
                       "iconToken": "system_check",
                       "text": "",
@@ -454,7 +450,6 @@
                       {
                         "id": "primary",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "contentMode": "icon",
                         "state": "normal",
                         "iconToken": "system_check",
                         "text": "",
@@ -467,7 +462,6 @@
                       {
                         "id": "secondary",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "contentMode": "icon",
                         "state": "normal",
                         "iconToken": "system_check",
                         "text": "",
@@ -626,7 +620,6 @@
                       {
                         "id": "primary",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::default",
-                        "contentMode": "text",
                         "state": "normal",
                         "iconToken": "system_check",
                         "text": "",
@@ -644,8 +637,7 @@
                       },
                       {
                         "id": "secondary",
-                        "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "contentMode": "text",
+                        "buttonVariantReference": "component_project_foqn_s2_button::variant::default",
                         "state": "normal",
                         "iconToken": "system_check",
                         "text": "",
@@ -2586,46 +2578,6 @@
                 "itemLabel": "Button",
                 "fields": [
                   {
-                    "id": "contentMode",
-                    "label": "Content",
-                    "jsonKey": "contentMode",
-                    "kind": "option",
-                    "valueKind": "OptionToken",
-                    "defaultValue": "text",
-                    "minimum": 0,
-                    "maximum": 9999,
-                    "increment": 1,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [
-                      {
-                        "value": "icon",
-                        "label": "Icon"
-                      },
-                      {
-                        "value": "text",
-                        "label": "Text"
-                      },
-                      {
-                        "value": "iconText",
-                        "label": "Icon + text"
-                      }
-                    ],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "runtime",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "content",
-                    "uiGroupLabel": "Content",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "",
-                    "uiOrder": 20
-                  },
-                  {
                     "id": "state",
                     "label": "State",
                     "jsonKey": "state",
@@ -3142,7 +3094,6 @@
           "buttonInputs": [
             {
               "id": "primary",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "",
               "iconToken": "nav_back",
@@ -3162,7 +3113,6 @@
             },
             {
               "id": "secondary",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "",
               "iconToken": "phone_call",
@@ -3224,46 +3174,6 @@
                 "itemLabel": "Button",
                 "fields": [
                   {
-                    "id": "contentMode",
-                    "label": "Content",
-                    "jsonKey": "contentMode",
-                    "kind": "option",
-                    "valueKind": "OptionToken",
-                    "defaultValue": "text",
-                    "minimum": 0,
-                    "maximum": 9999,
-                    "increment": 1,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [
-                      {
-                        "value": "icon",
-                        "label": "Icon"
-                      },
-                      {
-                        "value": "text",
-                        "label": "Text"
-                      },
-                      {
-                        "value": "iconText",
-                        "label": "Icon + text"
-                      }
-                    ],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "runtime",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "content",
-                    "uiGroupLabel": "Content",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "",
-                    "uiOrder": 20
-                  },
-                  {
                     "id": "state",
                     "label": "State",
                     "jsonKey": "state",
@@ -3780,7 +3690,6 @@
           "buttonInputs": [
             {
               "id": "primary",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "",
               "iconToken": "nav_forward",
@@ -3800,7 +3709,6 @@
             },
             {
               "id": "secondary",
-              "contentMode": "icon",
               "state": "normal",
               "sampleText": "",
               "iconToken": "phone_call",
@@ -3862,46 +3770,6 @@
                 "itemLabel": "Button",
                 "fields": [
                   {
-                    "id": "contentMode",
-                    "label": "Content",
-                    "jsonKey": "contentMode",
-                    "kind": "option",
-                    "valueKind": "OptionToken",
-                    "defaultValue": "text",
-                    "minimum": 0,
-                    "maximum": 9999,
-                    "increment": 1,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [
-                      {
-                        "value": "icon",
-                        "label": "Icon"
-                      },
-                      {
-                        "value": "text",
-                        "label": "Text"
-                      },
-                      {
-                        "value": "iconText",
-                        "label": "Icon + text"
-                      }
-                    ],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "runtime",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "content",
-                    "uiGroupLabel": "Content",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "",
-                    "uiOrder": 20
-                  },
-                  {
                     "id": "state",
                     "label": "State",
                     "jsonKey": "state",
@@ -4418,7 +4286,6 @@
           "buttonInputs": [
             {
               "id": "primary",
-              "contentMode": "text",
               "state": "normal",
               "sampleText": "19:18",
               "iconToken": "system_check",
@@ -4438,7 +4305,6 @@
             },
             {
               "id": "secondary",
-              "contentMode": "text",
               "state": "active",
               "sampleText": "1",
               "iconToken": "system_check",

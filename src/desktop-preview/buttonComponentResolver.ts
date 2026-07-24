@@ -28,7 +28,9 @@ export function resolveButtonComponentFromRecords(
   id: string,
 ): ButtonDesignContract {
   const button = requiredRecord(config, "button", "component.button");
-  const contentMode = buttonContentMode(requiredString(preview, "contentMode", "component.button.input.contentMode"));
+  const contentMode = buttonContentMode(
+    requiredString(button, "contentMode", "component.button.contentMode"),
+  );
   const state = typeof preview.pushTrigger === "boolean" && preview.pushTrigger
     ? "pushed"
     : buttonState(typeof preview.state === "string" ? preview.state : "normal");
