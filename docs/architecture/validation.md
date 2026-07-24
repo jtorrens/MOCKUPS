@@ -68,7 +68,9 @@ npm run test:cold
 
 It removes desktop build outputs before running the complete validation. The
 repository CI executes this cold gate so analyzer results cannot depend on a
-previous local build.
+previous local build. On Linux, the workflow installs Xvfb and WebKitGTK 4.1,
+then runs the same gate on a virtual display so tests can construct the real
+`MainWindow` and its native Preview WebView.
 
 Use focused checks while iterating:
 

@@ -503,6 +503,11 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
   const checkoutAction = checkoutIndex >= 0 ? steps[checkoutIndex]?.uses ?? "" : "";
   const setupNodeIndex = steps.findIndex((step) => step.uses === "actions/setup-node@v6");
   const setupDotnetIndex = steps.findIndex((step) => step.uses === "actions/setup-dotnet@v5");
+  const linuxUiDependenciesCommand =
+    "sudo apt-get update && sudo apt-get install --yes xvfb libwebkit2gtk-4.1-dev";
+  const linuxUiDependenciesIndex = steps.findIndex(
+    (step) => step.run === linuxUiDependenciesCommand,
+  );
   const npmCiIndex = steps.findIndex((step) => step.run === "npm ci");
   const coldGateCommand = "xvfb-run -a npm run test:cold";
   const coldGateIndex = steps.findIndex((step) => step.run === coldGateCommand);
@@ -518,21 +523,22 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
       "repository CI must configure the admitted Node and .NET setup actions",
     );
   }
-  if (npmCiIndex < 0 || coldGateIndex < 0) {
+  if (linuxUiDependenciesIndex < 0 || npmCiIndex < 0 || coldGateIndex < 0) {
     addViolation(
       workflowPath,
-      "repository CI must install the lockfile with npm ci before running test:cold under a virtual Linux display",
+      "repository CI must install Linux UI dependencies and the npm lockfile before running test:cold under a virtual display",
     );
   }
   const setupCompleteIndex = Math.max(setupNodeIndex, setupDotnetIndex);
   if (checkoutIndex < 0
       || setupNodeIndex <= checkoutIndex
       || setupDotnetIndex <= checkoutIndex
-      || npmCiIndex <= setupCompleteIndex
+      || linuxUiDependenciesIndex <= setupCompleteIndex
+      || npmCiIndex <= linuxUiDependenciesIndex
       || coldGateIndex <= npmCiIndex) {
     addViolation(
       workflowPath,
-      `repository CI steps must be ordered checkout, setup, npm ci, then ${coldGateCommand}`,
+      `repository CI steps must be ordered checkout, setup, ${linuxUiDependenciesCommand}, npm ci, then ${coldGateCommand}`,
     );
   }
 }
