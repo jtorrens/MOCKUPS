@@ -62,6 +62,8 @@ The first scaffolding stage is deliberately read-only:
 ```text
 npm run scaffold:component -- --print-template
 npm run scaffold:component -- --spec <component-contract.json> --dry-run
+npm run scaffold:component -- --spec <component-contract.json> --materialize
+npm run scaffold:component -- --spec scaffolding/components/<type>.json --verify
 ```
 
 The printed template is intentionally not a valid authoring contract until all
@@ -84,11 +86,22 @@ and editor fields that are missing or duplicated. Additional Variant ids are
 stable, unique across the definition and never replace the protected Default
 Variant as the current config snapshot.
 
-This stage has no `apply` mode and writes neither source nor database. A valid
-plan means that the authoring contract is ready for its concrete resolver,
-renderable and focused characterization test; it does not register an
-incomplete Component. Applying the plan is a later explicit maintenance
-revision after those semantic owners have been implemented.
+The dry-run stage writes neither source nor database. Materialization persists
+the exact spec under `scaffolding/components` and creates, without overwriting,
+the contract, resolver, renderable, strict desktop config owner and focused
+test. Every generated owner carries an explicit semantic marker and remains
+unregistered: materialization never edits the manifest, registry or database.
+
+The semantic implementation replaces every marker with the concrete resolver,
+renderable, strict config validation and focused characterization. Verification
+then compares the persisted spec with the exact manifest route, owner exports,
+registry route, dictionary fields, current database row, complete Variants,
+Design Preview fixture and editor layout. A marked or divergent owner fails.
+
+An existing complete Component can be adopted once from the current manifest,
+owners and committed database through the explicit `--adopt-existing` workflow.
+The resulting persisted spec becomes the reviewed authority; adoption refuses
+multiple classes of the same type and never overwrites a prior spec.
 
 ## Module scaffolding
 

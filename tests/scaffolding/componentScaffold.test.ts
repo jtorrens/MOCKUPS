@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import os from "node:os";
@@ -18,6 +24,10 @@ import {
   type ComponentScaffoldInventory,
   type ComponentScaffoldSpec,
 } from "../../src/development-scaffolding/componentScaffold.js";
+import {
+  componentScaffoldSemanticMarker,
+  materializeComponentScaffold,
+} from "../../src/development-scaffolding/componentScaffoldWorkspace.js";
 
 const repositoryRoot = process.cwd();
 
@@ -115,7 +125,7 @@ test("Authored Component scaffold contract produces a deterministic read-only ow
   assert.equal(first.status, "contract-ready-for-owner-implementation");
   assert.deepEqual(
     first.creates.map((owner) => owner.role),
-    ["contract", "resolver", "renderable", "focusedTest"],
+    ["contract", "resolver", "renderable", "desktopConfigContract", "focusedTest"],
   );
   assert.deepEqual(first.manifestEntry.embeds, []);
   assert.equal(first.registryRoute.mode, "simple");
@@ -133,6 +143,39 @@ test("Authored Component scaffold contract produces a deterministic read-only ow
   assert.deepEqual(first.assets, []);
   assert.ok(first.validationCommands.includes("npm run check:architecture"));
   assert.ok(first.validationCommands.includes("npm run desktop:db:validate"));
+});
+
+test("Component scaffold materializes deterministic unregistered owners without overwriting", () => {
+  const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-materialize-"));
+  try {
+    const spec = validSpec();
+    const plan = createComponentScaffoldPlan(spec, inventory(), temporaryDirectory);
+    const result = materializeComponentScaffold(spec, plan, temporaryDirectory);
+
+    assert.equal(result.status, "materialized-unregistered");
+    assert.equal(result.created.length, 6);
+    assert.ok(existsSync(path.join(
+      temporaryDirectory,
+      "scaffolding/components/scaffoldFixture.json",
+    )));
+    for (const owner of plan.creates) {
+      const source = readFileSync(path.join(temporaryDirectory, owner.path), "utf8");
+      assert.match(source, new RegExp(componentScaffoldSemanticMarker));
+    }
+    assert.throws(
+      () => materializeComponentScaffold(spec, plan, temporaryDirectory),
+      /will not overwrite existing target/,
+    );
+    assert.equal(
+      existsSync(path.join(
+        temporaryDirectory,
+        "src/desktop-preview/desktopPreviewManifest.json",
+      )),
+      false,
+    );
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
 });
 
 test("Component scaffold inventory opens the database read-only", () => {

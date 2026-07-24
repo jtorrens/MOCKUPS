@@ -313,7 +313,7 @@ if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
 if (packageScripts["scaffold:component"] !== "tsx scripts/scaffoldComponent.ts") {
   addViolation(
     "package.json",
-    "Component development scaffolding must use the single read-only scaffold command owner",
+    "Component development scaffolding must use the single scaffold command owner",
   );
 }
 if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.ts"
@@ -323,20 +323,33 @@ if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.
     "the complete repository gate must execute Component scaffolding contract tests",
   );
 }
+if (packageScripts["scaffold:verify"] !== "tsx scripts/verifyIntegratedComponentScaffolds.ts"
+    || !(packageScripts.test ?? "").includes("npm run scaffold:verify")) {
+  addViolation(
+    "package.json",
+    "the complete repository gate must verify every integrated Component scaffold spec",
+  );
+}
 for (const [scaffoldPath, requiredTerm] of [
   ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
   ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
   ["src/development-scaffolding/componentScaffold.ts", "Default and additionalVariants are the Variant sources"],
   ["src/development-scaffolding/componentScaffold.ts", "resolveComponentScaffoldSpecPath"],
   ["scripts/scaffoldComponent.ts", '"dry-run": { type: "boolean"'],
-  ["scripts/scaffoldComponent.ts", "--apply is intentionally unavailable"],
+  ["scripts/scaffoldComponent.ts", 'materialize: { type: "boolean"'],
+  ["scripts/scaffoldComponent.ts", 'verify: { type: "boolean"'],
+  ["scripts/scaffoldComponent.ts", '"adopt-existing": { type: "boolean"'],
+  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "SCAFFOLD_SEMANTICS_REQUIRED"],
+  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "will not overwrite existing target"],
+  ["src/development-scaffolding/componentScaffoldAdoption.ts", "will not overwrite"],
+  ["scripts/verifyIntegratedComponentScaffolds.ts", "verifyComponentScaffoldImplementation"],
   ["tests/scaffolding/componentScaffold.test.ts", "opens the database read-only"],
-  ["docs/architecture/development_workflow.md", "This stage has no `apply` mode"],
+  ["docs/architecture/development_workflow.md", "materialization never edits the manifest, registry or database"],
 ] as const) {
   assertContains(
     scaffoldPath,
     requiredTerm,
-    "Component scaffolding must remain an explicit read-only contract plan until semantic owners exist",
+    "Component scaffolding must keep planning read-only and materialization unregistered until semantic owners exist",
   );
 }
 for (const prohibitedWriteTerm of [

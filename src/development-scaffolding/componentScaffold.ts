@@ -28,6 +28,7 @@ export interface ComponentScaffoldField {
   defaultValue: string;
   isEditable: boolean;
   options: JsonObject[];
+  optionsSource: string;
   pairLabels: { first: string; second: string } | null;
   number: {
     minimum: number | null;
@@ -119,7 +120,12 @@ export interface ComponentScaffoldPlan {
   intent: ComponentScaffoldSpec["intent"];
   component: ComponentScaffoldSpec["component"];
   creates: Array<{
-    role: "contract" | "resolver" | "renderable" | "focusedTest";
+    role:
+      | "contract"
+      | "resolver"
+      | "renderable"
+      | "desktopConfigContract"
+      | "focusedTest";
     path: string;
     requiredExport?: string;
   }>;
@@ -609,6 +615,11 @@ export function createComponentScaffoldPlan(
     ownerFile("resolver", spec.manifest.resolver, spec.owners.resolverExport),
     ownerFile("renderable", spec.manifest.renderable, spec.owners.renderableExport),
     {
+      role: "desktopConfigContract" as const,
+      path: `spikes/desktop-editor-shell/Data/${pascalCase(componentType)}ComponentConfigContract.cs`,
+      requiredExport: `${pascalCase(componentType)}ComponentConfigContract`,
+    },
+    {
       role: "focusedTest" as const,
       path: spec.owners.focusedTest,
     },
@@ -630,6 +641,13 @@ export function createComponentScaffoldPlan(
       if (!normalized.startsWith("tests/animation/") || !normalized.endsWith(".test.ts")) {
         violations.push(
           `Focused test '${owner.path}' must be an executable tests/animation/*.test.ts owner.`,
+        );
+      }
+    } else if (owner.role === "desktopConfigContract") {
+      if (!normalized.startsWith("spikes/desktop-editor-shell/Data/")
+          || !normalized.endsWith("ComponentConfigContract.cs")) {
+        violations.push(
+          `desktop config owner '${owner.path}' must be a ComponentConfigContract.cs file under the desktop Data owner.`,
         );
       }
     } else if (!normalized.startsWith("src/desktop-preview/") || !normalized.endsWith(".ts")) {
@@ -875,6 +893,7 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
         defaultValue: "100",
         isEditable: true,
         options: [],
+        optionsSource: "",
         pairLabels: null,
         number: {
           minimum: 1,
@@ -950,6 +969,7 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     "defaultValue",
     "isEditable",
     "options",
+    "optionsSource",
     "pairLabels",
     "number",
     "componentInputBindings",
@@ -991,6 +1011,11 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     isEditable: requiredBoolean(field.isEditable, `${owner} isEditable`),
     options: requiredArray(field.options, `${owner} options`)
       .map((option, index) => requiredJsonObject(option, `${owner} options[${index}]`)),
+    optionsSource: requiredString(
+      field.optionsSource,
+      `${owner} optionsSource`,
+      true,
+    ),
     pairLabels: pairLabels
       ? {
           first: requiredString(pairLabels.first, `${owner} pairLabels first`),
@@ -1386,6 +1411,12 @@ function jsonPathExists(root: JsonObject, segments: readonly string[]) {
     current = current[segment] as JsonValue;
   }
   return current !== null;
+}
+
+function pascalCase(value: string) {
+  return value.length === 0
+    ? value
+    : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
 
 function requiredObject(value: unknown, owner: string): Record<string, unknown> {

@@ -29,6 +29,7 @@
     "desktop:launch:mac": "npm run desktop:package:mac && npm run desktop:open:mac",
     "desktop:publish:win": "npm run desktop-preview:build && dotnet publish spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj -c Release -r win-x64 --self-contained true -o out/desktop/win-x64",
     "scaffold:component": "tsx scripts/scaffoldComponent.ts",
+    "scaffold:verify": "tsx scripts/verifyIntegratedComponentScaffolds.ts",
     "app": "npm run desktop",
     "app:check": "npm run desktop:build",
     "app:build": "npm run desktop:build",
@@ -37,7 +38,7 @@
     "animation:test": "npm run animation:test:preview && npm run animation:test:desktop",
     "test:scaffolding": "tsx --test tests/scaffolding/*.test.ts",
     "test:tooling": "tsx --test tests/tooling/*.test.ts",
-    "test": "npm run desktop-preview:build && npm run typecheck && npm run desktop:build && npm run check:unused:desktop && npm run test:scaffolding && npm run test:tooling && npm run animation:test && npm run check:architecture",
+    "test": "npm run desktop-preview:build && npm run typecheck && npm run desktop:build && npm run check:unused:desktop && npm run test:scaffolding && npm run scaffold:verify && npm run test:tooling && npm run animation:test && npm run check:architecture",
     "test:cold": "dotnet clean spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj && npm test"
   },
   "dependencies": {
