@@ -1647,6 +1647,12 @@ internal sealed class ComponentPreviewInputSession
                 }
             }
             if (!isVisible && !includeHidden) continue;
+            var uiPresentation = JsonString(collection, "uiPresentation", "collection");
+            if (uiPresentation is not "collection" and not "itemSections")
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input collection '{id}' has unsupported uiPresentation '{uiPresentation}'.");
+            }
             definitions.Add(new RuntimeInputCollectionDefinition(
                 id,
                 label,
@@ -1660,7 +1666,10 @@ internal sealed class ComponentPreviewInputSession
                 JsonString(collection, "itemRuntimeContractJsonKey"),
                 JsonString(collection, "uiParentCollectionJsonKey"),
                 JsonString(collection, "uiParentItemIdJsonKey"),
-                JsonString(collection, "animationPresentation", "item")));
+                JsonString(collection, "animationPresentation", "item"),
+                collection["canEditStructure"]?.GetValue<bool>() ?? true,
+                FixedCollectionItemCount(collection, config),
+                uiPresentation));
         }
 
         return definitions;
@@ -1671,6 +1680,28 @@ internal sealed class ComponentPreviewInputSession
         if (collection is null) return null;
         var wrapper = new JsonObject { ["collections"] = new JsonArray(collection.DeepClone()) };
         return ReadRuntimeCollections(wrapper, new JsonObject()).SingleOrDefault();
+    }
+
+    private static int FixedCollectionItemCount(JsonObject collection, JsonObject config)
+    {
+        var path = JsonString(collection, "fixedCountPath");
+        if (string.IsNullOrWhiteSpace(path)) return 0;
+        var node = JsonPath.Get(
+            config,
+            path.Split('.', StringSplitOptions.RemoveEmptyEntries));
+        if (node is null && config.Count == 0)
+        {
+            return 0;
+        }
+        if (node is not JsonValue value
+            || !value.TryGetValue<double>(out var number)
+            || number < 1
+            || number != Math.Truncate(number))
+        {
+            throw new InvalidOperationException(
+                $"Runtime Input collection '{JsonString(collection, "id")}' fixedCountPath '{path}' must resolve to a positive integer.");
+        }
+        return checked((int)number);
     }
 
     private static RuntimeInputCollectionItemPresentation? ReadItemPresentation(JsonObject collection)
@@ -2092,7 +2123,9 @@ internal sealed record RuntimeInputCollectionDefinition(
     string UiParentCollectionJsonKey = "",
     string UiParentItemIdJsonKey = "",
     string AnimationPresentation = "item",
-    bool CanEditStructure = true);
+    bool CanEditStructure = true,
+    int FixedItemCount = 0,
+    string UiPresentation = "collection");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,

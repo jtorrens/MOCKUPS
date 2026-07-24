@@ -29,22 +29,26 @@ test("List Calls and Chats Variants select one exact List Item Variant", () => {
     && item.variantReference.endsWith("::variant::chats")));
 });
 
-test("List forwards selectedSetId and state through the stable List item target", () => {
+test("List forwards one shared Runtime size and the exact List Item Runtime", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as {
+    itemWidth: number;
+    itemHeight: number;
     items: Array<{
       id: string;
-      selectedSetId: string;
-      state: string;
-      contentSets: Array<Record<string, unknown>>;
+      listItemInputs: {
+        activeSet: number;
+        state: string;
+        labelContent: Array<{
+          runtimeInputs: { sampleText: string };
+        }>;
+      };
     }>;
   };
+  preview.itemWidth = 344;
+  preview.itemHeight = 76;
   const first = preview.items[0]!;
-  const next = structuredClone(first.contentSets[0]!);
-  next.id = "list_item_diana_alternate";
-  next.name = "Alternate";
-  next.text = "Alternate caller";
-  first.contentSets.push(next);
+  first.listItemInputs.labelContent[1]!.runtimeInputs.sampleText = "Alternate caller";
   source.designPreviewJson = JSON.stringify(preview);
   source.runtimeContractJson = source.designPreviewJson;
   source.localFrame = 12;
@@ -53,13 +57,13 @@ test("List forwards selectedSetId and state through the stable List item target"
       schemaVersion: 2,
       tracks: [
         {
-          id: "selected-content",
-          fieldId: "selectedSetId",
+          id: "active-content",
+          fieldId: "activeSet",
           targetId: first.id,
           keyframes: [{
-            id: "selected-content-12",
+            id: "active-content-12",
             frame: 12,
-            value: next.id,
+            value: 2,
             interpolation: "hold",
           }],
         },
@@ -79,11 +83,15 @@ test("List forwards selectedSetId and state through the stable List item target"
   });
 
   const resolved = resolveListComponent(source);
-  assert.equal(resolved.stack.items[0]?.inputs.selectedSetId, next.id);
+  assert.equal(resolved.stack.items[0]?.inputs.activeSet, 2);
   assert.equal(resolved.stack.items[0]?.inputs.state, "pressed");
+  assert.equal(resolved.stack.items[0]?.inputs.width, 344);
+  assert.equal(resolved.stack.items[0]?.inputs.height, 76);
   const node = listComponentToRenderable(source, resolved, renderChild);
   const firstItem = node.children?.[0];
   assert.equal(firstItem?.id, "component.listItem");
+  assert.equal(firstItem?.box?.width, 344);
+  assert.equal(firstItem?.box?.height, 76);
   assert.equal(firstItem?.children?.[1]?.transform?.opacity, 0.82);
 });
 

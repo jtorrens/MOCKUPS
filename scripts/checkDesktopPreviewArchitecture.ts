@@ -8280,8 +8280,18 @@ assertContains(
 );
 assertContains(
   "src/desktop-preview/iconRowComponentResolver.ts",
-  'requiredObjectArray(inputs, "items", "component.iconRow input")',
-  "Icon Row must require exact Runtime item objects",
+  '"buttonInputs",\n    "component.iconRow input"',
+  "Icon Row must require exact Button Runtime item objects",
+);
+assertContains(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  ': requiredObjectArray(iconRow, "items", "component.iconRow")',
+  "Icon Row must retain Variant-owned structural items",
+);
+assertContains(
+  "src/desktop-preview/iconRowComponentResolver.ts",
+  "Button Runtime values must match the Variant items exactly",
+  "Icon Row must match exact Runtime values to stable Variant item ids",
 );
 assertContains(
   "src/desktop-preview/iconRowComponentResolver.ts",
@@ -10120,6 +10130,53 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
   }
 }
 
+function assertListItemRuntimePresentationIsGeneric() {
+  for (const requiredBoundary of [
+    'uiPresentation is not "collection" and not "itemSections"',
+    'collection.UiPresentation.Equals("itemSections", StringComparison.Ordinal)',
+    "CreateTestValueCollectionItemSections(",
+    "CreateDirectChildRuntimeContent(",
+  ]) {
+    assertContains(
+      requiredBoundary.includes("uiPresentation is")
+        ? "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs"
+        : "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+      requiredBoundary,
+      `Runtime collection item sections must remain metadata-driven (${requiredBoundary})`,
+    );
+  }
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    'ComponentType == "listItem"',
+    "the generic Runtime editor must not branch on List Item",
+  );
+
+  const database = new Database(path.join(root, "data", "desktop-editor-spike.sqlite"), {
+    readonly: true,
+    fileMustExist: true,
+  });
+  try {
+    const row = database.prepare(
+      "SELECT design_preview_json FROM component_classes WHERE component_type = 'listItem'",
+    ).get() as { design_preview_json: string } | undefined;
+    if (!row) {
+      addViolation("data/desktop-editor-spike.sqlite", "List Item Runtime contract is missing");
+      return;
+    }
+    const preview = jsonRecord(jsonParse(row.design_preview_json));
+    const collections = jsonArray(preview.collections).map(jsonRecord);
+    const contentSets = collections.find((collection) => collection.id === "contentSets");
+    if (!contentSets || contentSets.uiPresentation !== "itemSections") {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "List Item Content Sets must promote their stable items through generic itemSections metadata",
+      );
+    }
+  } finally {
+    database.close();
+  }
+}
+
 
 assertDesktopSystemTypographyData();
 assertSharedEditorSurfacesHaveNoConcreteEditors();
@@ -10131,6 +10188,7 @@ assertModuleInstanceRuntimePayloadsMatchContracts();
 assertActionDurationFieldIdsAreCanonical();
 assertConversationMessageActorOwnership();
 assertStructuredTextBoxIconRowsAreCanonical();
+assertListItemRuntimePresentationIsGeneric();
 
 if (violations.length > 0) {
   console.error("Desktop preview architecture check failed:");

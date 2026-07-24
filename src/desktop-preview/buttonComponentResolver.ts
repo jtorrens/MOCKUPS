@@ -86,10 +86,18 @@ function resolveButtonStateStyle(
   const surfaceSlot = requiredRecord(style, "surfaceSlot", `component.button.states.${state}.surfaceSlot`);
   const labelSlot = requiredRecord(style, "labelSlot", `component.button.states.${state}.labelSlot`);
   return {
-    iconColorToken: requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
+    iconColorToken: typeof preview.iconColorToken === "string" && preview.iconColorToken.trim()
+      ? preview.iconColorToken
+      : requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
     label: contentMode === "icon" ? undefined : resolveLabelComponentFromRecords(
       embeddedComponentConfig(bases, labelSlot, "label", `component.button.states.${state}.labelSlot`),
-      { ...literalLabelPreview(text), textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken") },
+      {
+        ...literalLabelPreview(text),
+        textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken"),
+        ...(typeof preview.textColorToken === "string" && preview.textColorToken.trim()
+          ? { textColorToken: preview.textColorToken }
+          : {}),
+      },
       bases,
       `component.button.${state}.label`,
       staticLabelFrameContext,

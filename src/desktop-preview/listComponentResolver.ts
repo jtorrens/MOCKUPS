@@ -17,9 +17,7 @@ const listItemKeys = new Set([
   "id",
   "name",
   "present",
-  "selectedSetId",
-  "state",
-  "contentSets",
+  "listItemInputs",
   "presenceTransition",
   "presenceElapsedMs",
 ]);
@@ -67,6 +65,13 @@ export function resolveListComponent(
     "overrides",
     "component.list.listItemSlot.overrides",
   );
+  const itemSize = {
+    width: requiredNumber(preview, "itemWidth", "component.list.runtime.itemWidth"),
+    height: requiredNumber(preview, "itemHeight", "component.list.runtime.itemHeight"),
+  };
+  if (itemSize.width <= 0 || itemSize.height <= 0) {
+    throw new Error("component.list Runtime itemWidth and itemHeight must be greater than zero");
+  }
   const items = requiredObjectArray(preview, "items", "component.list runtime")
     .map((item, index) => listStackItem(
       item,
@@ -74,6 +79,7 @@ export function resolveListComponent(
       itemVariantReference,
       itemOverrides,
       list,
+      itemSize,
     ));
   const stack = resolveCollectionStackComponent({
     ...payload,
@@ -109,6 +115,7 @@ function listStackItem(
   variantReference: string,
   overrides: Record<string, unknown>,
   list: Record<string, unknown>,
+  itemSize: { width: number; height: number },
 ) {
   const path = `component.list.items[${index}]`;
   const unknown = Object.keys(item).filter((key) => !listItemKeys.has(key));
@@ -116,16 +123,19 @@ function listStackItem(
     throw new Error(`${path} contains undeclared fields: ${unknown.join(", ")}`);
   }
   const id = requiredString(item, "id", `${path}.id`);
+  const listItemInputs = requiredRecord(item, "listItemInputs", `${path}.listItemInputs`);
   return {
     id,
     variantReference,
     overrides,
     inputs: {
-      selectedSetId: requiredString(item, "selectedSetId", `${path}.selectedSetId`),
-      state: requiredString(item, "state", `${path}.state`),
-      contentSets: requiredObjectArray(item, "contentSets", path),
+      ...listItemInputs,
+      width: itemSize.width,
+      height: itemSize.height,
       __runtimeFieldIds: {
-        selectedSetId: "selectedSetId",
+        width: "width",
+        height: "height",
+        activeSet: "activeSet",
         state: "state",
       },
     },

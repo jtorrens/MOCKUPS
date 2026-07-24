@@ -15,45 +15,84 @@ internal static class ListItemComponentConfigContract
     {
         RequireExactKeys(config, ["listItem"], context);
         var listItem = JsonPath.RequiredObject(config, "listItem", context);
-        RequireExactKeys(listItem, ["size", "elements", "states"], $"{context}.listItem");
-        _ = RuntimeInputValueKindContract.ParseValue(
-            ValueKind.IntegerPair,
-            JsonPath.RequiredString(listItem, "size", $"{context}.listItem"),
-            $"{context}.listItem.size");
-
-        var ids = new HashSet<string>(StringComparer.Ordinal);
-        var types = new HashSet<string>(StringComparer.Ordinal);
-        var elements = JsonPath.RequiredArray(listItem, "elements", $"{context}.listItem");
-        for (var index = 0; index < elements.Count; index++)
+        RequireExactKeys(
+            listItem,
+            ["contentSetCount", "padding", "gapToken", "components", "states"],
+            $"{context}.listItem");
+        var contentSetCount = JsonPath.RequiredNumber(
+            listItem,
+            "contentSetCount",
+            $"{context}.listItem");
+        if (contentSetCount < 1 || contentSetCount != Math.Truncate(contentSetCount))
         {
-            var owner = $"{context}.listItem.elements[{index}]";
-            var element = elements[index] as JsonObject
-                ?? throw new InvalidOperationException($"{owner} must be an object.");
+            throw new InvalidOperationException(
+                $"{context}.listItem.contentSetCount must be a positive integer.");
+        }
+        _ = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.ThemeTokenPair,
+            JsonPath.RequiredString(listItem, "padding", $"{context}.listItem"),
+            $"{context}.listItem.padding");
+        _ = JsonPath.RequiredString(listItem, "gapToken", $"{context}.listItem");
+
+        var components = JsonPath.RequiredObject(
+            listItem,
+            "components",
+            $"{context}.listItem");
+        RequireExactKeys(
+            components,
+            ["avatar", "label", "iconRow"],
+            $"{context}.listItem.components");
+        var orders = new HashSet<int>();
+        foreach (var componentType in new[] { "avatar", "label", "iconRow" })
+        {
+            var owner = $"{context}.listItem.components.{componentType}";
+            var component = JsonPath.RequiredObject(components, componentType, owner);
             RequireExactKeys(
-                element,
-                ["id", "componentType", "componentSlot", "size", "placement"],
+                component,
+                ["visible", "order", "componentSlot", "sizeMode", "fixedSize", "verticalAlignment"],
                 owner);
-            var id = JsonPath.RequiredString(element, "id", owner);
-            if (!ids.Add(id))
+            _ = JsonPath.RequiredBoolean(component, "visible", owner);
+            var order = JsonPath.RequiredNumber(component, "order", owner);
+            if (order < 1 || order != Math.Truncate(order))
             {
-                throw new InvalidOperationException($"{context}.listItem.elements contains duplicate id '{id}'.");
+                throw new InvalidOperationException($"{owner}.order must be a positive integer.");
             }
-            var componentType = JsonPath.RequiredString(element, "componentType", owner);
-            RequireOneOf(componentType, ["avatar", "label", "iconRow"], $"{owner}.componentType");
-            if (!types.Add(componentType))
+            if (!orders.Add((int)order))
             {
                 throw new InvalidOperationException(
-                    $"{context}.listItem.elements may contain at most one '{componentType}'.");
+                    $"{context}.listItem component order '{order}' is duplicated.");
             }
             ComponentVariantSlotDocumentContract.Validate(
-                JsonPath.RequiredObject(element, "componentSlot", owner),
+                JsonPath.RequiredObject(component, "componentSlot", owner),
                 $"{owner}.componentSlot");
-            _ = RuntimeInputValueKindContract.ParseValue(
-                ValueKind.IntegerPair,
-                JsonPath.RequiredString(element, "size", owner),
-                $"{owner}.size");
-            _ = AlignmentPlacementValue.Parse(
-                JsonPath.RequiredObject(element, "placement", owner).ToJsonString());
+            var sizeMode = JsonPath.RequiredString(component, "sizeMode", owner);
+            RequireOneOf(
+                sizeMode,
+                componentType switch
+                {
+                    "avatar" => ["auto", "fixed"],
+                    "label" => ["fill", "fixed"],
+                    _ => ["content", "fixed"],
+                },
+                $"{owner}.sizeMode");
+            if (componentType == "avatar")
+            {
+                if (JsonPath.RequiredNumber(component, "fixedSize", owner) <= 0)
+                {
+                    throw new InvalidOperationException($"{owner}.fixedSize must be positive.");
+                }
+            }
+            else
+            {
+                _ = RuntimeInputValueKindContract.ParseValue(
+                    ValueKind.IntegerPair,
+                    JsonPath.RequiredString(component, "fixedSize", owner),
+                    $"{owner}.fixedSize");
+            }
+            RequireOneOf(
+                JsonPath.RequiredString(component, "verticalAlignment", owner),
+                ["start", "center", "end"],
+                $"{owner}.verticalAlignment");
         }
 
         var states = JsonPath.RequiredObject(listItem, "states", $"{context}.listItem");

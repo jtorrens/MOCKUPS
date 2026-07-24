@@ -81,10 +81,12 @@ reference and explicit local `buttonOverrides`. The editor shows Variant,
 navigation to Button and the shared Overrides action. It does not show a
 Component selector.
 
-Icon Row structure is authored in the Variant. It is not a Runtime/Test Value.
-An owning parent may explicitly project Runtime content into those stable item
-ids, including icon, label, Button state, colors and Badge values. This never
-adds, removes or reorders the Icon Row items.
+Icon Row structure is authored in the Variant. Runtime supplies one exact
+Button Runtime value for every stable Variant item id, including content mode,
+icon or label, Button state, colors, push values and Badge values. Runtime
+never adds, removes or reorders Icon Row items. An owning parent receives and
+forwards that same Icon Row Runtime contract; it does not declare a reduced or
+renamed copy of Button fields.
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
 
@@ -92,21 +94,36 @@ Bar customize their selected Text Box slot through local Overrides.
 
 A List Item Variant is one complete item model. It owns:
 
-- the item size;
-- an ordered element model containing at most one Avatar, Label and Icon Row;
-- each element's exact Component Variant slot, local Overrides, size and
-  placement;
+- horizontal and vertical padding plus the gap between visible children;
+- exactly one fixed Avatar, Label and Icon Row slot, each with visibility,
+  order, exact Component Variant, local Overrides, sizing mode and vertical
+  alignment;
+- automatic or fixed Avatar sizing, fill or fixed Label sizing, and intrinsic
+  or fixed Icon Row sizing;
+- the number of Content Sets;
 - Normal, Pressed and Inactive appearances.
 
-Elements may be reordered or omitted by a Variant. Runtime never changes that
-structure. Runtime owns a collection of stable content sets plus the selected
-set id and current item state. Every content set supplies the Actor/avatar, primary
-and secondary text, text color tokens and values for the stable Icon Row item
-ids required by the active Variant.
+List Item `width` and `height` are Runtime Inputs. The content box subtracts
+the Variant padding. In automatic mode Avatar is a square whose side equals
+the content-box height. Icon Row consumes its intrinsic width unless fixed,
+and Label receives the remaining width unless fixed. Visible children follow
+Variant order with one gap between adjacent children. A child that cannot fit
+fails explicitly; clipping is not a layout fallback.
 
-The selected set and current state are separate animatable fields. At a List
-boundary both are resolved against the stable List Item instance id; the
-content sets remain values of that item and never become temporal owners.
+Runtime owns numbered Content Set rows, a positive numeric `activeSet` and the
+current item state. Each row contains the exact Runtime contracts of Avatar,
+Label and Icon Row. List Item never copies Actor, text, color, Button or Badge
+fields into a parent-specific schema. The active set and current state are
+separate animatable fields. Each embedded child Runtime keeps a stable target
+id under its Content Set.
+
+The Runtime collection declares `uiPresentation: itemSections`. This generic
+editor metadata promotes each fixed Content Set to a section beside General;
+it does not change the persisted collection envelope. Child collections appear
+as compact rows in Variant order, and their shared `…` action reveals the
+child's exact Runtime values directly. The editor does not add an intermediate
+Content Sets section or nested child navigation.
+
 The state appearance contains exactly one Surface Variant slot and one
 `elementsOpacity` multiplier between zero and one. The multiplier applies to
 Avatar, Label and Icon Row as a group; it never changes the state Surface.
@@ -118,10 +135,12 @@ exact List Item Variant. Its Variant owns the Collection Stack slot, List Item
 slot, sizing, edge gaps, item alignment, inter-item gap policy and item
 presence motion.
 
-Runtime owns the ordered item collection. Each item has a stable id, presence,
-selected content set and its complete List Item content sets. List owns
-vertical flow, entry, exit and reflow. It does not reinterpret Avatar, Label,
-Icon Row, List Item state or content-set behavior.
+Runtime owns `itemWidth`, `itemHeight` and the ordered item collection. List
+forwards the same two dimensions to every child. Each item has a stable id,
+presence and one complete exact List Item Runtime contract. A parent of List
+can therefore provide the shared width and height without bypassing List Item
+ownership. List owns vertical flow, entry, exit and reflow. It does not
+reinterpret Avatar, Label, Icon Row, List Item state or Content Set behavior.
 
 ## Structural stacks
 

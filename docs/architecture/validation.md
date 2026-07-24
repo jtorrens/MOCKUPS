@@ -29,8 +29,9 @@ It includes:
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;
 - headless Avalonia List Item/List authoring surfaces, including Variant
-  selection, dynamic content-set options, runtime state and nested Actor
-  references;
+  selection, numeric active-set and state Runtime values, shared List item
+  dimensions, General plus promoted Content Set sections, compact Avatar/Label/
+  Icon Row rows and exact nested child Runtime contracts;
 - architecture enforcement;
 - desktop application build.
 

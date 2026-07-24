@@ -148,11 +148,9 @@ export function resolveLabelComponentFromRecords(
       "textShadowEnabled",
       "component.label.textShadowEnabled",
     ),
-    textColorToken: requiredString(
-      label,
-      "textColorToken",
-      "component.label.textColorToken",
-    ),
+    textColorToken: typeof preview.textColorToken === "string" && preview.textColorToken.trim()
+      ? preview.textColorToken
+      : requiredString(label, "textColorToken", "component.label.textColorToken"),
     textTypography: {
       ...requiredTypographyStyle(label, "textTypography", "component.label.textTypography"),
       ...(typeof preview.textSizeToken === "string" && preview.textSizeToken.trim()
@@ -168,11 +166,9 @@ export function resolveLabelComponentFromRecords(
     ),
     subtextVerticalPosition,
     subtextHorizontalAlign,
-    subtextColorToken: requiredString(
-      label,
-      "subtextColorToken",
-      "component.label.subtextColorToken",
-    ),
+    subtextColorToken: typeof preview.subtextColorToken === "string" && preview.subtextColorToken.trim()
+      ? preview.subtextColorToken
+      : requiredString(label, "subtextColorToken", "component.label.subtextColorToken"),
     subtextTypography: requiredTypographyStyle(
       label,
       "subtextTypography",

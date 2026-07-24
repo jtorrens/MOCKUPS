@@ -19,7 +19,10 @@ import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
 import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
-import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
+import {
+  iconRowButtonRuntimeDefaults,
+  resolveIconRowComponentFromRecords,
+} from "./iconRowComponentResolver.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import {
@@ -666,7 +669,21 @@ function headerNode(
       "iconRow",
       "module.conversation.headerLeftIconRowSlot",
     ),
-    leftInputs,
+    {
+      ...leftInputs,
+      structuralItems: requiredObjectArray(
+        leftInputs,
+        "items",
+        "module.conversation.headerLeftIconRowInputs",
+      ),
+      buttonInputs: iconRowButtonRuntimeDefaults(
+        requiredObjectArray(
+          leftInputs,
+          "items",
+          "module.conversation.headerLeftIconRowInputs",
+        ),
+      ),
+    },
     componentBaseConfigs,
     "module.conversation.header.left",
   );
@@ -677,7 +694,21 @@ function headerNode(
       "iconRow",
       "module.conversation.headerRightIconRowSlot",
     ),
-    rightInputs,
+    {
+      ...rightInputs,
+      structuralItems: requiredObjectArray(
+        rightInputs,
+        "items",
+        "module.conversation.headerRightIconRowInputs",
+      ),
+      buttonInputs: iconRowButtonRuntimeDefaults(
+        requiredObjectArray(
+          rightInputs,
+          "items",
+          "module.conversation.headerRightIconRowInputs",
+        ),
+      ),
+    },
     componentBaseConfigs,
     "module.conversation.header.right",
   );

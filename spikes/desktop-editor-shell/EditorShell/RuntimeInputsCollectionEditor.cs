@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -383,10 +385,21 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             foreach (var collection in collections.Where((collection) => string.IsNullOrWhiteSpace(collection.UiParentCollectionJsonKey)))
             {
-                var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+                var items = DisplayItems(preview, collection);
                 var childCollections = collections
                     .Where((candidate) => candidate.UiParentCollectionJsonKey.Equals(collection.JsonKey, StringComparison.Ordinal))
                     .ToList();
+                if (collection.UiPresentation.Equals("itemSections", StringComparison.Ordinal))
+                {
+                    sections.AddRange(CreateTestValueCollectionItemSections(
+                        owner,
+                        preview,
+                        collection,
+                        actions,
+                        items,
+                        childCollections));
+                    continue;
+                }
                 var collectionContent = childCollections.Count == 0
                     ? CreateTestValueCollectionContent(owner, preview, collection, actions, items)
                     : CreateTestValueCollectionContent(owner, preview, collection, actions, items, childCollections);
@@ -598,6 +611,212 @@ internal sealed class RuntimeInputsCollectionEditor
             && text.Equals(input.EnabledWhenValue, StringComparison.Ordinal);
     }
 
+    private IReadOnlyList<EditorInternalNavigationSection> CreateTestValueCollectionItemSections(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
+        IReadOnlyList<JsonObject> items,
+        IReadOnlyList<RuntimeInputCollectionDefinition> childCollections)
+    {
+        var sections = new List<EditorInternalNavigationSection>();
+        for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
+        {
+            var item = items[itemIndex];
+            var itemId = ItemId(item, itemIndex);
+            var presentation = RuntimeCollectionItemPresentation.Resolve(
+                collection,
+                item,
+                itemIndex,
+                $"{collection.ItemLabel} {itemIndex + 1}",
+                $"Runtime {collection.ItemLabel.ToLowerInvariant()} {itemIndex + 1}",
+                EditorIcons.Component);
+            sections.Add(new EditorInternalNavigationSection(
+                $"{collection.Id}:{itemId}",
+                presentation.Title,
+                presentation.Subtitle,
+                presentation.Icon,
+                CreatePromotedCollectionItemContent(
+                    owner,
+                    preview,
+                    collection,
+                    actions,
+                    itemIndex,
+                    item,
+                    childCollections)));
+        }
+        return sections;
+    }
+
+    private Control CreatePromotedCollectionItemContent(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
+        int itemIndex,
+        JsonObject item,
+        IReadOnlyList<RuntimeInputCollectionDefinition> childCollections)
+    {
+        var result = new StackPanel { Spacing = EditorUiDensity.Card(8) };
+        var ownContent = CreateTestValueCollectionItemContent(
+            owner,
+            preview,
+            collection,
+            actions,
+            itemIndex,
+            item,
+            () => { },
+            out var ownSubcards);
+        if (ownContent is Panel ownPanel && ownPanel.Children.Count > 0)
+        {
+            result.Children.Add(ownContent);
+        }
+        if (ownSubcards.Count > 0)
+        {
+            result.Children.Add(new EditorSubcardLayoutHost(
+                ownSubcards,
+                EditorSubcardLayout.SeparatedSections));
+        }
+
+        var editorHost = new ContentControl
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        void ShowChildContent(Control content)
+        {
+            editorHost.Content = content;
+            editorHost.InvalidateMeasure();
+            result.InvalidateMeasure();
+            Dispatcher.UIThread.Post(() =>
+            {
+                editorHost.InvalidateMeasure();
+                result.InvalidateMeasure();
+                foreach (var ancestor in result.GetVisualAncestors().OfType<Control>())
+                {
+                    ancestor.InvalidateMeasure();
+                    if (ancestor is ScrollViewer) break;
+                }
+            }, DispatcherPriority.Background);
+        }
+        var parentItemId = ItemId(item, itemIndex);
+        var selectedKey = $"{owner.Node.Id}:{collection.Id}:{parentItemId}:runtime-child";
+        var selectedChildId = _sessionUiState.Selection(selectedKey);
+        var childRows = new StackPanel { Spacing = 0 };
+        foreach (var childCollection in childCollections)
+        {
+            var allChildItems = DesignPreviewTestValues.CollectionItems(preview, childCollection).ToList();
+            var childItems = allChildItems
+                .Where((candidate) =>
+                    candidate[childCollection.UiParentItemIdJsonKey] is JsonValue parentValue
+                    && parentValue.TryGetValue<string>(out var parentId)
+                    && parentId.Equals(parentItemId, StringComparison.Ordinal))
+                .ToList();
+            foreach (var childItem in childItems)
+            {
+                var childItemId = ItemId(childItem, 0);
+                var globalChildIndex = allChildItems.FindIndex((candidate) =>
+                    ItemId(candidate, 0).Equals(childItemId, StringComparison.Ordinal));
+                if (globalChildIndex < 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime child item '{childItemId}' is not present in collection '{childCollection.Id}'.");
+                }
+                Control ChildContent() => CreateDirectChildRuntimeContent(
+                    owner,
+                    preview,
+                    childCollection,
+                    actions,
+                    globalChildIndex,
+                    childItem);
+                var button = new Button
+                {
+                    Content = "···",
+                    Width = 40,
+                    Height = 32,
+                    Padding = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center,
+                };
+                EditorOverrideVisuals.ApplyActionButton(button);
+                EditorAccessibility.Describe(
+                    button,
+                    $"Edit runtime values for {childCollection.Label}");
+                button.Click += (_, args) =>
+                {
+                    args.Handled = true;
+                    _sessionUiState.Select(selectedKey, childItemId);
+                    ShowChildContent(ChildContent());
+                };
+                var label = new TextBlock
+                {
+                    Text = childCollection.Label,
+                    FontWeight = FontWeight.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                };
+                var row = new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                    ColumnSpacing = 8,
+                    MinHeight = 48,
+                    Children =
+                    {
+                        label,
+                        button,
+                    },
+                };
+                Grid.SetColumn(button, 1);
+                childRows.Children.Add(new Border
+                {
+                    Padding = new Thickness(0, 7),
+                    BorderThickness = new Thickness(0, 0, 0, 1),
+                    BorderBrush = EditorUiVisuals.ScrollbarSeparatorBrush(
+                        Application.Current?.ActualThemeVariant != Avalonia.Styling.ThemeVariant.Light),
+                    Child = row,
+                });
+                if (childItemId.Equals(selectedChildId, StringComparison.Ordinal))
+                {
+                    ShowChildContent(ChildContent());
+                }
+            }
+        }
+        result.Children.Add(childRows);
+        result.Children.Add(editorHost);
+        return result;
+    }
+
+    private Control CreateDirectChildRuntimeContent(
+        RuntimeInputOwner owner,
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<ComponentPreviewActionDefinition> actions,
+        int itemIndex,
+        JsonObject item)
+    {
+        var content = CreateTestValueCollectionItemContent(
+            owner,
+            preview,
+            collection,
+            actions,
+            itemIndex,
+            item,
+            () => { },
+            out var subcards);
+        var result = new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(8),
+            Margin = new Thickness(0, 8, 0, 36),
+        };
+        if (content is Panel panel && panel.Children.Count > 0)
+        {
+            result.Children.Add(content);
+        }
+        foreach (var subcard in subcards)
+        {
+            result.Children.Add(EditorSubcardLayoutHost.ComposeSectionContent(subcard));
+        }
+        return result;
+    }
+
     private Control CreateTestValueCollectionContent(
         RuntimeInputOwner owner,
         JsonObject preview,
@@ -738,7 +957,8 @@ internal sealed class RuntimeInputsCollectionEditor
             },
             collectionActions,
             _sessionUiState,
-            canEditStructure: string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
+            canEditStructure: collection.CanEditStructure
+                && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
         var collectionEditor = editor.Create();
         if (!owner.IsInstance
             || _animationEditor is null
@@ -779,7 +999,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var parentId = ItemId(parentItem, 0);
         foreach (var childCollection in childCollections)
         {
-            var childItems = DesignPreviewTestValues.CollectionItems(preview, childCollection)
+            var childItems = DisplayItems(preview, childCollection)
                 .Where((candidate) => candidate[childCollection.UiParentItemIdJsonKey]?.GetValue<string>() == parentId)
                 .ToList();
             for (var index = 0; index < childItems.Count; index++)
@@ -968,6 +1188,16 @@ internal sealed class RuntimeInputsCollectionEditor
     private static string ItemId(JsonObject item, int index)
     {
         return JsonPath.RequiredString(item, "id", $"Runtime collection item at index {index}");
+    }
+
+    private static IReadOnlyList<JsonObject> DisplayItems(
+        JsonObject preview,
+        RuntimeInputCollectionDefinition collection)
+    {
+        var items = DesignPreviewTestValues.CollectionItems(preview, collection);
+        return collection.FixedItemCount > 0
+            ? items.Take(collection.FixedItemCount).ToList()
+            : items;
     }
 
     private static bool IsVisibleRuntimeValue(RuntimeInputOwner owner, ComponentInputDefinition input) =>

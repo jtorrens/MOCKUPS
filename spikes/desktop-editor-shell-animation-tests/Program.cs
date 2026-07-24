@@ -2282,48 +2282,93 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             SequenceEqual(
                 ["Default", "Calls", "Chats"],
                 VariantOptions(contextHost).Select((option) => option.Label));
-            var selectedSet = RequiredField(listItemSurface, "selectedSetId");
-            Equal("set_a", selectedSet.Value);
-            var selectedSetOptions = selectedSet.GetVisualDescendants()
-                .OfType<EditorInstantComboBox>()
-                .Single()
-                .ItemsSource?
-                .ToList()
-                ?? throw new InvalidOperationException("List Item content-set selector has no options.");
-            SequenceEqual(["set_a", "set_b", "set_c"], selectedSetOptions.Select((option) => option.Value));
-            SequenceEqual(
-                ["A · Answered call", "B · Missed call", "C · Chat"],
-                selectedSetOptions.Select((option) => option.Label));
+            Equal("360", RequiredField(listItemSurface, "width").Value);
+            Equal("84", RequiredField(listItemSurface, "height").Value);
+            Equal("1", RequiredField(listItemSurface, "activeSet").Value);
             Equal("normal", RequiredField(listItemSurface, "state").Value);
-            True(listItemSurface.GetVisualDescendants()
+            var runtimeSectionLabels = listItemSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
-                .Any((text) => text.Text == "Content sets"));
+                .Select((text) => text.Text ?? "")
+                .ToList();
+            True(runtimeSectionLabels.Contains("General"));
+            SequenceEqual(
+                ["Set 1", "Set 2", "Set 3"],
+                runtimeSectionLabels.Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
+            True(!runtimeSectionLabels.Contains("Content Sets"));
+
+            var setOneButton = listItemSurface.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) => button.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Any((text) => text.Text == "Set 1"));
+            setOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            var componentRows = listItemSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .Where((text) => text is "Avatar" or "Label" or "Icon Row")
+                .ToList();
+            SequenceEqual(["Avatar", "Label", "Icon Row"], componentRows);
+            var runtimeButtons = listItemSurface.GetVisualDescendants()
+                .OfType<Button>()
+                .Where((button) => button.Content as string == "···")
+                .ToList();
+            Equal(3, runtimeButtons.Count);
+
+            runtimeButtons[0].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listItemSurface, "actorId");
+            runtimeButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listItemSurface, "sampleText");
+            var finalLabelField = RequiredField(listItemSurface, "subtextColorToken");
+            var runtimeScroll = listItemSurface.GetVisualDescendants()
+                .OfType<ScrollViewer>()
+                .Single((scroll) => scroll.Name == "PreviewTestValuesEditorScroll");
+            runtimeScroll.Offset = new Vector(0, double.MaxValue);
+            Dispatcher.UIThread.RunJobs();
+            var finalFieldTransform = finalLabelField.TransformToVisual(runtimeScroll)
+                ?? throw new InvalidOperationException("Final Label Runtime field has no scroll transform.");
+            var finalFieldBottom = finalFieldTransform.Transform(
+                new Point(0, finalLabelField.Bounds.Height)).Y;
+            if (finalFieldBottom > runtimeScroll.Viewport.Height + 0.5)
+            {
+                throw new InvalidOperationException(
+                    $"Final Label Runtime field remains below the scroll viewport "
+                    + $"(bottom={finalFieldBottom:0.##}, viewport={runtimeScroll.Viewport.Height:0.##}, "
+                    + $"extent={runtimeScroll.Extent.Height:0.##}, offset={runtimeScroll.Offset.Y:0.##}).");
+            }
+            runtimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listItemSurface, "buttonInputs");
 
             var listSurface = SelectComponent("component_project_foqn_s2_list");
             SequenceEqual(
                 ["Default", "Calls", "Chats"],
                 VariantOptions(contextHost).Select((option) => option.Label));
-            var listSelectedSets = listSurface.GetVisualDescendants()
-                .OfType<DictionaryFieldControl>()
-                .Where((field) => field.FieldId == "selectedSetId")
-                .ToList();
-            True(listSelectedSets.Count >= 5);
-            True(listSelectedSets.All((field) =>
+            Equal("360", RequiredField(listSurface, "itemWidth").Value);
+            Equal("84", RequiredField(listSurface, "itemHeight").Value);
+            var database = new SpikeDatabase(temporary);
+            var listPreview = JsonPath.ParseRequiredObject(
+                database.GetComponentClassSettings("component_project_foqn_s2_list").DesignPreviewJson,
+                "List Design Preview");
+            var listItems = JsonPath.RequiredArray(listPreview, "items", "List Design Preview");
+            if (listItems.Count < 5)
             {
-                var options = field.GetVisualDescendants()
-                    .OfType<EditorInstantComboBox>()
-                    .Single()
-                    .ItemsSource?
-                    .ToList()
-                    ?? [];
-                return options.Count > 0 && options.Any((option) => option.Value == field.Value);
-            }));
-            True(listSurface.GetVisualDescendants()
-                .OfType<DictionaryFieldControl>()
-                .Count((field) => field.FieldId == "state") >= listSelectedSets.Count);
-            True(listSurface.GetVisualDescendants()
-                .OfType<DictionaryFieldControl>()
-                .Count((field) => field.FieldId == "contentSets") >= listSelectedSets.Count);
+                throw new InvalidOperationException(
+                    $"List exposes {listItems.Count} Runtime items instead of at least five.");
+            }
+            foreach (var node in listItems)
+            {
+                var item = node as JsonObject
+                    ?? throw new InvalidOperationException("List Runtime item must be an object.");
+                var runtime = JsonPath.RequiredObject(item, "listItemInputs", "List Runtime item");
+                Equal(1d, JsonPath.RequiredNumber(runtime, "activeSet", "List Item Runtime"));
+                Equal("normal", JsonPath.RequiredString(runtime, "state", "List Item Runtime"));
+                Equal(360d, JsonPath.RequiredNumber(runtime, "width", "List Item Runtime"));
+                Equal(84d, JsonPath.RequiredNumber(runtime, "height", "List Item Runtime"));
+                Equal(4, JsonPath.RequiredArray(runtime, "collections", "List Item Runtime").Count);
+            }
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();

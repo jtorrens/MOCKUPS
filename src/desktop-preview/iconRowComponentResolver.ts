@@ -1,13 +1,26 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
-import { parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
+import {
+  parseObject,
+  requiredNumber,
+  requiredPossiblyEmptyString,
+  requiredRecord,
+  requiredString,
+} from "./componentResolverCommon.js";
 import { resolveButtonComponentFromRecords } from "./buttonComponentResolver.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 
 export function resolveIconRowComponent(payload: DesignPreviewPayload): IconRowDesignContract {
-  return resolveConfiguredIconRowComponentFromRecords(
-    parseObject(payload.configJson),
+  const config = parseObject(payload.configJson);
+  const iconRow = requiredRecord(config, "iconRow", "component.iconRow");
+  return resolveIconRowComponentFromRecords(
+    config,
+    {
+      ...parseObject(payload.designPreviewJson),
+      gap: requiredString(iconRow, "gap", "component.iconRow.gap"),
+      orientation: requiredString(iconRow, "orientation", "component.iconRow.orientation"),
+    },
     parseObject(payload.componentBaseConfigsJson),
     "component.iconRow",
   );
@@ -22,13 +35,46 @@ export function resolveConfiguredIconRowComponentFromRecords(
   return resolveIconRowComponentFromRecords(
     config,
     {
-      items: requiredObjectArray(iconRow, "items", "component.iconRow"),
+      buttonInputs: iconRowButtonRuntimeDefaults(
+        requiredObjectArray(iconRow, "items", "component.iconRow"),
+      ),
       gap: requiredString(iconRow, "gap", "component.iconRow.gap"),
       orientation: requiredString(iconRow, "orientation", "component.iconRow.orientation"),
     },
     componentBaseConfigs,
     id,
   );
+}
+
+export function iconRowButtonRuntimeDefaults(
+  items: Record<string, unknown>[],
+) {
+  return items.map((item, index) => ({
+    id: requiredString(item, "id", `component.iconRow.items[${index}].id`),
+    contentMode: requiredString(item, "contentMode", `component.iconRow.items[${index}].contentMode`),
+    state: requiredString(item, "state", `component.iconRow.items[${index}].state`),
+    sampleText: typeof item.sampleText === "string"
+      ? item.sampleText
+      : typeof item.text === "string" ? item.text : "",
+    iconToken: requiredString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
+    iconSizeToken: requiredString(item, "iconSizeToken", `component.iconRow.items[${index}].iconSizeToken`),
+    textSizeToken: requiredString(item, "textSizeToken", `component.iconRow.items[${index}].textSizeToken`),
+    pushTrigger: item.pushTrigger === true,
+    pushElapsedMs: typeof item.pushElapsedMs === "number" ? item.pushElapsedMs : 0,
+    iconColorToken: typeof item.iconColorToken === "string" ? item.iconColorToken : "theme.colors.icon",
+    textColorToken: typeof item.textColorToken === "string" ? item.textColorToken : "theme.colors.textPrimary",
+    showBadge: item.showBadge === true,
+    badgeContentMode: typeof item.badgeContentMode === "string" ? item.badgeContentMode : "text",
+    badgeIconToken: typeof item.badgeIconToken === "string" ? item.badgeIconToken : "system_check",
+    badgeText: typeof item.badgeText === "string" ? item.badgeText : "1",
+    badgeSize: typeof item.badgeSize === "number" ? item.badgeSize : 20,
+    badgeBackgroundPaletteColor: typeof item.badgeBackgroundPaletteColor === "string"
+      ? item.badgeBackgroundPaletteColor
+      : "blue",
+    badgeContentPaletteColor: typeof item.badgeContentPaletteColor === "string"
+      ? item.badgeContentPaletteColor
+      : "gray_100",
+  }));
 }
 
 export function resolveIconRowComponentFromRecords(
@@ -38,62 +84,76 @@ export function resolveIconRowComponentFromRecords(
   id: string,
 ): IconRowDesignContract {
   const iconRow = requiredRecord(config, "iconRow", "component.iconRow");
-  const orientation = requiredString(inputs, "orientation", "component.iconRow.input.orientation");
+  const orientation = typeof inputs.orientation === "string"
+    ? inputs.orientation
+    : requiredString(iconRow, "orientation", "component.iconRow.orientation");
   if (orientation !== "horizontal" && orientation !== "vertical") {
     throw new Error(`Unsupported icon row orientation ${orientation}`);
   }
-  const rawItems = requiredObjectArray(inputs, "items", "component.iconRow input");
+  const structuralItems = Array.isArray(inputs.structuralItems)
+    ? requiredObjectArray(inputs, "structuralItems", "component.iconRow input")
+    : requiredObjectArray(iconRow, "items", "component.iconRow");
+  const runtimeItems = requiredObjectArray(
+    inputs,
+    "buttonInputs",
+    "component.iconRow input",
+  );
+  const runtimeById = exactRuntimeItems(structuralItems, runtimeItems);
   const sizeSource = requiredString(iconRow, "sizeSource", "component.iconRow.sizeSource");
   if (sizeSource !== "shared" && sizeSource !== "perButton") throw new Error(`Unsupported icon row size source ${sizeSource}`);
   const inheritedIconSize = typeof inputs.iconSizeToken === "string" ? inputs.iconSizeToken : "";
   const inheritedTextSize = typeof inputs.textSizeToken === "string" ? inputs.textSizeToken : "";
   const sharedIconSize = inheritedIconSize || requiredString(iconRow, "iconSizeToken", "component.iconRow.iconSizeToken");
   const sharedTextSize = inheritedTextSize || requiredString(iconRow, "textSizeToken", "component.iconRow.textSizeToken");
-  const items = rawItems.map((item, index) => {
+  const items = structuralItems.map((item, index) => {
     const itemId = requiredString(item, "id", `component.iconRow.items[${index}].id`);
+    const runtime = runtimeById.get(itemId)!;
     const buttonVariantReference = requiredString(item, "buttonVariantReference", `component.iconRow.items[${index}].buttonVariantReference`);
     const baseButtonConfig = mergeComponentDefaults(
       componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
       requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`),
     );
-    const state = requiredString(item, "state", `component.iconRow.items[${index}].state`);
-    const buttonConfig = mergeRuntimeColors(baseButtonConfig, item, state);
-    const showBadge = item.showBadge === true;
+    const state = requiredString(runtime, "state", `component.iconRow.buttonInputs[${index}].state`);
+    const showBadge = runtime.showBadge === true;
     return {
       id: itemId,
       button: resolveButtonComponentFromRecords(
-        buttonConfig,
+        baseButtonConfig,
         {
-          contentMode: requiredString(item, "contentMode", `component.iconRow.items[${index}].contentMode`),
+          contentMode: requiredString(runtime, "contentMode", `component.iconRow.buttonInputs[${index}].contentMode`),
           state,
-          iconToken: requiredString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
+          iconToken: requiredString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize
-            ? requiredString(item, "iconSizeToken", `component.iconRow.items[${index}].iconSizeToken`)
+            ? requiredString(runtime, "iconSizeToken", `component.iconRow.buttonInputs[${index}].iconSizeToken`)
             : sharedIconSize,
           textSizeToken: sizeSource === "perButton" && !inheritedTextSize
-            ? requiredString(item, "textSizeToken", `component.iconRow.items[${index}].textSizeToken`)
+            ? requiredString(runtime, "textSizeToken", `component.iconRow.buttonInputs[${index}].textSizeToken`)
             : sharedTextSize,
-          sampleText: typeof item.text === "string" ? item.text : "",
-          pushTrigger: item.pushTrigger === true,
-          pushElapsedMs: typeof item.pushElapsedMs === "number" ? item.pushElapsedMs : 0,
+          sampleText: requiredPossiblyEmptyString(
+            runtime,
+            "sampleText",
+            `component.iconRow.buttonInputs[${index}].sampleText`,
+          ),
+          pushTrigger: runtime.pushTrigger === true,
+          pushElapsedMs: typeof runtime.pushElapsedMs === "number" ? runtime.pushElapsedMs : 0,
           showBadge,
           badgeContentMode: showBadge
-            ? requiredString(item, "badgeContentMode", `component.iconRow.items[${index}].badgeContentMode`)
+            ? requiredString(runtime, "badgeContentMode", `component.iconRow.buttonInputs[${index}].badgeContentMode`)
             : "text",
           badgeIconToken: showBadge
-            ? requiredString(item, "badgeIconToken", `component.iconRow.items[${index}].badgeIconToken`)
+            ? requiredString(runtime, "badgeIconToken", `component.iconRow.buttonInputs[${index}].badgeIconToken`)
             : "system_check",
           badgeText: showBadge
-            ? requiredString(item, "badgeText", `component.iconRow.items[${index}].badgeText`)
+            ? requiredString(runtime, "badgeText", `component.iconRow.buttonInputs[${index}].badgeText`)
             : "1",
           badgeSize: showBadge
-            ? requiredNumber(item, "badgeSize", `component.iconRow.items[${index}].badgeSize`)
+            ? requiredNumber(runtime, "badgeSize", `component.iconRow.buttonInputs[${index}].badgeSize`)
             : 20,
           badgeBackgroundPaletteColor: showBadge
-            ? requiredString(item, "badgeBackgroundPaletteColor", `component.iconRow.items[${index}].badgeBackgroundPaletteColor`)
+            ? requiredString(runtime, "badgeBackgroundPaletteColor", `component.iconRow.buttonInputs[${index}].badgeBackgroundPaletteColor`)
             : "blue",
           badgeContentPaletteColor: showBadge
-            ? requiredString(item, "badgeContentPaletteColor", `component.iconRow.items[${index}].badgeContentPaletteColor`)
+            ? requiredString(runtime, "badgeContentPaletteColor", `component.iconRow.buttonInputs[${index}].badgeContentPaletteColor`)
             : "gray_100",
         },
         componentBaseConfigs,
@@ -104,39 +164,35 @@ export function resolveIconRowComponentFromRecords(
   return {
     id,
     orientation,
-    gapToken: requiredString(inputs, "gap", "component.iconRow.input.gap"),
+    gapToken: typeof inputs.gap === "string"
+      ? inputs.gap
+      : requiredString(iconRow, "gap", "component.iconRow.gap"),
     items,
   };
 }
 
-function mergeRuntimeColors(
-  config: Record<string, unknown>,
-  item: Record<string, unknown>,
-  state: string,
+function exactRuntimeItems(
+  structuralItems: Record<string, unknown>[],
+  runtimeItems: Record<string, unknown>[],
 ) {
-  const iconColorToken = typeof item.iconColorToken === "string" && item.iconColorToken.trim()
-    ? item.iconColorToken
-    : undefined;
-  const textColorToken = typeof item.textColorToken === "string" && item.textColorToken.trim()
-    ? item.textColorToken
-    : undefined;
-  if (!iconColorToken && !textColorToken) return config;
-  return mergeComponentDefaults(config, {
-    button: {
-      states: {
-        [state]: {
-          ...(iconColorToken ? { iconColorToken } : {}),
-          ...(textColorToken
-            ? {
-                labelSlot: {
-                  overrides: {
-                    label: { textColorToken },
-                  },
-                },
-              }
-            : {}),
-        },
-      },
-    },
-  });
+  const structuralIds = structuralItems.map((item, index) =>
+    requiredString(item, "id", `component.iconRow.items[${index}].id`));
+  const runtimeById = new Map<string, Record<string, unknown>>();
+  for (const [index, item] of runtimeItems.entries()) {
+    const id = requiredString(item, "id", `component.iconRow.buttonInputs[${index}].id`);
+    if (runtimeById.has(id)) {
+      throw new Error(`component.iconRow Button Runtime '${id}' is duplicated`);
+    }
+    runtimeById.set(id, item);
+  }
+  const missing = structuralIds.filter((id) => !runtimeById.has(id));
+  const unknown = [...runtimeById.keys()].filter((id) => !structuralIds.includes(id));
+  if (missing.length || unknown.length) {
+    throw new Error(
+      "component.iconRow Button Runtime values must match the Variant items exactly"
+      + `${missing.length ? `; missing: ${missing.join(", ")}` : ""}`
+      + `${unknown.length ? `; unknown: ${unknown.join(", ")}` : ""}`,
+    );
+  }
+  return runtimeById;
 }

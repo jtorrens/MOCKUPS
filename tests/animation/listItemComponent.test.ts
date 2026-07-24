@@ -8,7 +8,7 @@ import { committedComponentFixture } from "./committedComponentFixture.js";
 const fixture = (variantId = "calls") =>
   committedComponentFixture("listItem", variantId);
 
-test("List Item Calls and Chats Variants share the element model boundary", () => {
+test("List Item Calls and Chats Variants share fixed child slots with Variant-owned order", () => {
   const calls = resolveListItemComponent(fixture("calls"));
   const chats = resolveListItemComponent(fixture("chats"));
 
@@ -24,10 +24,11 @@ test("List Item Calls and Chats Variants share the element model boundary", () =
     && calls.elements[2].component.orientation, "horizontal");
   assert.equal(chats.elements[2]?.componentType === "iconRow"
     && chats.elements[2].component.orientation, "vertical");
-  assert.equal(calls.selectedSetId, "set_a");
+  assert.equal(calls.activeSet, 1);
+  assert.deepEqual(calls.size, { width: 360, height: 84 });
 });
 
-test("List Item animates selected content set and current state independently", () => {
+test("List Item animates the numeric active set and current state independently", () => {
   const source = fixture("calls");
   source.localFrame = 10;
   source.instanceJson = JSON.stringify({
@@ -35,10 +36,10 @@ test("List Item animates selected content set and current state independently", 
       schemaVersion: 2,
       tracks: [
         {
-          id: "selected-set",
-          fieldId: "selectedSetId",
+          id: "active-set",
+          fieldId: "activeSet",
           targetId: "",
-          keyframes: [{ id: "selected-set-10", frame: 10, value: "set_b", interpolation: "hold" }],
+          keyframes: [{ id: "active-set-10", frame: 10, value: 2, interpolation: "hold" }],
         },
         {
           id: "item-state",
@@ -51,7 +52,7 @@ test("List Item animates selected content set and current state independently", 
   });
 
   const resolved = resolveListItemComponent(source);
-  assert.equal(resolved.selectedSetId, "set_b");
+  assert.equal(resolved.activeSet, 2);
   assert.equal(resolved.state, "inactive");
   assert.equal(resolved.elementsOpacity, 0.45);
   assert.equal(
@@ -61,16 +62,40 @@ test("List Item animates selected content set and current state independently", 
   );
 });
 
-test("List Item rejects content sets whose Icon Row values do not match Variant slots", () => {
+test("List Item rejects an Icon Row child Runtime that does not match its Variant slots", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as {
-    contentSets: Array<{ iconRowValues: unknown[] }>;
+    iconRowContent: Array<{ runtimeInputs: { buttonInputs: unknown[] } }>;
   };
-  preview.contentSets[0]!.iconRowValues = preview.contentSets[0]!.iconRowValues.slice(0, 1);
+  preview.iconRowContent[0]!.runtimeInputs.buttonInputs =
+    preview.iconRowContent[0]!.runtimeInputs.buttonInputs.slice(0, 1);
   source.designPreviewJson = JSON.stringify(preview);
   assert.throws(
     () => resolveListItemComponent(source),
-    /must match the Variant slots exactly/,
+    /Button Runtime values must match the Variant items exactly/,
+  );
+});
+
+test("List Item consumes exact child Runtime fields instead of parent-owned copies", () => {
+  const source = fixture("calls");
+  const preview = JSON.parse(source.designPreviewJson) as {
+    activeSet: number;
+    labelContent: Array<{
+      contentSetId: string;
+      runtimeInputs: { sampleText: string; textColorToken: string };
+    }>;
+  };
+  preview.activeSet = 2;
+  preview.labelContent[1]!.runtimeInputs.sampleText = "Exact Label Runtime";
+  preview.labelContent[1]!.runtimeInputs.textColorToken = "theme.colors.badge";
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const resolved = resolveListItemComponent(source);
+  const label = resolved.elements.find((element) => element.componentType === "label");
+  assert.equal(label?.componentType === "label" && label.component.text, "Exact Label Runtime");
+  assert.equal(
+    label?.componentType === "label" && label.component.textColorToken,
+    "theme.colors.badge",
   );
 });
 
@@ -90,4 +115,30 @@ test("List Item renderable keeps Surface outside the element opacity group", () 
   assert.equal(node.children?.[1]?.id, "component.listItem.elements");
   assert.equal(node.children?.[1]?.transform?.opacity, 1);
   assert.equal(node.children?.[1]?.children?.length, 3);
+});
+
+test("List Item flows visible children through padding and gap with an auto Avatar", () => {
+  const source = fixture("calls");
+  const contract = resolveListItemComponent(source);
+  const node = listItemComponentToRenderable(source, contract);
+  const children = node.children?.[1]?.children ?? [];
+
+  assert.deepEqual(children.map((child) => child.box), [
+    { x: 8, y: 322, width: 76, height: 76 },
+    { x: 92, y: 322, width: 160, height: 76 },
+    { x: 260, y: 338, width: 92, height: 44 },
+  ]);
+});
+
+test("List Item rejects a Runtime width that cannot contain its Variant flow", () => {
+  const source = fixture("calls");
+  const preview = JSON.parse(source.designPreviewJson) as { width: number };
+  preview.width = 100;
+  source.designPreviewJson = JSON.stringify(preview);
+  const contract = resolveListItemComponent(source);
+
+  assert.throws(
+    () => listItemComponentToRenderable(source, contract),
+    /components, padding and gaps exceed the Runtime width/,
+  );
 });

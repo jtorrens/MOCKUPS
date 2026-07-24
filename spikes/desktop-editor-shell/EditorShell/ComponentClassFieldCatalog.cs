@@ -384,35 +384,6 @@ internal static class ComponentClassFieldCatalog
             "keypad",
             new Dictionary<string, string>()));
 
-    private static readonly RuntimeInputCollectionDefinition ListItemElementsCollection = new(
-        "elements",
-        "Elements",
-        "elements",
-        "Element",
-        [
-            new ComponentInputDefinition(
-                "componentType", "Type", "componentType", ComponentInputKind.Option, ValueKind.OptionToken, "avatar",
-                [new("avatar", "Avatar"), new("label", "Label"), new("iconRow", "Icon Row")]),
-            new ComponentInputDefinition(
-                "componentSlot", "Component", "componentSlot", ComponentInputKind.ComponentVariantSlot, ValueKind.ComponentVariantSlot,
-                """{"variantReference":"component_project_foqn_s2_avatar::variant::default","overrides":{}}""",
-                ComponentType: "avatar,label,iconRow"),
-            new ComponentInputDefinition(
-                "size", "Size", "size", ComponentInputKind.IntegerPair, ValueKind.IntegerPair, "64|64",
-                PairLabels: new("W", "H")),
-            new ComponentInputDefinition(
-                "placement", "Placement", "placement", ComponentInputKind.Text, ValueKind.AlignmentPlacement,
-                """{"mode":"center","alignX":0.5,"alignY":0.5,"offsetX":0,"offsetY":0}"""),
-        ],
-        ItemPresentation: new RuntimeInputCollectionItemPresentation(
-            "",
-            "",
-            ["componentType", "componentSlot", "size"],
-            72,
-            "",
-            EditorIcons.Component,
-            new Dictionary<string, string>()));
-
     private static readonly RuntimeInputCollectionDefinition StatusBarItemsCollection = new(
         "statusBarItems",
         "Items",
@@ -855,8 +826,27 @@ internal static class ComponentClassFieldCatalog
         ["component.notifications.showBadge"] = new("component.notifications.showBadge", "Show badge", ValueKind.Boolean, ["notifications", "showBadge"], "true"),
         ["component.notifications.distributionMotion"] = new("component.notifications.distributionMotion", "Distribution transition", ValueKind.Motion, ["notifications", "distributionMotion"], MotionVariantValue.Default.ToJsonString()),
 
-        ["component.listItem.size"] = new("component.listItem.size", "Size", ValueKind.IntegerPair, ["listItem", "size"], "360|84", PairLabels: new("W", "H")),
-        ["component.listItem.elements"] = new("component.listItem.elements", "Elements", ValueKind.StructuredCollection, ["listItem", "elements"], "[]", StructuredCollection: ListItemElementsCollection),
+        ["component.listItem.contentSetCount"] = new("component.listItem.contentSetCount", "Content Sets", ValueKind.Integer, ["listItem", "contentSetCount"], "1", Number: new NumberDefinition(1, 100, 1, 0)),
+        ["component.listItem.padding"] = new("component.listItem.padding", "Padding", ValueKind.ThemeTokenPair, ["listItem", "padding"], "theme.spacing.m|theme.spacing.s", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
+        ["component.listItem.gapToken"] = new("component.listItem.gapToken", "Gap", ValueKind.ThemeToken, ["listItem", "gapToken"], "theme.spacing.m", Options: SpacingTokenOptions),
+        ["component.listItem.components.avatar.visible"] = new("component.listItem.components.avatar.visible", "Visible", ValueKind.Boolean, ["listItem", "components", "avatar", "visible"], "true"),
+        ["component.listItem.components.avatar.order"] = new("component.listItem.components.avatar.order", "Order", ValueKind.Integer, ["listItem", "components", "avatar", "order"], "1", Number: new NumberDefinition(1, 3, 1, 0)),
+        ["component.listItem.components.avatar.component"] = new("component.listItem.components.avatar.component", "Avatar", ValueKind.ComponentVariantSlot, ["listItem", "components", "avatar", "componentSlot"], """{"variantReference":"component_project_foqn_s2_avatar::variant::default","overrides":{}}""", ComponentVariantType: "avatar"),
+        ["component.listItem.components.avatar.sizeMode"] = new("component.listItem.components.avatar.sizeMode", "Size", ValueKind.OptionToken, ["listItem", "components", "avatar", "sizeMode"], "auto", Options: [new("auto", "Use item height"), new("fixed", "Fixed")]),
+        ["component.listItem.components.avatar.fixedSize"] = new("component.listItem.components.avatar.fixedSize", "Fixed size", ValueKind.Integer, ["listItem", "components", "avatar", "fixedSize"], "56", Number: new NumberDefinition(1, 4096, 1, 0)),
+        ["component.listItem.components.avatar.verticalAlignment"] = new("component.listItem.components.avatar.verticalAlignment", "Vertical alignment", ValueKind.OptionToken, ["listItem", "components", "avatar", "verticalAlignment"], "center", Options: [new("start", "Top"), new("center", "Center"), new("end", "Bottom")]),
+        ["component.listItem.components.label.visible"] = new("component.listItem.components.label.visible", "Visible", ValueKind.Boolean, ["listItem", "components", "label", "visible"], "true"),
+        ["component.listItem.components.label.order"] = new("component.listItem.components.label.order", "Order", ValueKind.Integer, ["listItem", "components", "label", "order"], "2", Number: new NumberDefinition(1, 3, 1, 0)),
+        ["component.listItem.components.label.component"] = new("component.listItem.components.label.component", "Label", ValueKind.ComponentVariantSlot, ["listItem", "components", "label", "componentSlot"], """{"variantReference":"component_project_foqn_s2_label::variant::default","overrides":{}}""", ComponentVariantType: "label"),
+        ["component.listItem.components.label.sizeMode"] = new("component.listItem.components.label.sizeMode", "Size", ValueKind.OptionToken, ["listItem", "components", "label", "sizeMode"], "fill", Options: [new("fill", "Fill remaining width"), new("fixed", "Fixed")]),
+        ["component.listItem.components.label.fixedSize"] = new("component.listItem.components.label.fixedSize", "Fixed size", ValueKind.IntegerPair, ["listItem", "components", "label", "fixedSize"], "196|62", PairLabels: new("W", "H")),
+        ["component.listItem.components.label.verticalAlignment"] = new("component.listItem.components.label.verticalAlignment", "Vertical alignment", ValueKind.OptionToken, ["listItem", "components", "label", "verticalAlignment"], "center", Options: [new("start", "Top"), new("center", "Center"), new("end", "Bottom")]),
+        ["component.listItem.components.iconRow.visible"] = new("component.listItem.components.iconRow.visible", "Visible", ValueKind.Boolean, ["listItem", "components", "iconRow", "visible"], "true"),
+        ["component.listItem.components.iconRow.order"] = new("component.listItem.components.iconRow.order", "Order", ValueKind.Integer, ["listItem", "components", "iconRow", "order"], "3", Number: new NumberDefinition(1, 3, 1, 0)),
+        ["component.listItem.components.iconRow.component"] = new("component.listItem.components.iconRow.component", "Icon Row", ValueKind.ComponentVariantSlot, ["listItem", "components", "iconRow", "componentSlot"], """{"variantReference":"component_project_foqn_s2_iconRow::variant::default","overrides":{}}""", ComponentVariantType: "iconRow"),
+        ["component.listItem.components.iconRow.sizeMode"] = new("component.listItem.components.iconRow.sizeMode", "Size", ValueKind.OptionToken, ["listItem", "components", "iconRow", "sizeMode"], "content", Options: [new("content", "Fit content"), new("fixed", "Fixed")]),
+        ["component.listItem.components.iconRow.fixedSize"] = new("component.listItem.components.iconRow.fixedSize", "Fixed size", ValueKind.IntegerPair, ["listItem", "components", "iconRow", "fixedSize"], "88|44", PairLabels: new("W", "H")),
+        ["component.listItem.components.iconRow.verticalAlignment"] = new("component.listItem.components.iconRow.verticalAlignment", "Vertical alignment", ValueKind.OptionToken, ["listItem", "components", "iconRow", "verticalAlignment"], "center", Options: [new("start", "Top"), new("center", "Center"), new("end", "Bottom")]),
         ["component.listItem.states.normal.surface"] = new("component.listItem.states.normal.surface", "Normal surface", ValueKind.ComponentVariantSlot, ["listItem", "states", "normal", "surfaceSlot"], """{"variantReference":"component_project_foqn_s2_surface::variant::default_copy_4","overrides":{}}""", ComponentVariantType: "surface"),
         ["component.listItem.states.normal.elementsOpacity"] = new("component.listItem.states.normal.elementsOpacity", "Normal opacity", ValueKind.Alpha, ["listItem", "states", "normal", "elementsOpacity"], "1"),
         ["component.listItem.states.pressed.surface"] = new("component.listItem.states.pressed.surface", "Pressed surface", ValueKind.ComponentVariantSlot, ["listItem", "states", "pressed", "surfaceSlot"], """{"variantReference":"component_project_foqn_s2_surface::variant::surface_00_copy","overrides":{}}""", ComponentVariantType: "surface"),
