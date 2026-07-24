@@ -20,6 +20,11 @@ Theme tokens are semantic values, not UI styling shortcuts. Components refer
 to tokens and Palette Color ids; resolution to final light/dark values happens
 in the Preview pipeline.
 
+Positive and negative actions use `theme.colors.positive` and
+`theme.colors.negative`; their foreground uses `theme.colors.onAction`.
+Components never hardcode the resolved Palette Colors, so each Theme owns the
+exact light/dark treatment and contrast.
+
 Visual spacing fields use `theme.spacing.*` tokens. Compound light/dark values
 preserve their explicit pair labels and use their registered dictionary
 control.

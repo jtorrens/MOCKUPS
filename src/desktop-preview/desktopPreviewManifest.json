@@ -6,7 +6,9 @@
       "contract": "./labelComponentContract",
       "resolver": "./labelComponentResolver",
       "renderable": "./labelComponentRenderable",
-      "embeds": ["surface"]
+      "embeds": [
+        "surface"
+      ]
     },
     "surface": {
       "category": "atom",
@@ -27,35 +29,101 @@
       "contract": "./textBoxComponentContract",
       "resolver": "./textBoxComponentResolver",
       "renderable": "./textBoxComponentRenderable",
-      "embeds": ["surface", "cursor", "iconRow"]
+      "embeds": [
+        "surface",
+        "cursor",
+        "iconRow"
+      ]
     },
     "iconRow": {
       "category": "atom",
       "contract": "./iconRowComponentContract",
       "resolver": "./iconRowComponentResolver",
       "renderable": "./iconRowComponentRenderable",
-      "embeds": ["button"]
+      "embeds": [
+        "button"
+      ]
     },
     "iconBar": {
       "category": "atom",
       "contract": "./iconBarComponentContract",
       "resolver": "./iconBarComponentResolver",
       "renderable": "./iconBarComponentRenderable",
-      "embeds": ["iconRow"]
+      "embeds": [
+        "iconRow"
+      ]
     },
     "componentStack": {
       "category": "atom",
       "contract": "./componentStackComponentContract",
       "resolver": "./componentStackComponentResolver",
       "renderable": "./componentStackComponentRenderable",
-      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "collectionStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "list", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
+      "embeds": [
+        "label",
+        "surface",
+        "cursor",
+        "textBox",
+        "iconRow",
+        "iconBar",
+        "collectionStack",
+        "badge",
+        "codeIndicator",
+        "avatar",
+        "button",
+        "audio",
+        "notification",
+        "notifications",
+        "listItem",
+        "list",
+        "textInputBar",
+        "keyboard",
+        "keypad",
+        "fingerprint",
+        "faceRecognition",
+        "drawPassword",
+        "password",
+        "media",
+        "bubble",
+        "status_bar",
+        "navigation_bar",
+        "incomingCallNotification"
+      ]
     },
     "collectionStack": {
       "category": "atom",
       "contract": "./collectionStackComponentContract",
       "resolver": "./collectionStackComponentResolver",
       "renderable": "./collectionStackComponentRenderable",
-      "embeds": ["label", "surface", "cursor", "textBox", "iconRow", "iconBar", "componentStack", "badge", "codeIndicator", "avatar", "button", "audio", "notification", "notifications", "listItem", "list", "textInputBar", "keyboard", "keypad", "fingerprint", "faceRecognition", "drawPassword", "password", "media", "bubble", "status_bar", "navigation_bar"]
+      "embeds": [
+        "label",
+        "surface",
+        "cursor",
+        "textBox",
+        "iconRow",
+        "iconBar",
+        "componentStack",
+        "badge",
+        "codeIndicator",
+        "avatar",
+        "button",
+        "audio",
+        "notification",
+        "notifications",
+        "listItem",
+        "list",
+        "textInputBar",
+        "keyboard",
+        "keypad",
+        "fingerprint",
+        "faceRecognition",
+        "drawPassword",
+        "password",
+        "media",
+        "bubble",
+        "status_bar",
+        "navigation_bar",
+        "incomingCallNotification"
+      ]
     },
     "badge": {
       "category": "atom",
@@ -69,77 +137,115 @@
       "contract": "./notificationComponentContract",
       "resolver": "./notificationComponentResolver",
       "renderable": "./notificationComponentRenderable",
-      "embeds": ["surface", "avatar", "label"]
+      "embeds": [
+        "surface",
+        "avatar",
+        "label"
+      ]
     },
     "notifications": {
       "category": "component",
       "contract": "./notificationsComponentContract",
       "resolver": "./notificationsComponentResolver",
       "renderable": "./notificationsComponentRenderable",
-      "embeds": ["collectionStack", "badge"]
+      "embeds": [
+        "collectionStack",
+        "badge"
+      ]
     },
     "listItem": {
       "category": "component",
       "contract": "./listItemComponentContract",
       "resolver": "./listItemComponentResolver",
       "renderable": "./listItemComponentRenderable",
-      "embeds": ["surface", "avatar", "label", "iconRow"]
+      "embeds": [
+        "surface",
+        "avatar",
+        "label",
+        "iconRow"
+      ]
     },
     "list": {
       "category": "component",
       "contract": "./listComponentContract",
       "resolver": "./listComponentResolver",
       "renderable": "./listComponentRenderable",
-      "embeds": ["collectionStack", "listItem", "surface"]
+      "embeds": [
+        "collectionStack",
+        "listItem",
+        "surface"
+      ]
     },
     "codeIndicator": {
       "category": "atom",
       "contract": "./codeIndicatorComponentContract",
       "resolver": "./codeIndicatorComponentResolver",
       "renderable": "./codeIndicatorComponentRenderable",
-      "embeds": ["surface"]
+      "embeds": [
+        "surface"
+      ]
     },
     "avatar": {
       "category": "component",
       "contract": "./avatarComponentContract",
       "resolver": "./avatarComponentResolver",
       "renderable": "./avatarComponentRenderable",
-      "embeds": ["label", "badge"]
+      "embeds": [
+        "label",
+        "badge"
+      ]
     },
     "button": {
       "category": "atom",
       "contract": "./buttonComponentContract",
       "resolver": "./buttonComponentResolver",
       "renderable": "./buttonComponentRenderable",
-      "embeds": ["surface", "label", "badge"]
+      "embeds": [
+        "surface",
+        "label",
+        "badge"
+      ]
     },
     "audio": {
       "category": "component",
       "contract": "./audioComponentContract",
       "resolver": "./audioComponentResolver",
       "renderable": "./audioComponentRenderable",
-      "embeds": ["surface", "avatar", "badge", "label"]
+      "embeds": [
+        "surface",
+        "avatar",
+        "badge",
+        "label"
+      ]
     },
     "textInputBar": {
       "category": "system",
       "contract": "./textInputBarComponentContract",
       "resolver": "./textInputBarComponentResolver",
       "renderable": "./textInputBarComponentRenderable",
-      "embeds": ["surface", "textBox", "iconBar"]
+      "embeds": [
+        "surface",
+        "textBox",
+        "iconBar"
+      ]
     },
     "keyboard": {
       "category": "system",
       "contract": "./keyboardComponentContract",
       "resolver": "./keyboardComponentResolver",
       "renderable": "./keyboardComponentRenderable",
-      "embeds": ["iconBar"]
+      "embeds": [
+        "iconBar"
+      ]
     },
     "keypad": {
       "category": "system",
       "contract": "./keypadComponentContract",
       "resolver": "./keypadComponentResolver",
       "renderable": "./keypadComponentRenderable",
-      "embeds": ["label"]
+      "embeds": [
+        "label"
+      ]
     },
     "fingerprint": {
       "category": "system",
@@ -167,21 +273,40 @@
       "contract": "./passwordComponentContract",
       "resolver": "./passwordComponentResolver",
       "renderable": "./passwordComponentRenderable",
-      "embeds": ["label", "codeIndicator", "keypad", "fingerprint", "faceRecognition", "drawPassword", "iconBar"]
+      "embeds": [
+        "label",
+        "codeIndicator",
+        "keypad",
+        "fingerprint",
+        "faceRecognition",
+        "drawPassword",
+        "iconBar"
+      ]
     },
     "media": {
       "category": "component",
       "contract": "./mediaComponentContract",
       "resolver": "./mediaComponentResolver",
       "renderable": "./mediaComponentRenderable",
-      "embeds": ["surface", "iconBar", "label"]
+      "embeds": [
+        "surface",
+        "iconBar",
+        "label"
+      ]
     },
     "bubble": {
       "category": "component",
       "contract": "./bubbleComponentContract",
       "resolver": "./bubbleComponentResolver",
       "renderable": "./bubbleComponentRenderable",
-      "embeds": ["surface", "textBox", "media", "audio", "label", "avatar"]
+      "embeds": [
+        "surface",
+        "textBox",
+        "media",
+        "audio",
+        "label",
+        "avatar"
+      ]
     },
     "status_bar": {
       "category": "system",
@@ -196,6 +321,18 @@
       "resolver": "./navigationBarComponentResolver",
       "renderable": "./navigationBarComponentRenderable",
       "embeds": []
+    },
+    "incomingCallNotification": {
+      "category": "component",
+      "contract": "./incomingCallNotificationComponentContract",
+      "resolver": "./incomingCallNotificationComponentResolver",
+      "renderable": "./incomingCallNotificationComponentRenderable",
+      "embeds": [
+        "surface",
+        "avatar",
+        "label",
+        "iconRow"
+      ]
     }
   },
   "modules": {
@@ -204,21 +341,39 @@
       "contract": "./conversationModuleContract",
       "resolver": "./conversationModuleResolver",
       "renderable": "./conversationModuleRenderable",
-      "embeds": ["avatar", "bubble", "keyboard", "iconRow", "navigation_bar", "status_bar", "textInputBar"]
+      "embeds": [
+        "avatar",
+        "bubble",
+        "keyboard",
+        "iconRow",
+        "navigation_bar",
+        "status_bar",
+        "textInputBar"
+      ]
     },
     "module.core.lockScreen": {
       "label": "Lock Screen",
       "contract": "./lockScreenModuleContract",
       "resolver": "./lockScreenModuleResolver",
       "renderable": "./lockScreenModuleRenderable",
-      "embeds": ["componentStack", "navigation_bar", "status_bar"]
+      "embeds": [
+        "componentStack",
+        "navigation_bar",
+        "status_bar"
+      ]
     },
     "module.core.chatList": {
       "label": "Chat List",
       "contract": "./chatListModuleContract",
       "resolver": "./chatListModuleResolver",
       "renderable": "./chatListModuleRenderable",
-      "embeds": ["componentStack", "iconBar", "list", "status_bar", "navigation_bar"]
+      "embeds": [
+        "componentStack",
+        "iconBar",
+        "list",
+        "status_bar",
+        "navigation_bar"
+      ]
     }
   }
 }

@@ -12,6 +12,9 @@ internal static class GeneratedComponentScaffoldConfigRegistry
     {
         switch (componentType)
         {
+            case IncomingCallNotificationComponentConfigContract.ComponentType:
+                IncomingCallNotificationComponentConfigContract.Validate(config, context);
+                return true;
             case ListComponentConfigContract.ComponentType:
                 ListComponentConfigContract.Validate(config, context);
                 return true;
