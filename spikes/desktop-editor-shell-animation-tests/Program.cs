@@ -90,6 +90,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
+    ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
@@ -2890,6 +2891,131 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Dispatcher.UIThread.RunJobs();
 
             window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-chat-list-module-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        session.Dispatch(() =>
+        {
+            var window = new MainWindow(temporary)
+            {
+                Width = 3000,
+                Height = 900,
+            };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
+                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window)
+                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var chatApp = treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.App
+                    && node.Id == "app_core_chat");
+            var chatList = DescendantsAndSelf(chatApp)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.Module
+                    && node.Id == "module_project_foqn_s2_chat_list");
+            Equal("module.core.chatList", chatList.RecordClassId);
+
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+            Check(
+                (bool)(selectNode.Invoke(window, [chatList.Id]) ?? false),
+                "Chat List Module could not be selected.");
+            Dispatcher.UIThread.RunJobs();
+
+            var selected = typeof(MainWindow)
+                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as ProjectTreeNode
+                ?? throw new InvalidOperationException("Missing selected Chat List node.");
+            Check(
+                selected.Kind == ProjectTreeNodeKind.ModuleVariant,
+                $"Chat List selection resolved to {selected.Kind} instead of its Default Variant.");
+            Check(
+                selected.Id.EndsWith("::variant::default", StringComparison.Ordinal),
+                $"Chat List selection resolved to unexpected Variant '{selected.Id}'.");
+
+            var configurationFields = window.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Select((field) => field.FieldId)
+                .ToHashSet(StringComparer.Ordinal);
+            Check(
+                configurationFields.Contains("module.core.chatList.list"),
+                "Chat List editor is missing its fixed List boundary.");
+            Check(
+                configurationFields.Contains("module.core.chatList.horizontalAlignment"),
+                "Chat List editor is missing horizontal alignment.");
+            Check(
+                configurationFields.Contains("module.core.chatList.topInset"),
+                "Chat List editor is missing top inset.");
+            Check(
+                window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Any((button) =>
+                        Avalonia.Automation.AutomationProperties.GetName(button)
+                            == "Edit overrides for List"),
+                "Chat List fixed List boundary is missing Overrides.");
+
+            var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
+            var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
+            var authoringHost = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+            Check(authoringTab.IsVisible, "Chat List Runtime tab is not visible.");
+            tabs.SelectedItem = authoringTab;
+            Dispatcher.UIThread.RunJobs();
+            var runtime = Required(authoringHost.Content as Control);
+            var runtimeFields = runtime.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .ToList();
+            Equal("360", runtimeFields.Single((field) => field.FieldId == "itemWidth").Value);
+            Equal("84", runtimeFields.Single((field) => field.FieldId == "itemHeight").Value);
+            var itemLabels = runtime.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .Where((label) =>
+                    label.StartsWith("Item ", StringComparison.Ordinal)
+                    && int.TryParse(label.AsSpan(5), out _))
+                .ToList();
+            Check(
+                itemLabels.Count >= 5,
+                $"Chat List Runtime exposes only {itemLabels.Count} items.");
+            SequenceEqual(
+                Enumerable.Range(1, itemLabels.Count).Select((index) => $"Item {index}"),
+                itemLabels);
+            Equal(
+                1,
+                runtime.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Count((button) => ToolTip.GetTip(button) as string == "Add item"));
+
+            window.Hide();
+
+            static void Check(bool condition, string message)
+            {
+                if (!condition) throw new InvalidOperationException(message);
+            }
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
