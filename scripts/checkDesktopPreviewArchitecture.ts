@@ -504,7 +504,8 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
   const setupNodeIndex = steps.findIndex((step) => step.uses === "actions/setup-node@v6");
   const setupDotnetIndex = steps.findIndex((step) => step.uses === "actions/setup-dotnet@v5");
   const npmCiIndex = steps.findIndex((step) => step.run === "npm ci");
-  const coldGateIndex = steps.findIndex((step) => step.run === "npm run test:cold");
+  const coldGateCommand = "xvfb-run -a npm run test:cold";
+  const coldGateIndex = steps.findIndex((step) => step.run === coldGateCommand);
   if (checkoutIndexes.length !== 1 || !supportedCheckoutActions.has(checkoutAction)) {
     addViolation(
       workflowPath,
@@ -520,7 +521,7 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
   if (npmCiIndex < 0 || coldGateIndex < 0) {
     addViolation(
       workflowPath,
-      "repository CI must install the lockfile with npm ci before running test:cold",
+      "repository CI must install the lockfile with npm ci before running test:cold under a virtual Linux display",
     );
   }
   const setupCompleteIndex = Math.max(setupNodeIndex, setupDotnetIndex);
@@ -531,7 +532,7 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
       || coldGateIndex <= npmCiIndex) {
     addViolation(
       workflowPath,
-      "repository CI steps must be ordered checkout, setup, npm ci, then npm run test:cold",
+      `repository CI steps must be ordered checkout, setup, npm ci, then ${coldGateCommand}`,
     );
   }
 }
