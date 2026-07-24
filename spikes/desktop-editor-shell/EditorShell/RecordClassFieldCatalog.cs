@@ -24,6 +24,11 @@ internal sealed record RecordClassFieldDescriptor(
 
 internal static class RecordClassFieldCatalog
 {
+    static RecordClassFieldCatalog()
+    {
+        GeneratedModuleScaffoldFieldCatalog.AddFields(Fields);
+    }
+
     private static readonly FieldOption[] SpacingTokenOptions = ComponentClassFieldCatalog.SpacingTokenOptions;
     private static readonly FieldOption[] TypographySizeOptions = ComponentClassFieldCatalog.TypographySizeOptions;
     private static readonly PairFieldLabels WidthHeightPairLabels = new("W", "H");

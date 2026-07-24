@@ -6,13 +6,22 @@ import {
   type DesktopPreviewModuleClass,
 } from "./desktopPreviewModules.js";
 import { lockScreenModuleToRenderable } from "./lockScreenModuleRenderable.js";
+import { generatedModuleScaffoldFactories } from "./generatedModuleScaffoldRegistry.js";
 
-type ModuleRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
+export type ModuleRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
-export const moduleRenderableFactories = {
+const builtInModuleRenderableFactories = {
   "module.core.chat": conversationModuleToRenderable,
   "module.core.lockScreen": lockScreenModuleToRenderable,
-} satisfies Record<DesktopPreviewModuleClass, ModuleRenderableFactory>;
+} satisfies Record<string, ModuleRenderableFactory>;
+
+export const moduleRenderableFactories: Record<
+  DesktopPreviewModuleClass,
+  ModuleRenderableFactory
+> = {
+  ...builtInModuleRenderableFactories,
+  ...generatedModuleScaffoldFactories,
+};
 
 export function routeModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const moduleClass = payload.componentType ?? "";

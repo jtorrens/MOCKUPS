@@ -340,7 +340,10 @@ internal sealed partial class SpikeDatabase
     }
 
     public string GetModuleVariantConfigFieldValue(ProjectTreeNode node, string fieldId) =>
-        ModuleConfigFieldValue(GetModuleVariantSettings(node).ConfigJson, fieldId);
+        ModuleConfigFieldValue(
+            GetModuleVariantSettings(node).RecordClassId,
+            GetModuleVariantSettings(node).ConfigJson,
+            fieldId);
 
     private ProjectTreeNode UpdateModuleVariantMetadata(ProjectTreeNode node, Action<JsonObject> update, string name)
     {

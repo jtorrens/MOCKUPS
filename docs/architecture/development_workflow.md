@@ -135,6 +135,44 @@ The user confirms this contract before implementation. A Module is complete
 only when Design authoring, Production payload, timeline and Preview all use
 the same declarations.
 
+### Module contract planning
+
+Module development follows the same read-only planning and explicit semantic
+integration boundary as Component development:
+
+```text
+npm run scaffold:module -- --print-template
+npm run scaffold:module -- --spec <module-contract.json> --dry-run
+npm run scaffold:module -- --spec <module-contract.json> --materialize
+npm run scaffold:module -- --spec scaffolding/module-drafts/<class>.json --integrate
+npm run scaffold:module:generate
+npm run scaffold:module -- --spec scaffolding/modules/<class>.json --verify
+```
+
+The specification names the exact existing App and Project, Module identity,
+manifest contract/resolver/renderable routes, complete protected Default
+Variant, optional complete additional Variants, duration policy, dictionary
+fields, embedded Component slots, editor layout, assets and one exact child
+Component Runtime contract source. The source is a full Component Variant
+reference plus the ordered stable Runtime Input and collection ids expected by
+the Module. Planning reads the manifest and parity database without writing
+either, resolves that exact same-Project Component fixture and rejects drift in
+any declared id.
+
+Materialization stores the reviewed draft and creates non-overwriting semantic
+owner skeletons without registering the Module. Integration is allowed only
+after the contract, resolver, renderable, strict desktop config owner and
+focused test have replaced every semantic marker. It then adds the manifest
+route, current Module row and editor layout in one maintenance transaction and
+regenerates the Module registry, dictionary descriptors, config route and
+embedded-slot catalog.
+
+Files named `generatedModuleScaffold*` or
+`GeneratedModuleScaffold*` are derived only from integrated specifications and
+must not be edited manually. Verification re-derives the Runtime fixture from
+the exact child Component contract and checks the manifest, owners, generated
+routes, complete Variants, editor layout and committed parity database.
+
 ## Persisted changes
 
 Persistence changes use an explicit maintenance workflow. Update schema,

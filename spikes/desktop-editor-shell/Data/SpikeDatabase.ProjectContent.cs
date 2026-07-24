@@ -127,9 +127,14 @@ internal sealed partial class SpikeDatabase
     public void UpdateModuleField(string moduleId, string fieldId, string value)
     {
         using var connection = OpenConnection();
+        var module = _appModuleRepository.GetModule(connection, moduleId);
         if (fieldId == "module.appearanceMode"
             || fieldId.StartsWith("module.conversation.", StringComparison.Ordinal)
-            || fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal))
+            || fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal)
+            || GeneratedModuleScaffoldConfigRegistry.TryGetField(
+                module.RecordClassId,
+                fieldId,
+                out _))
         {
             UpdateModuleConfigField(connection, moduleId, fieldId, value);
             return;
@@ -155,12 +160,46 @@ internal sealed partial class SpikeDatabase
     public string GetModuleConfigFieldValue(string moduleId, string fieldId)
     {
         var settings = GetModuleSettings(moduleId);
-        return ModuleConfigFieldValue(settings.ConfigJson, fieldId);
+        return ModuleConfigFieldValue(settings.RecordClassId, settings.ConfigJson, fieldId);
     }
 
-    private static string ModuleConfigFieldValue(string configJson, string fieldId)
+    private static string ModuleConfigFieldValue(
+        string recordClassId,
+        string configJson,
+        string fieldId)
     {
         var config = ParseJsonObject(configJson);
+        if (GeneratedModuleScaffoldConfigRegistry.TryGetField(
+                recordClassId,
+                fieldId,
+                out var generated))
+        {
+            var node = JsonPath.Get(config, generated.JsonPath)
+                ?? throw new InvalidOperationException(
+                    $"Module config field '{fieldId}' is missing '{string.Join(".", generated.JsonPath)}'.");
+            RuntimeInputValueKindContract.ValidateValue(
+                generated.ValueKind,
+                node,
+                $"Module config field '{fieldId}'");
+            return generated.ValueKind switch
+            {
+                ValueKind.Boolean => BooleanText.Format(node.GetValue<bool>()),
+                ValueKind.Integer or ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
+                    node.ToJsonString(),
+                ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
+                    TypographyStyleValue.Parse(node).ToJsonString(),
+                ValueKind.AlignmentPlacement
+                    or ValueKind.Motion
+                    or ValueKind.MotionTiming
+                    or ValueKind.IconTokenList
+                    or ValueKind.IconSlots
+                    or ValueKind.ComponentInputBindings
+                    or ValueKind.ComponentVariantSlot
+                    or ValueKind.StructuredCollection
+                    or ValueKind.BehaviorTiming => node.ToJsonString(),
+                _ => node.GetValue<string>(),
+            };
+        }
         var conversation = fieldId.StartsWith("module.conversation.", StringComparison.Ordinal)
             ? JsonPath.RequiredObject(config, "conversation", "Module config")
             : null;
@@ -340,6 +379,40 @@ internal sealed partial class SpikeDatabase
         string fieldId,
         string value)
     {
+        if (GeneratedModuleScaffoldConfigRegistry.TryGetField(
+                recordClassId,
+                fieldId,
+                out var generated))
+        {
+            var next = RuntimeInputValueKindContract.ParseValue(
+                generated.ValueKind,
+                value,
+                $"Module field '{fieldId}' value");
+            if (!string.IsNullOrWhiteSpace(generated.ComponentVariantType))
+            {
+                if (generated.ValueKind == ValueKind.ComponentVariant)
+                {
+                    next = JsonValue.Create(ValidateComponentVariantReference(
+                        connection,
+                        projectId,
+                        generated.ComponentVariantType,
+                        next.GetValue<string>()))!;
+                }
+                else if (generated.ValueKind == ValueKind.ComponentVariantSlot)
+                {
+                    var slot = next.AsObject();
+                    var owner = $"Module field '{fieldId}'";
+                    slot["variantReference"] = ValidateComponentVariantReference(
+                        connection,
+                        projectId,
+                        generated.ComponentVariantType,
+                        ComponentVariantSlotDocumentContract.VariantReference(slot, owner));
+                }
+            }
+            JsonPath.Set(config, generated.JsonPath, next);
+            CurrentModuleConfigContract.Validate(recordClassId, config, "Edited Module config");
+            return;
+        }
         switch (fieldId)
         {
             case "module.appearanceMode":

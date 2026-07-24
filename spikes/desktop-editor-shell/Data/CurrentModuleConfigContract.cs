@@ -16,6 +16,13 @@ internal static class CurrentModuleConfigContract
                 LockScreenModuleConfigContract.Validate(config, context);
                 break;
             default:
+                if (GeneratedModuleScaffoldConfigRegistry.TryValidate(
+                        recordClassId,
+                        config,
+                        context))
+                {
+                    break;
+                }
                 throw new InvalidOperationException(
                     $"{context} has no current Module config contract for record class '{recordClassId}'.");
         }

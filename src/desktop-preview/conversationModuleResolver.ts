@@ -10,10 +10,11 @@ import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { naturalWriteOnFrame } from "./behaviorTiming.js";
+import type { ConversationModuleContract } from "./conversationModuleContract.js";
 
-type JsonRecord = Record<string, unknown>;
-
-export function resolveConversationModuleFrame(payload: DesignPreviewPayload): JsonRecord {
+export function resolveConversationModuleFrame(
+  payload: DesignPreviewPayload,
+): ConversationModuleContract {
   const preview = parseObject(payload.designPreviewJson);
   const instance = parseObject(payload.instanceJson);
   const animation = optionalObject(instance, "animation", "Preview instance envelope");

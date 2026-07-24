@@ -201,12 +201,14 @@
   "modules": {
     "module.core.chat": {
       "label": "Core Chat",
+      "contract": "./conversationModuleContract",
       "resolver": "./conversationModuleResolver",
       "renderable": "./conversationModuleRenderable",
       "embeds": ["avatar", "bubble", "keyboard", "iconRow", "navigation_bar", "status_bar", "textInputBar"]
     },
     "module.core.lockScreen": {
       "label": "Lock Screen",
+      "contract": "./lockScreenModuleContract",
       "resolver": "./lockScreenModuleResolver",
       "renderable": "./lockScreenModuleRenderable",
       "embeds": ["componentStack", "navigation_bar", "status_bar"]

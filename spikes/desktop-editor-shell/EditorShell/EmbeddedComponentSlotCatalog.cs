@@ -280,7 +280,7 @@ internal static class EmbeddedComponentSlotCatalog
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)
     {
-        foreach (var candidate in Slots)
+        foreach (var candidate in All())
         {
             if (!candidate.FieldId.Equals(fieldId, StringComparison.Ordinal))
             {
@@ -297,7 +297,7 @@ internal static class EmbeddedComponentSlotCatalog
 
     public static IReadOnlyList<EmbeddedComponentSlotDefinition> All()
     {
-        return Slots;
+        return [.. Slots, .. GeneratedModuleScaffoldEmbeddedSlots.All];
     }
 
     public static EmbeddedComponentSlotDefinition Get(string fieldId)

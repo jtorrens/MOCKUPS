@@ -25,6 +25,10 @@ It includes:
 - Component scaffolding contract, collision, no-overwrite draft
   materialization, semantic integration transaction, deterministic generated
   routes, persisted-spec adoption and integrated-owner verification tests;
+- Module scaffolding read-only planning, exact child Runtime-contract
+  derivation, duration-policy validation, non-overwriting semantic
+  materialization, transactional integration and deterministic generated
+  registry/dictionary/config/slot verification;
 - macOS display-aware launcher ownership and command tests;
 - Preview and desktop animation tests;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,

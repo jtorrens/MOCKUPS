@@ -223,9 +223,7 @@ internal sealed class RecordClassFieldValueService
             "module.metadata" => settings.MetadataJson,
             "module.appearanceMode" =>
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
-            _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
-                _database.GetModuleConfigFieldValue(moduleId, fieldId),
-            _ when fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal) =>
+            _ when fieldId.StartsWith("module.", StringComparison.Ordinal) =>
                 _database.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
         };
@@ -240,9 +238,7 @@ internal sealed class RecordClassFieldValueService
             "module.sortOrder" => settings.SortOrder.ToString(),
             "module.metadata" => settings.MetadataJson,
             "module.appearanceMode" => _database.GetModuleVariantConfigFieldValue(node, fieldId),
-            _ when fieldId.StartsWith("module.conversation.", StringComparison.Ordinal) =>
-                _database.GetModuleVariantConfigFieldValue(node, fieldId),
-            _ when fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal) =>
+            _ when fieldId.StartsWith("module.", StringComparison.Ordinal) =>
                 _database.GetModuleVariantConfigFieldValue(node, fieldId),
             _ => throw new InvalidOperationException($"Unknown module variant field '{fieldId}'."),
         };

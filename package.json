@@ -31,6 +31,9 @@
     "scaffold:component": "tsx scripts/scaffoldComponent.ts",
     "scaffold:generate": "tsx scripts/generateIntegratedComponentScaffoldArtifacts.ts",
     "scaffold:verify": "tsx scripts/verifyIntegratedComponentScaffolds.ts",
+    "scaffold:module": "tsx scripts/scaffoldModule.ts",
+    "scaffold:module:generate": "tsx scripts/generateIntegratedModuleScaffoldArtifacts.ts",
+    "scaffold:module:verify": "tsx scripts/verifyIntegratedModuleScaffolds.ts",
     "app": "npm run desktop",
     "app:check": "npm run desktop:build",
     "app:build": "npm run desktop:build",
@@ -39,7 +42,7 @@
     "animation:test": "npm run animation:test:preview && npm run animation:test:desktop",
     "test:scaffolding": "tsx --test tests/scaffolding/*.test.ts",
     "test:tooling": "tsx --test tests/tooling/*.test.ts",
-    "test": "npm run desktop-preview:build && npm run typecheck && npm run desktop:build && npm run check:unused:desktop && npm run test:scaffolding && npm run scaffold:verify && npm run test:tooling && npm run animation:test && npm run check:architecture",
+    "test": "npm run desktop-preview:build && npm run typecheck && npm run desktop:build && npm run check:unused:desktop && npm run test:scaffolding && npm run scaffold:verify && npm run scaffold:module:verify && npm run test:tooling && npm run animation:test && npm run check:architecture",
     "test:cold": "dotnet clean spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj && npm test"
   },
   "dependencies": {

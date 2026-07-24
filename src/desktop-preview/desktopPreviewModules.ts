@@ -2,6 +2,7 @@ import manifest from "./desktopPreviewManifest.json" with { type: "json" };
 
 export interface DesktopPreviewModuleManifestEntry {
   label: string;
+  contract: string;
   resolver: string;
   renderable: string;
   embeds: readonly string[];

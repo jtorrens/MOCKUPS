@@ -19,6 +19,10 @@ import {
   expectedIntegratedComponentScaffoldArtifacts,
   loadIntegratedComponentScaffoldSpecs,
 } from "../src/development-scaffolding/componentScaffoldArtifacts.js";
+import {
+  expectedIntegratedModuleScaffoldArtifacts,
+  loadIntegratedModuleScaffoldSpecs,
+} from "../src/development-scaffolding/moduleScaffoldArtifacts.js";
 import { renderableNodeTypes } from "../src/visual/renderable/types.js";
 
 const root = process.cwd();
@@ -341,6 +345,17 @@ if (packageScripts["scaffold:generate"]
     "integrated Component scaffold artifacts must use one deterministic generator",
   );
 }
+if (packageScripts["scaffold:module"] !== "tsx scripts/scaffoldModule.ts"
+    || packageScripts["scaffold:module:generate"]
+      !== "tsx scripts/generateIntegratedModuleScaffoldArtifacts.ts"
+    || packageScripts["scaffold:module:verify"]
+      !== "tsx scripts/verifyIntegratedModuleScaffolds.ts"
+    || !(packageScripts.test ?? "").includes("npm run scaffold:module:verify")) {
+  addViolation(
+    "package.json",
+    "Module development scaffolding must expose planning, generation and full-gate verification",
+  );
+}
 for (const [scaffoldPath, requiredTerm] of [
   ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
   ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
@@ -374,6 +389,37 @@ for (const [generatedPath, expected] of
     addViolation(
       generatedPath,
       "generated Component scaffold artifact is stale or was edited manually",
+    );
+  }
+}
+for (const [scaffoldPath, requiredTerm] of [
+  ["src/development-scaffolding/moduleScaffold.ts", "readonly: true"],
+  ["src/development-scaffolding/moduleScaffold.ts", "contract-ready-for-owner-implementation"],
+  ["src/development-scaffolding/moduleScaffold.ts", "resolveModuleScaffoldSpecPath"],
+  ["src/development-scaffolding/moduleScaffoldWorkspace.ts", "MODULE_SCAFFOLD_SEMANTICS_REQUIRED"],
+  ["src/development-scaffolding/moduleScaffoldWorkspace.ts", "materialization will not overwrite"],
+  ["src/development-scaffolding/moduleScaffoldArtifacts.ts", "Do not edit manually"],
+  ["scripts/scaffoldModule.ts", '"dry-run": { type: "boolean"'],
+  ["scripts/scaffoldModule.ts", 'materialize: { type: "boolean"'],
+  ["scripts/scaffoldModule.ts", 'integrate: { type: "boolean"'],
+  ["scripts/scaffoldModule.ts", 'verify: { type: "boolean"'],
+  ["scripts/verifyIntegratedModuleScaffolds.ts", "verifyModuleScaffoldImplementation"],
+  ["tests/scaffolding/moduleScaffold.test.ts", "derives one exact child Runtime contract"],
+  ["docs/architecture/development_workflow.md", "Module contract planning"],
+] as const) {
+  assertContains(
+    scaffoldPath,
+    requiredTerm,
+    "Module scaffolding must keep planning read-only and semantic integration explicit",
+  );
+}
+const integratedModuleScaffoldSpecs = loadIntegratedModuleScaffoldSpecs(root);
+for (const [generatedPath, expected] of
+  expectedIntegratedModuleScaffoldArtifacts(integratedModuleScaffoldSpecs)) {
+  if (readText(generatedPath) !== expected) {
+    addViolation(
+      generatedPath,
+      "generated Module scaffold artifact is stale or was edited manually",
     );
   }
 }
@@ -3343,6 +3389,7 @@ const registryFiles = new Set([
   "src/desktop-preview/generatedComponentScaffoldRegistry.ts",
   "src/desktop-preview/designPreviewRenderableRegistry.ts",
   "src/desktop-preview/moduleRenderableRegistry.ts",
+  "src/desktop-preview/generatedModuleScaffoldRegistry.ts",
 ]);
 
 const sharedPreviewHelperFiles = new Set([
@@ -3427,7 +3474,7 @@ for (const [componentClass, entry] of manifestEntries) {
 }
 
 for (const [moduleClass, entry] of moduleManifestEntries) {
-  for (const kind of ["resolver", "renderable"] as const) {
+  for (const kind of ["contract", "resolver", "renderable"] as const) {
     const filePath = `src/desktop-preview/${entry[kind].replace(/^\.\//, "")}.ts`;
     if (!repositoryFileExists(filePath)) {
       addViolation(
@@ -4704,7 +4751,9 @@ for (const moduleClass of Object.keys(desktopPreviewModules)) {
     ...moduleManifestEntries.map(([owner, entry]) => ({
       kind: "Module",
       owner,
-      contract: currentModuleClassRows.some((row) =>
+      contract: repositoryFileExists(
+        `src/desktop-preview/${entry.contract.replace(/^\.\//, "")}.ts`,
+      ) && currentModuleClassRows.some((row) =>
         row.record_class_id === owner
         && row.config_json.trim().startsWith("{")
         && row.metadata_json.trim().startsWith("{")),
