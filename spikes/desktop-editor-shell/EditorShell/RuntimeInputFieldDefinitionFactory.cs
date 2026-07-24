@@ -14,7 +14,10 @@ internal static class RuntimeInputFieldDefinitionFactory
         var permitsEmpty = allowEmpty ?? input.AllowEmpty;
         var options = input.ValueKind switch
         {
-            ValueKind.RecordReference when input.TableId == "actors" => optionsDataSource.ActorOptions(projectId, permitsEmpty),
+            ValueKind.RecordReference => optionsDataSource.RecordReferenceOptions(
+                projectId,
+                input.TableId,
+                permitsEmpty),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),

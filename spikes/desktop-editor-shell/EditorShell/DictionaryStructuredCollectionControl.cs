@@ -230,6 +230,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
         var options = input.ValueKind switch
         {
+            ValueKind.RecordReference =>
+                _services.GetRecordReferenceOptions?.Invoke(input.TableId, input.AllowEmpty)
+                ?? throw new InvalidOperationException(
+                    $"Structured collection record reference '{input.Id}' has no options provider."),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 ComponentVariantOptions(input),
@@ -247,9 +251,15 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
+            RecordReference: input.ValueKind == ValueKind.RecordReference
+                ? new RecordReferenceDefinition(input.TableId)
+                : null,
             SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),
-            StructuredCollection: input.StructuredCollection);
+            StructuredCollection: input.StructuredCollection,
+            Unit: input.Unit,
+            Animation: input.Animation,
+            BehaviorTiming: input.BehaviorTiming);
         var overrides = componentItems is null
             ? null
             : item[componentItems.OverridesJsonKey] as JsonObject;

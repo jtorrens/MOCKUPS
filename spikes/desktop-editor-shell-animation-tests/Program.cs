@@ -87,6 +87,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
+    ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
@@ -2206,6 +2207,130 @@ static void PreviewShellVisualTreeIsResponsive()
     static void LayoutCheck(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);
+    }
+}
+
+static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-list-editor-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        session.Dispatch(() =>
+        {
+            var window = new MainWindow(temporary);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
+                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window)
+                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+            var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
+            var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
+            var authoringHost = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
+            var contextHost = Required(window.FindControl<StackPanel>("EditorContextStripHost"));
+
+            Control SelectComponent(string componentId)
+            {
+                var component = treeRoots
+                    .SelectMany(DescendantsAndSelf)
+                    .Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass && node.Id == componentId);
+                try
+                {
+                    True((bool)(selectNode.Invoke(window, [component.Id]) ?? false));
+                }
+                catch (TargetInvocationException error) when (error.InnerException is not null)
+                {
+                    throw error.InnerException;
+                }
+                Dispatcher.UIThread.RunJobs();
+                True(authoringTab.IsVisible);
+                tabs.SelectedItem = authoringTab;
+                Dispatcher.UIThread.RunJobs();
+                return Required(authoringHost.Content as Control);
+            }
+
+            static IReadOnlyList<FieldOption> VariantOptions(Control context)
+            {
+                return context.GetVisualDescendants()
+                    .OfType<EditorInstantComboBox>()
+                    .Select((combo) => combo.ItemsSource?.ToList() ?? [])
+                    .Single((options) => options.Any((option) => option.Value.Contains("::variant::", StringComparison.Ordinal)));
+            }
+
+            static DictionaryFieldControl RequiredField(Control root, string fieldId)
+            {
+                return root.GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .First((field) => field.FieldId == fieldId);
+            }
+
+            var listItemSurface = SelectComponent("component_project_foqn_s2_list_item");
+            SequenceEqual(
+                ["Default", "Calls", "Chats"],
+                VariantOptions(contextHost).Select((option) => option.Label));
+            var selectedSet = RequiredField(listItemSurface, "selectedSetId");
+            Equal("set_a", selectedSet.Value);
+            var selectedSetOptions = selectedSet.GetVisualDescendants()
+                .OfType<EditorInstantComboBox>()
+                .Single()
+                .ItemsSource?
+                .ToList()
+                ?? throw new InvalidOperationException("List Item content-set selector has no options.");
+            SequenceEqual(["set_a", "set_b", "set_c"], selectedSetOptions.Select((option) => option.Value));
+            SequenceEqual(
+                ["A · Answered call", "B · Missed call", "C · Chat"],
+                selectedSetOptions.Select((option) => option.Label));
+            Equal("normal", RequiredField(listItemSurface, "state").Value);
+            True(listItemSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == "Content sets"));
+
+            var listSurface = SelectComponent("component_project_foqn_s2_list");
+            SequenceEqual(
+                ["Default", "Calls", "Chats"],
+                VariantOptions(contextHost).Select((option) => option.Label));
+            var listSelectedSets = listSurface.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Where((field) => field.FieldId == "selectedSetId")
+                .ToList();
+            True(listSelectedSets.Count >= 5);
+            True(listSelectedSets.All((field) =>
+            {
+                var options = field.GetVisualDescendants()
+                    .OfType<EditorInstantComboBox>()
+                    .Single()
+                    .ItemsSource?
+                    .ToList()
+                    ?? [];
+                return options.Count > 0 && options.Any((option) => option.Value == field.Value);
+            }));
+            True(listSurface.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Count((field) => field.FieldId == "state") >= listSelectedSets.Count);
+            True(listSurface.GetVisualDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Count((field) => field.FieldId == "contentSets") >= listSelectedSets.Count);
+
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
     }
 }
 

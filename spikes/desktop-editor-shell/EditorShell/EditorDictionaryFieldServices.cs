@@ -11,6 +11,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly DictionaryFieldContextDataSource _contextData;
     private readonly EditorPathBrowser _pathBrowser;
     private readonly EditorDomainDialogService _domainDialogs;
+    private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly Func<string?> _selectedThemeId;
     private readonly Action<string, string> _setRuntimeTestValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
@@ -25,6 +26,7 @@ internal sealed class EditorDictionaryFieldServices
         _contextData = new DictionaryFieldContextDataSource(database);
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
+        _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
         _selectedThemeId = selectedThemeId;
         _setRuntimeTestValue = setRuntimeTestValue;
     }
@@ -90,6 +92,8 @@ internal sealed class EditorDictionaryFieldServices
             ResolveImagePath: _pathBrowser.ResolveImagePath,
             GetFieldValue: getFieldValue,
             GetPaletteColorOptions: () => _contextData.PaletteColorOptions(projectId),
+            GetRecordReferenceOptions: (tableId, includeNone) =>
+                _runtimeInputOptions.RecordReferenceOptions(projectId, tableId, includeNone),
             GetComponentVariantOptions: (componentType) => _contextData.ComponentVariantOptions(projectId, componentType),
             GetComponentVariantRuntimeInputs: _contextData.ComponentVariantRuntimeInputBindings,
             GetComponentVariantRuntimeValues: _contextData.ComponentVariantRuntimeValues,

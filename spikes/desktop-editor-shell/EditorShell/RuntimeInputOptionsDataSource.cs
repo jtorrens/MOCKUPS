@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 
@@ -18,6 +19,19 @@ internal sealed class RuntimeInputOptionsDataSource
     public IReadOnlyList<FieldOption> ActorOptions(string projectId, bool includeNone)
     {
         return _actorDataSource.Options(projectId, includeNone);
+    }
+
+    public IReadOnlyList<FieldOption> RecordReferenceOptions(
+        string projectId,
+        string tableId,
+        bool includeNone)
+    {
+        return tableId switch
+        {
+            "actors" => ActorOptions(projectId, includeNone),
+            _ => throw new InvalidOperationException(
+                $"Runtime record reference table '{tableId}' has no options owner."),
+        };
     }
 
     public IReadOnlyList<FieldOption> ComponentVariantOptions(

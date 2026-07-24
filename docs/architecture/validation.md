@@ -23,10 +23,14 @@ It includes:
 - desktop restore/build preparation before compiler-backed analysis;
 - unused desktop-code analysis;
 - read-only Component scaffolding contract and collision tests;
+- macOS display-aware launcher ownership and command tests;
 - Preview and desktop animation tests;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;
+- headless Avalonia List Item/List authoring surfaces, including Variant
+  selection, dynamic content-set options, runtime state and nested Actor
+  references;
 - architecture enforcement;
 - desktop application build.
 

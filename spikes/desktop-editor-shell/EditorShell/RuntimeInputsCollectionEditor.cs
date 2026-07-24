@@ -533,8 +533,19 @@ internal sealed class RuntimeInputsCollectionEditor
         ComponentInputDefinition input)
     {
         var value = DesignPreviewTestValues.Value(preview, input);
+        var definition = RuntimeInputFieldDefinitionFactory.Create(
+            _runtimeInputOptions,
+            owner.Node,
+            input);
+        if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
+        {
+            definition = definition with
+            {
+                Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, preview),
+            };
+        }
         var control = new DictionaryFieldControl(
-            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input), value),
+            new FieldValue(definition, value),
             _dictionaryServices.ForNode(
                 owner.Node,
                 (_) => "",

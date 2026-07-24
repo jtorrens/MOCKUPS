@@ -118,6 +118,31 @@ the migration routine from the delivered revision.
 Normal startup remains read-only. Do not add compatibility parsing, alternate
 field names or fallback defaults to ease a migration.
 
+## macOS display-aware development launch
+
+Avalonia.Native registers its render timer against the active macOS displays
+before it creates the compositor. A process started remotely while every
+display is asleep can therefore fail before the first window with CoreVideo
+error `-6661`.
+
+Display wake policy belongs to development tooling, not application startup.
+The macOS launcher declares user activity and prevents display sleep for ten
+seconds while it starts the requested process. The assertion then expires; the
+editor never keeps the display awake for the rest of the session.
+
+Use:
+
+```text
+npm run desktop:mac
+npm run desktop:open:mac
+npm run desktop:launch:mac
+```
+
+`desktop:mac` runs the development build. `desktop:open:mac` opens the existing
+packaged bundle and fails if it is absent. `desktop:launch:mac` packages the
+current revision first. Automated macOS UI review uses one of these launchers;
+headless checks continue to use the Avalonia headless platform.
+
 ## Safe implementation sequence
 
 For each coherent phase:

@@ -14,6 +14,7 @@ internal sealed record DictionaryFieldServices(
     Func<string, string?>? ResolveImagePath = null,
     Func<string, string>? GetFieldValue = null,
     Func<IReadOnlyList<FieldOption>>? GetPaletteColorOptions = null,
+    Func<string, bool, IReadOnlyList<FieldOption>>? GetRecordReferenceOptions = null,
     Func<string, IReadOnlyList<FieldOption>>? GetComponentVariantOptions = null,
     Func<string, IReadOnlyList<ComponentInputBindingDefinition>>? GetComponentVariantRuntimeInputs = null,
     Func<string, JsonObject>? GetComponentVariantRuntimeValues = null,
