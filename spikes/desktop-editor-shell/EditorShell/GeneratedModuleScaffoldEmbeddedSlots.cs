@@ -5,5 +5,11 @@ internal static class GeneratedModuleScaffoldEmbeddedSlots
 {
     public static EmbeddedComponentSlotDefinition[] All { get; } =
     [
+        new(
+            "module.core.chatList.list",
+            "list",
+            "List",
+            "component.list",
+            ["chatList", "listSlot"]),
     ];
 }

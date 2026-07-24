@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the reusable Screen that presents the Chat App conversation list.",
+    "visualBoundary": "Place one exact List boundary within the current Screen and clip the composed result to that Screen.",
+    "runtimeBehavior": "Expose the List Chats Variant Runtime Inputs and item collection without renaming, reducing or duplicating them.",
+    "forwarding": "Promote the exact List input ids itemWidth and itemHeight plus the exact items collection into the Module Runtime contract.",
+    "temporalOwnership": "The Screen owns its duration and transition; List owns collection presence and reflow; List Item owns item Motion and internal state.",
+    "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
+  },
+  "module": {
+    "moduleId": "module_project_foqn_s2_chat_list",
+    "appId": "app_core_chat",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "module.core.chatList",
+    "name": "Chat List",
+    "notes": "Chat App Screen composed from the exact List Chats Variant Runtime contract.",
+    "sortOrder": 1
+  },
+  "manifest": {
+    "label": "Chat List",
+    "contract": "./chatListModuleContract",
+    "resolver": "./chatListModuleResolver",
+    "renderable": "./chatListModuleRenderable",
+    "embeds": [
+      "list"
+    ]
+  },
+  "owners": {
+    "contractExport": "ChatListModuleContract",
+    "resolverExport": "resolveChatListModule",
+    "renderableExport": "chatListModuleToRenderable",
+    "focusedTest": "tests/animation/chatListModule.test.ts"
+  },
+  "config": {
+    "appearanceMode": "inherit",
+    "chatList": {
+      "listSlot": {
+        "variantReference": "component_project_foqn_s2_list::variant::chats",
+        "overrides": {}
+      },
+      "horizontalAlignment": "center",
+      "topInsetToken": "theme.spacing.none",
+      "runtimeContract": {
+        "mode": "exact",
+        "componentType": "list",
+        "variantReference": "component_project_foqn_s2_list::variant::chats",
+        "inputIds": [
+          "itemWidth",
+          "itemHeight"
+        ],
+        "collectionIds": [
+          "items"
+        ]
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "appearanceMode": "inherit",
+      "chatList": {
+        "listSlot": {
+          "variantReference": "component_project_foqn_s2_list::variant::chats",
+          "overrides": {}
+        },
+        "horizontalAlignment": "center",
+        "topInsetToken": "theme.spacing.none",
+        "runtimeContract": {
+          "mode": "exact",
+          "componentType": "list",
+          "variantReference": "component_project_foqn_s2_list::variant::chats",
+          "inputIds": [
+            "itemWidth",
+            "itemHeight"
+          ],
+          "collectionIds": [
+            "items"
+          ]
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "runtimeContract": {
+    "source": {
+      "componentType": "list",
+      "variantReference": "component_project_foqn_s2_list::variant::chats",
+      "inputIds": [
+        "itemWidth",
+        "itemHeight"
+      ],
+      "collectionIds": [
+        "items"
+      ]
+    },
+    "durationPolicy": "calculated",
+    "defaultDurationFrames": null
+  },
+  "metadata": {
+    "note": "Chat List is owned by the Chat App and derives its Runtime contract from List Chats."
+  },
+  "dictionaryFields": [
+    {
+      "id": "module.core.chatList.list",
+      "label": "List",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "listSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list::variant::chats\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "list",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "list",
+        "label": "List",
+        "recordClassId": "component.list"
+      }
+    },
+    {
+      "id": "module.core.chatList.horizontalAlignment",
+      "label": "Horizontal alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "chatList",
+        "horizontalAlignment"
+      ],
+      "defaultValue": "center",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chatList.topInset",
+      "label": "Top inset",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "chatList",
+        "topInsetToken"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "ComponentClassFieldCatalog.SpacingTokenOptions",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": null
+    }
+  ],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.recordClassId",
+                "order": 20,
+                "visible": false
+              },
+              {
+                "id": "module.sortOrder",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.appearanceMode",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.metadata",
+                "order": 60,
+                "visible": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "content",
+        "label": "Chat List",
+        "subtitle": "Exact List boundary and placement",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "list",
+            "label": "List",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.chatList.list",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.chatList.horizontalAlignment",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.chatList.topInset",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

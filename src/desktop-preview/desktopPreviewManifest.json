@@ -212,6 +212,13 @@
       "resolver": "./lockScreenModuleResolver",
       "renderable": "./lockScreenModuleRenderable",
       "embeds": ["componentStack", "navigation_bar", "status_bar"]
+    },
+    "module.core.chatList": {
+      "label": "Chat List",
+      "contract": "./chatListModuleContract",
+      "resolver": "./chatListModuleResolver",
+      "renderable": "./chatListModuleRenderable",
+      "embeds": ["list"]
     }
   }
 }

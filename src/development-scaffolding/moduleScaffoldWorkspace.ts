@@ -153,7 +153,7 @@ export function integrateModuleScaffold(
         plan.editorLayout.row.record_class_id,
         JSON.stringify(plan.editorLayout.row.layout_json),
       );
-      writeFileSync(manifestTarget, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+      writeFileSync(manifestTarget, formatPreviewManifest(manifest), "utf8");
       mkdirSync(path.dirname(integrated), { recursive: true });
       writeFileSync(integrated, `${JSON.stringify(spec, null, 2)}\n`, {
         encoding: "utf8",
@@ -435,6 +435,16 @@ function canonicalJson(value: unknown): string {
   const record = value as Record<string, unknown>;
   return `{${Object.keys(record).sort().map((key) =>
     `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(",")}}`;
+}
+
+function formatPreviewManifest(manifest: JsonObject) {
+  const expanded = JSON.stringify(manifest, null, 2);
+  const compactStringArrays = expanded.replace(
+    /\[\n((?:\s+"(?:[^"\\]|\\.)*"(?:,)?\n)+)\s*\]/g,
+    (_match, entries: string) =>
+      `[${entries.trim().split("\n").map((entry) => entry.trim()).join(" ")}]`,
+  );
+  return `${compactStringArrays}\n`;
 }
 
 function pascalCase(value: string) {

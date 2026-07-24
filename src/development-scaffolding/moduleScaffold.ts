@@ -28,7 +28,6 @@ export interface ModuleScaffoldField {
   runtimeInputComponentVariantFieldId: string;
   runtimeCollectionComponentVariantFieldId: string;
   componentInputBindingsSource: string;
-  structuredCollectionSource: string;
   unit: string;
   embeddedSlot: {
     componentType: string;
@@ -967,7 +966,6 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     "runtimeInputComponentVariantFieldId",
     "runtimeCollectionComponentVariantFieldId",
     "componentInputBindingsSource",
-    "structuredCollectionSource",
     "unit",
     "embeddedSlot",
   ], owner);
@@ -1037,11 +1035,6 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     componentInputBindingsSource: requiredString(
       field.componentInputBindingsSource,
       `${owner} componentInputBindingsSource`,
-      true,
-    ),
-    structuredCollectionSource: requiredString(
-      field.structuredCollectionSource,
-      `${owner} structuredCollectionSource`,
       true,
     ),
     unit: requiredString(field.unit, `${owner} unit`, true),

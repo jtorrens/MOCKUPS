@@ -59,12 +59,15 @@ internal sealed class DesignPreviewPayloadDataSource
     private readonly SpikeDatabase _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ActorPreviewDataSource _actorDataSource;
+    private readonly NestedRuntimeRecordReferenceResolver _nestedRuntimeRecordReferenceResolver;
 
     public DesignPreviewPayloadDataSource(SpikeDatabase database)
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         _actorDataSource = new ActorPreviewDataSource(database);
+        _nestedRuntimeRecordReferenceResolver =
+            new NestedRuntimeRecordReferenceResolver(_actorDataSource);
     }
 
     public DesignPreviewThemeContext? LoadThemeContext(
@@ -178,6 +181,14 @@ internal sealed class DesignPreviewPayloadDataSource
         IReadOnlyDictionary<string, string> paletteColors)
     {
         return ActorPreviewInputFactory.Create(_actorDataSource, actorId, themeMode, paletteColors);
+    }
+
+    public void ResolveNestedRuntimeRecordReferences(
+        JsonNode? runtime,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        _nestedRuntimeRecordReferenceResolver.Resolve(runtime, themeMode, paletteColors);
     }
 
     private DesignPreviewComponentSource ComponentSource(SpikeDatabase.ComponentClassSettings settings)

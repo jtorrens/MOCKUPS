@@ -224,7 +224,6 @@ function validSpec(): ModuleScaffoldSpec {
         runtimeInputComponentVariantFieldId: "",
         runtimeCollectionComponentVariantFieldId: "",
         componentInputBindingsSource: "",
-        structuredCollectionSource: "",
         unit: "",
         embeddedSlot: {
           componentType: "list",

@@ -200,6 +200,10 @@ internal static class DesignPreviewPayloadFactory
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()
             : dataSource.CreateActorPreview(actorId, effectiveThemeMode, theme.PaletteColors);
+        dataSource.ResolveNestedRuntimeRecordReferences(
+            runtimePreview,
+            effectiveThemeMode,
+            theme.PaletteColors);
         var runtimePreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "module",

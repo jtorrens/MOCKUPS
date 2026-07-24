@@ -18,6 +18,24 @@ internal static class GeneratedModuleScaffoldConfigRegistry
     private static readonly Dictionary<string, GeneratedModuleConfigFieldDescriptor> Fields =
         new(StringComparer.Ordinal)
     {
+        ["module.core.chatList.horizontalAlignment"] = new(
+            "module.core.chatList",
+            "module.core.chatList.horizontalAlignment",
+            ValueKind.OptionToken,
+            ["chatList", "horizontalAlignment"],
+            ""),
+        ["module.core.chatList.list"] = new(
+            "module.core.chatList",
+            "module.core.chatList.list",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "listSlot"],
+            "list"),
+        ["module.core.chatList.topInset"] = new(
+            "module.core.chatList",
+            "module.core.chatList.topInset",
+            ValueKind.ThemeToken,
+            ["chatList", "topInsetToken"],
+            ""),
     };
 
     public static bool TryValidate(
@@ -27,6 +45,9 @@ internal static class GeneratedModuleScaffoldConfigRegistry
     {
         switch (recordClassId)
         {
+            case ChatListModuleConfigContract.RecordClassId:
+                ChatListModuleConfigContract.Validate(config, context);
+                return true;
             default:
                 return false;
         }
