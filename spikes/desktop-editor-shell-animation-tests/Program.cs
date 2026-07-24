@@ -2436,11 +2436,21 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             True(!listRuntimeLabels.Contains("Diana"));
             True(!listRuntimeLabels.Contains("Missed call"));
 
-            var itemOneButton = listSurface.GetVisualDescendants()
+            Button ItemButton(string label) => listSurface.GetVisualDescendants()
                 .OfType<Button>()
                 .Single((button) => button.GetVisualDescendants()
                     .OfType<TextBlock>()
-                    .Any((text) => text.Text == "Item 1"));
+                    .Any((text) => text.Text == label));
+
+            foreach (var itemLabel in new[] { "Item 2", "Item 3", "Item 1" })
+            {
+                ItemButton(itemLabel).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                Equal("1", RequiredField(listSurface, "activeSet").Value);
+                Equal("normal", RequiredField(listSurface, "state").Value);
+            }
+
+            var itemOneButton = ItemButton("Item 1");
             itemOneButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             Equal("true", RequiredField(listSurface, "present").Value);

@@ -167,6 +167,7 @@ internal sealed class EditorInternalNavigation : Grid
     private readonly Border _contentHost;
     private readonly Dictionary<string, Button> _buttons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _entries = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Control> _sectionContents = new(StringComparer.Ordinal);
     private string _selectedId;
     private bool _isCompact;
     private double _navigationWidth;
@@ -354,25 +355,32 @@ internal sealed class EditorInternalNavigation : Grid
         if (section is null) return;
         _selectedId = section.Id;
         _content.Content = null;
+        if (!_sectionContents.TryGetValue(section.Id, out var selectedContent))
+        {
+            selectedContent = CreateSelectedContent(section);
+            _sectionContents[section.Id] = selectedContent;
+        }
+        _content.Content = selectedContent;
+        RefreshVisuals();
+        if (notify) _selectionChanged?.Invoke(section.Id);
+    }
+
+    private static Control CreateSelectedContent(EditorInternalNavigationSection section)
+    {
         var sectionContent = EditorSubcardLayoutHost.ComposeSectionContent(section);
         if (section.Trailing is null)
         {
-            _content.Content = sectionContent;
+            return sectionContent;
         }
-        else
+        var content = new StackPanel { Spacing = EditorUiDensity.Card(8) };
+        var actions = new Border
         {
-            var content = new StackPanel { Spacing = EditorUiDensity.Card(8) };
-            var actions = new Border
-            {
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Child = section.Trailing,
-            };
-            content.Children.Add(actions);
-            content.Children.Add(sectionContent);
-            _content.Content = content;
-        }
-        RefreshVisuals();
-        if (notify) _selectionChanged?.Invoke(section.Id);
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Child = section.Trailing,
+        };
+        content.Children.Add(actions);
+        content.Children.Add(sectionContent);
+        return content;
     }
 
     private void ApplyResponsiveLayout(double width, Border contentHost)
