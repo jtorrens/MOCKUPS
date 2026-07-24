@@ -2220,7 +2220,7 @@ static void PreviewShellVisualTreeIsResponsive()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
             var window = new MainWindow(temporary);
@@ -2402,7 +2402,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
             var window = new MainWindow(temporary)
@@ -2909,7 +2909,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
             var window = new MainWindow(temporary)
@@ -8083,7 +8083,7 @@ static void PlaybackStatePublishesChanges()
 
 static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
 {
-    using var session = HeadlessUnitTestSession.StartNew(typeof(App));
+    using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
     session.Dispatch(() =>
     {
         var playbackState = new PreviewPlaybackState();
@@ -9697,4 +9697,15 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
+}
+
+internal static class HeadlessTestApplication
+{
+    public static AppBuilder BuildAvaloniaApp() =>
+        AppBuilder.Configure<App>()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions
+            {
+                UseHeadlessDrawing = true,
+            })
+            .WithInterFont();
 }

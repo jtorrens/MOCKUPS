@@ -7313,7 +7313,9 @@ for (const [relativePath, responsivePreviewTerm] of [
   ["spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs", "PreviewPanelLayoutPolicy.ClampRestoredColumns("],
   ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellLayoutIsResponsive"],
   ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellVisualTreeIsResponsive"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "HeadlessUnitTestSession.StartNew(typeof(App))"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication))"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "AppBuilder.Configure<App>()"],
+  ["spikes/desktop-editor-shell-animation-tests/Program.cs", ".UseHeadless(new AvaloniaHeadlessPlatformOptions"],
   ["spikes/desktop-editor-shell-animation-tests/Mockups.DesktopEditorShell.AnimationTests.csproj", 'PackageReference Include="Avalonia.Headless"'],
   ["docs/architecture/ux_ui.md", "1040 px minimum"],
 ] as const) {
