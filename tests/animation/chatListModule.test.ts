@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 import { chatListModuleToRenderable } from "../../src/desktop-preview/chatListModuleRenderable.js";
 import { resolveChatListModule } from "../../src/desktop-preview/chatListModuleResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
+import type { RenderableNode } from "../../src/visual/renderable/types.js";
 
 type ModuleRow = {
   app_id: string;
@@ -70,15 +71,65 @@ test("Chat List belongs to the Chat App and exposes the exact List Runtime contr
 test("Chat List composes the exact List boundary at the configured Screen placement", () => {
   const source = fixture();
   const node = chatListModuleToRenderable(source);
-  const list = node.children?.find((child) => child.id === "component.list");
+  const stack = findNode(node, "componentStack");
+  const top = findNode(node, "top");
+  const listSlot = findNode(node, "list");
+  const bottom = findNode(node, "bottom");
+  const list = findNode(node, "component.list");
+  const status = findNode(node, "status_bar");
+  const navigation = findNode(node, "navigation_bar");
 
   assert.equal(node.id, "module.core.chatList");
   assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
+  assert.equal(node.children?.[0]?.id, "module.core.chatList.background");
+  assert.ok(stack?.box);
+  assert.ok(status?.box);
+  assert.ok(navigation?.box);
+  assert.ok(top?.box);
+  assert.ok(listSlot?.box);
+  assert.ok(bottom?.box);
   assert.ok(list?.box);
-  assert.equal(list.box.x, 0);
-  assert.equal(list.box.y, 0);
-  assert.equal(list.box.width, 360);
-  assert.ok((list.children?.length ?? 0) > 0);
+  assert.equal(top.box.y, stack.box.y);
+  assert.equal(listSlot.box.y, top.box.y + top.box.height);
+  assert.equal(bottom.box.y, listSlot.box.y + listSlot.box.height);
+  assert.equal(bottom.box.y + bottom.box.height, stack.box.y + stack.box.height);
+  assert.deepEqual(list.box, listSlot.box);
+  assert.equal(list.style?.overflow, "hidden");
+  assert.ok((list.children?.[1]?.children?.length ?? 0) > 0);
+});
+
+test("Chat List wallpaper toggle either uses the exact App wallpaper or Theme background", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson) as {
+    chatList: { wallpaperEnabled: boolean };
+  };
+  config.chatList.wallpaperEnabled = false;
+  source.configJson = JSON.stringify(config);
+  assert.equal(
+    chatListModuleToRenderable(source).children?.[0]?.id,
+    "module.core.chatList.background",
+  );
+
+  config.chatList.wallpaperEnabled = true;
+  source.configJson = JSON.stringify(config);
+  source.appConfigJson = JSON.stringify({
+    wallpaper: {
+      opacity: 1,
+      kind: "solid",
+      images: {
+        light: { filePath: "" },
+        dark: { filePath: "" },
+      },
+    },
+    modes: {
+      light: { wallpaper: { color: "gray_100" } },
+      dark: { wallpaper: { color: "gray_000" } },
+    },
+  });
+  assert.match(
+    chatListModuleToRenderable(source).children?.[0]?.id ?? "",
+    /^wallpaper\./,
+  );
 });
 
 test("Chat List rejects a different Component type and a reduced Runtime contract", () => {
@@ -105,3 +156,12 @@ test("Chat List rejects a different Component type and a reduced Runtime contrac
     /Runtime contract.inputs must be exactly itemWidth, itemHeight/,
   );
 });
+
+function findNode(root: RenderableNode, id: string): RenderableNode | undefined {
+  if (root.id === id) return root;
+  for (const child of root.children ?? []) {
+    const match = findNode(child, id);
+    if (match) return match;
+  }
+  return undefined;
+}

@@ -18,16 +18,40 @@ internal static class ChatListModuleConfigContract
         var owner = $"{context}.chatList";
         RequireExactKeys(
             chatList,
-            ["listSlot", "horizontalAlignment", "topInsetToken", "runtimeContract"],
+            [
+                "wallpaperEnabled",
+                "stackSlot",
+                "topIconBarSlot",
+                "topIconBarInputs",
+                "listSlot",
+                "bottomIconBarSlot",
+                "bottomIconBarInputs",
+                "statusBarSlot",
+                "navigationBarSlot",
+                "runtimeContract",
+            ],
             owner);
-        ComponentVariantSlotDocumentContract.Validate(
-            JsonPath.RequiredObject(chatList, "listSlot", owner),
-            $"{owner}.listSlot");
-        RequireOneOf(
-            JsonPath.RequiredString(chatList, "horizontalAlignment", owner),
-            ["left", "center", "right"],
-            $"{owner}.horizontalAlignment");
-        JsonPath.RequiredString(chatList, "topInsetToken", owner);
+        JsonPath.RequiredBoolean(chatList, "wallpaperEnabled", owner);
+        foreach (var slotKey in new[]
+        {
+            "stackSlot",
+            "topIconBarSlot",
+            "listSlot",
+            "bottomIconBarSlot",
+            "statusBarSlot",
+            "navigationBarSlot",
+        })
+        {
+            ComponentVariantSlotDocumentContract.Validate(
+                JsonPath.RequiredObject(chatList, slotKey, owner),
+                $"{owner}.{slotKey}");
+        }
+        ValidateIconBarInputs(
+            JsonPath.RequiredObject(chatList, "topIconBarInputs", owner),
+            $"{owner}.topIconBarInputs");
+        ValidateIconBarInputs(
+            JsonPath.RequiredObject(chatList, "bottomIconBarInputs", owner),
+            $"{owner}.bottomIconBarInputs");
 
         var runtime = JsonPath.RequiredObject(chatList, "runtimeContract", owner);
         var runtimeOwner = $"{owner}.runtimeContract";
@@ -57,6 +81,16 @@ internal static class ChatListModuleConfigContract
             JsonPath.RequiredArray(runtime, "collectionIds", runtimeOwner),
             ["items"],
             $"{runtimeOwner}.collectionIds");
+    }
+
+    private static void ValidateIconBarInputs(JsonObject inputs, string owner)
+    {
+        RequireExactKeys(inputs, ["state", "size"], owner);
+        RequireOneOf(
+            JsonPath.RequiredString(inputs, "state", owner),
+            ["idle", "active"],
+            $"{owner}.state");
+        JsonPath.RequiredString(inputs, "size", owner);
     }
 
     private static void RequireExactKeys(

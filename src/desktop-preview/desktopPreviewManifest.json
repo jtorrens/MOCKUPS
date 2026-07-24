@@ -90,7 +90,7 @@
       "contract": "./listComponentContract",
       "resolver": "./listComponentResolver",
       "renderable": "./listComponentRenderable",
-      "embeds": ["collectionStack", "listItem"]
+      "embeds": ["collectionStack", "listItem", "surface"]
     },
     "codeIndicator": {
       "category": "atom",
@@ -218,7 +218,7 @@
       "contract": "./chatListModuleContract",
       "resolver": "./chatListModuleResolver",
       "renderable": "./chatListModuleRenderable",
-      "embeds": ["list"]
+      "embeds": ["componentStack", "iconBar", "list", "status_bar", "navigation_bar"]
     }
   }
 }

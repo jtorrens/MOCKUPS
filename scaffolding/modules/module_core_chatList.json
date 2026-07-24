@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "intent": {
     "responsibility": "Own the reusable Screen that presents the Chat App conversation list.",
-    "visualBoundary": "Place one exact List boundary within the current Screen and clip the composed result to that Screen.",
+    "visualBoundary": "Compose Status Bar and Navigation Bar around one fill Component Stack whose top and bottom Icon Bars bound a central List viewport.",
     "runtimeBehavior": "Expose the List Chats Variant Runtime Inputs and item collection without renaming, reducing or duplicating them.",
-    "forwarding": "Promote the exact List input ids itemWidth and itemHeight plus the exact items collection into the Module Runtime contract.",
+    "forwarding": "Promote the exact List input ids itemWidth and itemHeight plus the exact items collection into the Module Runtime contract; keep system chrome and Icon Bar content Variant-owned.",
     "temporalOwnership": "The Screen owns its duration and transition; List owns collection presence and reflow; List Item owns item Motion and internal state.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
   },
@@ -23,7 +23,11 @@
     "resolver": "./chatListModuleResolver",
     "renderable": "./chatListModuleRenderable",
     "embeds": [
-      "list"
+      "componentStack",
+      "iconBar",
+      "list",
+      "status_bar",
+      "navigation_bar"
     ]
   },
   "owners": {
@@ -35,12 +39,39 @@
   "config": {
     "appearanceMode": "inherit",
     "chatList": {
+      "wallpaperEnabled": false,
+      "stackSlot": {
+        "variantReference": "component_project_foqn_s2_componentStack::variant::default",
+        "overrides": {}
+      },
+      "topIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "topIconBarInputs": {
+        "state": "idle",
+        "size": "360|56"
+      },
       "listSlot": {
         "variantReference": "component_project_foqn_s2_list::variant::chats",
         "overrides": {}
       },
-      "horizontalAlignment": "center",
-      "topInsetToken": "theme.spacing.none",
+      "bottomIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "bottomIconBarInputs": {
+        "state": "idle",
+        "size": "360|56"
+      },
+      "statusBarSlot": {
+        "variantReference": "component_project_foqn_s2_status_bar::variant::default",
+        "overrides": {}
+      },
+      "navigationBarSlot": {
+        "variantReference": "component_project_foqn_s2_navigation_bar::variant::default",
+        "overrides": {}
+      },
       "runtimeContract": {
         "mode": "exact",
         "componentType": "list",
@@ -63,12 +94,39 @@
     "config": {
       "appearanceMode": "inherit",
       "chatList": {
+        "wallpaperEnabled": false,
+        "stackSlot": {
+          "variantReference": "component_project_foqn_s2_componentStack::variant::default",
+          "overrides": {}
+        },
+        "topIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "topIconBarInputs": {
+          "state": "idle",
+          "size": "360|56"
+        },
         "listSlot": {
           "variantReference": "component_project_foqn_s2_list::variant::chats",
           "overrides": {}
         },
-        "horizontalAlignment": "center",
-        "topInsetToken": "theme.spacing.none",
+        "bottomIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "bottomIconBarInputs": {
+          "state": "idle",
+          "size": "360|56"
+        },
+        "statusBarSlot": {
+          "variantReference": "component_project_foqn_s2_status_bar::variant::default",
+          "overrides": {}
+        },
+        "navigationBarSlot": {
+          "variantReference": "component_project_foqn_s2_navigation_bar::variant::default",
+          "overrides": {}
+        },
         "runtimeContract": {
           "mode": "exact",
           "componentType": "list",
@@ -105,6 +163,77 @@
   },
   "dictionaryFields": [
     {
+      "id": "module.core.chatList.wallpaperEnabled",
+      "label": "Wallpaper",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "chatList",
+        "wallpaperEnabled"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chatList.stack",
+      "label": "Content Stack",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "stackSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_componentStack::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "componentStack",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "componentStack",
+        "label": "Content Stack",
+        "recordClassId": "component.componentStack"
+      }
+    },
+    {
+      "id": "module.core.chatList.topIconBar",
+      "label": "Top Icon Bar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "topIconBarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconBar",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconBar",
+        "label": "Top Icon Bar",
+        "recordClassId": "component.iconBar"
+      }
+    },
+    {
       "id": "module.core.chatList.list",
       "label": "List",
       "valueKind": "ComponentVariantSlot",
@@ -130,59 +259,79 @@
       }
     },
     {
-      "id": "module.core.chatList.horizontalAlignment",
-      "label": "Horizontal alignment",
-      "valueKind": "OptionToken",
+      "id": "module.core.chatList.bottomIconBar",
+      "label": "Bottom Icon Bar",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "chatList",
-        "horizontalAlignment"
+        "bottomIconBarSlot"
       ],
-      "defaultValue": "center",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
-      "options": [
-        {
-          "value": "left",
-          "label": "Left"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "right",
-          "label": "Right"
-        }
-      ],
+      "options": [],
       "optionsSource": "",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindingsSource": "",
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "iconBar",
+        "label": "Bottom Icon Bar",
+        "recordClassId": "component.iconBar"
+      }
     },
     {
-      "id": "module.core.chatList.topInset",
-      "label": "Top inset",
-      "valueKind": "ThemeToken",
+      "id": "module.core.chatList.statusBar",
+      "label": "Status Bar",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "chatList",
-        "topInsetToken"
+        "statusBarSlot"
       ],
-      "defaultValue": "theme.spacing.none",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_status_bar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "ComponentClassFieldCatalog.SpacingTokenOptions",
+      "optionsSource": "",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "",
+      "componentVariantType": "status_bar",
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindingsSource": "",
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "status_bar",
+        "label": "Status Bar",
+        "recordClassId": "component.status_bar"
+      }
+    },
+    {
+      "id": "module.core.chatList.navigationBar",
+      "label": "Navigation Bar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "navigationBarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_navigation_bar::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "navigation_bar",
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindingsSource": "",
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "navigation_bar",
+        "label": "Navigation Bar",
+        "recordClassId": "component.navigation_bar"
+      }
     }
   ],
   "editorLayout": {
@@ -239,31 +388,67 @@
       {
         "id": "content",
         "label": "Chat List",
-        "subtitle": "Exact List boundary and placement",
+        "subtitle": "System chrome and three-zone content",
         "icon": "layout",
         "order": 20,
         "visible": true,
         "defaultOpen": true,
         "groups": [
           {
-            "id": "list",
-            "label": "List",
+            "id": "background",
+            "label": "Background",
             "order": 10,
             "visible": true,
             "fields": [
               {
-                "id": "module.core.chatList.list",
+                "id": "module.core.chatList.wallpaperEnabled",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "contentStack",
+            "label": "Content Stack",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.chatList.stack",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.core.chatList.horizontalAlignment",
+                "id": "module.core.chatList.topIconBar",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.core.chatList.topInset",
+                "id": "module.core.chatList.list",
                 "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.chatList.bottomIconBar",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "systemChrome",
+            "label": "System Chrome",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.chatList.statusBar",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.chatList.navigationBar",
+                "order": 20,
                 "visible": true
               }
             ]

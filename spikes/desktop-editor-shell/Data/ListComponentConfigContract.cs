@@ -23,6 +23,7 @@ internal static class ListComponentConfigContract
             [
                 "collectionStackSlot",
                 "listItemSlot",
+                "surfaceSlot",
                 "sizingMode",
                 "startGapToken",
                 "endGapToken",
@@ -31,6 +32,8 @@ internal static class ListComponentConfigContract
                 "itemGapBeforeMode",
                 "itemGapBeforeToken",
                 "itemGapBeforeWeight",
+                "itemsPlacement",
+                "overflowMode",
             ],
             $"{context}.list");
         ComponentVariantSlotDocumentContract.Validate(
@@ -39,6 +42,9 @@ internal static class ListComponentConfigContract
         ComponentVariantSlotDocumentContract.Validate(
             JsonPath.RequiredObject(list, "listItemSlot", $"{context}.list"),
             $"{context}.list.listItemSlot");
+        ComponentVariantSlotDocumentContract.Validate(
+            JsonPath.RequiredObject(list, "surfaceSlot", $"{context}.list"),
+            $"{context}.list.surfaceSlot");
         RequireOneOf(
             JsonPath.RequiredString(list, "sizingMode", $"{context}.list"),
             ["content", "fill"],
@@ -55,6 +61,14 @@ internal static class ListComponentConfigContract
             JsonPath.RequiredString(list, "itemGapBeforeMode", $"{context}.list"),
             ["fixed", "reflow"],
             $"{context}.list.itemGapBeforeMode");
+        RequireOneOf(
+            JsonPath.RequiredString(list, "itemsPlacement", $"{context}.list"),
+            ["top", "center", "bottom"],
+            $"{context}.list.itemsPlacement");
+        RequireOneOf(
+            JsonPath.RequiredString(list, "overflowMode", $"{context}.list"),
+            ["clip"],
+            $"{context}.list.overflowMode");
         JsonPath.RequiredString(list, "startGapToken", $"{context}.list");
         JsonPath.RequiredString(list, "endGapToken", $"{context}.list");
         JsonPath.RequiredString(list, "itemGapBeforeToken", $"{context}.list");

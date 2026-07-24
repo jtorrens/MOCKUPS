@@ -26,6 +26,7 @@ export interface ComponentStackAlternativeContract {
 
 export interface ComponentStackSlotContract {
   id: string;
+  sizeMode: "content" | "fill";
   gapBeforeMode: ComponentStackGapMode;
   gapBeforeToken: string;
   gapBeforeWeight: number;

@@ -9,6 +9,7 @@ export type ComponentCollectionGapMode = "fixed" | "reflow";
 export interface ComponentCollectionLayoutItem {
   id: string;
   alignment: ComponentCollectionAlignment;
+  mainSizeMode?: "content" | "fill";
   gapBeforeMode: ComponentCollectionGapMode;
   gapBeforeToken: string;
   gapBeforeWeight: number;

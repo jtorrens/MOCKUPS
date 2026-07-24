@@ -1,13 +1,12 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import {
-  requireComponentVariantType,
-} from "./componentPreviewDefaults.js";
+import { requireComponentVariantType } from "./componentPreviewDefaults.js";
 import type {
-  ChatListHorizontalAlignment,
+  ChatListComponentSlot,
   ChatListModuleContract,
 } from "./chatListModuleContract.js";
 import {
   parseObject,
+  requiredBoolean,
   requiredComponentVariantSlot,
   requiredRecord,
   requiredString,
@@ -22,17 +21,42 @@ export function resolveChatListModule(
 ): ChatListModuleContract {
   const config = parseObject(payload.configJson);
   const chatList = requiredRecord(config, "chatList", "module.core.chatList");
-  const listSlot = requiredComponentVariantSlot(
-    chatList,
-    "listSlot",
-    "module.core.chatList.listSlot",
-  );
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  requireComponentVariantType(
+  const stackSlot = requiredTypedSlot(
+    chatList,
     componentBaseConfigs,
-    listSlot,
+    "stackSlot",
+    "componentStack",
+  );
+  const topIconBarSlot = requiredTypedSlot(
+    chatList,
+    componentBaseConfigs,
+    "topIconBarSlot",
+    "iconBar",
+  );
+  const bottomIconBarSlot = requiredTypedSlot(
+    chatList,
+    componentBaseConfigs,
+    "bottomIconBarSlot",
+    "iconBar",
+  );
+  const listSlot = requiredTypedSlot(
+    chatList,
+    componentBaseConfigs,
+    "listSlot",
     "list",
-    "module.core.chatList.listSlot",
+  );
+  const statusBarSlot = requiredTypedSlot(
+    chatList,
+    componentBaseConfigs,
+    "statusBarSlot",
+    "status_bar",
+  );
+  const navigationBarSlot = requiredTypedSlot(
+    chatList,
+    componentBaseConfigs,
+    "navigationBarSlot",
+    "navigation_bar",
   );
 
   const runtimeDeclaration = requiredRecord(
@@ -81,28 +105,41 @@ export function resolveChatListModule(
 
   return {
     id: "module.core.chatList",
-    listSlot,
-    listInputs,
-    horizontalAlignment: requireHorizontalAlignment(
-      requiredString(
-        chatList,
-        "horizontalAlignment",
-        "module.core.chatList.horizontalAlignment",
-      ),
-    ),
-    topInsetToken: requiredString(
+    wallpaperEnabled: requiredBoolean(
       chatList,
-      "topInsetToken",
-      "module.core.chatList.topInsetToken",
+      "wallpaperEnabled",
+      "module.core.chatList.wallpaperEnabled",
     ),
+    stackSlot,
+    topIconBarSlot,
+    bottomIconBarSlot,
+    listSlot,
+    statusBarSlot,
+    navigationBarSlot,
+    topIconBarInputs: requiredRecord(
+      chatList,
+      "topIconBarInputs",
+      "module.core.chatList.topIconBarInputs",
+    ),
+    bottomIconBarInputs: requiredRecord(
+      chatList,
+      "bottomIconBarInputs",
+      "module.core.chatList.bottomIconBarInputs",
+    ),
+    listInputs,
   };
 }
 
-function requireHorizontalAlignment(value: string): ChatListHorizontalAlignment {
-  if (value === "left" || value === "center" || value === "right") return value;
-  throw new Error(
-    `module.core.chatList.horizontalAlignment has unsupported value '${value}'`,
-  );
+function requiredTypedSlot(
+  owner: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  key: string,
+  componentType: string,
+): ChatListComponentSlot {
+  const path = `module.core.chatList.${key}`;
+  const slot = requiredComponentVariantSlot(owner, key, path);
+  requireComponentVariantType(componentBaseConfigs, slot, componentType, path);
+  return slot;
 }
 
 function requireExactDeclarationIds(

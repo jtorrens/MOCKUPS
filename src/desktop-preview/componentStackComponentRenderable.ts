@@ -141,6 +141,7 @@ function slotLayoutItem(slot: ComponentStackSlotContract): ComponentCollectionLa
   return {
     id: slot.id,
     alignment: "center",
+    mainSizeMode: slot.sizeMode,
     gapBeforeMode: slot.gapBeforeMode,
     gapBeforeToken: slot.gapBeforeToken,
     gapBeforeWeight: slot.gapBeforeWeight,

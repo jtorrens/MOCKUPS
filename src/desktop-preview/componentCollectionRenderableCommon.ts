@@ -76,9 +76,19 @@ function renderMeasuredFlow(
   const parentBox = options.sizingMode === "fill"
     ? previewScreenBox(payload)
     : boundedCenterBox(payload, naturalWidth, naturalHeight);
+  const fillItems = measured.filter(({ item }) => item.mainSizeMode === "fill");
+  const fixedContentHeight = startGap + endGap + measured.reduce((sum, current, index) =>
+    sum
+      + (current.item.mainSizeMode === "fill" ? 0 : current.box.height)
+      + (index > 0 && current.item.gapBeforeMode === "fixed" ? current.fixedGapBefore : 0), 0);
+  const fillItemHeight = options.sizingMode === "fill" && fillItems.length > 0
+    ? Math.max(0, parentBox.height - fixedContentHeight) / fillItems.length
+    : undefined;
   const totalWeight = measured.slice(1).reduce((sum, current) =>
     sum + (current.item.gapBeforeMode === "reflow" ? current.item.gapBeforeWeight : 0), 0);
-  const reflowSpace = options.sizingMode === "fill" ? Math.max(0, parentBox.height - naturalHeight) : 0;
+  const reflowSpace = options.sizingMode === "fill" && fillItems.length === 0
+    ? Math.max(0, parentBox.height - naturalHeight)
+    : 0;
   let cursorY = parentBox.y + startGap;
   const children = measured.map((current, index) => {
     if (index > 0) {
@@ -88,7 +98,12 @@ function renderMeasuredFlow(
     }
     const remainingHeight = Math.max(0, parentBox.y + parentBox.height - endGap - cursorY);
     const assignedHeight = resolveAssignedNode && options.sizingMode === "fill"
-      ? Math.min(current.box.height, remainingHeight)
+      ? Math.min(
+          current.item.mainSizeMode === "fill"
+            ? fillItemHeight ?? current.box.height
+            : current.box.height,
+          remainingHeight,
+        )
       : current.box.height;
     const slotBox: RenderableBox = {
       x: parentBox.x,

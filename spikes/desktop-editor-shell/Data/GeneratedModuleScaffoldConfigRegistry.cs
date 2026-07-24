@@ -18,23 +18,47 @@ internal static class GeneratedModuleScaffoldConfigRegistry
     private static readonly Dictionary<string, GeneratedModuleConfigFieldDescriptor> Fields =
         new(StringComparer.Ordinal)
     {
-        ["module.core.chatList.horizontalAlignment"] = new(
+        ["module.core.chatList.bottomIconBar"] = new(
             "module.core.chatList",
-            "module.core.chatList.horizontalAlignment",
-            ValueKind.OptionToken,
-            ["chatList", "horizontalAlignment"],
-            ""),
+            "module.core.chatList.bottomIconBar",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "bottomIconBarSlot"],
+            "iconBar"),
         ["module.core.chatList.list"] = new(
             "module.core.chatList",
             "module.core.chatList.list",
             ValueKind.ComponentVariantSlot,
             ["chatList", "listSlot"],
             "list"),
-        ["module.core.chatList.topInset"] = new(
+        ["module.core.chatList.navigationBar"] = new(
             "module.core.chatList",
-            "module.core.chatList.topInset",
-            ValueKind.ThemeToken,
-            ["chatList", "topInsetToken"],
+            "module.core.chatList.navigationBar",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "navigationBarSlot"],
+            "navigation_bar"),
+        ["module.core.chatList.stack"] = new(
+            "module.core.chatList",
+            "module.core.chatList.stack",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "stackSlot"],
+            "componentStack"),
+        ["module.core.chatList.statusBar"] = new(
+            "module.core.chatList",
+            "module.core.chatList.statusBar",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "statusBarSlot"],
+            "status_bar"),
+        ["module.core.chatList.topIconBar"] = new(
+            "module.core.chatList",
+            "module.core.chatList.topIconBar",
+            ValueKind.ComponentVariantSlot,
+            ["chatList", "topIconBarSlot"],
+            "iconBar"),
+        ["module.core.chatList.wallpaperEnabled"] = new(
+            "module.core.chatList",
+            "module.core.chatList.wallpaperEnabled",
+            ValueKind.Boolean,
+            ["chatList", "wallpaperEnabled"],
             ""),
     };
 

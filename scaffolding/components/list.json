@@ -22,14 +22,15 @@
     "renderable": "./listComponentRenderable",
     "embeds": [
       "collectionStack",
-      "listItem"
+      "listItem",
+      "surface"
     ]
   },
   "owners": {
     "contractExport": "ListDesignContract",
     "resolverExport": "resolveListComponent",
     "renderableExport": "listComponentToRenderable",
-    "registryMode": "children",
+    "registryMode": "assignedBoxAndChildren",
     "focusedTest": "tests/animation/listComponent.test.ts"
   },
   "config": {
@@ -50,6 +51,10 @@
         "variantReference": "component_project_foqn_s2_list_item::variant::calls",
         "overrides": {}
       },
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
       "sizingMode": "content",
       "startGapToken": "theme.spacing.none",
       "endGapToken": "theme.spacing.none",
@@ -57,7 +62,9 @@
       "itemAlignment": "center",
       "itemGapBeforeMode": "fixed",
       "itemGapBeforeToken": "theme.spacing.none",
-      "itemGapBeforeWeight": 1
+      "itemGapBeforeWeight": 1,
+      "itemsPlacement": "top",
+      "overflowMode": "clip"
     }
   },
   "defaultVariant": {
@@ -83,6 +90,10 @@
           "variantReference": "component_project_foqn_s2_list_item::variant::calls",
           "overrides": {}
         },
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
         "sizingMode": "content",
         "startGapToken": "theme.spacing.none",
         "endGapToken": "theme.spacing.none",
@@ -90,7 +101,9 @@
         "itemAlignment": "center",
         "itemGapBeforeMode": "fixed",
         "itemGapBeforeToken": "theme.spacing.none",
-        "itemGapBeforeWeight": 1
+        "itemGapBeforeWeight": 1,
+        "itemsPlacement": "top",
+        "overflowMode": "clip"
       }
     }
   },
@@ -118,6 +131,10 @@
             "variantReference": "component_project_foqn_s2_list_item::variant::calls",
             "overrides": {}
           },
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
           "sizingMode": "content",
           "startGapToken": "theme.spacing.none",
           "endGapToken": "theme.spacing.none",
@@ -125,7 +142,9 @@
           "itemAlignment": "center",
           "itemGapBeforeMode": "fixed",
           "itemGapBeforeToken": "theme.spacing.none",
-          "itemGapBeforeWeight": 1
+          "itemGapBeforeWeight": 1,
+          "itemsPlacement": "top",
+          "overflowMode": "clip"
         }
       }
     },
@@ -152,6 +171,10 @@
             "variantReference": "component_project_foqn_s2_list_item::variant::chats",
             "overrides": {}
           },
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
           "sizingMode": "content",
           "startGapToken": "theme.spacing.none",
           "endGapToken": "theme.spacing.none",
@@ -159,7 +182,9 @@
           "itemAlignment": "center",
           "itemGapBeforeMode": "fixed",
           "itemGapBeforeToken": "theme.spacing.none",
-          "itemGapBeforeWeight": 1
+          "itemGapBeforeWeight": 1,
+          "itemsPlacement": "top",
+          "overflowMode": "clip"
         }
       }
     }
@@ -19113,7 +19138,7 @@
     "itemHeight": 84
   },
   "metadata": {
-    "note": "List repeats List Item through Collection Stack; the List owns vertical flow and item presence only."
+    "note": "List owns its shared Surface and viewport, then repeats List Item through Collection Stack with explicit vertical placement, clipping and item presence."
   },
   "dictionaryFields": [
     {
@@ -19153,6 +19178,26 @@
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "listItem",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": ""
+    },
+    {
+      "id": "component.list.surface",
+      "label": "Surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "list",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": ""
     },
@@ -19276,6 +19321,39 @@
         {
           "value": "end",
           "label": "Right"
+        }
+      ],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": ""
+    },
+    {
+      "id": "component.list.itemsPlacement",
+      "label": "Items placement",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "list",
+        "itemsPlacement"
+      ],
+      "defaultValue": "top",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom"
         }
       ],
       "optionsSource": "",
@@ -19442,6 +19520,11 @@
                 "id": "component.list.listItem",
                 "order": 20,
                 "visible": true
+              },
+              {
+                "id": "component.list.surface",
+                "order": 30,
+                "visible": true
               }
             ]
           }
@@ -19485,6 +19568,11 @@
               {
                 "id": "component.list.itemAlignment",
                 "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.list.itemsPlacement",
+                "order": 55,
                 "visible": true
               },
               {

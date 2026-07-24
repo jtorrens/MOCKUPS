@@ -2966,11 +2966,23 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 configurationFields.Contains("module.core.chatList.list"),
                 "Chat List editor is missing its fixed List boundary.");
             Check(
-                configurationFields.Contains("module.core.chatList.horizontalAlignment"),
-                "Chat List editor is missing horizontal alignment.");
+                configurationFields.Contains("module.core.chatList.wallpaperEnabled"),
+                "Chat List editor is missing its Wallpaper toggle.");
             Check(
-                configurationFields.Contains("module.core.chatList.topInset"),
-                "Chat List editor is missing top inset.");
+                configurationFields.Contains("module.core.chatList.stack"),
+                "Chat List editor is missing its fixed Content Stack boundary.");
+            Check(
+                configurationFields.Contains("module.core.chatList.topIconBar"),
+                "Chat List editor is missing its fixed top Icon Bar boundary.");
+            Check(
+                configurationFields.Contains("module.core.chatList.bottomIconBar"),
+                "Chat List editor is missing its fixed bottom Icon Bar boundary.");
+            Check(
+                configurationFields.Contains("module.core.chatList.statusBar"),
+                "Chat List editor is missing its fixed Status Bar boundary.");
+            Check(
+                configurationFields.Contains("module.core.chatList.navigationBar"),
+                "Chat List editor is missing its fixed Navigation Bar boundary.");
             Check(
                 window.GetVisualDescendants()
                     .OfType<Button>()

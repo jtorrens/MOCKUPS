@@ -6,8 +6,8 @@ import { listItemComponentToRenderable } from "./listItemComponentRenderable.js"
 import { resolveListItemComponent } from "./listItemComponentResolver.js";
 
 export const generatedComponentScaffoldFactories = {
-  list: (payload, _assignedBox, renderChild) =>
-    listComponentToRenderable(payload, resolveListComponent(payload), renderChild),
+  list: (payload, assignedBox, renderChild) =>
+    listComponentToRenderable(payload, resolveListComponent(payload), assignedBox, renderChild),
   listItem: (payload, assignedBox) =>
     listItemComponentToRenderable(payload, resolveListItemComponent(payload), assignedBox),
 } satisfies Record<string, ComponentRenderableFactory>;

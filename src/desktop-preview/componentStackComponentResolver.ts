@@ -45,6 +45,11 @@ function resolveSlot(
 ): ComponentStackSlotContract {
   const path = `componentStack.items[${index}]`;
   const slotId = requiredString(slot, "id", `${path}.id`);
+  const authoredSizeMode = optionalString(slot, "sizeMode");
+  const sizeMode = authoredSizeMode || "content";
+  if (sizeMode !== "content" && sizeMode !== "fill") {
+    throw new Error(`Unsupported componentStack slot size mode ${sizeMode}`);
+  }
   const gapBeforeMode = requiredString(slot, "gapBeforeMode", `${path}.gapBeforeMode`);
   if (gapBeforeMode !== "fixed" && gapBeforeMode !== "reflow") {
     throw new Error(`Unsupported componentStack gap-before mode ${gapBeforeMode}`);
@@ -81,6 +86,7 @@ function resolveSlot(
     : undefined;
   return {
     id: slotId,
+    sizeMode,
     gapBeforeMode: gapBeforeMode as ComponentStackGapMode,
     gapBeforeToken: requiredString(slot, "gapBeforeToken", `${path}.gapBeforeToken`),
     gapBeforeWeight: Math.max(0, requiredNumber(slot, "gapBeforeWeight", `${path}.gapBeforeWeight`)),

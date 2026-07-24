@@ -436,3 +436,62 @@ test("independent slots keep their occupied flow space when a later slot changes
   assert.deepEqual(clockSlot, { x: 0, y: 0, width: 360, height: 80 });
   assert.deepEqual(passwordSlot, { x: 0, y: 100, width: 360, height: 620 });
 });
+
+test("Component Stack fill slots receive the space left between content slots", () => {
+  const source = payload([alternative("top", "stub::variant::top", false)]);
+  const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
+  preview.items = [
+    {
+      id: "top-slot",
+      sizeMode: "content",
+      gapBeforeMode: "fixed",
+      gapBeforeToken: "theme.spacing.none",
+      gapBeforeWeight: 1,
+      alternatives: [alternative("top", "stub::variant::top", false)],
+    },
+    {
+      id: "center-slot",
+      sizeMode: "fill",
+      gapBeforeMode: "fixed",
+      gapBeforeToken: "theme.spacing.none",
+      gapBeforeWeight: 1,
+      alternatives: [alternative("center", "stub::variant::center", false)],
+    },
+    {
+      id: "bottom-slot",
+      sizeMode: "content",
+      gapBeforeMode: "fixed",
+      gapBeforeToken: "theme.spacing.none",
+      gapBeforeWeight: 1,
+      alternatives: [alternative("bottom", "stub::variant::bottom", false)],
+    },
+  ];
+  source.designPreviewJson = JSON.stringify(preview);
+  source.componentBaseConfigsJson = JSON.stringify({
+    variantTypes: {
+      "stub::variant::top": "stub",
+      "stub::variant::center": "stub",
+      "stub::variant::bottom": "stub",
+    },
+    variants: {
+      "stub::variant::top": {},
+      "stub::variant::center": {},
+      "stub::variant::bottom": {},
+    },
+  });
+
+  const resolved = resolveComponentStackComponent(source);
+  const renderable = componentStackComponentToRenderable(source, resolved, (child, assignedBox) => ({
+    id: JSON.parse(child.designPreviewJson).id as string,
+    type: "group",
+    frame: 0,
+    box: assignedBox ?? { x: 0, y: 0, width: 360, height: 56 },
+    children: [],
+  }));
+
+  assert.deepEqual(renderable.children?.map((slot) => slot.box), [
+    { x: 0, y: 0, width: 360, height: 56 },
+    { x: 0, y: 56, width: 360, height: 608 },
+    { x: 0, y: 664, width: 360, height: 56 },
+  ]);
+});

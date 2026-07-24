@@ -13,6 +13,7 @@ import {
 } from "./componentResolverCommon.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 import type { ListDesignContract } from "./listComponentContract.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 const listItemKeys = new Set([
   "id",
@@ -39,6 +40,11 @@ export function resolveListComponent(
     "listItemSlot",
     "component.list.listItemSlot",
   );
+  const surfaceSlot = requiredRecord(
+    list,
+    "surfaceSlot",
+    "component.list.surfaceSlot",
+  );
   requireComponentVariantType(
     bases,
     stackSlot,
@@ -50,6 +56,12 @@ export function resolveListComponent(
     itemSlot,
     "listItem",
     "component.list.listItemSlot",
+  );
+  requireComponentVariantType(
+    bases,
+    surfaceSlot,
+    "surface",
+    "component.list.surfaceSlot",
   );
   const stackConfig = mergeComponentDefaults(
     componentVariantConfig(
@@ -77,6 +89,42 @@ export function resolveListComponent(
     "overrides",
     "component.list.listItemSlot.overrides",
   );
+  const surfaceConfig = mergeComponentDefaults(
+    componentVariantConfig(
+      bases,
+      "surface",
+      requiredString(
+        surfaceSlot,
+        "variantReference",
+        "component.list.surfaceSlot.variantReference",
+      ),
+    ),
+    requiredRecord(
+      surfaceSlot,
+      "overrides",
+      "component.list.surfaceSlot.overrides",
+    ),
+  );
+  const itemsPlacement = requiredString(
+    list,
+    "itemsPlacement",
+    "component.list.itemsPlacement",
+  );
+  if (
+    itemsPlacement !== "top"
+    && itemsPlacement !== "center"
+    && itemsPlacement !== "bottom"
+  ) {
+    throw new Error(`Unsupported component.list items placement ${itemsPlacement}`);
+  }
+  const overflowMode = requiredString(
+    list,
+    "overflowMode",
+    "component.list.overflowMode",
+  );
+  if (overflowMode !== "clip") {
+    throw new Error(`Unsupported component.list overflow mode ${overflowMode}`);
+  }
   const itemSize = {
     width: requiredNumber(preview, "itemWidth", "component.list.runtime.itemWidth"),
     height: requiredNumber(preview, "itemHeight", "component.list.runtime.itemHeight"),
@@ -118,7 +166,17 @@ export function resolveListComponent(
       items,
     }),
   });
-  return { id: "component.list", stack };
+  return {
+    id: "component.list",
+    stack,
+    surface: resolveSurfaceComponentAtSize(
+      surfaceConfig,
+      { width: 1, height: 1 },
+      "component.list.surface",
+    ),
+    itemsPlacement,
+    overflowMode,
+  };
 }
 
 function listStackItem(

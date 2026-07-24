@@ -138,8 +138,8 @@ test("List forwards one shared Runtime size and the exact List Item Runtime", ()
   assert.equal(resolved.stack.items[0]?.inputs.state, "pressed");
   assert.equal(resolved.stack.items[0]?.inputs.width, 344);
   assert.equal(resolved.stack.items[0]?.inputs.height, 76);
-  const node = listComponentToRenderable(source, resolved, renderChild);
-  const firstItem = node.children?.[0];
+  const node = listComponentToRenderable(source, resolved, undefined, renderChild);
+  const firstItem = node.children?.[1]?.children?.[0];
   assert.equal(firstItem?.id, "component.listItem");
   assert.equal(firstItem?.box?.width, 344);
   assert.equal(firstItem?.box?.height, 76);
@@ -154,13 +154,44 @@ test("List renders a vertical Collection Stack without owning item internals", (
     items: unknown[];
   };
   const contract = resolveListComponent(source);
-  const node = listComponentToRenderable(source, contract, renderChild);
+  const node = listComponentToRenderable(source, contract, undefined, renderChild);
 
   assert.equal(node.id, "component.list");
-  assert.equal(node.children?.length, runtime.items.length);
+  assert.equal(node.style?.overflow, "hidden");
+  assert.equal(node.children?.[0]?.id, "component.list.surface");
+  assert.equal(node.children?.[1]?.children?.length, runtime.items.length);
   assert.equal(node.box?.width, runtime.itemWidth);
   assert.equal(node.box?.height, runtime.itemHeight * runtime.items.length);
-  assert.ok(node.children?.every((item) => item.id === "component.listItem"));
+  assert.ok(node.children?.[1]?.children?.every((item) => item.id === "component.listItem"));
+});
+
+test("List fills an assigned viewport and places its items at top, center or bottom", () => {
+  const source = fixture("chats");
+  const viewport = { x: 10, y: 20, width: 360, height: 600 };
+  const expectedY = {
+    top: 20,
+    center: 20 + (600 - 84 * 5) / 2,
+    bottom: 20 + 600 - 84 * 5,
+  };
+
+  for (const placement of ["top", "center", "bottom"] as const) {
+    const config = JSON.parse(source.configJson) as {
+      list: { itemsPlacement: typeof placement };
+    };
+    config.list.itemsPlacement = placement;
+    source.configJson = JSON.stringify(config);
+    const node = listComponentToRenderable(
+      source,
+      resolveListComponent(source),
+      viewport,
+      renderChild,
+    );
+
+    assert.deepEqual(node.box, viewport);
+    assert.equal(node.style?.overflow, "hidden");
+    assert.deepEqual(node.children?.[0]?.box, viewport);
+    assert.equal(node.children?.[1]?.box?.y, expectedY[placement]);
+  }
 });
 
 test("List rejects undeclared per-item fields", () => {
