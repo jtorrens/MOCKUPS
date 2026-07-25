@@ -90,21 +90,21 @@
                             <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
                             <TextBlock x:Name="NavigationWorkspaceTextBlock" FontSize="17" FontWeight="Bold" Text="Design" />
                             <Grid x:Name="ProductionPickerGrid"
-                                  ColumnDefinitions="*,Auto"
+                                  ColumnDefinitions="Auto,*"
                                   ColumnSpacing="6"
                                   IsVisible="False"
                                   Margin="0,8,0,0">
-                                <editor:EditorInstantComboBox x:Name="ProductionComboBox"
-                                                              Grid.Column="0"
-                                                              MinHeight="34" />
                                 <Button x:Name="ProductionActionButton"
-                                        Grid.Column="1"
+                                        Grid.Column="0"
                                         Width="34"
                                         Height="34"
                                         Padding="0"
                                         BorderThickness="0"
                                         Background="Transparent"
                                         BorderBrush="Transparent" />
+                                <editor:EditorInstantComboBox x:Name="ProductionComboBox"
+                                                              Grid.Column="1"
+                                                              MinHeight="34" />
                             </Grid>
                         </StackPanel>
                     </Border>

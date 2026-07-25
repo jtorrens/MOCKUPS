@@ -8251,12 +8251,18 @@ static void ProductionShotManagerActionOwnsAssociation()
             window.Show();
             var action = Required(
                 window.FindControl<Button>("ProductionActionButton"));
+            var selector = Required(
+                window.FindControl<Control>("ProductionComboBox"));
+            Equal(0, Grid.GetColumn(action));
+            Equal(1, Grid.GetColumn(selector));
             var foreground = Required(action.Foreground as SolidColorBrush).Color;
-            True(foreground == Color.Parse("#F0B429")
-                || foreground == Color.Parse("#A56600"));
-            var background = Required(action.Background as SolidColorBrush).Color;
-            True(background == Color.Parse("#463711")
-                || background == Color.Parse("#F2DEAA"));
+            True(foreground == Color.Parse("#39D98A")
+                || foreground == Color.Parse("#137A4B"));
+            True(ReferenceEquals(Brushes.Transparent, action.Background));
+            True((ToolTip.GetTip(action)?.ToString() ?? "")
+                .Contains(
+                    "Shot Manager connected to Navigation Series · S01",
+                    StringComparison.Ordinal));
 
             action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
@@ -8286,8 +8292,12 @@ static void ProductionShotManagerActionOwnsAssociation()
                 ?.Invoke(window, null);
             var disconnectedForeground =
                 Required(action.Foreground as SolidColorBrush).Color;
-            True(disconnectedForeground != Color.Parse("#F0B429")
-                && disconnectedForeground != Color.Parse("#A56600"));
+            True(disconnectedForeground != Color.Parse("#39D98A")
+                && disconnectedForeground != Color.Parse("#137A4B"));
+            True((ToolTip.GetTip(action)?.ToString() ?? "")
+                .Contains(
+                    "Shot Manager is not connected",
+                    StringComparison.Ordinal));
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }

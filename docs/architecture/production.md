@@ -61,9 +61,10 @@ creates new stable ids.
 
 A Project may associate with one exact VFX Shot Manager Production and Season.
 The integration is optional: without an association, Episodes and Shots keep
-the independent workflow above. The Shot Manager action beside the active
-Production selector opens this Project-owned association. Its icon is amber
-only while that Project has an association.
+the independent workflow above. The independent Shot Manager icon to the left
+of the active Production selector opens this Project-owned association. Its
+tooltip explains the current state and its glyph is green only while that
+Project has an association.
 
 With an association:
 

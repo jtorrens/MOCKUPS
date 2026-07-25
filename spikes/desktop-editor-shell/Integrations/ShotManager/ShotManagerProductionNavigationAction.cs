@@ -37,28 +37,25 @@ internal sealed class ShotManagerProductionNavigationAction
     public void Refresh(string? projectId)
     {
         _button.IsEnabled = !string.IsNullOrWhiteSpace(projectId);
-        IsAssociated = !string.IsNullOrWhiteSpace(projectId)
-            && _database.GetShotManagerAssociation(projectId) is not null;
+        var association = string.IsNullOrWhiteSpace(projectId)
+            ? null
+            : _database.GetShotManagerAssociation(projectId);
+        IsAssociated = association is not null;
 
         var foreground = IsAssociated
-            ? AmberForeground(_isDark())
+            ? ConnectedForeground(_isDark())
             : EditorUiVisuals.SecondaryTextBrush(_isDark());
         _button.Foreground = foreground;
-        _button.Background = IsAssociated
-            ? AmberBackground(_isDark())
-            : Brushes.Transparent;
+        _button.Background = Brushes.Transparent;
         _button.BorderBrush = Brushes.Transparent;
         EditorIcons.ApplyBrush(_icon, foreground);
         EditorAccessibility.Describe(
             _button,
             IsAssociated
-                ? "Shot Manager connected. Open association"
-                : "Connect this Production to Shot Manager");
+                ? $"Shot Manager connected to {association!.ProductionName} · {association.SeasonCode}. Open association"
+                : "Shot Manager is not connected. Open to associate this Production");
     }
 
-    internal static IBrush AmberForeground(bool isDark) =>
-        new SolidColorBrush(Color.Parse(isDark ? "#F0B429" : "#A56600"));
-
-    internal static IBrush AmberBackground(bool isDark) =>
-        new SolidColorBrush(Color.Parse(isDark ? "#463711" : "#F2DEAA"));
+    internal static IBrush ConnectedForeground(bool isDark) =>
+        new SolidColorBrush(Color.Parse(isDark ? "#39D98A" : "#137A4B"));
 }
