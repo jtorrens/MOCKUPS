@@ -4,7 +4,11 @@ import type {
   ComponentCollectionItemContract,
   ComponentCollectionSizingMode,
 } from "./componentCollectionContract.js";
-import type { AlignmentPlacementContract, ComponentMotionContract } from "./previewComponentContracts.js";
+import type {
+  AlignmentPlacementContract,
+  ComponentMotionContract,
+  ComponentMotionFrameContract,
+} from "./previewComponentContracts.js";
 
 export type ComponentStackSizingMode = ComponentCollectionSizingMode;
 export type ComponentStackGapMode = ComponentCollectionGapMode;
@@ -18,10 +22,11 @@ export interface ComponentStackAlternativeContract {
   isDefault: boolean;
   enterMotion: ComponentMotionContract;
   exitMotion: ComponentMotionContract;
+  localFrame: number;
+  enterMotionFrame?: ComponentMotionFrameContract;
+  exitMotionFrame?: ComponentMotionFrameContract;
   activationFrame?: number;
   exitFrame?: number;
-  enterElapsedMs?: number;
-  exitElapsedMs?: number;
 }
 
 export interface ComponentStackSlotContract {

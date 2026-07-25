@@ -19,7 +19,10 @@ import {
   requiredTypographyStyle,
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
-import { requiredMotionContract } from "./previewMotionHelpers.js";
+import {
+  requiredMotionContract,
+  resolveMotionFrame,
+} from "./previewMotionHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 
 export function resolveKeyboardComponent(
@@ -71,6 +74,11 @@ export function resolveKeyboardComponent(
     ? withExtraEmojis(rowsWithMode, extraEmojis)
     : rowsWithMode;
 
+  const motion = requiredMotionContract(
+    keyboard,
+    "motion",
+    "component.keyboard.motion",
+  );
   return {
     id: "component.keyboard",
     language,
@@ -154,15 +162,11 @@ export function resolveKeyboardComponent(
       "component.keyboard.iconBar",
     ),
     rows,
-    motion: requiredMotionContract(
-      keyboard,
-      "motion",
-      "component.keyboard.motion",
-    ),
-    motionFrame: {
+    motion,
+    motionFrame: resolveMotionFrame(payload, motion, {
       trigger: optionalBoolean(preview, "trigger"),
       elapsedMs: optionalNumber(preview, "motionElapsedMs", 0),
-    },
+    }),
   };
 }
 

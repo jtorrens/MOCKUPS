@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
-import { resolveConversationModuleFrame } from "../../src/desktop-preview/conversationModuleResolver.js";
-import { conversationMessageActorIdentityVisible } from "../../src/desktop-preview/conversationModuleRenderable.js";
+import {
+  conversationMessageActorIdentityVisible,
+  resolveConversationModuleFrame,
+} from "../../src/desktop-preview/conversationModuleResolver.js";
 
 function payload(
   localFrame: number,
@@ -206,7 +208,7 @@ test("an animated text track replaces the base write-on duration", () => {
   const resolvedMessages = resolved.messages as Array<Record<string, unknown>>;
   assert.equal(resolvedMessages[0]!.writeOnDurationFrames, 0);
   assert.equal(resolvedMessages[0]!.composerWriteOnDurationFrames, 2);
-  assert.equal(resolvedMessages[0]!.composerUsesResolvedText, true);
+  assert.equal(resolvedMessages[0]!.composerWriteOnFrame, 3);
   assert.equal(
     Number(resolvedMessages[0]!.timelineEndFrame) - Number(resolvedMessages[0]!.timelineStartFrame),
     3,

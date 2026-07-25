@@ -54,9 +54,7 @@ export interface MediaDesignContract {
   centerIconBar: IconBarDesignContract;
   bottomIconBar: IconBarDesignContract;
   textOverlay: MediaTextOverlayContract | null;
-  controlsFadeDelayMs: number;
-  controlsFadeDurationMs: number;
-  controlsElapsedMs: number;
+  controlsOpacity: number;
   motion: ComponentMotionContract;
   motionFrame: ComponentMotionFrameContract;
 }

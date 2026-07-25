@@ -30,6 +30,6 @@ export interface TextBoxDesignContract {
 
 export interface TextBoxTextAnimationContract {
   mode: "none" | "pulsating" | "wave";
-  elapsedMs: number;
+  phase: number;
   minimumOpacity: number;
 }

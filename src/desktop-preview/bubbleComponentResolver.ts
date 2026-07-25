@@ -211,6 +211,7 @@ export function resolveBubbleComponent(
       ),
       media: imageMediaConfig || videoMediaConfig
         ? resolveMediaComponentFromRecords(
+            payload,
             imageMediaConfig || videoMediaConfig!,
             bubbleMediaInputs(
               preview,

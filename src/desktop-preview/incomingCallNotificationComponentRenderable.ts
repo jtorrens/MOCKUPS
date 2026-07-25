@@ -75,17 +75,13 @@ export function incomingCallNotificationComponentToRenderable(
     ],
   };
 
-  if (notification.presenceTransition) {
-    const frame = {
-      trigger: true,
-      elapsedMs: notification.presenceElapsedMs,
-    };
+  if (notification.boundaryMotionFrame.active) {
     return notification.present
       ? wrapMotionFrame(
           payload,
           node,
           notification.boundaryMotion,
-          frame,
+          notification.boundaryMotionFrame,
           box,
           previewScreenBox(payload),
         )
@@ -93,7 +89,7 @@ export function incomingCallNotificationComponentToRenderable(
           payload,
           node,
           notification.boundaryMotion,
-          frame,
+          notification.boundaryMotionFrame,
           box,
           previewScreenBox(payload),
         );

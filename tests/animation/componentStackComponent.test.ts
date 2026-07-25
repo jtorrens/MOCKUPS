@@ -374,9 +374,13 @@ test("Component Stack runtime state actions resolve the selected state and trans
   const resolved = resolveComponentStackComponent(source);
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
   assert.equal(resolved.slots[0]?.alternatives[0]?.activationFrame, 10);
-  assert.equal(resolved.slots[0]?.alternatives[0]?.enterElapsedMs, 80);
+  assert.equal(resolved.slots[0]?.alternatives[0]?.enterMotionFrame?.active, true);
   assert.equal(resolved.slots[0]?.alternatives[1]?.exitFrame, 10);
-  assert.equal(resolved.slots[0]?.alternatives[1]?.exitElapsedMs, 80);
+  assert.equal(resolved.slots[0]?.alternatives[1]?.exitMotionFrame?.active, true);
+  assert.equal(
+    resolved.slots[0]?.alternatives[0]?.enterMotionFrame?.progress,
+    resolved.slots[0]?.alternatives[1]?.exitMotionFrame?.progress,
+  );
 });
 
 test("Component Stack animatable State keyframes derive the outgoing state and transition clock", () => {
@@ -400,8 +404,12 @@ test("Component Stack animatable State keyframes derive the outgoing state and t
 
   const resolved = resolveComponentStackComponent(source);
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "clock"]);
-  assert.equal(resolved.slots[0]?.alternatives[0]?.enterElapsedMs, 80);
-  assert.equal(resolved.slots[0]?.alternatives[1]?.exitElapsedMs, 80);
+  assert.equal(resolved.slots[0]?.alternatives[0]?.enterMotionFrame?.active, true);
+  assert.equal(resolved.slots[0]?.alternatives[1]?.exitMotionFrame?.active, true);
+  assert.equal(
+    resolved.slots[0]?.alternatives[0]?.enterMotionFrame?.progress,
+    resolved.slots[0]?.alternatives[1]?.exitMotionFrame?.progress,
+  );
 });
 
 test("each Component Stack state resolves its own placement inside the assigned slot", () => {

@@ -23,7 +23,10 @@ import {
 } from "./componentResolverCommon.js";
 import { resolveIconBarComponentFromRecords } from "./iconBarComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
-import { requiredMotionContract } from "./previewMotionHelpers.js";
+import {
+  requiredMotionContract,
+  resolveMotionFrame,
+} from "./previewMotionHelpers.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveMediaComponent(
@@ -33,6 +36,7 @@ export function resolveMediaComponent(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   return resolveMediaComponentFromRecords(
+    payload,
     config,
     preview,
     componentBaseConfigs,
@@ -41,6 +45,7 @@ export function resolveMediaComponent(
 }
 
 export function resolveMediaComponentFromRecords(
+  payload: DesignPreviewPayload,
   config: Record<string, unknown>,
   inputs: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
@@ -131,6 +136,20 @@ export function resolveMediaComponentFromRecords(
     "component.media.surfaceSlot",
   );
 
+  const controlsFadeDelayMs = Math.max(
+    0,
+    requiredNumber(media, "controlsFadeDelayMs", "component.media.controlsFadeDelayMs"),
+  );
+  const controlsFadeDurationMs = Math.max(
+    0,
+    requiredNumber(media, "controlsFadeDurationMs", "component.media.controlsFadeDurationMs"),
+  );
+  const controlsElapsedMs = Math.max(
+    0,
+    requiredNumber(inputs, "controlsElapsedMs", "component.media.input.controlsElapsedMs"),
+  );
+  const motion = requiredMotionContract(media, "motion", "component.media.motion");
+  const fullScreenTransitionElapsedMs = optionalNumber(inputs, "motionElapsedMs", 0);
   return {
     id,
     sourceUri: optionalString(inputs, "mediaSource"),
@@ -179,25 +198,31 @@ export function resolveMediaComponentFromRecords(
       durationSeconds,
       componentBaseConfigs,
     ),
-    controlsFadeDelayMs: Math.max(
-      0,
-      requiredNumber(media, "controlsFadeDelayMs", "component.media.controlsFadeDelayMs"),
+    controlsOpacity: resolvedControlsOpacity(
+      controlsElapsedMs,
+      controlsFadeDelayMs,
+      controlsFadeDurationMs,
     ),
-    controlsFadeDurationMs: Math.max(
-      0,
-      requiredNumber(media, "controlsFadeDurationMs", "component.media.controlsFadeDurationMs"),
-    ),
-    controlsElapsedMs: Math.max(
-      0,
-      requiredNumber(inputs, "controlsElapsedMs", "component.media.input.controlsElapsedMs"),
-    ),
-    motion: requiredMotionContract(media, "motion", "component.media.motion"),
-    motionFrame: {
+    motion,
+    motionFrame: resolveMotionFrame(payload, motion, {
       trigger: fullScreenTransition,
-      elapsedMs: optionalNumber(inputs, "motionElapsedMs", 0),
+      elapsedMs: fullScreenTransitionElapsedMs,
       reverse: fullScreenTransition && !isFullScreen,
-    },
+    }),
   };
+}
+
+function resolvedControlsOpacity(
+  elapsedMs: number,
+  fadeDelayMs: number,
+  fadeDurationMs: number,
+) {
+  if (fadeDurationMs <= 0) return elapsedMs > fadeDelayMs ? 0 : 1;
+  if (elapsedMs <= fadeDelayMs) return 1;
+  return Math.max(
+    0,
+    Math.min(1, 1 - ((elapsedMs - fadeDelayMs) / fadeDurationMs)),
+  );
 }
 
 function resolveMediaTextOverlay(

@@ -11,7 +11,11 @@ import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
-import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
+import {
+  motionTotalDurationMs,
+  requiredMotionContract,
+  resolveMotionFrame,
+} from "./previewMotionHelpers.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import type {
   ComponentStackAlternativeContract,
@@ -137,14 +141,22 @@ function runtimeSelectedAlternatives(
     ...item,
     active: true,
     activationFrame: eventFrame,
-    enterElapsedMs: elapsedMs,
+    localFrame: Math.max(0, frame - eventFrame),
+    enterMotionFrame: resolveMotionFrame(payload, item.enterMotion, {
+      trigger: true,
+      elapsedMs,
+    }),
   }));
   if (!outgoing || entering.some((item) => item.id === outgoing.id) || elapsedMs >= exitDurationMs) return entering;
   return [...entering, {
     ...outgoing,
     active: false,
     exitFrame: eventFrame,
-    exitElapsedMs: elapsedMs,
+    localFrame: Math.max(0, eventFrame - (outgoing.activationFrame ?? 0)),
+    exitMotionFrame: resolveMotionFrame(payload, outgoing.exitMotion, {
+      trigger: true,
+      elapsedMs,
+    }),
   }];
 }
 
@@ -182,6 +194,13 @@ function resolveAlternative(
   const boundaryMotion = component
     ? optionalComponentBoundaryMotion(component.config, `${path}.component`)
     : undefined;
+  const enterMotion = boundaryMotion
+    ?? requiredMotionContract(alternative, "enterMotion", `${path}.enterMotion`);
+  const exitMotion = boundaryMotion
+    ?? requiredMotionContract(alternative, "exitMotion", `${path}.exitMotion`);
+  const activationFrame = resolvedActive.value === true
+    ? resolvedActive.sourceKeyframeFrame
+    : undefined;
   return {
     id,
     component,
@@ -189,11 +208,23 @@ function resolveAlternative(
     behavior,
     active: resolvedActive.value === true,
     isDefault: index === 0,
-    enterMotion: boundaryMotion
-      ?? requiredMotionContract(alternative, "enterMotion", `${path}.enterMotion`),
-    exitMotion: boundaryMotion
-      ?? requiredMotionContract(alternative, "exitMotion", `${path}.exitMotion`),
-    activationFrame: resolvedActive.value === true ? resolvedActive.sourceKeyframeFrame : undefined,
+    enterMotion,
+    exitMotion,
+    localFrame: Math.max(0, frame - (activationFrame ?? 0)),
+    activationFrame,
+    ...(activationFrame !== undefined
+      ? {
+          enterMotionFrame: resolveMotionFrame(
+            payload,
+            enterMotion,
+            {
+              trigger: true,
+              elapsedMs: Math.max(0, frame - activationFrame)
+                / Math.max(1, payload.frameRate) * 1000,
+            },
+          ),
+        }
+      : {}),
   };
 }
 
@@ -238,7 +269,17 @@ function visibleAlternativesWithExits(
         motionTotalDurationMs(payload, alternative.exitMotion) / 1000 * Math.max(1, payload.frameRate),
       );
       if (durationFrames <= 0 || frame - eventFrame >= durationFrames) continue;
-      exiting.push({ ...alternative, active: false, exitFrame: eventFrame });
+      exiting.push({
+        ...alternative,
+        active: false,
+        localFrame: Math.max(0, eventFrame - (alternative.activationFrame ?? 0)),
+        exitFrame: eventFrame,
+        exitMotionFrame: resolveMotionFrame(payload, alternative.exitMotion, {
+          trigger: true,
+          elapsedMs: Math.max(0, frame - eventFrame)
+            / Math.max(1, payload.frameRate) * 1000,
+        }),
+      });
       exitingIds.add(id);
     }
   }

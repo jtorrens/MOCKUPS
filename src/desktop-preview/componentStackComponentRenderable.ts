@@ -81,12 +81,8 @@ function renderAlternativeBase(
   assignedBox?: RenderableBox,
 ): RenderableNode {
   const component = alternative.component!;
-  const activationFrame = alternative.activationFrame ?? 0;
-  const localFrame = alternative.exitFrame === undefined
-    ? Math.max(0, payload.localFrame - activationFrame)
-    : Math.max(0, alternative.exitFrame - activationFrame);
   const childPayload = embeddedComponentPayload(
-    { ...payload, localFrame },
+    { ...payload, localFrame: alternative.localFrame },
     component.componentType,
     component.config,
     component.inputs,
@@ -103,27 +99,22 @@ function applyAlternativeMotion(
   parentBox: RenderableBox,
 ) {
   if (!node.box) throw new Error(`Component Stack state ${alternative.id} has no placed box`);
-  if (alternative.exitFrame !== undefined) {
-    const exitElapsedMs = alternative.exitElapsedMs
-      ?? Math.max(0, payload.localFrame - alternative.exitFrame) / Math.max(1, payload.frameRate) * 1000;
+  if (alternative.exitMotionFrame) {
     return wrapExitMotionFrame(
       payload,
       node,
       alternative.exitMotion,
-      { trigger: true, elapsedMs: exitElapsedMs },
+      alternative.exitMotionFrame,
       node.box,
       parentBox,
     );
   }
-  if (alternative.activationFrame === undefined && alternative.enterElapsedMs === undefined) return node;
-  const enterElapsedMs = alternative.enterElapsedMs
-    ?? Math.max(0, payload.localFrame - (alternative.activationFrame ?? 0))
-      / Math.max(1, payload.frameRate) * 1000;
+  if (!alternative.enterMotionFrame) return node;
   return wrapMotionFrame(
     payload,
     node,
     alternative.enterMotion,
-    { trigger: true, elapsedMs: enterElapsedMs },
+    alternative.enterMotionFrame,
     node.box,
     parentBox,
   );

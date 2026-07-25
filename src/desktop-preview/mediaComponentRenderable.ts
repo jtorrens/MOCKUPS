@@ -12,7 +12,6 @@ import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js"
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
-import { motionFrameProgress } from "./previewMotionHelpers.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
@@ -110,8 +109,8 @@ function mediaBoxesFromInlineBox(
     media: inlineBox,
   };
   const fullframe = fullframeMediaBoxes(payload, media);
-  const progress = mediaFullframeTransitionProgress(payload, media);
-  if (!media.motionFrame.trigger || progress >= 1) {
+  const progress = media.motionFrame.progress;
+  if (!media.motionFrame.active || progress >= 1) {
     return media.displayState === "fullframe" ? fullframe : inline;
   }
 
@@ -209,8 +208,8 @@ function mediaBars(
   media: MediaDesignContract,
   boxes: MediaRenderBoxes,
 ): RenderableNode[] {
-  const transitionProgress = mediaFullframeTransitionProgress(payload, media);
-  const isTransitioning = media.motionFrame.trigger && transitionProgress < 1;
+  const transitionProgress = media.motionFrame.progress;
+  const isTransitioning = media.motionFrame.active && transitionProgress < 1;
   if (media.displayState !== "fullframe" && !isTransitioning) return [];
   const transitionRadius = numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload);
   const bars: RenderableNode[] = [
@@ -228,13 +227,6 @@ function mediaBars(
   ];
 
   return bars;
-}
-
-function mediaFullframeTransitionProgress(
-  payload: DesignPreviewPayload,
-  media: MediaDesignContract,
-) {
-  return motionFrameProgress(payload, media.motion, media.motionFrame);
 }
 
 function mediaContent(
@@ -304,7 +296,7 @@ function mediaControlNodes(
   media: MediaDesignContract,
   mediaBox: RenderableBox,
 ): RenderableNode[] {
-  const opacity = controlsOpacity(media);
+  const opacity = media.controlsOpacity;
   if (opacity <= 0) return [];
   const scale = renderScale(payload);
   const paddingX = Math.max(0, numberToken(payload, media.iconBarPadding.xToken) * scale);
@@ -372,17 +364,6 @@ function insetBox(
     width: Math.max(1, box.width - paddingX * 2),
     height: Math.max(1, box.height - paddingY * 2),
   };
-}
-
-function controlsOpacity(media: MediaDesignContract) {
-  if (media.controlsFadeDurationMs <= 0) {
-    return media.controlsElapsedMs > media.controlsFadeDelayMs ? 0 : 1;
-  }
-  if (media.controlsElapsedMs <= media.controlsFadeDelayMs) return 1;
-  const fadeProgress =
-    (media.controlsElapsedMs - media.controlsFadeDelayMs) /
-    media.controlsFadeDurationMs;
-  return Math.max(0, Math.min(1, 1 - fadeProgress));
 }
 
 function mediaTextOverlayNodes(

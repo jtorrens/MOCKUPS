@@ -15,6 +15,24 @@ interface MotionTiming {
   intensity: number;
 }
 
+type ComponentMotionClock = {
+  trigger: boolean;
+  elapsedMs: number;
+  reverse?: boolean;
+};
+
+export function resolveMotionFrame(
+  payload: DesignPreviewPayload,
+  motion: ComponentMotionContract,
+  clock: ComponentMotionClock,
+): ComponentMotionFrameContract {
+  return {
+    active: clock.trigger,
+    progress: resolvedMotionProgress(payload, motion, clock),
+    ...(clock.reverse === undefined ? {} : { reverse: clock.reverse }),
+  };
+}
+
 export function wrapMotionFrame(
   payload: DesignPreviewPayload,
   node: RenderableNode,
@@ -23,18 +41,13 @@ export function wrapMotionFrame(
   finalBox: RenderableBox,
   parentBox: RenderableBox,
 ): RenderableNode {
-  if (!frame.trigger || (motion.transition === "none" && !motion.fade)) {
+  if (!frame.active
+      || frame.progress >= 1
+      || (motion.transition === "none" && !motion.fade)) {
     return node;
   }
 
-  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
-  if (timing.durationMs <= 0) {
-    return node;
-  }
-
-  const elapsedMs = frame.elapsedMs;
-  const linearProgress = linearMotionProgress(elapsedMs, timing);
-  const progress = easingProgress(timing.easing, linearProgress, timing.intensity);
+  const progress = clampedProgress(frame.progress);
   const boundsBox = motion.bounds === "screen" ? rootPreviewScreenBox(payload) : parentBox;
   const startBox = motion.translate
     ? entranceStartBox(finalBox, boundsBox, motion.direction)
@@ -84,14 +97,8 @@ export function wrapExitMotionFrame(
   finalBox: RenderableBox,
   parentBox: RenderableBox,
 ): RenderableNode {
-  if (!frame.trigger || (motion.transition === "none" && !motion.fade)) return node;
-  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
-  if (timing.durationMs <= 0) return node;
-  const progress = easingProgress(
-    timing.easing,
-    linearMotionProgress(frame.elapsedMs, timing),
-    timing.intensity,
-  );
+  if (!frame.active || (motion.transition === "none" && !motion.fade)) return node;
+  const progress = clampedProgress(frame.progress);
   const boundsBox = motion.bounds === "screen" ? rootPreviewScreenBox(payload) : parentBox;
   const endBox = motion.translate ? entranceStartBox(finalBox, boundsBox, motion.direction) : finalBox;
   return {
@@ -120,10 +127,10 @@ export function motionTotalDurationMs(payload: DesignPreviewPayload, motion: Com
   return Math.max(0, timing.delayMs + timing.durationMs);
 }
 
-export function motionFrameProgress(
+function resolvedMotionProgress(
   payload: DesignPreviewPayload,
   motion: ComponentMotionContract,
-  frame: ComponentMotionFrameContract,
+  frame: ComponentMotionClock,
 ) {
   if (!frame.trigger || (motion.transition === "none" && !motion.fade)) {
     return 1;

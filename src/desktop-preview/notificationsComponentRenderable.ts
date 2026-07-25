@@ -50,13 +50,12 @@ function renderDistributionTransition(
     ? withBadge(payload, current, notifications)
     : current;
   if (!current.box || !previous.box) throw new Error("Notifications distribution transition requires resolved boxes");
-  const elapsedMs = transition.elapsedFrames / Math.max(1, payload.frameRate) * 1000;
   const parent = previewScreenBox(payload);
   const outgoing = wrapExitMotionFrame(
     payload,
     previous,
     notifications.distributionMotion,
-    { trigger: true, elapsedMs },
+    transition.motionFrame,
     previous.box,
     parent,
   );
@@ -64,7 +63,7 @@ function renderDistributionTransition(
     payload,
     decoratedCurrent,
     notifications.distributionMotion,
-    { trigger: true, elapsedMs },
+    transition.motionFrame,
     decoratedCurrent.box!,
     parent,
   );

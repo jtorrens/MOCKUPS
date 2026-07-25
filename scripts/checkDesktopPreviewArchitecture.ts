@@ -3138,6 +3138,31 @@ for (const filePath of walkFiles(previewRoot)) {
     addViolation(file, "production preview layout must use resolved production-font measurement");
   }
 }
+const forbiddenRenderableTemporalReads = [
+  "payload.localFrame",
+  "payload.frameRate",
+  "rootScreenFrame(",
+  "resolveParameterAnimation(",
+  "RuntimeOwnerTimeline",
+  "motionFrameProgress(",
+  "resolveMotionFrame(",
+  "naturalWriteOnFrame(",
+  "simpleWriteOnFrame",
+  "parseObject(payload.instanceJson)",
+] as const;
+for (const filePath of walkFiles(previewRoot)) {
+  const file = relative(filePath);
+  if (!/Renderable(?:Common)?\.ts$/.test(file)) continue;
+  const source = readText(file);
+  for (const forbidden of forbiddenRenderableTemporalReads) {
+    if (source.includes(forbidden)) {
+      addViolation(
+        file,
+        `renderables must paint resolver-owned frame state and cannot evaluate '${forbidden}'`,
+      );
+    }
+  }
+}
 assertMatches(
   "src/desktop-preview/conversationModuleRenderable.ts",
   /childRenderable\(\s*payload,[\s\S]*?"keyboard"[\s\S]*?\{\s*text: composer\.text,[\s\S]*?currentCharacter: composer\.currentCharacter,[\s\S]*?motionElapsedMs,/,
@@ -6979,7 +7004,7 @@ for (const timelineAwareResolver of [
 }
 assertContains(
   "src/desktop-preview/componentStackComponentRenderable.ts",
-  "{ ...payload, localFrame }",
+  "{ ...payload, localFrame: alternative.localFrame }",
   "recursive Component Stack composition must rebase only the current boundary localFrame",
 );
 for (const concreteFrameOwner of ["conversation", "componentStack", "collectionStack"]) {
@@ -8842,7 +8867,6 @@ for (const permissiveWallpaperDocument of [
 for (const requiredConversationDocument of [
   ["src/desktop-preview/conversationModuleResolver.ts", 'requiredObjectArray(preview, "messages", "module.conversation runtime")'],
   ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(config, "conversation", "module config")'],
-  ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredObjectArray(preview, "messages", "module.conversation runtime")'],
   ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerLeftIconRowSlot",'],
   ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerRightIconRowSlot",'],
   ["src/desktop-preview/conversationModuleRenderable.ts", 'requiredRecord(\n    conversation,\n    "headerLeftIconRowInputs",'],
@@ -9388,12 +9412,12 @@ assertDoesNotContain(
   "shared internal navigation must not know a concrete runtime collection",
 );
 assertContains(
-  "src/desktop-preview/conversationModuleRenderable.ts",
-  "conversationMessageActorIdentityVisible(conversationType, message.state)",
+  "src/desktop-preview/conversationModuleResolver.ts",
+  "conversationMessageActorIdentityVisible(\n        conversationType,\n        message.state,",
   "Conversation must expose per-message Actor identity only through its direction-owned composition rule",
 );
 assertContains(
-  "src/desktop-preview/conversationModuleRenderable.ts",
+  "src/desktop-preview/conversationModuleResolver.ts",
   'return conversationType === "group" && direction === "incoming"',
   "only group incoming messages may expose per-message Actor identity",
 );
@@ -9403,7 +9427,7 @@ assertContains(
   "Conversation messages must stack from Header with messageGap before applying overflow scroll",
 );
 assertContains(
-  "src/desktop-preview/conversationModuleRenderable.ts",
+  "src/desktop-preview/conversationModuleResolver.ts",
   'transition: "slide"',
   "Conversation message overflow must use the shared Theme Slide motion",
 );

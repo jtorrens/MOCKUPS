@@ -54,12 +54,12 @@ test("Transition Screen bounds survive nested parent frames", () => {
     width: 320,
     height: 500,
   });
-  const screen = wrapMotionFrame(nested, node, baseMotion, { trigger: true, elapsedMs: 0 }, finalBox, parentBox);
+  const screen = wrapMotionFrame(nested, node, baseMotion, { active: true, progress: 0 }, finalBox, parentBox);
   const parent = wrapMotionFrame(
     nested,
     node,
     { ...baseMotion, bounds: "parent" },
-    { trigger: true, elapsedMs: 0 },
+    { active: true, progress: 0 },
     finalBox,
     parentBox,
   );
@@ -72,12 +72,12 @@ test("Transition Screen bounds survive nested parent frames", () => {
 
 test("Transition Exit uses the same generic Screen and Parent bounds", () => {
   const nested = previewPayloadInBox(payload, parentBox);
-  const screen = wrapExitMotionFrame(nested, node, baseMotion, { trigger: true, elapsedMs: 240 }, finalBox, parentBox);
+  const screen = wrapExitMotionFrame(nested, node, baseMotion, { active: true, progress: 1 }, finalBox, parentBox);
   const parent = wrapExitMotionFrame(
     nested,
     node,
     { ...baseMotion, bounds: "parent" },
-    { trigger: true, elapsedMs: 240 },
+    { active: true, progress: 1 },
     finalBox,
     parentBox,
   );

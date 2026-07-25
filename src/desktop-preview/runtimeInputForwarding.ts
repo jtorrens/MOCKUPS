@@ -16,6 +16,54 @@ export function applyRuntimeInputForwarding(
   };
 }
 
+export function forwardedRuntimeInputPatch(
+  config: JsonRecord,
+  fieldId: string,
+  value: unknown,
+): JsonRecord {
+  const matches: Array<{ jsonKey: string }> = [];
+  collectForwardedInput(config, fieldId, matches);
+  if (matches.length !== 1) {
+    throw new Error(
+      `Forwarded runtime input '${fieldId}' must have exactly one target; found ${matches.length}`,
+    );
+  }
+  return { [matches[0]!.jsonKey]: value };
+}
+
+function collectForwardedInput(
+  node: unknown,
+  fieldId: string,
+  matches: Array<{ jsonKey: string }>,
+) {
+  if (Array.isArray(node)) {
+    node.forEach((child) => collectForwardedInput(child, fieldId, matches));
+    return;
+  }
+  if (!isRecord(node)) return;
+
+  const forwarding = node[storageKey];
+  if (forwarding !== undefined && !isRecord(forwarding)) {
+    throw new Error(`${storageKey} must be an object when present`);
+  }
+  if (isRecord(forwarding)) {
+    for (const [targetKey, rawDefinition] of Object.entries(forwarding)) {
+      if (!isRecord(rawDefinition)
+          || typeof rawDefinition.id !== "string"
+          || typeof rawDefinition.jsonKey !== "string") {
+        throw new Error(`Invalid forwarded runtime input definition ${targetKey}`);
+      }
+      if (rawDefinition.id === fieldId) {
+        matches.push({ jsonKey: rawDefinition.jsonKey });
+      }
+    }
+  }
+
+  for (const [key, child] of Object.entries(node)) {
+    if (key !== storageKey) collectForwardedInput(child, fieldId, matches);
+  }
+}
+
 function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
   if (Array.isArray(node)) {
     node.forEach((child) => apply(child, runtime, inheritedOwnerId));

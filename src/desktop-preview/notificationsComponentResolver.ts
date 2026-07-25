@@ -4,8 +4,11 @@ import { parseObject, requiredBoolean, requiredNumber, requiredRecord, requiredS
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { NotificationsDesignContract } from "./notificationsComponentContract.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
-import { requiredMotionContract } from "./previewMotionHelpers.js";
-import { motionTotalDurationMs } from "./previewMotionHelpers.js";
+import {
+  motionTotalDurationMs,
+  requiredMotionContract,
+  resolveMotionFrame,
+} from "./previewMotionHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
@@ -76,7 +79,12 @@ export function resolveNotificationsComponent(payload: DesignPreviewPayload): No
     : stack;
   const distributionTransition = distribution.transition
     ? {
-        ...distribution.transition,
+        fromMode: distribution.transition.fromMode,
+        motionFrame: resolveMotionFrame(payload, distributionMotion, {
+          trigger: true,
+          elapsedMs: distribution.transition.elapsedFrames
+            / Math.max(1, payload.frameRate) * 1000,
+        }),
         fromStack: {
           ...stack,
           distributionMode: distribution.transition.fromMode,

@@ -4,6 +4,7 @@ import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type {
   AlignmentPlacementContract,
   ComponentMotionContract,
+  ComponentMotionFrameContract,
   SpacingPairContract,
 } from "./previewComponentContracts.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
@@ -13,9 +14,8 @@ export interface IncomingCallNotificationDesignContract {
   size: { width: number; height: number };
   padding: SpacingPairContract;
   present: boolean;
-  presenceTransition: boolean;
-  presenceElapsedMs: number;
   boundaryMotion: ComponentMotionContract;
+  boundaryMotionFrame: ComponentMotionFrameContract;
   surface: SurfaceDesignContract;
   avatar: AvatarDesignContract;
   avatarPlacement: AlignmentPlacementContract;

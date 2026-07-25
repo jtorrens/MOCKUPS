@@ -15,6 +15,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import { requiredComponentBoundaryMotion } from "./componentBoundaryMotion.js";
+import { resolveMotionFrame } from "./previewMotionHelpers.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
@@ -66,32 +67,38 @@ export function resolveIncomingCallNotificationComponent(
     "iconRow",
   );
 
+  const present = requiredBoolean(
+    preview,
+    "present",
+    "component.incomingCallNotification.runtime.present",
+  );
+  const presenceTransition = requiredBoolean(
+    preview,
+    "presenceTransition",
+    "component.incomingCallNotification.runtime.presenceTransition",
+  );
+  const presenceElapsedMs = nonNegative(
+    requiredNumber(
+      preview,
+      "presenceElapsedMs",
+      "component.incomingCallNotification.runtime.presenceElapsedMs",
+    ),
+    "component.incomingCallNotification.runtime.presenceElapsedMs",
+  );
+  const boundaryMotion = requiredComponentBoundaryMotion(
+    config,
+    "component.incomingCallNotification",
+  );
   return {
     id: "component.incomingCallNotification",
     size,
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },
-    present: requiredBoolean(
-      preview,
-      "present",
-      "component.incomingCallNotification.runtime.present",
-    ),
-    presenceTransition: requiredBoolean(
-      preview,
-      "presenceTransition",
-      "component.incomingCallNotification.runtime.presenceTransition",
-    ),
-    presenceElapsedMs: nonNegative(
-      requiredNumber(
-        preview,
-        "presenceElapsedMs",
-        "component.incomingCallNotification.runtime.presenceElapsedMs",
-      ),
-      "component.incomingCallNotification.runtime.presenceElapsedMs",
-    ),
-    boundaryMotion: requiredComponentBoundaryMotion(
-      config,
-      "component.incomingCallNotification",
-    ),
+    present,
+    boundaryMotion,
+    boundaryMotionFrame: resolveMotionFrame(payload, boundaryMotion, {
+      trigger: presenceTransition,
+      elapsedMs: presenceElapsedMs,
+    }),
     surface: resolveSurfaceComponentAtSize(
       surfaceConfig,
       size,

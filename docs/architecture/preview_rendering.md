@@ -100,6 +100,13 @@ declared owner files, exact registry route, permitted dependency edges and
 committed database parity. A behavior change is incomplete until its focused
 tests change in the same revision.
 
+A renderable consumes only the state resolved for the requested frame. It never
+reads the playhead, frame rate or animation document and never derives
+write-on, playback, presence, fade or motion progress. A parent resolver may
+project an already resolved child-local frame across an embedded boundary; the
+child resolver then resolves that child frame before its renderable paints it.
+Architecture validation rejects raw temporal evaluation in renderable owners.
+
 ## Component and Module ownership
 
 Every Component follows:

@@ -1,7 +1,10 @@
 import type { CollectionStackDesignContract } from "./collectionStackComponentContract.js";
 import type { ComponentCollectionChildRenderer } from "./componentCollectionContract.js";
 import type { BadgeDesignContract } from "./badgeComponentContract.js";
-import type { ComponentMotionContract } from "./previewComponentContracts.js";
+import type {
+  ComponentMotionContract,
+  ComponentMotionFrameContract,
+} from "./previewComponentContracts.js";
 import type { CollectionStackDistributionMode } from "./collectionStackComponentContract.js";
 
 export interface NotificationsDesignContract {
@@ -11,7 +14,7 @@ export interface NotificationsDesignContract {
   distributionMotion: ComponentMotionContract;
   distributionTransition?: {
     fromMode: CollectionStackDistributionMode;
-    elapsedFrames: number;
+    motionFrame: ComponentMotionFrameContract;
     fromStack: CollectionStackDesignContract;
   };
   badge?: BadgeDesignContract;

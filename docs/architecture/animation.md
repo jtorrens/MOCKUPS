@@ -130,3 +130,9 @@ Animation is resolved frame data. For every requested frame:
 
 The web layer does not run timers, CSS animations, countdowns or
 Component-specific interpolation.
+
+Temporal render contracts carry resolved state such as `active`, normalized
+`progress`, current text, current playback time and child-local frame. Raw
+elapsed milliseconds, frame-rate conversion and track evaluation remain in the
+owning resolver. Renderables may apply resolved progress to geometry but never
+calculate that progress.

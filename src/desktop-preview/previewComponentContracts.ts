@@ -48,7 +48,7 @@ export interface ComponentMotionContract {
 }
 
 export interface ComponentMotionFrameContract {
-  trigger: boolean;
-  elapsedMs: number;
+  active: boolean;
+  progress: number;
   reverse?: boolean;
 }

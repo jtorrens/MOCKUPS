@@ -1,11 +1,9 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
-import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
+import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
-  optionalBoolean,
   optionalNumber,
   optionalString,
   parseObject,
@@ -15,16 +13,12 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
-import { keyboardComponentToRenderable } from "./keyboardComponentRenderable.js";
-import { resolveKeyboardComponent } from "./keyboardComponentResolver.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
 import {
   iconRowButtonRuntimeDefaults,
   resolveIconRowComponentFromRecords,
 } from "./iconRowComponentResolver.js";
-import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
-import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import {
   numberToken,
   previewScreenBox,
@@ -34,29 +28,18 @@ import {
   translateRenderableNode,
 } from "./componentRenderableCommon.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
-import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
-import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
-import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
-import { resolveTextInputBarComponent } from "./textInputBarComponentResolver.js";
-import { motionFrameProgress, requiredMotionContract } from "./previewMotionHelpers.js";
-import {
-  simpleWriteOnFrameVisibleCount,
-  textGraphemes,
-} from "./previewTextRevealHelpers.js";
-import { resolveConversationModuleFrame } from "./conversationModuleResolver.js";
+import { resolveConversationModule } from "./conversationModuleResolver.js";
+import type {
+  ConversationMessageContract,
+  ConversationTimingContract,
+} from "./conversationModuleContract.js";
 
 type JsonRecord = Record<string, unknown>;
 
-export function conversationMessageActorIdentityVisible(
-  conversationType: string,
-  direction: string,
-) {
-  return conversationType === "group" && direction === "incoming";
-}
-
 export function conversationModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const config = parseObject(payload.configJson);
-  const preview = resolveConversationModuleFrame(payload);
+  const contract = resolveConversationModule(payload);
+  const preview = contract.preview;
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const conversation = requiredRecord(config, "conversation", "module config");
   const screen = previewScreenBox(payload);
@@ -84,8 +67,6 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         "status_bar",
         themeStatusBarVariantReference,
         {},
-        (childPayload) =>
-          statusBarComponentToRenderable(childPayload, resolveStatusBarComponent(childPayload)),
       )
     : undefined;
   const navigation = requiredBoolean(
@@ -99,21 +80,11 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         "navigation_bar",
         themeNavigationBarVariantReference,
         {},
-        (childPayload) =>
-          navigationBarComponentToRenderable(
-            childPayload,
-            resolveNavigationBarComponent(childPayload),
-          ),
       )
     : undefined;
-  const conversationFrame = Math.max(0, Math.floor(optionalNumber(preview, "conversationFrame", Number.MAX_SAFE_INTEGER)));
-  const motionElapsedMs = conversationFrame / Math.max(1, payload.frameRate) * 1000;
-  const timing = conversationTiming(conversation, preview);
-  const composer = composerState(conversationMessages(preview), conversationFrame, timing);
-  const keyboardVisible = composer.keyboardVisible
-    && requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard");
-  const textInputVisible = composer.textInputVisible
-    && requiredBoolean(conversation, "showTextInputBar", "module.conversation.showTextInputBar");
+  const { composer, timing } = contract;
+  const keyboardVisible = composer.keyboardVisible;
+  const textInputVisible = composer.textInputVisible;
   const keyboard = keyboardVisible
     ? childRenderable(
         payload,
@@ -123,10 +94,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
-          motionElapsedMs,
+          motionElapsedMs: contract.motionElapsedMs,
         },
-        (childPayload) =>
-          keyboardComponentToRenderable(childPayload, resolveKeyboardComponent(childPayload)),
       )
     : undefined;
   const textInput = textInputVisible
@@ -140,14 +109,9 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
           "module.conversation.textInputBarVariant",
         ),
         {
-          sampleText: composer.text,
           availableWidth: screen.width / scale,
         },
-        (childPayload) =>
-          textInputBarComponentToRenderable(
-            childPayload,
-            resolveTextInputBarComponent(childPayload),
-          ),
+        contract.textInputConfig,
       )
     : undefined;
 
@@ -189,22 +153,8 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       ? keyboardNode.box?.y ?? closedBottom
       : closedBottom;
   const composerOpen = keyboardVisible || textInputVisible;
-  const viewportMotion = conversation.messageViewportMotion
-    ? requiredMotionContract(conversation, "messageViewportMotion", "module.conversation.messageViewportMotion")
-    : {
-        transition: "slide" as const,
-        direction: "bottom" as const,
-        bounds: "parent" as const,
-        fade: false,
-        translate: true,
-        scale: false,
-      };
-  const motionProgress = motionFrameProgress(payload, viewportMotion, {
-    trigger: optionalBoolean(preview, "composerTransitionTrigger"),
-    elapsedMs: optionalNumber(preview, "composerTransitionElapsedMs", 0),
-  });
   const bottom = composerOpen
-    ? lerp(closedBottom, composerBottom, motionProgress)
+    ? lerp(closedBottom, composerBottom, contract.viewportMotionProgress)
     : closedBottom;
   const messageViewport = {
     x: screen.x,
@@ -224,12 +174,12 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       payload,
       componentBaseConfigs,
       conversation,
-      preview,
+      contract.visibleMessages,
       top,
       bottom,
-      conversationFrame,
-      motionElapsedMs,
       timing,
+      contract.motionElapsedMs,
+      contract.scrollMotionProgress,
     ),
   });
 
@@ -253,12 +203,12 @@ function messageNodes(
   payload: DesignPreviewPayload,
   componentBaseConfigs: JsonRecord,
   conversation: JsonRecord,
-  preview: JsonRecord,
+  messages: ConversationMessageContract[],
   top: number,
   bottom: number,
-  conversationFrame: number,
+  timing: ConversationTimingContract,
   motionElapsedMs: number,
-  timing: ConversationTiming,
+  resolvedScrollProgress: number,
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -268,20 +218,7 @@ function messageNodes(
     "bubbleVariant",
     "module.conversation.bubbleVariant",
   );
-  const messages = visibleMessages(
-    conversationMessages(preview),
-    conversationFrame,
-    timing,
-  );
-  const conversationType = requiredString(
-    preview,
-    "conversationType",
-    "module.conversation.input.conversationType",
-  );
-  if (conversationType !== "individual" && conversationType !== "group") {
-    throw new Error(`Unsupported Conversation type ${conversationType}`);
-  }
-  const bubbleNode = (message: ConversationPreviewMessage, writeOnTrigger: boolean) => childRenderable(
+  const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => childRenderable(
     payload,
     componentBaseConfigs,
     "bubble",
@@ -290,14 +227,14 @@ function messageNodes(
       state: message.state,
       sampleText: message.text,
       actor: message.actor,
-      actorIdentityVisible: conversationMessageActorIdentityVisible(conversationType, message.state),
+      actorIdentityVisible: message.actorIdentityVisible,
       mediaType: message.mediaType,
       mediaSource: message.mediaSource,
       viewportSize: message.viewportSize,
       mediaScale: message.mediaScale,
       mediaOffset: message.mediaOffset,
       isPlaying: message.isPlaying,
-      currentTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate),
+      currentTimeSeconds: message.playbackTimeSeconds,
       durationSeconds: message.durationSeconds,
       playbackMode: message.playbackMode,
       isFullScreen: message.isFullScreen,
@@ -316,7 +253,6 @@ function messageNodes(
       statusState: message.statusVisible ? message.statusState : "none",
       statusText: message.statusVisible ? message.statusText : "",
     },
-    (childPayload) => bubbleComponentToRenderable(childPayload, resolveBubbleComponent(childPayload)),
   );
   const entries = messages.map((message) => {
     const node = bubbleNode(message, message.writeOnTrigger);
@@ -339,22 +275,9 @@ function messageNodes(
   const previousHeight = previousEntries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, previousEntries.length - 1) * gap;
   const previousOverflow = Math.max(0, gap + previousHeight - viewportHeight);
-  const scrollProgress = motionFrameProgress(
-    payload,
-    {
-      transition: "slide",
-      direction: "bottom",
-      bounds: "parent",
-      fade: false,
-      translate: true,
-      scale: false,
-    },
-    {
-      trigger: targetOverflow !== previousOverflow,
-      elapsedMs: Math.max(0, conversationFrame - latestAppearanceFrame)
-        / Math.max(1, payload.frameRate) * 1000,
-    },
-  );
+  const scrollProgress = targetOverflow !== previousOverflow
+    ? resolvedScrollProgress
+    : 1;
   const scrollOffset = lerp(previousOverflow, targetOverflow, scrollProgress);
   let y = top + gap - scrollOffset;
   return entries.map((entry, index) => {
@@ -371,230 +294,6 @@ function messageNodes(
   });
 }
 
-type ConversationPreviewMessage = {
-  actor: JsonRecord;
-  state: string;
-  text: string;
-  statusState: string;
-  statusText: string;
-  delayAfterPreviousFrames: number;
-  writeOnDurationFrames: number;
-  composerWriteOnDurationFrames: number;
-  composerUsesResolvedText: boolean;
-  timelineBodyDurationFrames: number;
-  timelineStartFrame: number;
-  timelineEndFrame: number;
-  timelineRevealAtFrame: number;
-  postWriteOnHoldFrames: number;
-  writeOnTrigger: boolean;
-  writeOnFrame: number;
-  statusVisible: boolean;
-  visibleAtFrame: number;
-  mediaType: "none" | "image" | "video" | "audio";
-  mediaSource: string;
-  viewportSize: string;
-  mediaScale: number;
-  mediaOffset: string;
-  isPlaying: boolean;
-  currentTimeSeconds: number;
-  durationSeconds: number;
-  playbackMode: "once" | "loop";
-  playDurationFrames: number;
-  playbackFrame: number;
-  isFullScreen: boolean;
-  fullScreenTransition: boolean;
-  fullframeOrientation: string;
-  controlsElapsedMs: number;
-  isTypingIndicator: boolean;
-};
-
-type IncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
-type TypingIndicatorAnimation = "none" | "pulsating" | "wave";
-
-type ConversationTiming = {
-  bubbleRevealMode: "duringWriteOn" | "afterWriteOn";
-  incomingRevealMode: IncomingRevealMode;
-  textInputVisible: boolean;
-  keyboardVisible: boolean;
-  typingIndicatorText: string;
-  typingIndicatorSizeToken: string;
-  typingIndicatorAnimation: TypingIndicatorAnimation;
-};
-
-function conversationTiming(conversation: JsonRecord, preview: JsonRecord): ConversationTiming {
-  const incomingRevealMode = optionalString(preview, "incomingRevealMode")
-    || optionalString(conversation, "incomingRevealMode");
-  const bubbleRevealMode = optionalString(preview, "bubbleRevealMode")
-    || optionalString(conversation, "bubbleRevealMode");
-  return {
-    bubbleRevealMode: bubbleRevealMode === "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
-    incomingRevealMode: incomingRevealMode === "writeOn" || incomingRevealMode === "typingIndicator"
-      ? incomingRevealMode
-      : "instant",
-    textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
-    keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
-    typingIndicatorText: optionalString(preview, "typingIndicatorText")
-      || optionalString(conversation, "typingIndicatorText")
-      || "•••",
-    typingIndicatorSizeToken: optionalString(preview, "typingIndicatorSizeToken")
-      || optionalString(conversation, "typingIndicatorSizeToken")
-      || "theme.typography.sizes.m",
-    typingIndicatorAnimation: typingIndicatorAnimation(
-      optionalString(preview, "typingIndicatorAnimation")
-        || optionalString(conversation, "typingIndicatorAnimation"),
-    ),
-  };
-}
-
-function typingIndicatorAnimation(value: string | undefined): TypingIndicatorAnimation {
-  return value === "none" || value === "wave" ? value : "pulsating";
-}
-
-function optionalBooleanWithFallback(
-  primary: JsonRecord,
-  secondary: JsonRecord,
-  key: string,
-  fallback: boolean,
-) {
-  if (typeof primary[key] === "boolean") return primary[key];
-  if (typeof secondary[key] === "boolean") return secondary[key];
-  return fallback;
-}
-
-function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[] {
-  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
-  return messages.map((message, index) => {
-    const path = `module.conversation.messages[${index}]`;
-    return {
-      actor: optionalObject(message, "actor", path),
-      state: requiredString(message, "direction", path),
-      text: optionalString(message, "text"),
-      statusState: optionalString(message, "statusState") || "none",
-      statusText: optionalString(message, "statusText"),
-      delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
-      writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
-      composerWriteOnDurationFrames: Math.max(
-        0,
-        Math.floor(optionalNumber(
-          message,
-          "composerWriteOnDurationFrames",
-          optionalNumber(message, "writeOnDurationFrames", 0),
-        )),
-      ),
-      composerUsesResolvedText: optionalBoolean(
-        message,
-        "composerUsesResolvedText",
-      ),
-      timelineBodyDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "timelineBodyDurationFrames", 0))),
-      timelineStartFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineStartFrame", 0))),
-      timelineEndFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineEndFrame", 0))),
-      timelineRevealAtFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0))),
-      postWriteOnHoldFrames: Math.max(0, Math.floor(optionalNumber(message, "postWriteOnHoldFrames", 0))),
-      writeOnTrigger: false,
-      writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
-      statusVisible: optionalBoolean(message, "statusVisible") || optionalString(message, "statusState") !== "none",
-      visibleAtFrame: 0,
-      mediaType: messageMediaType(message),
-      mediaSource: optionalString(message, "mediaSource"),
-      viewportSize: optionalString(message, "viewportSize") || "240|160",
-      mediaScale: optionalNumber(message, "mediaScale", 1),
-      mediaOffset: optionalString(message, "mediaOffset") || "0|0",
-      isPlaying: optionalBoolean(message, "isPlaying"),
-      currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
-      durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
-      playbackMode: playbackMode(optionalString(message, "playbackMode")),
-      playDurationFrames: Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 72))),
-      playbackFrame: Math.max(0, Math.floor(optionalNumber(message, "playbackFrame", 0))),
-      isFullScreen: optionalBoolean(message, "isFullScreen"),
-      fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
-      fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
-      controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
-      isTypingIndicator: false,
-    };
-  });
-}
-
-function visibleMessages(
-  messages: ConversationPreviewMessage[],
-  frame: number,
-  timing: ConversationTiming,
-) {
-  return messages.flatMap((message) => {
-    const startFrame = message.timelineStartFrame;
-    const isSystemMessage = message.state === "system";
-    const isOutgoingMessage = message.state === "outgoing";
-    const isIncomingMessage = message.state === "incoming";
-    const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
-    const revealEndFrame = startFrame + effectiveWriteOnFrames;
-    const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
-    const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;
-    if (frame < visibleAt) return [];
-    const incomingTyping = isIncomingMessage
-      && timing.incomingRevealMode === "typingIndicator"
-      && frame < revealEndFrame;
-    const incomingWriteOn = isIncomingMessage
-      && timing.incomingRevealMode === "writeOn"
-      && effectiveWriteOnFrames > 0
-      && frame < revealEndFrame;
-    const messageIsWriting = frame < revealEndFrame
-      && effectiveWriteOnFrames > 0
-      && (isOutgoingMessage || incomingWriteOn || incomingTyping);
-    return [{
-      ...message,
-      visibleAtFrame: visibleAt,
-      text: incomingTyping ? timing.typingIndicatorText : message.text,
-      mediaType: messageIsWriting ? "none" as const : message.mediaType,
-      mediaSource: messageIsWriting ? "" : message.mediaSource,
-      isTypingIndicator: incomingTyping,
-      writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
-        && !revealAfterWriteOn
-        && effectiveWriteOnFrames > 0,
-      writeOnFrame: message.writeOnFrame,
-      writeOnDurationFrames: effectiveWriteOnFrames,
-    }];
-  });
-}
-
-function composerState(
-  messages: ConversationPreviewMessage[],
-  frame: number,
-  timing: ConversationTiming,
-) {
-  for (const message of messages) {
-    const startFrame = message.timelineStartFrame;
-    const effectiveWriteOnFrames = message.state === "system"
-      ? 0
-      : message.composerWriteOnDurationFrames;
-    const endFrame = startFrame + effectiveWriteOnFrames;
-    const holdEndFrame = message.timelineRevealAtFrame;
-    const composerVisible = message.state === "outgoing"
-      && effectiveWriteOnFrames > 0
-      && frame >= startFrame
-      && frame < holdEndFrame;
-    if (composerVisible) {
-      const graphemes = textGraphemes(message.text);
-      const writeOnInProgress = frame < endFrame;
-      const textLength = writeOnInProgress
-        && !message.composerUsesResolvedText
-          ? simpleWriteOnFrameVisibleCount(message.text, {
-              enabled: true,
-              frame: message.writeOnFrame,
-              durationFrames: effectiveWriteOnFrames,
-            })
-          : graphemes.length;
-      return {
-        text: graphemes.slice(0, textLength).join(""),
-        // The composer remains visible during the post-write-on hold, but the
-        // physical key is only down while a grapheme is actively being typed.
-        currentCharacter: writeOnInProgress ? textLength : 0,
-        textInputVisible: timing.textInputVisible,
-        keyboardVisible: timing.keyboardVisible,
-      };
-    }
-  }
-  return { text: "", currentCharacter: 0, textInputVisible: false, keyboardVisible: false };
-}
-
 function withZIndex(node: RenderableNode, zIndex: number): RenderableNode {
   return {
     ...node,
@@ -603,27 +302,6 @@ function withZIndex(node: RenderableNode, zIndex: number): RenderableNode {
       zIndex,
     },
   };
-}
-
-function messageMediaType(message: JsonRecord): ConversationPreviewMessage["mediaType"] {
-  const mediaType = optionalString(message, "mediaType");
-  return mediaType === "image" || mediaType === "video" || mediaType === "audio"
-    ? mediaType
-    : "none";
-}
-
-function playbackMode(value: string): ConversationPreviewMessage["playbackMode"] {
-  return value === "loop" ? "loop" : "once";
-}
-
-function messagePlaybackTimeSeconds(message: ConversationPreviewMessage, frameRate: number) {
-  const elapsedSeconds = message.playbackFrame > 0
-    ? message.playbackFrame / Math.max(1, frameRate)
-    : message.currentTimeSeconds;
-  if (message.playbackMode === "loop") {
-    return elapsedSeconds % message.durationSeconds;
-  }
-  return Math.min(message.durationSeconds, Math.max(0, elapsedSeconds));
 }
 
 function lerp(from: number, to: number, progress: number) {
@@ -636,10 +314,11 @@ function childRenderable(
   componentType: string,
   variantReference: string,
   designPreviewPatch: JsonRecord,
-  render: (payload: DesignPreviewPayload) => RenderableNode,
+  resolvedConfig?: JsonRecord,
 ) {
-  const config = componentVariantConfig(componentBaseConfigs, componentType, variantReference);
-  return render({
+  const config = resolvedConfig
+    ?? componentVariantConfig(componentBaseConfigs, componentType, variantReference);
+  return componentClassToRenderable({
     ...payload,
     kind: "componentClass",
     componentType,

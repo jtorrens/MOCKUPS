@@ -45,7 +45,12 @@ export function renderComponentCollectionFlow(
     items,
     (item) => {
       const component = item as ComponentCollectionItemContract;
-      return renderChild(embeddedComponentPayload(payload, component.componentType, component.config, component.inputs));
+      return renderChild(embeddedComponentPayload(
+        { ...payload, localFrame: component.localFrame },
+        component.componentType,
+        component.config,
+        component.inputs,
+      ));
     },
     options,
   );
@@ -198,7 +203,12 @@ function measureItems(
 ): MeasuredItem[] {
   const scale = renderScale(payload);
   const intrinsic = items.map((item) => {
-    const node = renderChild(embeddedComponentPayload(payload, item.componentType, item.config, item.inputs));
+    const node = renderChild(embeddedComponentPayload(
+      { ...payload, localFrame: item.localFrame },
+      item.componentType,
+      item.config,
+      item.inputs,
+    ));
     if (!node.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
     return {
       item,
@@ -215,7 +225,12 @@ function measureItems(
   const assignedBox = boundedCenterBox(payload, width, height);
   return items.map((item) => {
     const child = renderChild(
-      embeddedComponentPayload(payload, item.componentType, item.config, item.inputs),
+      embeddedComponentPayload(
+        { ...payload, localFrame: item.localFrame },
+        item.componentType,
+        item.config,
+        item.inputs,
+      ),
       assignedBox,
     );
     if (!child.box) throw new Error(`Component collection item ${item.id} has no resolved box`);
@@ -244,33 +259,24 @@ function applyPresenceMotion(
   parentBox: RenderableBox,
 ) {
   if (!node.box) return node;
-  if (item.presenceTransition) {
-    const frame = { trigger: true, elapsedMs: item.presenceElapsedMs ?? 0 };
-    return item.present
-      ? wrapMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox)
-      : wrapExitMotionFrame(payload, node, item.presenceMotion, frame, node.box, parentBox);
-  }
-  if (item.exitFrame !== undefined) {
-    const elapsedFrames = Math.max(0, payload.localFrame - item.exitFrame);
-    return wrapExitMotionFrame(
+  if (!item.presenceMotionFrame || !item.presenceMotionKind) return node;
+  return item.presenceMotionKind === "enter"
+    ? wrapMotionFrame(
       payload,
       node,
       item.presenceMotion,
-      { trigger: true, elapsedMs: elapsedFrames / Math.max(1, payload.frameRate) * 1000 },
+      item.presenceMotionFrame,
       node.box,
       parentBox,
-    );
-  }
-  if (item.activationFrame === undefined || item.activationFrame <= 0) return node;
-  const elapsedFrames = Math.max(0, payload.localFrame - item.activationFrame);
-  return wrapMotionFrame(
-    payload,
-    node,
-    item.presenceMotion,
-    { trigger: true, elapsedMs: elapsedFrames / Math.max(1, payload.frameRate) * 1000 },
-    node.box,
-    parentBox,
-  );
+    )
+    : wrapExitMotionFrame(
+        payload,
+        node,
+        item.presenceMotion,
+        item.presenceMotionFrame,
+        node.box,
+        parentBox,
+      );
 }
 
 function isPresenceItem(item: ComponentCollectionLayoutItem): item is ComponentCollectionItemContract {

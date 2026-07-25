@@ -3,7 +3,11 @@ import { componentVariantConfig, mergeComponentDefaults } from "./componentPrevi
 import { optionalBoolean, optionalNumber, optionalString, parseObject, requiredNumber, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import { optionalObject, optionalObjectArray, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
-import { motionTotalDurationMs, requiredMotionContract } from "./previewMotionHelpers.js";
+import {
+  motionTotalDurationMs,
+  requiredMotionContract,
+  resolveMotionFrame,
+} from "./previewMotionHelpers.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
@@ -83,6 +87,37 @@ export function resolveComponentCollectionItem(
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
     const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame, themeTokens, payload.frameRate);
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
+    const activationFrame = present ? presence.sourceKeyframeFrame : undefined;
+    const localFrame = exitFrame === undefined
+      ? Math.max(0, frame - (activationFrame ?? 0))
+      : Math.max(0, exitFrame - (activationFrame ?? 0));
+    const resolvedPresenceMotion = presenceTransition
+      ? {
+          kind: present ? "enter" as const : "exit" as const,
+          frame: resolveMotionFrame(payload, presenceMotion, {
+            trigger: true,
+            elapsedMs: presenceElapsedMs,
+          }),
+        }
+      : exitFrame !== undefined
+        ? {
+            kind: "exit" as const,
+            frame: resolveMotionFrame(payload, presenceMotion, {
+              trigger: true,
+              elapsedMs: Math.max(0, frame - exitFrame)
+                / Math.max(1, payload.frameRate) * 1000,
+            }),
+          }
+        : activationFrame !== undefined && activationFrame > 0
+          ? {
+              kind: "enter" as const,
+              frame: resolveMotionFrame(payload, presenceMotion, {
+                trigger: true,
+                elapsedMs: Math.max(0, frame - activationFrame)
+                  / Math.max(1, payload.frameRate) * 1000,
+              }),
+            }
+          : undefined;
     const alignment = requiredString(item, "alignment", `${itemPath}.alignment`);
     if (alignment !== "start" && alignment !== "center" && alignment !== "end") {
       throw new Error(`Unsupported ${itemPath} alignment ${alignment}`);
@@ -103,12 +138,17 @@ export function resolveComponentCollectionItem(
       inputs: inputResolution.values,
       present,
       presenceMotion,
-      activationFrame: present ? presence.sourceKeyframeFrame : undefined,
+      localFrame,
+      ...(resolvedPresenceMotion
+        ? {
+            presenceMotionKind: resolvedPresenceMotion.kind,
+            presenceMotionFrame: resolvedPresenceMotion.frame,
+          }
+        : {}),
+      activationFrame,
       exitFrame,
       reflowStartFrame,
       reflowFromInputs: inputResolution.previousValues,
-      presenceTransition,
-      presenceElapsedMs,
     };
 }
 
