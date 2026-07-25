@@ -8,10 +8,14 @@ namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
 internal sealed class ShotManagerAssociationService
 {
     private readonly SpikeDatabase _database;
+    private readonly ShotManagerWorkstationRootStore _roots;
 
-    public ShotManagerAssociationService(SpikeDatabase database)
+    public ShotManagerAssociationService(
+        SpikeDatabase database,
+        ShotManagerWorkstationRootStore? roots = null)
     {
         _database = database;
+        _roots = roots ?? new ShotManagerWorkstationRootStore();
     }
 
     public ShotManagerProjectAssociationRecord Synchronize(
@@ -144,6 +148,7 @@ internal sealed class ShotManagerAssociationService
             season.Code,
             season.Name,
             timestamp);
+        _roots.Remember(snapshot.Production.Id, snapshot.RootPath);
         _database.ApplyShotManagerAssociation(new ShotManagerAssociationWritePlan(
             association,
             writes,

@@ -4,7 +4,7 @@ Status: normative.
 
 ## Production workflow
 
-Production consumes definitions and resources to build an ordered audiovisual
+Production consumes definitions and resources to build an ordered visual
 sequence:
 
 ```text
@@ -26,11 +26,7 @@ while preserving each editor's session context.
 Production exposes:
 
 - Episodes, Shots and Screens in the sequence tree;
-- one **Production Data** card containing Actors, Devices, Production Fonts and Render Presets.
-
-Render Presets live in Production Data because their selection belongs to a
-Production, even though a normal workflow can carry common presets between
-Projects. They do not imply that Render Mode or export is complete.
+- one **Production Data** card containing Actors, Devices and Production Fonts.
 
 Future Project duplication may offer:
 
@@ -87,8 +83,9 @@ With an association:
 - no external Shot identity exists or is manufactured.
 
 The persisted snapshot contains portable relative directories, stable
-structure-entry identities and the canonical prefix and version padding for
-every planned output. Workstation roots, resolved absolute paths, discovery
+structure-entry identities plus the source prefix and version padding for
+every planned output. MOCKUPS uses the stable entry identity and relative
+directory but owns the final render name. Workstation roots, resolved absolute paths, discovery
 data and bearer credentials remain local and transient. Repair
 resolves the current workstation root through Shot Manager and recreates only
 directories missing from the stored snapshot; a later Shot Manager template
@@ -101,6 +98,56 @@ Episodes, Shots and folder snapshots and removes only association ownership.
 Deleting a governed Shot removes its local database content but deliberately
 retains its production folders. No ordinary lifecycle action deletes external
 folders.
+
+## Render Queue
+
+The Render action is a persistent icon on each governed Shot row. It opens the
+local queue modal with that exact Shot selected. A Shot without stored Shot
+Manager output contracts cannot be queued because governed output never falls
+back to a free folder picker.
+
+The modal exposes:
+
+- the Shot Actor as read-only;
+- Device and Theme defaulted from that Actor, with same-Project job-only
+  overrides;
+- Light, Dark or Both;
+- one of the predefined output routes stored from Shot Manager;
+- a job-owned output mode;
+- an editable safe base name.
+
+The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha, PNG
+sequence and EXR sequence. No output contains audio.
+
+MOCKUPS proposes:
+
+```text
+<SHOT>_LIGHT_v001
+<SHOT>_DARK_v001
+```
+
+The user may add a qualifier such as `GFX` or `COMP` to the base name.
+Appearance and version remain automatic. Both reserves one free version across the pair
+and creates two independent child jobs with the same batch and route.
+One child may complete or fail without changing the other.
+
+Every Screen resolves its exact Module appearance contract. A Screen forced to
+Light or Dark keeps that mode even inside the opposite requested Shot job;
+`inherit` follows the job appearance. Device and Theme combinations are never
+rejected by family because Themes are authored visual fiction.
+
+At enqueue time MOCKUPS freezes every resolved Shot frame and referenced asset.
+Later editor changes do not modify that work. The worker produces only the
+clean Production canvas, with no editor chrome or device frame, at the selected
+Device metrics and Shot FPS. Jobs run sequentially, can be paused or canceled,
+and active work returns to Pending after application restart.
+
+The selected route is stored by stable Shot Manager `entryId`. The
+first render requires an explicit choice; a later modal may restore the last route for that
+Project. Its relative directory and version padding come from the stored
+portable contract. The workstation root is refreshed from the on-demand Shot
+Manager service and cached locally so a previously synchronized Production can
+still render if that service cannot start.
 
 ## Screens
 

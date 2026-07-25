@@ -26,6 +26,7 @@ var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
+    ("current schema has no legacy Render Preset persistence", CurrentSchemaHasNoLegacyRenderPresetPersistence),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
     ("Project-owned references reject cross-Project reads and writes", ProjectOwnedReferencesRejectCrossProjectValues),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
@@ -80,6 +81,10 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager client requires exact loopback discovery and parses the read-only plan", ShotManagerClientRequiresExactDiscovery),
     ("Shot Manager client starts the registered headless service on demand", ShotManagerClientStartsRegisteredService),
     ("Shot Manager integration keeps Shots local and materializes portable folder plans", ShotManagerIntegrationKeepsShotsLocal),
+    ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
+    ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
+    ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
+    ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
@@ -89,7 +94,7 @@ var tests = new (string Name, Action Run)[]
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
-    ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
+    ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
     ("Production Shot Manager action owns and reveals the optional association", ProductionShotManagerActionOwnsAssociation),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
@@ -2905,6 +2910,50 @@ static void ExistingDatabaseOpenIsReadOnly()
     }
 }
 
+static void CurrentSchemaHasNoLegacyRenderPresetPersistence()
+{
+    var path = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
+    connection.Open();
+    Equal(
+        3L,
+        SqliteCommandExecutor.ScalarLong(
+            connection,
+            "PRAGMA user_version"));
+    Equal(
+        0L,
+        SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM sqlite_master
+            WHERE type = 'table' AND name = 'render_presets'
+            """));
+    Equal(
+        0L,
+        SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM pragma_table_info('shots')
+            WHERE name = 'render_preset_id'
+            """));
+    Equal(
+        0L,
+        SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM editor_layouts
+            WHERE record_class_id IN (
+              'navigation.render_presets',
+              'render_preset')
+            """));
+}
+
 static void PreviewShellLayoutIsResponsive()
 {
     foreach (var width in new[]
@@ -4077,12 +4126,6 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         InsertCrossProjectActor(connection);
         Execute(connection, "UPDATE shots SET owner_actor_id = 'actor_cross' WHERE id = 'shot_001'");
     });
-    AssertRejectedDatabaseIsReadOnly("cross-project-shot-render-preset", (connection) =>
-    {
-        InsertCrossProject(connection);
-        InsertCrossProjectRenderPreset(connection);
-        Execute(connection, "UPDATE shots SET render_preset_id = 'render_preset_cross' WHERE id = 'shot_001'");
-    });
     AssertRejectedDatabaseIsReadOnly("cross-project-theme-icon-theme", (connection) =>
     {
         InsertCrossProject(connection);
@@ -4127,7 +4170,6 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
             connection.Open();
             InsertCrossProject(connection);
             InsertCrossProjectActor(connection);
-            InsertCrossProjectRenderPreset(connection);
             Execute(connection, """
                 INSERT INTO devices (
                     id, project_id, name, manufacturer, model, os_family, metrics_json)
@@ -4190,8 +4232,6 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         {
             Throws<InvalidOperationException>(() =>
                 shotRepository.UpdateField(connection, shotId, "shot.ownerActorId", "actor_cross"));
-            Throws<InvalidOperationException>(() =>
-                shotRepository.UpdateField(connection, shotId, "shot.renderPresetId", "render_preset_cross"));
         }
         Throws<InvalidOperationException>(() =>
             themeRepository.UpdateDirectField(themeId, "theme.iconThemeId", "icon_theme_cross"));
@@ -4282,22 +4322,6 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
                 'actor_cross', 'project_cross', 'Cross Actor', 'CA',
                 '', '', metadata_json
             FROM actors
-            ORDER BY id
-            LIMIT 1
-            """);
-    }
-
-    static void InsertCrossProjectRenderPreset(SqliteConnection connection)
-    {
-        Execute(connection, """
-            INSERT INTO render_presets (
-                id, project_id, name, width, height, fps, format,
-                codec_json, color_json, quality_json, export_json, metadata_json)
-            SELECT
-                'render_preset_cross', 'project_cross', 'Cross Render Preset',
-                width, height, fps, format,
-                codec_json, color_json, quality_json, export_json, metadata_json
-            FROM render_presets
             ORDER BY id
             LIMIT 1
             """);
@@ -4961,19 +4985,13 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         IEditorLayoutRepository layoutRepository = new EditorLayoutRepository(context);
         IShotRepository shotRepository = new ShotRepository(context);
         IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context, shotRepository);
-        IRenderPresetRepository renderPresetRepository = new RenderPresetRepository(context);
 
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var episode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Episode);
-        var renderPreset = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.RenderPreset);
 
         Equal(database.GetProjectSettings(project.Id), projectEpisodeRepository.GetProjectSettings(project.Id));
         Equal(database.GetEpisodeSettings(episode.Id), projectEpisodeRepository.GetEpisodeSettings(episode.Id));
-        Equal(database.GetRenderPresetSettings(renderPreset.Id), renderPresetRepository.GetSettings(renderPreset.Id));
-        SequenceEqual(
-            database.GetRenderPresetOptions(project.Id).Skip(1).Select((option) => option.Value),
-            renderPresetRepository.GetOptions(project.Id).Select((option) => option.Value));
 
         var facadeLayout = database.LoadEditorLayout("component.keypad");
         var repositoryLayout = layoutRepository.Load("component.keypad");
@@ -4985,7 +5003,6 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         {
             True(projectEpisodeRepository.QueryProjects(connection).Any((row) => row.Id == project.Id));
             True(projectEpisodeRepository.QueryEpisodes(connection).Any((row) => row.Id == episode.Id));
-            True(renderPresetRepository.QueryAll(connection).Any((row) => row.Id == renderPreset.Id));
         }
 
         var originalProject = database.GetProjectSettings(project.Id);
@@ -4999,12 +5016,6 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         Equal($"{originalEpisode.Slug}-repository", database.GetEpisodeSettings(episode.Id).Slug);
         database.UpdateEpisodeField(episode.Id, "episode.slug", originalEpisode.Slug);
         Equal(originalEpisode, projectEpisodeRepository.GetEpisodeSettings(episode.Id));
-
-        var originalPreset = database.GetRenderPresetSettings(renderPreset.Id);
-        renderPresetRepository.UpdateField(renderPreset.Id, "renderPreset.width", "1234");
-        Equal(1234, database.GetRenderPresetSettings(renderPreset.Id).Width);
-        database.UpdateRenderPresetField(renderPreset.Id, "renderPreset.width", originalPreset.Width.ToString());
-        Equal(originalPreset, renderPresetRepository.GetSettings(renderPreset.Id));
 
         var originalProjectName = project.Name;
         project.Name = $"{project.Name} repository";
@@ -5026,16 +5037,6 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         episode.Name = originalEpisodeName;
         database.UpdateNode(episode);
 
-        var originalPresetName = renderPreset.Name;
-        renderPreset.Name = $"{renderPreset.Name} repository";
-        database.UpdateNode(renderPreset);
-        using (var connection = context.OpenConnection())
-        {
-            Equal(renderPreset.Name, renderPresetRepository.QueryAll(connection).Single((row) => row.Id == renderPreset.Id).Name);
-        }
-        renderPreset.Name = originalPresetName;
-        database.UpdateNode(renderPreset);
-
         var episodesRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
         var createdEpisode = database.AddChild(episodesRoot);
@@ -5047,22 +5048,6 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         database.Delete(duplicatedEpisode);
         database.Delete(createdEpisode);
 
-        var renderPresetsRoot = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Kind == ProjectTreeNodeKind.RenderPresetsRoot);
-        var createdPreset = database.AddChild(renderPresetsRoot);
-        using (var connection = context.OpenConnection())
-        {
-            True(renderPresetRepository.QueryAll(connection).Any((row) => row.Id == createdPreset.Id));
-        }
-        var duplicatedPreset = database.Duplicate(createdPreset);
-        database.Delete(duplicatedPreset);
-        database.Delete(createdPreset);
-
-        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() =>
-            renderPresetRepository.UpdateField(renderPreset.Id, "renderPreset.codec", "[]"));
-        var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
-        SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }
     finally
     {
@@ -6831,21 +6816,13 @@ static void ShotRepositoryPreservesFacadeContract()
         node.Name = originalName;
         database.UpdateNode(node);
 
-        var renderPreset = Descendants(tree)
-            .First((candidate) => candidate.Kind == ProjectTreeNodeKind.RenderPreset);
         using (var connection = context.OpenConnection())
         {
-            repository.UpdateField(
-                connection,
-                original.Id,
-                "shot.renderPresetId",
-                renderPreset.Id);
             var duplicate = repository.Duplicate(
                 connection,
                 original.Id,
                 $"shot_repository_{Guid.NewGuid():N}",
                 $"{original.Name} repository copy");
-            Equal(renderPreset.Id, duplicate.RenderPresetId);
             Equal(original.OwnerActorId, duplicate.OwnerActorId);
             Equal(original.CanvasJson, duplicate.CanvasJson);
             Equal(original.MetadataJson, duplicate.MetadataJson);
@@ -6856,17 +6833,10 @@ static void ShotRepositoryPreservesFacadeContract()
                 original.EpisodeId,
                 "Repository Episode");
             var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id).Single();
-            Equal(renderPreset.Id, episodeShot.RenderPresetId);
             Equal(original.OwnerActorId, episodeShot.OwnerActorId);
             Equal(original.CanvasJson, episodeShot.CanvasJson);
             Equal(original.MetadataJson, episodeShot.MetadataJson);
             episodeRepository.DeleteEpisode(connection, duplicatedEpisode.Id);
-
-            repository.UpdateField(
-                connection,
-                original.Id,
-                "shot.renderPresetId",
-                original.RenderPresetId);
         }
 
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -6890,6 +6860,339 @@ static void ShotRepositoryPreservesFacadeContract()
     }
 }
 
+static void RenderOutputNamingReservesOneBatchVersion()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-output-plan-{Guid.NewGuid():N}");
+    var output = Path.Combine(root, "shots", "output");
+    Directory.CreateDirectory(output);
+    try
+    {
+        File.WriteAllText(
+            Path.Combine(output, "SHOT_010_LIGHT_v001.mov"),
+            "occupied");
+        var plan = RenderOutputPlanner.Suggest(
+            root,
+            "shots/output",
+            "SHOT_010",
+            [
+                RenderQueueAppearance.Light,
+                RenderQueueAppearance.Dark,
+            ],
+            RenderOutputModes.Require(
+                RenderOutputModes.MovProRes422Hq),
+            3);
+        Equal(2, plan.Version);
+        Equal(
+            "SHOT_010_LIGHT_v002.mov",
+            Path.GetFileName(
+                plan.OutputPaths[RenderQueueAppearance.Light]));
+        Equal(
+            "SHOT_010_DARK_v002.mov",
+            Path.GetFileName(
+                plan.OutputPaths[RenderQueueAppearance.Dark]));
+        Equal(
+            "SHOT_010_GFX",
+            RenderOutputPlanner.SuggestedBaseName(
+                "Shot 010 · GFX"));
+        Throws<InvalidOperationException>(() =>
+            RenderOutputPlanner.RequireBaseName("../SHOT"));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void ProductionRenderOverridesRespectScreenAppearance()
+{
+    var source = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-context-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var tree = database.LoadProjectTree();
+        var shot = Descendants(tree)
+            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var firstScreen = shot.Children
+            .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
+            .OrderBy((node) =>
+                database.GetModuleInstanceSettings(node.Id).SortOrder)
+            .First();
+        var instance = database.GetModuleInstanceSettings(firstScreen.Id);
+        using (var connection =
+            new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            SqliteCommandExecutor.Execute(
+                connection,
+                """
+                UPDATE modules
+                SET metadata_json = json_set(
+                  metadata_json,
+                  '$.variants[0].config.appearanceMode',
+                  'light')
+                WHERE id = $moduleId
+                """,
+                ("$moduleId", instance.ModuleId));
+        }
+        var shotSettings = database.GetShotSettings(shot.Id);
+        var actor = database.GetActorSettings(
+            shotSettings.OwnerActorId);
+        var deviceId = database.GetDeviceOptions(
+                shotSettings.ProjectId)
+            .Select((option) => option.Value)
+            .FirstOrDefault((id) =>
+                !id.Equals(
+                    actor.DefaultDeviceId,
+                    StringComparison.Ordinal))
+            ?? actor.DefaultDeviceId;
+        var themeId = database.GetThemeOptions(
+                shotSettings.ProjectId)
+            .Select((option) => option.Value)
+            .FirstOrDefault((id) =>
+                !id.Equals(
+                    actor.DefaultThemeId,
+                    StringComparison.Ordinal))
+            ?? actor.DefaultThemeId;
+        var payload = DesignPreviewPayloadFactory.CreateProductionRender(
+            new DesignPreviewPayloadDataSource(database),
+            shot,
+            themeId,
+            deviceId,
+            RenderQueueAppearance.Dark,
+            0);
+        Equal(deviceId, payload.DeviceId);
+        Equal(
+            database.GetThemeSettings(themeId).TokensJson,
+            payload.ThemeTokensJson);
+        Equal(
+            RenderQueueAppearance.Light,
+            payload.ThemeMode);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RenderQueueChildrenAreIndependent()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-queue-{Guid.NewGuid():N}");
+    var output = Path.Combine(root, "output");
+    var queuePath = Path.Combine(root, "state", "queue.json");
+    Directory.CreateDirectory(output);
+    try
+    {
+        var mode = RenderOutputModes.Require(
+            RenderOutputModes.MovProRes422Hq);
+        var outputPlan = RenderOutputPlanner.Suggest(
+            root,
+            "output",
+            "SHOT_020",
+            [
+                RenderQueueAppearance.Light,
+                RenderQueueAppearance.Dark,
+            ],
+            mode,
+            3);
+        RenderJobSnapshot Snapshot(string appearance) =>
+            new(
+                RenderJobSnapshot.CurrentSchema,
+                RenderJobSnapshot.CurrentVersion,
+                new RenderShotContext(
+                    "project",
+                    "shot",
+                    "Shot 020",
+                    "actor",
+                    "Actor"),
+                "device",
+                "Device",
+                "theme",
+                "Theme",
+                appearance,
+                new DevicePreviewMetrics(
+                    "Device",
+                    100,
+                    200,
+                    0,
+                    0,
+                    100,
+                    200,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1),
+                25,
+                [new RenderFrozenFrame(0, "<html>frame</html>")],
+                new Dictionary<string, string>(),
+                new RenderOutputTarget(
+                    "production",
+                    "output",
+                    root,
+                    "output",
+                    "SHOT_020",
+                    appearance,
+                    outputPlan.Version,
+                    3,
+                    mode.Id,
+                    outputPlan.OutputPaths[appearance]));
+
+        using (var queue = new RenderQueueManager(
+            queuePath,
+            new AppearanceFailingRenderExecutor(
+                RenderQueueAppearance.Dark)))
+        {
+            var children = queue.EnqueueBatch(
+            [
+                Snapshot(RenderQueueAppearance.Light),
+                Snapshot(RenderQueueAppearance.Dark),
+            ]);
+            Equal(2, children.Count);
+            Equal(children[0].BatchId, children[1].BatchId);
+            True(SpinWait.SpinUntil(
+                () => queue.Jobs().All((job) =>
+                    RenderQueueStatus.IsTerminal(job.Status)),
+                TimeSpan.FromSeconds(5)));
+            Equal(
+                RenderQueueStatus.Completed,
+                queue.Jobs().Single((job) =>
+                    job.Summary.Appearance
+                        == RenderQueueAppearance.Light).Status);
+            Equal(
+                RenderQueueStatus.Failed,
+                queue.Jobs().Single((job) =>
+                    job.Summary.Appearance
+                        == RenderQueueAppearance.Dark).Status);
+        }
+
+        using var reopened = new RenderQueueManager(
+            queuePath,
+            new AppearanceFailingRenderExecutor(""));
+        Equal(2, reopened.Jobs().Count);
+        True(reopened.Jobs().Single((job) =>
+            job.Summary.Appearance == RenderQueueAppearance.Light)
+            .SnapshotAvailable == false);
+        True(reopened.Jobs().Single((job) =>
+            job.Summary.Appearance == RenderQueueAppearance.Dark)
+            .SnapshotAvailable);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RenderExecutorPublishesCleanPngSequence()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-executor-{Guid.NewGuid():N}");
+    var output = Path.Combine(root, "output");
+    Directory.CreateDirectory(output);
+    try
+    {
+        var mode = RenderOutputModes.Require(
+            RenderOutputModes.PngSequence);
+        var outputPlan = RenderOutputPlanner.Suggest(
+            root,
+            "output",
+            "SHOT_030",
+            [RenderQueueAppearance.Light],
+            mode,
+            3);
+        var snapshot = new RenderJobSnapshot(
+            RenderJobSnapshot.CurrentSchema,
+            RenderJobSnapshot.CurrentVersion,
+            new RenderShotContext(
+                "project",
+                "shot",
+                "Shot 030",
+                "actor",
+                "Actor"),
+            "device",
+            "Device",
+            "theme",
+            "Theme",
+            RenderQueueAppearance.Light,
+            new DevicePreviewMetrics(
+                "Device",
+                64,
+                64,
+                0,
+                0,
+                64,
+                64,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1),
+            25,
+            [
+                new RenderFrozenFrame(
+                    0,
+                    """
+                    <!doctype html>
+                    <html>
+                      <body style="margin:0">
+                        <div
+                          data-renderable-id="design_preview.surface"
+                          style="width:64px;height:64px;background:#ff3366">
+                        </div>
+                      </body>
+                    </html>
+                    """),
+            ],
+            new Dictionary<string, string>(),
+            new RenderOutputTarget(
+                "production",
+                "output",
+                root,
+                "output",
+                "SHOT_030",
+                RenderQueueAppearance.Light,
+                outputPlan.Version,
+                3,
+                mode.Id,
+                outputPlan.OutputPaths[RenderQueueAppearance.Light]));
+        using var executor = new RenderJobExecutor();
+        executor.ExecuteAsync(
+                snapshot,
+                new Progress<RenderQueueExecutionProgress>(),
+                CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+        True(Directory.Exists(snapshot.Output.OutputPath));
+        var frames = Directory.GetFiles(
+            snapshot.Output.OutputPath,
+            "*.png");
+        Equal(1, frames.Length);
+        True(new FileInfo(frames[0]).Length > 0);
+        True(Directory.GetDirectories(
+                output,
+                "*.mockups-*",
+                SearchOption.TopDirectoryOnly)
+            .Length == 0);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
 static void ShotManagerIntegrationKeepsShotsLocal()
 {
     var source = Path.Combine(
@@ -6902,11 +7205,16 @@ static void ShotManagerIntegrationKeepsShotsLocal()
     var productionRoot = Path.Combine(
         Path.GetTempPath(),
         $"mockups-shot-manager-root-{Guid.NewGuid():N}");
+    var workstationRootsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-roots-{Guid.NewGuid():N}.json");
     File.Copy(source, temporary, overwrite: true);
     Directory.CreateDirectory(productionRoot);
     try
     {
         var database = new SpikeDatabase(temporary);
+        var workstationRoots = new ShotManagerWorkstationRootStore(
+            workstationRootsPath);
         var project = database.LoadProjectTree().Single();
         var remoteProduction = new ShotManagerCatalogProduction(
             "sm-production",
@@ -6937,7 +7245,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
         var initialShotCount = Descendants(database.LoadProjectTree())
             .Count((node) => node.Kind == ProjectTreeNodeKind.Shot);
         Throws<InvalidOperationException>(() =>
-            new ShotManagerAssociationService(database).Synchronize(
+            new ShotManagerAssociationService(
+                database,
+                workstationRoots).Synchronize(
                 project.Id,
                 snapshot,
                 remoteSeason.Id,
@@ -6947,7 +7257,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
             initialEpisodeCount,
             Descendants(database.LoadProjectTree())
                 .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
-        var association = new ShotManagerAssociationService(database)
+        var association = new ShotManagerAssociationService(
+            database,
+            workstationRoots)
             .Synchronize(
                 project.Id,
                 snapshot,
@@ -6979,7 +7291,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
             2,
             "E02",
             "Second");
-        new ShotManagerAssociationService(database).Synchronize(
+        new ShotManagerAssociationService(
+            database,
+            workstationRoots).Synchronize(
             project.Id,
             snapshot with
             {
@@ -7000,7 +7314,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
                 == explicitlyCreatedRemoteEpisode.Id
             && local.Episode.Notes
                 == "Episode synchronized from Shot Manager."));
-        new ShotManagerAssociationService(database).Synchronize(
+        new ShotManagerAssociationService(
+            database,
+            workstationRoots).Synchronize(
             project.Id,
             snapshot,
             remoteSeason.Id,
@@ -7097,6 +7413,20 @@ static void ShotManagerIntegrationKeepsShotsLocal()
         Equal(
             $"{fullName}_comp_v",
             portable.OutputContracts[0].FileNamePrefix);
+        var offlineRenderDraft = new RenderJobSnapshotFactory(
+                database,
+                new UnavailableShotManagerClient(),
+                workstationRoots)
+            .LoadDraftAsync(shot)
+            .GetAwaiter()
+            .GetResult();
+        True(offlineRenderDraft.UsesCachedRoot);
+        Equal(productionRoot, offlineRenderDraft.RootPath);
+        Equal(1, offlineRenderDraft.Routes.Count);
+        Equal("structure-comp", offlineRenderDraft.Routes[0].EntryId);
+        Equal(
+            $"S02/EP_01/{fullName}/comp",
+            offlineRenderDraft.Routes[0].RelativeDirectory);
         Throws<InvalidOperationException>(() =>
             database.UpdateShotField(
                 shot.Id,
@@ -7141,7 +7471,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
                 .GetAwaiter()
                 .GetResult());
 
-        new ShotManagerAssociationService(database).Disconnect(project.Id);
+        new ShotManagerAssociationService(
+            database,
+            workstationRoots).Disconnect(project.Id);
         Equal(null, database.GetShotManagerAssociation(project.Id));
         Equal(null, database.GetShotManagerEpisodeBinding(governedEpisode.Id));
         True(Descendants(database.LoadProjectTree()).Any((node) =>
@@ -7150,6 +7482,7 @@ static void ShotManagerIntegrationKeepsShotsLocal()
     finally
     {
         File.Delete(temporary);
+        File.Delete(workstationRootsPath);
         if (Directory.Exists(productionRoot))
         {
             Directory.Delete(productionRoot, recursive: true);
@@ -7858,11 +8191,13 @@ foreach (var (name, run) in tests)
     catch (Exception exception)
     {
         failures.Add(name);
-        Console.Error.WriteLine($"FAIL {name}: {exception.GetBaseException().Message}");
+        Console.Error.WriteLine(
+            $"FAIL {name}: {exception.GetBaseException().Message}");
     }
 }
 
-Console.WriteLine($"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
+Console.WriteLine(
+    $"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
 
 static void ForwardedChildInputsBecomeParentRuntimeInputs()
@@ -8152,7 +8487,6 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
                          or ProjectTreeNodeKind.Theme
                          or ProjectTreeNodeKind.ProductionFont
                          or ProjectTreeNodeKind.IconTheme
-                         or ProjectTreeNodeKind.RenderPreset
                          or ProjectTreeNodeKind.ComponentVariant
                          or ProjectTreeNodeKind.ModuleVariant))
             {
@@ -8237,18 +8571,6 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         True(blueUsages.Count > 0);
         True(blueUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
 
-        var unusedRenderPreset = nodes.First((node) => node.Kind == ProjectTreeNodeKind.RenderPreset && !node.IsUsed);
-        using (var connection = context.OpenConnection())
-        {
-            SqliteCommandExecutor.Execute(
-                connection,
-                "UPDATE projects SET notes = $notes, metadata_json = $metadataJson",
-                ("$notes", $"Unrelated prefix-{unusedRenderPreset.Id}-suffix"),
-                ("$metadataJson", $"{{\"comment\":\"{unusedRenderPreset.Id}\"}}"));
-        }
-        Equal(0, database.GetReferenceUsageDetails(unusedRenderPreset).Count);
-        database.Delete(unusedRenderPreset);
-        True(Descendants(database.LoadProjectTree()).All((node) => node.Id != unusedRenderPreset.Id));
     }
     finally
     {
@@ -8328,7 +8650,6 @@ static void ProductionDataOwnsConcreteResources()
             ProjectTreeNodeKind.ActorsRoot,
             ProjectTreeNodeKind.DevicesRoot,
             ProjectTreeNodeKind.ProductionFontsRoot,
-            ProjectTreeNodeKind.RenderPresetsRoot,
         },
         productionData.Children.Select((node) => node.Kind));
     True(productionData.Children.All((node) =>
@@ -8339,7 +8660,6 @@ static void ProductionDataOwnsConcreteResources()
     True(designSections.Any((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot));
     True(designSections.All((node) => node.Kind is not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
-        and not ProjectTreeNodeKind.RenderPresetsRoot
         and not ProjectTreeNodeKind.ActorsRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
@@ -8355,10 +8675,15 @@ static void ProductionShotManagerActionOwnsAssociation()
         Directory.GetCurrentDirectory(),
         "data",
         $".mockups-shot-manager-card-{Guid.NewGuid():N}.sqlite");
+    var workstationRootsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-card-roots-{Guid.NewGuid():N}.json");
     File.Copy(source, temporary, overwrite: true);
     try
     {
         var database = new SpikeDatabase(temporary);
+        var workstationRoots = new ShotManagerWorkstationRootStore(
+            workstationRootsPath);
         var project = database.LoadProjectTree().Single();
         var remoteProduction = new ShotManagerCatalogProduction(
             "sm-navigation-production",
@@ -8372,7 +8697,9 @@ static void ProductionShotManagerActionOwnsAssociation()
             1,
             "S01",
             "Season 1");
-        new ShotManagerAssociationService(database).Synchronize(
+        new ShotManagerAssociationService(
+            database,
+            workstationRoots).Synchronize(
             project.Id,
             new ShotManagerProductionSnapshot(
                 Path.GetTempPath(),
@@ -8428,7 +8755,9 @@ static void ProductionShotManagerActionOwnsAssociation()
                     "Missing MainWindow selection state.");
             Equal(ProjectTreeNodeKind.Project, selectedNode.Kind);
 
-            new ShotManagerAssociationService(database).Disconnect(project.Id);
+            new ShotManagerAssociationService(
+                database,
+                workstationRoots).Disconnect(project.Id);
             typeof(MainWindow).GetMethod(
                 "RefreshProductionPicker",
                 BindingFlags.Instance | BindingFlags.NonPublic)
@@ -8447,6 +8776,7 @@ static void ProductionShotManagerActionOwnsAssociation()
     finally
     {
         File.Delete(temporary);
+        File.Delete(workstationRootsPath);
     }
 }
 
@@ -10955,6 +11285,68 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
+}
+
+internal sealed class AppearanceFailingRenderExecutor(
+    string failingAppearance) : IRenderJobExecutor
+{
+    public Task ExecuteAsync(
+        RenderJobSnapshot snapshot,
+        IProgress<RenderQueueExecutionProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        progress.Report(new RenderQueueExecutionProgress(
+            snapshot.Frames.Count,
+            snapshot.Frames.Count,
+            "Test execution",
+            RenderQueueStatus.Rendering));
+        if (snapshot.RequestedAppearance.Equals(
+            failingAppearance,
+            StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Deliberate child failure.");
+        }
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() { }
+}
+
+internal sealed class UnavailableShotManagerClient :
+    IShotManagerIntegrationClient
+{
+    public Task<ShotManagerStatus> GetStatusAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(new ShotManagerStatus(
+            false,
+            "Unavailable for test."));
+
+    public Task<IReadOnlyList<ShotManagerCatalogProduction>> GetCatalogAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<IReadOnlyList<ShotManagerCatalogProduction>>(
+            new ShotManagerIntegrationException(
+                "unavailable",
+                "Unavailable for test."));
+
+    public Task<ShotManagerProductionSnapshot> GetSnapshotAsync(
+        string productionId,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<ShotManagerProductionSnapshot>(
+            new ShotManagerIntegrationException(
+                "unavailable",
+                "Unavailable for test."));
+
+    public Task<ShotManagerExternalShotPlan> PlanShotAsync(
+        string productionId,
+        string episodeId,
+        int shotNumber,
+        CancellationToken cancellationToken = default) =>
+        Task.FromException<ShotManagerExternalShotPlan>(
+            new ShotManagerIntegrationException(
+                "unavailable",
+                "Unavailable for test."));
 }
 
 internal sealed class ShotManagerTestHandler(

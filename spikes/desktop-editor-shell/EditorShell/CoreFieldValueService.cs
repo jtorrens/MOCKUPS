@@ -83,7 +83,6 @@ internal sealed class CoreFieldValueService
             or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.ProductionFont
             or ProjectTreeNodeKind.IconTheme
-            or ProjectTreeNodeKind.RenderPreset
             or ProjectTreeNodeKind.ComponentClass;
     }
 }

@@ -40,7 +40,6 @@ internal sealed partial class SpikeDatabase
           fps_override INTEGER,
           duration_frames INTEGER NOT NULL DEFAULT 240,
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
-          render_preset_id TEXT NOT NULL DEFAULT '',
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
@@ -181,22 +180,6 @@ internal sealed partial class SpikeDatabase
           UNIQUE(project_id, name)
         );
 
-        CREATE TABLE IF NOT EXISTS render_presets (
-          id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-          name TEXT NOT NULL,
-          width INTEGER NOT NULL DEFAULT 1080,
-          height INTEGER NOT NULL DEFAULT 1920,
-          fps INTEGER NOT NULL DEFAULT 25,
-          format TEXT NOT NULL DEFAULT 'mov',
-          codec_json TEXT NOT NULL DEFAULT '{}',
-          color_json TEXT NOT NULL DEFAULT '{}',
-          quality_json TEXT NOT NULL DEFAULT '{}',
-          export_json TEXT NOT NULL DEFAULT '{}',
-          metadata_json TEXT NOT NULL DEFAULT '{}',
-          UNIQUE(project_id, name)
-        );
-
         CREATE TABLE IF NOT EXISTS component_classes (
           id TEXT PRIMARY KEY,
           project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -228,7 +211,7 @@ internal sealed partial class SpikeDatabase
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 2;
+        PRAGMA user_version = 3;
         """;
 
 }

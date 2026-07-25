@@ -113,7 +113,8 @@ componentClassId::variant::variantId
 ```
 
 Short Variant ids and class-only composition references are invalid.
-`Preset` is a separate term used by Render Presets.
+`Preset` is not a current authored concept. Render output configuration belongs
+only to workstation-local Render Queue jobs.
 
 ## Hard rule: definitions use complete development scaffolding
 
@@ -310,7 +311,7 @@ Reference Usage consumes typed relational and owner-declared JSON edges. Never
 scan arbitrary text or JSON for references.
 
 Production navigation contains Episodes plus one Production Data card with
-Actors, Devices, Production Fonts and Render Presets. Resources never fall back
+Actors, Devices and Production Fonts. Resources never fall back
 across Projects.
 
 Conversation messages own Actor independently:

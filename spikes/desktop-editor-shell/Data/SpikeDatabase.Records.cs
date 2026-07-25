@@ -14,7 +14,6 @@ internal sealed partial class SpikeDatabase
         int? FpsOverride,
         int DurationFrames,
         string OwnerActorId,
-        string RenderPresetId,
         string CanvasJson,
         string MetadataJson);
     public sealed record AppSettings(

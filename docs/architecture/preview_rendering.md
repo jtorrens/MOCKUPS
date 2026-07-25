@@ -145,6 +145,19 @@ The web renderer paints final resolved nodes. It knows nothing about:
 
 New rendering needs are expressed as generic resolved primitives.
 
+## Render Queue boundary
+
+Render Queue reuses the same prepared Production payload and generic web
+renderer, but it is not a second Preview mode. Enqueue resolves every Shot
+frame with an explicit Theme, Device and requested Light/Dark mode, renders a
+clean raster document, and freezes that document plus its asset data in the
+job snapshot.
+
+The queue worker receives no `SpikeDatabase`, repository or current tree
+selection. It rasterizes the frozen documents through the persistent Chromium
+owner, then writes a MOV or image sequence. The renderer still knows nothing
+about queue state, output naming, Shot Manager paths or codecs.
+
 ## Preview sessions
 
 Design and Production Preview keep only temporary presentation state:

@@ -77,7 +77,6 @@ internal sealed class ShotRepository : IShotRepository
             null,
             240,
             actorId,
-            "",
             "{}",
             "{}");
         Insert(connection, record);
@@ -121,7 +120,6 @@ internal sealed class ShotRepository : IShotRepository
             null,
             240,
             actorId,
-            "",
             "{}",
             "{}");
         Validate(record);
@@ -231,7 +229,6 @@ internal sealed class ShotRepository : IShotRepository
             "shot.sortOrder" => "sort_order",
             "shot.fps" => "fps_override",
             "shot.ownerActorId" => "owner_actor_id",
-            "shot.renderPresetId" => "render_preset_id",
             "shot.canvas" => "canvas_json",
             "shot.metadata" => "metadata_json",
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
@@ -258,15 +255,6 @@ internal sealed class ShotRepository : IShotRepository
                 value,
                 $"Shot '{shotId}' owner Actor",
                 required: true);
-        }
-        if (fieldId == "shot.renderPresetId")
-        {
-            ProjectReferenceIntegrity.RequireSameProjectReference(
-                connection,
-                current.ProjectId,
-                ProjectReferenceKind.RenderPreset,
-                value,
-                $"Shot '{shotId}' Render Preset");
         }
         SqliteCommandExecutor.Execute(
             connection,
@@ -325,12 +313,6 @@ internal sealed class ShotRepository : IShotRepository
             record.OwnerActorId,
             $"Shot '{record.Id}' owner Actor",
             required: true);
-        ProjectReferenceIntegrity.RequireSameProjectReference(
-            connection,
-            record.ProjectId,
-            ProjectReferenceKind.RenderPreset,
-            record.RenderPresetId,
-            $"Shot '{record.Id}' Render Preset");
         InsertRow(connection, transaction: null, record);
     }
 
@@ -346,10 +328,10 @@ internal sealed class ShotRepository : IShotRepository
             """
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
-              duration_frames, owner_actor_id, render_preset_id, canvas_json, metadata_json)
+              duration_frames, owner_actor_id, canvas_json, metadata_json)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
-              $durationFrames, $ownerActorId, $renderPresetId, $canvasJson, $metadataJson)
+              $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
             """,
             ("$id", record.Id),
             ("$episodeId", record.EpisodeId),
@@ -361,7 +343,6 @@ internal sealed class ShotRepository : IShotRepository
             ("$fpsOverride", record.FpsOverride),
             ("$durationFrames", record.DurationFrames),
             ("$ownerActorId", record.OwnerActorId),
-            ("$renderPresetId", record.RenderPresetId),
             ("$canvasJson", record.CanvasJson),
             ("$metadataJson", record.MetadataJson));
     }
@@ -389,8 +370,7 @@ internal sealed class ShotRepository : IShotRepository
             reader.GetInt32(9),
             SqliteCommandExecutor.ReadString(reader, 10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            SqliteCommandExecutor.ReadString(reader, 12),
-            SqliteCommandExecutor.ReadString(reader, 13));
+            SqliteCommandExecutor.ReadString(reader, 12));
         Validate(record);
         return record;
     }
@@ -428,7 +408,7 @@ internal sealed class ShotRepository : IShotRepository
     private const string SelectCurrentRows = """
         SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.owner_actor_id,
-               s.render_preset_id, s.canvas_json, s.metadata_json
+               s.canvas_json, s.metadata_json
         FROM shots s
         JOIN episodes e ON e.id = s.episode_id
         """;

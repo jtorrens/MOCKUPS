@@ -16,8 +16,10 @@ Design produces reusable definitions. Production consumes exact definitions
 and complete Variant references. Preview resolves the selected Design fixture
 or Production frame without changing authored data.
 
-Render Presets are Production Data, but Render Mode and a complete
-render/export workflow are not part of the current application.
+Render Queue is a workstation-local Production workflow. A concrete Shot
+creates one immutable child job per requested appearance. Output mode, route,
+name and version belong to that queued job; they are not authored Shot or
+Project records.
 
 An optional local integration may let VFX Shot Manager govern a Project's
 Production, Season and Episode identities, technical Shot names and directory
@@ -40,15 +42,22 @@ SQLite current project data
         ├── optional Shot Manager integration
         │       ├── strict loopback read-only client
         │       ├── Episode identity synchronization
-        │       └── validated local folder materialization
+        │       ├── validated local folder materialization
+        │       └── portable predefined output routes
         │
-        └── Preview payload preparation
-                ├── explicit context and forwarding
-                ├── exact manifest routing
-                ├── owner resolver
-                ├── owner renderable
-                ├── common resolved primitives
-                └── generic web renderer
+        ├── Preview payload preparation
+        │       ├── explicit context and forwarding
+        │       ├── exact manifest routing
+        │       ├── owner resolver
+        │       ├── owner renderable
+        │       ├── common resolved primitives
+        │       └── generic web renderer
+        │
+        └── workstation-local Render Queue
+                ├── immutable Shot frame snapshot
+                ├── sequential recoverable jobs
+                ├── clean Production raster frames
+                └── MOV or image-sequence output
 ```
 
 ## Core domains
@@ -66,8 +75,7 @@ never resolve across Projects.
 - Component Variants are complete named snapshots.
 - Modules define Production Screen behavior.
 - Module Variants are complete named snapshots.
-- Devices, Actors, Production Fonts and Render Presets are exposed through
-  Production Data.
+- Devices, Actors and Production Fonts are exposed through Production Data.
 
 ### Production sequence
 
@@ -84,6 +92,13 @@ never resolve across Projects.
 Preview is a resolved view of current authored state. It does not own Component
 defaults, Production payload, context inheritance, runtime forwarding,
 animation timing or component layout rules.
+
+### Render Queue
+
+The visible editor creates a complete immutable snapshot. A local sequential
+worker rasterizes and encodes that snapshot without reading current authored
+data again. Queue persistence, progress and last route choice are local
+workstation state, outside the portable Project database.
 
 ## Layer ownership
 

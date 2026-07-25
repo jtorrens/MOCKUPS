@@ -40,6 +40,7 @@ internal sealed record EditorHierarchicalNavigationMetadata(
     bool ShowTopSeparator,
     bool IsLastSibling,
     double Height,
+    EditorNavigationRowAction? PersistentAction,
     EditorNavigationRowAction? LockedAction,
     EditorNavigationRowAction? AddAction,
     IReadOnlyList<EditorNavigationRowAction> Options);
@@ -224,6 +225,10 @@ internal static class EditorHierarchicalNavigationRow
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Center,
         };
+        if (metadata.PersistentAction is { } persistent)
+        {
+            actions.Children.Add(ActionButton(persistent, ""));
+        }
         if (metadata.LockedAction is { } locked)
         {
             var lockButton = ActionButton(locked, "");

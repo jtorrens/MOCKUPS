@@ -112,6 +112,12 @@ public partial class MainWindow : SukiWindow
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
         _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(_database));
+        _productionNavigationActions = new EditorProductionNavigationActions(
+            this,
+            ProductionActionButton,
+            _database,
+            () => _themeController.IsDark,
+            OpenSelectedProductionCard);
         _navigationRenderer = new EditorNavigationRenderer(
             () => _selectedNode,
             () => _themeController.IsDark,
@@ -125,7 +131,8 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ToggleVariantLock,
             _productionShotContext.CanExposeChildren,
             _productionShotContext.IsNavigationNodeEnabled,
-            () => _previewController.ActiveNavigationNodeId);
+            () => _previewController.ActiveNavigationNodeId,
+            _productionNavigationActions.NodeAction);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             _database,
@@ -267,11 +274,6 @@ public partial class MainWindow : SukiWindow
         ApplyHeaderUtilityButton(ShellSettingsButton);
         EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
-        _productionNavigationActions = new EditorProductionNavigationActions(
-            ProductionActionButton,
-            _database,
-            () => _themeController.IsDark,
-            OpenSelectedProductionCard);
         _shellState.Restore();
         _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
         _selectedProductionId = _shellState.ProductionId;
@@ -286,7 +288,11 @@ public partial class MainWindow : SukiWindow
         _nodeSelection.RestoreComponentVariantSelections(_shellState.SessionHistory.LastComponentVariantSelections);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
-        Closing += (_, _) => _shellState.Save(CreateSessionHistoryState());
+        Closing += (_, _) =>
+        {
+            _shellState.Save(CreateSessionHistoryState());
+            _productionNavigationActions.Dispose();
+        };
         _themeController.Apply();
         LoadProjectTree();
         InitializePreviewOptions();

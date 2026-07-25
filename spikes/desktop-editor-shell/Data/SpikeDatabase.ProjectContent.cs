@@ -26,7 +26,6 @@ internal sealed partial class SpikeDatabase
             record.FpsOverride,
             record.DurationFrames,
             record.OwnerActorId,
-            record.RenderPresetId,
             record.CanvasJson,
             record.MetadataJson);
     }

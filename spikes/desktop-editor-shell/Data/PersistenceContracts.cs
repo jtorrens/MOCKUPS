@@ -8,19 +8,6 @@ internal sealed record ProjectSettings(string Slug, int DefaultFps, string Media
 
 internal sealed record EpisodeSettings(string Slug, int SortOrder);
 
-internal sealed record RenderPresetSettings(
-    string ProjectId,
-    string Name,
-    int Width,
-    int Height,
-    int Fps,
-    string Format,
-    string CodecJson,
-    string ColorJson,
-    string QualityJson,
-    string ExportJson,
-    string MetadataJson);
-
 internal sealed record ProjectRecord(string Id, string Name, string Notes);
 
 internal sealed record EpisodeRecord(
@@ -43,7 +30,6 @@ internal sealed record ShotRecord(
     int? FpsOverride,
     int DurationFrames,
     string OwnerActorId,
-    string RenderPresetId,
     string CanvasJson,
     string MetadataJson);
 
@@ -91,22 +77,6 @@ internal sealed record ShotManagerAssociationWritePlan(
     ShotManagerProjectAssociationRecord Association,
     IReadOnlyList<ShotManagerEpisodeWrite> Upserts,
     IReadOnlyList<string> DeleteEpisodeIds);
-
-internal sealed record RenderPresetRecord(
-    string Id,
-    string ProjectId,
-    string Name,
-    int Width,
-    int Height,
-    int Fps,
-    string Format,
-    string CodecJson,
-    string ColorJson,
-    string QualityJson,
-    string ExportJson,
-    string MetadataJson);
-
-internal sealed record RenderPresetOption(string Value, string Label);
 
 internal sealed record PaletteColorSettings(
     string Token,
@@ -390,25 +360,6 @@ internal interface IShotManagerIntegrationRepository
         SqliteConnection connection,
         SqliteTransaction transaction,
         ShotManagerShotStructureRecord record);
-}
-
-internal interface IRenderPresetRepository
-{
-    RenderPresetSettings GetSettings(string renderPresetId);
-
-    void UpdateField(string renderPresetId, string fieldId, string value);
-
-    IReadOnlyList<RenderPresetOption> GetOptions(string projectId);
-
-    IReadOnlyList<RenderPresetRecord> QueryAll(SqliteConnection connection);
-
-    RenderPresetRecord Create(SqliteConnection connection, string projectId);
-
-    RenderPresetRecord Duplicate(SqliteConnection connection, string sourceId, string copyName);
-
-    void Delete(SqliteConnection connection, string renderPresetId);
-
-    void Rename(SqliteConnection connection, string renderPresetId, string name);
 }
 
 internal interface IPaletteRepository

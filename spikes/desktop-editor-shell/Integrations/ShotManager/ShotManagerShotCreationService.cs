@@ -11,15 +11,18 @@ internal sealed class ShotManagerShotCreationService
     private readonly SpikeDatabase _database;
     private readonly IShotManagerIntegrationClient _client;
     private readonly ShotManagerFolderMaterializer _folders;
+    private readonly ShotManagerWorkstationRootStore _roots;
 
     public ShotManagerShotCreationService(
         SpikeDatabase database,
         IShotManagerIntegrationClient? client = null,
-        ShotManagerFolderMaterializer? folders = null)
+        ShotManagerFolderMaterializer? folders = null,
+        ShotManagerWorkstationRootStore? roots = null)
     {
         _database = database;
         _client = client ?? new ShotManagerIntegrationClient();
         _folders = folders ?? new ShotManagerFolderMaterializer();
+        _roots = roots ?? new ShotManagerWorkstationRootStore();
     }
 
     public async Task<ProjectTreeNode> CreateAsync(
@@ -53,6 +56,7 @@ internal sealed class ShotManagerShotCreationService
             throw new InvalidOperationException(
                 "Shot Manager returned a plan outside the associated Production, Season or Episode.");
         }
+        _roots.Remember(plan.Production.Id, plan.RootPath);
         var creation = await _folders.CreateAsync(plan, cancellationToken);
         try
         {
@@ -94,6 +98,7 @@ internal sealed class ShotManagerShotCreationService
         var snapshot = await _client.GetSnapshotAsync(
             record.ProductionId,
             cancellationToken);
+        _roots.Remember(record.ProductionId, snapshot.RootPath);
         var creation = await _folders.RepairAsync(
             snapshot.RootPath,
             structure,

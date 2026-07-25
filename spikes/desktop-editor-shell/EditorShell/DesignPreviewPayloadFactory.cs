@@ -71,6 +71,44 @@ internal static class DesignPreviewPayloadFactory
             };
     }
 
+    public static DesignPreviewPayload CreateProductionRender(
+        DesignPreviewPayloadDataSource dataSource,
+        ProjectTreeNode shot,
+        string themeId,
+        string deviceId,
+        string requestedThemeMode,
+        int shotFrame)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot)
+        {
+            throw new InvalidOperationException(
+                "A Production render payload requires a Shot.");
+        }
+        var theme = dataSource.LoadProductionRenderThemeContext(
+            shot,
+            themeId,
+            deviceId);
+        var payload = FromShot(
+            dataSource,
+            shot,
+            deviceId,
+            ModuleAppearanceModeContract.RequireResolved(
+                requestedThemeMode,
+                $"Shot '{shot.Id}' render appearance"),
+            theme,
+            shotFrame)
+            ?? throw new InvalidOperationException(
+                $"Shot '{shot.Name}' has no Screens to render.");
+        return payload with
+        {
+            OwnerId = shot.Id,
+            ThemeStatusBarVariantReference =
+                theme.StatusBarVariantReference,
+            ThemeNavigationBarVariantReference =
+                theme.NavigationBarVariantReference,
+        };
+    }
+
     private static DesignPreviewPayload FromModuleInstance(
         DesignPreviewPayloadDataSource dataSource,
         string moduleInstanceId,

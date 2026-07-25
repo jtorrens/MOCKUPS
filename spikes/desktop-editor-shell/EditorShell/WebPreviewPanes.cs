@@ -1806,7 +1806,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         return PreloadPreviewImagesAsync(imageSources, cancellationToken);
     }
 
-    public async Task<string> BuildRasterHtmlAsync(
+    public static async Task<string> BuildRasterHtmlAsync(
         DevicePreviewMetrics metrics,
         DesignPreviewPayload payload)
     {

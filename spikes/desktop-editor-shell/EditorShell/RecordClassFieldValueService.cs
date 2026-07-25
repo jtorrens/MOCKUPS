@@ -28,7 +28,6 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.ModuleInstance => fieldId.StartsWith("moduleInstance.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Episode => fieldId.StartsWith("episode.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Shot => fieldId.StartsWith("shot.", StringComparison.Ordinal),
-            ProjectTreeNodeKind.RenderPreset => fieldId.StartsWith("renderPreset.", StringComparison.Ordinal),
             ProjectTreeNodeKind.PaletteColor => fieldId.StartsWith("palette.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Device => fieldId.StartsWith("device.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Theme => fieldId.StartsWith("theme.", StringComparison.Ordinal),
@@ -51,7 +50,6 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.ModuleInstance => ModuleInstanceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Episode => EpisodeFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Shot => ShotFieldValue(node.Id, field.Id),
-            ProjectTreeNodeKind.RenderPreset => RenderPresetFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.PaletteColor => PaletteColorFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Device => DeviceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Theme => ThemeFieldValue(node.Id, field.Id),
@@ -71,7 +69,6 @@ internal sealed class RecordClassFieldValueService
                 ? _database.GetModuleVariantOptions(_database.GetModuleInstanceSettings(node.Id).ModuleId)
                 : field.Options,
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.RenderPreset => RenderPresetFieldOptions(field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
             _ => field.Options,
         };
@@ -164,9 +161,6 @@ internal sealed class RecordClassFieldValueService
                 return;
             case ProjectTreeNodeKind.Shot when fieldId.StartsWith("shot.", StringComparison.Ordinal):
                 _database.UpdateShotField(node.Id, fieldId, value);
-                return;
-            case ProjectTreeNodeKind.RenderPreset when fieldId.StartsWith("renderPreset.", StringComparison.Ordinal):
-                _database.UpdateRenderPresetField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.PaletteColor when fieldId.StartsWith("palette.", StringComparison.Ordinal):
                 _database.UpdatePaletteColorField(node.Id, fieldId, value);
@@ -270,7 +264,6 @@ internal sealed class RecordClassFieldValueService
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),
-            "shot.renderPresetId" => settings.RenderPresetId,
             "shot.renderName" => _database.GetShotRenderName(shotId),
             "shot.canvas" => settings.CanvasJson,
             "shot.metadata" => settings.MetadataJson,
@@ -297,24 +290,6 @@ internal sealed class RecordClassFieldValueService
             "app.icon.scale" => _database.GetAppMetadataFieldValue(appId, fieldId),
             "app.icon.offset" => _database.GetAppMetadataFieldValue(appId, fieldId),
             _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
-        };
-    }
-
-    private string RenderPresetFieldValue(string renderPresetId, string fieldId)
-    {
-        var settings = _database.GetRenderPresetSettings(renderPresetId);
-        return fieldId switch
-        {
-            "renderPreset.width" => settings.Width.ToString(),
-            "renderPreset.height" => settings.Height.ToString(),
-            "renderPreset.fps" => settings.Fps.ToString(),
-            "renderPreset.format" => settings.Format,
-            "renderPreset.codec" => settings.CodecJson,
-            "renderPreset.color" => settings.ColorJson,
-            "renderPreset.quality" => settings.QualityJson,
-            "renderPreset.export" => settings.ExportJson,
-            "renderPreset.export.ffmpegArgs" => ExportFfmpegArgs(settings.ExportJson),
-            _ => throw new InvalidOperationException($"Unknown render preset field '{fieldId}'."),
         };
     }
 
@@ -404,7 +379,6 @@ internal sealed class RecordClassFieldValueService
         return field.Id switch
         {
             "shot.ownerActorId" => _database.GetRequiredActorOptions(settings.ProjectId),
-            "shot.renderPresetId" => _database.GetRenderPresetOptions(settings.ProjectId),
             _ => field.Options,
         };
     }
@@ -419,19 +393,6 @@ internal sealed class RecordClassFieldValueService
         }
 
         return field.Options;
-    }
-
-    private static IReadOnlyList<FieldOption>? RenderPresetFieldOptions(RecordClassFieldDescriptor field)
-    {
-        return field.Id switch
-        {
-            "renderPreset.format" =>
-            [
-                new FieldOption("mov", "MOV"),
-                new FieldOption("image", "Image"),
-            ],
-            _ => field.Options,
-        };
     }
 
     private IReadOnlyList<FieldOption>? ThemeFieldOptions(string themeId, RecordClassFieldDescriptor field)
@@ -542,9 +503,4 @@ internal sealed class RecordClassFieldValueService
             : BoolToString(fallback);
     }
 
-    private static string ExportFfmpegArgs(string exportJson)
-    {
-        var export = JsonPath.ParseRequiredObject(exportJson, "Render Preset export JSON");
-        return export["ffmpegArgs"]?.GetValue<string>() ?? "";
-    }
 }

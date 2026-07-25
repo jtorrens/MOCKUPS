@@ -29,7 +29,6 @@ internal sealed partial class SpikeDatabase
         var themes = _themeRepository.QueryAll(connection);
         var productionFonts = _productionFontRepository.QueryAll(connection);
         var iconThemes = _iconThemeRepository.QueryAll(connection);
-        var renderPresets = QueryRenderPresetRows(connection);
         var componentClasses = QueryComponentClassRows(connection);
         var referenceUsageIndex = _referenceUsageService.BuildIndex(connection);
 
@@ -49,7 +48,6 @@ internal sealed partial class SpikeDatabase
         var themeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var productionFontRootNodes = new Dictionary<string, ProjectTreeNode>();
         var iconThemeRootNodes = new Dictionary<string, ProjectTreeNode>();
-        var renderPresetRootNodes = new Dictionary<string, ProjectTreeNode>();
         var componentClassGroupNodes = new Dictionary<string, Dictionary<DesktopPreviewComponentCategory, ProjectTreeNode>>();
         var episodeRootNodes = new Dictionary<string, ProjectTreeNode>();
         var episodeNodes = new Dictionary<string, ProjectTreeNode>();
@@ -119,13 +117,6 @@ internal sealed partial class SpikeDatabase
                 "Icon sets and shared semantic icon tokens.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconThemesRoot),
                 systemDataRoot);
-            var renderPresetsRoot = new ProjectTreeNode(
-                ProjectTreeNodeKind.RenderPresetsRoot,
-                $"render_presets_root_{project.Id}",
-                "Render Presets",
-                "Reusable render output definitions.",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPresetsRoot),
-                productionDataRoot);
             var componentClassesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentClassesRoot,
                 $"component_classes_root_{project.Id}",
@@ -149,7 +140,6 @@ internal sealed partial class SpikeDatabase
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
             productionDataRoot.AddChild(productionFontsRoot);
-            productionDataRoot.AddChild(renderPresetsRoot);
             systemDataRoot.AddChild(themesRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
@@ -165,7 +155,6 @@ internal sealed partial class SpikeDatabase
             themeRootNodes[project.Id] = themesRoot;
             productionFontRootNodes[project.Id] = productionFontsRoot;
             iconThemeRootNodes[project.Id] = iconThemesRoot;
-            renderPresetRootNodes[project.Id] = renderPresetsRoot;
             componentClassGroupNodes[project.Id] = componentGroups;
             episodeRootNodes[project.Id] = episodesRoot;
         }
@@ -313,20 +302,6 @@ internal sealed partial class SpikeDatabase
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
                 iconThemesRoot,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
-        }
-
-        foreach (var renderPreset in renderPresets.OrderBy((renderPreset) => renderPreset.Name))
-        {
-            if (!renderPresetRootNodes.TryGetValue(renderPreset.ProjectId, out var renderPresetsRoot)) continue;
-
-            renderPresetsRoot.AddChild(new ProjectTreeNode(
-                ProjectTreeNodeKind.RenderPreset,
-                renderPreset.Id,
-                renderPreset.Name,
-                $"{renderPreset.Width}x{renderPreset.Height} · {renderPreset.Fps} fps · {renderPreset.Format}",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPreset),
-                renderPresetsRoot,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.RenderPreset, renderPreset.Id)));
         }
 
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
@@ -528,20 +503,6 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
         {
             throw new InvalidOperationException("Icon themes are rebuilt through Refresh Sets.");
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.RenderPresetsRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var preset = _renderPresetRepository.Create(connection, project.Id);
-
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.RenderPreset,
-                preset.Id,
-                preset.Name,
-                "1x1 · 1 fps · mov",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderPreset),
-                parent);
         }
 
         if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
@@ -786,13 +747,6 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.IconTheme, id, name, node.Notes, node.RecordClassId, node.Parent);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
-        {
-            var copy = _renderPresetRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
-
-            return new ProjectTreeNode(ProjectTreeNodeKind.RenderPreset, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
-        }
-
         if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
         {
             return DuplicateComponentVariant(node);
@@ -825,7 +779,6 @@ internal sealed partial class SpikeDatabase
             ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.ModuleInstance
             or ProjectTreeNodeKind.Episode
-            or ProjectTreeNodeKind.RenderPreset
             or ProjectTreeNodeKind.Theme
             or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
@@ -865,12 +818,6 @@ internal sealed partial class SpikeDatabase
                     "Shot Manager governs this Episode and it cannot be deleted locally.");
             }
             _projectEpisodeRepository.DeleteEpisode(connection, node.Id);
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
-        {
-            _renderPresetRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -935,12 +882,6 @@ internal sealed partial class SpikeDatabase
                     "Shot Manager governs this Episode. Change it there and synchronize.");
             }
             _projectEpisodeRepository.UpdateEpisodeNode(connection, node.Id, node.Name, node.Notes);
-            return;
-        }
-
-        if (node.Kind == ProjectTreeNodeKind.RenderPreset)
-        {
-            _renderPresetRepository.Rename(connection, node.Id, node.Name);
             return;
         }
 
@@ -1038,7 +979,6 @@ internal sealed partial class SpikeDatabase
                 or ProjectTreeNodeKind.Shot
                 or ProjectTreeNodeKind.PaletteColor
                 or ProjectTreeNodeKind.IconTheme
-                or ProjectTreeNodeKind.RenderPreset
                 or ProjectTreeNodeKind.Device
                 or ProjectTreeNodeKind.Actor
                 or ProjectTreeNodeKind.Theme

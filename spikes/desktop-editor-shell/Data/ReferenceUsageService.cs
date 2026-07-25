@@ -56,7 +56,6 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             ["themes"] = ProjectTreeNodeKind.Theme,
             ["production_fonts"] = ProjectTreeNodeKind.ProductionFont,
             ["icon_themes"] = ProjectTreeNodeKind.IconTheme,
-            ["render_presets"] = ProjectTreeNodeKind.RenderPreset,
         };
 
     private readonly SqliteProjectContext _context;
@@ -134,7 +133,6 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         ReadTargetRows(connection, catalog, ProjectTreeNodeKind.Theme, "SELECT id FROM themes");
         ReadTargetRows(connection, catalog, ProjectTreeNodeKind.ProductionFont, "SELECT id FROM production_fonts");
         ReadTargetRows(connection, catalog, ProjectTreeNodeKind.IconTheme, "SELECT id FROM icon_themes");
-        ReadTargetRows(connection, catalog, ProjectTreeNodeKind.RenderPreset, "SELECT id FROM render_presets");
 
         using (var command = connection.CreateCommand())
         {
@@ -188,14 +186,13 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
     {
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, s.render_preset_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
+            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(5));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(4));
                 AddExact(usages, targets, ProjectTreeNodeKind.Episode, reader.GetString(2), source, "Episode");
                 AddExact(usages, targets, ProjectTreeNodeKind.Actor, ReadString(reader, 3), source, "Owner actor");
-                AddExact(usages, targets, ProjectTreeNodeKind.RenderPreset, ReadString(reader, 4), source, "Render preset");
             }
         }
 

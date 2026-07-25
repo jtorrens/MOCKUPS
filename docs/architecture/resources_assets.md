@@ -4,8 +4,8 @@ Status: normative.
 
 ## Resource ownership
 
-Palette Colors, Themes, Icon Themes, Actors, Devices, Production Fonts and
-Render Presets are Project-owned SQLite records. Asset files are referenced by
+Palette Colors, Themes, Icon Themes, Actors, Devices and Production Fonts are
+Project-owned SQLite records. Asset files are referenced by
 those current records and resolved through the owning resource service.
 
 There are no cross-Project records and no cross-Project fallback.
@@ -63,11 +63,12 @@ Wallpaper is App configuration with explicit kind, light/dark color or image
 references and alpha. Alpha affects the complete wallpaper visual, including
 an image. Resolution happens before Preview rendering.
 
-## Render Presets
+## Render output resources
 
-Render Presets are Project-owned Production Data. They describe codec, color,
-quality and export documents for future rendering workflows. Their presence
-does not represent an active render/export pipeline.
+Output mode and encoding profile are queue-job choices, not Project resources.
+An immutable pending snapshot embeds the exact assets needed by its resolved
+frames. The worker therefore does not reinterpret current font, icon, media or
+wallpaper records after enqueue.
 
 ## Asset delivery
 

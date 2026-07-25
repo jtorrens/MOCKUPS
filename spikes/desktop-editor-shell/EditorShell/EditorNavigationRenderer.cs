@@ -29,6 +29,8 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
     private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
     private readonly Func<string> _activePreviewNodeId;
+    private readonly Func<ProjectTreeNode, EditorNavigationRowAction?>
+        _persistentAction;
     private string _renderedActivePreviewNodeId = "";
 
     public EditorNavigationRenderer(
@@ -44,7 +46,8 @@ internal sealed class EditorNavigationRenderer
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Func<ProjectTreeNode, bool> canExposeChildren,
         Func<ProjectTreeNode, bool> isNodeEnabled,
-        Func<string> activePreviewNodeId)
+        Func<string> activePreviewNodeId,
+        Func<ProjectTreeNode, EditorNavigationRowAction?> persistentAction)
     {
         _selectedNode = selectedNode;
         _isDark = isDark;
@@ -59,6 +62,7 @@ internal sealed class EditorNavigationRenderer
         _canExposeChildren = canExposeChildren;
         _isNodeEnabled = isNodeEnabled;
         _activePreviewNodeId = activePreviewNodeId;
+        _persistentAction = persistentAction;
     }
 
     public void Rebuild(
@@ -182,6 +186,7 @@ internal sealed class EditorNavigationRenderer
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup && siblingIndex > 0,
             isLastSibling,
             node.Kind == ProjectTreeNodeKind.ComponentClassGroup ? 46 : node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant ? 40 : 42,
+            _persistentAction(node),
             lockedAction,
             add,
             options);
@@ -442,6 +447,20 @@ internal sealed class EditorNavigationRenderer
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Right,
         };
+
+        if (_persistentAction(node) is { } persistent)
+        {
+            var persistentButton = CreateTreeActionButton(
+                EditorIcons.Create(persistent.Icon, 14),
+                persistent.Label,
+                (_, e) =>
+                {
+                    e.Handled = true;
+                    if (persistent.IsEnabled) persistent.Activate();
+                });
+            persistentButton.IsEnabled = persistent.IsEnabled;
+            actions.Children.Add(persistentButton);
+        }
 
         if (node.CanRenameDirectly)
         {

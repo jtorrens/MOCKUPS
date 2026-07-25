@@ -76,7 +76,39 @@ internal sealed class DesignPreviewPayloadDataSource
     {
         var themeId = ResolveThemeId(node, selectedThemeId);
         if (string.IsNullOrWhiteSpace(themeId)) return null;
+        return CreateThemeContext(themeId, ResolveDeviceId(node));
+    }
 
+    public DesignPreviewThemeContext LoadProductionRenderThemeContext(
+        ProjectTreeNode shot,
+        string themeId,
+        string deviceId)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot)
+        {
+            throw new InvalidOperationException(
+                "Production render context requires a Shot.");
+        }
+        var settings = _database.GetShotSettings(shot.Id);
+        if (!_database.GetThemeOptions(settings.ProjectId)
+                .Any((option) => option.Value.Equals(
+                    themeId,
+                    StringComparison.Ordinal))
+            || !_database.GetDeviceOptions(settings.ProjectId)
+                .Any((option) => option.Value.Equals(
+                    deviceId,
+                    StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException(
+                "Render Theme and Device must belong to the Shot Project.");
+        }
+        return CreateThemeContext(themeId, deviceId);
+    }
+
+    private DesignPreviewThemeContext CreateThemeContext(
+        string themeId,
+        string deviceId)
+    {
         var theme = _database.GetThemeSettings(themeId);
 
         var iconTheme = !string.IsNullOrWhiteSpace(theme.IconThemeId)
@@ -92,7 +124,7 @@ internal sealed class DesignPreviewPayloadDataSource
             _database.GetProductionFontFaces(theme.ProjectId),
             theme.StatusBarId,
             theme.NavigationBarId,
-            ResolveDeviceId(node));
+            deviceId);
     }
 
     public string? ResolveThemeId(ProjectTreeNode node, string? selectedThemeId)

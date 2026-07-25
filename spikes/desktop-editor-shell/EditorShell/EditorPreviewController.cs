@@ -1559,7 +1559,7 @@ internal sealed class EditorPreviewController
                 UpdateRasterProgress(frameIndex, frames.Count);
                 _aheadPreloadedFrameKeys.Add(PlaybackFrameKey(frame));
                 cancellationToken.ThrowIfCancellationRequested();
-                var rasterHtml = await _designPreviewPane.BuildRasterHtmlAsync(metrics, frame);
+                var rasterHtml = await DesignWebPreviewPane.BuildRasterHtmlAsync(metrics, frame);
                 var rasterPath = Path.Combine(_rasterCacheDirectory, $"frame-{frameIndex:D6}.webp");
                 await _chromiumRasterizer.RasterizeAsync(
                     rasterHtml,

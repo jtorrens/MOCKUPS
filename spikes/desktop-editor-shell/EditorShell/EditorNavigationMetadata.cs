@@ -29,8 +29,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.ProductionDataRoot
                 or ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor
                 or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device
-                or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont
-                or ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset => EditorWorkspaceScope.Production,
+                or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont => EditorWorkspaceScope.Production,
             _ => EditorWorkspaceScope.None,
         };
     }
@@ -102,11 +101,10 @@ internal static class EditorNavigationMetadata
         {
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
-            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices, production fonts and render presets",
+            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production fonts",
             ProjectTreeNodeKind.SystemDataRoot => "Themes, icon sets, component variants, palette and media",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
-            ProjectTreeNodeKind.RenderPresetsRoot => "Reusable render output definitions",
             ProjectTreeNodeKind.ComponentClassesRoot => "Reusable component defaults",
             ProjectTreeNodeKind.ComponentClassGroup => "Component class group",
             ProjectTreeNodeKind.ThemesRoot => "Visual theme definitions",
@@ -142,7 +140,6 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.Shot => "Add screen",
             ProjectTreeNodeKind.PaletteRoot => "Add palette color",
             ProjectTreeNodeKind.IconThemesRoot => "Add icon theme",
-            ProjectTreeNodeKind.RenderPresetsRoot => "Add render preset",
             ProjectTreeNodeKind.DevicesRoot => "Add device",
             ProjectTreeNodeKind.ActorsRoot => "Add actor",
             ProjectTreeNodeKind.ThemesRoot => "Add theme",

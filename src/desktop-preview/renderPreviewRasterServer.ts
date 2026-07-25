@@ -136,6 +136,7 @@ async function rasterize(request: RasterRequest) {
       clip: box,
       scale: "css",
       animations: "disabled",
+      omitBackground: true,
     });
   } else {
     const session = await activePage.context().newCDPSession(activePage);

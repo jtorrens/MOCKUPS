@@ -3934,7 +3934,6 @@ for (const [contractType, implementationType] of [
   ["IEditorLayoutRepository", "EditorLayoutRepository"],
   ["IProjectEpisodeRepository", "ProjectEpisodeRepository"],
   ["IShotRepository", "ShotRepository"],
-  ["IRenderPresetRepository", "RenderPresetRepository"],
   ["IPaletteRepository", "PaletteRepository"],
   ["IDeviceRepository", "DeviceRepository"],
   ["IActorRepository", "ActorRepository"],
@@ -3961,7 +3960,6 @@ for (const [contractType, implementationType] of [
 for (const facadePath of [
   "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectsEpisodes.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RenderPresets.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Palette.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
   "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
@@ -3982,7 +3980,6 @@ for (const [repositoryPath, ownedTable] of [
   ["spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs", "editor_layouts"],
   ["spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs", "episodes"],
   ["spikes/desktop-editor-shell/Data/ShotRepository.cs", "shots"],
-  ["spikes/desktop-editor-shell/Data/RenderPresetRepository.cs", "render_presets"],
   ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "palette_colors"],
   ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
   ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
@@ -4365,7 +4362,6 @@ for (const requiredProjectReferenceKind of [
   "ProjectReferenceKind.Actor",
   "ProjectReferenceKind.Device",
   "ProjectReferenceKind.IconTheme",
-  "ProjectReferenceKind.RenderPreset",
   "ProjectReferenceKind.Theme",
 ]) {
   assertContains(
@@ -4510,7 +4506,6 @@ for (const productionDataTreeContract of [
   "productionDataRoot.AddChild(actorsRoot);",
   "productionDataRoot.AddChild(devicesRoot);",
   "productionDataRoot.AddChild(productionFontsRoot);",
-  "productionDataRoot.AddChild(renderPresetsRoot);",
   "systemDataRoot.AddChild(themesRoot);",
 ]) {
   assertContains(
@@ -4523,7 +4518,6 @@ for (const productionWorkspaceKind of [
   "ProjectTreeNodeKind.ProductionDataRoot",
   "or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device",
   "or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont",
-  "or ProjectTreeNodeKind.RenderPresetsRoot or ProjectTreeNodeKind.RenderPreset",
 ]) {
   assertContains(
     "spikes/desktop-editor-shell/EditorShell/EditorNavigationMetadata.cs",
@@ -4542,7 +4536,7 @@ assertContains(
   "grouped Production Data sections must retain their explicit Add actions",
 );
 for (const resourceNavigationContract of [
-  "Actors, Devices, Production Fonts and Render Presets",
+  "Actors, Devices and Production Fonts",
   "copy current records | regenerate from current seeds | create empty",
   "never fall back to records from another Project",
 ]) {
@@ -4550,6 +4544,46 @@ for (const resourceNavigationContract of [
     "docs/architecture/production.md",
     resourceNavigationContract,
     `resource navigation contract must retain ${resourceNavigationContract}`,
+  );
+}
+for (const renderQueueContract of [
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueContracts.cs", "mockups_render_job_snapshot"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueContracts.cs", "public const string Both"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderOutputPlanner.cs", "_v{version.ToString().PadLeft(versionPadding, '0')}"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "CreateProductionRender("],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PreviewAssetRegistry.TryResolve"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "RecoverInterruptedJobs()"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "Environment.SpecialFolder.LocalApplicationData"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueDialog.cs", "Choose one of the predefined Shot Manager output routes."],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueController.cs", "EditorIcons.Render"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "\"-an\""],
+] as const) {
+  assertContains(
+    renderQueueContract[0],
+    renderQueueContract[1],
+    `${renderQueueContract[0]} must preserve Render Queue contract ${renderQueueContract[1]}`,
+  );
+}
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs",
+  "SpikeDatabase",
+  "the Render Queue worker must execute its immutable snapshot without reopening Project data",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "RenderQueueController",
+  "MainWindow must delegate Render Queue ownership through the Production navigation action owner",
+);
+for (const renderQueueDocumentationContract of [
+  "Both reserves one free version across the pair",
+  "Every Screen resolves its exact Module appearance contract.",
+  "no editor chrome or device frame",
+  "first render requires an explicit choice",
+]) {
+  assertContains(
+    "docs/architecture/production.md",
+    renderQueueDocumentationContract,
+    `Production documentation must preserve Render Queue rule ${renderQueueDocumentationContract}`,
   );
 }
 assertContains(
@@ -4596,6 +4630,28 @@ if (!existsSync(desktopDatabasePath)) {
 } else {
   const database = new Database(desktopDatabasePath, { readonly: true, fileMustExist: true });
   try {
+    const userVersion = database.pragma("user_version", { simple: true }) as number;
+    if (userVersion !== 3) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        `the committed current database must use schema version 3, found ${userVersion}`,
+      );
+    }
+    const renderPresetTables = database
+      .prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name = 'render_presets'")
+      .get() as { count: number };
+    const shotColumns = database.pragma("table_info(shots)") as { name: string }[];
+    const retiredRenderLayouts = database
+      .prepare("SELECT COUNT(*) AS count FROM editor_layouts WHERE record_class_id IN ('navigation.render_presets', 'render_preset')")
+      .get() as { count: number };
+    if (renderPresetTables.count !== 0
+      || shotColumns.some((column) => column.name === "render_preset_id")
+      || retiredRenderLayouts.count !== 0) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "Render Presets must be completely retired from current tables, Shot columns and editor layouts",
+      );
+    }
     const parityShots = database
       .prepare("SELECT id, episode_id FROM shots ORDER BY id")
       .all() as { id: string; episode_id: string }[];
@@ -7516,7 +7572,6 @@ for (const renameableKind of [
   "Shot",
   "PaletteColor",
   "IconTheme",
-  "RenderPreset",
   "Device",
   "Actor",
   "Theme",

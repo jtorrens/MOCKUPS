@@ -102,6 +102,22 @@ repreparing unchanged frames. Restore returns to the captured initial state.
 Moving the authoring surface between visual hosts does not leave either
 transport control disabled.
 
+## Render Queue
+
+Every governed Shot row keeps one compact Render action visible independently
+of selection. It opens a resizable modal split between the selected Shot
+settings and the local queue.
+
+Actor is informative and immutable in that modal. Device, Theme, appearance,
+output mode, predefined route and base name are explicit. The route control
+shows the stored relative directory and has no arbitrary folder alternative.
+The proposed automatic version and final child names update before enqueue.
+
+Queue rows show phase and frame progress. Pending or active work can be
+canceled; failed or canceled jobs retain a retry snapshot while available;
+completed work can reveal its output; terminal history can be cleared. Pause
+lets the active job finish and prevents the next pending job from starting.
+
 ## Lifecycle consistency
 
 An action may be available in more than one useful context.

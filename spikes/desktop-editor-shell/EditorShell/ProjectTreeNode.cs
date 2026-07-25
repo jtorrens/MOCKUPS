@@ -11,7 +11,6 @@ internal enum ProjectTreeNodeKind
     AppsRoot,
     PaletteRoot,
     IconThemesRoot,
-    RenderPresetsRoot,
     ComponentClassesRoot,
     ComponentClassGroup,
     DevicesRoot,
@@ -27,7 +26,6 @@ internal enum ProjectTreeNodeKind
     ModuleInstance,
     PaletteColor,
     IconTheme,
-    RenderPreset,
     ComponentClass,
     ComponentVariant,
     Device,
@@ -77,7 +75,6 @@ internal sealed class ProjectTreeNode
     public int Level => Parent is null ? 0 : Parent.Level + 1;
     public bool CanAddChild => Kind is ProjectTreeNodeKind.PaletteRoot
         or ProjectTreeNodeKind.IconThemesRoot
-        or ProjectTreeNodeKind.RenderPresetsRoot
         or ProjectTreeNodeKind.DevicesRoot
         or ProjectTreeNodeKind.ActorsRoot
         or ProjectTreeNodeKind.ThemesRoot
@@ -91,7 +88,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
-        or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.ComponentVariant
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
@@ -107,7 +103,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
-        or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
@@ -117,7 +112,6 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor
         or ProjectTreeNodeKind.IconTheme
-        or ProjectTreeNodeKind.RenderPreset
         or ProjectTreeNodeKind.Device
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
@@ -129,7 +123,6 @@ internal sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.IconThemesRoot
-        and not ProjectTreeNodeKind.RenderPresetsRoot
         and not ProjectTreeNodeKind.ComponentClassesRoot
         and not ProjectTreeNodeKind.ComponentClassGroup
         and not ProjectTreeNodeKind.DevicesRoot
@@ -158,7 +151,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
-            ProjectTreeNodeKind.RenderPresetsRoot => "navigation.render_presets",
             ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
             ProjectTreeNodeKind.ComponentClassGroup => "navigation.component_class_group",
             ProjectTreeNodeKind.DevicesRoot => "navigation.devices",
@@ -172,7 +164,6 @@ internal sealed class ProjectTreeNode
             ProjectTreeNodeKind.ModuleInstance => "module_instance",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
             ProjectTreeNodeKind.IconTheme => "icon_theme",
-            ProjectTreeNodeKind.RenderPreset => "render_preset",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
             ProjectTreeNodeKind.ComponentVariant => "component.variant",
             ProjectTreeNodeKind.Device => "device",

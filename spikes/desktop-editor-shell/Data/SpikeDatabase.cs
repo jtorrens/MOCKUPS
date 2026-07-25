@@ -11,7 +11,6 @@ internal sealed partial class SpikeDatabase
     private readonly IEditorLayoutRepository _editorLayoutRepository;
     private readonly IShotRepository _shotRepository;
     private readonly IProjectEpisodeRepository _projectEpisodeRepository;
-    private readonly IRenderPresetRepository _renderPresetRepository;
     private readonly IPaletteRepository _paletteRepository;
     private readonly IDeviceRepository _deviceRepository;
     private readonly IActorRepository _actorRepository;
@@ -31,7 +30,6 @@ internal sealed partial class SpikeDatabase
         _editorLayoutRepository = new EditorLayoutRepository(_context);
         _shotRepository = new ShotRepository(_context);
         _projectEpisodeRepository = new ProjectEpisodeRepository(_context, _shotRepository);
-        _renderPresetRepository = new RenderPresetRepository(_context);
         _paletteRepository = new PaletteRepository(_context);
         _deviceRepository = new DeviceRepository(_context);
         _actorRepository = new ActorRepository(_context);

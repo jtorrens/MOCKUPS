@@ -11,7 +11,6 @@ internal enum ProjectReferenceKind
     Actor,
     Device,
     IconTheme,
-    RenderPreset,
     Theme,
 }
 
@@ -44,12 +43,6 @@ internal static class ProjectReferenceIntegrity
                 shot.OwnerActorId,
                 $"Shot '{shot.Id}' owner Actor",
                 required: true);
-            RequireSameProjectReference(
-                connection,
-                shot.ProjectId,
-                ProjectReferenceKind.RenderPreset,
-                shot.RenderPresetId,
-                $"Shot '{shot.Id}' Render Preset");
         }
 
         foreach (var theme in ThemeReferences(connection))
@@ -191,7 +184,7 @@ internal static class ProjectReferenceIntegrity
         var rows = new List<ShotReferenceRow>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT s.id, e.project_id, s.owner_actor_id, s.render_preset_id
+            SELECT s.id, e.project_id, s.owner_actor_id
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
             ORDER BY s.id
@@ -202,8 +195,7 @@ internal static class ProjectReferenceIntegrity
             rows.Add(new ShotReferenceRow(
                 reader.GetString(0),
                 reader.GetString(1),
-                SqliteCommandExecutor.ReadString(reader, 2),
-                SqliteCommandExecutor.ReadString(reader, 3)));
+                SqliteCommandExecutor.ReadString(reader, 2)));
         }
         return rows;
     }
@@ -236,7 +228,6 @@ internal static class ProjectReferenceIntegrity
             ProjectReferenceKind.Actor => "actors",
             ProjectReferenceKind.Device => "devices",
             ProjectReferenceKind.IconTheme => "icon_themes",
-            ProjectReferenceKind.RenderPreset => "render_presets",
             ProjectReferenceKind.Theme => "themes",
             _ => throw new InvalidOperationException($"Unsupported Project reference kind '{referenceKind}'."),
         };
@@ -247,7 +238,6 @@ internal static class ProjectReferenceIntegrity
             ProjectReferenceKind.Actor => "Actor",
             ProjectReferenceKind.Device => "Device",
             ProjectReferenceKind.IconTheme => "Icon Theme",
-            ProjectReferenceKind.RenderPreset => "Render Preset",
             ProjectReferenceKind.Theme => "Theme",
             _ => throw new InvalidOperationException($"Unsupported Project reference kind '{referenceKind}'."),
         };
@@ -261,8 +251,7 @@ internal static class ProjectReferenceIntegrity
     private sealed record ShotReferenceRow(
         string Id,
         string ProjectId,
-        string OwnerActorId,
-        string RenderPresetId);
+        string OwnerActorId);
 
     private sealed record ThemeReferenceRow(
         string Id,

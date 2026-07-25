@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `2` is the only current schema. Every row belongs directly or
+Schema version `3` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -17,7 +17,7 @@ The current tables are:
 | Optional Shot Manager governance | `shot_manager_project_associations`, `shot_manager_episode_bindings`, `shot_manager_shot_structures` | exact Project/Season association → stable Episode bindings → immutable local Shot folder snapshot |
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
 | Visual resources | `palette_colors`, `themes`, `icon_themes` | Project-owned semantic resources |
-| Production resources | `actors`, `devices`, `production_fonts`, `render_presets` | Project-owned Production Data |
+| Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
@@ -27,7 +27,7 @@ updated explicitly before its referenced definition can be removed.
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
 Project-owned relational references. Focused repositories invoke it before
 writes and startup validation invokes the same owner read-only. Actor Device
-and Theme, Shot Actor and Render Preset, and Theme Icon Theme, Status Bar and
+and Theme, Shot Actor, and Theme Icon Theme, Status Bar and
 Navigation Bar references must resolve inside the owner's exact Project.
 Status and Navigation references additionally require a complete existing
 Component Variant of their exact declared type.
@@ -47,7 +47,6 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 - `ActorRepository`
 - `ProductionFontRepository`
 - `IconThemeRepository`
-- `RenderPresetRepository`
 - `EditorLayoutRepository`
 - `ShotManagerIntegrationRepository`
 
@@ -90,11 +89,6 @@ object
   production_fonts.metadata_json
   icon_themes.mapping_json
   icon_themes.metadata_json
-  render_presets.codec_json
-  render_presets.color_json
-  render_presets.quality_json
-  render_presets.export_json
-  render_presets.metadata_json
   component_classes.config_json
   component_classes.design_preview_json
   component_classes.metadata_json
@@ -109,10 +103,27 @@ array
 `schemaVersion`, unique `/`-separated relative `directories`, the exact
 `shotOwnedDirectories` subset supplied by the file-layout owner, and complete
 `entries` containing only `entryId` and `relativePath`. Its
-`outputContracts` retain the exact output entry, relative directory, canonical
-file-name prefix and version padding returned by Shot Manager. It never
+`outputContracts` retain the exact output entry, relative directory, source
+file-name prefix and version padding returned by Shot Manager. The Render
+Queue selects by stable entry id but MOCKUPS owns its final
+`Shot_Appearance_Version` output name. The portable snapshot never
 persists a workstation root, resolved absolute path, discovery document or
 credential.
+
+## Local render state
+
+Render Queue is deliberately outside SQLite. The application-data directory on
+each workstation contains:
+
+- the current local queue and its immutable pending/active snapshots;
+- terminal history, compacted after completion;
+- the last selected output route per Project;
+- the last successfully resolved absolute root per Shot Manager Production.
+
+The queue snapshot freezes every resolved frame and referenced asset. A worker
+never reopens the Project database to execute an existing job. The absolute
+root is local machine state and is never copied into the portable Project.
+Interrupted active jobs return to Pending on the next application start.
 
 The Project association stores one exact external Production and Season.
 Episode bindings store stable external identities. A Shot structure stores the

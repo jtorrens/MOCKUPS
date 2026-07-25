@@ -81,8 +81,8 @@ session remains open but never rewrites the Variant envelope. A new session
 therefore starts with Default locked without startup repair or any other
 persistence write. Non-Default Variant locks remain authored metadata.
 
-`Preset` is a separate term used by Render Presets and reserved for future
-reusable recipes that are not Variants.
+`Preset` is not a current authored concept. Render output choices belong to
+workstation-local queue jobs and are never Component or Module Variants.
 
 ## Apps, Modules and Module Variants
 

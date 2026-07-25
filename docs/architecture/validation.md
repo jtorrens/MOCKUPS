@@ -61,6 +61,9 @@ It includes:
 - optional Shot Manager governance, including exact Episode adoption,
   local-only Shot persistence, portable folder snapshots, unsafe-path
   rejection, retained folders on delete and independent data after disconnect;
+- Render Queue naming and shared Light/Dark version resolution, immutable
+  frame snapshots, local recovery, strict stored-route containment,
+  no-overwrite publication and sequential child jobs;
 - architecture enforcement;
 - desktop application build.
 
@@ -162,6 +165,9 @@ For any editor or Preview change, exercise at least:
 12. resizable panels, compact layout and scroll restoration.
 13. optional Shot Manager connect/synchronize, governed Shot creation, missing
     folder repair, retained folders on Shot deletion and disconnect behavior.
+14. governed Shot Render action, explicit first route choice, Actor defaults
+    and Device/Theme overrides, Light/Dark/Both naming, queue progress,
+    cancel/retry/pause and output reveal.
 
 Component-specific changes add an isolated Design case and a Production case
 that reaches the same owner through a Screen payload.
