@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -27,16 +28,26 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
     private const int ApiVersion = 1;
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
     private readonly string _discoveryPath;
+    private readonly string _launcherPath;
     private readonly HttpClient _httpClient;
+    private readonly SemaphoreSlim _startGate = new(1, 1);
+    private readonly Action<string, IReadOnlyList<string>> _launchService;
 
     public ShotManagerIntegrationClient(
         string? discoveryPath = null,
-        HttpMessageHandler? handler = null)
+        HttpMessageHandler? handler = null,
+        Action<string, IReadOnlyList<string>>? launchService = null)
     {
         _discoveryPath = discoveryPath ?? DefaultDiscoveryPath();
+        _launcherPath = Path.Combine(
+            Path.GetDirectoryName(_discoveryPath)
+                ?? throw new InvalidOperationException(
+                    "Shot Manager discovery requires a parent directory."),
+            "integration-service.json");
         _httpClient = handler is null
             ? SharedHttpClient
             : CreateHttpClient(handler);
+        _launchService = launchService ?? LaunchService;
     }
 
     public async Task<ShotManagerStatus> GetStatusAsync(
@@ -248,6 +259,18 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
                     value,
                     "Shot Manager Shot-owned directory")))
             .ToList();
+        var outputContracts = RequiredArray(
+            RequiredProperty(
+                data,
+                "outputContracts",
+                "Shot Manager Shot plan"),
+            "Shot Manager Shot plan output contracts")
+            .EnumerateArray()
+            .Select((value) => ParseOutputContract(
+                RequiredObject(
+                    value,
+                    "Shot Manager Shot plan output contract")))
+            .ToList();
         if (directories.Count == 0
             || entries.Count == 0
             || shotOwnedDirectories.Count == 0
@@ -258,7 +281,10 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
                 .Distinct(StringComparer.Ordinal).Count()
                 != shotOwnedDirectories.Count
             || entries.Select((entry) => entry.EntryId)
-                .Distinct(StringComparer.Ordinal).Count() != entries.Count)
+                .Distinct(StringComparer.Ordinal).Count() != entries.Count
+            || outputContracts.Select((output) => output.EntryId)
+                .Distinct(StringComparer.Ordinal).Count()
+                != outputContracts.Count)
         {
             throw InvalidResponse(
                 "Shot Manager returned an empty or ambiguous directory plan.");
@@ -281,6 +307,18 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
             throw InvalidResponse(
                 "Shot Manager returned an inconsistent directory ownership or structure mapping.");
         }
+        var entriesById = entries.ToDictionary(
+            (entry) => entry.EntryId,
+            StringComparer.Ordinal);
+        if (outputContracts.Any((output) =>
+            !entriesById.TryGetValue(output.EntryId, out var entry)
+            || !entry.RelativePath.Equals(
+                output.RelativeDirectory,
+                StringComparison.Ordinal)))
+        {
+            throw InvalidResponse(
+                "Shot Manager returned an output contract outside its structure mapping.");
+        }
         return new ShotManagerExternalShotPlan(
             1,
             production,
@@ -292,7 +330,8 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
             rootPath,
             directories,
             shotOwnedDirectories,
-            entries);
+            entries,
+            outputContracts);
     }
 
     private async Task<JsonDocument> RequestAsync(
@@ -300,7 +339,7 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
         bool authenticated,
         CancellationToken cancellationToken)
     {
-        var connection = await ReadConnectionAsync(cancellationToken);
+        var connection = await EnsureRunningAsync(cancellationToken);
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             new Uri(
@@ -375,6 +414,194 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
         }
     }
 
+    private async Task<Connection> EnsureRunningAsync(
+        CancellationToken cancellationToken)
+    {
+        await _startGate.WaitAsync(cancellationToken);
+        try
+        {
+            var current = await TryHealthyConnectionAsync(cancellationToken);
+            if (current is not null)
+            {
+                return current;
+            }
+            var launcher = await ReadLauncherAsync(cancellationToken);
+            try
+            {
+                _launchService(
+                    launcher.ExecutablePath,
+                    launcher.Arguments);
+            }
+            catch (Exception exception)
+                when (exception is not OperationCanceledException)
+            {
+                throw new ShotManagerIntegrationException(
+                    "SHOT_MANAGER_SERVICE_START_FAILED",
+                    $"No se pudo iniciar el servicio local de Shot Manager: {exception.Message}");
+            }
+
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                await Task.Delay(100, cancellationToken);
+                var connection =
+                    await TryHealthyConnectionAsync(cancellationToken);
+                if (connection is not null)
+                {
+                    return connection;
+                }
+            }
+            throw new ShotManagerIntegrationException(
+                "SHOT_MANAGER_SERVICE_START_FAILED",
+                "El servicio local de Shot Manager no respondió en 5 segundos.");
+        }
+        finally
+        {
+            _startGate.Release();
+        }
+    }
+
+    private async Task<Connection?> TryHealthyConnectionAsync(
+        CancellationToken cancellationToken)
+    {
+        Connection connection;
+        try
+        {
+            connection = await ReadConnectionAsync(cancellationToken);
+        }
+        catch (ShotManagerIntegrationException)
+        {
+            return null;
+        }
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMilliseconds(500));
+        try
+        {
+            using var response = await _httpClient.GetAsync(
+                new Uri(
+                    connection.BaseUrl.AbsoluteUri.TrimEnd('/') + "/health",
+                    UriKind.Absolute),
+                timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+            await using var stream =
+                await response.Content.ReadAsStreamAsync(timeout.Token);
+            using var document = await JsonDocument.ParseAsync(
+                stream,
+                cancellationToken: timeout.Token);
+            var root = RequiredObject(
+                document.RootElement,
+                "Shot Manager health");
+            if (RequiredInt32(root, "apiVersion", "Shot Manager health")
+                    != ApiVersion)
+            {
+                return null;
+            }
+            var data = RequiredObject(
+                RequiredProperty(root, "data", "Shot Manager health"),
+                "Shot Manager health data");
+            return RequiredBoolean(data, "readOnly", "Shot Manager health")
+                && RequiredString(data, "service", "Shot Manager health")
+                    == "vfx-shot-manager"
+                ? connection
+                : null;
+        }
+        catch (Exception exception)
+            when (exception is HttpRequestException
+                or JsonException
+                or ShotManagerIntegrationException
+                or OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<Launcher> ReadLauncherAsync(
+        CancellationToken cancellationToken)
+    {
+        string json;
+        try
+        {
+            json = await File.ReadAllTextAsync(
+                _launcherPath,
+                cancellationToken);
+        }
+        catch (Exception exception)
+            when (exception is FileNotFoundException
+                or DirectoryNotFoundException)
+        {
+            throw new ShotManagerIntegrationException(
+                "SHOT_MANAGER_SERVICE_NOT_REGISTERED",
+                "Abre Shot Manager una vez para registrar su servicio de integración.");
+        }
+        catch (IOException)
+        {
+            throw new ShotManagerIntegrationException(
+                "DISCOVERY_READ_FAILED",
+                "No se pudo leer el lanzador local de Shot Manager.");
+        }
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = RequiredObject(
+                document.RootElement,
+                "Shot Manager service launcher");
+            var keys = root.EnumerateObject()
+                .Select((property) => property.Name)
+                .ToHashSet(StringComparer.Ordinal);
+            var expected = new HashSet<string>(
+                ["version", "executablePath", "arguments", "updatedAt"],
+                StringComparer.Ordinal);
+            if (!keys.SetEquals(expected)
+                || RequiredInt32(
+                    root,
+                    "version",
+                    "Shot Manager service launcher") != 1)
+            {
+                throw InvalidDiscovery();
+            }
+            var executablePath = RequiredString(
+                root,
+                "executablePath",
+                "Shot Manager service launcher");
+            if (!Path.IsPathFullyQualified(executablePath))
+            {
+                throw InvalidDiscovery();
+            }
+            var arguments = RequiredArray(
+                RequiredProperty(
+                    root,
+                    "arguments",
+                    "Shot Manager service launcher"),
+                "Shot Manager service launcher arguments")
+                .EnumerateArray()
+                .Select((value) => RequiredStringValue(
+                    value,
+                    "Shot Manager service launcher argument"))
+                .ToList();
+            var updatedAt = RequiredString(
+                root,
+                "updatedAt",
+                "Shot Manager service launcher");
+            if (!DateTimeOffset.TryParse(
+                updatedAt,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind,
+                out _))
+            {
+                throw InvalidDiscovery();
+            }
+            return new Launcher(executablePath, arguments);
+        }
+        catch (JsonException)
+        {
+            throw InvalidDiscovery();
+        }
+    }
+
     private async Task<Connection> ReadConnectionAsync(
         CancellationToken cancellationToken)
     {
@@ -388,14 +615,14 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
         catch (FileNotFoundException)
         {
             throw new ShotManagerIntegrationException(
-                "SHOT_MANAGER_NOT_RUNNING",
-                "Abre Shot Manager para conectar esta producción.");
+                "SHOT_MANAGER_CONNECTION_MISSING",
+                "El servicio de Shot Manager todavía no está activo.");
         }
         catch (DirectoryNotFoundException)
         {
             throw new ShotManagerIntegrationException(
-                "SHOT_MANAGER_NOT_RUNNING",
-                "Abre Shot Manager para conectar esta producción.");
+                "SHOT_MANAGER_CONNECTION_MISSING",
+                "El servicio de Shot Manager todavía no está activo.");
         }
         catch (IOException)
         {
@@ -631,6 +858,46 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
             RequiredString(value, "resolvedPath", "Shot Manager structure entry"));
     }
 
+    private static ShotManagerPlanOutputContract ParseOutputContract(
+        JsonElement value)
+    {
+        var prefix = RequiredString(
+            value,
+            "fileNamePrefix",
+            "Shot Manager output contract");
+        if (prefix.Any((character) =>
+            !(character is >= 'A' and <= 'Z'
+                or >= 'a' and <= 'z'
+                or >= '0' and <= '9'
+                or '_'
+                or '-'
+                or '.')))
+        {
+            throw InvalidResponse(
+                "Shot Manager returned a non-portable output prefix.");
+        }
+        var versionPadding = RequiredInt32(
+            value,
+            "versionPadding",
+            "Shot Manager output contract");
+        if (versionPadding is < 1 or > 8)
+        {
+            throw InvalidResponse(
+                "Shot Manager returned an invalid output version padding.");
+        }
+        return new ShotManagerPlanOutputContract(
+            RequiredString(
+                value,
+                "entryId",
+                "Shot Manager output contract"),
+            RequiredString(
+                value,
+                "relativeDirectory",
+                "Shot Manager output contract"),
+            prefix,
+            versionPadding);
+    }
+
     private static bool IsArchived(JsonElement value)
     {
         return value.TryGetProperty("archivedAt", out var archivedAt)
@@ -786,5 +1053,29 @@ internal sealed class ShotManagerIntegrationClient : IShotManagerIntegrationClie
         return client;
     }
 
+    private static void LaunchService(
+        string executablePath,
+        IReadOnlyList<string> arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = executablePath,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException(
+                "The Shot Manager service process did not start.");
+    }
+
     private sealed record Connection(Uri BaseUrl, string Token);
+
+    private sealed record Launcher(
+        string ExecutablePath,
+        IReadOnlyList<string> Arguments);
 }

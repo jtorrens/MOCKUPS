@@ -108,8 +108,11 @@ array
 `shot_manager_shot_structures.structure_json` is a strict portable object with
 `schemaVersion`, unique `/`-separated relative `directories`, the exact
 `shotOwnedDirectories` subset supplied by the file-layout owner, and complete
-`entries` containing only `entryId` and `relativePath`. It never persists a
-workstation root, resolved absolute path, discovery document or credential.
+`entries` containing only `entryId` and `relativePath`. Its
+`outputContracts` retain the exact output entry, relative directory, canonical
+file-name prefix and version padding returned by Shot Manager. It never
+persists a workstation root, resolved absolute path, discovery document or
+credential.
 
 The Project association stores one exact external Production and Season.
 Episode bindings store stable external identities. A Shot structure stores the

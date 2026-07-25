@@ -52,6 +52,12 @@ internal sealed record ShotManagerPlanEntry(
     string RelativePath,
     string ResolvedPath);
 
+internal sealed record ShotManagerPlanOutputContract(
+    string EntryId,
+    string RelativeDirectory,
+    string FileNamePrefix,
+    int VersionPadding);
+
 internal sealed record ShotManagerExternalShotPlan(
     int PlanVersion,
     ShotManagerCatalogProduction Production,
@@ -63,7 +69,8 @@ internal sealed record ShotManagerExternalShotPlan(
     string RootPath,
     IReadOnlyList<ShotManagerPlanDirectory> Directories,
     IReadOnlyList<ShotManagerPlanDirectory> ShotOwnedDirectories,
-    IReadOnlyList<ShotManagerPlanEntry> StructureEntries);
+    IReadOnlyList<ShotManagerPlanEntry> StructureEntries,
+    IReadOnlyList<ShotManagerPlanOutputContract> OutputContracts);
 
 internal static class ShotManagerExternalShotPlanExtensions
 {
@@ -71,14 +78,20 @@ internal static class ShotManagerExternalShotPlanExtensions
         this ShotManagerExternalShotPlan plan)
     {
         var structure = new ShotManagerPortableStructure(
-            1,
+            2,
             plan.Directories.Select((directory) => directory.RelativePath).ToList(),
             plan.ShotOwnedDirectories.Select((directory) =>
                 directory.RelativePath).ToList(),
             plan.StructureEntries.Select((entry) =>
                 new ShotManagerPortableStructureEntry(
                     entry.EntryId,
-                    entry.RelativePath)).ToList());
+                    entry.RelativePath)).ToList(),
+            plan.OutputContracts.Select((output) =>
+                new ShotManagerPortableOutputContract(
+                    output.EntryId,
+                    output.RelativeDirectory,
+                    output.FileNamePrefix,
+                    output.VersionPadding)).ToList());
         structure.Validate("Shot Manager external Shot plan");
         return structure;
     }

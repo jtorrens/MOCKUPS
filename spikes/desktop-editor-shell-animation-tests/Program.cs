@@ -78,6 +78,7 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shot Manager client requires exact loopback discovery and parses the read-only plan", ShotManagerClientRequiresExactDiscovery),
+    ("Shot Manager client starts the registered headless service on demand", ShotManagerClientStartsRegisteredService),
     ("Shot Manager integration keeps Shots local and materializes portable folder plans", ShotManagerIntegrationKeepsShotsLocal),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
@@ -7056,6 +7057,13 @@ static void ShotManagerIntegrationKeepsShotsLocal()
                         "EP_01",
                         fullName,
                         "comp")),
+            ],
+            [
+                new ShotManagerPlanOutputContract(
+                    "structure-comp",
+                    $"S02/EP_01/{fullName}/comp",
+                    $"{fullName}_comp_v",
+                    3),
             ]);
         var materializer = new ShotManagerFolderMaterializer();
         var creation = materializer.CreateAsync(plan)
@@ -7084,6 +7092,11 @@ static void ShotManagerIntegrationKeepsShotsLocal()
         SequenceEqual(
             relatives,
             portable.Directories);
+        Equal(2, portable.SchemaVersion);
+        Equal(1, portable.OutputContracts.Count);
+        Equal(
+            $"{fullName}_comp_v",
+            portable.OutputContracts[0].FileNamePrefix);
         Throws<InvalidOperationException>(() =>
             database.UpdateShotField(
                 shot.Id,
@@ -7181,9 +7194,12 @@ static void ShotManagerClientRequiresExactDiscovery()
         Equal("PRJ_S01_E01_SH0010", plan.FullName);
         Equal(1, plan.Directories.Count);
         Equal(1, plan.StructureEntries.Count);
-        Equal(2, handler.Requests.Count);
+        Equal(0, plan.OutputContracts.Count);
+        Equal(4, handler.Requests.Count);
         True(!handler.Requests[0].Authenticated);
-        True(handler.Requests[1].Authenticated);
+        True(!handler.Requests[1].Authenticated);
+        True(!handler.Requests[2].Authenticated);
+        True(handler.Requests[3].Authenticated);
 
         File.WriteAllText(
             discoveryPath,
@@ -7203,6 +7219,66 @@ static void ShotManagerClientRequiresExactDiscovery()
     finally
     {
         File.Delete(discoveryPath);
+    }
+}
+
+static void ShotManagerClientStartsRegisteredService()
+{
+    var directory = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-service-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(directory);
+    var discoveryPath = Path.Combine(directory, "integration-api.json");
+    var launcherPath = Path.Combine(directory, "integration-service.json");
+    var executablePath = Path.GetFullPath(
+        Path.Combine(directory, "VFX Shot Manager"));
+    const string token =
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    File.WriteAllText(
+        launcherPath,
+        $$"""
+        {
+          "version": 1,
+          "executablePath": "{{executablePath.Replace("\\", "\\\\")}}",
+          "arguments": ["--integration-service"],
+          "updatedAt": "2026-07-25T12:00:00.000Z"
+        }
+        """);
+    var launchCount = 0;
+    try
+    {
+        var handler = new ShotManagerTestHandler(token);
+        var client = new ShotManagerIntegrationClient(
+            discoveryPath,
+            handler,
+            (launchedExecutable, arguments) =>
+            {
+                Equal(executablePath, launchedExecutable);
+                SequenceEqual(
+                    new[] { "--integration-service" },
+                    arguments);
+                launchCount += 1;
+                File.WriteAllText(
+                    discoveryPath,
+                    $$"""
+                    {
+                      "version": 1,
+                      "apiVersion": 1,
+                      "baseUrl": "http://127.0.0.1:43210/api/v1",
+                      "token": "{{token}}",
+                      "updatedAt": "2026-07-25T12:00:00.000Z"
+                    }
+                    """);
+            });
+
+        var status = client.GetStatusAsync().GetAwaiter().GetResult();
+
+        True(status.Connected);
+        Equal(1, launchCount);
+    }
+    finally
+    {
+        Directory.Delete(directory, recursive: true);
     }
 }
 
@@ -10947,6 +11023,7 @@ internal sealed class ShotManagerTestHandler(
                     "relativePath": "S01/E01/PRJ_S01_E01_SH0010/comp",
                     "resolvedPath": "/tmp/shot-manager-production/S01/E01/PRJ_S01_E01_SH0010/comp"
                   }],
+                  "outputContracts": [],
                   "persisted": false,
                   "reserved": false
                 }

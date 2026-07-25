@@ -10,11 +10,18 @@ internal sealed record ShotManagerPortableStructureEntry(
     string EntryId,
     string RelativePath);
 
+internal sealed record ShotManagerPortableOutputContract(
+    string EntryId,
+    string RelativeDirectory,
+    string FileNamePrefix,
+    int VersionPadding);
+
 internal sealed record ShotManagerPortableStructure(
     int SchemaVersion,
     IReadOnlyList<string> Directories,
     IReadOnlyList<string> ShotOwnedDirectories,
-    IReadOnlyList<ShotManagerPortableStructureEntry> Entries)
+    IReadOnlyList<ShotManagerPortableStructureEntry> Entries,
+    IReadOnlyList<ShotManagerPortableOutputContract> OutputContracts)
 {
     private static readonly HashSet<string> RootKeys =
         new(
@@ -23,10 +30,20 @@ internal sealed record ShotManagerPortableStructure(
                 "directories",
                 "shotOwnedDirectories",
                 "entries",
+                "outputContracts",
             ],
             StringComparer.Ordinal);
     private static readonly HashSet<string> EntryKeys =
         new(["entryId", "relativePath"], StringComparer.Ordinal);
+    private static readonly HashSet<string> OutputContractKeys =
+        new(
+            [
+                "entryId",
+                "relativeDirectory",
+                "fileNamePrefix",
+                "versionPadding",
+            ],
+            StringComparer.Ordinal);
 
     public string ToJson()
     {
@@ -45,6 +62,14 @@ internal sealed record ShotManagerPortableStructure(
                 {
                     ["entryId"] = entry.EntryId,
                     ["relativePath"] = entry.RelativePath,
+                }).ToArray()),
+            ["outputContracts"] = new JsonArray(
+                OutputContracts.Select((output) => (JsonNode)new JsonObject
+                {
+                    ["entryId"] = output.EntryId,
+                    ["relativeDirectory"] = output.RelativeDirectory,
+                    ["fileNamePrefix"] = output.FileNamePrefix,
+                    ["versionPadding"] = output.VersionPadding,
                 }).ToArray()),
         }.ToJsonString();
     }
@@ -68,6 +93,9 @@ internal sealed record ShotManagerPortableStructure(
             root["shotOwnedDirectories"] as JsonArray
             ?? throw new InvalidOperationException(
                 $"{context}.shotOwnedDirectories must be an array.");
+        var outputContractsNode = root["outputContracts"] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"{context}.outputContracts must be an array.");
         var directories = directoriesNode.Select((node) =>
             node?.GetValue<string>()
             ?? throw new InvalidOperationException(
@@ -92,18 +120,42 @@ internal sealed record ShotManagerPortableStructure(
                     ?? throw new InvalidOperationException(
                         $"{context}.entries requires relativePath."));
         }).ToList();
+        var outputContracts = outputContractsNode.Select((node) =>
+        {
+            var output = node as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{context}.outputContracts contains a non-object value.");
+            RequireExactKeys(
+                output,
+                OutputContractKeys,
+                $"{context}.outputContracts");
+            return new ShotManagerPortableOutputContract(
+                output["entryId"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException(
+                        $"{context}.outputContracts requires entryId."),
+                output["relativeDirectory"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException(
+                        $"{context}.outputContracts requires relativeDirectory."),
+                output["fileNamePrefix"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException(
+                        $"{context}.outputContracts requires fileNamePrefix."),
+                output["versionPadding"]?.GetValue<int>()
+                    ?? throw new InvalidOperationException(
+                        $"{context}.outputContracts requires versionPadding."));
+        }).ToList();
         var structure = new ShotManagerPortableStructure(
             schemaVersion,
             directories,
             shotOwnedDirectories,
-            entries);
+            entries,
+            outputContracts);
         structure.Validate(context);
         return structure;
     }
 
     public void Validate(string context)
     {
-        if (SchemaVersion != 1)
+        if (SchemaVersion != 2)
         {
             throw new InvalidOperationException(
                 $"{context} uses unsupported schemaVersion '{SchemaVersion}'.");
@@ -142,6 +194,23 @@ internal sealed record ShotManagerPortableStructure(
             throw new InvalidOperationException(
                 $"{context} contains an entry outside its directory snapshot.");
         }
+        var entriesById = Entries.ToDictionary(
+            (entry) => entry.EntryId,
+            StringComparer.Ordinal);
+        if (OutputContracts.Select((output) => output.EntryId)
+                .Distinct(StringComparer.Ordinal).Count()
+                != OutputContracts.Count
+            || OutputContracts.Any((output) =>
+                !entriesById.TryGetValue(output.EntryId, out var entry)
+                || !entry.RelativePath.Equals(
+                    output.RelativeDirectory,
+                    StringComparison.Ordinal)
+                || !IsPortableFileNamePrefix(output.FileNamePrefix)
+                || output.VersionPadding is < 1 or > 8))
+        {
+            throw new InvalidOperationException(
+                $"{context} contains invalid or ambiguous output contracts.");
+        }
     }
 
     private static bool IsPortableRelativePath(string path)
@@ -156,6 +225,18 @@ internal sealed record ShotManagerPortableStructure(
         return path.Split('/').All((segment) =>
             !string.IsNullOrWhiteSpace(segment)
             && segment is not "." and not "..");
+    }
+
+    private static bool IsPortableFileNamePrefix(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.All((character) =>
+                character is >= 'A' and <= 'Z'
+                    or >= 'a' and <= 'z'
+                    or >= '0' and <= '9'
+                    or '_'
+                    or '-'
+                    or '.');
     }
 
     private static void RequireExactKeys(

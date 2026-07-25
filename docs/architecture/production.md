@@ -86,9 +86,10 @@ With an association:
   exact portable layout snapshot;
 - no external Shot identity exists or is manufactured.
 
-The persisted snapshot contains only portable relative directories and stable
-structure-entry identities. Workstation roots, resolved absolute paths,
-discovery data and bearer credentials remain local and transient. Repair
+The persisted snapshot contains portable relative directories, stable
+structure-entry identities and the canonical prefix and version padding for
+every planned output. Workstation roots, resolved absolute paths, discovery
+data and bearer credentials remain local and transient. Repair
 resolves the current workstation root through Shot Manager and recreates only
 directories missing from the stored snapshot; a later Shot Manager template
 change does not reinterpret an existing Shot.
