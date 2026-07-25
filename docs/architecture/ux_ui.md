@@ -121,8 +121,8 @@ disable the form: the render worker creates it from the selected stored route
 when the job starts.
 
 Confirming the modal closes it immediately and creates visible `PREPARING`
-Light/Dark children. Their progress reports the appearance and frame currently
-being frozen into the immutable local store. Canceling either child during
+Light/Dark children. Preparation uses an indeterminate indicator and never
+reports its source traversal as rendered frames. Canceling either child during
 this atomic preparation cancels the complete batch; once preparation finishes,
 the children are independent queue jobs.
 
@@ -132,8 +132,10 @@ empty queue or without cached Shot Manager routes. It groups Light/Dark children
 and shows phase, frame progress, errors and final output. Pending or active
 work can be canceled; failed or canceled jobs retain a retry snapshot while
 available; completed work can reveal its output; terminal history can be
-cleared. Pause lets the active job finish and prevents the next pending job
-from starting.
+cleared. Each job row and progress control remains mounted while values change;
+render progress is monotonic and cannot visually restart on every frame.
+Pause lets the active job finish and prevents the next pending job from
+starting.
 
 ## Lifecycle consistency
 

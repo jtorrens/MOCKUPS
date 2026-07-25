@@ -184,8 +184,11 @@ Monitoring is separate from batch creation. The permanent Production
 **Render Queue** panel is available even when it is empty, when Shot Manager is
 offline and when no Shot has a cached output route. It groups child jobs by
 batch and owns pause/resume, cancel, retry, reveal, remove and clear-finished
-actions together with progress, error and output-path reporting. The add modal
-and this panel share one workstation-local queue manager.
+actions together with progress, error and output-path reporting. Preparation
+is indeterminate; only rasterized frames advance the determinate frame bar.
+Rows update their existing controls in place and execution updates are ordered
+monotonically, so an older notification cannot make a bar move backwards. The
+add modal and this panel share one workstation-local queue manager.
 
 ## Screens
 
@@ -235,6 +238,11 @@ is independent from the Shot owner:
 Changing direction clears or requires the Actor as one atomic prepared
 collection write. Design sample Actors are fixtures and never repair persisted
 Production messages.
+
+An outgoing message with an explicit animated `text` track keeps the
+track-owned write interval for composer presence even though that track
+replaces the bubble's base write-on. Text Input Bar and Keyboard therefore
+remain visible while the animated text is being authored on screen.
 
 ## Playback
 

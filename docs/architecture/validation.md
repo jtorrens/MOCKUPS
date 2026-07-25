@@ -66,8 +66,11 @@ It includes:
   content-addressed frame snapshots, bounded one-frame consumption, local
   recovery, strict stored-route containment,
   no-overwrite publication, sequential child jobs, permanent Production
-  monitoring, job-start route materialization, exact ProRes/H.264 profiles and
-  an always-openable Shot add action;
+  monitoring with stable monotonic progress controls, job-start route
+  materialization, exact ProRes/H.264 profiles and an always-openable Shot add
+  action;
+- explicit Conversation text tracks retaining Keyboard and Text Input Bar
+  presence for the outgoing write interval;
 - architecture enforcement;
 - desktop application build.
 

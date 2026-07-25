@@ -161,6 +161,12 @@ then writes a MOV or image sequence. A repeated document hash reuses the
 already generated lossless raster. The renderer still knows nothing about
 queue state, output naming, Shot Manager paths or codecs.
 
+Conversation keeps composer presence under its temporal owner. When an
+explicit `text` track replaces the base write-on, the resolved bubble text and
+the effective track duration remain separate: the former paints the message,
+while the latter keeps Text Input Bar and Keyboard present for the outgoing
+write interval.
+
 ## Preview sessions
 
 Design and Production Preview keep only temporary presentation state:

@@ -93,6 +93,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
+    ("animated Conversation text keeps Keyboard and Text Input Bar visible", AnimatedConversationComposerRemainsVisible),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
@@ -177,6 +178,7 @@ var tests = new (string Name, Action Run)[]
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
+    ("Render Queue keeps one stable monotonic progress control", RenderQueueProgressControlIsStable),
 };
 
 static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
@@ -7061,6 +7063,57 @@ static void ProductionRenderOverridesRespectScreenAppearance()
     }
 }
 
+static void AnimatedConversationComposerRemainsVisible()
+{
+    var source = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $"mockups-conversation-composer-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var conversation = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && node.Id
+                == "module_instance_900f1616432d4f63a97f2a74dd647e08");
+        var theme = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.Theme);
+        var start = ModuleInstanceTimeline.ScreenStartFrame(
+            new ModuleInstanceTimelineDataSource(database),
+            conversation.Id);
+        var payload = Required(CreatePreviewPayload(
+            database,
+            conversation,
+            theme.Id,
+            timelineFrame: start + 1));
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(payload.DeviceId),
+            false,
+            payload).GetAwaiter().GetResult();
+        True(!html.Contains(
+            "preview-error",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-renderable-id=\"component.keyboard\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-renderable-id=\"component.textInputBar\"",
+            StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void RenderQueueChildrenAreIndependent()
 {
     var root = Path.Combine(
@@ -7256,6 +7309,153 @@ static void RenderSnapshotStoreInternsAssets()
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+}
+
+static void RenderQueueProgressControlIsStable()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-progress-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var queuePath = Path.Combine(root, "queue.json");
+            using var queue = new RenderQueueManager(
+                queuePath,
+                new AppearanceFailingRenderExecutor(""));
+            var context = new RenderShotContext(
+                "project",
+                "shot",
+                "Shot",
+                "actor",
+                "Actor");
+            var mode = RenderOutputModes.Require(
+                RenderOutputModes.PngSequence);
+            var outputPlan = RenderOutputPlanner.Suggest(
+                root,
+                "output",
+                "SHOT",
+                [RenderQueueAppearance.Light],
+                mode,
+                3);
+            var summary = new RenderJobSummary(
+                context,
+                "Device",
+                "Theme",
+                RenderQueueAppearance.Light,
+                10,
+                new RenderOutputTarget(
+                    "production",
+                    "output",
+                    root,
+                    "output",
+                    "SHOT",
+                    RenderQueueAppearance.Light,
+                    outputPlan.Version,
+                    3,
+                    mode.Id,
+                    outputPlan.OutputPaths[
+                        RenderQueueAppearance.Light]));
+            var monitor = new RenderQueueMonitorControl(
+                new Window(),
+                queue);
+            var window = new Window
+            {
+                Width = 900,
+                Height = 500,
+                Content = monitor,
+            };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            var child = queue.EnqueuePreparingBatch(
+                [summary],
+                async (_, _, cancellationToken) =>
+                {
+                    await Task.Delay(
+                        Timeout.InfiniteTimeSpan,
+                        cancellationToken);
+                    return [];
+                }).Single();
+            Dispatcher.UIThread.RunJobs();
+            var first = monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single();
+            True(first.IsIndeterminate);
+
+            var update = typeof(RenderQueueManager).GetMethod(
+                "UpdatePreparationProgress",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Missing Render Queue preparation progress boundary.");
+            update.Invoke(
+                queue,
+                [
+                    child.BatchId,
+                    new RenderSnapshotFreezeProgress(
+                        4,
+                        10,
+                        RenderQueueAppearance.Light),
+                ]);
+            Dispatcher.UIThread.RunJobs();
+            var second = monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single();
+            True(ReferenceEquals(first, second));
+            True(second.IsIndeterminate);
+            var status = monitor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single((text) =>
+                    text.Name
+                        == $"RenderQueueStatus_{child.Id}");
+            True(!status.Text!.Contains(
+                    "frames",
+                    StringComparison.Ordinal));
+
+            var updateExecution = typeof(RenderQueueManager).GetMethod(
+                "UpdateProgress",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Missing Render Queue execution progress boundary.");
+            updateExecution.Invoke(
+                queue,
+                [
+                    child.Id,
+                    new RenderQueueExecutionProgress(
+                        4,
+                        10,
+                        "Rendering 4 / 10",
+                        RenderQueueStatus.Rendering),
+                ]);
+            updateExecution.Invoke(
+                queue,
+                [
+                    child.Id,
+                    new RenderQueueExecutionProgress(
+                        3,
+                        10,
+                        "Rendering 3 / 10",
+                        RenderQueueStatus.Rendering),
+                ]);
+            Dispatcher.UIThread.RunJobs();
+            var rendering = monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single();
+            True(ReferenceEquals(first, rendering));
+            True(!rendering.IsIndeterminate);
+            Equal(4d, rendering.Value);
+
+            window.Close();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
     }
 }
 

@@ -56,11 +56,13 @@ export function resolveConversationModuleFrame(
         baseValue,
       );
 
-    message.text = resolve("text", message.text).value;
+    const resolvedText = resolve("text", message.text);
+    message.text = resolvedText.value;
     message.timelineStartFrame = timeline.itemStartFrame(targetId);
     message.timelineEndFrame = timeline.itemEndFrame(targetId);
     const textCompletionFrame = timeline.fieldCompletionFrame("text", targetId);
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
+    const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
     const postHold = direction === "outgoing"
       ? Math.max(0, optionalNumber(message, "postWriteOnHoldFrames", 0))
       : 0;
@@ -68,9 +70,14 @@ export function resolveConversationModuleFrame(
       targetId,
       timeline.fieldCompletionLocal("text", targetId) + postHold,
     );
-    message.writeOnDurationFrames = timeline.usesTrackCompletion("text", targetId)
+    message.writeOnDurationFrames = textUsesTrackCompletion
       ? 0
       : Math.max(0, textCompletionFrame - textOriginFrame);
+    message.composerWriteOnDurationFrames = Math.max(
+      0,
+      textCompletionFrame - textOriginFrame,
+    );
+    message.composerUsesResolvedText = textUsesTrackCompletion;
     message.writeOnFrame = naturalWriteOnFrame(
       optionalString(message, "text"),
       message.writeOnTiming,

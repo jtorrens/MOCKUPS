@@ -68,7 +68,10 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private readonly Button _pause;
     private readonly Button _clear;
     private readonly StackPanel _batches;
+    private readonly Dictionary<string, JobRowState> _jobRows =
+        new(StringComparer.Ordinal);
     private bool _observing;
+    private string _structureKey = "";
 
     public RenderQueueMonitorControl(
         Window owner,
@@ -183,30 +186,55 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             && jobs.Any((job) =>
                 RenderQueueStatus.IsTerminal(job.Status));
 
-        _batches.Children.Clear();
-        if (jobs.Count == 0)
+        var nextStructureKey = string.Join(
+            "|",
+            jobs.Select((job) => $"{job.BatchId}:{job.Id}"));
+        if (!nextStructureKey.Equals(
+                _structureKey,
+                StringComparison.Ordinal))
         {
-            _batches.Children.Add(new Border
+            _batches.Children.Clear();
+            var activeIds = jobs
+                .Select((job) => job.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (var removedId in _jobRows.Keys
+                         .Where((id) => !activeIds.Contains(id))
+                         .ToList())
             {
-                Padding = new Thickness(14, 20),
-                CornerRadius = new CornerRadius(10),
-                BorderThickness = new Thickness(1),
-                BorderBrush = ConnectorBrush(),
-                Child = new TextBlock
+                _jobRows.Remove(removedId);
+            }
+            if (jobs.Count == 0)
+            {
+                _batches.Children.Add(new Border
                 {
-                    Text = "No render jobs yet.",
-                    Opacity = 0.68,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                },
-            });
-            return;
+                    Padding = new Thickness(14, 20),
+                    CornerRadius = new CornerRadius(10),
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = ConnectorBrush(),
+                    Child = new TextBlock
+                    {
+                        Text = "No render jobs yet.",
+                        Opacity = 0.68,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                    },
+                });
+            }
+            else
+            {
+                foreach (var batch in jobs
+                             .GroupBy((job) => job.BatchId)
+                             .Reverse())
+                {
+                    _batches.Children.Add(
+                        CreateBatch(batch.ToList()));
+                }
+            }
+            _structureKey = nextStructureKey;
         }
 
-        foreach (var batch in jobs
-                     .GroupBy((job) => job.BatchId)
-                     .Reverse())
+        foreach (var job in jobs)
         {
-            _batches.Children.Add(CreateBatch(batch.ToList()));
+            UpdateJobRow(job);
         }
     }
 
@@ -251,7 +279,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         };
         foreach (var job in jobs)
         {
-            rows.Children.Add(CreateJobRow(job));
+            rows.Children.Add(GetOrCreateJobRow(job).Root);
         }
         return new Border
         {
@@ -267,11 +295,16 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         };
     }
 
-    private Control CreateJobRow(RenderQueueJobView job)
+    private JobRowState GetOrCreateJobRow(RenderQueueJobView job)
     {
+        if (_jobRows.TryGetValue(job.Id, out var existing))
+        {
+            return existing;
+        }
         var progressMaximum = Math.Max(1, job.Progress.Total);
         var progress = new ProgressBar
         {
+            Name = $"RenderQueueProgress_{job.Id}",
             Minimum = 0,
             Maximum = progressMaximum,
             Value = Math.Clamp(
@@ -282,6 +315,17 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         };
         var outputName = Path.GetFileName(
             job.Summary.Output.OutputPath);
+        var status = new TextBlock
+        {
+            Name = $"RenderQueueStatus_{job.Id}",
+            Text =
+                $"{job.Status} · {job.Progress.Phase} · "
+                + $"{job.Progress.Current}/{job.Progress.Total} frames · "
+                + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}",
+            FontSize = 12,
+            Opacity = 0.72,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
         var details = new StackPanel
         {
             Spacing = 4,
@@ -289,25 +333,18 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             {
                 new TextBlock
                 {
+                    Name = $"RenderQueueOutputName_{job.Id}",
                     Text = string.IsNullOrWhiteSpace(outputName)
                         ? DisplayAppearance(job.Summary.Appearance)
                         : outputName,
                     FontWeight = FontWeight.SemiBold,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                 },
-                new TextBlock
-                {
-                    Text =
-                        $"{job.Status} · {job.Progress.Phase} · "
-                        + $"{job.Progress.Current}/{job.Progress.Total} frames · "
-                        + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}",
-                    FontSize = 12,
-                    Opacity = 0.72,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
+                status,
                 progress,
                 new TextBlock
                 {
+                    Name = $"RenderQueueOutputPath_{job.Id}",
                     Text = job.Summary.Output.OutputPath,
                     FontSize = 11,
                     Opacity = 0.62,
@@ -315,16 +352,15 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 },
             },
         };
-        if (!string.IsNullOrWhiteSpace(job.Error))
+        var error = new TextBlock
         {
-            details.Children.Add(new TextBlock
-            {
-                Text = job.Error,
-                Foreground = Brushes.IndianRed,
-                FontSize = 12,
-                TextWrapping = TextWrapping.Wrap,
-            });
-        }
+            Text = job.Error,
+            Foreground = Brushes.IndianRed,
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = !string.IsNullOrWhiteSpace(job.Error),
+        };
+        details.Children.Add(error);
 
         var actions = new StackPanel
         {
@@ -332,32 +368,6 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 4,
         };
-        if (!RenderQueueStatus.IsTerminal(job.Status))
-        {
-            actions.Children.Add(ActionButton(
-                "Cancel",
-                () => _queue.Cancel(job.Id)));
-        }
-        else
-        {
-            if ((job.Status is RenderQueueStatus.Failed
-                    or RenderQueueStatus.Canceled)
-                && job.SnapshotAvailable)
-            {
-                actions.Children.Add(ActionButton(
-                    "Retry",
-                    () => _queue.Retry(job.Id)));
-            }
-            if (job.Status == RenderQueueStatus.Completed)
-            {
-                actions.Children.Add(ActionButton(
-                    "Reveal",
-                    () => Reveal(job.Summary.Output.OutputPath)));
-            }
-            actions.Children.Add(ActionButton(
-                "Remove",
-                () => _queue.Remove(job.Id)));
-        }
 
         var grid = new Grid
         {
@@ -366,7 +376,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             Children = { details, actions },
         };
         Grid.SetColumn(actions, 1);
-        return new Border
+        var root = new Border
         {
             Padding = new Thickness(10),
             CornerRadius = new CornerRadius(8),
@@ -377,6 +387,83 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                     : "#0C000000")),
             Child = grid,
         };
+        var state = new JobRowState(
+            root,
+            status,
+            progress,
+            error,
+            actions);
+        _jobRows.Add(job.Id, state);
+        UpdateJobRow(job);
+        return state;
+    }
+
+    private void UpdateJobRow(RenderQueueJobView job)
+    {
+        var row = GetOrCreateJobRow(job);
+        var progressMaximum = Math.Max(1, job.Progress.Total);
+        var preparing = job.Status == RenderQueueStatus.Preparing;
+        row.Progress.Minimum = 0;
+        row.Progress.Maximum = progressMaximum;
+        row.Progress.IsIndeterminate = preparing;
+        if (!preparing)
+        {
+            row.Progress.Value = Math.Clamp(
+                job.Progress.Current,
+                0,
+                progressMaximum);
+        }
+        row.Status.Text = preparing
+            ? $"{job.Status} · {job.Progress.Phase} · "
+                + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}"
+            : $"{job.Status} · {job.Progress.Phase} · "
+                + $"{job.Progress.Current}/{job.Progress.Total} frames · "
+                + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}";
+        row.Error.Text = job.Error;
+        row.Error.IsVisible = !string.IsNullOrWhiteSpace(job.Error);
+        row.Root.Background = new SolidColorBrush(Color.Parse(
+            _owner.ActualThemeVariant
+                == Avalonia.Styling.ThemeVariant.Dark
+                ? "#14FFFFFF"
+                : "#0C000000"));
+
+        var actionKey =
+            $"{job.Status}:{job.SnapshotAvailable}:{job.Summary.Output.OutputPath}";
+        if (actionKey.Equals(
+                row.ActionKey,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+        row.Actions.Children.Clear();
+        if (!RenderQueueStatus.IsTerminal(job.Status))
+        {
+            row.Actions.Children.Add(ActionButton(
+                "Cancel",
+                () => _queue.Cancel(job.Id)));
+        }
+        else
+        {
+            if ((job.Status is RenderQueueStatus.Failed
+                    or RenderQueueStatus.Canceled)
+                && job.SnapshotAvailable)
+            {
+                row.Actions.Children.Add(ActionButton(
+                    "Retry",
+                    () => _queue.Retry(job.Id)));
+            }
+            if (job.Status == RenderQueueStatus.Completed)
+            {
+                row.Actions.Children.Add(ActionButton(
+                    "Reveal",
+                    () => Reveal(
+                        job.Summary.Output.OutputPath)));
+            }
+            row.Actions.Children.Add(ActionButton(
+                "Remove",
+                () => _queue.Remove(job.Id)));
+        }
+        row.ActionKey = actionKey;
     }
 
     private Button ActionButton(
@@ -441,5 +528,20 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         {
             // Revealing is a convenience; the completed output remains valid.
         }
+    }
+
+    private sealed class JobRowState(
+        Border root,
+        TextBlock status,
+        ProgressBar progress,
+        TextBlock error,
+        StackPanel actions)
+    {
+        public Border Root { get; } = root;
+        public TextBlock Status { get; } = status;
+        public ProgressBar Progress { get; } = progress;
+        public TextBlock Error { get; } = error;
+        public StackPanel Actions { get; } = actions;
+        public string ActionKey { get; set; } = "";
     }
 }

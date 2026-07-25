@@ -706,6 +706,14 @@ internal sealed class RenderQueueManager : IDisposable
             var job = _document.Jobs.SingleOrDefault((candidate) =>
                 candidate.Id.Equals(jobId, StringComparison.Ordinal));
             if (job is null || RenderQueueStatus.IsTerminal(job.Status)) return;
+            var currentRank = ExecutionStatusRank(job.Status);
+            var nextRank = ExecutionStatusRank(value.Status);
+            if (nextRank < currentRank
+                || (nextRank == currentRank
+                    && value.Current < job.Progress.Current))
+            {
+                return;
+            }
             job.Status = value.Status;
             job.Progress = new RenderQueueProgress(
                 Math.Max(0, value.Current),
@@ -715,6 +723,16 @@ internal sealed class RenderQueueManager : IDisposable
         }
         NotifyChanged();
     }
+
+    private static int ExecutionStatusRank(string status) =>
+        status switch
+        {
+            RenderQueueStatus.Pending => 0,
+            RenderQueueStatus.Preparing => 1,
+            RenderQueueStatus.Rendering => 2,
+            RenderQueueStatus.Encoding => 3,
+            _ => 4,
+        };
 
     private void Finish(string jobId, string status, string? error)
     {

@@ -379,6 +379,8 @@ type ConversationPreviewMessage = {
   statusText: string;
   delayAfterPreviousFrames: number;
   writeOnDurationFrames: number;
+  composerWriteOnDurationFrames: number;
+  composerUsesResolvedText: boolean;
   timelineBodyDurationFrames: number;
   timelineStartFrame: number;
   timelineEndFrame: number;
@@ -471,6 +473,18 @@ function conversationMessages(preview: JsonRecord): ConversationPreviewMessage[]
       statusText: optionalString(message, "statusText"),
       delayAfterPreviousFrames: Math.max(0, Math.floor(optionalNumber(message, "delayAfterPreviousFrames", 0))),
       writeOnDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "writeOnDurationFrames", 0))),
+      composerWriteOnDurationFrames: Math.max(
+        0,
+        Math.floor(optionalNumber(
+          message,
+          "composerWriteOnDurationFrames",
+          optionalNumber(message, "writeOnDurationFrames", 0),
+        )),
+      ),
+      composerUsesResolvedText: optionalBoolean(
+        message,
+        "composerUsesResolvedText",
+      ),
       timelineBodyDurationFrames: Math.max(0, Math.floor(optionalNumber(message, "timelineBodyDurationFrames", 0))),
       timelineStartFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineStartFrame", 0))),
       timelineEndFrame: Math.max(0, Math.floor(optionalNumber(message, "timelineEndFrame", 0))),
@@ -548,7 +562,9 @@ function composerState(
 ) {
   for (const message of messages) {
     const startFrame = message.timelineStartFrame;
-    const effectiveWriteOnFrames = message.state === "system" ? 0 : message.writeOnDurationFrames;
+    const effectiveWriteOnFrames = message.state === "system"
+      ? 0
+      : message.composerWriteOnDurationFrames;
     const endFrame = startFrame + effectiveWriteOnFrames;
     const holdEndFrame = message.timelineRevealAtFrame;
     const composerVisible = message.state === "outgoing"
@@ -559,12 +575,13 @@ function composerState(
       const graphemes = textGraphemes(message.text);
       const writeOnInProgress = frame < endFrame;
       const textLength = writeOnInProgress
-        ? simpleWriteOnFrameVisibleCount(message.text, {
-            enabled: true,
-            frame: message.writeOnFrame,
-            durationFrames: effectiveWriteOnFrames,
-          })
-        : graphemes.length;
+        && !message.composerUsesResolvedText
+          ? simpleWriteOnFrameVisibleCount(message.text, {
+              enabled: true,
+              frame: message.writeOnFrame,
+              durationFrames: effectiveWriteOnFrames,
+            })
+          : graphemes.length;
       return {
         text: graphemes.slice(0, textLength).join(""),
         // The composer remains visible during the post-write-on hold, but the
