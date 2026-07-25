@@ -182,6 +182,7 @@ export function resolveBubbleComponent(
     textBoxInputs,
     componentBaseConfigs,
     "component.bubble.textBox",
+    payload,
   );
 
   return {

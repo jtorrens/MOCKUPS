@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import Database from "better-sqlite3";
@@ -22,22 +22,31 @@ export function committedComponentFixture(
     { readonly: true, fileMustExist: true },
   );
   try {
-    const scaffold = JSON.parse(readFileSync(path.join(
+    const scaffoldPath = path.join(
       process.cwd(),
       "scaffolding",
       "components",
       `${componentType}.json`,
-    ), "utf8")) as {
-      component: { componentClassId: string; componentType: string };
-    };
-    assert.equal(scaffold.component.componentType, componentType);
+    );
+    const scaffold = existsSync(scaffoldPath)
+      ? JSON.parse(readFileSync(scaffoldPath, "utf8")) as {
+          component: { componentClassId: string; componentType: string };
+        }
+      : undefined;
+    if (scaffold) assert.equal(scaffold.component.componentType, componentType);
     const rows = database.prepare(`
       SELECT id, component_type, design_preview_json, metadata_json
       FROM component_classes
     `).all() as ComponentRow[];
-    const component = rows.find((row) =>
-      row.id === scaffold.component.componentClassId
-      && row.component_type === componentType);
+    const matching = rows.filter((row) =>
+      row.component_type === componentType
+      && (!scaffold || row.id === scaffold.component.componentClassId));
+    assert.equal(
+      matching.length,
+      1,
+      `Expected one committed ${componentType} Component Class fixture`,
+    );
+    const component = matching[0];
     assert.ok(component);
     const variants: Record<string, unknown> = {};
     const variantTypes: Record<string, string> = {};
@@ -129,7 +138,7 @@ function resolveActors(
   }
   if (!value || typeof value !== "object") return;
   const record = value as Record<string, unknown>;
-  if (typeof record.actorId === "string") {
+  if (typeof record.actorId === "string" && record.actorId.trim()) {
     record.actor = resolvedActor(record.actorId, database, palette);
   }
   for (const child of Object.values(record)) {

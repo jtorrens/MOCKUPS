@@ -515,7 +515,7 @@ function inlineCursorMetadata(
         inlineCursor: {
           color: selectedColor(payload, textBox.cursor.colorToken),
           width: cursorWidth,
-          opacity: 1,
+          opacity: textBox.cursor.opacity,
         },
       }
     : undefined;

@@ -36,6 +36,7 @@ export function resolveTextBoxComponent(
     preview,
     componentBaseConfigs,
     "component.textBox",
+    payload,
   );
 }
 
@@ -44,6 +45,7 @@ export function resolveTextBoxComponentFromRecords(
   inputs: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   id: string,
+  frameContext: Pick<DesignPreviewPayload, "localFrame" | "frameRate">,
 ): TextBoxDesignContract {
   rejectVariantOwnedTextBoxInputs(inputs);
   const textBox = requiredRecord(config, "textBox", "component.textBox");
@@ -164,7 +166,12 @@ export function resolveTextBoxComponentFromRecords(
       { width: size.first, height: size.second },
       `${id}.surface`,
     ),
-    cursor: resolveCursorComponentAtHeight(embeddedCursorConfig, 1, `${id}.cursor`),
+    cursor: resolveCursorComponentAtHeight(
+      embeddedCursorConfig,
+      1,
+      `${id}.cursor`,
+      frameContext,
+    ),
     iconGapToken: requiredString(textBox, "iconGap", "component.textBox.iconGap"),
     leftIconRow: resolveTextBoxIconRowComponentFromRecords(
       leftIconRowSlot,

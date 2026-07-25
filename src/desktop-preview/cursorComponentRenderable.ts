@@ -36,7 +36,7 @@ export function cursorComponentToRenderableAt(
       pathData: "M0 0H100V100H0Z",
       preserveAspectRatio: "none",
       viewBox: "0 0 100 100",
-      opacity: 1,
+      opacity: cursor.opacity,
     },
   };
 }

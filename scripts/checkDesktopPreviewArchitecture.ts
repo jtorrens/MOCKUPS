@@ -5,6 +5,10 @@ import {
   desktopPreviewComponents,
   type DesktopPreviewComponentManifestEntry,
 } from "../src/desktop-preview/desktopPreviewComponents.js";
+import {
+  desktopPreviewComponentCapabilities,
+  desktopPreviewModuleCapabilities,
+} from "../src/desktop-preview/desktopPreviewCapabilityMatrix.js";
 import { componentRenderableFactories } from "../src/desktop-preview/componentClassRenderableRegistry.js";
 import {
   desktopPreviewModules,
@@ -58,6 +62,24 @@ const forbiddenDesktopPreviewNodeTypes = new Set([
   "icon_token",
   "waveform_bar",
 ]);
+
+for (const [owner, capabilities] of Object.entries({
+  ...desktopPreviewComponentCapabilities,
+  ...desktopPreviewModuleCapabilities,
+})) {
+  for (const [kind, values] of Object.entries(capabilities)) {
+    if (new Set(values).size !== values.length) {
+      violations.push(
+        `src/desktop-preview/desktopPreviewCapabilityMatrix.ts: ${owner} repeats a ${kind} capability`,
+      );
+    }
+    if (values.some((value) => !value.trim())) {
+      violations.push(
+        `src/desktop-preview/desktopPreviewCapabilityMatrix.ts: ${owner} declares a blank ${kind} capability`,
+      );
+    }
+  }
+}
 
 function relative(filePath: string) {
   return path.relative(root, filePath).replace(/\\/g, "/");
@@ -4829,7 +4851,7 @@ for (const moduleClass of Object.keys(desktopPreviewModules)) {
   const moduleHarness = [
     "ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime",
     "DesktopPreviewManifest.Modules.Keys",
-    "foreach (var frame in new[] { 0, 1 })",
+    "foreach (var frame in new[] { 0, 1, 12, 60 })",
     "Equal(frame, payload.LocalFrame)",
     "WebDesignPreviewRenderer.RenderBodyAsync",
     'html.Contains("data-renderable-id="',

@@ -136,3 +136,9 @@ Temporal render contracts carry resolved state such as `active`, normalized
 elapsed milliseconds, frame-rate conversion and track evaluation remain in the
 owning resolver. Renderables may apply resolved progress to geometry but never
 calculate that progress.
+
+Continuous visual state follows the same rule. Cursor owns its fade duration
+and minimum opacity, resolves the exact opacity from its owner-local frame and
+passes that number to its renderable. Text Box and Text Input Bar forward the
+frame through their declared embedded boundaries; they do not restart the
+Cursor clock or paint a fixed replacement opacity.

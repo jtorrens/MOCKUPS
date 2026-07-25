@@ -3,6 +3,5 @@ export interface CursorDesignContract {
   height: number;
   colorToken: string;
   width: number;
-  minimumFade: number;
-  fadeDurationMs: number;
+  opacity: number;
 }

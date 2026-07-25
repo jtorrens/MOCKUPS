@@ -108,6 +108,7 @@ export function resolveTextInputBarComponent(
     },
     componentBaseConfigs,
     "component.textInputBar.textBox",
+    payload,
   );
 
   return {

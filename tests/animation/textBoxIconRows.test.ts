@@ -126,6 +126,7 @@ test("Text Box resolves both Icon Row boundaries from its Variant slots", () => 
     inputs(),
     bases,
     "component.textBox",
+    { localFrame: 0, frameRate: 25 },
   );
 
   assert.equal(resolved.leftIconRow.orientation, "horizontal");
@@ -157,6 +158,7 @@ test("Text Box requires complete Icon Row slots even when their item lists are e
       inputs(),
       bases,
       "component.textBox",
+      { localFrame: 0, frameRate: 25 },
     ));
   }
 });
@@ -187,6 +189,7 @@ test("Text Box rejects Variant-owned values at its Runtime boundary", () => {
       { ...inputs(), [retired]: [] },
       bases,
       "component.textBox",
+      { localFrame: 0, frameRate: 25 },
     ));
   }
 });

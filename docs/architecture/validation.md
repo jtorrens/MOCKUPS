@@ -79,9 +79,15 @@ Component and Module catalog. It checks exact owner files, registry routes,
 declared embedded dependencies and committed database parity. A matrix derived
 from that manifest requires each owner contract, resolver, renderable, declared
 embeds, registry route and committed fixture. The desktop integration test
-renders every current Component fixture and exercises every Module fixture at
-more than one local frame. The manifest is a current contract rather than a
-migration ledger; inert migration-state fields are rejected.
+renders every current Component and Module Variant at local frames 0, 1, 12 and
+60; Component Variants are exercised in both Light and Dark. The explicit
+Preview capability matrix inventories every root action, collection-item
+action and frame-owned behavior, and validation requires exact parity with the
+persisted Runtime contracts. Focused resolver tests characterize Motion,
+write-on, playback, controls fade, reflow, key presses, authentication progress
+and Cursor propagation through embedded boundaries. The manifest is a current
+contract rather than a migration ledger; inert migration-state fields are
+rejected.
 
 The clean-checkout gate is:
 
@@ -113,6 +119,7 @@ including:
 
 - canonical documentation and archive isolation;
 - exact manifest routing and declared dependencies;
+- exhaustive Preview capability and persisted-action agreement;
 - strict Preview payload documents;
 - generic bridge and renderer boundaries;
 - dictionary and Runtime Input `ValueKind` coverage;

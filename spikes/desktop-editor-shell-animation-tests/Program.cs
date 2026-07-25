@@ -4035,20 +4035,37 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                 True(components.Count > 0);
                 foreach (var component in components)
                 {
-                    var fixture = component.Children.Single((node) =>
-                        node.Kind == ProjectTreeNodeKind.ComponentVariant
-                        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
-                    var payload = Required(CreatePreviewPayload(database, fixture, theme.Id));
-                    var inputSession = new ComponentPreviewInputSession(database, () => { });
+                    var fixtures = component.Children
+                        .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
+                        .ToList();
+                    True(fixtures.Count > 0);
                     var projectId = database.GetComponentClassSettings(component.Id).ProjectId;
-                    inputSession.UpdateForPayload(payload, projectId);
-                    payload = inputSession.ApplyInputs(payload, "light", projectId);
-                    var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
-                        .GetAwaiter()
-                        .GetResult();
-                    True(!string.IsNullOrWhiteSpace(html));
-                    True(!html.Contains("preview-error", StringComparison.Ordinal));
-                    True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                    foreach (var fixture in fixtures)
+                    {
+                        foreach (var themeMode in new[] { "light", "dark" })
+                        {
+                            foreach (var frame in new[] { 0, 1, 12, 60 })
+                            {
+                                var payload = Required(CreatePreviewPayload(
+                                    database,
+                                    fixture,
+                                    theme.Id,
+                                    themeMode: themeMode,
+                                    timelineFrame: frame));
+                                Equal(frame, payload.LocalFrame);
+                                var inputSession = new ComponentPreviewInputSession(database, () => { });
+                                inputSession.UpdateForPayload(payload, projectId);
+                                payload = inputSession.ApplyInputs(payload, themeMode, projectId);
+                                Equal(themeMode, payload.ThemeMode);
+                                var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
+                                    .GetAwaiter()
+                                    .GetResult();
+                                True(!string.IsNullOrWhiteSpace(html));
+                                True(!html.Contains("preview-error", StringComparison.Ordinal));
+                                True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception exception)
@@ -4070,23 +4087,27 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                 True(modules.Count > 0);
                 foreach (var module in modules)
                 {
-                    var fixture = module.Children.Single((node) =>
-                        node.Kind == ProjectTreeNodeKind.ModuleVariant
-                        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
-                    foreach (var frame in new[] { 0, 1 })
+                    var fixtures = module.Children
+                        .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant)
+                        .ToList();
+                    True(fixtures.Count > 0);
+                    foreach (var fixture in fixtures)
                     {
-                        var payload = Required(CreatePreviewPayload(
-                            database,
-                            fixture,
-                            theme.Id,
-                            timelineFrame: frame));
-                        Equal(frame, payload.LocalFrame);
-                        var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
-                            .GetAwaiter()
-                            .GetResult();
-                        True(!string.IsNullOrWhiteSpace(html));
-                        True(!html.Contains("preview-error", StringComparison.Ordinal));
-                        True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                        foreach (var frame in new[] { 0, 1, 12, 60 })
+                        {
+                            var payload = Required(CreatePreviewPayload(
+                                database,
+                                fixture,
+                                theme.Id,
+                                timelineFrame: frame));
+                            Equal(frame, payload.LocalFrame);
+                            var html = WebDesignPreviewRenderer.RenderBodyAsync(metrics, false, payload)
+                                .GetAwaiter()
+                                .GetResult();
+                            True(!string.IsNullOrWhiteSpace(html));
+                            True(!html.Contains("preview-error", StringComparison.Ordinal));
+                            True(html.Contains("data-renderable-id=", StringComparison.Ordinal));
+                        }
                     }
                 }
             }
