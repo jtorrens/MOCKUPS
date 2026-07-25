@@ -29,6 +29,7 @@ import {
   componentScaffoldSemanticMarker,
   integrateComponentScaffold,
   materializeComponentScaffold,
+  verifyComponentScaffoldImplementation,
 } from "../../src/development-scaffolding/componentScaffoldWorkspace.js";
 import {
   draftComponentSpecRoot,
@@ -208,7 +209,7 @@ test("Integrated scaffold artifacts are deterministic and own registry, dictiona
   );
 });
 
-test("Component scaffold integrates complete owners, generated routes and parity rows explicitly", () => {
+test("Component scaffold integrates complete owners and later verifies only development-owned state", () => {
   const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-integrate-"));
   const databasePath = path.join(temporaryDirectory, "data", "desktop-editor-spike.sqlite");
   try {
@@ -296,6 +297,88 @@ test("Component scaffold integrates complete owners, generated routes and parity
     } finally {
       database.close();
     }
+
+    assert.equal(
+      verifyComponentScaffoldImplementation(
+        spec,
+        temporaryDirectory,
+        databasePath,
+      ).status,
+      "integrated-contract-verified",
+    );
+
+    const authoredConfig = { scaffoldFixture: { size: 144 } };
+    const authoredDatabase = new Database(databasePath);
+    try {
+      authoredDatabase.prepare(`
+        UPDATE component_classes
+        SET name = ?,
+            notes = ?,
+            config_json = ?,
+            design_preview_json = ?,
+            metadata_json = ?
+        WHERE id = ?
+      `).run(
+        "Renamed Fixture",
+        "Values edited after scaffold integration.",
+        JSON.stringify(authoredConfig),
+        JSON.stringify({
+          ...spec.designPreview,
+          value: 144,
+        }),
+        JSON.stringify({
+          note: "Current application-authored metadata.",
+          variants: [
+            {
+              ...spec.defaultVariant,
+              name: "Renamed Default",
+              config: authoredConfig,
+            },
+            {
+              id: "user_variant",
+              name: "User Variant",
+              protected: false,
+              locked: false,
+              config: { scaffoldFixture: { size: 72 } },
+            },
+          ],
+        }),
+        spec.component.componentClassId,
+      );
+    } finally {
+      authoredDatabase.close();
+    }
+
+    assert.equal(
+      verifyComponentScaffoldImplementation(
+        spec,
+        temporaryDirectory,
+        databasePath,
+      ).status,
+      "integrated-contract-verified",
+    );
+
+    const identityDatabase = new Database(databasePath);
+    try {
+      identityDatabase.prepare(`
+        UPDATE component_classes
+        SET component_type = ?
+        WHERE id = ?
+      `).run(
+        "differentType",
+        spec.component.componentClassId,
+      );
+    } finally {
+      identityDatabase.close();
+    }
+    assert.throws(
+      () => verifyComponentScaffoldImplementation(
+        spec,
+        temporaryDirectory,
+        databasePath,
+      ),
+      /stable identity differs from its scaffold spec/,
+    );
   } finally {
     rmSync(temporaryDirectory, { force: true, recursive: true });
   }
@@ -622,6 +705,10 @@ function prepareIntegrationFixture(
     repositoryPath,
     "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
   );
+  const registryPath = path.join(
+    repositoryPath,
+    "src/desktop-preview/componentClassRenderableRegistry.ts",
+  );
   mkdirSync(path.dirname(manifestPath), { recursive: true });
   mkdirSync(path.dirname(fieldDefinitionPath), { recursive: true });
   mkdirSync(path.dirname(databasePath), { recursive: true });
@@ -663,6 +750,7 @@ function prepareIntegrationFixture(
     "namespace Fixture;\ninternal enum ValueKind { Integer }\n",
     "utf8",
   );
+  writeFileSync(registryPath, "export {};\n", "utf8");
 
   const database = new Database(databasePath);
   try {

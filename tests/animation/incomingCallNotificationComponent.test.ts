@@ -12,62 +12,47 @@ import { committedComponentFixture } from "./committedComponentFixture.js";
 const fixture = (variantId = "default") =>
   committedComponentFixture("incomingCallNotification", variantId);
 
-test("Incoming Call Notification resolves exact iOS and Android child Variant boundaries", () => {
+test("Incoming Call Notification resolves current authored values through exact child Variant boundaries", () => {
   const iosSource = fixture();
   const androidSource = fixture("android");
   assert.equal(iosSource.designPreviewJson, androidSource.designPreviewJson);
-  const runtime = JSON.parse(iosSource.designPreviewJson) as {
-    iconRowRuntime: Array<{
-      runtimeInputs: {
-        buttonInputs: Array<Record<string, unknown>>;
-      };
-    }>;
-  };
-  assert.ok(runtime.iconRowRuntime[0]!.runtimeInputs.buttonInputs.every((button) =>
-    !Object.hasOwn(button, "contentMode")));
 
   const ios = resolveIncomingCallNotificationComponent(iosSource);
   const android = resolveIncomingCallNotificationComponent(androidSource);
 
-  assert.deepEqual(ios.size, { width: 360, height: 88 });
-  assert.deepEqual(ios.avatarPlacement, {
-    mode: "insideEdge",
-    alignX: 0,
-    alignY: 0.5,
-    offsetX: 0,
-    offsetY: 0,
-  });
-  assert.deepEqual(ios.iconRowPlacement, {
-    mode: "insideEdge",
-    alignX: 1,
-    alignY: 0.5,
-    offsetX: 0,
-    offsetY: 0,
-  });
-  assert.equal(ios.avatar.labelSlot.showLabel, true);
-  assert.equal(ios.avatar.labelSlot.showSubtext, true);
-  assert.equal(ios.iconRow.itemSizingMode, "content");
-  assert.equal(ios.iconRow.items[0]?.button.contentMode, "icon");
-  assert.deepEqual(
-    ios.iconRow.items.map((item) => item.button.size),
-    [{ width: 52, height: 52 }, { width: 52, height: 52 }],
-  );
-  assert.deepEqual(
-    ios.iconRow.items.map((item) => item.button.stateStyle.surface.backgroundColorToken),
-    ["theme.colors.negative", "theme.colors.positive"],
-  );
-  assert.deepEqual(android.size, { width: 360, height: 152 });
-  assert.equal(android.avatarPlacement.alignY, 0);
-  assert.equal(android.iconRowPlacement.alignY, 1);
-  assert.equal(android.iconRow.itemSizingMode, "fillParent");
-  assert.equal(android.iconRow.items[0]?.button.contentMode, "iconText");
-  assert.ok(android.iconRow.items.every((item) =>
-    item.button.dimensionMode === "content"));
-  assert.deepEqual(
-    android.iconRow.items.map((item) => item.id),
-    ["decline", "answer"],
-  );
+  for (const [source, resolved] of [
+    [iosSource, ios],
+    [androidSource, android],
+  ] as const) {
+    const authored = incomingCallAuthoredValues(source.configJson);
+    assert.deepEqual(resolved.size, authored.size);
+    assert.deepEqual(resolved.avatarPlacement, authored.avatarPlacement);
+    assert.deepEqual(resolved.iconRowPlacement, authored.iconRowPlacement);
+    assert.equal(resolved.avatar.id, "component.incomingCallNotification.avatar");
+    assert.equal(resolved.iconRow.id, "component.incomingCallNotification.iconRow");
+  }
 });
+
+function incomingCallAuthoredValues(configJson: string) {
+  const config = JSON.parse(configJson) as {
+    incomingCallNotification: {
+      size: string;
+      avatarPlacement: Record<string, unknown>;
+      iconRowPlacement: Record<string, unknown>;
+    };
+  };
+  const [width, height, extra] = config.incomingCallNotification.size
+    .split("|")
+    .map(Number);
+  assert.equal(extra, undefined);
+  assert.ok(Number.isFinite(width));
+  assert.ok(Number.isFinite(height));
+  return {
+    size: { width: width!, height: height! },
+    avatarPlacement: config.incomingCallNotification.avatarPlacement,
+    iconRowPlacement: config.incomingCallNotification.iconRowPlacement,
+  };
+}
 
 test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime contracts", () => {
   const source = fixture();

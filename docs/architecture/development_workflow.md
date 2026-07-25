@@ -107,14 +107,23 @@ The files named `generatedComponentScaffold*` and
 `GeneratedComponentScaffold*` are derived exclusively from the integrated
 specifications. They are never edited manually. `npm run scaffold:generate`
 rebuilds them deterministically; `npm run scaffold:verify` fails if they are
-stale or if an integrated owner, manifest route, database row, complete
-Variants, Design Preview fixture or editor layout diverges from its spec.
+stale or if an integrated owner, manifest route, stable persisted identity or
+editor layout diverges from its spec.
+
+The integrated specification records the development intervention that created
+the Component Class. It is not a permanent snapshot of values later authored
+in the application. After integration, Rename, notes, current config, Design
+Preview and complete Variants may change through their current owners without
+rewriting the scaffold specification. `scaffold:verify` deliberately ignores
+those authored values; their shape, references and lifecycle rules remain
+enforced by the current document contracts and read-only database validation.
 
 An existing complete Component can be adopted once from the current manifest,
 owners and committed database through the explicit `--adopt-existing` workflow.
-The resulting persisted spec becomes the reviewed authority and generates the
-same shared integration artifacts; adoption refuses multiple classes of the
-same type and never overwrites a prior spec.
+The resulting persisted spec becomes the reviewed authority for that
+development intervention and generates the same shared integration artifacts;
+it does not take ownership of later application-authored values. Adoption
+refuses multiple classes of the same type and never overwrites a prior spec.
 
 ## Module scaffolding
 

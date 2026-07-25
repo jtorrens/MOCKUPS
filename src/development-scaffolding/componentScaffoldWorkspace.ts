@@ -390,12 +390,7 @@ export function verifyComponentScaffoldImplementation(
       SELECT id,
              project_id,
              component_type,
-             record_class_id,
-             name,
-             notes,
-             config_json,
-             design_preview_json,
-             metadata_json
+             record_class_id
       FROM component_classes
       WHERE id = ?
     `).get(spec.component.componentClassId) as {
@@ -403,11 +398,6 @@ export function verifyComponentScaffoldImplementation(
       project_id: string;
       component_type: string;
       record_class_id: string;
-      name: string;
-      notes: string;
-      config_json: string;
-      design_preview_json: string;
-      metadata_json: string;
     } | undefined;
     if (!row) {
       violations.push(
@@ -419,36 +409,17 @@ export function verifyComponentScaffoldImplementation(
         project_id: spec.component.projectId,
         component_type: componentType,
         record_class_id: spec.component.recordClassId,
-        name: spec.component.name,
-        notes: spec.component.notes,
       };
       const actualIdentity = {
         id: row.id,
         project_id: row.project_id,
         component_type: row.component_type,
         record_class_id: row.record_class_id,
-        name: row.name,
-        notes: row.notes,
       };
       if (canonicalJson(actualIdentity) !== canonicalJson(expectedIdentity)) {
-        violations.push(`Component class '${row.id}' identity differs from its scaffold spec.`);
-      }
-      if (canonicalJson(JSON.parse(row.config_json)) !== canonicalJson(spec.config)) {
-        violations.push(`Component class '${row.id}' config differs from its scaffold spec.`);
-      }
-      if (canonicalJson(JSON.parse(row.design_preview_json))
-          !== canonicalJson(spec.designPreview)) {
         violations.push(
-          `Component class '${row.id}' Design Preview differs from its scaffold spec.`,
+          `Component class '${row.id}' stable identity differs from its scaffold spec.`,
         );
-      }
-      const expectedMetadata = {
-        ...spec.metadata,
-        variants: [spec.defaultVariant, ...spec.additionalVariants],
-      };
-      if (canonicalJson(JSON.parse(row.metadata_json))
-          !== canonicalJson(expectedMetadata)) {
-        violations.push(`Component class '${row.id}' Variants differ from its scaffold spec.`);
       }
     }
 

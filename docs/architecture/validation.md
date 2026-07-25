@@ -138,6 +138,12 @@ Database validation is read-only and confirms:
 
 Lifecycle and migration tests operate on disposable database copies.
 
+Component scaffold verification has a narrower boundary than persistence
+validation. It checks the development-owned integration surfaces, stable
+Component Class identity and editor layout created by the scaffold. It never
+compares later application-authored names, notes, config, Design Preview or
+Variants with their initial scaffold values.
+
 ## Manual UI validation
 
 For any editor or Preview change, exercise at least:
