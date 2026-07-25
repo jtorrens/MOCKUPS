@@ -26,6 +26,7 @@ while preserving each editor's session context.
 Production exposes:
 
 - Episodes, Shots and Screens in the sequence tree;
+- one permanent **Render Queue** section for workstation-local jobs;
 - one **Production Data** card containing Actors, Devices and Production Fonts.
 
 Future Project duplication may offer:
@@ -101,12 +102,12 @@ folders.
 
 ## Render Queue
 
-The Render action is a persistent icon on each governed Shot row. It opens the
-local queue modal with that exact Shot selected. A Shot without stored Shot
-Manager output contracts cannot be queued because governed output never falls
-back to a free folder picker.
+The Render action is a persistent icon on every Shot row. It always opens an
+add modal with that exact Shot selected. If the Shot has no stored Shot Manager
+output contract, the modal explains that prerequisite and disables enqueue;
+governed output never falls back to a free folder picker.
 
-The modal exposes:
+The add modal exposes:
 
 - the Shot Actor as read-only;
 - Device and Theme defaulted from that Actor, with same-Project job-only
@@ -116,8 +117,10 @@ The modal exposes:
 - a job-owned output mode;
 - an editable safe base name.
 
-The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha, PNG
-sequence and EXR sequence. No output contains audio.
+The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha,
+MOV H.264 Light at 8 Mb/s, Standard at 20 Mb/s, High at 40 Mb/s, PNG sequence
+and EXR sequence. H.264 uses the exact Créditos `libx264` profiles with
+`yuv420p` and fast start; it never preserves alpha. No output contains audio.
 
 MOCKUPS proposes:
 
@@ -148,6 +151,20 @@ Project. Its relative directory and version padding come from the stored
 portable contract. The workstation root is refreshed from the on-demand Shot
 Manager service and cached locally so a previously synchronized Production can
 still render if that service cannot start.
+
+The predefined relative route does not need to exist when the batch is
+planned. The worker validates its containment under the existing workstation
+root and creates any missing route directories when that job begins. Existing
+route segments must be real directories rather than files, symbolic links or
+reparse points. Planning and enqueue never create folders, and publication
+still refuses an existing final output.
+
+Monitoring is separate from batch creation. The permanent Production
+**Render Queue** panel is available even when it is empty, when Shot Manager is
+offline and when no Shot has a stored output route. It groups child jobs by
+batch and owns pause/resume, cancel, retry, reveal, remove and clear-finished
+actions together with progress, error and output-path reporting. The add modal
+and this panel share one workstation-local queue manager.
 
 ## Screens
 

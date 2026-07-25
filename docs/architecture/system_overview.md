@@ -100,6 +100,13 @@ worker rasterizes and encodes that snapshot without reading current authored
 data again. Queue persistence, progress and last route choice are local
 workstation state, outside the portable Project database.
 
+Production exposes that owner through a permanent Render Queue section. Shot
+rows open a separate batch-creation modal; the central queue panel monitors
+the shared worker and remains accessible independently of Shot Manager route
+availability. Shot Manager owns the portable relative route; the worker
+securely creates its missing directories at job start before publishing the
+immutable output.
+
 ## Layer ownership
 
 ### SQLite and repositories

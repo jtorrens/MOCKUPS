@@ -26,7 +26,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.ThemesRoot or ProjectTreeNodeKind.Theme => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode or ProjectTreeNodeKind.Shot
                 or ProjectTreeNodeKind.ModuleInstance => EditorWorkspaceScope.Production,
-            ProjectTreeNodeKind.ProductionDataRoot
+            ProjectTreeNodeKind.ProductionDataRoot or ProjectTreeNodeKind.RenderQueueRoot
                 or ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor
                 or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device
                 or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont => EditorWorkspaceScope.Production,
@@ -42,6 +42,7 @@ internal static class EditorNavigationMetadata
             or ProjectTreeNodeKind.PaletteRoot
             or ProjectTreeNodeKind.IconThemesRoot
             or ProjectTreeNodeKind.EpisodesRoot
+            or ProjectTreeNodeKind.RenderQueueRoot
             or ProjectTreeNodeKind.ProductionDataRoot;
     }
 
@@ -55,7 +56,8 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.PaletteRoot => 40,
             ProjectTreeNodeKind.IconThemesRoot => 50,
             ProjectTreeNodeKind.EpisodesRoot => 10,
-            ProjectTreeNodeKind.ProductionDataRoot => 20,
+            ProjectTreeNodeKind.RenderQueueRoot => 20,
+            ProjectTreeNodeKind.ProductionDataRoot => 30,
             _ => 100,
         };
     }
@@ -63,6 +65,7 @@ internal static class EditorNavigationMetadata
     public static bool IsTopLevelSection(ProjectTreeNode node)
     {
         return node.Kind is ProjectTreeNodeKind.AppsRoot
+            or ProjectTreeNodeKind.RenderQueueRoot
             or ProjectTreeNodeKind.ProductionDataRoot
             or ProjectTreeNodeKind.SystemDataRoot;
     }
@@ -73,8 +76,9 @@ internal static class EditorNavigationMetadata
         {
             ProjectTreeNodeKind.AppsRoot => 10,
             ProjectTreeNodeKind.EpisodesRoot => 20,
-            ProjectTreeNodeKind.ProductionDataRoot => 30,
-            ProjectTreeNodeKind.SystemDataRoot => 40,
+            ProjectTreeNodeKind.RenderQueueRoot => 30,
+            ProjectTreeNodeKind.ProductionDataRoot => 40,
+            ProjectTreeNodeKind.SystemDataRoot => 50,
             _ => 100,
         };
     }
@@ -89,6 +93,7 @@ internal static class EditorNavigationMetadata
         return node.Kind switch
         {
             ProjectTreeNodeKind.Project => "Project",
+            ProjectTreeNodeKind.RenderQueueRoot => "Render Queue",
             ProjectTreeNodeKind.ProductionDataRoot => "Production data",
             ProjectTreeNodeKind.SystemDataRoot => "System data",
             _ => node.Name,
@@ -101,6 +106,7 @@ internal static class EditorNavigationMetadata
         {
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
+            ProjectTreeNodeKind.RenderQueueRoot => "Local render jobs and history",
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production fonts",
             ProjectTreeNodeKind.SystemDataRoot => "Themes, icon sets, component variants, palette and media",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",

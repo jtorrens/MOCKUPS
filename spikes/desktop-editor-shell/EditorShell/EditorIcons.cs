@@ -99,6 +99,7 @@ internal static class EditorIcons
         {
             ProjectTreeNodeKind.Project => Project,
             ProjectTreeNodeKind.ProductionDataRoot => Content,
+            ProjectTreeNodeKind.RenderQueueRoot => Render,
             ProjectTreeNodeKind.SystemDataRoot => Design,
             ProjectTreeNodeKind.AppsRoot => Apps,
             ProjectTreeNodeKind.PaletteRoot => Color,
@@ -164,6 +165,7 @@ internal static class EditorIcons
             ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont => NavigationAsset("Production Fonts"),
             ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device => NavigationAsset("Devices"),
             ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode => NavigationAsset("Episodes"),
+            ProjectTreeNodeKind.RenderQueueRoot => Render,
             ProjectTreeNodeKind.ActorsRoot or ProjectTreeNodeKind.Actor => NavigationAsset("Actors"),
             ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.PaletteColor => Color,
             ProjectTreeNodeKind.Shot => Shot,

@@ -77,7 +77,7 @@ internal static class RenderOutputPlanner
         int versionPadding,
         IReadOnlySet<string>? reservedOutputPaths = null)
     {
-        var directory = RenderOutputPathSecurity.RequireExistingDirectory(
+        var directory = RenderOutputPathSecurity.RequirePlannedDirectory(
             rootPath,
             relativeDirectory);
         var comparer = OperatingSystem.IsWindows()
@@ -130,9 +130,31 @@ internal static class RenderOutputPlanner
 
 internal static class RenderOutputPathSecurity
 {
-    public static string RequireExistingDirectory(
+    public static string RequirePlannedDirectory(
         string rootPath,
         string relativeDirectory)
+    {
+        return ResolveDirectory(
+            rootPath,
+            relativeDirectory,
+            createMissing: false);
+    }
+
+    public static void EnsureOutputDirectory(
+        RenderOutputTarget output)
+    {
+        RequireOutputTarget(output);
+        _ = ResolveDirectory(
+            output.RootPath,
+            output.RelativeDirectory,
+            createMissing: true);
+        RequireOutputTarget(output);
+    }
+
+    private static string ResolveDirectory(
+        string rootPath,
+        string relativeDirectory,
+        bool createMissing)
     {
         if (!Path.IsPathFullyQualified(rootPath))
         {
@@ -160,9 +182,25 @@ internal static class RenderOutputPathSecurity
         foreach (var segment in segments)
         {
             current = Path.Combine(current, segment);
-            RequireRealDirectory(
-                current,
-                "Shot Manager output route. Update the disk structure from Shot Manager");
+            if (Directory.Exists(current))
+            {
+                RequireRealDirectory(
+                    current,
+                    "Shot Manager output route");
+                continue;
+            }
+            if (File.Exists(current))
+            {
+                throw new IOException(
+                    $"Shot Manager output route crosses a file: {current}");
+            }
+            if (createMissing)
+            {
+                Directory.CreateDirectory(current);
+                RequireRealDirectory(
+                    current,
+                    "Shot Manager output route");
+            }
         }
         var relative = Path.GetRelativePath(root, current);
         if (Path.IsPathFullyQualified(relative)
@@ -179,7 +217,7 @@ internal static class RenderOutputPathSecurity
 
     public static void RequireOutputTarget(RenderOutputTarget output)
     {
-        var directory = RequireExistingDirectory(
+        var directory = RequirePlannedDirectory(
             output.RootPath,
             output.RelativeDirectory);
         var expectedStem = RenderOutputPlanner.FileStem(

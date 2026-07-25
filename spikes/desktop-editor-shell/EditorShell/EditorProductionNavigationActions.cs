@@ -2,13 +2,16 @@ using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
+using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorProductionNavigationActions : IDisposable
 {
     private readonly ShotManagerProductionNavigationAction _shotManager;
+    private readonly RenderQueueManager _queue;
     private readonly RenderQueueController _renderQueue;
+    private readonly RenderQueueEditorSurface _renderQueueSurface;
 
     public EditorProductionNavigationActions(
         Window owner,
@@ -22,7 +25,16 @@ internal sealed class EditorProductionNavigationActions : IDisposable
             database,
             isDark,
             () => openProductionCard("integration:shot-manager"));
-        _renderQueue = new RenderQueueController(owner, database);
+        _queue = new RenderQueueManager();
+        var snapshots = new RenderJobSnapshotFactory(database);
+        _renderQueue = new RenderQueueController(
+            owner,
+            database,
+            _queue,
+            snapshots);
+        _renderQueueSurface = new RenderQueueEditorSurface(
+            owner,
+            _queue);
     }
 
     public void Refresh(string? projectId)
@@ -35,8 +47,14 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         return _renderQueue.NavigationAction(node);
     }
 
+    public IReadOnlyList<InstantEditorCard>? EditorCards(
+        ProjectTreeNode node)
+    {
+        return _renderQueueSurface.CreateCards(node);
+    }
+
     public void Dispose()
     {
-        _renderQueue.Dispose();
+        _queue.Dispose();
     }
 }

@@ -15,6 +15,8 @@ internal sealed class EditorContentController
     private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
+    private readonly Func<ProjectTreeNode, IReadOnlyList<InstantEditorCard>?>
+        _specialCards;
 
     public EditorContentController(
         SpikeDatabase database,
@@ -24,7 +26,8 @@ internal sealed class EditorContentController
         EditorActiveFieldControls activeFieldControls,
         IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
-        EditorCollectionCardFactory collectionCards)
+        EditorCollectionCardFactory collectionCards,
+        Func<ProjectTreeNode, IReadOnlyList<InstantEditorCard>?>? specialCards = null)
     {
         _database = database;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
@@ -32,14 +35,20 @@ internal sealed class EditorContentController
         _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
         _collectionCards = collectionCards;
+        _specialCards = specialCards ?? (_ => null);
     }
 
     public IReadOnlyList<InstantEditorCard> Cards => _cardHost.Cards;
 
     public void Build(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
     {
-        var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
         ResetRegistries();
+        if (_specialCards(dataNode) is { } specialCards)
+        {
+            _cardHost.Replace(specialCards, resetExpansion: false);
+            return;
+        }
+        var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
         var cards = layout.Cards
             .Where((card) => card.Visible)
             .OrderBy((card) => card.Order)

@@ -1,11 +1,12 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class RenderQueueController : IDisposable
+internal sealed class RenderQueueController
 {
     private readonly Window _owner;
     private readonly SpikeDatabase _database;
@@ -27,7 +28,7 @@ internal sealed class RenderQueueController : IDisposable
 
     public EditorNavigationRowAction? NavigationAction(ProjectTreeNode node)
     {
-        if (node.Kind != ProjectTreeNodeKind.Shot) return null;
+        if (!OwnsNavigationAction(node)) return null;
         var available = false;
         try
         {
@@ -45,11 +46,15 @@ internal sealed class RenderQueueController : IDisposable
         return new EditorNavigationRowAction(
             available
                 ? $"Add {node.Name} to Render Queue"
-                : $"{node.Name} has no Shot Manager output route",
+                : $"Open Render Queue for {node.Name} · output route unavailable",
             EditorIcons.Render,
             () => _ = OpenAsync(node),
-            available);
+            true);
     }
+
+    internal static bool OwnsNavigationAction(
+        ProjectTreeNode node) =>
+        node.Kind == ProjectTreeNodeKind.Shot;
 
     private async Task OpenAsync(ProjectTreeNode shot)
     {
@@ -57,33 +62,29 @@ internal sealed class RenderQueueController : IDisposable
         _dialogOpen = true;
         try
         {
-            if (!string.IsNullOrWhiteSpace(_queue.InitializationError))
-            {
-                throw new InvalidOperationException(
-                    _queue.InitializationError);
-            }
-            var draft = await _snapshots.LoadDraftAsync(shot);
             await new RenderQueueDialog(
                 _owner,
                 _queue,
-                _snapshots).Show(draft);
-        }
-        catch (Exception exception)
-        {
-            await new EditorDialogService(
-                _owner,
-                _owner.ActualThemeVariant
-                    != Avalonia.Styling.ThemeVariant.Light)
-                .ShowInfo("Render Queue", exception.Message);
+                _snapshots).Show(
+                    shot,
+                    LoadDraft);
         }
         finally
         {
             _dialogOpen = false;
         }
-    }
 
-    public void Dispose()
-    {
-        _queue.Dispose();
+        async Task<RenderQueueShotDraft> LoadDraft(
+            CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrWhiteSpace(_queue.InitializationError))
+            {
+                throw new InvalidOperationException(
+                    _queue.InitializationError);
+            }
+            return await _snapshots.LoadDraftAsync(
+                shot,
+                cancellationToken);
+        }
     }
 }

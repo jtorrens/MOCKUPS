@@ -2,13 +2,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -29,15 +29,18 @@ internal sealed class RenderQueueDialog
         _snapshots = snapshots;
     }
 
-    public async Task Show(RenderQueueShotDraft draft)
+    public async Task Show(
+        ProjectTreeNode shot,
+        Func<CancellationToken, Task<RenderQueueShotDraft>>
+            loadDraft)
     {
         var dialog = new SukiWindow
         {
-            Title = "Render Queue",
-            Width = 1060,
-            Height = 760,
-            MinWidth = 900,
-            MinHeight = 620,
+            Title = "Add to Render Queue",
+            Width = 680,
+            Height = 720,
+            MinWidth = 560,
+            MinHeight = 580,
             CanResize = true,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             IsMenuVisible = false,
@@ -47,12 +50,8 @@ internal sealed class RenderQueueDialog
         };
         EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
 
-        var device = Combo(
-            draft.Devices,
-            draft.DefaultDeviceId);
-        var theme = Combo(
-            draft.Themes,
-            draft.DefaultThemeId);
+        var device = Combo([], null);
+        var theme = Combo([], null);
         var appearance = Combo(
         [
             new FieldOption(RenderQueueAppearance.Light, "Light"),
@@ -64,20 +63,23 @@ internal sealed class RenderQueueDialog
             RenderOutputModes.All.Select((mode) =>
                 new FieldOption(mode.Id, mode.Label)).ToList(),
             RenderOutputModes.MovProRes422Hq);
-        var routeOptions = draft.Routes.Select((route) =>
-            new FieldOption(route.EntryId, route.RelativeDirectory)).ToList();
-        var rememberedRoute = _queue.LastRoute(draft.ProjectId);
-        var route = Combo(routeOptions, rememberedRoute);
-        if (string.IsNullOrWhiteSpace(rememberedRoute))
-        {
-            route.SelectedItem = null;
-        }
+        var route = Combo([], null);
         var baseName = EditorTextBoxBehavior.Configure(new TextBox
         {
-            Text = draft.SuggestedBaseName,
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
         });
+        var actorValue = new TextBlock
+        {
+            Text = "Loading…",
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var shotDetails = new TextBlock
+        {
+            Text = "Resolving Shot Manager routes…",
+            Opacity = 0.68,
+        };
         var proposal = new TextBlock
         {
             Opacity = 0.78,
@@ -85,18 +87,41 @@ internal sealed class RenderQueueDialog
         };
         var validation = new TextBlock
         {
-            Foreground = Brushes.IndianRed,
+            Text = "Loading the render options for this Shot…",
             TextWrapping = TextWrapping.Wrap,
         };
         var add = new Button
         {
             Content = "Add to queue",
             MinWidth = 132,
+            IsEnabled = false,
         };
 
+        var draftControls = new Control[]
+        {
+            device,
+            theme,
+            appearance,
+            outputMode,
+            route,
+            baseName,
+        };
+        foreach (var control in draftControls)
+        {
+            control.IsEnabled = false;
+        }
+
+        RenderQueueShotDraft? currentDraft = null;
         RenderOutputPlan? currentPlan = null;
         void RefreshProposal()
         {
+            if (currentDraft is null)
+            {
+                currentPlan = null;
+                proposal.Text = "";
+                add.IsEnabled = false;
+                return;
+            }
             try
             {
                 validation.Foreground = null;
@@ -114,14 +139,14 @@ internal sealed class RenderQueueDialog
                     add.IsEnabled = false;
                     return;
                 }
-                var routeContract = draft.Routes.Single((candidate) =>
-                    candidate.EntryId.Equals(
+                var routeContract = currentDraft.Routes.Single(
+                    (candidate) => candidate.EntryId.Equals(
                         route.SelectedItem.Value,
                         StringComparison.Ordinal));
                 var mode = RenderOutputModes.Require(
                     outputMode.SelectedItem.Value);
                 currentPlan = RenderOutputPlanner.Suggest(
-                    draft.RootPath,
+                    currentDraft.RootPath,
                     routeContract.RelativeDirectory,
                     baseName.Text ?? "",
                     RenderQueueAppearance.Expand(
@@ -135,7 +160,7 @@ internal sealed class RenderQueueDialog
                 proposal.Text =
                     $"Version v{currentPlan.Version.ToString().PadLeft(routeContract.VersionPadding, '0')} · "
                     + string.Join(" · ", names);
-                validation.Text = draft.UsesCachedRoot
+                validation.Text = currentDraft.UsesCachedRoot
                     ? "Shot Manager is offline. Using the last known root for this workstation."
                     : "";
                 add.IsEnabled = true;
@@ -163,46 +188,10 @@ internal sealed class RenderQueueDialog
         }
         baseName.TextChanged += (_, _) => RefreshProposal();
 
-        var jobsPanel = new StackPanel { Spacing = 8 };
-        var pause = new Button { MinWidth = 92 };
-        var clear = new Button
-        {
-            Content = "Clear finished",
-            MinWidth = 110,
-        };
-        void RefreshJobs()
-        {
-            if (!Dispatcher.UIThread.CheckAccess())
-            {
-                Dispatcher.UIThread.Post(RefreshJobs);
-                return;
-            }
-            pause.Content = _queue.Paused ? "Resume" : "Pause";
-            var jobs = _queue.Jobs();
-            clear.IsEnabled = jobs.Any((job) =>
-                RenderQueueStatus.IsTerminal(job.Status));
-            jobsPanel.Children.Clear();
-            if (jobs.Count == 0)
-            {
-                jobsPanel.Children.Add(new TextBlock
-                {
-                    Text = "The local queue is empty.",
-                    Opacity = 0.68,
-                    Margin = new Thickness(2, 12),
-                });
-                return;
-            }
-            foreach (var job in jobs)
-            {
-                jobsPanel.Children.Add(CreateJobRow(job, RefreshJobs));
-            }
-        }
-        pause.Click += (_, _) => _queue.SetPaused(!_queue.Paused);
-        clear.Click += (_, _) => _queue.ClearFinished();
-
         add.Click += async (_, _) =>
         {
-            if (currentPlan is null
+            if (currentDraft is null
+                || currentPlan is null
                 || device.SelectedItem is null
                 || theme.SelectedItem is null
                 || appearance.SelectedItem is null
@@ -224,7 +213,7 @@ internal sealed class RenderQueueDialog
             try
             {
                 var snapshots = await _snapshots.BuildAsync(
-                    draft,
+                    currentDraft,
                     selectedDeviceId,
                     selectedThemeId,
                     selectedAppearance,
@@ -234,13 +223,14 @@ internal sealed class RenderQueueDialog
                     selectedPlan);
                 _queue.EnqueueBatch(snapshots);
                 _queue.RememberRoute(
-                    draft.ProjectId,
+                    currentDraft.ProjectId,
                     selectedRouteId);
-                RefreshJobs();
                 RefreshProposal();
                 validation.Foreground = null;
                 validation.Text =
-                    $"{snapshots.Count} render job{(snapshots.Count == 1 ? "" : "s")} added.";
+                    $"{snapshots.Count} render job"
+                    + (snapshots.Count == 1 ? "" : "s")
+                    + " added. Follow progress in the Production Render Queue panel.";
             }
             catch (Exception exception)
             {
@@ -252,18 +242,6 @@ internal sealed class RenderQueueDialog
             }
         };
 
-        var close = new Button
-        {
-            Content = "Close",
-            MinWidth = 92,
-        };
-        close.Click += (_, _) => dialog.Close();
-        var actorValue = new TextBlock
-        {
-            Text = draft.ActorName,
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
         var form = new StackPanel
         {
             Spacing = 12,
@@ -271,16 +249,12 @@ internal sealed class RenderQueueDialog
             {
                 new TextBlock
                 {
-                    Text = draft.Shot.Name,
+                    Text = shot.Name,
                     FontSize = 19,
                     FontWeight = FontWeight.Bold,
                     TextWrapping = TextWrapping.Wrap,
                 },
-                new TextBlock
-                {
-                    Text = $"{draft.TotalFrames} frames · {draft.Fps} fps · no audio",
-                    Opacity = 0.68,
-                },
+                shotDetails,
                 Field("Actor", actorValue),
                 Field("Device", device),
                 Field("Theme", theme),
@@ -298,74 +272,12 @@ internal sealed class RenderQueueDialog
                 },
             },
         };
-        var queueHeader = new Grid
+        var close = new Button
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            Children =
-            {
-                new StackPanel
-                {
-                    Spacing = 2,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = "Local queue",
-                            FontSize = 17,
-                            FontWeight = FontWeight.Bold,
-                        },
-                        new TextBlock
-                        {
-                            Text = "One job runs at a time. Editing can continue.",
-                            Opacity = 0.68,
-                        },
-                    },
-                },
-                new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 8,
-                    Children = { pause, clear },
-                },
-            },
+            Content = "Close",
+            MinWidth = 92,
         };
-        Grid.SetColumn(queueHeader.Children[1], 1);
-        var queueContent = new Grid
-        {
-            RowDefinitions = new RowDefinitions("Auto,*"),
-            RowSpacing = 12,
-            Children =
-            {
-                queueHeader,
-                new ScrollViewer
-                {
-                    VerticalScrollBarVisibility =
-                        Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility =
-                        Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-                    Content = jobsPanel,
-                },
-            },
-        };
-        Grid.SetRow(queueContent.Children[1], 1);
-        var columns = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("420,*"),
-            ColumnSpacing = 20,
-            Children =
-            {
-                new ScrollViewer
-                {
-                    VerticalScrollBarVisibility =
-                        Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                    HorizontalScrollBarVisibility =
-                        Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-                    Content = form,
-                },
-                queueContent,
-            },
-        };
-        Grid.SetColumn(queueContent, 1);
+        close.Click += (_, _) => dialog.Close();
         var footer = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -376,7 +288,18 @@ internal sealed class RenderQueueDialog
         {
             RowDefinitions = new RowDefinitions("*,Auto"),
             RowSpacing = 16,
-            Children = { columns, footer },
+            Children =
+            {
+                new ScrollViewer
+                {
+                    VerticalScrollBarVisibility =
+                        Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility =
+                        Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                    Content = form,
+                },
+                footer,
+            },
         };
         Grid.SetRow(footer, 1);
         dialog.Content = new Border
@@ -384,132 +307,66 @@ internal sealed class RenderQueueDialog
             Padding = EditorUiDensity.CardThickness(18),
             Child = root,
         };
-        void QueueChanged() => RefreshJobs();
-        _queue.Changed += QueueChanged;
-        dialog.Closed += (_, _) => _queue.Changed -= QueueChanged;
-        dialog.Opened += (_, _) =>
+
+        using var cancellation = new CancellationTokenSource();
+        dialog.Closed += (_, _) => cancellation.Cancel();
+        dialog.Opened += async (_, _) =>
         {
-            RefreshProposal();
-            RefreshJobs();
+            try
+            {
+                currentDraft = await loadDraft(cancellation.Token);
+                device.ItemsSource = currentDraft.Devices;
+                device.SelectedItem = currentDraft.Devices.FirstOrDefault(
+                    (option) => option.Value.Equals(
+                        currentDraft.DefaultDeviceId,
+                        StringComparison.Ordinal));
+                theme.ItemsSource = currentDraft.Themes;
+                theme.SelectedItem = currentDraft.Themes.FirstOrDefault(
+                    (option) => option.Value.Equals(
+                        currentDraft.DefaultThemeId,
+                        StringComparison.Ordinal));
+                var routeOptions = currentDraft.Routes.Select(
+                    (candidate) => new FieldOption(
+                        candidate.EntryId,
+                        candidate.RelativeDirectory)).ToList();
+                route.ItemsSource = routeOptions;
+                var rememberedRoute = _queue.LastRoute(
+                    currentDraft.ProjectId);
+                route.SelectedItem = routeOptions.FirstOrDefault(
+                    (option) => option.Value.Equals(
+                        rememberedRoute,
+                        StringComparison.Ordinal));
+                baseName.Text = currentDraft.SuggestedBaseName;
+                actorValue.Text = currentDraft.ActorName;
+                shotDetails.Text =
+                    $"{currentDraft.TotalFrames} frames · "
+                    + $"{currentDraft.Fps} fps · no audio";
+                foreach (var control in draftControls)
+                {
+                    control.IsEnabled = true;
+                }
+                RefreshProposal();
+            }
+            catch (OperationCanceledException)
+                when (cancellation.IsCancellationRequested)
+            {
+                // The user closed the modal while its routes were resolving.
+            }
+            catch (Exception exception)
+            {
+                actorValue.Text = "Unavailable";
+                shotDetails.Text =
+                    "This Shot cannot be added until its output route is available.";
+                validation.Foreground = Brushes.IndianRed;
+                validation.Text = exception.Message;
+                RefreshProposal();
+            }
         };
         await dialog.ShowDialog(_owner);
     }
 
-    private Control CreateJobRow(
-        RenderQueueJobView job,
-        Action refresh)
-    {
-        var progressMaximum = Math.Max(1, job.Progress.Total);
-        var progress = new ProgressBar
-        {
-            Minimum = 0,
-            Maximum = progressMaximum,
-            Value = Math.Clamp(
-                job.Progress.Current,
-                0,
-                progressMaximum),
-            Height = 5,
-        };
-        var title = Path.GetFileName(job.Summary.Output.OutputPath);
-        var content = new StackPanel
-        {
-            Spacing = 4,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = string.IsNullOrWhiteSpace(title)
-                        ? job.Summary.Context.ShotName
-                        : title,
-                    FontWeight = FontWeight.SemiBold,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-                new TextBlock
-                {
-                    Text =
-                        $"{job.Status} · {job.Progress.Phase} · "
-                        + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}",
-                    FontSize = 12,
-                    Opacity = 0.72,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                },
-                progress,
-            },
-        };
-        if (!string.IsNullOrWhiteSpace(job.Error))
-        {
-            content.Children.Add(new TextBlock
-            {
-                Text = job.Error,
-                Foreground = Brushes.IndianRed,
-                FontSize = 12,
-                TextWrapping = TextWrapping.Wrap,
-            });
-        }
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 4,
-        };
-        if (!RenderQueueStatus.IsTerminal(job.Status))
-        {
-            actions.Children.Add(ActionButton(
-                "Cancel",
-                () =>
-                {
-                    _queue.Cancel(job.Id);
-                    refresh();
-                }));
-        }
-        else
-        {
-            if (job.Status is RenderQueueStatus.Failed
-                    or RenderQueueStatus.Canceled
-                && job.SnapshotAvailable)
-            {
-                actions.Children.Add(ActionButton(
-                    "Retry",
-                    () =>
-                    {
-                        _queue.Retry(job.Id);
-                        refresh();
-                    }));
-            }
-            if (job.Status == RenderQueueStatus.Completed)
-            {
-                actions.Children.Add(ActionButton(
-                    "Reveal",
-                    () => Reveal(job.Summary.Output.OutputPath)));
-            }
-            actions.Children.Add(ActionButton(
-                "Remove",
-                () =>
-                {
-                    _queue.Remove(job.Id);
-                    refresh();
-                }));
-        }
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = 8,
-            Children = { content, actions },
-        };
-        Grid.SetColumn(actions, 1);
-        return new Border
-        {
-            Padding = new Thickness(10),
-            CornerRadius = new CornerRadius(8),
-            BorderThickness = new Thickness(1),
-            BorderBrush = EditorUiVisuals.ConnectorBrush(
-                _owner.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark),
-            Child = grid,
-        };
-    }
-
     private static EditorInstantComboBox Combo(
-        System.Collections.Generic.IReadOnlyList<FieldOption> options,
+        IReadOnlyList<FieldOption> options,
         string? selectedValue)
     {
         return new EditorInstantComboBox
@@ -523,7 +380,9 @@ internal sealed class RenderQueueDialog
         };
     }
 
-    private static Control Field(string label, Control control)
+    private static Control Field(
+        string label,
+        Control control)
     {
         var grid = new Grid
         {
@@ -542,41 +401,5 @@ internal sealed class RenderQueueDialog
         };
         Grid.SetColumn(control, 1);
         return grid;
-    }
-
-    private static Button ActionButton(string label, Action activate)
-    {
-        var button = new Button
-        {
-            Content = label,
-            MinWidth = 64,
-            Padding = new Thickness(8, 4),
-        };
-        button.Click += (_, _) => activate();
-        return button;
-    }
-
-    private static void Reveal(string outputPath)
-    {
-        var target = Directory.Exists(outputPath)
-            ? outputPath
-            : Path.GetDirectoryName(outputPath);
-        if (string.IsNullOrWhiteSpace(target)
-            || !Directory.Exists(target))
-        {
-            return;
-        }
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = target,
-                UseShellExecute = true,
-            });
-        }
-        catch
-        {
-            // Revealing is a convenience; the completed output remains valid.
-        }
     }
 }

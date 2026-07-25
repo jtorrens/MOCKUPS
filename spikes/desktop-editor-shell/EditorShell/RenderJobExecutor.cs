@@ -19,7 +19,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
         CancellationToken cancellationToken)
     {
         snapshot.Validate();
-        RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
+        RenderOutputPathSecurity.EnsureOutputDirectory(snapshot.Output);
         foreach (var asset in snapshot.Assets)
         {
             PreviewAssetRegistry.Register(asset.Key, asset.Value);
@@ -66,26 +66,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 snapshot.Frames.Count,
                 "Encoding MOV",
                 RenderQueueStatus.Encoding));
-            IReadOnlyList<string> profileArgs = mode.EncodingProfile switch
-            {
-                "prores_422_hq" =>
-                [
-                    "-c:v", "prores_ks",
-                    "-profile:v", "3",
-                    "-pix_fmt", "yuv422p10le",
-                    "-vendor", "apl0",
-                ],
-                "prores_4444" =>
-                [
-                    "-c:v", "prores_ks",
-                    "-profile:v", "4",
-                    "-pix_fmt", "yuva444p10le",
-                    "-alpha_bits", "16",
-                    "-vendor", "apl0",
-                ],
-                _ => throw new InvalidOperationException(
-                    $"Unsupported MOV encoding profile '{mode.EncodingProfile}'."),
-            };
+            var profileArgs = RenderMovEncodingProfiles.Arguments(
+                mode.EncodingProfile);
             await RunFfmpegAsync(
             [
                 "-n",
@@ -320,5 +302,63 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
     public void Dispose()
     {
         _rasterizer.Dispose();
+    }
+}
+
+internal static class RenderMovEncodingProfiles
+{
+    public static IReadOnlyList<string> Arguments(
+        string encodingProfile)
+    {
+        return encodingProfile switch
+        {
+            "prores_422_hq" =>
+            [
+                "-c:v", "prores_ks",
+                "-profile:v", "3",
+                "-pix_fmt", "yuv422p10le",
+                "-vendor", "apl0",
+            ],
+            "prores_4444" =>
+            [
+                "-c:v", "prores_ks",
+                "-profile:v", "4",
+                "-pix_fmt", "yuva444p10le",
+                "-alpha_bits", "16",
+                "-vendor", "apl0",
+            ],
+            "h264_light" =>
+            [
+                "-c:v", "libx264",
+                "-preset", "medium",
+                "-b:v", "8M",
+                "-maxrate", "10M",
+                "-bufsize", "16M",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+            ],
+            "h264_standard" =>
+            [
+                "-c:v", "libx264",
+                "-preset", "medium",
+                "-b:v", "20M",
+                "-maxrate", "25M",
+                "-bufsize", "40M",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+            ],
+            "h264_high" =>
+            [
+                "-c:v", "libx264",
+                "-preset", "slow",
+                "-b:v", "40M",
+                "-maxrate", "50M",
+                "-bufsize", "80M",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+            ],
+            _ => throw new InvalidOperationException(
+                $"Unsupported MOV encoding profile '{encodingProfile}'."),
+        };
     }
 }

@@ -105,18 +105,26 @@ transport control disabled.
 ## Render Queue
 
 Every governed Shot row keeps one compact Render action visible independently
-of selection. It opens a resizable modal split between the selected Shot
-settings and the local queue.
+of selection. The action remains enabled when the Shot has no available
+output route: it still opens the add modal and explains the missing
+prerequisite in place.
 
-Actor is informative and immutable in that modal. Device, Theme, appearance,
-output mode, predefined route and base name are explicit. The route control
-shows the stored relative directory and has no arbitrary folder alternative.
-The proposed automatic version and final child names update before enqueue.
+That modal owns only creation of a new batch. Actor is informative and
+immutable. Device, Theme, appearance, output mode, predefined route and base
+name are explicit. The route control shows the stored relative directory and
+has no arbitrary folder alternative. The proposed automatic version and final
+child names update before enqueue. A missing physical route directory does not
+disable the form: the render worker creates it from the selected stored route
+when the job starts.
 
-Queue rows show phase and frame progress. Pending or active work can be
-canceled; failed or canceled jobs retain a retry snapshot while available;
-completed work can reveal its output; terminal history can be cleared. Pause
-lets the active job finish and prevents the next pending job from starting.
+Production also exposes a permanent **Render Queue** section alongside
+Episodes and Production Data. Its central panel remains accessible with an
+empty queue or without governed Shots. It groups Light/Dark children by batch
+and shows phase, frame progress, errors and final output. Pending or active
+work can be canceled; failed or canceled jobs retain a retry snapshot while
+available; completed work can reveal its output; terminal history can be
+cleared. Pause lets the active job finish and prevents the next pending job
+from starting.
 
 ## Lifecycle consistency
 

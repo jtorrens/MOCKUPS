@@ -82,8 +82,10 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager client starts the registered headless service on demand", ShotManagerClientStartsRegisteredService),
     ("Shot Manager integration keeps Shots local and materializes portable folder plans", ShotManagerIntegrationKeepsShotsLocal),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
+    ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
+    ("Render Queue is a permanent Production surface and Shot action stays available", RenderQueueNavigationAndSurfaceAreAlwaysAvailable),
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
@@ -6905,6 +6907,65 @@ static void RenderOutputNamingReservesOneBatchVersion()
     }
 }
 
+static void MovH264ModesMatchCreditosProfiles()
+{
+    var light = RenderOutputModes.Require(
+        RenderOutputModes.MovH264Light);
+    var standard = RenderOutputModes.Require(
+        RenderOutputModes.MovH264Standard);
+    var high = RenderOutputModes.Require(
+        RenderOutputModes.MovH264High);
+    True(!light.PreservesAlpha);
+    True(!standard.PreservesAlpha);
+    True(!high.PreservesAlpha);
+    Equal("mov", light.Kind);
+    Equal("mov", standard.Kind);
+    Equal("mov", high.Kind);
+    Equal("mov", light.Extension);
+    Equal("mov", standard.Extension);
+    Equal("mov", high.Extension);
+
+    SequenceEqual(
+        new[]
+        {
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-b:v", "8M",
+            "-maxrate", "10M",
+            "-bufsize", "16M",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+        },
+        RenderMovEncodingProfiles.Arguments(
+            light.EncodingProfile));
+    SequenceEqual(
+        new[]
+        {
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-b:v", "20M",
+            "-maxrate", "25M",
+            "-bufsize", "40M",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+        },
+        RenderMovEncodingProfiles.Arguments(
+            standard.EncodingProfile));
+    SequenceEqual(
+        new[]
+        {
+            "-c:v", "libx264",
+            "-preset", "slow",
+            "-b:v", "40M",
+            "-maxrate", "50M",
+            "-bufsize", "80M",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+        },
+        RenderMovEncodingProfiles.Arguments(
+            high.EncodingProfile));
+}
+
 static void ProductionRenderOverridesRespectScreenAppearance()
 {
     var source = Path.Combine(
@@ -7100,7 +7161,7 @@ static void RenderExecutorPublishesCleanPngSequence()
         Path.GetTempPath(),
         $"mockups-render-executor-{Guid.NewGuid():N}");
     var output = Path.Combine(root, "output");
-    Directory.CreateDirectory(output);
+    Directory.CreateDirectory(root);
     try
     {
         var mode = RenderOutputModes.Require(
@@ -7168,6 +7229,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                 3,
                 mode.Id,
                 outputPlan.OutputPaths[RenderQueueAppearance.Light]));
+        True(!Directory.Exists(output));
         using var executor = new RenderJobExecutor();
         executor.ExecuteAsync(
                 snapshot,
@@ -7175,6 +7237,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                 CancellationToken.None)
             .GetAwaiter()
             .GetResult();
+        True(Directory.Exists(output));
         True(Directory.Exists(snapshot.Output.OutputPath));
         var frames = Directory.GetFiles(
             snapshot.Output.OutputPath,
@@ -8640,7 +8703,12 @@ static void ProductionDataOwnsConcreteResources()
     var project = database.LoadProjectTree().Single();
     var productionSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Production);
     SequenceEqual(
-        new[] { ProjectTreeNodeKind.EpisodesRoot, ProjectTreeNodeKind.ProductionDataRoot },
+        new[]
+        {
+            ProjectTreeNodeKind.EpisodesRoot,
+            ProjectTreeNodeKind.RenderQueueRoot,
+            ProjectTreeNodeKind.ProductionDataRoot,
+        },
         productionSections.Select((node) => node.Kind));
 
     var productionData = productionSections.Single((node) => node.Kind == ProjectTreeNodeKind.ProductionDataRoot);
@@ -8663,6 +8731,30 @@ static void ProductionDataOwnsConcreteResources()
         and not ProjectTreeNodeKind.ActorsRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
+}
+
+static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var project = database.LoadProjectTree().Single();
+    var queueNode = EditorWorkspaceNavigation
+        .SectionRoots(project, EditorWorkspace.Production)
+        .Single((node) =>
+            node.Kind == ProjectTreeNodeKind.RenderQueueRoot);
+    Equal(project, Required(queueNode.Parent));
+    True(queueNode.CanOpenEditor);
+    Equal(
+        "navigation.render_queue",
+        queueNode.RecordClassId);
+
+    True(RenderQueueEditorSurface.Owns(queueNode));
+    var shot = DescendantsAndSelf(project)
+        .First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+    True(RenderQueueController.OwnsNavigationAction(shot));
+    True(!RenderQueueController.OwnsNavigationAction(queueNode));
 }
 
 static void ProductionShotManagerActionOwnsAssociation()

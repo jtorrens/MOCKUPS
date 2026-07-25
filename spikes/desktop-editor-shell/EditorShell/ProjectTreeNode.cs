@@ -7,6 +7,7 @@ internal enum ProjectTreeNodeKind
 {
     Project,
     ProductionDataRoot,
+    RenderQueueRoot,
     SystemDataRoot,
     AppsRoot,
     PaletteRoot,
@@ -147,6 +148,7 @@ internal sealed class ProjectTreeNode
         {
             ProjectTreeNodeKind.Project => "project",
             ProjectTreeNodeKind.ProductionDataRoot => "navigation.production_data",
+            ProjectTreeNodeKind.RenderQueueRoot => "navigation.render_queue",
             ProjectTreeNodeKind.SystemDataRoot => "navigation.system_data",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",

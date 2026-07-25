@@ -240,7 +240,8 @@ public partial class MainWindow : SukiWindow
             _activeFieldControls,
             _inlinePreviews,
             _layoutCards,
-            _collectionCards);
+            _collectionCards,
+            _productionNavigationActions.EditorCards);
         PreviewUtilityTabs.SelectionChanged += (_, args) =>
         {
             if (_isUpdatingPreviewUtilityTab

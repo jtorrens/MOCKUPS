@@ -240,11 +240,14 @@ internal sealed class EditorNavigationRenderer
 
     private Control CreateNavigationHeader(ProjectTreeNode node, string? iconName, bool isExpanded)
     {
+        var canExpand = node.Children.Count > 0 || node.CanAddChild;
         var grid = new Grid
         {
             ColumnDefinitions = iconName is null
-                ? new ColumnDefinitions("*,Auto,24")
-                : new ColumnDefinitions("20,*,Auto,24"),
+                ? new ColumnDefinitions(
+                    canExpand ? "*,Auto,24" : "*,Auto")
+                : new ColumnDefinitions(
+                    canExpand ? "20,*,Auto,24" : "20,*,Auto"),
             ColumnSpacing = 6,
             Background = Brushes.Transparent,
             VerticalAlignment = VerticalAlignment.Center,
@@ -266,19 +269,21 @@ internal sealed class EditorNavigationRenderer
         var actions = CreateNavigationActions(node);
         Grid.SetColumn(actions, contentColumn + 1);
 
-        var toggle = EditorNavigationVisuals.ToggleButton(
-            isExpanded,
-            $"{(isExpanded ? "Collapse" : "Expand")} {EditorNavigationMetadata.Title(node)}",
-            (_, e) =>
-            {
-                e.Handled = true;
-                _toggleGroup(node);
-            });
-        Grid.SetColumn(toggle, contentColumn + 2);
-
         grid.Children.Add(titleButton);
         grid.Children.Add(actions);
-        grid.Children.Add(toggle);
+        if (canExpand)
+        {
+            var toggle = EditorNavigationVisuals.ToggleButton(
+                isExpanded,
+                $"{(isExpanded ? "Collapse" : "Expand")} {EditorNavigationMetadata.Title(node)}",
+                (_, e) =>
+                {
+                    e.Handled = true;
+                    _toggleGroup(node);
+                });
+            Grid.SetColumn(toggle, contentColumn + 2);
+            grid.Children.Add(toggle);
+        }
         grid.PointerPressed += (_, args) =>
         {
             if (args.Source is not Visual source

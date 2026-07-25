@@ -14,9 +14,21 @@ internal static class EditorWorkspaceNavigation
 {
     public static IReadOnlyList<ProjectTreeNode> SectionRoots(ProjectTreeNode project, EditorWorkspace workspace)
     {
-        return DescendantsAndSelf(project)
+        var roots = DescendantsAndSelf(project)
             .Where((node) => EditorNavigationMetadata.IsWorkspaceSectionRoot(node.Kind))
             .Where((node) => Includes(EditorNavigationMetadata.WorkspaceScope(node.Kind), workspace))
+            .ToList();
+        if (workspace == EditorWorkspace.Production)
+        {
+            roots.Add(new ProjectTreeNode(
+                ProjectTreeNodeKind.RenderQueueRoot,
+                $"render-queue:{project.Id}",
+                "Render Queue",
+                "Local render jobs and history",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.RenderQueueRoot),
+                project));
+        }
+        return roots
             .OrderBy((node) => EditorNavigationMetadata.WorkspaceOrder(node.Kind))
             .ToList();
     }

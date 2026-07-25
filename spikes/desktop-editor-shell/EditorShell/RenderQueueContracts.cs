@@ -54,6 +54,9 @@ internal static class RenderOutputModes
 {
     public const string MovProRes422Hq = "mov_prores_422_hq";
     public const string MovProRes4444 = "mov_prores_4444";
+    public const string MovH264Light = "mov_h264_light";
+    public const string MovH264Standard = "mov_h264_standard";
+    public const string MovH264High = "mov_h264_high";
     public const string PngSequence = "png_sequence";
     public const string ExrSequence = "exr_sequence";
 
@@ -73,6 +76,27 @@ internal static class RenderOutputModes
             "mov",
             "prores_4444",
             true),
+        new(
+            MovH264Light,
+            "MOV · H.264 Light · 8 Mb/s",
+            "mov",
+            "mov",
+            "h264_light",
+            false),
+        new(
+            MovH264Standard,
+            "MOV · H.264 Standard · 20 Mb/s",
+            "mov",
+            "mov",
+            "h264_standard",
+            false),
+        new(
+            MovH264High,
+            "MOV · H.264 High · 40 Mb/s",
+            "mov",
+            "mov",
+            "h264_high",
+            false),
         new(
             PngSequence,
             "PNG sequence",
