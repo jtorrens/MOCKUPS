@@ -1432,7 +1432,7 @@
       "defaultValue": "theme.spacing.l|theme.spacing.m",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
+      "optionsSource": "SpacingTokenOptions",
       "pairLabels": {
         "first": "X",
         "second": "Y"

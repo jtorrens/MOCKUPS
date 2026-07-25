@@ -553,6 +553,13 @@ test("Component scaffold validates current dictionary and Runtime Input contract
   missingStorage.dictionaryFields[0]!.jsonPath = ["scaffoldFixture", "missing"];
   expectInvalid(missingStorage, "is missing from current config");
 
+  const unfilteredSpacing = validSpec();
+  unfilteredSpacing.dictionaryFields[0]!.valueKind = "ThemeTokenPair";
+  unfilteredSpacing.dictionaryFields[0]!.defaultValue =
+    "theme.spacing.l|theme.spacing.m";
+  unfilteredSpacing.dictionaryFields[0]!.optionsSource = "";
+  expectInvalid(unfilteredSpacing, "requires optionsSource 'SpacingTokenOptions'");
+
   const unknownInputKind = validSpec();
   (unknownInputKind.designPreview.inputs as Array<Record<string, unknown>>)[0]!.valueKind = "Unknown";
   expectInvalid(unknownInputKind, "unknown current ValueKind");

@@ -1102,6 +1102,14 @@ function validateDictionaryFields(
         violations.push(`Dictionary field '${field.id}' number minimum exceeds its maximum.`);
       }
     }
+    const themeTokens = field.defaultValue.split("|");
+    if ((field.valueKind === "ThemeToken" || field.valueKind === "ThemeTokenPair")
+        && themeTokens.some((token) => token.startsWith("theme.spacing."))
+        && field.optionsSource !== "SpacingTokenOptions") {
+      violations.push(
+        `Dictionary field '${field.id}' uses Theme spacing defaults and requires optionsSource 'SpacingTokenOptions'.`,
+      );
+    }
   }
 }
 
