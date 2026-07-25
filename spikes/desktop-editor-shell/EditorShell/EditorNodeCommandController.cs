@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -116,18 +117,67 @@ internal sealed class EditorNodeCommandController
         _reloadAndSelect(child);
     }
 
-    public void DuplicateNode(ProjectTreeNode node)
+    public async void DuplicateNode(ProjectTreeNode node)
     {
         if (node.Parent is null || !node.CanDuplicate) return;
 
-        var copy = _database.Duplicate(node);
-        _reloadAndSelect(copy);
+        if (node.Kind == ProjectTreeNodeKind.Episode
+            && _database.GetShotManagerEpisodeBinding(node.Id) is not null)
+        {
+            await ShowInfoDialog(
+                "Episode duplication unavailable",
+                "Shot Manager governs this Episode. Disconnect the Project before duplicating its local hierarchy.");
+            return;
+        }
+        if (node.Kind == ProjectTreeNodeKind.Shot
+            && _database.GetShotManagerShotStructure(node.Id) is not null)
+        {
+            try
+            {
+                var episode = node.Parent;
+                var draft = await new ShotCreationDialog(
+                    _owner,
+                    _database).Show(episode);
+                if (draft is null || draft.ShotNumber is null) return;
+                var governedCopy = await new ShotManagerShotCreationService(_database)
+                    .CreateAsync(
+                        episode,
+                        draft.ActorId,
+                        draft.ShotNumber.Value,
+                        node.Id);
+                _reloadAndSelect(governedCopy);
+            }
+            catch (Exception exception)
+            {
+                await ShowInfoDialog(
+                    "Shot duplication failed",
+                    exception.Message);
+            }
+            return;
+        }
+        try
+        {
+            var copy = _database.Duplicate(node);
+            _reloadAndSelect(copy);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error($"Duplicate {node.Name}", exception);
+        }
     }
 
     public async Task RenameNode(ProjectTreeNode node)
     {
         if (!node.CanRenameDirectly)
         {
+            return;
+        }
+        if (node.Kind == ProjectTreeNodeKind.Episode
+            && _database.GetShotManagerEpisodeBinding(node.Id) is not null)
+        {
+            _messages.Warning(
+                "Rename Episode",
+                "Shot Manager governs this Episode name. Rename it there and synchronize.");
             return;
         }
 
@@ -193,7 +243,24 @@ internal sealed class EditorNodeCommandController
             return;
         }
 
-        var confirmed = await Dialogs().ConfirmDelete(node);
+        if (node.Kind == ProjectTreeNodeKind.Episode
+            && _database.GetShotManagerEpisodeBinding(node.Id) is not null)
+        {
+            await ShowInfoDialog(
+                "Episode deletion unavailable",
+                "Shot Manager governs this Episode. Disconnect the Project before deleting it locally.");
+            return;
+        }
+        var confirmed = node.Kind == ProjectTreeNodeKind.Shot
+            && _database.GetShotManagerShotStructure(node.Id) is not null
+            ? await Dialogs().ConfirmAction(
+                "Delete Shot",
+                $"Delete {node.Name}?",
+                "The local Shot and its Screens will be removed. Its production folders are retained and are never deleted automatically.",
+                "Delete",
+                width: 480,
+                height: 240)
+            : await Dialogs().ConfirmDelete(node);
         if (!confirmed) return;
 
         var nextSelectionId = node.Parent.Id;

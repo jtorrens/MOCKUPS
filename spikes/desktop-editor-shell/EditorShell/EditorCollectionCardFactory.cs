@@ -104,14 +104,13 @@ internal sealed class EditorCollectionCardFactory
                     _reloadAndSelect).Create(node),
             ],
             ProjectTreeNodeKind.Shot =>
-                [new ShotModuleInstancesCollectionEditor(
+                ShotCards(node),
+            ProjectTreeNodeKind.Project =>
+                [new ShotManagerIntegrationCollectionEditor(
                     _database,
-                    _onChanged,
-                    _reloadAndSelect,
-                    _domainDialogs.DefineModuleInstanceForShot,
-                    _domainDialogs.ConfirmModuleInstanceDelete,
-                    _shotFrame,
-                    _previewPlaybackState).Create(node)],
+                    _domainDialogs,
+                    _showInfo,
+                    _reloadAndSelect).Create(node)],
             _ => [],
         };
 
@@ -120,6 +119,30 @@ internal sealed class EditorCollectionCardFactory
             cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _isDark(), _navigateToUsage).Create(node)];
         }
 
+        return cards;
+    }
+
+    private IReadOnlyList<InstantEditorCard> ShotCards(
+        ProjectTreeNode node)
+    {
+        var cards = new List<InstantEditorCard>
+        {
+            new ShotModuleInstancesCollectionEditor(
+                _database,
+                _onChanged,
+                _reloadAndSelect,
+                _domainDialogs.DefineModuleInstanceForShot,
+                _domainDialogs.ConfirmModuleInstanceDelete,
+                _shotFrame,
+                _previewPlaybackState).Create(node),
+        };
+        var structure = new ShotManagerShotStructureCollectionEditor(
+            _database,
+            _showInfo).Create(node);
+        if (structure is not null)
+        {
+            cards.Add(structure);
+        }
         return cards;
     }
 

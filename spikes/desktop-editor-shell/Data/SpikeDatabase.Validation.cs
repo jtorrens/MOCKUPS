@@ -29,6 +29,7 @@ internal sealed partial class SpikeDatabase
         ("episodes", "metadata_json", "object"),
         ("shots", "canvas_json", "object"),
         ("shots", "metadata_json", "object"),
+        ("shot_manager_shot_structures", "structure_json", "object"),
         ("apps", "config_json", "object"),
         ("apps", "metadata_json", "object"),
         ("modules", "config_json", "object"),
@@ -59,11 +60,12 @@ internal sealed partial class SpikeDatabase
         ("editor_layouts", "layout_json", "object"),
     ];
 
-    private void ValidateSchemaV1(SqliteConnection connection)
+    private void ValidateCurrentDatabase(SqliteConnection connection)
     {
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentShotManagerStructures(connection);
         ValidateCurrentProductionFontFiles(connection);
         ValidateCurrentEditorLayouts(connection);
         ValidateCurrentDefinitionLifecycle(connection);
@@ -74,6 +76,32 @@ internal sealed partial class SpikeDatabase
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentShotManagerStructures(
+        SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT shot_id, structure_json
+            FROM shot_manager_shot_structures
+            ORDER BY shot_id
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var shotId = reader.GetString(0);
+            try
+            {
+                ShotManagerPortableStructure.Parse(
+                    reader.GetString(1),
+                    $"Shot Manager Shot '{shotId}' structure_json");
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(exception.Message);
+            }
+        }
     }
 
     private void ValidateCurrentProductionFontFiles(SqliteConnection connection)

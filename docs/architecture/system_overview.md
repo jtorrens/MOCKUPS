@@ -19,6 +19,11 @@ or Production frame without changing authored data.
 Render Presets are Production Data, but Render Mode and a complete
 render/export workflow are not part of the current application.
 
+An optional local integration may let VFX Shot Manager govern a Project's
+Production, Season and Episode identities, technical Shot names and directory
+layout. MOCKUPS still creates and owns the Shot, its Actor, Screens and
+creative data.
+
 ## System map
 
 ```text
@@ -31,6 +36,11 @@ SQLite current project data
         │       ├── dictionary fields
         │       ├── structured collections
         │       └── owner-relative animation
+        │
+        ├── optional Shot Manager integration
+        │       ├── strict loopback read-only client
+        │       ├── Episode identity synchronization
+        │       └── validated local folder materialization
         │
         └── Preview payload preparation
                 ├── explicit context and forwarding
@@ -66,6 +76,8 @@ never resolve across Projects.
 - A Screen is a persisted Module Instance with one exact Module Variant,
   payload, transition, duration and animation document.
 - Shot time is the ordered aggregate of its Screens.
+- An associated Project stores exact external Episode bindings and one
+  immutable portable folder snapshot per locally owned governed Shot.
 
 ### Preview
 
@@ -139,6 +151,11 @@ shell
 → focused repository
 → SQLite context
 
+Shot Manager editor
+→ integration coordination service
+→ authenticated read-only client + folder materializer
+→ focused integration and Shot repositories
+
 payload factory
 → manifest route
 → Component/Module resolver
@@ -159,6 +176,8 @@ payload factory
 - A new Component boundary crosses into that class's protected Default Variant.
 - Keyframes are relative to their stable temporal owner.
 - Preview receives a complete resolved result.
+- Optional external hierarchy uses exact Production, Season and Episode ids;
+  it never substitutes an external Shot id for the local Shot identity.
 
 Names, types, hierarchy depth, sibling order and visual position are never
 substitutes for explicit identity.

@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using System;
 using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -22,6 +23,11 @@ internal sealed partial class SpikeDatabase
 
     public void UpdateEpisodeField(string episodeId, string fieldId, string value)
     {
+        if (_shotManagerIntegrationRepository.GetEpisodeBinding(episodeId) is not null)
+        {
+            throw new InvalidOperationException(
+                "Shot Manager governs this Episode. Change it there and synchronize.");
+        }
         _projectEpisodeRepository.UpdateEpisodeField(episodeId, fieldId, value);
     }
 

@@ -26,6 +26,9 @@ internal sealed partial class SpikeDatabase
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_episodes_id_project
+          ON episodes(id, project_id);
+
         CREATE TABLE IF NOT EXISTS shots (
           id TEXT PRIMARY KEY,
           episode_id TEXT NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
@@ -41,6 +44,47 @@ internal sealed partial class SpikeDatabase
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
+
+        CREATE TABLE IF NOT EXISTS shot_manager_project_associations (
+          project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+          production_id TEXT NOT NULL,
+          production_name TEXT NOT NULL,
+          season_id TEXT NOT NULL,
+          season_code TEXT NOT NULL,
+          season_name TEXT,
+          updated_at TEXT NOT NULL,
+          UNIQUE(production_id, season_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS shot_manager_episode_bindings (
+          episode_id TEXT PRIMARY KEY,
+          project_id TEXT NOT NULL REFERENCES shot_manager_project_associations(project_id) ON DELETE CASCADE,
+          external_episode_id TEXT NOT NULL,
+          episode_number INTEGER NOT NULL CHECK(episode_number > 0),
+          episode_code TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE(project_id, external_episode_id),
+          FOREIGN KEY(episode_id, project_id)
+            REFERENCES episodes(id, project_id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS shot_manager_shot_structures (
+          shot_id TEXT PRIMARY KEY REFERENCES shots(id) ON DELETE CASCADE,
+          plan_version INTEGER NOT NULL CHECK(plan_version = 1),
+          production_id TEXT NOT NULL,
+          season_id TEXT NOT NULL,
+          episode_id TEXT NOT NULL,
+          shot_number INTEGER NOT NULL CHECK(shot_number > 0),
+          shot_code TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          structure_json TEXT NOT NULL
+            CHECK(json_valid(structure_json) AND json_type(structure_json) = 'object'),
+          created_at TEXT NOT NULL,
+          UNIQUE(production_id, episode_id, shot_number)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_shot_manager_episode_bindings_project
+          ON shot_manager_episode_bindings(project_id, episode_number, external_episode_id);
 
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
@@ -184,7 +228,7 @@ internal sealed partial class SpikeDatabase
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 1;
+        PRAGMA user_version = 2;
         """;
 
 }

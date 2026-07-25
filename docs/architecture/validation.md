@@ -58,6 +58,9 @@ It includes:
   while preserving matching stable-id values;
 - generic Runtime action completion, visual-tree reattachment, repeat from the
   captured origin, Restore and exact prepared-frame reuse;
+- optional Shot Manager governance, including exact Episode adoption,
+  local-only Shot persistence, portable folder snapshots, unsafe-path
+  rejection, retained folders on delete and independent data after disconnect;
 - architecture enforcement;
 - desktop application build.
 
@@ -128,6 +131,8 @@ Database validation is read-only and confirms:
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
 - required Shot Actor and Production context;
+- exact Shot Manager association/binding relationships and strict portable
+  Shot structure documents;
 - declared font, icon and media assets;
 - manifest-to-row agreement.
 
@@ -149,6 +154,8 @@ For any editor or Preview change, exercise at least:
 10. Usage navigation across Design and Production;
 11. tree/editor Rename consistency and destructive confirmation links;
 12. resizable panels, compact layout and scroll restoration.
+13. optional Shot Manager connect/synchronize, governed Shot creation, missing
+    folder repair, retained folders on Shot deletion and disconnect behavior.
 
 Component-specific changes add an isolated Design case and a Production case
 that reaches the same owner through a Screen payload.

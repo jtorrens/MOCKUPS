@@ -547,6 +547,11 @@ internal sealed partial class SpikeDatabase
         if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
         {
             var project = ProjectAncestor(parent);
+            if (_shotManagerIntegrationRepository.GetAssociation(project.Id) is not null)
+            {
+                throw new InvalidOperationException(
+                    "Shot Manager governs this Project's Episodes.");
+            }
             var episode = _projectEpisodeRepository.CreateEpisode(connection, project.Id);
 
             return new ProjectTreeNode(
@@ -672,6 +677,11 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
+            if (_shotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
+            {
+                throw new InvalidOperationException(
+                    "Shot Manager governs this Episode and it cannot be duplicated locally.");
+            }
             var copy = _projectEpisodeRepository.DuplicateEpisode(connection, node.Id, $"{node.Name} copy");
 
             return new ProjectTreeNode(ProjectTreeNodeKind.Episode, copy.Id, copy.Name, copy.Notes, node.RecordClassId, node.Parent);
@@ -849,6 +859,11 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
+            if (_shotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
+            {
+                throw new InvalidOperationException(
+                    "Shot Manager governs this Episode and it cannot be deleted locally.");
+            }
             _projectEpisodeRepository.DeleteEpisode(connection, node.Id);
             return;
         }
@@ -914,6 +929,11 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
+            if (_shotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
+            {
+                throw new InvalidOperationException(
+                    "Shot Manager governs this Episode. Change it there and synchronize.");
+            }
             _projectEpisodeRepository.UpdateEpisodeNode(connection, node.Id, node.Name, node.Notes);
             return;
         }
@@ -974,6 +994,16 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Shot)
         {
+            var structure =
+                _shotManagerIntegrationRepository.GetShotStructure(node.Id);
+            if (structure is not null
+                && !node.Name.Equals(
+                    structure.FullName,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The technical name of a Shot with created Shot Manager folders is immutable.");
+            }
             _shotRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
             return;
         }

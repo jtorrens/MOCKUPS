@@ -23,6 +23,7 @@ internal sealed partial class SpikeDatabase
     private readonly IModuleInstanceRepository _moduleInstanceRepository;
     private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
     private readonly IReferenceUsageService _referenceUsageService;
+    private readonly IShotManagerIntegrationRepository _shotManagerIntegrationRepository;
 
     public SpikeDatabase(string databasePath)
     {
@@ -42,6 +43,7 @@ internal sealed partial class SpikeDatabase
         _moduleInstanceRepository = new ModuleInstanceRepository(_context);
         _moduleInstanceThemeContextService = new ModuleInstanceThemeContextService(_context);
         _referenceUsageService = new ReferenceUsageService(_context);
+        _shotManagerIntegrationRepository = new ShotManagerIntegrationRepository(_context);
 
         Initialize();
     }
@@ -80,7 +82,7 @@ internal sealed partial class SpikeDatabase
                 $"Desktop database '{_context.DatabasePath}' is empty. Create a validated database explicitly before opening the application.");
         }
 
-        ValidateSchemaV1(validationConnection);
+        ValidateCurrentDatabase(validationConnection);
     }
 
     private static bool HasUserTables(SqliteConnection connection)

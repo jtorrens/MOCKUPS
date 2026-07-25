@@ -47,6 +47,51 @@ internal sealed record ShotRecord(
     string CanvasJson,
     string MetadataJson);
 
+internal sealed record ShotManagerProjectAssociationRecord(
+    string ProjectId,
+    string ProductionId,
+    string ProductionName,
+    string SeasonId,
+    string SeasonCode,
+    string? SeasonName,
+    string UpdatedAt);
+
+internal sealed record ShotManagerEpisodeBindingRecord(
+    string EpisodeId,
+    string ProjectId,
+    string ExternalEpisodeId,
+    int EpisodeNumber,
+    string EpisodeCode,
+    string UpdatedAt);
+
+internal sealed record ShotManagerShotStructureRecord(
+    string ShotId,
+    int PlanVersion,
+    string ProductionId,
+    string SeasonId,
+    string EpisodeId,
+    int ShotNumber,
+    string ShotCode,
+    string FullName,
+    string StructureJson,
+    string CreatedAt);
+
+internal sealed record ShotManagerLocalEpisodeRecord(
+    EpisodeRecord Episode,
+    ShotManagerEpisodeBindingRecord? Binding,
+    bool HasShots);
+
+internal sealed record ShotManagerEpisodeWrite(
+    EpisodeRecord Episode,
+    string ExternalEpisodeId,
+    int EpisodeNumber,
+    string EpisodeCode);
+
+internal sealed record ShotManagerAssociationWritePlan(
+    ShotManagerProjectAssociationRecord Association,
+    IReadOnlyList<ShotManagerEpisodeWrite> Upserts,
+    IReadOnlyList<string> DeleteEpisodeIds);
+
 internal sealed record RenderPresetRecord(
     string Id,
     string ProjectId,
@@ -281,6 +326,25 @@ internal interface IShotRepository
 
     ShotRecord Create(SqliteConnection connection, string episodeId, string actorId);
 
+    ShotRecord PrepareGoverned(
+        SqliteConnection connection,
+        string episodeId,
+        string actorId,
+        string fullName,
+        string shotCode);
+
+    ShotRecord PrepareGovernedDuplicate(
+        SqliteConnection connection,
+        string sourceShotId,
+        string actorId,
+        string fullName,
+        string shotCode);
+
+    void InsertPrepared(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        ShotRecord record);
+
     ShotRecord Duplicate(SqliteConnection connection, string sourceId, string id, string name);
 
     void DuplicateForEpisode(
@@ -297,6 +361,35 @@ internal interface IShotRepository
     void UpdateNode(SqliteConnection connection, string shotId, string name, string notes);
 
     void Delete(SqliteConnection connection, string shotId);
+}
+
+internal interface IShotManagerIntegrationRepository
+{
+    ShotManagerProjectAssociationRecord? GetAssociation(string projectId);
+
+    ShotManagerEpisodeBindingRecord? GetEpisodeBinding(string episodeId);
+
+    ShotManagerShotStructureRecord? GetShotStructure(string shotId);
+
+    int SuggestShotNumber(string episodeId);
+
+    IReadOnlyList<ShotManagerLocalEpisodeRecord> LoadLocalEpisodes(string projectId);
+
+    void ApplyAssociation(ShotManagerAssociationWritePlan plan);
+
+    void Disconnect(string projectId);
+
+    void ValidateGovernedShotContext(
+        SqliteConnection connection,
+        string episodeId,
+        string productionId,
+        string seasonId,
+        string externalEpisodeId);
+
+    void InsertShotStructure(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        ShotManagerShotStructureRecord record);
 }
 
 internal interface IRenderPresetRepository

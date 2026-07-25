@@ -57,6 +57,42 @@ Project.
 Duplicating an Episode or Shot preserves every current persisted column and
 creates new stable ids.
 
+## Optional Shot Manager governance
+
+A Project may associate with one exact VFX Shot Manager Production and Season.
+The integration is optional: without an association, Episodes and Shots keep
+the independent workflow above.
+
+With an association:
+
+- Shot Manager owns the Production, Season and Episode identities, Episode
+  names and codes, technical Shot naming rules and configured folder layout;
+- MOCKUPS synchronizes Episodes by stable external identity after the initial
+  exact-code adoption;
+- MOCKUPS remains the sole owner of every Shot row, Actor, Screen, creative
+  payload and animation;
+- creating or duplicating a Shot requires an explicit positive Shot number and
+  Actor;
+- Shot Manager returns a read-only, non-reserving plan; MOCKUPS validates and
+  creates its directories, then atomically persists the local Shot and the
+  exact portable layout snapshot;
+- no external Shot identity exists or is manufactured.
+
+The persisted snapshot contains only portable relative directories and stable
+structure-entry identities. Workstation roots, resolved absolute paths,
+discovery data and bearer credentials remain local and transient. Repair
+resolves the current workstation root through Shot Manager and recreates only
+directories missing from the stored snapshot; a later Shot Manager template
+change does not reinterpret an existing Shot.
+
+Episode rename, creation, duplication and deletion are unavailable while the
+association governs that hierarchy. Synchronization may remove a governed
+Episode only while it contains no local Shots. Disconnecting retains the local
+Episodes, Shots and folder snapshots and removes only association ownership.
+Deleting a governed Shot removes its local database content but deliberately
+retains its production folders. No ordinary lifecycle action deletes external
+folders.
+
 ## Screens
 
 A Screen is a persisted Module Instance. It owns:

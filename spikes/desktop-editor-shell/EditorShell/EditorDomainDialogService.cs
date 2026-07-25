@@ -94,6 +94,24 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmDelete(node);
     }
 
+    public Task<ShotManagerAssociationSelection?> ShowShotManagerAssociation()
+    {
+        return new ShotManagerAssociationDialog(_owner).Show();
+    }
+
+    public Task<bool> ConfirmShotManagerDisconnect(
+        string productionName,
+        string seasonCode)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
+            "Disconnect Shot Manager",
+            $"Disconnect {productionName} · {seasonCode}?",
+            "Local Episodes, Shots and stored folder snapshots are retained. New official Shots require reconnecting and synchronizing.",
+            "Disconnect",
+            width: 500,
+            height: 240);
+    }
+
     public Task ShowIconThemeSearch(ProjectTreeNode node)
     {
         return new IconThemeSearchDialog(_owner, _database, _showInfo, _reloadAndSelect).Show(node);

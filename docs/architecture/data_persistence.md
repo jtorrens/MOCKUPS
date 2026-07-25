@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `1` is the only current schema. Every row belongs directly or
+Schema version `2` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -14,6 +14,7 @@ The current tables are:
 | --- | --- | --- |
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
+| Optional Shot Manager governance | `shot_manager_project_associations`, `shot_manager_episode_bindings`, `shot_manager_shot_structures` | exact Project/Season association → stable Episode bindings → immutable local Shot folder snapshot |
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
 | Visual resources | `palette_colors`, `themes`, `icon_themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts`, `render_presets` | Project-owned Production Data |
@@ -48,6 +49,7 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 - `IconThemeRepository`
 - `RenderPresetRepository`
 - `EditorLayoutRepository`
+- `ShotManagerIntegrationRepository`
 
 `SpikeDatabase` is a compatibility facade and orchestration boundary. New SQL,
 connection construction, table mapping or write synchronization belongs in the
@@ -71,6 +73,7 @@ object
   episodes.metadata_json
   shots.canvas_json
   shots.metadata_json
+  shot_manager_shot_structures.structure_json
   apps.config_json
   apps.metadata_json
   modules.config_json
@@ -101,6 +104,17 @@ object
 array
   production_fonts.files_json
 ```
+
+`shot_manager_shot_structures.structure_json` is a strict portable object with
+`schemaVersion`, unique `/`-separated relative `directories`, the exact
+`shotOwnedDirectories` subset supplied by the file-layout owner, and complete
+`entries` containing only `entryId` and `relativePath`. It never persists a
+workstation root, resolved absolute path, discovery document or credential.
+
+The Project association stores one exact external Production and Season.
+Episode bindings store stable external identities. A Shot structure stores the
+technical identity returned at creation and its portable plan snapshot, but no
+external Shot id because MOCKUPS owns that Shot.
 
 Component and Module Variant arrays are required current data. Every Variant is
 a complete named snapshot with:
