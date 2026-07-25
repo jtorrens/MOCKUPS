@@ -2,6 +2,7 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
 import Database from "better-sqlite3";
+import { parityDatabasePath } from "./parityDatabasePath.js";
 
 export type ComponentScaffoldCategory = "atom" | "component" | "system";
 export type ComponentRegistryMode =
@@ -467,7 +468,7 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
 
 export function loadComponentScaffoldInventory(
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ): ComponentScaffoldInventory {
   const manifestPath = resolveRepositoryPath(
     repositoryRoot,

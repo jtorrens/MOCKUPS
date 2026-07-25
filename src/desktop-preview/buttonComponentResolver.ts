@@ -57,7 +57,6 @@ export function resolveButtonComponentFromRecords(
       ? preview.iconToken
       : requiredString(button, "iconToken", "component.button.iconToken"),
     iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
-    pushedDurationToken: requiredString(button, "pushedDurationToken", "component.button.pushedDurationToken"),
     stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
     badge: showBadge ? resolveBadgeComponentFromRecords(
       embeddedComponentConfig(bases, badgeSlot, "badge", "component.button.badgeSlot"),

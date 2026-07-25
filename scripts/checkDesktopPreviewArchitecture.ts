@@ -28,15 +28,19 @@ import {
   loadIntegratedModuleScaffoldSpecs,
 } from "../src/development-scaffolding/moduleScaffoldArtifacts.js";
 import { renderableNodeTypes } from "../src/visual/renderable/types.js";
+import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
 
 const root = process.cwd();
 const previewRoot = path.join(root, "src", "desktop-preview");
+const currentParityDatabasePath = parityDatabasePath(root);
 
 const violations: string[] = [];
 const retiredTimeFields = [
   "fadeFrames",
   "cursorBlinkFrames",
+  "cursorBlinkDurationMs",
   "blinkFrames",
+  "pushedDurationToken",
   "motionTimeSeconds",
   "textAnimationTimeSeconds",
   "composerTransitionTimeSeconds",
@@ -182,6 +186,13 @@ for (const directory of ["src/desktop-preview", "spikes/desktop-editor-shell/Com
     }
   }
 }
+for (const retired of retiredTimeFields) {
+  assertDoesNotContain(
+    "spikes/desktop-editor-shell/Data/window-state.json",
+    retired,
+    `session state must not retain retired time field ${retired}`,
+  );
+}
 
 function importTargets(source: string) {
   const targets: string[] = [];
@@ -322,15 +333,73 @@ for (const activeMarkdownPath of [
 const packageScripts = (JSON.parse(readText("package.json")) as {
   scripts?: Record<string, string>;
 }).scripts ?? {};
-const fullTestScript = packageScripts.test ?? "";
-const desktopBuildIndex = fullTestScript.indexOf("npm run desktop:build");
-const unusedAnalysisIndex = fullTestScript.indexOf("npm run check:unused:desktop");
+const repositoryTestScript = packageScripts["test:repository"] ?? "";
+const desktopBuildIndex = repositoryTestScript.indexOf("npm run desktop:compile");
+const unusedAnalysisIndex = repositoryTestScript.indexOf("npm run check:unused:desktop");
 if (desktopBuildIndex < 0
   || unusedAnalysisIndex < 0
   || desktopBuildIndex > unusedAnalysisIndex) {
   addViolation(
     "package.json",
     "the full test gate must build the desktop project before unused-parameter analysis",
+  );
+}
+if (packageScripts.test !== "tsx scripts/runRepositoryValidation.ts") {
+  addViolation(
+    "package.json",
+    "the public repository gate must isolate the staged parity database through its validation owner",
+  );
+}
+for (const requiredTerm of [
+  "git",
+  `["show", \`:\${parityPath}\`]`,
+  "MOCKUPS_VALIDATION_DATABASE",
+  "symlinkSync",
+  "repositoryAssets",
+  `["run", "test:repository"]`,
+  "finally",
+  "rmSync",
+]) {
+  assertContains(
+    "scripts/runRepositoryValidation.ts",
+    requiredTerm,
+    "the validation owner must use a disposable staged parity database and always clean it",
+  );
+}
+for (const group of ["core", "ui", "exhaustive"]) {
+  if (!(packageScripts[`animation:test:desktop:${group}`] ?? "")
+    .includes(`--group ${group}`)
+    || !repositoryTestScript.includes("npm run animation:test")) {
+    addViolation(
+      "package.json",
+      `the complete repository gate must execute the isolated desktop ${group} group`,
+    );
+  }
+}
+if (packageScripts["test:focus:preview"] !== "tsx --test"
+    || !(packageScripts["test:focus:desktop"] ?? "").endsWith(" --")
+    || !(packageScripts["test:focus:desktop"] ?? "").startsWith("npm run desktop-preview:build && ")
+    || !(packageScripts["test:guard"] ?? "").includes("npm run check:architecture")) {
+  addViolation(
+    "package.json",
+    "focused Preview and desktop selectors plus the shared architecture guard must remain available",
+  );
+}
+for (const requiredTerm of [
+  `SingleArgumentValue(args, "--group")`,
+  `ArgumentValues(args, "--exact")`,
+  `ArgumentValues(args, "--filter")`,
+  "Unknown exact desktop test",
+  "Desktop test selection matched no tests.",
+  `"core" => !isolatedUiTests.Contains(test.Name)`,
+  `"ui" => isolatedUiTests.Contains(test.Name)`,
+  `"exhaustive" => exhaustiveTests.Contains(test.Name)`,
+  "MOCKUPS_VALIDATION_DATABASE",
+]) {
+  assertContains(
+    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    requiredTerm,
+    "the desktop test owner must keep fail-closed focused selection, isolated groups and parity-path injection",
   );
 }
 if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
@@ -347,14 +416,14 @@ if (packageScripts["scaffold:component"] !== "tsx scripts/scaffoldComponent.ts")
   );
 }
 if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.ts"
-    || !(packageScripts.test ?? "").includes("npm run test:scaffolding")) {
+    || !repositoryTestScript.includes("npm run test:scaffolding")) {
   addViolation(
     "package.json",
     "the complete repository gate must execute Component scaffolding contract tests",
   );
 }
 if (packageScripts["scaffold:verify"] !== "tsx scripts/verifyIntegratedComponentScaffolds.ts"
-    || !(packageScripts.test ?? "").includes("npm run scaffold:verify")) {
+    || !repositoryTestScript.includes("npm run scaffold:verify")) {
   addViolation(
     "package.json",
     "the complete repository gate must verify every integrated Component scaffold spec",
@@ -372,7 +441,7 @@ if (packageScripts["scaffold:module"] !== "tsx scripts/scaffoldModule.ts"
       !== "tsx scripts/generateIntegratedModuleScaffoldArtifacts.ts"
     || packageScripts["scaffold:module:verify"]
       !== "tsx scripts/verifyIntegratedModuleScaffolds.ts"
-    || !(packageScripts.test ?? "").includes("npm run scaffold:module:verify")) {
+    || !repositoryTestScript.includes("npm run scaffold:module:verify")) {
   addViolation(
     "package.json",
     "Module development scaffolding must expose planning, generation and full-gate verification",
@@ -1503,7 +1572,7 @@ for (const [systemBarRenderablePath, forbiddenFallbacks] of [
   }
 }
 {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (existsSync(databasePath)) {
     const database = new Database(databasePath, { readonly: true, fileMustExist: true });
     try {
@@ -1931,7 +2000,7 @@ assertContains(
   "startup validation must reject the retired Simplified Editor metadata",
 );
 {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (existsSync(databasePath)) {
     const database = new Database(databasePath, { readonly: true, fileMustExist: true });
     try {
@@ -2091,7 +2160,7 @@ for (const [entry, rootKind] of documentedJsonRoots) {
   }
 }
 function assertDesktopJsonRootsAreCanonical() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -2266,7 +2335,7 @@ function assertPropertyBlockContainsKind(
 }
 
 function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) {
     return;
   }
@@ -2290,7 +2359,7 @@ function assertDesktopDatabaseTableIsEmpty(tableName: string, message: string) {
 }
 
 function assertDesktopComponentVariantReferencesAreCanonical() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -2426,7 +2495,7 @@ function completeVariantEnvelopes(value: unknown, owner: string): Record<string,
 }
 
 function assertDesktopModuleVariantEnvelopesAreCanonical() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -2456,7 +2525,7 @@ function jsonArray(value: unknown): unknown[] {
 }
 
 function assertDesktopRuntimeInputValueKindsAreCanonical() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const valueKindSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
@@ -2591,7 +2660,7 @@ function walkJson(value: unknown, visit: (value: unknown, pathLabel: string) => 
 }
 
 function assertDesktopDatabaseDoesNotContainRetiredTokens() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const retiredRadiusTokens = new Set([
@@ -2761,7 +2830,7 @@ function assertDesktopDatabaseDoesNotContainRetiredTokens() {
 }
 
 function assertDesktopRuntimeCollectionsAreConsistent() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -2820,7 +2889,7 @@ function assertDesktopRuntimeCollectionsAreConsistent() {
 }
 
 function assertDesktopPreviewActionsAreDeclarative() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -2999,7 +3068,7 @@ function assertDesktopPreviewActionsAreDeclarative() {
 }
 
 function assertComponentEditorLayoutsUseKnownFields() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const catalog = [
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
@@ -3038,7 +3107,7 @@ function assertComponentEditorLayoutsUseKnownFields() {
 }
 
 function assertDesktopConversationPreviewDoesNotUseLegacyMessageKeys() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const legacyMessageKeys = new Set([
@@ -4660,7 +4729,7 @@ for (const retiredPersistenceCommand of [
     `retired persistence command ${retiredPersistenceCommand} must not return`,
   );
 }
-const desktopDatabasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+const desktopDatabasePath = currentParityDatabasePath;
 type CurrentComponentClassRow = {
   id: string;
   component_type: string;
@@ -9704,7 +9773,7 @@ for (const retiredNumericPointerInterception of [
 }
 
 function assertDesktopSystemTypographyData() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -9760,7 +9829,7 @@ function assertDesktopSystemTypographyData() {
 }
 
 function assertDesktopDatabaseHasNoRetiredTimeFields() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -9789,7 +9858,7 @@ function assertDesktopDatabaseHasNoRetiredTimeFields() {
 }
 
 function assertDesktopDatabaseHasNoRetiredEditorLayouts() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const retired = ["status_bar", "navigation_bar", "navigation.status_bars", "navigation.navigation_bars"];
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
@@ -9807,7 +9876,7 @@ function assertDesktopDatabaseHasNoRetiredEditorLayouts() {
 }
 
 function assertDesktopDatabaseHasCurrentDefinitionLifecycle() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -9829,7 +9898,7 @@ function assertDesktopDatabaseHasCurrentDefinitionLifecycle() {
 }
 
 function assertModuleInstanceRuntimePayloadsMatchContracts() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -9888,7 +9957,7 @@ function assertModuleInstanceRuntimePayloadsMatchContracts() {
 }
 
 function assertActionDurationFieldIdsAreCanonical() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -9953,7 +10022,7 @@ function assertActionDurationFieldIdsAreCanonical() {
 }
 
 function assertConversationMessageActorOwnership() {
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -10199,7 +10268,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "Usage must retain generic exact references and Overrides for Component Variant Slot values",
   );
 
-  const databasePath = path.join(root, "data", "desktop-editor-spike.sqlite");
+  const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const database = new Database(databasePath, { readonly: true, fileMustExist: true });
   try {
@@ -10513,7 +10582,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "List must require the exact List Item slot type",
   );
 
-  const database = new Database(path.join(root, "data", "desktop-editor-spike.sqlite"), {
+  const database = new Database(currentParityDatabasePath, {
     readonly: true,
     fileMustExist: true,
   });

@@ -199,3 +199,12 @@ same revision:
 
 Tests that exercise destructive lifecycle behavior use disposable database
 copies. The committed Project keeps its intentional authoring content.
+
+The complete repository gate also validates a disposable byte-for-byte copy of
+the staged parity database. The copy path is supplied explicitly to every
+database-backed test, scaffold verifier and architecture check. Validation
+never swaps the worktree database, so an active workstation database may retain
+its local authoring state without affecting or being overwritten by the gate.
+The disposable workspace links the repository asset root at the same relative
+boundary, preserving strict Project font, icon and media resolution without
+copying or mutating those assets.

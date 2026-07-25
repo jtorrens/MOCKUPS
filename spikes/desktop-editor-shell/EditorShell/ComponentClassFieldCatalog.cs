@@ -117,10 +117,6 @@ internal static partial class ComponentClassFieldCatalog
         new("drawPassword", "Draw password"),
     ];
 
-    private static readonly FieldOption[] ButtonPushedDurationTokenOptions =
-    [
-        new("theme.motion.buttonPushedDurationMs", "motion.buttonPushedDurationMs"),
-    ];
     private static readonly FieldOption[] ButtonContentModeOptions =
     [
         new("icon", "Icon"),
@@ -868,7 +864,6 @@ internal static partial class ComponentClassFieldCatalog
         ["component.button.padding"] = new("component.button.padding", "Padding", ValueKind.ThemeTokenPair, ["button", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.button.contentGapToken"] = new("component.button.contentGapToken", "Content gap", ValueKind.ThemeToken, ["button", "contentGapToken"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.button.iconToken"] = new("component.button.iconToken", "Default icon", ValueKind.IconToken, ["button", "iconToken"], "media_play_fill"),
-        ["component.button.pushedDurationToken"] = new("component.button.pushedDurationToken", "Pushed duration", ValueKind.ThemeToken, ["button", "pushedDurationToken"], "theme.motion.buttonPushedDurationMs", Options: ButtonPushedDurationTokenOptions),
         ["component.button.badge.editor"] = new("component.button.badge.editor", "Badge", ValueKind.ComponentVariant, ["button", "badgeSlot", "variantReference"], "default"),
         ["component.button.states.normal.surface.editor"] = new("component.button.states.normal.surface.editor", "Surface", ValueKind.ComponentVariant, ["button", "states", "normal", "surfaceSlot", "variantReference"], "default"),
         ["component.button.states.normal.label.editor"] = new("component.button.states.normal.label.editor", "Label", ValueKind.ComponentVariant, ["button", "states", "normal", "labelSlot", "variantReference"], "default"),

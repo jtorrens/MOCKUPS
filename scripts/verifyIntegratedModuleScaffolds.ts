@@ -7,9 +7,10 @@ import {
 } from "../src/development-scaffolding/moduleScaffoldArtifacts.js";
 import { verifyModuleScaffoldImplementation } from
   "../src/development-scaffolding/moduleScaffoldWorkspace.js";
+import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
 
 const repositoryRoot = process.cwd();
-const databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+const databasePath = parityDatabasePath(repositoryRoot);
 const specs = loadIntegratedModuleScaffoldSpecs(repositoryRoot);
 for (const spec of specs) {
   verifyModuleScaffoldImplementation(spec, repositoryRoot, databasePath);

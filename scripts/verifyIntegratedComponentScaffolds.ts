@@ -11,10 +11,11 @@ import {
   expectedIntegratedComponentScaffoldArtifacts,
   integratedComponentSpecRoot,
 } from "../src/development-scaffolding/componentScaffoldArtifacts.js";
+import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
 
 const repositoryRoot = process.cwd();
 const specRoot = path.join(repositoryRoot, integratedComponentSpecRoot);
-const databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+const databasePath = parityDatabasePath(repositoryRoot);
 const results = readdirSync(specRoot, { withFileTypes: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
   .sort((left, right) => left.name.localeCompare(right.name))

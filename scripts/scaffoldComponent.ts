@@ -18,6 +18,7 @@ import {
   adoptExistingComponentScaffold,
   type ComponentScaffoldIntent,
 } from "../src/development-scaffolding/componentScaffoldAdoption.js";
+import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
 
 const { values } = parseArgs({
   options: {
@@ -78,7 +79,7 @@ if (!values["adopt-existing"] && values["dictionary-catalog"]) {
 const repositoryRoot = process.cwd();
 const databasePath = values.database
   ? path.resolve(values.database)
-  : path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+  : parityDatabasePath(repositoryRoot);
 if (values["adopt-existing"]) {
   if (!values["component-type"] || !values.intent || values.spec) {
     throw new Error(

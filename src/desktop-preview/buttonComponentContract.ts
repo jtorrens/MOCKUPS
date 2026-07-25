@@ -22,7 +22,6 @@ export interface ButtonDesignContract {
   contentGapToken: string;
   iconToken: string;
   iconSizeToken: string;
-  pushedDurationToken: string;
   stateStyle: ButtonStateDesignContract;
   badge?: BadgeDesignContract;
 }

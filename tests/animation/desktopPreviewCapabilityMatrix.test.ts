@@ -14,6 +14,7 @@ import {
   type DesktopPreviewComponentClass,
 } from "../../src/desktop-preview/desktopPreviewComponents.js";
 import { desktopPreviewModules } from "../../src/desktop-preview/desktopPreviewModules.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 
 type Action = {
   id: string;
@@ -29,11 +30,7 @@ type RuntimeOwnerDocument = {
   collections?: Collection[];
 };
 
-const databasePath = path.join(
-  process.cwd(),
-  "data",
-  "desktop-editor-spike.sqlite",
-);
+const databasePath = parityDatabasePath();
 
 const focusedCharacterizations = {
   label: "tests/animation/calculatedText.test.ts",

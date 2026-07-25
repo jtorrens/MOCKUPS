@@ -27,6 +27,7 @@ import {
   integratedModuleSpecRoot,
   regenerateIntegratedModuleScaffoldArtifacts,
 } from "./moduleScaffoldArtifacts.js";
+import { parityDatabasePath } from "./parityDatabasePath.js";
 import type { JsonObject } from "./componentScaffold.js";
 
 export const moduleScaffoldSemanticMarker = "MODULE_SCAFFOLD_SEMANTICS_REQUIRED";
@@ -68,7 +69,7 @@ export function materializeModuleScaffold(
 export function integrateModuleScaffold(
   spec: ModuleScaffoldSpec,
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ) {
   const fileName = moduleFileName(spec);
   const draftSpecPath = `${draftModuleSpecRoot}/${fileName}.json`;
@@ -186,7 +187,7 @@ export function integrateModuleScaffold(
 export function verifyModuleScaffoldImplementation(
   spec: ModuleScaffoldSpec,
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ) {
   const violations: string[] = [];
   const checked: string[] = [];

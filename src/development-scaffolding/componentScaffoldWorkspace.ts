@@ -25,6 +25,7 @@ import {
   integratedComponentSpecRoot,
   regenerateIntegratedComponentScaffoldArtifacts,
 } from "./componentScaffoldArtifacts.js";
+import { parityDatabasePath } from "./parityDatabasePath.js";
 
 export const componentScaffoldSemanticMarker = "SCAFFOLD_SEMANTICS_REQUIRED";
 
@@ -107,7 +108,7 @@ export function materializeComponentScaffold(
 export function integrateComponentScaffold(
   spec: ComponentScaffoldSpec,
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ): ComponentScaffoldIntegration {
   const componentType = spec.component.componentType;
   const draftSpecPath = `${draftComponentSpecRoot}/${componentType}.json`;
@@ -276,7 +277,7 @@ export function integrateComponentScaffold(
 export function verifyComponentScaffoldImplementation(
   spec: ComponentScaffoldSpec,
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ): ComponentScaffoldVerification {
   const violations: string[] = [];
   const checked: string[] = [];

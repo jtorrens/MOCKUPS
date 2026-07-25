@@ -5,6 +5,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 
 type ComponentRow = {
   id: string;
@@ -18,7 +19,7 @@ export function committedComponentFixture(
   variantId = "default",
 ): DesignPreviewPayload {
   const database = new Database(
-    path.join(process.cwd(), "data", "desktop-editor-spike.sqlite"),
+    parityDatabasePath(),
     { readonly: true, fileMustExist: true },
   );
   try {

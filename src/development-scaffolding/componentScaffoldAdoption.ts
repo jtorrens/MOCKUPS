@@ -17,6 +17,7 @@ import {
   type JsonValue,
 } from "./componentScaffold.js";
 import { integratedComponentSpecRoot } from "./componentScaffoldArtifacts.js";
+import { parityDatabasePath } from "./parityDatabasePath.js";
 
 export type ComponentScaffoldIntent = ComponentScaffoldSpec["intent"];
 
@@ -31,7 +32,7 @@ export function adoptExistingComponentScaffold(
   componentType: string,
   intent: ComponentScaffoldIntent,
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
   dictionaryCatalogPath = path.join(
     repositoryRoot,
     "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",

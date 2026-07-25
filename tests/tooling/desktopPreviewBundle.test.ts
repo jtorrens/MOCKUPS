@@ -18,7 +18,15 @@ test("desktop development commands rebuild Preview before invoking .NET", () => 
   );
   assert.match(
     packageJson.scripts["desktop:build"] ?? "",
-    /^npm run desktop-preview:build && dotnet build /u,
+    /^npm run desktop-preview:build && npm run desktop:compile$/u,
+  );
+  assert.match(
+    packageJson.scripts["desktop:compile"] ?? "",
+    /^dotnet build /u,
+  );
+  assert.match(
+    packageJson.scripts["test:focus:desktop"] ?? "",
+    /^npm run desktop-preview:build && dotnet run /u,
   );
 });
 

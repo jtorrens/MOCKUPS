@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import path from "node:path";
 import Database from "better-sqlite3";
 
 import { resolveTextBoxComponentFromRecords } from "../../src/desktop-preview/textBoxComponentResolver.js";
 import { resolveTextInputBarComponent } from "../../src/desktop-preview/textInputBarComponentResolver.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 
 const surfaceVariantReference = "component_surface::variant::default";
 const cursorVariantReference = "component_cursor::variant::default";
@@ -196,7 +196,7 @@ test("Text Box rejects Variant-owned values at its Runtime boundary", () => {
 
 test("the committed Text Input Bar resolves its migrated structured Button item", () => {
   const database = new Database(
-    path.join(process.cwd(), "data", "desktop-editor-spike.sqlite"),
+    parityDatabasePath(),
     { readonly: true, fileMustExist: true },
   );
   try {

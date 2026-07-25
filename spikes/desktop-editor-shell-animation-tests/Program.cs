@@ -288,10 +288,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
 
 static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -367,10 +364,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 
 static void ListPresenceReplaysAndRestoresItsOrigin()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -523,7 +517,7 @@ static void TypographyStyleKeepsOnlyExplicitSentinels()
     Throws<InvalidOperationException>(() => TypographyStyleValue.Parse("4"));
     Throws<InvalidOperationException>(() => TypographyStyleValue.Parse(JsonNode.Parse("[]")!));
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-typography-owner-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -811,7 +805,7 @@ static void RuntimeInputDefinitionReadersAreStrict()
 
 static void ComponentDictionaryFieldsUseExactValueKinds()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-value-kinds-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -916,7 +910,7 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
 
 static void RecordScalarWritesRejectInvalidValues()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-record-scalar-values-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -984,7 +978,7 @@ static void RecordScalarWritesRejectInvalidValues()
 
 static void ResourceScalarReadsRejectWrongShapes()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-resource-scalar-reads-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -1412,10 +1406,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
 
 static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var textBox = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -1492,10 +1483,7 @@ static void PairFieldsRequireExplicitLabels()
         }
     }
 
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     foreach (var variant in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant))
     {
@@ -2019,7 +2007,7 @@ static void PreviewActionContractsAreStrict()
         command.ExecuteNonQuery();
     });
 
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-action-motion-path-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -2305,10 +2293,7 @@ static void ComponentAndModuleVariantsShareEnvelopeOperations()
 
 static void DefaultVariantEditingUnlockIsSessionOnly()
 {
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Path.GetTempPath(),
         $"mockups-default-variant-session-{Guid.NewGuid():N}.sqlite");
@@ -2391,10 +2376,7 @@ static bool PersistedDefaultLock(
 
 static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var iconRow = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) =>
@@ -2530,10 +2512,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 
 static void IncomingCallExposesExactChildRuntimeBoundaries()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var nodes = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .ToList();
@@ -2728,7 +2707,7 @@ static void EditorViewStateRoundTripsPerClass()
 
 static void EditorViewStateSurvivesRealNavigation()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -2898,7 +2877,7 @@ static void EditorViewStateSurvivesRealNavigation()
 
 static void ExistingDatabaseOpenIsReadOnly()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-read-only-open-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -2917,10 +2896,7 @@ static void ExistingDatabaseOpenIsReadOnly()
 
 static void CurrentSchemaHasNoLegacyRenderPresetPersistence()
 {
-    var path = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var path = ParityDatabasePath();
     using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
     connection.Open();
     Equal(
@@ -3014,7 +2990,7 @@ static void PreviewShellLayoutIsResponsive()
 
 static void PreviewShellVisualTreeIsResponsive()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -3196,7 +3172,7 @@ static void PreviewShellVisualTreeIsResponsive()
 
 static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -3703,7 +3679,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
 
 static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -4010,7 +3986,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
 
 static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -4194,7 +4170,7 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
             """);
     });
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-cross-project-writes-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -4652,10 +4628,7 @@ static void ListComponentContractsFailReadOnly()
         update.ExecuteNonQuery();
     });
 
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Path.GetTempPath(),
         $"mockups-list-contracts-{Guid.NewGuid():N}.sqlite");
@@ -4705,7 +4678,7 @@ static void ModuleConfigsUseOwnerContracts()
             (config) => config["lockScreen"]!["stackInputs"]!["items"] = new JsonObject());
     });
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-config-owner-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -4771,7 +4744,7 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         ["zone", "order"],
         navigationField.StructuredCollection!.Fields.Where((field) => field.ShowInEditor).Select((field) => field.Id));
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-system-bar-items-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -4901,7 +4874,7 @@ static void MutateModuleAndDefaultVariant(
 
 static void VariantWritesDoNotRepairMissingArrays()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-variant-write-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -4959,7 +4932,7 @@ static void VariantWritesDoNotRepairMissingArrays()
 
 static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnection> mutate)
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-rejected-{fixture}-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -4983,7 +4956,7 @@ static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnec
 
 static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-layout-serialization-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -5010,7 +4983,7 @@ static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
 
 static void ExtractedRepositoriesPreserveFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-repository-contract-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -5092,7 +5065,7 @@ static void ExtractedRepositoriesPreserveFacadeContract()
 
 static void ResourceRepositoriesPreserveFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-resource-repositories-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -5213,7 +5186,7 @@ static void ResourceRepositoriesPreserveFacadeContract()
 
 static void ActorPreviewDataBoundaryPreservesCurrentValues()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-actor-preview-data-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5276,7 +5249,7 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
 
 static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-options-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5445,10 +5418,7 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
     True(!ComponentVariantOptionContract.SelectsComponentClass("button"));
     True(ComponentVariantOptionContract.SelectsComponentClass("*,-componentStack"));
 
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var list = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) =>
@@ -5494,7 +5464,7 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
 
 static void DictionaryFieldContextBoundaryPreservesCurrentData()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-dictionary-field-context-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5576,7 +5546,7 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
 
 static void EmbeddedComponentDocumentStorePreservesOwnership()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-embedded-component-documents-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5664,7 +5634,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
 
 static void EditorPresentationContextBoundaryPreservesCurrentData()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-editor-presentation-context-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5698,7 +5668,7 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
 
 static void ProductionScreenPresentationBoundaryPreservesCurrentData()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-screen-presentation-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5747,7 +5717,7 @@ static void ProductionActiveScreenPresentationFollowsShotFrames()
 
 static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-preview-input-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5791,7 +5761,7 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
 
 static void RuntimeInputOwnerStorePreservesCurrentDocuments()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-owner-store-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -5861,7 +5831,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
 
 static void RuntimeInputInstanceStorePreservesExplicitWrites()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-runtime-input-instance-store-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -6046,7 +6016,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
 
 static void PreviewVisualContextBoundaryPreservesResolvedResources()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-preview-visual-context-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -6078,7 +6048,7 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
 
 static void ProductionPreviewSessionBoundaryPreservesCurrentData()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-preview-session-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -6111,7 +6081,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
 
 static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-instance-animation-store-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -6158,7 +6128,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
 
 static void ThemeRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6234,7 +6204,7 @@ static void ThemeRepositoryPreservesFacadeContract()
 
 static void ProductionFontRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-font-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6372,7 +6342,7 @@ static void ProductionFontFileDocumentsAreStrict()
 
 static void IconThemeRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-icon-theme-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6471,7 +6441,7 @@ static void IconThemeRepositoryPreservesFacadeContract()
 
 static void AppModuleRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-app-module-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6565,7 +6535,7 @@ static void AppModuleRepositoryPreservesFacadeContract()
 
 static void ComponentClassRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-class-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6652,7 +6622,7 @@ static void ComponentClassRepositoryPreservesFacadeContract()
 
 static void ModuleInstanceRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-instance-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -6794,7 +6764,7 @@ static void ModuleInstanceRepositoryPreservesFacadeContract()
 
 static void ShotRepositoryPreservesFacadeContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-repository-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -7008,10 +6978,7 @@ static void MovH264ModesMatchCreditosProfiles()
 
 static void ProductionRenderOverridesRespectScreenAppearance()
 {
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Path.GetTempPath(),
         $"mockups-render-context-{Guid.NewGuid():N}.sqlite");
@@ -7086,10 +7053,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
 
 static void AnimatedConversationComposerRemainsVisible()
 {
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -7631,10 +7595,7 @@ static void RenderExecutorPublishesCleanPngSequence()
 
 static void ShotManagerIntegrationKeepsShotsLocal()
 {
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Path.GetTempPath(),
         $"mockups-shot-manager-{Guid.NewGuid():N}.sqlite");
@@ -8134,7 +8095,7 @@ static void ShotManagerClientStartsRegisteredService()
 
 static void ShotActorContextIsExplicit()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-actor-context-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -8187,7 +8148,7 @@ static void ShotActorContextIsExplicit()
 
 static void ProductionShotContextBoundaryPreservesInheritedContext()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-context-data-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -8222,7 +8183,7 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
 
 static void PreviewPayloadRejectsIncompleteProductionContext()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-preview-production-context-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -8282,7 +8243,7 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
 
 static void ProductionPayloadPreservesActorAndAnimation()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-payload-owner-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
@@ -8363,7 +8324,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
     Throws<InvalidOperationException>(() =>
         ModuleAppearanceModeContract.RequireResolved("inherit", "Test resolved mode"));
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-mode-owner-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -8425,7 +8386,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
 
 static void ConversationMessageActorsFollowDirectionContract()
 {
-    var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -8593,7 +8554,7 @@ static void InvalidConversationMessageActorsFailReadOnly()
 
 static void ModuleVariantsAreExplicit()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-variants-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -8656,7 +8617,7 @@ static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nod
 
 static void LabelSubtextPlacementUsesCurrentContract()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var database = new SpikeDatabase(source);
     var settings = database.GetComponentClassSettings("component_project_foqn_s2_label");
     var label = JsonNode.Parse(settings.ConfigJson)?["label"]?.AsObject()
@@ -8701,8 +8662,72 @@ static void ForwardActionsUseSharedPresentation()
     Equal("Keep as Variant value", EditorForwardVisuals.AccessibleName(isForwarded: true));
 }
 
+var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
+{
+    "real Preview shell layout remains usable at 1040 and 1440",
+    "List Item and List expose their runtime model in the real editor",
+    "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
+};
+var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
+{
+    "manifest owners render their committed fixtures and Modules advance time",
+};
+var group = SingleArgumentValue(args, "--group") ?? "all";
+if (group is not ("all" or "core" or "ui" or "exhaustive"))
+{
+    throw new InvalidOperationException(
+        $"Unknown desktop test group '{group}'. Expected all, core, ui or exhaustive.");
+}
+var exactNames = ArgumentValues(args, "--exact");
+var filters = ArgumentValues(args, "--filter");
+var knownArguments = new HashSet<string>(StringComparer.Ordinal)
+{
+    "--group",
+    "--exact",
+    "--filter",
+    "--list",
+};
+for (var index = 0; index < args.Length; index++)
+{
+    var argument = args[index];
+    if (!knownArguments.Contains(argument))
+    {
+        throw new InvalidOperationException($"Unknown desktop test argument '{argument}'.");
+    }
+    if (argument != "--list") index++;
+}
+foreach (var exactName in exactNames)
+{
+    if (!tests.Any((test) => test.Name.Equals(exactName, StringComparison.Ordinal)))
+    {
+        throw new InvalidOperationException($"Unknown exact desktop test '{exactName}'.");
+    }
+}
+var selectedTests = tests
+    .Where((test) => group switch
+    {
+        "core" => !isolatedUiTests.Contains(test.Name) && !exhaustiveTests.Contains(test.Name),
+        "ui" => isolatedUiTests.Contains(test.Name),
+        "exhaustive" => exhaustiveTests.Contains(test.Name),
+        _ => true,
+    })
+    .Where((test) =>
+        (exactNames.Count == 0 && filters.Count == 0)
+        || exactNames.Contains(test.Name, StringComparer.Ordinal)
+        || filters.Any((filter) => test.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+    .ToArray();
+if (selectedTests.Length == 0)
+{
+    throw new InvalidOperationException("Desktop test selection matched no tests.");
+}
+if (args.Contains("--list", StringComparer.Ordinal))
+{
+    foreach (var (name, _) in selectedTests) Console.WriteLine(name);
+    return;
+}
+
 var failures = new List<string>();
-foreach (var (name, run) in tests)
+foreach (var (name, run) in selectedTests)
 {
     try
     {
@@ -8718,12 +8743,12 @@ foreach (var (name, run) in tests)
 }
 
 Console.WriteLine(
-    $"Animation desktop tests: {tests.Length - failures.Count}/{tests.Length} passed.");
+    $"Animation desktop tests: {selectedTests.Length - failures.Count}/{selectedTests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
 
 static void ForwardedChildInputsBecomeParentRuntimeInputs()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-forwarding-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -8824,7 +8849,7 @@ static void RuntimeInputForwardingEnvelopesAreStrict()
 
 static void ForwardedRuntimeCollectionsExposeSlotStateActions()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-forwarded-slots-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -8990,7 +9015,7 @@ static void RejectsMalformedDocuments()
 
 static void ExplicitReferenceUsageIsExactTypedAndShared()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-explicit-usage-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -9154,10 +9179,7 @@ static void UsageNavigationPreservesTypedContext()
 
 static void ProductionDataOwnsConcreteResources()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var project = database.LoadProjectTree().Single();
     var productionSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Production);
     SequenceEqual(
@@ -9193,10 +9215,7 @@ static void ProductionDataOwnsConcreteResources()
 
 static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
 {
-    var database = new SpikeDatabase(Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite"));
+    var database = new SpikeDatabase(ParityDatabasePath());
     var project = database.LoadProjectTree().Single();
     var queueNode = EditorWorkspaceNavigation
         .SectionRoots(project, EditorWorkspace.Production)
@@ -9217,10 +9236,7 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
 
 static void ProductionShotManagerActionOwnsAssociation()
 {
-    var source = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -10141,7 +10157,7 @@ static void StrictValidationRejectsMissingOrigin()
 
 static void LegacyAnimationRequiresExplicitMigration()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-legacy-animation-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -10167,7 +10183,7 @@ static void LegacyAnimationRequiresExplicitMigration()
 
 static void AnimatableFieldVocabularyIsConstrained()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var database = new SpikeDatabase(source);
     var module = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
@@ -10336,7 +10352,7 @@ static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()
 
 static void CollectionItemReorderPersistsStableIds()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-animation-reorder-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -10411,7 +10427,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     True(customVariant.CanDuplicate);
     True(customVariant.CanDelete);
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-definition-lifecycle-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -10481,7 +10497,7 @@ static void ModuleParentsFollowComponentVariantSelection()
 
 static void OnlyDefaultSystemBarVariantsAreProtected()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-system-variants-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -10508,7 +10524,7 @@ static void OnlyDefaultSystemBarVariantsAreProtected()
 
 static void ComponentStackSeedOpensAndRenders()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-component-stack-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -10752,7 +10768,7 @@ static void ComponentStackSeedOpensAndRenders()
 
 static void CollectionStackSeedOpensAndRenders()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-collection-stack-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -10812,7 +10828,7 @@ static void CollectionStackSeedOpensAndRenders()
 
 static void NotificationsSeedOpensAndRenders()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-notifications-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -11045,7 +11061,7 @@ static void NotificationsSeedOpensAndRenders()
 
 static void KeypadSeedOpensAndRenders()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-keypad-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -11113,7 +11129,7 @@ static void KeypadSeedOpensAndRenders()
 
 static void PasswordSeedOpensAndRenders()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-password-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -11260,7 +11276,7 @@ static void PasswordSeedOpensAndRenders()
 
 static void LockScreenComposesRuntimeStack()
 {
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Directory.GetCurrentDirectory(), "data", $".mockups-lock-screen-stack-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary);
     try
@@ -11596,7 +11612,7 @@ static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
     True(screen.CanDuplicate);
     True(screen.CanDelete);
 
-    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-lifecycle-consistency-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
     try
@@ -11778,6 +11794,42 @@ static JsonObject SequenceContract(bool withMediaAction = false) => Object($$$$"
     """);
 
 static JsonObject Object(string json) => JsonNode.Parse(json)!.AsObject();
+
+static string ParityDatabasePath()
+{
+    var configured = Environment.GetEnvironmentVariable("MOCKUPS_VALIDATION_DATABASE");
+    return string.IsNullOrWhiteSpace(configured)
+        ? Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite")
+        : Path.GetFullPath(configured);
+}
+
+static IReadOnlyList<string> ArgumentValues(string[] arguments, string key)
+{
+    var values = new List<string>();
+    for (var index = 0; index < arguments.Length; index++)
+    {
+        if (!arguments[index].Equals(key, StringComparison.Ordinal)) continue;
+        if (index + 1 >= arguments.Length || arguments[index + 1].StartsWith("--", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Desktop test argument '{key}' requires a value.");
+        }
+        values.Add(arguments[index + 1]);
+        index++;
+    }
+    return values;
+}
+
+static string? SingleArgumentValue(string[] arguments, string key)
+{
+    var values = ArgumentValues(arguments, key);
+    return values.Count switch
+    {
+        0 => null,
+        1 => values[0],
+        _ => throw new InvalidOperationException(
+            $"Desktop test argument '{key}' may be specified only once."),
+    };
+}
 
 static T Required<T>(T? value) where T : class => value ?? throw new Exception("Expected a value.");
 static DesignPreviewPayload? CreatePreviewPayload(

@@ -231,12 +231,22 @@ For each coherent phase:
 3. inspect the current owner and shared equivalent;
 4. implement the smallest complete owner change;
 5. update current documentation and enforcement together;
-6. run focused checks, then the full applicable validation;
-7. inspect the final diff, including parity artifacts;
-8. create a local commit;
-9. open the validated desktop application for manual review when UI behavior
+6. run exact owner checks and the shared architecture guard while iterating;
+7. after the intended revision stops changing, run the complete repository
+   validation once against a disposable copy of the staged parity database;
+8. inspect the final diff, including parity artifacts;
+9. create a local commit;
+10. open the validated desktop application for manual review when UI behavior
    changed;
-10. push only when the user asks.
+11. push only when the user asks.
+
+Focused Preview files and exact or filtered desktop test names are iteration
+tools, not substitutes for the final gate. A manifest, shared resolver helper,
+generic renderer, persistence contract, schema, scaffold generator or parity
+change expands immediately to its owning suite. A completed full gate remains
+valid while the source, contracts, generated artifacts, assets and staged
+parity database are unchanged; do not rerun it merely to reproduce the same
+result.
 
 Only one task writes tracked project code or parity data in the shared checkout
 at a time. Read-only investigation may run independently.

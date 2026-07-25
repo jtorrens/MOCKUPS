@@ -21,6 +21,7 @@ import {
   parseModuleScaffoldSpec,
   type ModuleScaffoldSpec,
 } from "../../src/development-scaffolding/moduleScaffold.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 import {
   integrateModuleScaffold,
   materializeModuleScaffold,
@@ -299,7 +300,7 @@ function integrationFixture() {
     mkdirSync(path.join(root, directory), { recursive: true });
   }
   const database = path.join(root, "data/desktop-editor-spike.sqlite");
-  copyFileSync(path.join(repositoryRoot, "data/desktop-editor-spike.sqlite"), database);
+  copyFileSync(parityDatabasePath(repositoryRoot), database);
   for (const relativePath of [
     "src/desktop-preview/desktopPreviewManifest.json",
     "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",

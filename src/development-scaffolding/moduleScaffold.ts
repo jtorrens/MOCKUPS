@@ -2,6 +2,7 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
 import Database from "better-sqlite3";
+import { parityDatabasePath } from "./parityDatabasePath.js";
 
 import type { JsonObject, JsonValue } from "./componentScaffold.js";
 
@@ -384,7 +385,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
 
 export function loadModuleScaffoldInventory(
   repositoryRoot: string,
-  databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite"),
+  databasePath = parityDatabasePath(repositoryRoot),
 ): ModuleScaffoldInventory {
   const manifest = requiredObject(
     JSON.parse(readFileSync(

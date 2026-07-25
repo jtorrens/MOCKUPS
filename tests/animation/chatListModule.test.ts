@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import path from "node:path";
 import test from "node:test";
 
 import Database from "better-sqlite3";
@@ -8,6 +7,7 @@ import { chatListModuleToRenderable } from "../../src/desktop-preview/chatListMo
 import { resolveChatListModule } from "../../src/desktop-preview/chatListModuleResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 
 type ModuleRow = {
   app_id: string;
@@ -18,7 +18,7 @@ type ModuleRow = {
 function fixture() {
   const list = committedComponentFixture("list", "chats");
   const database = new Database(
-    path.join(process.cwd(), "data", "desktop-editor-spike.sqlite"),
+    parityDatabasePath(),
     { readonly: true, fileMustExist: true },
   );
   try {

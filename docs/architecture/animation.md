@@ -142,3 +142,9 @@ and minimum opacity, resolves the exact opacity from its owner-local frame and
 passes that number to its renderable. Text Box and Text Input Bar forward the
 frame through their declared embedded boundaries; they do not restart the
 Cursor clock or paint a fixed replacement opacity.
+
+Button pressed-state duration belongs to its declared Runtime action and
+`BehaviorTiming`; Button Variant config does not persist a second duration.
+Likewise, Text Input Bar persists no Cursor blink duration. It forwards the
+resolved child frame and Cursor remains the only owner of that continuous
+state.

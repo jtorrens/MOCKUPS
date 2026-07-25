@@ -25,6 +25,7 @@ import {
   type ComponentScaffoldInventory,
   type ComponentScaffoldSpec,
 } from "../../src/development-scaffolding/componentScaffold.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 import {
   componentScaffoldSemanticMarker,
   integrateComponentScaffold,
@@ -464,7 +465,7 @@ test("Component scaffold inventory opens the database read-only", () => {
 test("Component scaffold CLI produces a dry-run without changing parity data", () => {
   const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-cli-"));
   const specPath = path.join(temporaryDirectory, "component.json");
-  const databasePath = path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+  const databasePath = parityDatabasePath(repositoryRoot);
   try {
     writeFileSync(specPath, JSON.stringify(validSpec()), "utf8");
     const before = sha256(databasePath);

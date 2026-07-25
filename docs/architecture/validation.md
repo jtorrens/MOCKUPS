@@ -16,6 +16,14 @@ The complete repository validation is:
 npm test
 ```
 
+The public gate reads `data/desktop-editor-spike.sqlite` from the Git index
+into a disposable file and supplies that path to every database-backed check.
+It never replaces, opens for writing or validates against the workstation's
+active authoring database. Its disposable workspace exposes the repository
+assets read-only at the same relative boundary used by normal Project
+resolution. The internal `test:repository` command is owned by that wrapper
+and is not the normal entrypoint.
+
 It includes:
 
 - desktop Preview bundle build;
@@ -74,6 +82,12 @@ It includes:
 - architecture enforcement;
 - desktop application build.
 
+The Preview bundle is built once. Desktop compilation reuses it instead of
+starting a second bundle build. The desktop suite runs in three fresh
+processes: `core`, native visual-tree `ui`, and manifest-wide `exhaustive`.
+This preserves complete coverage while preventing native UI state from leaking
+between unrelated tests.
+
 Architecture enforcement treats the Preview manifest as the complete executable
 Component and Module catalog. It checks exact owner files, registry routes,
 declared embedded dependencies and committed database parity. A matrix derived
@@ -104,13 +118,27 @@ then runs the same gate on a virtual display so tests can construct the real
 Use focused checks while iterating:
 
 ```text
+npm run test:focus:preview -- tests/animation/<owner>.test.ts
+npm run test:focus:desktop -- --exact "<desktop test name>"
+npm run test:focus:desktop -- --filter "<stable name fragment>"
+npm run test:guard
 npm run check:architecture
-npm run animation:test
 npm run desktop-preview:build
 npm run desktop:build
 npm run desktop:db:validate
 git diff --check
 ```
+
+An exact desktop name that does not exist, an unknown selector or a filter that
+matches nothing fails explicitly. A local owner change starts with its focused
+test and the shared guard. The focused desktop command rebuilds the Preview
+bundle before running so it cannot exercise stale web output. Changes to
+manifests, registries, shared Preview
+helpers, persistence, schemas, generated scaffolding or generic desktop
+surfaces expand to their owning suite. `npm test` remains mandatory once, after
+the intended revision stops changing. An unchanged successful gate is not
+repeated; any subsequent source, contract, database, asset or generated-file
+change invalidates it.
 
 ## Architecture enforcement
 
@@ -154,6 +182,11 @@ Database validation is read-only and confirms:
 - manifest-to-row agreement.
 
 Lifecycle and migration tests operate on disposable database copies.
+
+Repository validation derives its pristine source from the staged parity
+artifact. This keeps personal Shot Manager associations and other local
+authoring changes out of test expectations while still validating the exact
+database intended for the revision.
 
 Component scaffold verification has a narrower boundary than persistence
 validation. It checks the development-owned integration surfaces, stable

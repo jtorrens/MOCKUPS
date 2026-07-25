@@ -14,6 +14,7 @@ import {
   materializeModuleScaffold,
   verifyModuleScaffoldImplementation,
 } from "../src/development-scaffolding/moduleScaffoldWorkspace.js";
+import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
 
 const { values } = parseArgs({
   options: {
@@ -52,7 +53,7 @@ if (modes.length !== 1 || !values.spec) {
 const repositoryRoot = process.cwd();
 const databasePath = values.database
   ? path.resolve(values.database)
-  : path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+  : parityDatabasePath(repositoryRoot);
 const specPath = resolveModuleScaffoldSpecPath(repositoryRoot, values.spec);
 const spec = parseModuleScaffoldSpec(
   JSON.parse(readFileSync(specPath, "utf8")) as unknown,
