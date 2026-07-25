@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -94,9 +95,25 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmDelete(node);
     }
 
-    public Task<ShotManagerAssociationSelection?> ShowShotManagerAssociation()
+    public Task<ShotManagerAssociationSelection?> ShowShotManagerAssociation(
+        string projectId)
     {
-        return new ShotManagerAssociationDialog(_owner).Show();
+        return new ShotManagerAssociationDialog(
+            _owner,
+            _database,
+            projectId).Show();
+    }
+
+    public Task<IReadOnlyList<ShotManagerEpisodeAssociationChoice>?>
+        ShowShotManagerEpisodeMappings(
+            string projectId,
+            ShotManagerProductionSnapshot snapshot,
+            string seasonId)
+    {
+        return new ShotManagerEpisodeMappingDialog(
+            _owner,
+            _database,
+            projectId).Show(snapshot, seasonId);
     }
 
     public Task<bool> ConfirmShotManagerDisconnect(

@@ -17,7 +17,8 @@ internal sealed class ShotManagerAssociationService
     public ShotManagerProjectAssociationRecord Synchronize(
         string projectId,
         ShotManagerProductionSnapshot snapshot,
-        string seasonId)
+        string seasonId,
+        IReadOnlyList<ShotManagerEpisodeAssociationChoice> episodeChoices)
     {
         if (snapshot.Production.ProductionType != "SERIES"
             || snapshot.Production.SeriesShotStructure != "EPISODE_SHOT")
@@ -66,35 +67,37 @@ internal sealed class ShotManagerAssociationService
                 "Disconnect the current Shot Manager Season before selecting another one.");
         }
         var locals = _database.LoadShotManagerLocalEpisodes(projectId);
-        var governed = existingAssociation is not null;
         var byExternalId = locals
             .Where((local) => local.Binding is not null)
             .ToDictionary(
                 (local) => local.Binding!.ExternalEpisodeId,
                 StringComparer.Ordinal);
-        var unboundByExactCode = locals
+        var unboundById = locals
             .Where((local) => local.Binding is null)
-            .GroupBy(
-                (local) => local.Episode.Slug,
-                StringComparer.OrdinalIgnoreCase)
-            .Where((group) => group.Count() == 1)
             .ToDictionary(
-                (group) => group.Key,
-                (group) => group.Single(),
-                StringComparer.OrdinalIgnoreCase);
+                (local) => local.Episode.Id,
+                StringComparer.Ordinal);
+        var unresolvedRemoteIds = remoteEpisodes
+            .Where((remote) => !byExternalId.ContainsKey(remote.Id))
+            .Select((remote) => remote.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var choicesByExternalId = ValidateChoices(
+            episodeChoices,
+            unresolvedRemoteIds,
+            unboundById);
         var writes = new List<ShotManagerEpisodeWrite>();
         var matchedLocalIds = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 0; index < remoteEpisodes.Count; index++)
         {
             var remote = remoteEpisodes[index];
-            ShotManagerLocalEpisodeRecord? local = null;
-            if (governed)
+            byExternalId.TryGetValue(remote.Id, out var local);
+            if (local is null)
             {
-                byExternalId.TryGetValue(remote.Id, out local);
-            }
-            else
-            {
-                unboundByExactCode.TryGetValue(remote.Code, out local);
+                var choice = choicesByExternalId[remote.Id];
+                if (choice.LocalEpisodeId is not null)
+                {
+                    local = unboundById[choice.LocalEpisodeId];
+                }
             }
             var episode = local?.Episode ?? new EpisodeRecord(
                 $"episode_{Guid.NewGuid():N}",
@@ -158,6 +161,54 @@ internal sealed class ShotManagerAssociationService
         return string.IsNullOrWhiteSpace(episode.Title)
             ? $"Episode {episode.Code}"
             : episode.Title.Trim();
+    }
+
+    private static IReadOnlyDictionary<string, ShotManagerEpisodeAssociationChoice>
+        ValidateChoices(
+            IReadOnlyList<ShotManagerEpisodeAssociationChoice> choices,
+            IReadOnlySet<string> unresolvedRemoteIds,
+            IReadOnlyDictionary<string, ShotManagerLocalEpisodeRecord> unboundById)
+    {
+        if (choices.Any((choice) =>
+                string.IsNullOrWhiteSpace(choice.ExternalEpisodeId)
+                || (choice.LocalEpisodeId is not null
+                    && string.IsNullOrWhiteSpace(choice.LocalEpisodeId)))
+            || choices.Select((choice) => choice.ExternalEpisodeId)
+                .Distinct(StringComparer.Ordinal).Count() != choices.Count)
+        {
+            throw new InvalidOperationException(
+                "Shot Manager Episode associations must identify each remote Episode exactly once.");
+        }
+
+        var choicesByExternalId = choices.ToDictionary(
+            (choice) => choice.ExternalEpisodeId,
+            StringComparer.Ordinal);
+        if (!choicesByExternalId.Keys.ToHashSet(StringComparer.Ordinal)
+                .SetEquals(unresolvedRemoteIds))
+        {
+            throw new InvalidOperationException(
+                "Every unassociated Shot Manager Episode requires an explicit local Episode or Create new choice.");
+        }
+
+        var localIds = choices
+            .Where((choice) => choice.LocalEpisodeId is not null)
+            .Select((choice) => choice.LocalEpisodeId!)
+            .ToList();
+        if (localIds.Distinct(StringComparer.Ordinal).Count() != localIds.Count)
+        {
+            throw new InvalidOperationException(
+                "A local Episode cannot be associated with more than one Shot Manager Episode.");
+        }
+        var missingLocalIds = localIds
+            .Where((localId) => !unboundById.ContainsKey(localId))
+            .ToList();
+        if (missingLocalIds.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Local Episodes are unavailable for Shot Manager association: {string.Join(", ", missingLocalIds)}.");
+        }
+
+        return choicesByExternalId;
     }
 
     private static void RequireUnique(

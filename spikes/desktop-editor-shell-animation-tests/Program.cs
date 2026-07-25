@@ -6924,24 +6924,90 @@ static void ShotManagerIntegrationKeepsShotsLocal()
             remoteProduction.Id,
             remoteSeason.Id,
             1,
-            "EP_01",
+            "E01",
             "Opening");
         var snapshot = new ShotManagerProductionSnapshot(
             productionRoot,
             remoteProduction,
             [remoteSeason],
             [remoteEpisode]);
+        var initialEpisodeCount = Descendants(database.LoadProjectTree())
+            .Count((node) => node.Kind == ProjectTreeNodeKind.Episode);
+        var initialShotCount = Descendants(database.LoadProjectTree())
+            .Count((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        Throws<InvalidOperationException>(() =>
+            new ShotManagerAssociationService(database).Synchronize(
+                project.Id,
+                snapshot,
+                remoteSeason.Id,
+                []));
+        Equal(null, database.GetShotManagerAssociation(project.Id));
+        Equal(
+            initialEpisodeCount,
+            Descendants(database.LoadProjectTree())
+                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
         var association = new ShotManagerAssociationService(database)
             .Synchronize(
                 project.Id,
                 snapshot,
-                remoteSeason.Id);
+                remoteSeason.Id,
+                [
+                    new ShotManagerEpisodeAssociationChoice(
+                        remoteEpisode.Id,
+                        "episode_001"),
+                ]);
         Equal(remoteProduction.Id, association.ProductionId);
         Equal(remoteSeason.Id, association.SeasonId);
+        Equal(
+            initialEpisodeCount,
+            Descendants(database.LoadProjectTree())
+                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
+        Equal(
+            initialShotCount,
+            Descendants(database.LoadProjectTree())
+                .Count((node) => node.Kind == ProjectTreeNodeKind.Shot));
         var binding = Required(
             database.GetShotManagerEpisodeBinding("episode_001"));
         Equal(remoteEpisode.Id, binding.ExternalEpisodeId);
         Equal(remoteEpisode.Code, binding.EpisodeCode);
+
+        var explicitlyCreatedRemoteEpisode = new ShotManagerEpisode(
+            "sm-episode-2",
+            remoteProduction.Id,
+            remoteSeason.Id,
+            2,
+            "E02",
+            "Second");
+        new ShotManagerAssociationService(database).Synchronize(
+            project.Id,
+            snapshot with
+            {
+                Episodes = [remoteEpisode, explicitlyCreatedRemoteEpisode],
+            },
+            remoteSeason.Id,
+            [
+                new ShotManagerEpisodeAssociationChoice(
+                    explicitlyCreatedRemoteEpisode.Id,
+                    null),
+            ]);
+        Equal(
+            initialEpisodeCount + 1,
+            Descendants(database.LoadProjectTree())
+                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
+        True(database.LoadShotManagerLocalEpisodes(project.Id).Any((local) =>
+            local.Binding?.ExternalEpisodeId
+                == explicitlyCreatedRemoteEpisode.Id
+            && local.Episode.Notes
+                == "Episode synchronized from Shot Manager."));
+        new ShotManagerAssociationService(database).Synchronize(
+            project.Id,
+            snapshot,
+            remoteSeason.Id,
+            []);
+        Equal(
+            initialEpisodeCount,
+            Descendants(database.LoadProjectTree())
+                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
 
         var governedEpisode = Descendants(database.LoadProjectTree())
             .Single((node) => node.Id == binding.EpisodeId);
@@ -8237,7 +8303,8 @@ static void ProductionShotManagerActionOwnsAssociation()
                 remoteProduction,
                 [remoteSeason],
                 []),
-            remoteSeason.Id);
+            remoteSeason.Id,
+            []);
 
         using var session =
             HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));

@@ -70,8 +70,13 @@ With an association:
 
 - Shot Manager owns the Production, Season and Episode identities, Episode
   names and codes, technical Shot naming rules and configured folder layout;
-- MOCKUPS synchronizes Episodes by stable external identity after the initial
-  exact-code adoption;
+- the initial connection requires one explicit choice for every Shot Manager
+  Episode: associate it with one unbound same-Project local Episode or choose
+  **Create new**;
+- no Episode is created, matched or adopted by code, name, number or order
+  before those complete choices are confirmed;
+- later synchronization preserves stable external identities and requires the
+  same explicit choice for every newly discovered Shot Manager Episode;
 - MOCKUPS remains the sole owner of every Shot row, Actor, Screen, creative
   payload and animation;
 - creating or duplicating a Shot requires an explicit positive Shot number and

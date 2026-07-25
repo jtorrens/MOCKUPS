@@ -86,21 +86,29 @@ internal sealed class ShotManagerIntegrationCollectionEditor
                 if (association is null)
                 {
                     var selection =
-                        await _dialogs.ShowShotManagerAssociation();
+                        await _dialogs.ShowShotManagerAssociation(project.Id);
                     if (selection is null) return;
                     service.Synchronize(
                         project.Id,
                         selection.Snapshot,
-                        selection.SeasonId);
+                        selection.SeasonId,
+                        selection.EpisodeChoices);
                 }
                 else
                 {
                     var snapshot = await _client.GetSnapshotAsync(
                         association.ProductionId);
+                    var episodeChoices =
+                        await _dialogs.ShowShotManagerEpisodeMappings(
+                            project.Id,
+                            snapshot,
+                            association.SeasonId);
+                    if (episodeChoices is null) return;
                     service.Synchronize(
                         project.Id,
                         snapshot,
-                        association.SeasonId);
+                        association.SeasonId,
+                        episodeChoices);
                 }
                 _reloadAndSelect(project);
             }

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using SukiUI.Controls;
 using System;
@@ -14,18 +15,25 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record ShotManagerAssociationSelection(
     ShotManagerProductionSnapshot Snapshot,
-    string SeasonId);
+    string SeasonId,
+    IReadOnlyList<ShotManagerEpisodeAssociationChoice> EpisodeChoices);
 
 internal sealed class ShotManagerAssociationDialog
 {
     private readonly Window _owner;
+    private readonly SpikeDatabase _database;
+    private readonly string _projectId;
     private readonly IShotManagerIntegrationClient _client;
 
     public ShotManagerAssociationDialog(
         Window owner,
+        SpikeDatabase database,
+        string projectId,
         IShotManagerIntegrationClient? client = null)
     {
         _owner = owner;
+        _database = database;
+        _projectId = projectId;
         _client = client ?? new ShotManagerIntegrationClient();
     }
 
@@ -54,11 +62,11 @@ internal sealed class ShotManagerAssociationDialog
         var dialog = new SukiWindow
         {
             Title = "Connect Shot Manager",
-            Width = 520,
-            Height = 290,
-            MinWidth = 480,
-            MinHeight = 270,
-            CanResize = false,
+            Width = 760,
+            Height = 680,
+            MinWidth = 680,
+            MinHeight = 520,
+            CanResize = true,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             IsMenuVisible = false,
             BackgroundAnimationEnabled = false,
@@ -80,26 +88,61 @@ internal sealed class ShotManagerAssociationDialog
         };
         var connect = new Button
         {
-            Content = "Connect and synchronize",
+            Content = "Connect",
             MinWidth = 170,
             IsEnabled = false,
         };
-        selector.SelectionChanged += (_, _) =>
-            connect.IsEnabled = selector.SelectedItem is not null;
+        var mappingHost = new ContentControl
+        {
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Top,
+        };
+        ShotManagerEpisodeMappingEditor? mappingEditor = null;
+        Candidate? selectedCandidate = null;
+        void RefreshConnect()
+        {
+            connect.IsEnabled = selectedCandidate is not null
+                && mappingEditor?.IsComplete == true;
+        }
+        void RefreshMappings()
+        {
+            selectedCandidate = selector.SelectedItem is null
+                ? null
+                : candidates.Single((value) =>
+                    value.Key.Equals(
+                        selector.SelectedItem.Value,
+                        StringComparison.Ordinal));
+            mappingEditor = selectedCandidate is null
+                ? null
+                : new ShotManagerEpisodeMappingEditor(
+                    _database,
+                    _projectId,
+                    selectedCandidate.Snapshot,
+                    selectedCandidate.Season.Id);
+            if (mappingEditor is not null)
+            {
+                mappingEditor.StateChanged += (_, _) => RefreshConnect();
+            }
+            mappingHost.Content = mappingEditor?.Content;
+            RefreshConnect();
+        }
+        selector.SelectionChanged += (_, _) => RefreshMappings();
         var cancel = new Button { Content = "Cancel", MinWidth = 92 };
         cancel.Click += (_, _) => dialog.Close(null);
         connect.Click += (_, _) =>
         {
-            var selected = selector.SelectedItem;
-            if (selected is null) return;
-            var candidate = candidates.Single((value) =>
-                value.Key.Equals(selected.Value, StringComparison.Ordinal));
+            if (selectedCandidate is null
+                || mappingEditor?.IsComplete != true)
+            {
+                return;
+            }
             dialog.Close(new ShotManagerAssociationSelection(
-                candidate.Snapshot,
-                candidate.Season.Id));
+                selectedCandidate.Snapshot,
+                selectedCandidate.Season.Id,
+                mappingEditor.Choices()));
         };
 
-        var content = new StackPanel
+        var intro = new StackPanel
         {
             Spacing = 12,
             Children =
@@ -111,13 +154,31 @@ internal sealed class ShotManagerAssociationDialog
                 },
                 new TextBlock
                 {
-                    Text = "Shot Manager will govern Episode identities, technical Shot names and folder layouts. Shots remain local to MOCKUPS.",
+                    Text = "Then associate every Shot Manager Episode explicitly with an existing local Episode or choose Create new. No Episode is created before confirmation.",
                     Opacity = 0.72,
                     TextWrapping = TextWrapping.Wrap,
                 },
                 selector,
             },
         };
+        var content = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,*"),
+            RowSpacing = 14,
+            Children =
+            {
+                intro,
+                new ScrollViewer
+                {
+                    HorizontalScrollBarVisibility =
+                        Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                    VerticalScrollBarVisibility =
+                        Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                    Content = mappingHost,
+                },
+            },
+        };
+        Grid.SetRow(content.Children[1], 1);
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -137,6 +198,7 @@ internal sealed class ShotManagerAssociationDialog
             Padding = EditorUiDensity.CardThickness(18),
             Child = root,
         };
+        dialog.Opened += (_, _) => RefreshMappings();
         return await dialog.ShowDialog<ShotManagerAssociationSelection?>(_owner);
     }
 

@@ -39,6 +39,10 @@ internal sealed record ShotManagerProductionSnapshot(
     IReadOnlyList<ShotManagerSeason> Seasons,
     IReadOnlyList<ShotManagerEpisode> Episodes);
 
+internal sealed record ShotManagerEpisodeAssociationChoice(
+    string ExternalEpisodeId,
+    string? LocalEpisodeId);
+
 internal sealed record ShotManagerPlanDirectory(
     string RelativePath,
     string ResolvedPath);
