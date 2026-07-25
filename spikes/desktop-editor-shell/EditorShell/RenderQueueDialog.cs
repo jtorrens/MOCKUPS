@@ -189,7 +189,7 @@ internal sealed class RenderQueueDialog
         }
         baseName.TextChanged += (_, _) => RefreshProposal();
 
-        add.Click += async (_, _) =>
+        add.Click += (_, _) =>
         {
             if (currentDraft is null
                 || currentPlan is null
@@ -203,35 +203,30 @@ internal sealed class RenderQueueDialog
             }
             add.IsEnabled = false;
             validation.Foreground = null;
-            validation.Text = "Freezing current Shot frames…";
-            var selectedDeviceId = device.SelectedItem.Value;
-            var selectedThemeId = theme.SelectedItem.Value;
-            var selectedAppearance = appearance.SelectedItem.Value;
-            var selectedOutputMode = outputMode.SelectedItem.Value;
-            var selectedRouteId = route.SelectedItem.Value;
-            var selectedBaseName = baseName.Text ?? "";
-            var selectedPlan = currentPlan;
+            validation.Text = "Adding batch to the local queue…";
             try
             {
-                var snapshots = await _snapshots.BuildAsync(
+                var preparation = _snapshots.PlanBatch(
                     currentDraft,
-                    selectedDeviceId,
-                    selectedThemeId,
-                    selectedAppearance,
-                    selectedOutputMode,
-                    selectedRouteId,
-                    selectedBaseName,
-                    selectedPlan);
-                _queue.EnqueueBatch(snapshots);
+                    device.SelectedItem.Value,
+                    theme.SelectedItem.Value,
+                    appearance.SelectedItem.Value,
+                    outputMode.SelectedItem.Value,
+                    route.SelectedItem.Value,
+                    baseName.Text ?? "",
+                    currentPlan);
+                _queue.EnqueuePreparingBatch(
+                    preparation.Summaries,
+                    (batchRoot, progress, cancellationToken) =>
+                        _snapshots.FreezeAsync(
+                            preparation,
+                            batchRoot,
+                            progress,
+                            cancellationToken));
                 _queue.RememberRoute(
                     currentDraft.ProjectId,
-                    selectedRouteId);
-                RefreshProposal();
-                validation.Foreground = null;
-                validation.Text =
-                    $"{snapshots.Count} render job"
-                    + (snapshots.Count == 1 ? "" : "s")
-                    + " added. Follow progress in the Production Render Queue panel.";
+                    route.SelectedItem.Value);
+                dialog.Close();
             }
             catch (Exception exception)
             {

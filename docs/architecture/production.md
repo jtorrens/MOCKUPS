@@ -148,11 +148,22 @@ Light or Dark keeps that mode even inside the opposite requested Shot job;
 `inherit` follows the job appearance. Device and Theme combinations are never
 rejected by family because Themes are authored visual fiction.
 
-At enqueue time MOCKUPS freezes every resolved Shot frame and referenced asset.
-Later editor changes do not modify that work. The worker produces only the
-clean Production canvas, with no editor chrome or device frame, at the selected
-Device metrics and Shot FPS. Jobs run sequentially, can be paused or canceled,
-and active work returns to Pending after application restart.
+Adding a batch first creates its visible `PREPARING` children. Snapshot
+preparation then resolves each Shot frame and writes its immutable raster
+document to the local queue store before releasing that frame from memory.
+Documents and referenced assets are content-addressed; identical documents,
+fonts and media are stored once for the batch and shared by its Light/Dark
+children. Only after every child manifest is complete do the jobs become
+`PENDING`. Later editor changes do not modify that work.
+
+The worker uses the same raster-document pipeline as raster Preview but owns a
+separate persistent Chromium session. It reads one frozen document at a time
+and produces the clean Production canvas with no editor chrome or device frame.
+It releases that document before requesting the next. Identical
+documents reuse their existing lossless raster. Jobs run sequentially, can be
+paused or canceled, and active work with a complete snapshot returns to
+Pending after application restart. Interrupted incomplete preparation becomes
+a non-retryable failed batch and its partial local store is removed.
 
 The selected route is stored by stable Shot Manager `entryId`. The modal
 restores the last route used by the Project when it remains available and

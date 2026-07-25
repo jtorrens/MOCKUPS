@@ -96,10 +96,13 @@ animation timing or component layout rules.
 
 ### Render Queue
 
-The visible editor creates a complete immutable snapshot. A local sequential
-worker rasterizes and encodes that snapshot without reading current authored
-data again. Queue persistence, progress and last route choice are local
-workstation state, outside the portable Project database.
+The visible editor creates a complete immutable snapshot by streaming resolved
+frame documents into a content-addressed local store. It never accumulates the
+complete Shot in memory. A local sequential worker uses the raster Preview
+pipeline to request one stored frame at a time and encode it without reading
+current authored data again. Queue persistence, progress, frame storage and
+last route choice are local workstation state, outside the portable Project
+database.
 
 Production exposes that owner through a permanent Render Queue section. Shot
 rows open a separate batch-creation modal; the central queue panel monitors

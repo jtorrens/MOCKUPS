@@ -20,10 +20,6 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
     {
         snapshot.Validate();
         RenderOutputPathSecurity.EnsureOutputDirectory(snapshot.Output);
-        foreach (var asset in snapshot.Assets)
-        {
-            PreviewAssetRegistry.Register(asset.Key, asset.Value);
-        }
         var mode = RenderOutputModes.Require(snapshot.Output.OutputModeId);
         if (mode.Kind == "mov")
         {
@@ -62,8 +58,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 progress,
                 cancellationToken);
             progress.Report(new RenderQueueExecutionProgress(
-                snapshot.Frames.Count,
-                snapshot.Frames.Count,
+                snapshot.FrameStore.TotalFrames,
+                snapshot.FrameStore.TotalFrames,
                 "Encoding MOV",
                 RenderQueueStatus.Encoding));
             var profileArgs = RenderMovEncodingProfiles.Arguments(
@@ -129,8 +125,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     progress,
                     cancellationToken);
                 progress.Report(new RenderQueueExecutionProgress(
-                    snapshot.Frames.Count,
-                    snapshot.Frames.Count,
+                    snapshot.FrameStore.TotalFrames,
+                    snapshot.FrameStore.TotalFrames,
                     "Writing EXR sequence",
                     RenderQueueStatus.Encoding));
                 await RunFfmpegAsync(
@@ -183,28 +179,58 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
         var height = Math.Max(
             1,
             (int)Math.Ceiling(snapshot.Metrics.CanvasHeight));
-        for (var index = 0; index < snapshot.Frames.Count; index++)
+        var store = new RenderSnapshotStore(
+            snapshot.FrameStore.BatchRootPath,
+            create: false);
+        var renderedDocuments = new Dictionary<string, string>(
+            StringComparer.Ordinal);
+        var index = 0;
+        foreach (var frame in RenderSnapshotStore.ReadFrames(
+                     snapshot.FrameStore))
         {
             cancellationToken.ThrowIfCancellationRequested();
             progress.Report(new RenderQueueExecutionProgress(
                 index,
-                snapshot.Frames.Count,
-                $"Rendering {index + 1} / {snapshot.Frames.Count}",
+                snapshot.FrameStore.TotalFrames,
+                $"Rendering {index + 1} / {snapshot.FrameStore.TotalFrames}",
                 RenderQueueStatus.Rendering));
-            await _rasterizer.RasterizeAsync(
-                snapshot.Frames[index].Html,
-                width,
-                height,
-                Path.Combine(directory, fileName(index)),
-                "png",
-                quality: 100,
-                captureScale: 1,
-                cancellationToken);
+            var outputPath = Path.Combine(
+                directory,
+                fileName(index));
+            if (renderedDocuments.TryGetValue(
+                    frame.DocumentKey,
+                    out var existingRaster))
+            {
+                File.Copy(existingRaster, outputPath);
+            }
+            else
+            {
+                var html = store.ReadDocument(
+                    frame.DocumentKey);
+                store.RegisterReferencedAssets(html);
+                await _rasterizer.RasterizeAsync(
+                    html,
+                    width,
+                    height,
+                    outputPath,
+                    "png",
+                    quality: 100,
+                    captureScale: 1,
+                    cancellationToken);
+                renderedDocuments[frame.DocumentKey] =
+                    outputPath;
+            }
+            index++;
             progress.Report(new RenderQueueExecutionProgress(
-                index + 1,
-                snapshot.Frames.Count,
-                $"Rendering {index + 1} / {snapshot.Frames.Count}",
+                index,
+                snapshot.FrameStore.TotalFrames,
+                $"Rendering {index} / {snapshot.FrameStore.TotalFrames}",
                 RenderQueueStatus.Rendering));
+        }
+        if (index != snapshot.FrameStore.TotalFrames)
+        {
+            throw new InvalidOperationException(
+                "The frozen render frame store ended unexpectedly.");
         }
     }
 

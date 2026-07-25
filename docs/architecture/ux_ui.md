@@ -120,6 +120,12 @@ child names update before enqueue. A missing physical route directory does not
 disable the form: the render worker creates it from the selected stored route
 when the job starts.
 
+Confirming the modal closes it immediately and creates visible `PREPARING`
+Light/Dark children. Their progress reports the appearance and frame currently
+being frozen into the immutable local store. Canceling either child during
+this atomic preparation cancels the complete batch; once preparation finishes,
+the children are independent queue jobs.
+
 Production also exposes a permanent **Render Queue** section alongside
 Episodes and Production Data. Its central panel remains accessible with an
 empty queue or without cached Shot Manager routes. It groups Light/Dark children by batch

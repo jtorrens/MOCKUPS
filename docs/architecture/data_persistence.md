@@ -119,15 +119,26 @@ credential.
 Render Queue is deliberately outside SQLite. The application-data directory on
 each workstation contains:
 
-- the current local queue and its immutable pending/active snapshots;
+- the current local queue and compact references to immutable pending/active
+  snapshots;
+- a queue-owned local frame store containing content-addressed raster
+  documents and assets plus one ordered manifest per Light/Dark child;
 - terminal history, compacted after completion;
 - the last selected output route per Project;
 - the last successfully resolved absolute root per Shot Manager Production.
 
-The queue snapshot freezes every resolved frame and referenced asset. A worker
-never reopens the Project database to execute an existing job. The absolute
-root is local machine state and is never copied into the portable Project.
-Interrupted active jobs return to Pending on the next application start.
+Snapshot preparation writes one resolved frame document at a time and never
+retains the complete Shot frame set in memory. Fonts, media and repeated frame
+documents are written once by content hash and may be shared by both children
+of a batch. The queue JSON does not embed their binary payloads.
+
+A worker never reopens the Project database to execute an existing job. It
+streams the ordered manifest, reads only the current document and registers
+each referenced asset once in its persistent raster process. The absolute
+production root and local snapshot-store paths are workstation state and are
+never copied into the portable Project. Interrupted active jobs with a complete
+snapshot return to Pending on the next application start; incomplete
+preparation fails explicitly and its orphaned local files are removed.
 
 The Project association stores one exact external Production and Season.
 Episode bindings store stable external identities. Render planning supplies

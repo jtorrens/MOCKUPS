@@ -66,9 +66,11 @@ an image. Resolution happens before Preview rendering.
 ## Render output resources
 
 Output mode and encoding profile are queue-job choices, not Project resources.
-An immutable pending snapshot embeds the exact assets needed by its resolved
-frames. The worker therefore does not reinterpret current font, icon, media or
-wallpaper records after enqueue.
+Snapshot preparation copies the exact assets needed by its resolved frames into
+the queue-owned local store once per content hash. Light/Dark children share
+that batch asset store. The worker registers a referenced asset only when its
+current frame first needs it and therefore does not reinterpret current font,
+icon, media or wallpaper records after enqueue.
 
 ## Asset delivery
 

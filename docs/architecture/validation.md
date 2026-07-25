@@ -62,8 +62,9 @@ It includes:
   stable local Shot numbers, on-demand portable render-contract caching,
   unsafe-path rejection, retained output folders on delete and independent
   data after disconnect;
-- Render Queue naming and shared Light/Dark version resolution, immutable
-  frame snapshots, local recovery, strict stored-route containment,
+- Render Queue naming and shared Light/Dark version resolution, incremental
+  content-addressed frame snapshots, bounded one-frame consumption, local
+  recovery, strict stored-route containment,
   no-overwrite publication, sequential child jobs, permanent Production
   monitoring, job-start route materialization, exact ProRes/H.264 profiles and
   an always-openable Shot add action;

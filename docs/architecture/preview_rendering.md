@@ -150,13 +150,16 @@ New rendering needs are expressed as generic resolved primitives.
 Render Queue reuses the same prepared Production payload and generic web
 renderer, but it is not a second Preview mode. Enqueue resolves every Shot
 frame with an explicit Theme, Device and requested Light/Dark mode, renders a
-clean raster document, and freezes that document plus its asset data in the
-job snapshot.
+clean raster document, and streams that frozen document into the queue-owned
+content-addressed store. The visible queue receives `PREPARING` children before
+this stream starts; preparation never builds an in-memory list of frame HTML.
 
 The queue worker receives no `SpikeDatabase`, repository or current tree
-selection. It rasterizes the frozen documents through the persistent Chromium
-owner, then writes a MOV or image sequence. The renderer still knows nothing
-about queue state, output naming, Shot Manager paths or codecs.
+selection. It uses the same document-to-raster owner as raster Preview through
+its own persistent Chromium session, reads one frozen document per request and
+then writes a MOV or image sequence. A repeated document hash reuses the
+already generated lossless raster. The renderer still knows nothing about
+queue state, output naming, Shot Manager paths or codecs.
 
 ## Preview sessions
 

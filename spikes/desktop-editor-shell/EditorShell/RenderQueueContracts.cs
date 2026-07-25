@@ -138,9 +138,11 @@ internal sealed record RenderOutputTarget(
     string OutputModeId,
     string OutputPath);
 
-internal sealed record RenderFrozenFrame(
-    int LocalFrame,
-    string Html);
+internal sealed record RenderFrameStoreReference(
+    string BatchRootPath,
+    string ManifestFileName,
+    string Appearance,
+    int TotalFrames);
 
 internal sealed record RenderJobSnapshot(
     string Schema,
@@ -153,12 +155,11 @@ internal sealed record RenderJobSnapshot(
     string RequestedAppearance,
     DevicePreviewMetrics Metrics,
     int Fps,
-    IReadOnlyList<RenderFrozenFrame> Frames,
-    IReadOnlyDictionary<string, string> Assets,
+    RenderFrameStoreReference FrameStore,
     RenderOutputTarget Output)
 {
     public const string CurrentSchema = "mockups_render_job_snapshot";
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public void Validate()
     {
@@ -174,15 +175,8 @@ internal sealed record RenderJobSnapshot(
             || Metrics.CanvasWidth <= 0
             || Metrics.CanvasHeight <= 0
             || Fps <= 0
-            || Frames.Count == 0
-            || Frames.Any((frame) =>
-                frame.LocalFrame < 0
-                || string.IsNullOrWhiteSpace(frame.Html))
-            || Frames.Select((frame) => frame.LocalFrame)
-                .Distinct().Count() != Frames.Count
-            || Assets.Any((asset) =>
-                asset.Key.Length != 64
-                || string.IsNullOrWhiteSpace(asset.Value))
+            || FrameStore is null
+            || FrameStore.Appearance != RequestedAppearance
             || Output.Appearance != RequestedAppearance
             || Output.Version <= 0
             || Output.VersionPadding is < 1 or > 8
@@ -191,6 +185,7 @@ internal sealed record RenderJobSnapshot(
             throw new InvalidOperationException(
                 "The render job snapshot is incomplete or unsupported.");
         }
+        RenderSnapshotStore.ValidateReference(FrameStore);
         _ = RenderOutputModes.Require(Output.OutputModeId);
     }
 }

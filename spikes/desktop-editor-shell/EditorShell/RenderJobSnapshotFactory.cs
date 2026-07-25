@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,20 @@ internal sealed record RenderQueueRouteOption(
     string EntryId,
     string RelativeDirectory,
     int VersionPadding);
+
+internal sealed record RenderSnapshotFreezeProgress(
+    int Current,
+    int Total,
+    string Appearance);
+
+internal sealed record RenderBatchSnapshotPreparation(
+    RenderQueueShotDraft Draft,
+    string DeviceId,
+    string DeviceName,
+    string ThemeId,
+    string ThemeName,
+    DevicePreviewMetrics Metrics,
+    IReadOnlyList<RenderJobSummary> Summaries);
 
 internal sealed record RenderQueueShotDraft(
     ProjectTreeNode Shot,
@@ -273,7 +288,7 @@ internal sealed class RenderJobSnapshotFactory
                 .ToList());
     }
 
-    public async Task<IReadOnlyList<RenderJobSnapshot>> BuildAsync(
+    public RenderBatchSnapshotPreparation PlanBatch(
         RenderQueueShotDraft draft,
         string deviceId,
         string themeId,
@@ -312,35 +327,8 @@ internal sealed class RenderJobSnapshotFactory
             draft.Shot.Name,
             draft.ActorId,
             draft.ActorName);
-        var snapshots = new List<RenderJobSnapshot>();
-        foreach (var requestedAppearance in appearances)
+        var summaries = appearances.Select((requestedAppearance) =>
         {
-            var frames = new List<RenderFrozenFrame>(draft.TotalFrames);
-            var assets = new Dictionary<string, string>(
-                StringComparer.Ordinal);
-            for (var frame = 0; frame < draft.TotalFrames; frame++)
-            {
-                var payload = DesignPreviewPayloadFactory.CreateProductionRender(
-                    _payloadData,
-                    draft.Shot,
-                    themeId,
-                    deviceId,
-                    requestedAppearance,
-                    frame);
-                var html = await DesignWebPreviewPane.BuildRasterHtmlAsync(
-                    metrics,
-                    payload);
-                foreach (var key in PreviewAssetRegistry.Keys(html))
-                {
-                    if (!PreviewAssetRegistry.TryResolve(key, out var uri))
-                    {
-                        throw new InvalidOperationException(
-                            $"Render snapshot could not freeze Preview asset '{key}'.");
-                    }
-                    assets[key] = uri;
-                }
-                frames.Add(new RenderFrozenFrame(frame, html));
-            }
             var output = new RenderOutputTarget(
                 draft.ProductionId,
                 route.EntryId,
@@ -352,20 +340,100 @@ internal sealed class RenderJobSnapshotFactory
                 route.VersionPadding,
                 outputModeId,
                 outputPlan.OutputPaths[requestedAppearance]);
+            return new RenderJobSummary(
+                context,
+                device.Label,
+                theme.Label,
+                requestedAppearance,
+                draft.TotalFrames,
+                output);
+        }).ToList();
+        return new RenderBatchSnapshotPreparation(
+            draft,
+            deviceId,
+            device.Label,
+            themeId,
+            theme.Label,
+            metrics,
+            summaries);
+    }
+
+    public async Task<IReadOnlyList<RenderJobSnapshot>> FreezeAsync(
+        RenderBatchSnapshotPreparation preparation,
+        string batchRoot,
+        IProgress<RenderSnapshotFreezeProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var draft = preparation.Draft;
+        var store = new RenderSnapshotStore(batchRoot, create: true);
+        var storedAssets = new HashSet<string>(StringComparer.Ordinal);
+        var snapshots = new List<RenderJobSnapshot>();
+        foreach (var summary in preparation.Summaries)
+        {
+            var requestedAppearance = summary.Appearance;
+            progress?.Report(new RenderSnapshotFreezeProgress(
+                0,
+                draft.TotalFrames,
+                requestedAppearance));
+            using var manifest = store.CreateManifest(
+                requestedAppearance);
+            for (var frame = 0; frame < draft.TotalFrames; frame++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var payload = DesignPreviewPayloadFactory.CreateProductionRender(
+                    _payloadData,
+                    draft.Shot,
+                    preparation.ThemeId,
+                    preparation.DeviceId,
+                    requestedAppearance,
+                    frame);
+                var html = await DesignWebPreviewPane.BuildRasterHtmlAsync(
+                    preparation.Metrics,
+                    payload);
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var key in PreviewAssetRegistry.Keys(html))
+                {
+                    if (!PreviewAssetRegistry.TryResolve(key, out var uri))
+                    {
+                        throw new InvalidOperationException(
+                            $"Render snapshot could not freeze Preview asset '{key}'.");
+                    }
+                    if (storedAssets.Add(key))
+                    {
+                        store.WriteAsset(key, uri);
+                    }
+                }
+                var documentKey = store.WriteDocument(html);
+                manifest.Write(frame, documentKey);
+                if ((frame + 1) % 4 == 0
+                    || frame + 1 == draft.TotalFrames)
+                {
+                    progress?.Report(new RenderSnapshotFreezeProgress(
+                        frame + 1,
+                        draft.TotalFrames,
+                        requestedAppearance));
+                    await Task.Yield();
+                }
+            }
+            manifest.Commit();
+            var frameStore = new RenderFrameStoreReference(
+                Path.GetFullPath(batchRoot),
+                $"{requestedAppearance}.frames",
+                requestedAppearance,
+                draft.TotalFrames);
             var snapshot = new RenderJobSnapshot(
                 RenderJobSnapshot.CurrentSchema,
                 RenderJobSnapshot.CurrentVersion,
-                context,
-                deviceId,
-                device.Label,
-                themeId,
-                theme.Label,
+                summary.Context,
+                preparation.DeviceId,
+                preparation.DeviceName,
+                preparation.ThemeId,
+                preparation.ThemeName,
                 requestedAppearance,
-                metrics,
+                preparation.Metrics,
                 draft.Fps,
-                frames,
-                assets,
-                output);
+                frameStore,
+                summary.Output);
             snapshot.Validate();
             snapshots.Add(snapshot);
         }

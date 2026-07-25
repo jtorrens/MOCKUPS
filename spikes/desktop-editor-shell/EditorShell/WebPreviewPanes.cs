@@ -1707,11 +1707,33 @@ internal abstract class WebPreviewPane : Grid
                 }
                 body { visibility: hidden; }
               </style>
-              {{FontStylesHtml(fontStyleHtml)}}
+              {{FreezeFontFileUris(fontStyleHtml)}}
             </head>
             <body>{{bodyContent}}</body>
             </html>
             """;
+    }
+
+    private static string FreezeFontFileUris(string fontStyleHtml)
+    {
+        var compacted = Regex.Replace(
+            fontStyleHtml,
+            "url\\(\"(?<url>file:[^\"]+)\"\\)",
+            (match) =>
+            {
+                try
+                {
+                    var localPath = new Uri(
+                        match.Groups["url"].Value).LocalPath;
+                    return
+                        $"url(\"{PreviewAssetRegistry.RegisterFileDataUri(localPath, FontMimeType(localPath))}\")";
+                }
+                catch
+                {
+                    return match.Value;
+                }
+            });
+        return PreviewAssetRegistry.Compact(compacted);
     }
 
     private static string InlineFontFileUris(string fontStyleHtml)

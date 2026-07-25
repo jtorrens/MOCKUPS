@@ -14,7 +14,7 @@ const input = readline.createInterface({
 });
 
 const knownAssets = new Map<string, string>();
-const dataUriPattern = /(?<uri>data:(?:image|video)\/.*?)(?=&quot;|&#39;|[\s"'<>]|$)/gis;
+const dataUriPattern = /(?<uri>data:(?:image|video|font)\/.*?)(?=&quot;|&#39;|[\s"'<>]|$)/gis;
 
 function compactPreviewAssets(html: string) {
   const assets: Array<{ key: string; uri: string }> = [];

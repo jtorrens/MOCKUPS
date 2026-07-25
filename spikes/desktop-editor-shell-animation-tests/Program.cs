@@ -84,6 +84,7 @@ var tests = new (string Name, Action Run)[]
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
+    ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
     ("Render Queue is a permanent Production surface and Shot action stays available", RenderQueueNavigationAndSurfaceAreAlwaysAvailable),
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
@@ -7082,62 +7083,109 @@ static void RenderQueueChildrenAreIndependent()
             ],
             mode,
             3);
-        RenderJobSnapshot Snapshot(string appearance) =>
+        var context = new RenderShotContext(
+            "project",
+            "shot",
+            "Shot 020",
+            "actor",
+            "Actor");
+        var metrics = new DevicePreviewMetrics(
+            "Device",
+            100,
+            200,
+            0,
+            0,
+            100,
+            200,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1);
+        RenderOutputTarget Output(string appearance) =>
+            new(
+                "production",
+                "output",
+                root,
+                "output",
+                "SHOT_020",
+                appearance,
+                outputPlan.Version,
+                3,
+                mode.Id,
+                outputPlan.OutputPaths[appearance]);
+        RenderJobSummary Summary(string appearance) =>
+            new(
+                context,
+                "Device",
+                "Theme",
+                appearance,
+                1,
+                Output(appearance));
+        RenderJobSnapshot Snapshot(
+            string batchRoot,
+            string appearance)
+        {
+            var frameStore = StoreRenderFrames(
+                batchRoot,
+                appearance,
+                ["<html>frame</html>"]);
+            return
             new(
                 RenderJobSnapshot.CurrentSchema,
                 RenderJobSnapshot.CurrentVersion,
-                new RenderShotContext(
-                    "project",
-                    "shot",
-                    "Shot 020",
-                    "actor",
-                    "Actor"),
+                context,
                 "device",
                 "Device",
                 "theme",
                 "Theme",
                 appearance,
-                new DevicePreviewMetrics(
-                    "Device",
-                    100,
-                    200,
-                    0,
-                    0,
-                    100,
-                    200,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1),
+                metrics,
                 25,
-                [new RenderFrozenFrame(0, "<html>frame</html>")],
-                new Dictionary<string, string>(),
-                new RenderOutputTarget(
-                    "production",
-                    "output",
-                    root,
-                    "output",
-                    "SHOT_020",
-                    appearance,
-                    outputPlan.Version,
-                    3,
-                    mode.Id,
-                    outputPlan.OutputPaths[appearance]));
+                frameStore,
+                Output(appearance));
+        }
 
         using (var queue = new RenderQueueManager(
             queuePath,
             new AppearanceFailingRenderExecutor(
                 RenderQueueAppearance.Dark)))
         {
-            var children = queue.EnqueueBatch(
-            [
-                Snapshot(RenderQueueAppearance.Light),
-                Snapshot(RenderQueueAppearance.Dark),
-            ]);
+            using var releasePreparation =
+                new ManualResetEventSlim();
+            using var preparationStarted =
+                new ManualResetEventSlim();
+            var children = queue.EnqueuePreparingBatch(
+                [
+                    Summary(RenderQueueAppearance.Light),
+                    Summary(RenderQueueAppearance.Dark),
+                ],
+                async (batchRoot, _, cancellationToken) =>
+                {
+                    preparationStarted.Set();
+                    await Task.Run(
+                        () => releasePreparation.Wait(
+                            cancellationToken),
+                        cancellationToken);
+                    return
+                    [
+                        Snapshot(
+                            batchRoot,
+                            RenderQueueAppearance.Light),
+                        Snapshot(
+                            batchRoot,
+                            RenderQueueAppearance.Dark),
+                    ];
+                });
             Equal(2, children.Count);
             Equal(children[0].BatchId, children[1].BatchId);
+            True(preparationStarted.Wait(
+                TimeSpan.FromSeconds(2)));
+            True(queue.Jobs().All((job) =>
+                job.Status == RenderQueueStatus.Preparing
+                && !job.SnapshotAvailable));
+            releasePreparation.Set();
             True(SpinWait.SpinUntil(
                 () => queue.Jobs().All((job) =>
                     RenderQueueStatus.IsTerminal(job.Status)),
@@ -7169,6 +7217,69 @@ static void RenderQueueChildrenAreIndependent()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void RenderSnapshotStoreInternsAssets()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-assets-{Guid.NewGuid():N}");
+    try
+    {
+        var dataUri =
+            "data:font/woff2;base64,AAECAwQFBgcICQ==";
+        var compact = PreviewAssetRegistry.Compact(
+            $"<style>@font-face{{src:url(\"{dataUri}\")}}</style>");
+        var key = PreviewAssetRegistry.Keys(compact).Single();
+        True(!compact.Contains(
+            dataUri,
+            StringComparison.Ordinal));
+        True(PreviewAssetRegistry.TryResolve(
+            key,
+            out var resolved));
+        Equal(dataUri, resolved);
+
+        var store = new RenderSnapshotStore(
+            root,
+            create: true);
+        store.WriteAsset(key, resolved);
+        store.WriteAsset(key, resolved);
+        Equal(
+            1,
+            Directory.GetFiles(
+                Path.Combine(root, "assets"),
+                "*.uri").Length);
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+}
+
+static RenderFrameStoreReference StoreRenderFrames(
+    string batchRoot,
+    string appearance,
+    IReadOnlyList<string> frames)
+{
+    var store = new RenderSnapshotStore(
+        batchRoot,
+        create: true);
+    using var manifest = store.CreateManifest(appearance);
+    for (var index = 0; index < frames.Count; index++)
+    {
+        manifest.Write(
+            index,
+            store.WriteDocument(frames[index]));
+    }
+    manifest.Commit();
+    return new RenderFrameStoreReference(
+        Path.GetFullPath(batchRoot),
+        $"{appearance}.frames",
+        appearance,
+        frames.Count);
 }
 
 static void RenderExecutorPublishesCleanPngSequence()
@@ -7218,9 +7329,12 @@ static void RenderExecutorPublishesCleanPngSequence()
                 0,
                 1),
             25,
-            [
-                new RenderFrozenFrame(
-                    0,
+            StoreRenderFrames(
+                Path.Combine(
+                    root,
+                    Guid.NewGuid().ToString()),
+                RenderQueueAppearance.Light,
+                [
                     """
                     <!doctype html>
                     <html>
@@ -7231,9 +7345,19 @@ static void RenderExecutorPublishesCleanPngSequence()
                         </div>
                       </body>
                     </html>
-                    """),
-            ],
-            new Dictionary<string, string>(),
+                    """,
+                    """
+                    <!doctype html>
+                    <html>
+                      <body style="margin:0">
+                        <div
+                          data-renderable-id="design_preview.surface"
+                          style="width:64px;height:64px;background:#ff3366">
+                        </div>
+                      </body>
+                    </html>
+                    """,
+                ]),
             new RenderOutputTarget(
                 "production",
                 "output",
@@ -7258,8 +7382,20 @@ static void RenderExecutorPublishesCleanPngSequence()
         var frames = Directory.GetFiles(
             snapshot.Output.OutputPath,
             "*.png");
-        Equal(1, frames.Length);
+        Equal(2, frames.Length);
         True(new FileInfo(frames[0]).Length > 0);
+        Equal(
+            Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(frames[0]))),
+            Convert.ToHexString(
+                SHA256.HashData(File.ReadAllBytes(frames[1]))));
+        Equal(
+            1,
+            Directory.GetFiles(
+                Path.Combine(
+                    snapshot.FrameStore.BatchRootPath,
+                    "documents"),
+                "*.html").Length);
         True(Directory.GetDirectories(
                 output,
                 "*.mockups-*",
@@ -11490,8 +11626,8 @@ internal sealed class AppearanceFailingRenderExecutor(
     {
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new RenderQueueExecutionProgress(
-            snapshot.Frames.Count,
-            snapshot.Frames.Count,
+            snapshot.FrameStore.TotalFrames,
+            snapshot.FrameStore.TotalFrames,
             "Test execution",
             RenderQueueStatus.Rendering));
         if (snapshot.RequestedAppearance.Equals(

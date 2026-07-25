@@ -4554,8 +4554,12 @@ for (const renderQueueContract of [
   ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PlanShotAsync("],
   ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "StoreShotManagerPlan("],
   ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PreviewAssetRegistry.TryResolve"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "store.WriteDocument(html)"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "EnqueuePreparingBatch("],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "RecoverInterruptedJobs()"],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "Environment.SpecialFolder.LocalApplicationData"],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "RenderSnapshotStore.ReadFrames("],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "renderedDocuments.TryGetValue("],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueDialog.cs", "Choose one of the predefined Shot Manager output routes."],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueController.cs", "EditorIcons.Render"],
   ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "\"-an\""],
@@ -4570,6 +4574,11 @@ assertDoesNotContain(
   "spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs",
   "SpikeDatabase",
   "the Render Queue worker must execute its immutable snapshot without reopening Project data",
+);
+assertDoesNotContain(
+  "spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs",
+  "List<RenderFrozenFrame>",
+  "Render Queue snapshot preparation must stream frame documents instead of accumulating them in memory",
 );
 assertDoesNotContain(
   "spikes/desktop-editor-shell/MainWindow.axaml.cs",

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,19 +13,53 @@ internal static partial class PreviewAssetRegistry
     private const string AssetPrefix = "mockups-asset:";
     private static readonly object Gate = new();
     private static readonly Dictionary<string, string> Assets = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, CachedFileAsset> FileAssets =
+        new(StringComparer.Ordinal);
 
     public static string Compact(string html)
     {
         return DataUriRegex().Replace(html, (match) =>
         {
             var uri = match.Groups["uri"].Value;
-            var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(uri))).ToLowerInvariant();
-            lock (Gate)
-            {
-                Assets.TryAdd(key, uri);
-            }
-            return $"{AssetPrefix}{key}";
+            return InternDataUri(uri);
         });
+    }
+
+    public static string RegisterFileDataUri(
+        string path,
+        string mimeType)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var info = new FileInfo(fullPath);
+        if (!info.Exists)
+        {
+            throw new InvalidOperationException(
+                $"Preview asset file '{fullPath}' does not exist.");
+        }
+        lock (Gate)
+        {
+            if (FileAssets.TryGetValue(fullPath, out var cached)
+                && cached.Length == info.Length
+                && cached.LastWriteTimeUtc == info.LastWriteTimeUtc
+                && Assets.ContainsKey(cached.Key))
+            {
+                return $"{AssetPrefix}{cached.Key}";
+            }
+        }
+
+        var uri =
+            $"data:{mimeType};base64,{Convert.ToBase64String(File.ReadAllBytes(fullPath))}";
+        var token = InternDataUri(uri);
+        var key = token[AssetPrefix.Length..];
+        info.Refresh();
+        lock (Gate)
+        {
+            FileAssets[fullPath] = new CachedFileAsset(
+                info.Length,
+                info.LastWriteTimeUtc,
+                key);
+        }
+        return token;
     }
 
     public static IReadOnlyList<string> Keys(string html)
@@ -71,7 +106,24 @@ internal static partial class PreviewAssetRegistry
         return TryResolve(key, out var uri) ? uri : source;
     }
 
-    [GeneratedRegex("(?<uri>data:(?:image|video)/.*?)(?=&quot;|&#39;|[\\s\"'<>]|$)", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    private static string InternDataUri(string uri)
+    {
+        var key = Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(uri)))
+            .ToLowerInvariant();
+        lock (Gate)
+        {
+            Assets.TryAdd(key, uri);
+        }
+        return $"{AssetPrefix}{key}";
+    }
+
+    private sealed record CachedFileAsset(
+        long Length,
+        DateTime LastWriteTimeUtc,
+        string Key);
+
+    [GeneratedRegex("(?<uri>data:(?:image|video|font)/.*?)(?=&quot;|&#39;|[\\s\"'<>]|$)", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex DataUriRegex();
 
     [GeneratedRegex("mockups-asset:(?<key>[a-f0-9]{64})", RegexOptions.IgnoreCase)]

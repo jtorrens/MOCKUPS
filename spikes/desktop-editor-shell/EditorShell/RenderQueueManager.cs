@@ -15,7 +15,12 @@ internal sealed class RenderQueueManager : IDisposable
     private readonly object _gate = new();
     private readonly CancellationTokenSource _shutdown = new();
     private readonly string _path;
+    private readonly string _storageRoot;
     private readonly IRenderJobExecutor _executor;
+    private readonly Dictionary<string, CancellationTokenSource>
+        _preparationCancellations = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Task> _preparationTasks =
+        new(StringComparer.Ordinal);
     private RenderQueueDocument _document;
     private CancellationTokenSource? _activeCancellation;
     private Task? _workerTask;
@@ -27,7 +32,12 @@ internal sealed class RenderQueueManager : IDisposable
         string? path = null,
         IRenderJobExecutor? executor = null)
     {
-        _path = path ?? DefaultPath();
+        _path = Path.GetFullPath(path ?? DefaultPath());
+        _storageRoot = Path.Combine(
+            Path.GetDirectoryName(_path)
+                ?? throw new InvalidOperationException(
+                    "The render queue has no parent directory."),
+            "render-queue-data");
         _executor = executor ?? new RenderJobExecutor();
         try
         {
@@ -35,6 +45,7 @@ internal sealed class RenderQueueManager : IDisposable
             RecoverInterruptedJobs();
             MaintainHistory();
             Save();
+            CleanupOrphanedStorage();
         }
         catch (Exception exception)
         {
@@ -118,6 +129,9 @@ internal sealed class RenderQueueManager : IDisposable
         foreach (var snapshot in snapshots)
         {
             snapshot.Validate();
+            RenderSnapshotStore.RequireContainedBatchRoot(
+                snapshot.FrameStore.BatchRootPath,
+                _storageRoot);
             RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
         }
         var comparer = OperatingSystem.IsWindows()
@@ -156,7 +170,7 @@ internal sealed class RenderQueueManager : IDisposable
                 Status = RenderQueueStatus.Pending,
                 Progress = new RenderQueueProgress(
                     0,
-                    snapshot.Frames.Count,
+                    snapshot.FrameStore.TotalFrames,
                     "Pending"),
                 Snapshot = snapshot,
                 Summary = Summary(snapshot),
@@ -169,10 +183,289 @@ internal sealed class RenderQueueManager : IDisposable
         return created.Select(ToView).ToList();
     }
 
+    public IReadOnlyList<RenderQueueJobView> EnqueuePreparingBatch(
+        IReadOnlyList<RenderJobSummary> summaries,
+        Func<
+            string,
+            IProgress<RenderSnapshotFreezeProgress>,
+            CancellationToken,
+            Task<IReadOnlyList<RenderJobSnapshot>>> freeze)
+    {
+        RequireAvailable();
+        if (summaries.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A render batch requires at least one child job.");
+        }
+        ValidateSummaries(summaries);
+        var newPaths = summaries
+            .Select((summary) => Path.GetFullPath(
+                summary.Output.OutputPath))
+            .ToList();
+        var comparer = OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+        if (newPaths.Distinct(comparer).Count() != newPaths.Count)
+        {
+            throw new InvalidOperationException(
+                "A render batch contains duplicate output paths.");
+        }
+
+        List<RenderQueueJob> created;
+        string batchId;
+        string batchRoot;
+        CancellationTokenSource preparationCancellation;
+        lock (_gate)
+        {
+            var activePaths = _document.Jobs
+                .Where((job) =>
+                    !RenderQueueStatus.IsTerminal(job.Status))
+                .Select((job) => Path.GetFullPath(
+                    job.Summary.Output.OutputPath))
+                .ToHashSet(comparer);
+            if (newPaths.Any(activePaths.Contains))
+            {
+                throw new InvalidOperationException(
+                    "Another queued render already owns one of these output paths.");
+            }
+            var now = DateTimeOffset.UtcNow.ToString("O");
+            batchId = Guid.NewGuid().ToString();
+            batchRoot = RenderSnapshotStore.BatchRoot(
+                _storageRoot,
+                batchId);
+            created = summaries.Select((summary) =>
+                new RenderQueueJob
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    BatchId = batchId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    StartedAt = now,
+                    Status = RenderQueueStatus.Preparing,
+                    Progress = new RenderQueueProgress(
+                        0,
+                        summary.TotalFrames,
+                        "Waiting for snapshot"),
+                    Summary = summary,
+                }).ToList();
+            _document.Jobs.AddRange(created);
+            preparationCancellation =
+                CancellationTokenSource.CreateLinkedTokenSource(
+                    _shutdown.Token);
+            _preparationCancellations.Add(
+                batchId,
+                preparationCancellation);
+            Save();
+        }
+        NotifyChanged();
+        var start = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var task = PrepareBatchAsync(
+            start.Task,
+            batchId,
+            batchRoot,
+            created.Select((job) => job.Id).ToArray(),
+            freeze,
+            preparationCancellation);
+        lock (_gate)
+        {
+            _preparationTasks[batchId] = task;
+        }
+        start.SetResult();
+        return created.Select(ToView).ToList();
+    }
+
+    private async Task PrepareBatchAsync(
+        Task start,
+        string batchId,
+        string batchRoot,
+        IReadOnlyList<string> jobIds,
+        Func<
+            string,
+            IProgress<RenderSnapshotFreezeProgress>,
+            CancellationToken,
+            Task<IReadOnlyList<RenderJobSnapshot>>> freeze,
+        CancellationTokenSource preparationCancellation)
+    {
+        await start;
+        try
+        {
+            var progress = new SynchronousProgress<
+                RenderSnapshotFreezeProgress>((value) =>
+                    UpdatePreparationProgress(batchId, value));
+            var snapshots = await freeze(
+                batchRoot,
+                progress,
+                preparationCancellation.Token);
+            preparationCancellation.Token
+                .ThrowIfCancellationRequested();
+            CompletePreparation(
+                jobIds,
+                snapshots);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!_shutdown.IsCancellationRequested)
+            {
+                FinishPreparation(
+                    batchId,
+                    RenderQueueStatus.Canceled,
+                    null);
+            }
+        }
+        catch (Exception exception)
+        {
+            FinishPreparation(
+                batchId,
+                RenderQueueStatus.Failed,
+                exception.Message);
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                _preparationCancellations.Remove(batchId);
+                _preparationTasks.Remove(batchId);
+            }
+            preparationCancellation.Dispose();
+            CleanupOrphanedStorage();
+        }
+    }
+
+    private void CompletePreparation(
+        IReadOnlyList<string> jobIds,
+        IReadOnlyList<RenderJobSnapshot> snapshots)
+    {
+        if (snapshots.Count != jobIds.Count)
+        {
+            throw new InvalidOperationException(
+                "Render snapshot preparation returned an incomplete batch.");
+        }
+        foreach (var snapshot in snapshots)
+        {
+            snapshot.Validate();
+            RenderSnapshotStore.RequireContainedBatchRoot(
+                snapshot.FrameStore.BatchRootPath,
+                _storageRoot);
+            RenderOutputPathSecurity.RequireOutputTarget(
+                snapshot.Output);
+        }
+
+        lock (_gate)
+        {
+            var jobs = jobIds.Select((jobId) =>
+                    _document.Jobs.SingleOrDefault((candidate) =>
+                        candidate.Id.Equals(
+                            jobId,
+                            StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "A preparing render child is unavailable."))
+                .ToList();
+            if (jobs.Any((job) =>
+                    job.Status != RenderQueueStatus.Preparing
+                    || job.Snapshot is not null
+                    || job.CancelRequested))
+            {
+                throw new OperationCanceledException(
+                    "Render snapshot preparation was canceled.");
+            }
+            foreach (var job in jobs)
+            {
+                var snapshot = snapshots.SingleOrDefault((candidate) =>
+                    candidate.RequestedAppearance.Equals(
+                        job.Summary.Appearance,
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        "Render snapshot preparation returned the wrong appearance.");
+                if (!snapshot.Output.OutputPath.Equals(
+                        job.Summary.Output.OutputPath,
+                        PathComparison())
+                    || snapshot.FrameStore.TotalFrames
+                        != job.Summary.TotalFrames)
+                {
+                    throw new InvalidOperationException(
+                        "Render snapshot preparation changed its queued output.");
+                }
+                job.Snapshot = snapshot;
+                job.Status = RenderQueueStatus.Pending;
+                job.StartedAt = null;
+                job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
+                job.Progress = new RenderQueueProgress(
+                    0,
+                    job.Summary.TotalFrames,
+                    "Pending");
+            }
+            Save();
+        }
+        NotifyChanged();
+        Kick();
+    }
+
+    private void UpdatePreparationProgress(
+        string batchId,
+        RenderSnapshotFreezeProgress value)
+    {
+        lock (_gate)
+        {
+            var job = _document.Jobs.SingleOrDefault((candidate) =>
+                candidate.BatchId.Equals(
+                    batchId,
+                    StringComparison.Ordinal)
+                && candidate.Summary.Appearance.Equals(
+                    value.Appearance,
+                    StringComparison.Ordinal)
+                && candidate.Status
+                    == RenderQueueStatus.Preparing
+                && candidate.Snapshot is null);
+            if (job is null) return;
+            job.Progress = new RenderQueueProgress(
+                Math.Clamp(value.Current, 0, value.Total),
+                Math.Max(0, value.Total),
+                $"Freezing {DisplayAppearance(value.Appearance)}");
+            job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
+        }
+        NotifyChanged();
+    }
+
+    private void FinishPreparation(
+        string batchId,
+        string status,
+        string? error)
+    {
+        lock (_gate)
+        {
+            var now = DateTimeOffset.UtcNow.ToString("O");
+            foreach (var job in _document.Jobs.Where((candidate) =>
+                         candidate.BatchId.Equals(
+                             batchId,
+                             StringComparison.Ordinal)
+                         && candidate.Status
+                             == RenderQueueStatus.Preparing
+                         && candidate.Snapshot is null))
+            {
+                job.Status = status;
+                job.Error = error;
+                job.CancelRequested = false;
+                job.CompletedAt = now;
+                job.UpdatedAt = now;
+                job.Progress = job.Progress with
+                {
+                    Phase = status == RenderQueueStatus.Canceled
+                        ? "Canceled"
+                        : "Snapshot error",
+                };
+            }
+            MaintainHistory();
+            Save();
+        }
+        NotifyChanged();
+    }
+
     public bool Cancel(string jobId)
     {
         RequireAvailable();
         var changed = false;
+        CancellationTokenSource? preparationCancellation = null;
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
@@ -183,7 +476,29 @@ internal sealed class RenderQueueManager : IDisposable
             }
             job.CancelRequested = true;
             job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
-            if (job.Status == RenderQueueStatus.Pending)
+            if (job.Status == RenderQueueStatus.Preparing
+                && job.Snapshot is null
+                && _preparationCancellations.TryGetValue(
+                    job.BatchId,
+                    out preparationCancellation))
+            {
+                foreach (var child in _document.Jobs.Where((candidate) =>
+                             candidate.BatchId.Equals(
+                                 job.BatchId,
+                                 StringComparison.Ordinal)
+                             && candidate.Status
+                                 == RenderQueueStatus.Preparing
+                             && candidate.Snapshot is null))
+                {
+                    child.CancelRequested = true;
+                    child.UpdatedAt = job.UpdatedAt;
+                    child.Progress = child.Progress with
+                    {
+                        Phase = "Canceling snapshot",
+                    };
+                }
+            }
+            else if (job.Status == RenderQueueStatus.Pending)
             {
                 job.Status = RenderQueueStatus.Canceled;
                 job.CompletedAt = job.UpdatedAt;
@@ -201,6 +516,7 @@ internal sealed class RenderQueueManager : IDisposable
             }
             changed = true;
         }
+        preparationCancellation?.Cancel();
         if (changed) NotifyChanged();
         return changed;
     }
@@ -241,6 +557,7 @@ internal sealed class RenderQueueManager : IDisposable
             _document.Jobs.RemoveAt(index);
             Save();
         }
+        CleanupOrphanedStorage();
         NotifyChanged();
         return true;
     }
@@ -255,6 +572,7 @@ internal sealed class RenderQueueManager : IDisposable
                 RenderQueueStatus.IsTerminal(job.Status));
             if (removed > 0) Save();
         }
+        if (removed > 0) CleanupOrphanedStorage();
         if (removed > 0) NotifyChanged();
         return removed;
     }
@@ -424,6 +742,7 @@ internal sealed class RenderQueueManager : IDisposable
             MaintainHistory();
             Save();
         }
+        CleanupOrphanedStorage();
         NotifyChanged();
     }
 
@@ -452,14 +771,27 @@ internal sealed class RenderQueueManager : IDisposable
         foreach (var job in _document.Jobs.Where((candidate) =>
             RenderQueueStatus.IsActive(candidate.Status)))
         {
-            job.Status = RenderQueueStatus.Pending;
-            job.StartedAt = null;
+            var snapshotAvailable = job.Snapshot is not null;
+            job.Status = snapshotAvailable
+                ? RenderQueueStatus.Pending
+                : RenderQueueStatus.Failed;
+            job.StartedAt = snapshotAvailable
+                ? null
+                : job.StartedAt;
+            job.CompletedAt = snapshotAvailable
+                ? null
+                : DateTimeOffset.UtcNow.ToString("O");
+            job.Error = snapshotAvailable
+                ? null
+                : "Snapshot preparation was interrupted before the render became immutable.";
             job.CancelRequested = false;
             job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
             job.Progress = new RenderQueueProgress(
                 0,
                 job.Summary.TotalFrames,
-                "Recovered after closing the app");
+                snapshotAvailable
+                    ? "Recovered after closing the app"
+                    : "Snapshot interrupted");
         }
     }
 
@@ -514,6 +846,12 @@ internal sealed class RenderQueueManager : IDisposable
             if (string.IsNullOrWhiteSpace(job.Id)
                 || string.IsNullOrWhiteSpace(job.BatchId)
                 || !RenderQueueStatus.IsKnown(job.Status)
+                || job.Summary.TotalFrames <= 0
+                || (job.Status == RenderQueueStatus.Pending
+                    && job.Snapshot is null)
+                || (job.Status is RenderQueueStatus.Rendering
+                        or RenderQueueStatus.Encoding
+                    && job.Snapshot is null)
                 || (job.Snapshot is not null
                     && job.Snapshot.Schema
                         != RenderJobSnapshot.CurrentSchema))
@@ -521,7 +859,13 @@ internal sealed class RenderQueueManager : IDisposable
                 throw new InvalidOperationException(
                     "The render queue contains an incomplete job.");
             }
-            job.Snapshot?.Validate();
+            if (job.Snapshot is not null)
+            {
+                job.Snapshot.Validate();
+                RenderSnapshotStore.RequireContainedBatchRoot(
+                    job.Snapshot.FrameStore.BatchRootPath,
+                    _storageRoot);
+            }
         }
         return document;
     }
@@ -556,13 +900,103 @@ internal sealed class RenderQueueManager : IDisposable
         }
     }
 
+    private static void ValidateSummaries(
+        IReadOnlyList<RenderJobSummary> summaries)
+    {
+        if (summaries.Select((summary) => summary.Appearance)
+                .Distinct(StringComparer.Ordinal)
+                .Count() != summaries.Count)
+        {
+            throw new InvalidOperationException(
+                "A render batch contains duplicate appearances.");
+        }
+        foreach (var summary in summaries)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    summary.Context.ProjectId)
+                || string.IsNullOrWhiteSpace(
+                    summary.Context.ShotId)
+                || string.IsNullOrWhiteSpace(
+                    summary.Context.ActorId)
+                || string.IsNullOrWhiteSpace(
+                    summary.DeviceName)
+                || string.IsNullOrWhiteSpace(
+                    summary.ThemeName)
+                || summary.Appearance is not RenderQueueAppearance.Light
+                    and not RenderQueueAppearance.Dark
+                || summary.TotalFrames <= 0
+                || summary.Output.Appearance
+                    != summary.Appearance)
+            {
+                throw new InvalidOperationException(
+                    "A preparing render summary is incomplete.");
+            }
+            _ = RenderOutputModes.Require(
+                summary.Output.OutputModeId);
+            RenderOutputPathSecurity.RequireOutputTarget(
+                summary.Output);
+        }
+    }
+
+    private void CleanupOrphanedStorage()
+    {
+        try
+        {
+            if (!Directory.Exists(_storageRoot)) return;
+            HashSet<string> referenced;
+            HashSet<string> preparing;
+            lock (_gate)
+            {
+                referenced = _document.Jobs
+                    .Where((job) => job.Snapshot is not null)
+                    .Select((job) => Path.GetFullPath(
+                        job.Snapshot!.FrameStore.BatchRootPath))
+                    .ToHashSet(PathComparer());
+                preparing = _preparationCancellations.Keys
+                    .Select((batchId) => RenderSnapshotStore.BatchRoot(
+                        _storageRoot,
+                        batchId))
+                    .ToHashSet(PathComparer());
+            }
+            foreach (var directory in Directory.GetDirectories(
+                         _storageRoot,
+                         "*",
+                         SearchOption.TopDirectoryOnly))
+            {
+                var fullPath = Path.GetFullPath(directory);
+                if (referenced.Contains(fullPath)
+                    || preparing.Contains(fullPath)
+                    || !Guid.TryParse(
+                        Path.GetFileName(fullPath),
+                        out _))
+                {
+                    continue;
+                }
+                try
+                {
+                    RenderSnapshotStore.DeleteBatchRoot(
+                        fullPath,
+                        _storageRoot);
+                }
+                catch
+                {
+                    // A later queue cleanup can retry a busy local store.
+                }
+            }
+        }
+        catch
+        {
+            // Queue execution remains available if stale-file cleanup fails.
+        }
+    }
+
     private static RenderJobSummary Summary(RenderJobSnapshot snapshot) =>
         new(
             snapshot.Context,
             snapshot.DeviceName,
             snapshot.ThemeName,
             snapshot.RequestedAppearance,
-            snapshot.Frames.Count,
+            snapshot.FrameStore.TotalFrames,
             snapshot.Output);
 
     private static RenderQueueJobView ToView(RenderQueueJob job) =>
@@ -584,6 +1018,21 @@ internal sealed class RenderQueueManager : IDisposable
         return Path.Combine(root, "MOCKUPS", "render-queue.json");
     }
 
+    private static string DisplayAppearance(string appearance) =>
+        appearance == RenderQueueAppearance.Light
+            ? "Light"
+            : "Dark";
+
+    private static StringComparison PathComparison() =>
+        OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+    private static StringComparer PathComparer() =>
+        OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+
     private void NotifyChanged()
     {
         try
@@ -600,15 +1049,26 @@ internal sealed class RenderQueueManager : IDisposable
     {
         if (Interlocked.Exchange(ref _disposeRequested, 1) != 0) return;
         _shutdown.Cancel();
+        Task[] tasks;
         lock (_gate)
         {
             _activeCancellation?.Cancel();
+            foreach (var cancellation in
+                     _preparationCancellations.Values)
+            {
+                cancellation.Cancel();
+            }
+            tasks = _preparationTasks.Values
+                .Concat(_workerTask is null
+                    ? []
+                    : [_workerTask])
+                .ToArray();
         }
-        var worker = _workerTask;
-        var stopped = worker is null;
+        var completion = Task.WhenAll(tasks);
+        var stopped = tasks.Length == 0;
         try
         {
-            stopped = worker?.Wait(TimeSpan.FromSeconds(3)) ?? true;
+            stopped = completion.Wait(TimeSpan.FromSeconds(3));
         }
         catch
         {
@@ -620,7 +1080,7 @@ internal sealed class RenderQueueManager : IDisposable
             _shutdown.Dispose();
             return;
         }
-        _ = worker!.ContinueWith(
+        _ = completion.ContinueWith(
             _ =>
             {
                 _executor.Dispose();
@@ -629,5 +1089,11 @@ internal sealed class RenderQueueManager : IDisposable
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+    }
+
+    private sealed class SynchronousProgress<T>(
+        Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }
