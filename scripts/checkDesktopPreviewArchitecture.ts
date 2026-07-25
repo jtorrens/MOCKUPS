@@ -10237,7 +10237,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       }
       if (row.component_type === "iconRow") {
         const inputIds = new Set(jsonArray(preview.inputs).map((input) => String(jsonRecord(input).id)));
-        for (const key of ["items", "gap", "orientation", "collections"]) {
+        for (const key of ["items", "gap", "orientation", "itemSizingMode", "collections"]) {
           if (inputIds.has(key) || Object.hasOwn(preview, key)) {
             addViolation("data/desktop-editor-spike.sqlite", `Icon Row Design Preview exposes Variant-owned ${key} as Runtime`);
           }
@@ -10249,7 +10249,17 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
       (database.prepare(
         "SELECT record_class_id, layout_json FROM editor_layouts WHERE record_class_id IN ('component.textBox', 'component.iconRow')",
       ).all() as { record_class_id: string; layout_json: string }[])
-        .map((row) => [row.record_class_id, row.layout_json]),
+        .map((row) => {
+          const layout = jsonRecord(jsonParse(row.layout_json));
+          const fieldIds = new Set(
+            jsonArray(layout.cards)
+              .map(jsonRecord)
+              .flatMap((card) => jsonArray(card.groups).map(jsonRecord))
+              .flatMap((group) => jsonArray(group.fields).map(jsonRecord))
+              .map((field) => String(field.id)),
+          );
+          return [row.record_class_id, fieldIds] as const;
+        }),
     );
     for (const [recordClassId, fieldIds] of [
       ["component.textBox", [
@@ -10262,11 +10272,12 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
         "component.iconRow.items",
         "component.iconRow.gap",
         "component.iconRow.orientation",
+        "component.iconRow.itemSizingMode",
       ]],
     ] as const) {
-      const layout = layouts.get(recordClassId) ?? "";
+      const layoutFieldIds = layouts.get(recordClassId) ?? new Set<string>();
       for (const fieldId of fieldIds) {
-        if (!layout.includes(`"id": "${fieldId}"`)) {
+        if (!layoutFieldIds.has(fieldId)) {
           addViolation("data/desktop-editor-spike.sqlite", `${recordClassId} layout is missing ${fieldId}`);
         }
       }

@@ -2389,6 +2389,54 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     var defaultContract = database.GetComponentVariantRuntimeContract(references["default"]);
     var iosContract = database.GetComponentVariantRuntimeContract(references["incoming_call_ios"]);
     var androidContract = database.GetComponentVariantRuntimeContract(references["incoming_call_android"]);
+    Equal(
+        "content",
+        JsonPath.RequiredString(
+            JsonPath.RequiredObject(
+                database.GetComponentVariantConfig(references["default"]),
+                "iconRow",
+                "Default Icon Row config"),
+            "itemSizingMode",
+            "Default Icon Row config"));
+    Equal(
+        "content",
+        JsonPath.RequiredString(
+            JsonPath.RequiredObject(
+                database.GetComponentVariantConfig(references["incoming_call_ios"]),
+                "iconRow",
+                "iOS Icon Row config"),
+            "itemSizingMode",
+            "iOS Icon Row config"));
+    Equal(
+        "fillParent",
+        JsonPath.RequiredString(
+            JsonPath.RequiredObject(
+                database.GetComponentVariantConfig(references["incoming_call_android"]),
+                "iconRow",
+                "Android Icon Row config"),
+            "itemSizingMode",
+            "Android Icon Row config"));
+    True(database.LoadEditorLayout("component.iconRow").Cards
+        .SelectMany((card) => card.Groups)
+        .SelectMany((group) => group.Fields)
+        .Any((field) => field.Id == "component.iconRow.itemSizingMode"));
+    var missingItemSizing = AndroidConfigWithoutItemSizing(
+        database.GetComponentVariantConfig(references["incoming_call_android"]));
+    Throws<InvalidOperationException>(() =>
+        ComponentIconRowCompositionContract.ValidateConfig(
+            "iconRow",
+            missingItemSizing,
+            "Icon Row without item sizing"));
+    var invalidItemSizing = database.GetComponentVariantConfig(references["incoming_call_android"]);
+    JsonPath.RequiredObject(
+        invalidItemSizing,
+        "iconRow",
+        "Invalid Icon Row item sizing")["itemSizingMode"] = "stretch";
+    Throws<InvalidOperationException>(() =>
+        ComponentIconRowCompositionContract.ValidateConfig(
+            "iconRow",
+            invalidItemSizing,
+            "Icon Row with invalid item sizing"));
     Equal(0, JsonPath.RequiredArray(defaultContract, "buttonInputs", "Default Icon Row Runtime").Count);
     SequenceEqual(
         ["decline", "answer"],
@@ -2448,6 +2496,16 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
                 database.GetComponentClassSettings(iconRow.Id).DesignPreviewJson,
                 "Duplicate Runtime projection"),
             duplicateConfig));
+
+    static JsonObject AndroidConfigWithoutItemSizing(JsonObject config)
+    {
+        var clone = config.DeepClone().AsObject();
+        JsonPath.RequiredObject(
+            clone,
+            "iconRow",
+            "Icon Row without item sizing").Remove("itemSizingMode");
+        return clone;
+    }
 }
 
 static void IncomingCallExposesExactChildRuntimeBoundaries()

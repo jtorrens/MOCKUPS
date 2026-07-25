@@ -3,6 +3,10 @@ import test from "node:test";
 
 import { incomingCallNotificationComponentToRenderable } from "../../src/desktop-preview/incomingCallNotificationComponentRenderable.js";
 import { resolveIncomingCallNotificationComponent } from "../../src/desktop-preview/incomingCallNotificationComponentResolver.js";
+import {
+  iconRowComponentToRenderableAt,
+  measureIconRowComponent,
+} from "../../src/desktop-preview/iconRowComponentRenderable.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 const fixture = (variantId = "default") =>
@@ -42,6 +46,7 @@ test("Incoming Call Notification resolves exact iOS and Android child Variant bo
   });
   assert.equal(ios.avatar.labelSlot.showLabel, true);
   assert.equal(ios.avatar.labelSlot.showSubtext, true);
+  assert.equal(ios.iconRow.itemSizingMode, "content");
   assert.equal(ios.iconRow.items[0]?.button.contentMode, "icon");
   assert.deepEqual(
     ios.iconRow.items.map((item) => item.button.size),
@@ -54,6 +59,7 @@ test("Incoming Call Notification resolves exact iOS and Android child Variant bo
   assert.deepEqual(android.size, { width: 360, height: 152 });
   assert.equal(android.avatarPlacement.alignY, 0);
   assert.equal(android.iconRowPlacement.alignY, 1);
+  assert.equal(android.iconRow.itemSizingMode, "fillParent");
   assert.equal(android.iconRow.items[0]?.button.contentMode, "iconText");
   assert.ok(android.iconRow.items.every((item) =>
     item.button.dimensionMode === "content"));
@@ -208,6 +214,47 @@ test("Incoming Call Notification places Avatar and Icon Row independently inside
   const androidActions = android.children?.[2]?.box!;
   assert.ok(androidAvatar.y < androidActions.y);
   assert.ok(androidActions.x + androidActions.width <= android.box!.x + android.box!.width);
+  const leftInset = androidActions.x - android.box!.x;
+  const rightInset =
+    android.box!.x + android.box!.width - androidActions.x - androidActions.width;
+  assert.ok(leftInset > 0);
+  assert.equal(leftInset, rightInset);
+  const androidButtons = android.children?.[2]?.children ?? [];
+  assert.equal(androidButtons.length, 2);
+  assert.equal(androidButtons[0]!.box!.width, androidButtons[1]!.box!.width);
+});
+
+test("Icon Row Fill parent distributes only its orientation axis", () => {
+  const source = fixture("android");
+  const row = resolveIncomingCallNotificationComponent(source).iconRow;
+  const horizontalIntrinsic = measureIconRowComponent(source, row);
+  const horizontalBox = { x: 10, y: 20, width: 300, height: horizontalIntrinsic.height };
+  const horizontal = iconRowComponentToRenderableAt(source, row, horizontalBox);
+  const horizontalButtons = horizontal.children ?? [];
+  assert.equal(horizontalButtons.length, 2);
+  assert.equal(
+    horizontalButtons[0]!.box!.width,
+    (horizontalBox.width - horizontalIntrinsic.gap) / 2,
+  );
+  assert.equal(
+    horizontalButtons[0]!.box!.height,
+    horizontalIntrinsic.sizes[0]!.height,
+  );
+
+  const verticalRow = { ...row, orientation: "vertical" as const };
+  const verticalIntrinsic = measureIconRowComponent(source, verticalRow);
+  const verticalBox = { x: 10, y: 20, width: verticalIntrinsic.width, height: 300 };
+  const vertical = iconRowComponentToRenderableAt(source, verticalRow, verticalBox);
+  const verticalButtons = vertical.children ?? [];
+  assert.equal(verticalButtons.length, 2);
+  assert.equal(
+    verticalButtons[0]!.box!.height,
+    (verticalBox.height - verticalIntrinsic.gap) / 2,
+  );
+  assert.equal(
+    verticalButtons[0]!.box!.width,
+    verticalIntrinsic.sizes[0]!.width,
+  );
 });
 
 test("Incoming Call Notification applies reusable boundary Motion to presence", () => {

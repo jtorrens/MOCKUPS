@@ -89,6 +89,12 @@ export function resolveIconRowComponentFromRecords(
   if (orientation !== "horizontal" && orientation !== "vertical") {
     throw new Error(`Unsupported icon row orientation ${orientation}`);
   }
+  const itemSizingMode = typeof inputs.itemSizingMode === "string"
+    ? inputs.itemSizingMode
+    : requiredString(iconRow, "itemSizingMode", "component.iconRow.itemSizingMode");
+  if (itemSizingMode !== "content" && itemSizingMode !== "fillParent") {
+    throw new Error(`Unsupported icon row item sizing mode ${itemSizingMode}`);
+  }
   const structuralItems = Array.isArray(inputs.structuralItems)
     ? requiredObjectArray(inputs, "structuralItems", "component.iconRow input")
     : requiredObjectArray(iconRow, "items", "component.iconRow");
@@ -162,6 +168,7 @@ export function resolveIconRowComponentFromRecords(
   return {
     id,
     orientation,
+    itemSizingMode,
     gapToken: typeof inputs.gap === "string"
       ? inputs.gap
       : requiredString(iconRow, "gap", "component.iconRow.gap"),

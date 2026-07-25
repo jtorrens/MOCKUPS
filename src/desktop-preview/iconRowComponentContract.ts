@@ -8,6 +8,7 @@ export interface IconRowItemContract {
 export interface IconRowDesignContract {
   id: string;
   orientation: "horizontal" | "vertical";
+  itemSizingMode: "content" | "fillParent";
   gapToken: string;
   items: IconRowItemContract[];
 }

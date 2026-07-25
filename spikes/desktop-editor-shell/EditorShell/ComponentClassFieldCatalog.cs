@@ -231,6 +231,12 @@ internal static partial class ComponentClassFieldCatalog
         new("vertical", "Vertical"),
     ];
 
+    private static readonly FieldOption[] IconRowItemSizingModeOptions =
+    [
+        new("content", "Content"),
+        new("fillParent", "Fill parent"),
+    ];
+
     private static readonly FieldOption[] SurfaceTailStyleOptions =
     [
         new("rounded_wedge", "Rounded wedge"),
@@ -276,6 +282,14 @@ internal static partial class ComponentClassFieldCatalog
             ComponentInputBindingSource.Variant,
             "horizontal",
             Options: IconRowOrientationOptions),
+        new(
+            "itemSizingMode",
+            "Item sizing",
+            "itemSizingMode",
+            ValueKind.OptionToken,
+            ComponentInputBindingSource.Variant,
+            "content",
+            Options: IconRowItemSizingModeOptions),
     ];
 
     private static readonly ComponentInputBindingDefinition[] TextBoxParentInputBindings =
@@ -598,6 +612,7 @@ internal static partial class ComponentClassFieldCatalog
             ["iconRow", "items"],
             EmptyIconSlots),
         ["component.iconRow.orientation"] = new("component.iconRow.orientation", "Orientation", ValueKind.OptionToken, ["iconRow", "orientation"], "horizontal", Options: IconRowOrientationOptions),
+        ["component.iconRow.itemSizingMode"] = new("component.iconRow.itemSizingMode", "Item sizing", ValueKind.OptionToken, ["iconRow", "itemSizingMode"], "content", Options: IconRowItemSizingModeOptions),
         ["component.iconRow.gap"] = new("component.iconRow.gap", "Gap", ValueKind.ThemeToken, ["iconRow", "gap"], "theme.spacing.s", Options: SpacingTokenOptions),
         ["component.iconRow.sizeSource"] = new("component.iconRow.sizeSource", "Size source", ValueKind.OptionToken, ["iconRow", "sizeSource"], "shared", Options: IconRowSizeSourceOptions),
         ["component.iconRow.iconSizeToken"] = new("component.iconRow.iconSizeToken", "Shared icon size", ValueKind.ThemeToken, ["iconRow", "iconSizeToken"], "theme.iconSizes.m", Options: IconSizeTokenOptions),

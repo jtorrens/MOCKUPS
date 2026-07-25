@@ -10,6 +10,7 @@ import {
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
+  iconRowAssignedSize,
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
 } from "./iconRowComponentRenderable.js";
@@ -51,7 +52,11 @@ export function incomingCallNotificationComponentToRenderable(
     { width: avatarSize, height: avatarSize },
     scalePlacement(notification.avatarPlacement, scale),
   );
-  const iconRowSize = measureIconRowComponent(payload, notification.iconRow);
+  const iconRowSize = iconRowAssignedSize(
+    notification.iconRow,
+    measureIconRowComponent(payload, notification.iconRow),
+    inner,
+  );
   const iconRowBox = placeChild(
     inner,
     iconRowSize,

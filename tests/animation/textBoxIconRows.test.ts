@@ -51,6 +51,7 @@ const bases = {
     [iconRowVariantReference]: {
       iconRow: {
         orientation: "horizontal",
+        itemSizingMode: "content",
         gap: "theme.spacing.s",
         items: [],
         sizeSource: "shared",

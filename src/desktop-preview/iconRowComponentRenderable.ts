@@ -1,5 +1,10 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
-import { boundedCenterBox, numberToken, renderScale } from "./componentRenderableCommon.js";
+import {
+  boundedCenterBox,
+  numberToken,
+  previewScreenBox,
+  renderScale,
+} from "./componentRenderableCommon.js";
 import { buttonComponentToRenderableAt, measureButtonComponent } from "./buttonComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
@@ -25,7 +30,13 @@ export function measureIconRowComponent(payload: DesignPreviewPayload, iconRow: 
 
 export function iconRowComponentToRenderable(payload: DesignPreviewPayload, iconRow: IconRowDesignContract): RenderableNode {
   const size = measureIconRowComponent(payload, iconRow);
-  return iconRowComponentToRenderableAt(payload, iconRow, boundedCenterBox(payload, size.width, size.height));
+  const screen = previewScreenBox(payload);
+  const assignedSize = iconRowAssignedSize(iconRow, size, screen);
+  return iconRowComponentToRenderableAt(
+    payload,
+    iconRow,
+    boundedCenterBox(payload, assignedSize.width, assignedSize.height),
+  );
 }
 
 export function iconRowComponentToRenderableAt(
@@ -34,9 +45,10 @@ export function iconRowComponentToRenderableAt(
   box: RenderableBox,
 ): RenderableNode {
   const metrics = measureIconRowComponent(payload, iconRow);
+  const itemSizes = distributedItemSizes(iconRow, box, metrics);
   let cursor = 0;
   const children = iconRow.items.map((item, index) => {
-    const size = metrics.sizes[index] ?? { width: 0, height: 0 };
+    const size = itemSizes[index] ?? { width: 0, height: 0 };
     const buttonBox = iconRow.orientation === "vertical"
       ? { x: box.x + (box.width - size.width) * 0.5, y: box.y + cursor, width: size.width, height: size.height }
       : { x: box.x + cursor, y: box.y + (box.height - size.height) * 0.5, width: size.width, height: size.height };
@@ -44,4 +56,37 @@ export function iconRowComponentToRenderableAt(
     return buttonComponentToRenderableAt(payload, item.button, buttonBox);
   });
   return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "visible" }, children };
+}
+
+export function iconRowAssignedSize(
+  iconRow: IconRowDesignContract,
+  intrinsicSize: { width: number; height: number },
+  availableBox: RenderableBox,
+) {
+  if (iconRow.itemSizingMode === "content") return intrinsicSize;
+  return iconRow.orientation === "vertical"
+    ? { width: intrinsicSize.width, height: availableBox.height }
+    : { width: availableBox.width, height: intrinsicSize.height };
+}
+
+function distributedItemSizes(
+  iconRow: IconRowDesignContract,
+  box: RenderableBox,
+  metrics: ReturnType<typeof measureIconRowComponent>,
+) {
+  if (iconRow.itemSizingMode === "content" || metrics.sizes.length === 0) {
+    return metrics.sizes;
+  }
+  const mainSize = iconRow.orientation === "vertical" ? box.height : box.width;
+  const gaps = Math.max(0, metrics.sizes.length - 1) * metrics.gap;
+  const available = mainSize - gaps;
+  if (available <= 0) {
+    throw new Error(
+      "component.iconRow Fill parent requires an assigned main axis larger than its gaps",
+    );
+  }
+  const itemMainSize = available / metrics.sizes.length;
+  return metrics.sizes.map((size) => iconRow.orientation === "vertical"
+    ? { width: size.width, height: itemMainSize }
+    : { width: itemMainSize, height: size.height });
 }

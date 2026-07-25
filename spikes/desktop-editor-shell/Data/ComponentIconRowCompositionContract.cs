@@ -126,7 +126,7 @@ internal static class ComponentIconRowCompositionContract
             return;
         }
 
-        foreach (var key in new[] { "items", "gap", "orientation" })
+        foreach (var key in new[] { "items", "gap", "orientation", "itemSizingMode" })
         {
             if (byId.ContainsKey(key) || preview.ContainsKey(key))
             {
@@ -165,6 +165,12 @@ internal static class ComponentIconRowCompositionContract
         {
             throw new InvalidOperationException(
                 $"{owner} has unsupported orientation '{orientation}'.");
+        }
+        var itemSizingMode = JsonPath.RequiredString(iconRow, "itemSizingMode", owner);
+        if (itemSizingMode is not "content" and not "fillParent")
+        {
+            throw new InvalidOperationException(
+                $"{owner} has unsupported item sizing mode '{itemSizingMode}'.");
         }
     }
 
