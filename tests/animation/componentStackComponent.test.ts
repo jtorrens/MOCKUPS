@@ -69,6 +69,65 @@ test("Component defaults merge only explicit object branches", () => {
   );
 });
 
+test("exact Component Variant Slots replace inherited boundaries atomically", () => {
+  const inheritedSlot = {
+    variantReference: "surface::variant::negative",
+    overrides: {
+      style: { cornerRadiusToken: "theme.radii.full" },
+      surface: { backgroundColorToken: "theme.colors.negative", backgroundAlpha: 1 },
+    },
+  };
+  const selectedSlot = {
+    variantReference: "surface::variant::neutral",
+    overrides: {
+      surface: { backgroundAlpha: 0.8 },
+    },
+  };
+
+  assert.deepEqual(
+    mergeComponentDefaults(
+      { button: { states: { normal: { surfaceSlot: inheritedSlot } } } },
+      { button: { states: { normal: { surfaceSlot: selectedSlot } } } },
+    ),
+    { button: { states: { normal: { surfaceSlot: selectedSlot } } } },
+  );
+
+  assert.deepEqual(
+    mergeComponentDefaults(
+      { button: { states: { normal: { surfaceSlot: inheritedSlot } } } },
+      {
+        button: {
+          states: {
+            normal: {
+              surfaceSlot: {
+                overrides: { surface: { backgroundAlpha: 0.5 } },
+              },
+            },
+          },
+        },
+      },
+    ),
+    {
+      button: {
+        states: {
+          normal: {
+            surfaceSlot: {
+              variantReference: "surface::variant::negative",
+              overrides: {
+                style: { cornerRadiusToken: "theme.radii.full" },
+                surface: {
+                  backgroundColorToken: "theme.colors.negative",
+                  backgroundAlpha: 0.5,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  );
+});
+
 const motion = {
   transition: "slide",
   direction: "bottom",

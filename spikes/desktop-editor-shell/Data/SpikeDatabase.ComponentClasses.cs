@@ -224,7 +224,7 @@ internal sealed partial class SpikeDatabase
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         using var connection = OpenConnection();
         var effectiveOwnerConfig = ParseJsonObject(baseConfigJson);
-        MergeOverride(effectiveOwnerConfig, overrides);
+        ComponentConfigOverrideMerger.MergeInto(effectiveOwnerConfig, overrides);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, projectId, effectiveOwnerConfig, slots);
         var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
         var localOverrides = EmbeddedOverrides(overrides, slots, createIfMissing: false);
@@ -861,7 +861,7 @@ internal sealed partial class SpikeDatabase
             var overrides = slotNode?["overrides"] as JsonObject;
             if (index < slots.Count - 1 && overrides is not null)
             {
-                MergeOverride(child, overrides);
+                ComponentConfigOverrideMerger.MergeInto(child, overrides);
             }
 
             current = child;
@@ -869,21 +869,6 @@ internal sealed partial class SpikeDatabase
         }
 
         return current ?? [];
-    }
-
-    private static void MergeOverride(JsonObject target, JsonObject overrides)
-    {
-        foreach (var pair in overrides)
-        {
-            if (pair.Value is JsonObject overrideObject
-                && target[pair.Key] is JsonObject targetObject)
-            {
-                MergeOverride(targetObject, overrideObject);
-                continue;
-            }
-
-            target[pair.Key] = pair.Value?.DeepClone();
-        }
     }
 
 }

@@ -88,6 +88,60 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
   assert.equal(resolved.iconRow.items[1]?.button.state, "pushed");
 });
 
+test("Incoming Call Notification preserves an exact nested Button Surface selection", () => {
+  const source = fixture("android");
+  const config = JSON.parse(source.configJson) as {
+    incomingCallNotification: {
+      iconRowSlot: {
+        variantReference: string;
+        overrides: Record<string, unknown>;
+      };
+    };
+  };
+  const bases = JSON.parse(source.componentBaseConfigsJson) as {
+    variants: Record<string, {
+      iconRow: {
+        items: Array<Record<string, unknown>>;
+      };
+    }>;
+  };
+  const iconRowSlot = config.incomingCallNotification.iconRowSlot;
+  const structuralItems = structuredClone(
+    bases.variants[iconRowSlot.variantReference]!.iconRow.items,
+  );
+  structuralItems[0]!.buttonOverrides = {
+    button: {
+      states: {
+        normal: {
+          surfaceSlot: {
+            variantReference: "component_project_foqn_s2_surface::variant::default",
+            overrides: {
+              style: { cornerRadiusToken: "theme.radii.m" },
+              surface: {
+                backgroundColorToken: "theme.colors.surface",
+                backgroundAlpha: 0.7,
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  iconRowSlot.overrides = { iconRow: { items: structuralItems } };
+  source.configJson = JSON.stringify(config);
+
+  const resolved = resolveIncomingCallNotificationComponent(source);
+  assert.equal(
+    resolved.iconRow.items[0]?.button.stateStyle.surface.backgroundColorToken,
+    "theme.colors.surface",
+  );
+  assert.equal(resolved.iconRow.items[0]?.button.stateStyle.surface.backgroundAlpha, 0.7);
+  assert.equal(
+    resolved.iconRow.items[0]?.button.stateStyle.surface.surface.cornerRadiusToken,
+    "theme.radii.m",
+  );
+});
+
 test("Incoming Call Notification rejects missing or manufactured child Runtime values", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as {

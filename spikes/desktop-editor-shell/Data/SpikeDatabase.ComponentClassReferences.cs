@@ -157,7 +157,7 @@ internal sealed partial class SpikeDatabase
                 variantReference));
             if (slotNode?["overrides"] is JsonObject overrides)
             {
-                MergeOverride(child, overrides);
+                ComponentConfigOverrideMerger.MergeInto(child, overrides);
             }
 
             currentContainer = child;
@@ -469,7 +469,7 @@ internal sealed partial class SpikeDatabase
             .Single((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal));
         if (slots.Count == 0) return variant.Name;
         var ownerConfig = ParseJsonObject(variant.ConfigJson);
-        MergeOverride(ownerConfig, overrides);
+        ComponentConfigOverrideMerger.MergeInto(ownerConfig, overrides);
         return GetEmbeddedComponentVariantName(connection, row.ProjectId, ownerConfig, slots);
     }
 

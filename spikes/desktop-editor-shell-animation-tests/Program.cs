@@ -83,6 +83,7 @@ var tests = new (string Name, Action Run)[]
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
+    ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
     ("Default Variant editing unlock is session-only", DefaultVariantEditingUnlockIsSessionOnly),
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
@@ -157,6 +158,111 @@ var tests = new (string Name, Action Run)[]
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
     ("module variants are explicit and selected by Screen instances", ModuleVariantsAreExplicit),
 };
+
+static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
+{
+    var target = JsonNode.Parse(
+        """
+        {
+          "button": {
+            "states": {
+              "normal": {
+                "surfaceSlot": {
+                  "variantReference": "surface::variant::negative",
+                  "overrides": {
+                    "style": {
+                      "cornerRadiusToken": "theme.radii.full"
+                    },
+                    "surface": {
+                      "backgroundColorToken": "theme.colors.negative",
+                      "backgroundAlpha": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)?.AsObject()
+        ?? throw new InvalidOperationException("Missing Component config target.");
+    var exactSlotOverride = JsonNode.Parse(
+        """
+        {
+          "button": {
+            "states": {
+              "normal": {
+                "surfaceSlot": {
+                  "variantReference": "surface::variant::neutral",
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 0.8
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)?.AsObject()
+        ?? throw new InvalidOperationException("Missing exact Component Variant Slot Override.");
+
+    ComponentConfigOverrideMerger.MergeInto(target, exactSlotOverride);
+    var selectedSlot = target["button"]?["states"]?["normal"]?["surfaceSlot"]?.AsObject()
+        ?? throw new InvalidOperationException("Missing selected Component Variant Slot.");
+    Equal("surface::variant::neutral", selectedSlot["variantReference"]?.GetValue<string>());
+    Equal(1, selectedSlot["overrides"]?["surface"]?.AsObject().Count ?? -1);
+    Equal(0.8, selectedSlot["overrides"]?["surface"]?["backgroundAlpha"]?.GetValue<double>() ?? -1);
+
+    var partialOverride = JsonNode.Parse(
+        """
+        {
+          "button": {
+            "states": {
+              "normal": {
+                "surfaceSlot": {
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 0.5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)?.AsObject()
+        ?? throw new InvalidOperationException("Missing partial Component Override.");
+    var partialTarget = JsonNode.Parse(
+        """
+        {
+          "button": {
+            "states": {
+              "normal": {
+                "surfaceSlot": {
+                  "variantReference": "surface::variant::negative",
+                  "overrides": {
+                    "surface": {
+                      "backgroundColorToken": "theme.colors.negative",
+                      "backgroundAlpha": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        """)?.AsObject()
+        ?? throw new InvalidOperationException("Missing partial Component config target.");
+
+    ComponentConfigOverrideMerger.MergeInto(partialTarget, partialOverride);
+    var partialSlot = partialTarget["button"]?["states"]?["normal"]?["surfaceSlot"]?.AsObject()
+        ?? throw new InvalidOperationException("Missing merged Component Variant Slot.");
+    Equal("surface::variant::negative", partialSlot["variantReference"]?.GetValue<string>());
+    Equal(
+        "theme.colors.negative",
+        partialSlot["overrides"]?["surface"]?["backgroundColorToken"]?.GetValue<string>());
+    Equal(0.5, partialSlot["overrides"]?["surface"]?["backgroundAlpha"]?.GetValue<double>() ?? -1);
+}
 
 static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 {

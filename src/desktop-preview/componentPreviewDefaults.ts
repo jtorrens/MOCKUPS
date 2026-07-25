@@ -55,11 +55,21 @@ export function mergeComponentDefaults(
   for (const [key, value] of Object.entries(overrides)) {
     const defaultValue = merged[key];
     merged[key] =
-      isRecord(defaultValue) && isRecord(value)
+      isRecord(defaultValue) && isRecord(value) && !isExactComponentVariantSlot(value)
         ? mergeComponentDefaults(defaultValue, value)
         : value;
   }
   return merged;
+}
+
+function isExactComponentVariantSlot(value: JsonRecord) {
+  const keys = Object.keys(value);
+  return keys.length === 2
+    && keys.includes("variantReference")
+    && keys.includes("overrides")
+    && typeof value.variantReference === "string"
+    && /^[A-Za-z0-9_.-]+::variant::[A-Za-z0-9_.-]+$/.test(value.variantReference)
+    && isRecord(value.overrides);
 }
 
 export function embeddedComponentConfig(
