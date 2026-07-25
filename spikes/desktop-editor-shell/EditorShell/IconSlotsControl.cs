@@ -121,6 +121,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private Control BuildSelectedEditor()
     {
         var item = _items[_selectedIndex];
+        var itemId = String(item, "id", "");
         var editor = new StackPanel { Spacing = 8 };
 
         var buttonSlot = ComponentVariantSlotDocumentContract.Create(
@@ -139,14 +140,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
             buttonSlot.ToJsonString(),
             _openComponentVariantReference,
             _openRuntimeComponentOverrides);
-        buttonVariant.ValueCommitted += (_, value) =>
-        {
-            var owner = $"Icon Row Button '{String(item, "id", "")}'";
-            var next = ComponentVariantSlotDocumentContract.Parse(value, owner);
-            item["buttonVariantReference"] = ComponentVariantSlotDocumentContract.VariantReference(next, owner);
-            item["buttonOverrides"] = ComponentVariantSlotDocumentContract.Overrides(next, owner).DeepClone();
-            Commit();
-        };
+        buttonVariant.ValueCommitted += (_, value) => CommitButtonSlot(itemId, value);
         editor.Children.Add(FieldRow("Button", buttonVariant));
 
         var state = OptionControl(
@@ -215,6 +209,16 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
             BorderBrush = new SolidColorBrush(Color.Parse("#3D5274")),
             Child = editor,
         };
+    }
+
+    private void CommitButtonSlot(string itemId, string value)
+    {
+        IconSlotsDocumentContract.ReplaceButtonVariantSlot(
+            _items,
+            itemId,
+            value,
+            "Icon Row");
+        Commit();
     }
 
     private Control SlotPreview(JsonObject item)

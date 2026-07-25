@@ -70,4 +70,23 @@ internal static class IconSlotsDocumentContract
             _ = JsonPath.RequiredObject(item, "buttonOverrides", context);
         }
     }
+
+    public static void ReplaceButtonVariantSlot(
+        IReadOnlyList<JsonObject> items,
+        string itemId,
+        string value,
+        string owner)
+    {
+        var item = items.SingleOrDefault((candidate) =>
+                JsonPath.RequiredString(candidate, "id", owner)
+                    .Equals(itemId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"{owner} item '{itemId}' no longer exists in the current Icon Row collection.");
+        var slotOwner = $"{owner} Button '{itemId}'";
+        var slot = ComponentVariantSlotDocumentContract.Parse(value, slotOwner);
+        item["buttonVariantReference"] =
+            ComponentVariantSlotDocumentContract.VariantReference(slot, slotOwner);
+        item["buttonOverrides"] =
+            ComponentVariantSlotDocumentContract.Overrides(slot, slotOwner).DeepClone();
+    }
 }

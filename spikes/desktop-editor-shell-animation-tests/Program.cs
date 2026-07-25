@@ -45,6 +45,7 @@ var tests = new (string Name, Action Run)[]
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
+    ("Icon Row preserves sequential nested Button Override commits", IconRowPreservesSequentialNestedButtonOverrideCommits),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
@@ -1578,6 +1579,75 @@ static void ValidIntegerPairsCommitAfterEditingPause()
         Dispatcher.UIThread.RunJobs();
     }
     Equal(1, commitCount);
+}
+
+static void IconRowPreservesSequentialNestedButtonOverrideCommits()
+{
+    const string iconSlots = """
+        [{"id":"decline","buttonVariantReference":"component_project_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
+        """;
+    var items = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IconSlots,
+            iconSlots,
+            "Sequential Icon Row Overrides")
+        .AsArray()
+        .OfType<JsonObject>()
+        .Select((item) => item.DeepClone().AsObject())
+        .ToList();
+    static string Slot(string size) => new JsonObject
+    {
+        ["variantReference"] = "component_project_button::variant::default",
+        ["overrides"] = new JsonObject
+        {
+            ["button"] = new JsonObject
+            {
+                ["dimensionMode"] = "fixed",
+                ["size"] = size,
+                ["padding"] = "theme.spacing.s|theme.spacing.s",
+            },
+        },
+    }.ToJsonString();
+
+    IconSlotsDocumentContract.ReplaceButtonVariantSlot(
+        items,
+        "decline",
+        Slot("112|48"),
+        "Sequential Icon Row");
+    items = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.IconSlots,
+            new JsonArray(items.Select((item) => (JsonNode?)item.DeepClone()).ToArray()).ToJsonString(),
+            "Rebuilt Sequential Icon Row Overrides")
+        .AsArray()
+        .OfType<JsonObject>()
+        .Select((item) => item.DeepClone().AsObject())
+        .ToList();
+    IconSlotsDocumentContract.ReplaceButtonVariantSlot(
+        items,
+        "decline",
+        Slot("300|300"),
+        "Sequential Icon Row");
+
+    var persisted = items.Single();
+    var buttonOverrides = JsonPath.RequiredObject(
+        persisted,
+        "buttonOverrides",
+        "Sequential Icon Row Button");
+    var button = JsonPath.RequiredObject(
+        buttonOverrides,
+        "button",
+        "Sequential Icon Row Button Overrides");
+    Equal("fixed", JsonPath.RequiredString(
+        button,
+        "dimensionMode",
+        "Sequential Icon Row Button Overrides"));
+    Equal("300|300", JsonPath.RequiredString(
+        button,
+        "size",
+        "Sequential Icon Row Button Overrides"));
+    Equal("theme.spacing.s|theme.spacing.s", JsonPath.RequiredString(
+        button,
+        "padding",
+        "Sequential Icon Row Button Overrides"));
 }
 
 static void PreviewActionContractsAreStrict()
