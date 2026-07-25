@@ -443,6 +443,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
+        ReconcileRuntimeStructure(preview, config);
 
         return payload with
         {
@@ -522,6 +523,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var effective = ParseJsonObject(DesignPreviewTestValues.RuntimeJson(envelope.ToJsonString()));
+        ReconcileRuntimeStructure(effective, config);
         if (string.IsNullOrWhiteSpace(scopeKey))
         {
             return effective;
@@ -535,7 +537,49 @@ internal sealed class ComponentPreviewInputSession
                 DesignPreviewTestValues.SetValue(effective, input, value);
             }
         }
-        return ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+        effective = ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
+        ReconcileRuntimeStructure(effective, config);
+        return effective;
+    }
+
+    private void ReconcileRuntimeStructure(
+        JsonObject preview,
+        JsonObject config)
+    {
+        StructuredRuntimeCollectionProjection.Apply(preview, config);
+        foreach (var collection in ReadRuntimeCollections(
+                     preview,
+                     config,
+                     includeHidden: true))
+        {
+            foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(
+                         preview,
+                         collection))
+            {
+                var runtimeKey = !string.IsNullOrWhiteSpace(
+                    collection.ItemRuntimeContractJsonKey)
+                    ? collection.ItemRuntimeContractJsonKey
+                    : collection.ComponentItems?.InputsJsonKey ?? "";
+                if (string.IsNullOrWhiteSpace(runtimeKey)
+                    || item[runtimeKey] is not JsonObject childRuntime)
+                {
+                    continue;
+                }
+
+                var variantReference = RuntimeCollectionItemContractOwner
+                    .ResolveItemVariantReference(
+                    item,
+                    collection,
+                    config,
+                    _previewInputData.ComponentVariantConfig);
+                if (string.IsNullOrWhiteSpace(variantReference)) continue;
+                var childConfig = _previewInputData.ComponentVariantConfig(
+                    variantReference);
+                StructuredRuntimeCollectionProjection.Apply(
+                    childRuntime,
+                    childConfig);
+            }
+        }
     }
 
     private static bool SupportsInputs(DesignPreviewPayload payload)
@@ -1727,7 +1771,8 @@ internal sealed class ComponentPreviewInputSession
                 uiPresentation,
                 itemRuntimePresentation,
                 JsonStringArray(collection, "itemRuntimeHiddenInputIds"),
-                JsonString(collection, "itemRuntimeVariantReferencePath")));
+                JsonString(collection, "itemRuntimeVariantReferencePath"),
+                JsonString(collection, "itemRuntimeOwnerVariantReferencePath")));
         }
 
         return definitions;
@@ -2186,7 +2231,8 @@ internal sealed record RuntimeInputCollectionDefinition(
     string UiPresentation = "collection",
     string ItemRuntimePresentation = "card",
     IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null,
-    string ItemRuntimeVariantReferencePath = "");
+    string ItemRuntimeVariantReferencePath = "",
+    string ItemRuntimeOwnerVariantReferencePath = "");
 
 internal sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,

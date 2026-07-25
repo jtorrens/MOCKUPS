@@ -75,6 +75,12 @@ into a Component Class. It may be renamed and cannot be deleted. Other
 Variants may be created, duplicated, renamed and deleted only when unlocked
 and unused.
 
+Default persists as `protected: true` and `locked: true`. Unlocking Default
+changes only the current editor session; it permits authored writes while that
+session remains open but never rewrites the Variant envelope. A new session
+therefore starts with Default locked without startup repair or any other
+persistence write. Non-Default Variant locks remain authored metadata.
+
 `Preset` is a separate term used by Render Presets and reserved for future
 reusable recipes that are not Variants.
 

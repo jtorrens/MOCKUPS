@@ -83,6 +83,9 @@ var tests = new (string Name, Action Run)[]
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
+    ("Default Variant editing unlock is session-only", DefaultVariantEditingUnlockIsSessionOnly),
+    ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
+    ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
@@ -2064,6 +2067,287 @@ static void ComponentAndModuleVariantsShareEnvelopeOperations()
     Equal(7, source["config"]?["value"]?.GetValue<int>());
 }
 
+static void DefaultVariantEditingUnlockIsSessionOnly()
+{
+    var source = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-default-variant-session-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SpikeDatabase(temporary);
+        var nodes = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var componentDefault = nodes.Single((node) =>
+            node.Id == "component_project_foqn_s2_label::variant::default");
+        var moduleDefault = nodes.Single((node) =>
+            node.Id == "module_core_chat::variant::default");
+        True(componentDefault.IsProtected);
+        True(componentDefault.IsLocked);
+        True(moduleDefault.IsProtected);
+        True(moduleDefault.IsLocked);
+
+        var beforeUnlock = SHA256.HashData(File.ReadAllBytes(temporary));
+        componentDefault = database.ToggleComponentVariantLock(componentDefault);
+        moduleDefault = database.ToggleModuleVariantLock(moduleDefault);
+        True(!componentDefault.IsLocked);
+        True(!moduleDefault.IsLocked);
+        SequenceEqual(beforeUnlock, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        database.UpdateComponentVariantField(
+            componentDefault,
+            "component.label.padding",
+            "theme.spacing.s|theme.spacing.s");
+        database.UpdateModuleVariantField(
+            moduleDefault,
+            "module.conversation.showHeader",
+            "false");
+        Equal(true, PersistedDefaultLock(temporary, "component_classes", "component_project_foqn_s2_label"));
+        Equal(true, PersistedDefaultLock(temporary, "modules", "module_core_chat"));
+
+        var nextSession = new SpikeDatabase(temporary);
+        var nextNodes = nextSession.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var nextComponentDefault = nextNodes.Single((node) =>
+            node.Id == componentDefault.Id);
+        var nextModuleDefault = nextNodes.Single((node) =>
+            node.Id == moduleDefault.Id);
+        True(nextComponentDefault.IsLocked);
+        True(nextModuleDefault.IsLocked);
+        Throws<InvalidOperationException>(() => nextSession.UpdateComponentVariantField(
+            nextComponentDefault,
+            "component.label.padding",
+            "theme.spacing.m|theme.spacing.m"));
+        Throws<InvalidOperationException>(() => nextSession.UpdateModuleVariantField(
+            nextModuleDefault,
+            "module.conversation.showHeader",
+            "true"));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static bool PersistedDefaultLock(
+    string databasePath,
+    string table,
+    string ownerId)
+{
+    using var connection = new SqliteConnection($"Data Source={databasePath};Mode=ReadOnly");
+    connection.Open();
+    using var command = connection.CreateCommand();
+    command.CommandText = $"""
+        SELECT json_extract(value, '$.locked')
+        FROM {table} owner, json_each(owner.metadata_json, '$.variants')
+        WHERE owner.id = $id
+          AND json_extract(value, '$.id') = 'default'
+        """;
+    command.Parameters.AddWithValue("$id", ownerId);
+    return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture) == 1;
+}
+
+static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var iconRow = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "iconRow");
+    var references = iconRow.Children
+        .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
+        .ToDictionary(
+            (node) => node.Id[(node.Id.LastIndexOf("::variant::", StringComparison.Ordinal) + "::variant::".Length)..],
+            (node) => node.Id,
+            StringComparer.Ordinal);
+    var defaultContract = database.GetComponentVariantRuntimeContract(references["default"]);
+    var iosContract = database.GetComponentVariantRuntimeContract(references["incoming_call_ios"]);
+    var androidContract = database.GetComponentVariantRuntimeContract(references["incoming_call_android"]);
+    Equal(0, JsonPath.RequiredArray(defaultContract, "buttonInputs", "Default Icon Row Runtime").Count);
+    SequenceEqual(
+        ["decline", "answer"],
+        JsonPath.ObjectItems(
+                JsonPath.RequiredArray(iosContract, "buttonInputs", "iOS Icon Row Runtime"),
+                "iOS Icon Row Runtime buttons")
+            .Select((item) => JsonPath.RequiredString(item, "id", "iOS Icon Row button")));
+    SequenceEqual(
+        ["decline", "answer"],
+        JsonPath.ObjectItems(
+                JsonPath.RequiredArray(androidContract, "buttonInputs", "Android Icon Row Runtime"),
+                "Android Icon Row Runtime buttons")
+            .Select((item) => JsonPath.RequiredString(item, "id", "Android Icon Row button")));
+
+    var preview = JsonPath.ParseRequiredObject(
+        database.GetComponentClassSettings(iconRow.Id).DesignPreviewJson,
+        "Icon Row Runtime projection");
+    var iosConfig = database.GetComponentVariantConfig(references["incoming_call_ios"]);
+    StructuredRuntimeCollectionProjection.Apply(preview, iosConfig);
+    var buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Projected Icon Row Runtime");
+    buttons[1]!["state"] = "pushed";
+
+    var androidConfig = database.GetComponentVariantConfig(references["incoming_call_android"]);
+    StructuredRuntimeCollectionProjection.Apply(preview, androidConfig);
+    buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Reprojected Icon Row Runtime");
+    Equal("pushed", buttons[1]?["state"]?.GetValue<string>() ?? "");
+
+    var reorderedAndroid = androidConfig.DeepClone().AsObject();
+    var structuralItems = JsonPath.RequiredArray(
+        JsonPath.RequiredObject(reorderedAndroid, "iconRow", "Android Icon Row config"),
+        "items",
+        "Android Icon Row config");
+    var first = structuralItems[0]!.DeepClone();
+    structuralItems[0] = structuralItems[1]!.DeepClone();
+    structuralItems[1] = first;
+    StructuredRuntimeCollectionProjection.Apply(preview, reorderedAndroid);
+    buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Reordered Icon Row Runtime");
+    SequenceEqual(
+        ["answer", "decline"],
+        buttons.OfType<JsonObject>().Select((item) => JsonPath.RequiredString(item, "id", "Reordered button")));
+    Equal("pushed", buttons[0]?["state"]?.GetValue<string>() ?? "");
+
+    StructuredRuntimeCollectionProjection.Apply(
+        preview,
+        database.GetComponentVariantConfig(references["default"]));
+    Equal(0, JsonPath.RequiredArray(preview, "buttonInputs", "Empty Icon Row Runtime").Count);
+
+    var duplicateConfig = iosConfig.DeepClone().AsObject();
+    var duplicateItems = JsonPath.RequiredArray(
+        JsonPath.RequiredObject(duplicateConfig, "iconRow", "Duplicate Icon Row config"),
+        "items",
+        "Duplicate Icon Row config");
+    duplicateItems.Add(duplicateItems[0]!.DeepClone());
+    Throws<InvalidOperationException>(() =>
+        StructuredRuntimeCollectionProjection.Apply(
+            JsonPath.ParseRequiredObject(
+                database.GetComponentClassSettings(iconRow.Id).DesignPreviewJson,
+                "Duplicate Runtime projection"),
+            duplicateConfig));
+}
+
+static void IncomingCallExposesExactChildRuntimeBoundaries()
+{
+    var database = new SpikeDatabase(Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite"));
+    var nodes = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .ToList();
+    var incomingCall = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+        && database.GetComponentClassSettings(node.Id).ComponentType == "incomingCallNotification");
+    var ios = incomingCall.Children.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
+    var android = incomingCall.Children.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id.EndsWith("::variant::android", StringComparison.Ordinal));
+    var iosRuntime = database.GetComponentVariantRuntimeContract(ios.Id);
+    True(iosRuntime["labelRuntime"] is null);
+    var avatarRuntime = JsonPath.ObjectItems(
+            JsonPath.RequiredArray(iosRuntime, "avatarRuntime", "Incoming Call Runtime"),
+            "Incoming Call Avatar Runtime")
+        .Single();
+    Equal("avatar", JsonPath.RequiredString(avatarRuntime, "id", "Incoming Call Avatar Runtime"));
+    var avatarInputs = JsonPath.RequiredObject(
+        avatarRuntime,
+        "runtimeInputs",
+        "Incoming Call Avatar Runtime");
+    var avatarDefinitions = ComponentPreviewInputSession.ReadRuntimeInputs(
+        avatarInputs,
+        new JsonObject());
+    SequenceEqual(
+        ["actorId", "sampleSubtext"],
+        avatarDefinitions
+            .Where((input) => input.UiGroupId == "identity")
+            .Select((input) => input.Id));
+
+    var iconRowRuntime = JsonPath.ObjectItems(
+            JsonPath.RequiredArray(iosRuntime, "iconRowRuntime", "Incoming Call Runtime"),
+            "Incoming Call Icon Row Runtime")
+        .Single();
+    Equal("iconRow", JsonPath.RequiredString(iconRowRuntime, "id", "Incoming Call Icon Row Runtime"));
+    var buttonInputs = JsonPath.RequiredArray(
+        JsonPath.RequiredObject(iconRowRuntime, "runtimeInputs", "Incoming Call Icon Row Runtime"),
+        "buttonInputs",
+        "Incoming Call Icon Row Runtime");
+    SequenceEqual(
+        ["decline", "answer"],
+        buttonInputs.OfType<JsonObject>()
+            .Select((item) => JsonPath.RequiredString(item, "id", "Incoming Call button")));
+    True(buttonInputs.OfType<JsonObject>().All((item) => item["state"] is JsonValue));
+
+    var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var payload = Required(CreatePreviewPayload(database, ios, theme.Id));
+    var changedConfig = JsonPath.ParseRequiredObject(
+        payload.ConfigJson,
+        "Incoming Call changed config");
+    var owner = JsonPath.RequiredObject(
+        changedConfig,
+        "incomingCallNotification",
+        "Incoming Call changed config");
+    var iconRowSlot = JsonPath.RequiredObject(
+        owner,
+        "iconRowSlot",
+        "Incoming Call changed config");
+    iconRowSlot["variantReference"] =
+        "component_project_foqn_s2_iconRow::variant::default";
+    var session = new ComponentPreviewInputSession(database, () => { });
+    var emptyPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
+    session.UpdateForPayload(emptyPayload, database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    var emptyResolved = session.ApplyInputs(
+        emptyPayload,
+        "light",
+        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    var emptyRuntime = JsonPath.ParseRequiredObject(
+        emptyResolved.DesignPreviewJson,
+        "Incoming Call empty Icon Row Runtime");
+    var emptyIconRow = JsonPath.ObjectItems(
+            JsonPath.RequiredArray(emptyRuntime, "iconRowRuntime", "Incoming Call empty Runtime"),
+            "Incoming Call empty Icon Row Runtime")
+        .Single();
+    Equal(
+        0,
+        JsonPath.RequiredArray(
+            JsonPath.RequiredObject(emptyIconRow, "runtimeInputs", "Incoming Call empty Icon Row Runtime"),
+            "buttonInputs",
+            "Incoming Call empty Icon Row Runtime").Count);
+
+    var androidPayload = Required(CreatePreviewPayload(database, android, theme.Id));
+    session.UpdateForPayload(
+        androidPayload,
+        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    var androidResolved = session.ApplyInputs(
+        androidPayload,
+        "light",
+        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    var androidPreview = JsonPath.ParseRequiredObject(
+        androidResolved.DesignPreviewJson,
+        "Incoming Call Android Runtime");
+    var androidIconRow = JsonPath.ObjectItems(
+            JsonPath.RequiredArray(androidPreview, "iconRowRuntime", "Incoming Call Android Runtime"),
+            "Incoming Call Android Icon Row Runtime")
+        .Single();
+    SequenceEqual(
+        ["decline", "answer"],
+        JsonPath.RequiredArray(
+                JsonPath.RequiredObject(androidIconRow, "runtimeInputs", "Incoming Call Android Icon Row Runtime"),
+                "buttonInputs",
+                "Incoming Call Android Icon Row Runtime")
+            .OfType<JsonObject>()
+            .Select((item) => JsonPath.RequiredString(item, "id", "Incoming Call Android button")));
+}
+
 static void PreviewReferencesShareProjectMediaPathResolution()
 {
     var mediaRoot = Path.Combine(Path.GetTempPath(), "mockups-media-root");
@@ -3665,6 +3949,16 @@ static void PersistedJsonRootsAreStrict()
 
 static void IncompleteVariantsFailReadOnly()
 {
+    AssertRejectedDatabaseIsReadOnly("component-default-unlocked", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE component_classes
+            SET metadata_json = json_set(metadata_json, '$.variants[0].locked', json('false'))
+            WHERE id = 'component_project_foqn_s2_label'
+            """;
+        command.ExecuteNonQuery();
+    });
     AssertRejectedDatabaseIsReadOnly("component-variant-locked", (connection) =>
     {
         using var command = connection.CreateCommand();
@@ -3715,6 +4009,16 @@ static void IncompleteVariantsFailReadOnly()
         command.CommandText = """
             UPDATE modules
             SET metadata_json = json_remove(metadata_json, '$.variants[0].locked')
+            WHERE id = 'module_core_chat'
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("module-default-unlocked", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE modules
+            SET metadata_json = json_set(metadata_json, '$.variants[0].locked', json('false'))
             WHERE id = 'module_core_chat'
             """;
         command.ExecuteNonQuery();
@@ -3922,6 +4226,7 @@ static void ModuleConfigsUseOwnerContracts()
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
+        conversationVariant = database.ToggleModuleVariantLock(conversationVariant);
         database.UpdateModuleVariantField(
             conversationVariant,
             "module.conversation.showHeader",
@@ -6707,7 +7012,7 @@ foreach (var (name, run) in tests)
     catch (Exception exception)
     {
         failures.Add(name);
-        Console.Error.WriteLine($"FAIL {name}: {exception.Message}");
+        Console.Error.WriteLine($"FAIL {name}: {exception.GetBaseException().Message}");
     }
 }
 
@@ -6828,6 +7133,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Parent?.RecordClassId == "module.core.lockScreen"
                 && node.Name == "Default");
+        moduleVariant = database.ToggleModuleVariantLock(moduleVariant);
         var settings = database.GetModuleVariantSettings(moduleVariant);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var authoredItems = config["lockScreen"]?["stackInputs"]?["items"] as JsonArray

@@ -91,8 +91,30 @@ Button state, colors, push values and Badge values. Runtime never adds, removes
 or reorders Icon Row items. An owning parent receives and forwards that same
 Icon Row Runtime contract; it does not declare a reduced or renamed copy of
 Button fields.
+
+A fixed structural Runtime collection declares its source config path, source
+and Runtime id keys, and field bindings. The common Runtime projection creates,
+removes and orders Runtime rows from the selected Variant structure while
+preserving authored values for matching stable ids. The resolver remains
+strict: it consumes the already reconciled exact rows and never manufactures
+missing Button values. When a Module derives such a collection from a
+Component, its fixture also declares the exact Module-config path to that
+source Component Variant before resolving child-relative paths.
+
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
+
+## Incoming Call Notification
+
+Incoming Call Notification owns one bounded Surface frame and two fixed child
+boundaries: Avatar and Icon Row. Surface is the frame and is not an independently
+placed content layer. Avatar and Icon Row each own an exact Variant, local
+Overrides and independent Variant-authored placement.
+
+Runtime exposes Avatar's exact Actor and internal Label subtext inputs plus
+Icon Row's exact Button Runtime rows. There is no separate notification Label
+or semantic action schema. Names such as decline and answer are stable authored
+Icon Row item ids, not branches in the notification resolver.
 
 ## List Item
 

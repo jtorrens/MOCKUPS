@@ -51,6 +51,10 @@ internal static class VariantEnvelopeContract
         {
             throw new InvalidOperationException($"{owner} Default Variant must be protected.");
         }
+        if (!defaultVariant.IsLocked)
+        {
+            throw new InvalidOperationException($"{owner} Default Variant must persist locked.");
+        }
 
         return array;
     }

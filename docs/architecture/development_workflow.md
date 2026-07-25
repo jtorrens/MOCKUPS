@@ -154,8 +154,11 @@ manifest contract/resolver/renderable routes, complete protected Default
 Variant, optional complete additional Variants, duration policy, dictionary
 fields, embedded Component slots, editor layout, assets and one exact child
 Component Runtime contract source. The source is a full Component Variant
-reference plus the ordered stable Runtime Input and collection ids expected by
-the Module. Planning reads the manifest and parity database without writing
+reference, its explicit path inside the Module config, plus the ordered stable
+Runtime Input and collection ids expected by the Module. A derived collection
+that embeds child Runtime contracts retains both paths: the path from Module to
+the source Component Variant and the path from that Component config to the
+child Variant. Planning reads the manifest and parity database without writing
 either, resolves that exact same-Project Component fixture and rejects drift in
 any declared id.
 

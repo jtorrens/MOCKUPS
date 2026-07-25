@@ -1712,26 +1712,13 @@ internal sealed class RuntimeInputsCollectionEditor
         }
         if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
         {
-            if (string.IsNullOrWhiteSpace(collection.ItemRuntimeVariantReferencePath))
-            {
-                throw new InvalidOperationException(
-                    $"Editable Runtime collection '{collection.Id}' requires itemRuntimeVariantReferencePath "
-                    + "to create its complete child Runtime contract.");
-            }
             var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-            var referenceNode = JsonPath.Get(
+            var reference = RuntimeCollectionItemContractOwner
+                .ResolveItemVariantReference(
+                item,
+                collection,
                 config,
-                collection.ItemRuntimeVariantReferencePath.Split(
-                    '.',
-                    StringSplitOptions.RemoveEmptyEntries));
-            if (referenceNode is not JsonValue referenceValue
-                || !referenceValue.TryGetValue<string>(out var reference)
-                || string.IsNullOrWhiteSpace(reference))
-            {
-                throw new InvalidOperationException(
-                    $"Runtime collection '{collection.Id}' itemRuntimeVariantReferencePath "
-                    + $"'{collection.ItemRuntimeVariantReferencePath}' must resolve to one complete Variant reference.");
-            }
+                _previewInputData.ComponentVariantConfig);
             item[collection.ItemRuntimeContractJsonKey] =
                 _ownerDocuments.ComponentVariantRuntimeInputs(reference);
         }

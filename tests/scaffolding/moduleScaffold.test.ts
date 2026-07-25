@@ -61,6 +61,12 @@ test("Module scaffold derives one exact child Runtime contract", () => {
       .map((collection) => collection.id),
     ["items"],
   );
+  assert.equal(
+    (plan.persistedDefinition.row.design_preview_json.collections as Array<{
+      itemRuntimeOwnerVariantReferencePath: string;
+    }>)[0]!.itemRuntimeOwnerVariantReferencePath,
+    "chatList.runtimeContract.variantReference",
+  );
   assert.deepEqual(
     plan.persistedDefinition.row.design_preview_json.animationTimeline,
     { durationPolicy: "calculated" },
@@ -89,6 +95,18 @@ test("Module scaffold rejects Runtime source drift and invalid duration", () => 
       repositoryRoot,
     ),
     /positive defaultDurationFrames/,
+  );
+
+  const invalidSourcePath = validSpec();
+  invalidSourcePath.runtimeContract.source.variantReferenceConfigPath =
+    "chatList.missing.variantReference";
+  assert.throws(
+    () => createModuleScaffoldPlan(
+      invalidSourcePath,
+      loadModuleScaffoldInventory(repositoryRoot),
+      repositoryRoot,
+    ),
+    /Runtime source Variant path/,
   );
 });
 
@@ -204,6 +222,7 @@ function validSpec(): ModuleScaffoldSpec {
       source: {
         componentType: "list",
         variantReference: "component_project_foqn_s2_list::variant::chats",
+        variantReferenceConfigPath: "chatList.runtimeContract.variantReference",
         inputIds: ["itemWidth", "itemHeight"],
         collectionIds: ["items"],
       },

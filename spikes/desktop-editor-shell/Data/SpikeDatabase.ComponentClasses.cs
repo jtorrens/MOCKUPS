@@ -80,7 +80,10 @@ internal sealed partial class SpikeDatabase
 
         var variant = VariantEnvelopeContract.FindSource(variants, variantId)
             ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
-        if (JsonBool(variant, ["locked"]))
+        if (IsVariantLockedForEditing(
+                componentClassId,
+                variantId,
+                JsonBool(variant, ["locked"])))
         {
             throw new InvalidOperationException($"Component variant '{variantId}' is locked.");
         }

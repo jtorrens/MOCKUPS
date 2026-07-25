@@ -28,7 +28,8 @@ It includes:
 - Module scaffolding read-only planning, exact child Runtime-contract
   derivation, duration-policy validation, non-overwriting semantic
   materialization, transactional integration and deterministic generated
-  registry/dictionary/config/slot verification;
+  registry/dictionary/config/slot verification, including the explicit source
+  Variant path used by derived nested Runtime collections;
 - macOS display-aware launcher ownership and command tests;
 - Preview and desktop animation tests;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
@@ -46,6 +47,12 @@ It includes:
   active-set edits resolving the selected embedded Actor,
   horizontal containment with compact Runtime navigation, and collision-free
   rebasing of nested target ids;
+- protected Default Variants remaining persistently locked while their edit
+  unlock is session-only, with a new database session restoring the lock
+  without a startup write;
+- Incoming Call Avatar/Icon Row boundaries, independently authored placement
+  and fixed structural Runtime reconciliation from zero to two Button rows
+  while preserving matching stable-id values;
 - generic Runtime action completion, visual-tree reattachment, repeat from the
   captured origin, Restore and exact prepared-frame reuse;
 - architecture enforcement;

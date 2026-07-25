@@ -24,23 +24,16 @@ internal static class IncomingCallNotificationComponentConfigContract
         RequireExactKeys(
             owner,
             [
-                "layout",
                 "size",
                 "padding",
-                "contentGapToken",
-                "sectionGapToken",
                 "childCount",
-                "avatarSize",
                 "surfaceSlot",
                 "avatarSlot",
-                "labelSlot",
+                "avatarPlacement",
                 "iconRowSlot",
+                "iconRowPlacement",
             ],
             $"{context}.incomingCallNotification");
-        RequireOneOf(
-            JsonPath.RequiredString(owner, "layout", context),
-            ["compact", "stackedActions"],
-            $"{context}.incomingCallNotification.layout");
         var size = RuntimeInputValueKindContract.ParseValue(
             ValueKind.IntegerPair,
             JsonPath.RequiredString(owner, "size", context),
@@ -50,24 +43,22 @@ internal static class IncomingCallNotificationComponentConfigContract
             ValueKind.ThemeTokenPair,
             JsonPath.RequiredString(owner, "padding", context),
             $"{context}.incomingCallNotification.padding");
-        _ = JsonPath.RequiredString(owner, "contentGapToken", context);
-        _ = JsonPath.RequiredString(owner, "sectionGapToken", context);
         var childCount = JsonPath.RequiredNumber(owner, "childCount", context);
         if (childCount != 1)
         {
             throw new InvalidOperationException(
                 $"{context}.incomingCallNotification.childCount must be 1.");
         }
-        if (JsonPath.RequiredNumber(owner, "avatarSize", context) <= 0)
-        {
-            throw new InvalidOperationException(
-                $"{context}.incomingCallNotification.avatarSize must be positive.");
-        }
-        foreach (var key in new[] { "surfaceSlot", "avatarSlot", "labelSlot", "iconRowSlot" })
+        foreach (var key in new[] { "surfaceSlot", "avatarSlot", "iconRowSlot" })
         {
             ComponentVariantSlotDocumentContract.Validate(
                 JsonPath.RequiredObject(owner, key, context),
                 $"{context}.incomingCallNotification.{key}");
+        }
+        foreach (var key in new[] { "avatarPlacement", "iconRowPlacement" })
+        {
+            _ = AlignmentPlacementValue.Parse(
+                JsonPath.RequiredObject(owner, key, context).ToJsonString());
         }
     }
 
@@ -87,14 +78,4 @@ internal static class IncomingCallNotificationComponentConfigContract
             + (unknown.Count > 0 ? $" Unknown: {string.Join(", ", unknown)}." : ""));
     }
 
-    private static void RequireOneOf(
-        string value,
-        IReadOnlyList<string> options,
-        string path)
-    {
-        if (!options.Contains(value, StringComparer.Ordinal))
-        {
-            throw new InvalidOperationException($"{path} has unsupported value '{value}'.");
-        }
-    }
 }

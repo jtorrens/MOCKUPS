@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "intent": {
     "responsibility": "Own one reusable incoming-call notification boundary for phone application interfaces.",
-    "visualBoundary": "Own one bounded Surface with exact Avatar, Label and Icon Row child boundaries in compact or stacked-actions layout.",
-    "runtimeBehavior": "Resolve presence plus the exact Avatar, Label and Icon Row Runtime contracts without manufacturing child values.",
+    "visualBoundary": "Own one bounded Surface frame with exact Avatar and Icon Row child boundaries, each with independent Variant-authored placement.",
+    "runtimeBehavior": "Resolve presence plus the exact Avatar and Icon Row Runtime contracts without manufacturing child values in the resolver.",
     "forwarding": "Forward each declared child Runtime contract unchanged to its exact fixed Component Variant boundary.",
     "temporalOwnership": "Own reusable boundary Motion; the embedding parent owns the appearance event and owner-relative time."
   },
@@ -14,7 +14,7 @@
     "projectId": "project_foqn_s2",
     "recordClassId": "component.incomingCallNotification",
     "name": "Incoming Call Notification",
-    "notes": "Reusable iOS and Android incoming-call notification with exact child Runtime forwarding."
+    "notes": "Reusable iOS and Android incoming-call notification with independently placed Avatar and Icon Row boundaries."
   },
   "manifest": {
     "contract": "./incomingCallNotificationComponentContract",
@@ -23,7 +23,6 @@
     "embeds": [
       "surface",
       "avatar",
-      "label",
       "iconRow"
     ]
   },
@@ -44,13 +43,9 @@
       "scale": false
     },
     "incomingCallNotification": {
-      "layout": "compact",
       "size": "360|88",
       "padding": "theme.spacing.l|theme.spacing.m",
-      "contentGapToken": "theme.spacing.m",
-      "sectionGapToken": "theme.spacing.m",
       "childCount": 1,
-      "avatarSize": 56,
       "surfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
         "overrides": {
@@ -68,7 +63,7 @@
         }
       },
       "avatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::default",
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
         "overrides": {
           "style": {
             "shadowEnabled": false,
@@ -79,53 +74,71 @@
             "defaultSize": 52,
             "cornerRadiusToken": "theme.radii.full",
             "labelSlot": {
-              "showLabel": false,
-              "showSubtext": false
+              "showLabel": true,
+              "showSubtext": true,
+              "placement": {
+                "mode": "outsideEdge",
+                "alignX": 1,
+                "alignY": 0.5,
+                "offsetX": 12,
+                "offsetY": 0
+              },
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0
+                },
+                "label": {
+                  "dimensionMode": "fixed",
+                  "size": "156|52",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textAlign": "left",
+                  "textGapToken": "theme.spacing.xs",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "left",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "600",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.l",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "subtextTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "400",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.m",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                    "overrides": {}
+                  }
+                }
+              }
             }
           }
         }
       },
-      "labelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {
-          "style": {
-            "shadowEnabled": false,
-            "reliefEnabled": false,
-            "borderWidth": 0
-          },
-          "label": {
-            "dimensionMode": "fixed",
-            "size": "172|56",
-            "padding": "theme.spacing.none|theme.spacing.none",
-            "textAlign": "left",
-            "textGapToken": "theme.spacing.xs",
-            "reserveSubtextSpace": false,
-            "subtextVerticalPosition": "bottom",
-            "subtextHorizontalAlign": "left",
-            "textTypography": {
-              "fontFamilyId": "theme",
-              "weight": "600",
-              "style": "normal",
-              "sizeToken": "theme.typography.sizes.l",
-              "lineHeight": "theme.typography.lineHeights.normal"
-            },
-            "subtextTypography": {
-              "fontFamilyId": "theme",
-              "weight": "400",
-              "style": "normal",
-              "sizeToken": "theme.typography.sizes.m",
-              "lineHeight": "theme.typography.lineHeights.normal"
-            },
-            "surfaceSlot": {
-              "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-              "overrides": {}
-            }
-          }
-        }
+      "avatarPlacement": {
+        "mode": "insideEdge",
+        "alignX": 0,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0
       },
       "iconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::incoming_call_ios",
         "overrides": {}
+      },
+      "iconRowPlacement": {
+        "mode": "insideEdge",
+        "alignX": 1,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0
       }
     }
   },
@@ -144,13 +157,9 @@
         "scale": false
       },
       "incomingCallNotification": {
-        "layout": "compact",
         "size": "360|88",
         "padding": "theme.spacing.l|theme.spacing.m",
-        "contentGapToken": "theme.spacing.m",
-        "sectionGapToken": "theme.spacing.m",
         "childCount": 1,
-        "avatarSize": 56,
         "surfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
           "overrides": {
@@ -168,7 +177,7 @@
           }
         },
         "avatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
           "overrides": {
             "style": {
               "shadowEnabled": false,
@@ -179,53 +188,71 @@
               "defaultSize": 52,
               "cornerRadiusToken": "theme.radii.full",
               "labelSlot": {
-                "showLabel": false,
-                "showSubtext": false
+                "showLabel": true,
+                "showSubtext": true,
+                "placement": {
+                  "mode": "outsideEdge",
+                  "alignX": 1,
+                  "alignY": 0.5,
+                  "offsetX": 12,
+                  "offsetY": 0
+                },
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "fixed",
+                    "size": "156|52",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textAlign": "left",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "left",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.l",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.m",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
               }
             }
           }
         },
-        "labelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {
-            "style": {
-              "shadowEnabled": false,
-              "reliefEnabled": false,
-              "borderWidth": 0
-            },
-            "label": {
-              "dimensionMode": "fixed",
-              "size": "172|56",
-              "padding": "theme.spacing.none|theme.spacing.none",
-              "textAlign": "left",
-              "textGapToken": "theme.spacing.xs",
-              "reserveSubtextSpace": false,
-              "subtextVerticalPosition": "bottom",
-              "subtextHorizontalAlign": "left",
-              "textTypography": {
-                "fontFamilyId": "theme",
-                "weight": "600",
-                "style": "normal",
-                "sizeToken": "theme.typography.sizes.l",
-                "lineHeight": "theme.typography.lineHeights.normal"
-              },
-              "subtextTypography": {
-                "fontFamilyId": "theme",
-                "weight": "400",
-                "style": "normal",
-                "sizeToken": "theme.typography.sizes.m",
-                "lineHeight": "theme.typography.lineHeights.normal"
-              },
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                "overrides": {}
-              }
-            }
-          }
+        "avatarPlacement": {
+          "mode": "insideEdge",
+          "alignX": 0,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
         },
         "iconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::incoming_call_ios",
           "overrides": {}
+        },
+        "iconRowPlacement": {
+          "mode": "insideEdge",
+          "alignX": 1,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
         }
       }
     }
@@ -246,13 +273,9 @@
           "scale": false
         },
         "incomingCallNotification": {
-          "layout": "stackedActions",
           "size": "360|152",
           "padding": "theme.spacing.l|theme.spacing.l",
-          "contentGapToken": "theme.spacing.m",
-          "sectionGapToken": "theme.spacing.l",
           "childCount": 1,
-          "avatarSize": 52,
           "surfaceSlot": {
             "variantReference": "component_project_foqn_s2_surface::variant::default",
             "overrides": {
@@ -270,7 +293,7 @@
             }
           },
           "avatarSlot": {
-            "variantReference": "component_project_foqn_s2_avatar::variant::default",
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {
               "style": {
                 "shadowEnabled": false,
@@ -281,53 +304,71 @@
                 "defaultSize": 52,
                 "cornerRadiusToken": "theme.radii.full",
                 "labelSlot": {
-                  "showLabel": false,
-                  "showSubtext": false
+                  "showLabel": true,
+                  "showSubtext": true,
+                  "placement": {
+                    "mode": "outsideEdge",
+                    "alignX": 1,
+                    "alignY": 0.5,
+                    "offsetX": 12,
+                    "offsetY": 0
+                  },
+                  "overrides": {
+                    "style": {
+                      "shadowEnabled": false,
+                      "reliefEnabled": false,
+                      "borderWidth": 0
+                    },
+                    "label": {
+                      "dimensionMode": "fixed",
+                      "size": "260|52",
+                      "padding": "theme.spacing.none|theme.spacing.none",
+                      "textAlign": "left",
+                      "textGapToken": "theme.spacing.xs",
+                      "reserveSubtextSpace": false,
+                      "subtextVerticalPosition": "bottom",
+                      "subtextHorizontalAlign": "left",
+                      "textTypography": {
+                        "fontFamilyId": "theme",
+                        "weight": "600",
+                        "style": "normal",
+                        "sizeToken": "theme.typography.sizes.l",
+                        "lineHeight": "theme.typography.lineHeights.normal"
+                      },
+                      "subtextTypography": {
+                        "fontFamilyId": "theme",
+                        "weight": "400",
+                        "style": "normal",
+                        "sizeToken": "theme.typography.sizes.m",
+                        "lineHeight": "theme.typography.lineHeights.normal"
+                      },
+                      "surfaceSlot": {
+                        "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                        "overrides": {}
+                      }
+                    }
+                  }
                 }
               }
             }
           },
-          "labelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
-            "overrides": {
-              "style": {
-                "shadowEnabled": false,
-                "reliefEnabled": false,
-                "borderWidth": 0
-              },
-              "label": {
-                "dimensionMode": "fixed",
-                "size": "272|52",
-                "padding": "theme.spacing.none|theme.spacing.none",
-                "textAlign": "left",
-                "textGapToken": "theme.spacing.xs",
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "left",
-                "textTypography": {
-                  "fontFamilyId": "theme",
-                  "weight": "600",
-                  "style": "normal",
-                  "sizeToken": "theme.typography.sizes.l",
-                  "lineHeight": "theme.typography.lineHeights.normal"
-                },
-                "subtextTypography": {
-                  "fontFamilyId": "theme",
-                  "weight": "400",
-                  "style": "normal",
-                  "sizeToken": "theme.typography.sizes.m",
-                  "lineHeight": "theme.typography.lineHeights.normal"
-                },
-                "surfaceSlot": {
-                  "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                  "overrides": {}
-                }
-              }
-            }
+          "avatarPlacement": {
+            "mode": "insideEdge",
+            "alignX": 0,
+            "alignY": 0,
+            "offsetX": 0,
+            "offsetY": 0
           },
           "iconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::incoming_call_android",
             "overrides": {}
+          },
+          "iconRowPlacement": {
+            "mode": "insideEdge",
+            "alignX": 1,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
           }
         }
       }
@@ -438,23 +479,10 @@
         "itemRuntimeVariantReferencePath": "incomingCallNotification.avatarSlot.variantReference"
       },
       {
-        "id": "labelRuntime",
-        "label": "Label",
-        "jsonKey": "labelRuntime",
-        "itemLabel": "Label",
-        "fields": [],
-        "itemRuntimeContractJsonKey": "runtimeInputs",
-        "fixedCountPath": "incomingCallNotification.childCount",
-        "canEditStructure": false,
-        "uiPresentation": "itemSections",
-        "itemRuntimePresentation": "sections",
-        "itemRuntimeVariantReferencePath": "incomingCallNotification.labelSlot.variantReference"
-      },
-      {
         "id": "iconRowRuntime",
-        "label": "Actions",
+        "label": "Icon Row",
         "jsonKey": "iconRowRuntime",
-        "itemLabel": "Actions",
+        "itemLabel": "Icon Row",
         "fields": [],
         "itemRuntimeContractJsonKey": "runtimeInputs",
         "fixedCountPath": "incomingCallNotification.childCount",
@@ -488,7 +516,7 @@
           "componentType": "avatar",
           "sampleText": "Sample",
           "sampleSize": 256,
-          "sampleSubtext": "Subtitle",
+          "sampleSubtext": "Incoming call",
           "inputs": [
             {
               "id": "actorId",
@@ -523,7 +551,7 @@
               "jsonKey": "sampleSubtext",
               "kind": "text",
               "valueKind": "StringSingleLine",
-              "defaultValue": "Subtitle",
+              "defaultValue": "Incoming call",
               "minimum": 0,
               "maximum": 9999,
               "increment": 1,
@@ -754,288 +782,9 @@
         }
       }
     ],
-    "labelRuntime": [
-      {
-        "id": "label",
-        "runtimeInputs": {
-          "componentType": "label",
-          "sampleText": "Alex",
-          "sampleSize": 256,
-          "sampleSubtext": "Incoming call",
-          "inputs": [
-            {
-              "id": "sampleText",
-              "label": "Text",
-              "jsonKey": "sampleText",
-              "kind": "text",
-              "valueKind": "StringSingleLine",
-              "defaultValue": "Sample",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "text",
-              "uiGroupLabel": "Text",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 10
-            },
-            {
-              "id": "textMode",
-              "label": "Content source",
-              "jsonKey": "textMode",
-              "kind": "option",
-              "valueKind": "OptionToken",
-              "defaultValue": "literal",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [
-                {
-                  "value": "literal",
-                  "label": "Text"
-                },
-                {
-                  "value": "countUp",
-                  "label": "Count up"
-                },
-                {
-                  "value": "countDown",
-                  "label": "Count down"
-                }
-              ],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "text",
-              "uiGroupLabel": "Text",
-              "uiParentGroupId": "",
-              "transition": {
-                "targetInputId": "sampleText",
-                "triggerValues": [
-                  "countUp",
-                  "countDown"
-                ],
-                "replacementValue": "00:00",
-                "targetValuePattern": "^\\d+:[0-5]\\d$",
-                "forwardedTargetOnly": true
-              },
-              "unit": "",
-              "uiOrder": 11
-            },
-            {
-              "id": "textSizeMultiplier",
-              "label": "Size multiplier",
-              "jsonKey": "textSizeMultiplier",
-              "kind": "number",
-              "valueKind": "Decimal",
-              "defaultValue": "1",
-              "minimum": 0.1,
-              "maximum": 20,
-              "increment": 0.1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "text",
-              "uiGroupLabel": "Text",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 12
-            },
-            {
-              "id": "sampleSubtext",
-              "label": "Subtext",
-              "jsonKey": "sampleSubtext",
-              "kind": "text",
-              "valueKind": "StringSingleLine",
-              "defaultValue": "Subtitle",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "subtext",
-              "uiGroupLabel": "Subtext",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 20
-            },
-            {
-              "id": "subtextMode",
-              "label": "Content source",
-              "jsonKey": "subtextMode",
-              "kind": "option",
-              "valueKind": "OptionToken",
-              "defaultValue": "literal",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [
-                {
-                  "value": "literal",
-                  "label": "Text"
-                },
-                {
-                  "value": "countUp",
-                  "label": "Count up"
-                },
-                {
-                  "value": "countDown",
-                  "label": "Count down"
-                }
-              ],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "subtext",
-              "uiGroupLabel": "Subtext",
-              "uiParentGroupId": "",
-              "transition": {
-                "targetInputId": "sampleSubtext",
-                "triggerValues": [
-                  "countUp",
-                  "countDown"
-                ],
-                "replacementValue": "00:00",
-                "targetValuePattern": "^\\d+:[0-5]\\d$",
-                "forwardedTargetOnly": true
-              },
-              "unit": "",
-              "uiOrder": 21
-            },
-            {
-              "id": "subtextSizeMultiplier",
-              "label": "Size multiplier",
-              "jsonKey": "subtextSizeMultiplier",
-              "kind": "number",
-              "valueKind": "Decimal",
-              "defaultValue": "1",
-              "minimum": 0.1,
-              "maximum": 20,
-              "increment": 0.1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "embedded",
-              "uiGroupId": "subtext",
-              "uiGroupLabel": "Subtext",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 22
-            },
-            {
-              "id": "textColorToken",
-              "label": "Text color",
-              "jsonKey": "textColorToken",
-              "kind": "themeToken",
-              "valueKind": "ThemeToken",
-              "defaultValue": "theme.colors.textPrimary",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "self",
-              "uiGroupId": "",
-              "uiGroupLabel": "",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 22
-            },
-            {
-              "id": "subtextColorToken",
-              "label": "Subtext color",
-              "jsonKey": "subtextColorToken",
-              "kind": "themeToken",
-              "valueKind": "ThemeToken",
-              "defaultValue": "theme.colors.textSecondary",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "runtime",
-              "uiOrigin": "self",
-              "uiGroupId": "",
-              "uiGroupLabel": "",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 22
-            }
-          ],
-          "textMode": "literal",
-          "textSizeMultiplier": 1,
-          "subtextMode": "literal",
-          "subtextSizeMultiplier": 1,
-          "textColorToken": "theme.colors.textPrimary",
-          "subtextColorToken": "theme.colors.textSecondary"
-        }
-      }
-    ],
     "iconRowRuntime": [
       {
-        "id": "actions",
+        "id": "iconRow",
         "runtimeInputs": {
           "componentType": "iconRow",
           "sampleText": "Sample",
@@ -1583,7 +1332,21 @@
                   "subtitleMaxCharacters": 72,
                   "fallbackIcon": "component"
                 },
-                "canEditStructure": false
+                "canEditStructure": false,
+                "structureProjection": {
+                  "sourceConfigPath": "iconRow.items",
+                  "sourceIdJsonKey": "id",
+                  "runtimeIdJsonKey": "id",
+                  "fieldBindings": {
+                    "state": "state",
+                    "sampleText": "text",
+                    "iconToken": "iconToken",
+                    "iconSizeToken": "iconSizeToken",
+                    "textSizeToken": "textSizeToken",
+                    "pushTrigger": "pushTrigger",
+                    "pushElapsedMs": "pushElapsedMs"
+                  }
+                }
               }
             }
           ],
@@ -1632,38 +1395,9 @@
     ]
   },
   "metadata": {
-    "note": "Scaffolded incoming-call notification owner with iOS and Android Variants."
+    "note": "Scaffolded incoming-call notification owner with a Surface frame and independently placed Avatar and Icon Row boundaries."
   },
   "dictionaryFields": [
-    {
-      "id": "component.incomingCallNotification.layout",
-      "label": "Layout",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "incomingCallNotification",
-        "layout"
-      ],
-      "defaultValue": "compact",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "compact",
-          "label": "Compact"
-        },
-        {
-          "value": "stackedActions",
-          "label": "Stacked actions"
-        }
-      ],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
     {
       "id": "component.incomingCallNotification.size",
       "label": "Size",
@@ -1711,72 +1445,6 @@
       "unit": ""
     },
     {
-      "id": "component.incomingCallNotification.contentGapToken",
-      "label": "Content gap",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "incomingCallNotification",
-        "contentGapToken"
-      ],
-      "defaultValue": "theme.spacing.m",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.incomingCallNotification.sectionGapToken",
-      "label": "Section gap",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "incomingCallNotification",
-        "sectionGapToken"
-      ],
-      "defaultValue": "theme.spacing.m",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.incomingCallNotification.avatarSize",
-      "label": "Avatar size",
-      "valueKind": "Integer",
-      "jsonPath": [
-        "incomingCallNotification",
-        "avatarSize"
-      ],
-      "defaultValue": "56",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": {
-        "minimum": 1,
-        "maximum": 512,
-        "increment": 1,
-        "decimalPlaces": 0,
-        "useSlider": false
-      },
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
       "id": "component.incomingCallNotification.surface",
       "label": "Surface",
       "valueKind": "ComponentVariantSlot",
@@ -1804,7 +1472,7 @@
         "incomingCallNotification",
         "avatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false,\"borderWidth\":0},\"avatar\":{\"defaultSize\":52,\"cornerRadiusToken\":\"theme.radii.full\",\"labelSlot\":{\"showLabel\":false,\"showSubtext\":false}}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false,\"borderWidth\":0},\"avatar\":{\"defaultSize\":52,\"cornerRadiusToken\":\"theme.radii.full\",\"labelSlot\":{\"showLabel\":true,\"showSubtext\":true,\"placement\":{\"mode\":\"outsideEdge\",\"alignX\":1,\"alignY\":0.5,\"offsetX\":12,\"offsetY\":0},\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false,\"borderWidth\":0},\"label\":{\"dimensionMode\":\"fixed\",\"size\":\"156|52\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textAlign\":\"left\",\"textGapToken\":\"theme.spacing.xs\",\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"left\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"600\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.l\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"subtextTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"400\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.m\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::surface_inputbox_copy\",\"overrides\":{}}}}}}}}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",
@@ -1817,28 +1485,8 @@
       "unit": ""
     },
     {
-      "id": "component.incomingCallNotification.label",
-      "label": "Label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "incomingCallNotification",
-        "labelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false,\"borderWidth\":0},\"label\":{\"dimensionMode\":\"fixed\",\"size\":\"172|56\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textAlign\":\"left\",\"textGapToken\":\"theme.spacing.xs\",\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"left\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"600\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.l\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"subtextTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"400\",\"style\":\"normal\",\"sizeToken\":\"theme.typography.sizes.m\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::surface_inputbox_copy\",\"overrides\":{}}}}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
       "id": "component.incomingCallNotification.iconRow",
-      "label": "Actions",
+      "label": "Icon Row",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "incomingCallNotification",
@@ -1864,6 +1512,46 @@
         "boundaryMotion"
       ],
       "defaultValue": "{\"transition\":\"slide\",\"direction\":\"top\",\"bounds\":\"screen\",\"fade\":true,\"translate\":true,\"scale\":false}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": ""
+    },
+    {
+      "id": "component.incomingCallNotification.avatarPlacement",
+      "label": "Avatar placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "incomingCallNotification",
+        "avatarPlacement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":0,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
+      "isEditable": true,
+      "options": [],
+      "optionsSource": "",
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": ""
+    },
+    {
+      "id": "component.incomingCallNotification.iconRowPlacement",
+      "label": "Icon Row placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "incomingCallNotification",
+        "iconRowPlacement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":1,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "optionsSource": "",
@@ -1929,33 +1617,18 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.incomingCallNotification.layout",
+                "id": "component.incomingCallNotification.size",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.incomingCallNotification.size",
+                "id": "component.incomingCallNotification.padding",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.incomingCallNotification.padding",
+                "id": "component.incomingCallNotification.surface",
                 "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.incomingCallNotification.contentGapToken",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.incomingCallNotification.sectionGapToken",
-                "order": 50,
-                "visible": true
-              },
-              {
-                "id": "component.incomingCallNotification.avatarSize",
-                "order": 60,
                 "visible": true
               }
             ]
@@ -1968,22 +1641,22 @@
             "presentation": "verticalCards",
             "fields": [
               {
-                "id": "component.incomingCallNotification.surface",
+                "id": "component.incomingCallNotification.avatar",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.incomingCallNotification.avatar",
+                "id": "component.incomingCallNotification.avatarPlacement",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.incomingCallNotification.label",
+                "id": "component.incomingCallNotification.iconRow",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "component.incomingCallNotification.iconRow",
+                "id": "component.incomingCallNotification.iconRowPlacement",
                 "order": 40,
                 "visible": true
               }

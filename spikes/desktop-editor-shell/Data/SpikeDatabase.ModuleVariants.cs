@@ -307,18 +307,41 @@ internal sealed partial class SpikeDatabase
         }
     }
 
-    public ProjectTreeNode ToggleModuleVariantLock(ProjectTreeNode node) =>
-        UpdateModuleVariantMetadata(node, (variant) => variant["locked"] = !JsonBool(variant, ["locked"]), node.Name);
+    public ProjectTreeNode ToggleModuleVariantLock(ProjectTreeNode node)
+    {
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
+            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
+
+        if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
+        {
+            var nextLocked = ToggleDefaultVariantSessionLock(moduleId, variantId);
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleVariant,
+                node.Id,
+                node.Name,
+                node.Notes,
+                node.RecordClassId,
+                node.Parent,
+                isUsed: node.IsUsed,
+                isProtected: node.IsProtected,
+                isLocked: nextLocked);
+        }
+
+        return UpdateModuleVariantMetadata(
+            node,
+            (variant) => variant["locked"] = !JsonBool(variant, ["locked"]),
+            node.Name);
+    }
 
     public void ReplaceModuleVariantConfig(ProjectTreeNode node, string configJson)
     {
         var config = ParseJsonObject(configJson);
-        UpdateModuleVariantMetadata(node, (variant) => variant["config"] = config, node.Name);
+        UpdateModuleVariantConfig(node, (variant) => variant["config"] = config);
     }
 
     public void UpdateModuleVariantField(ProjectTreeNode node, string fieldId, string value)
     {
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out _))
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
             throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
         if (fieldId is "module.sortOrder" or "module.metadata" or "module.recordClassId")
         {
@@ -331,7 +354,11 @@ internal sealed partial class SpikeDatabase
             var module = GetModuleSettings(moduleId);
             var metadata = ParseJsonObject(module.MetadataJson);
             var variant = FindModuleVariant(metadata, node.Id);
-            if (JsonBool(variant, ["locked"])) throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
+            if (IsVariantLockedForEditing(
+                    moduleId,
+                    variantId,
+                    JsonBool(variant, ["locked"])))
+                throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
             var config = variant["config"] as JsonObject ?? throw new InvalidOperationException("Module variant has no config.");
             UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
             variant["config"] = config;
@@ -361,6 +388,26 @@ internal sealed partial class SpikeDatabase
             return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, node.Id,
                 JsonPath.String(variant, "name", name), node.Notes, node.RecordClassId, node.Parent,
                 isUsed: node.IsUsed, isProtected: JsonBool(variant, ["protected"]), isLocked: JsonBool(variant, ["locked"]));
+        }
+    }
+
+    private void UpdateModuleVariantConfig(ProjectTreeNode node, Action<JsonObject> update)
+    {
+        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
+            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var module = GetModuleSettings(moduleId);
+            var metadata = ParseJsonObject(module.MetadataJson);
+            var variant = FindModuleVariant(metadata, node.Id);
+            if (IsVariantLockedForEditing(
+                    moduleId,
+                    variantId,
+                    JsonBool(variant, ["locked"])))
+                throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
+            update(variant);
+            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }
     }
 

@@ -147,6 +147,7 @@
     "source": {
       "componentType": "list",
       "variantReference": "component_project_foqn_s2_list::variant::chats",
+      "variantReferenceConfigPath": "chatList.runtimeContract.variantReference",
       "inputIds": [
         "itemWidth",
         "itemHeight"

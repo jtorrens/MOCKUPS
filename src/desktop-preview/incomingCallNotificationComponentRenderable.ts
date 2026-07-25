@@ -3,8 +3,10 @@ import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import {
   boundedCenterBox,
   numberToken,
+  placeChild,
   previewScreenBox,
   renderScale,
+  scalePlacement,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
@@ -12,7 +14,6 @@ import {
   measureIconRowComponent,
 } from "./iconRowComponentRenderable.js";
 import type { IncomingCallNotificationDesignContract } from "./incomingCallNotificationComponentContract.js";
-import { labelComponentToRenderableAt } from "./labelComponentRenderable.js";
 import {
   wrapExitMotionFrame,
   wrapMotionFrame,
@@ -44,9 +45,18 @@ export function incomingCallNotificationComponentToRenderable(
     );
   }
 
-  const content = notification.layout === "compact"
-    ? compactChildren(payload, notification, inner, scale)
-    : stackedChildren(payload, notification, inner, scale);
+  const avatarSize = notification.avatar.size * scale;
+  const avatarBox = placeChild(
+    inner,
+    { width: avatarSize, height: avatarSize },
+    scalePlacement(notification.avatarPlacement, scale),
+  );
+  const iconRowSize = measureIconRowComponent(payload, notification.iconRow);
+  const iconRowBox = placeChild(
+    inner,
+    iconRowSize,
+    scalePlacement(notification.iconRowPlacement, scale),
+  );
   const node: RenderableNode = {
     id: notification.id,
     type: "group",
@@ -55,7 +65,8 @@ export function incomingCallNotificationComponentToRenderable(
     style: { overflow: "visible" },
     children: [
       surfaceComponentToRenderableAt(payload, notification.surface, box),
-      ...content,
+      avatarComponentToRenderableAt(payload, notification.avatar, avatarBox),
+      iconRowComponentToRenderableAt(payload, notification.iconRow, iconRowBox),
     ],
   };
 
@@ -85,120 +96,4 @@ export function incomingCallNotificationComponentToRenderable(
   return notification.present
     ? node
     : { ...node, transform: { ...node.transform, opacity: 0 } };
-}
-
-function compactChildren(
-  payload: DesignPreviewPayload,
-  notification: IncomingCallNotificationDesignContract,
-  inner: RenderableBox,
-  scale: number,
-) {
-  const gap = Math.max(0, numberToken(payload, notification.contentGapToken) * scale);
-  const avatarSize = notification.avatarSize * scale;
-  const actionSize = measureIconRowComponent(payload, notification.iconRow);
-  const labelWidth = inner.width - avatarSize - actionSize.width - gap * 2;
-  if (labelWidth <= 0 || Math.max(avatarSize, actionSize.height) > inner.height) {
-    throw new Error(
-      "component.incomingCallNotification compact children do not fit its Variant size",
-    );
-  }
-  const avatarBox = verticallyCentered(inner, avatarSize, avatarSize, inner.x);
-  const labelBox = {
-    x: avatarBox.x + avatarBox.width + gap,
-    y: inner.y,
-    width: labelWidth,
-    height: inner.height,
-  };
-  const actionsBox = verticallyCentered(
-    inner,
-    actionSize.width,
-    actionSize.height,
-    inner.x + inner.width - actionSize.width,
-  );
-  return [
-    avatarComponentToRenderableAt(payload, notification.avatar, avatarBox),
-    labelComponentToRenderableAt(
-      payload,
-      notification.label,
-      labelBox,
-      { maximumWidth: labelBox.width },
-    ),
-    iconRowComponentToRenderableAt(payload, notification.iconRow, actionsBox),
-  ];
-}
-
-function stackedChildren(
-  payload: DesignPreviewPayload,
-  notification: IncomingCallNotificationDesignContract,
-  inner: RenderableBox,
-  scale: number,
-) {
-  const contentGap = Math.max(
-    0,
-    numberToken(payload, notification.contentGapToken) * scale,
-  );
-  const sectionGap = Math.max(
-    0,
-    numberToken(payload, notification.sectionGapToken) * scale,
-  );
-  const avatarSize = notification.avatarSize * scale;
-  const actionSize = measureIconRowComponent(payload, notification.iconRow);
-  const identityHeight = inner.height - actionSize.height - sectionGap;
-  const labelWidth = inner.width - avatarSize - contentGap;
-  if (identityHeight <= 0
-      || labelWidth <= 0
-      || avatarSize > identityHeight
-      || actionSize.width > inner.width) {
-    throw new Error(
-      "component.incomingCallNotification stacked children do not fit its Variant size",
-    );
-  }
-  const identityBox = {
-    x: inner.x,
-    y: inner.y,
-    width: inner.width,
-    height: identityHeight,
-  };
-  const avatarBox = verticallyCentered(
-    identityBox,
-    avatarSize,
-    avatarSize,
-    identityBox.x,
-  );
-  const labelBox = {
-    x: avatarBox.x + avatarBox.width + contentGap,
-    y: identityBox.y,
-    width: labelWidth,
-    height: identityBox.height,
-  };
-  const actionsBox = {
-    x: inner.x + inner.width - actionSize.width,
-    y: inner.y + inner.height - actionSize.height,
-    width: actionSize.width,
-    height: actionSize.height,
-  };
-  return [
-    avatarComponentToRenderableAt(payload, notification.avatar, avatarBox),
-    labelComponentToRenderableAt(
-      payload,
-      notification.label,
-      labelBox,
-      { maximumWidth: labelBox.width },
-    ),
-    iconRowComponentToRenderableAt(payload, notification.iconRow, actionsBox),
-  ];
-}
-
-function verticallyCentered(
-  bounds: RenderableBox,
-  width: number,
-  height: number,
-  x: number,
-) {
-  return {
-    x,
-    y: bounds.y + (bounds.height - height) / 2,
-    width,
-    height,
-  };
 }

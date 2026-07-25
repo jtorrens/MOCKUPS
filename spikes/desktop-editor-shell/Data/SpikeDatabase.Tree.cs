@@ -211,7 +211,7 @@ internal sealed partial class SpikeDatabase
                     moduleNode,
                     isUsed: used,
                     isProtected: variant.IsProtected,
-                    isLocked: variant.IsLocked));
+                    isLocked: IsVariantLockedForEditing(module.Id, variant.Id, variant.IsLocked)));
             }
         }
 
@@ -355,7 +355,7 @@ internal sealed partial class SpikeDatabase
                     componentNode,
                     isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, VariantReferenceId.Format(componentClass.Id, variant.Id)),
                     isProtected: variant.IsProtected,
-                    isLocked: variant.IsLocked));
+                    isLocked: IsVariantLockedForEditing(componentClass.Id, variant.Id, variant.IsLocked)));
             }
         }
 

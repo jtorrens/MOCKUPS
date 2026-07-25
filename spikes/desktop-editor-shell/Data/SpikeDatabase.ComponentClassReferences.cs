@@ -361,6 +361,7 @@ internal sealed partial class SpikeDatabase
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
+        StructuredRuntimeCollectionProjection.Apply(effective, config);
         return effective;
     }
 

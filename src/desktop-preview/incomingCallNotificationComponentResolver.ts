@@ -9,6 +9,7 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredPlacement,
   requiredRecord,
   requiredString,
   requiredStringPair,
@@ -16,16 +17,9 @@ import {
 import { requiredComponentBoundaryMotion } from "./componentBoundaryMotion.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
-import {
-  resolveLabelComponentFromRecords,
-  staticLabelFrameContext,
-} from "./labelComponentResolver.js";
 import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
-import type {
-  IncomingCallNotificationDesignContract,
-  IncomingCallNotificationLayout,
-} from "./incomingCallNotificationComponentContract.js";
+import type { IncomingCallNotificationDesignContract } from "./incomingCallNotificationComponentContract.js";
 
 export function resolveIncomingCallNotificationComponent(
   payload: DesignPreviewPayload,
@@ -65,12 +59,6 @@ export function resolveIncomingCallNotificationComponent(
     "avatarSlot",
     "avatar",
   );
-  const labelConfig = componentSlotConfig(
-    bases,
-    owner,
-    "labelSlot",
-    "label",
-  );
   const iconRowConfig = componentSlotConfig(
     bases,
     owner,
@@ -80,31 +68,8 @@ export function resolveIncomingCallNotificationComponent(
 
   return {
     id: "component.incomingCallNotification",
-    layout: layout(requiredString(
-      owner,
-      "layout",
-      "component.incomingCallNotification.layout",
-    )),
     size,
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },
-    contentGapToken: requiredString(
-      owner,
-      "contentGapToken",
-      "component.incomingCallNotification.contentGapToken",
-    ),
-    sectionGapToken: requiredString(
-      owner,
-      "sectionGapToken",
-      "component.incomingCallNotification.sectionGapToken",
-    ),
-    avatarSize: positive(
-      requiredNumber(
-        owner,
-        "avatarSize",
-        "component.incomingCallNotification.avatarSize",
-      ),
-      "component.incomingCallNotification.avatarSize",
-    ),
     present: requiredBoolean(
       preview,
       "present",
@@ -138,18 +103,21 @@ export function resolveIncomingCallNotificationComponent(
       bases,
       "component.incomingCallNotification.avatar",
     ),
-    label: resolveLabelComponentFromRecords(
-      labelConfig,
-      exactChildRuntime(preview, "labelRuntime", "label"),
-      bases,
-      "component.incomingCallNotification.label",
-      staticLabelFrameContext,
+    avatarPlacement: requiredPlacement(
+      owner,
+      "avatarPlacement",
+      "component.incomingCallNotification.avatarPlacement",
     ),
     iconRow: resolveIconRowComponentFromRecords(
       iconRowConfig,
-      exactChildRuntime(preview, "iconRowRuntime", "actions"),
+      exactChildRuntime(preview, "iconRowRuntime", "iconRow"),
       bases,
-      "component.incomingCallNotification.actions",
+      "component.incomingCallNotification.iconRow",
+    ),
+    iconRowPlacement: requiredPlacement(
+      owner,
+      "iconRowPlacement",
+      "component.incomingCallNotification.iconRowPlacement",
     ),
   };
 }
@@ -204,11 +172,6 @@ function exactChildRuntime(
     "runtimeInputs",
     `component.incomingCallNotification.runtime.${collectionKey}[0].runtimeInputs`,
   );
-}
-
-function layout(value: string): IncomingCallNotificationLayout {
-  if (value === "compact" || value === "stackedActions") return value;
-  throw new Error(`Unsupported Incoming Call Notification layout ${value}`);
 }
 
 function positive(value: number, path: string) {

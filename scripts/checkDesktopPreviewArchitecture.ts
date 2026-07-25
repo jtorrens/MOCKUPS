@@ -10488,6 +10488,38 @@ function assertListItemRuntimePresentationIsGeneric() {
         );
       }
     }
+
+    const chatListModule = database.prepare(
+      "SELECT config_json, design_preview_json FROM modules WHERE record_class_id = 'module.core.chatList'",
+    ).get() as {
+      config_json: string;
+      design_preview_json: string;
+    } | undefined;
+    if (!chatListModule) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "Chat List Module Runtime contract is missing",
+      );
+      return;
+    }
+    const chatListConfig = jsonRecord(jsonParse(chatListModule.config_json));
+    const chatListOwner = jsonRecord(chatListConfig.chatList);
+    const chatListRuntime = jsonRecord(chatListOwner.runtimeContract);
+    const chatListCollection = jsonArray(
+      jsonRecord(jsonParse(chatListModule.design_preview_json)).collections,
+    )
+      .map(jsonRecord)
+      .find((collection) => collection.id === "items");
+    if (!chatListCollection
+      || chatListCollection.itemRuntimeOwnerVariantReferencePath
+        !== "chatList.runtimeContract.variantReference"
+      || chatListRuntime.variantReference
+        !== jsonRecord(chatListOwner.listSlot).variantReference) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "Derived Module Runtime collections must declare the exact Component Variant owner of their nested item contract",
+      );
+    }
   } finally {
     database.close();
   }

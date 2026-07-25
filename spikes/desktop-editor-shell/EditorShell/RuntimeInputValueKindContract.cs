@@ -437,9 +437,22 @@ internal static class RuntimeInputValueKindContract
     private static double RequireNumber(JsonNode value, string owner)
     {
         if (value is not JsonValue scalar
-            || !scalar.TryGetValue<double>(out var number)
-            || double.IsNaN(number)
-            || double.IsInfinity(number))
+            || scalar.GetValueKind() != System.Text.Json.JsonValueKind.Number)
+        {
+            throw new InvalidOperationException($"{owner} value must be a finite number.");
+        }
+        var number = scalar.TryGetValue<double>(out var doubleValue)
+            ? doubleValue
+            : scalar.TryGetValue<decimal>(out var decimalValue)
+                ? (double)decimalValue
+                : scalar.TryGetValue<long>(out var longValue)
+                    ? longValue
+                    : scalar.TryGetValue<int>(out var integerValue)
+                        ? integerValue
+                        : scalar.TryGetValue<float>(out var floatValue)
+                            ? floatValue
+                            : double.NaN;
+        if (double.IsNaN(number) || double.IsInfinity(number))
         {
             throw new InvalidOperationException($"{owner} value must be a finite number.");
         }

@@ -88,6 +88,7 @@ export interface ModuleScaffoldSpec {
     source: {
       componentType: string;
       variantReference: string;
+      variantReferenceConfigPath: string;
       inputIds: string[];
       collectionIds: string[];
     };
@@ -278,7 +279,13 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   const source = requiredObject(runtimeContract.source, "Module scaffold runtimeContract source");
   requireExactKeys(
     source,
-    ["componentType", "variantReference", "inputIds", "collectionIds"],
+    [
+      "componentType",
+      "variantReference",
+      "variantReferenceConfigPath",
+      "inputIds",
+      "collectionIds",
+    ],
     "Module scaffold runtimeContract source",
   );
   const durationPolicy = requiredString(
@@ -355,6 +362,10 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
       source: {
         componentType: requiredString(source.componentType, "Module runtime source componentType"),
         variantReference: requiredString(source.variantReference, "Module runtime source variantReference"),
+        variantReferenceConfigPath: requiredString(
+          source.variantReferenceConfigPath,
+          "Module runtime source variantReferenceConfigPath",
+        ),
         inputIds: stringArray(source.inputIds, "Module runtime source inputIds"),
         collectionIds: stringArray(source.collectionIds, "Module runtime source collectionIds"),
       },
@@ -703,6 +714,7 @@ export function moduleScaffoldTemplate(): ModuleScaffoldSpec {
       source: {
         componentType: "list",
         variantReference: "component_project_foqn_s2_list::variant::chats",
+        variantReferenceConfigPath: "replaceMe.componentSlot.variantReference",
         inputIds: ["itemWidth", "itemHeight"],
         collectionIds: ["items"],
       },
@@ -808,6 +820,15 @@ function resolveRuntimeSource(
       `Runtime source Component '${sourceSpec.componentType}' must be a declared Module embed.`,
     );
   }
+  const configPath = sourceSpec.variantReferenceConfigPath
+    .split(".")
+    .filter((segment) => segment.length > 0);
+  if (configPath.length === 0
+      || jsonPathValue(spec.config, configPath) !== sourceSpec.variantReference) {
+    violations.push(
+      `Runtime source Variant path '${sourceSpec.variantReferenceConfigPath}' must resolve to '${sourceSpec.variantReference}' in current Module config.`,
+    );
+  }
   const matches = inventory.runtimeSources.filter((candidate) =>
     candidate.projectId === spec.module.projectId
     && candidate.componentType === sourceSpec.componentType);
@@ -862,6 +883,17 @@ function resolveRuntimeContract(
   }
   const designPreview = structuredClone(preview);
   designPreview.componentType = spec.module.recordClassId;
+  const derivedCollections = objectArray(
+    designPreview.collections,
+    "Derived Module Runtime collections",
+  );
+  for (const collection of derivedCollections) {
+    if (typeof collection.itemRuntimeVariantReferencePath === "string"
+        && collection.itemRuntimeVariantReferencePath.length > 0) {
+      collection.itemRuntimeOwnerVariantReferencePath =
+        spec.runtimeContract.source.variantReferenceConfigPath;
+    }
+  }
   designPreview.animationTimeline = spec.runtimeContract.durationPolicy === "explicit"
     ? {
       durationPolicy: "explicit",

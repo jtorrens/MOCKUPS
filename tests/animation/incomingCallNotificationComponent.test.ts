@@ -25,8 +25,23 @@ test("Incoming Call Notification resolves exact iOS and Android child Variant bo
   const ios = resolveIncomingCallNotificationComponent(iosSource);
   const android = resolveIncomingCallNotificationComponent(androidSource);
 
-  assert.equal(ios.layout, "compact");
   assert.deepEqual(ios.size, { width: 360, height: 88 });
+  assert.deepEqual(ios.avatarPlacement, {
+    mode: "insideEdge",
+    alignX: 0,
+    alignY: 0.5,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  assert.deepEqual(ios.iconRowPlacement, {
+    mode: "insideEdge",
+    alignX: 1,
+    alignY: 0.5,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  assert.equal(ios.avatar.labelSlot.showLabel, true);
+  assert.equal(ios.avatar.labelSlot.showSubtext, true);
   assert.equal(ios.iconRow.items[0]?.button.contentMode, "icon");
   assert.deepEqual(
     ios.iconRow.items.map((item) => item.button.size),
@@ -36,8 +51,9 @@ test("Incoming Call Notification resolves exact iOS and Android child Variant bo
     ios.iconRow.items.map((item) => item.button.stateStyle.surface.backgroundColorToken),
     ["theme.colors.negative", "theme.colors.positive"],
   );
-  assert.equal(android.layout, "stackedActions");
   assert.deepEqual(android.size, { width: 360, height: 152 });
+  assert.equal(android.avatarPlacement.alignY, 0);
+  assert.equal(android.iconRowPlacement.alignY, 1);
   assert.equal(android.iconRow.items[0]?.button.contentMode, "iconText");
   assert.ok(android.iconRow.items.every((item) =>
     item.button.dimensionMode === "content"));
@@ -47,23 +63,29 @@ test("Incoming Call Notification resolves exact iOS and Android child Variant bo
   );
 });
 
-test("Incoming Call Notification consumes exact Avatar, Label and Icon Row Runtime contracts", () => {
+test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime contracts", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as {
-    labelRuntime: Array<{ runtimeInputs: { sampleText: string; sampleSubtext: string } }>;
+    avatarRuntime: Array<{
+      runtimeInputs: { sampleSubtext: string };
+    }>;
     iconRowRuntime: Array<{
-      runtimeInputs: { buttonInputs: Array<{ id: string; iconToken: string }> };
+      runtimeInputs: {
+        buttonInputs: Array<{ id: string; iconToken: string; state: string }>;
+      };
     }>;
   };
-  preview.labelRuntime[0]!.runtimeInputs.sampleText = "Diana";
-  preview.labelRuntime[0]!.runtimeInputs.sampleSubtext = "WhatsApp audio";
+  preview.avatarRuntime[0]!.runtimeInputs.sampleSubtext = "WhatsApp audio";
   preview.iconRowRuntime[0]!.runtimeInputs.buttonInputs[1]!.iconToken = "phone_in_talk";
+  preview.iconRowRuntime[0]!.runtimeInputs.buttonInputs[1]!.state = "pushed";
   source.designPreviewJson = JSON.stringify(preview);
 
   const resolved = resolveIncomingCallNotificationComponent(source);
-  assert.equal(resolved.label.text, "Diana");
-  assert.equal(resolved.label.subtext, "WhatsApp audio");
+  assert.equal(resolved.avatar.actor.displayName, "Alex");
+  assert.equal(resolved.avatar.labelSlot.label?.text, "Alex");
+  assert.equal(resolved.avatar.labelSlot.label?.subtext, "WhatsApp audio");
   assert.equal(resolved.iconRow.items[1]?.button.iconToken, "phone_in_talk");
+  assert.equal(resolved.iconRow.items[1]?.button.state, "pushed");
 });
 
 test("Incoming Call Notification rejects missing or manufactured child Runtime values", () => {
@@ -96,7 +118,7 @@ test("Incoming Call Notification rejects missing or manufactured child Runtime v
   );
 });
 
-test("Incoming Call Notification renders compact and stacked-actions layouts without overlap", () => {
+test("Incoming Call Notification places Avatar and Icon Row independently inside its Surface frame", () => {
   const iosSource = fixture();
   const ios = incomingCallNotificationComponentToRenderable(
     iosSource,
@@ -117,16 +139,21 @@ test("Incoming Call Notification renders compact and stacked-actions layouts wit
     resolveIncomingCallNotificationComponent(androidSource),
   );
 
-  assert.equal(ios.children?.length, 4);
-  assert.equal(android.children?.length, 4);
-  const iosAvatar = ios.children?.[1]?.box!;
-  const iosLabel = ios.children?.[2]?.box!;
-  const iosActions = ios.children?.[3]?.box!;
-  assert.ok(iosAvatar.x + iosAvatar.width <= iosLabel.x);
-  assert.ok(iosLabel.x + iosLabel.width <= iosActions.x);
-  const androidLabel = android.children?.[2]?.box!;
-  const androidActions = android.children?.[3]?.box!;
-  assert.ok(androidLabel.y + androidLabel.height <= androidActions.y);
+  assert.equal(ios.children?.length, 3);
+  assert.equal(android.children?.length, 3);
+  assert.deepEqual(ios.children?.[0]?.children?.[0]?.box, ios.box);
+  assert.deepEqual(android.children?.[0]?.children?.[0]?.box, android.box);
+  const iosAvatar = ios.children?.[1]?.children?.[0]?.box!;
+  const iosActions = ios.children?.[2]?.box!;
+  assert.ok(iosAvatar.x < iosActions.x);
+  assert.equal(
+    Math.round(iosAvatar.y + iosAvatar.height / 2),
+    Math.round(iosActions.y + iosActions.height / 2),
+  );
+  const androidAvatar = android.children?.[1]?.children?.[0]?.box!;
+  const androidActions = android.children?.[2]?.box!;
+  assert.ok(androidAvatar.y < androidActions.y);
+  assert.ok(androidActions.x + androidActions.width <= android.box!.x + android.box!.width);
 });
 
 test("Incoming Call Notification applies reusable boundary Motion to presence", () => {

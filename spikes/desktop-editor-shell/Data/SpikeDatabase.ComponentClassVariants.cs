@@ -233,6 +233,21 @@ internal sealed partial class SpikeDatabase
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
             var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
+            if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
+            {
+                var sessionLocked = ToggleDefaultVariantSessionLock(componentClassId, variantId);
+                return new ProjectTreeNode(
+                    ProjectTreeNodeKind.ComponentVariant,
+                    node.Id,
+                    node.Name,
+                    node.Notes,
+                    node.RecordClassId,
+                    node.Parent,
+                    isUsed: node.IsUsed,
+                    isProtected: node.IsProtected,
+                    isLocked: sessionLocked);
+            }
+
             var nextLocked = !JsonBool(variant, ["locked"]);
             variant["locked"] = nextLocked;
             _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
@@ -275,7 +290,10 @@ internal sealed partial class SpikeDatabase
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
             var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
-            if (JsonBool(variant, ["locked"]))
+            if (IsVariantLockedForEditing(
+                    componentClassId,
+                    variantId,
+                    JsonBool(variant, ["locked"])))
             {
                 throw new InvalidOperationException($"Component variant '{variantId}' is locked.");
             }
