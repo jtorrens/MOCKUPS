@@ -11,6 +11,9 @@ internal sealed class EditorViewStateController
 {
     private readonly ScrollViewer _scrollViewer;
     private readonly EditorSessionViewStateStore _sessionStates;
+    private EventHandler? _pendingLayoutUpdated;
+    private Vector? _pendingScrollOffset;
+    private long _scrollRestoreRevision;
 
     public EditorViewStateController(
         ScrollViewer scrollViewer,
@@ -22,20 +25,30 @@ internal sealed class EditorViewStateController
 
     public void Capture(ProjectTreeNode? node, IReadOnlyList<InstantEditorCard> cards)
     {
-        if (node is null || cards.Count == 0) return;
+        if (node is null) return;
+        Capture(StateKey(node), cards);
+    }
 
+    public void Capture(string recordClassId, IReadOnlyList<InstantEditorCard> cards)
+    {
         var state = CaptureState(cards);
         if (state is not null)
         {
-            _sessionStates.Set(StateKey(node), state);
+            _sessionStates.Set(recordClassId, state);
         }
     }
 
     public void Restore(ProjectTreeNode node, IReadOnlyList<InstantEditorCard> cards)
     {
-        var state = _sessionStates.Get(StateKey(node));
+        Restore(StateKey(node), cards);
+    }
+
+    public void Restore(string recordClassId, IReadOnlyList<InstantEditorCard> cards)
+    {
+        var state = _sessionStates.Get(recordClassId);
         if (state is null)
         {
+            ScheduleScrollRestore(default);
             return;
         }
 
@@ -54,7 +67,7 @@ internal sealed class EditorViewStateController
             cards.Where((card) => card.IsExpanded)
                 .Select((card) => card.SessionStateId)
                 .ToArray(),
-            _scrollViewer.Offset);
+            _pendingScrollOffset ?? _scrollViewer.Offset);
     }
 
     public void RestoreState(EditorViewState? state, IReadOnlyList<InstantEditorCard> cards)
@@ -71,12 +84,7 @@ internal sealed class EditorViewStateController
             card.RestoreExpansion(expandedCardIds.Contains(card.SessionStateId));
         }
 
-        Dispatcher.UIThread.Post(
-            () => _scrollViewer.Offset = ClampOffset(
-                state.ScrollOffset,
-                _scrollViewer.Extent,
-                _scrollViewer.Viewport),
-            DispatcherPriority.Loaded);
+        ScheduleScrollRestore(state.ScrollOffset);
     }
 
     internal static string StateKey(ProjectTreeNode node)
@@ -102,5 +110,54 @@ internal sealed class EditorViewStateController
         {
             throw new InvalidOperationException("Top-level editor card session state ids must be unique.");
         }
+    }
+
+    private void ScheduleScrollRestore(Vector requested)
+    {
+        CancelPendingScrollRestore();
+        var revision = ++_scrollRestoreRevision;
+        _pendingScrollOffset = requested;
+
+        EventHandler? layoutUpdated = null;
+        layoutUpdated = (_, _) =>
+        {
+            if (revision != _scrollRestoreRevision
+                || !ReferenceEquals(_pendingLayoutUpdated, layoutUpdated)
+                || _scrollViewer.Viewport.Height <= 0)
+            {
+                return;
+            }
+
+            _scrollViewer.LayoutUpdated -= layoutUpdated;
+            _pendingLayoutUpdated = null;
+            _pendingScrollOffset = null;
+            _scrollViewer.Offset = ClampOffset(
+                requested,
+                _scrollViewer.Extent,
+                _scrollViewer.Viewport);
+        };
+        _pendingLayoutUpdated = layoutUpdated;
+        _scrollViewer.LayoutUpdated += layoutUpdated;
+
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                if (revision == _scrollRestoreRevision)
+                {
+                    _scrollViewer.InvalidateMeasure();
+                }
+            },
+            DispatcherPriority.Loaded);
+    }
+
+    private void CancelPendingScrollRestore()
+    {
+        _scrollRestoreRevision++;
+        if (_pendingLayoutUpdated is not null)
+        {
+            _scrollViewer.LayoutUpdated -= _pendingLayoutUpdated;
+        }
+        _pendingLayoutUpdated = null;
+        _pendingScrollOffset = null;
     }
 }

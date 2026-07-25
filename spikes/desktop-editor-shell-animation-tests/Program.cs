@@ -93,6 +93,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
+    ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
@@ -2704,6 +2705,176 @@ static void EditorViewStateRoundTripsPerClass()
             new Vector(-20, -10),
             new Size(100, 100),
             new Size(300, 400)));
+}
+
+static void EditorViewStateSurvivesRealNavigation()
+{
+    var source = Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-editor-view-state-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = new MainWindow(temporary)
+            {
+                Width = 1440,
+                Height = 480,
+            };
+            window.Show();
+
+            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
+                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window)
+                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+            var showEmbedded = typeof(MainWindow).GetMethod(
+                "ShowEmbeddedContext",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("Missing MainWindow embedded navigation boundary.");
+            var returnToOwner = typeof(MainWindow).GetMethod(
+                "ReturnToEmbeddedOwner",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("Missing MainWindow breadcrumb owner boundary.");
+            var editorContent = typeof(MainWindow)
+                .GetField("_editorContent", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException("Missing MainWindow editor content owner.");
+            var scroll = Required(window.FindControl<ScrollViewer>("EditorScrollViewer"));
+
+            ProjectTreeNode Component(string recordClassId) => treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.ComponentClass
+                    && node.RecordClassId == recordClassId);
+
+            ProjectTreeNode SelectedNode() => typeof(MainWindow)
+                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as ProjectTreeNode
+                ?? throw new InvalidOperationException("Missing MainWindow selection.");
+
+            void Layout()
+            {
+                Dispatcher.UIThread.RunJobs();
+                var size = new Size(window.Width, window.Height);
+                window.Measure(size);
+                window.Arrange(new Rect(size));
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            void Select(ProjectTreeNode node)
+            {
+                try
+                {
+                    if (!(bool)(selectNode.Invoke(window, [node.Id]) ?? false))
+                    {
+                        throw new InvalidOperationException($"Could not select editor fixture '{node.RecordClassId}'.");
+                    }
+                }
+                catch (TargetInvocationException error) when (error.InnerException is not null)
+                {
+                    throw error.InnerException;
+                }
+                Layout();
+            }
+
+            double ScrollToWorkingPoint()
+            {
+                var maximum = Math.Max(0, scroll.Extent.Height - scroll.Viewport.Height);
+                if (maximum < 24)
+                {
+                    throw new InvalidOperationException(
+                        $"Editor fixture is not scrollable (extent={scroll.Extent.Height:0.##}, "
+                        + $"viewport={scroll.Viewport.Height:0.##}).");
+                }
+                scroll.Offset = new Vector(0, Math.Min(96, maximum));
+                Dispatcher.UIThread.RunJobs();
+                return scroll.Offset.Y;
+            }
+
+            void EqualOffset(double expected, string context)
+            {
+                if (Math.Abs(scroll.Offset.Y - expected) > 0.5)
+                {
+                    throw new InvalidOperationException(
+                        $"{context} restored scroll {scroll.Offset.Y:0.##} instead of {expected:0.##}.");
+                }
+            }
+
+            var button = Component("component.button");
+            var avatar = Component("component.avatar");
+            Select(button);
+            var buttonCard = editorContent.Cards.Single((card) => card.SessionStateId == "layout:button");
+            buttonCard.RestoreExpansion(true);
+            Layout();
+            var buttonOffset = ScrollToWorkingPoint();
+
+            Select(avatar);
+            Select(button);
+            buttonCard = editorContent.Cards.Single((card) => card.SessionStateId == "layout:button");
+            if (!buttonCard.IsExpanded)
+            {
+                throw new InvalidOperationException("Editor-class navigation did not restore the expanded card.");
+            }
+            EqualOffset(buttonOffset, "Editor-class navigation");
+
+            Select(avatar);
+            var avatarCard = editorContent.Cards.Single((card) => card.SessionStateId == "layout:avatar");
+            avatarCard.RestoreExpansion(true);
+            Layout();
+            var avatarOffset = ScrollToWorkingPoint();
+            var ownerNode = SelectedNode();
+
+            var labelContext = new EditorEmbeddedContext(
+                ownerNode,
+                [EmbeddedComponentSlotCatalog.Get("component.avatar.label.editor")]);
+            showEmbedded.Invoke(window, [labelContext]);
+            Layout();
+            var labelCard = editorContent.Cards.Single((card) => card.SessionStateId == "embedded:label");
+            labelCard.RestoreExpansion(true);
+            Layout();
+            var labelOffset = ScrollToWorkingPoint();
+
+            var surfaceContext = labelContext.Nested(
+                EmbeddedComponentSlotCatalog.Get("component.label.surface.editor"));
+            showEmbedded.Invoke(window, [surfaceContext]);
+            Layout();
+
+            showEmbedded.Invoke(window, [labelContext]);
+            Layout();
+            labelCard = editorContent.Cards.Single((card) => card.SessionStateId == "embedded:label");
+            if (!labelCard.IsExpanded)
+            {
+                throw new InvalidOperationException("Embedded breadcrumb did not restore the expanded card.");
+            }
+            EqualOffset(labelOffset, "Embedded breadcrumb navigation");
+
+            returnToOwner.Invoke(window, [ownerNode]);
+            Layout();
+            avatarCard = editorContent.Cards.Single((card) => card.SessionStateId == "layout:avatar");
+            if (!avatarCard.IsExpanded)
+            {
+                throw new InvalidOperationException("Owner breadcrumb did not restore the expanded card.");
+            }
+            EqualOffset(avatarOffset, "Owner breadcrumb navigation");
+
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ExistingDatabaseOpenIsReadOnly()

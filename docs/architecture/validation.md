@@ -35,6 +35,9 @@ It includes:
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;
+- headless Avalonia editor view-state navigation across record classes and
+  embedded breadcrumb levels, including card expansion and post-layout scroll
+  restoration by exact `recordClassId`;
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/

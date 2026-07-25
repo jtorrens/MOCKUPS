@@ -37,7 +37,6 @@ public partial class MainWindow : SukiWindow
     private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorSessionUiState _editorSessionUiState = new();
-    private readonly Dictionary<string, EditorViewState> _embeddedParentViewStates = new(StringComparer.Ordinal);
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorContentController _editorContent;
@@ -445,15 +444,11 @@ public partial class MainWindow : SukiWindow
     private void ShowNode(ProjectTreeNode node, bool rebuildTree, string source)
     {
         node = _nodeSelection.ResolveSelectionNode(node);
-        var previousWasEmbedded = _activeEmbeddedContext is not null;
+        CaptureActiveEditorViewState();
         _activeEmbeddedContext = null;
         _editorContextRevision++;
         using var transaction = BeginContextTransaction(source, node.Id);
         var previousNode = _selectedNode;
-        if (!previousWasEmbedded)
-        {
-            _editorViewState.Capture(previousNode, _editorContent.Cards);
-        }
 
         try
         {
@@ -524,17 +519,25 @@ public partial class MainWindow : SukiWindow
 
     private void ShowEmbeddedContext(EditorEmbeddedContext context)
     {
+        CaptureActiveEditorViewState();
         _activeEmbeddedContext = context;
         _editorContextRevision++;
-        if (context.IsNavigationRoot
-            && _editorViewState.CaptureState(_editorContent.Cards) is { } parentState)
-        {
-            _embeddedParentViewStates[context.OwnerNode.Id] = parentState;
-        }
         _editorContent.BuildEmbedded(context);
         SetEditorEmbeddedTitle(context);
+        _editorViewState.Restore(context.RecordClassId, _editorContent.Cards);
         RefreshPreviewDevice();
         ApplyUiTextScale();
+    }
+
+    private void CaptureActiveEditorViewState()
+    {
+        if (_activeEmbeddedContext is { } embedded)
+        {
+            _editorViewState.Capture(embedded.RecordClassId, _editorContent.Cards);
+            return;
+        }
+
+        _editorViewState.Capture(_selectedNode, _editorContent.Cards);
     }
 
     private void ScheduleActiveEditorReload(ProjectTreeNode ownerNode)
@@ -600,10 +603,6 @@ public partial class MainWindow : SukiWindow
     private void ReturnToEmbeddedOwner(ProjectTreeNode ownerNode)
     {
         ShowNode(ownerNode, false, "breadcrumb");
-        if (_embeddedParentViewStates.Remove(ownerNode.Id, out var state))
-        {
-            _editorViewState.RestoreState(state, _editorContent.Cards);
-        }
     }
 
     private void SetEditorRootTitle(string title)
