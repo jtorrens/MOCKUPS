@@ -1,17 +1,23 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Threading;
 using System;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
 {
     private const double CompactThreshold = 320;
+    private static readonly TimeSpan ValidDraftCommitDelay = TimeSpan.FromMilliseconds(300);
     private readonly TextBlock _firstLabel;
     private readonly TextBlock _secondLabel;
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
     private readonly FieldDefinition _definition;
+    private CancellationTokenSource? _validDraftCommitCancellation;
     private bool _isUpdating;
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
@@ -53,6 +59,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
+        CancelPendingValidDraftCommit();
         var pair = DictionaryFieldPairText.ParseRequired(
             ValueKind.IntegerPair,
             value,
@@ -78,13 +85,76 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
         ValueChanged?.Invoke(this, DictionaryFieldPairText.Join(
             _firstTextBox.Text ?? "",
             _secondTextBox.Text ?? ""));
+        CancelPendingValidDraftCommit();
+        if (HasValidDraft())
+        {
+            _validDraftCommitCancellation = new CancellationTokenSource();
+            _ = CommitValidDraftAfterDelay(_validDraftCommitCancellation);
+        }
     }
 
     private void CommitValue()
     {
+        CancelPendingValidDraftCommit();
+        CommitCurrentValue();
+    }
+
+    private void CommitCurrentValue()
+    {
         ValueCommitted?.Invoke(this, DictionaryFieldPairText.Join(
             _firstTextBox.Text ?? "",
             _secondTextBox.Text ?? ""));
+    }
+
+    private bool HasValidDraft()
+    {
+        return int.TryParse(
+                _firstTextBox.Text,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out _)
+            && int.TryParse(
+                _secondTextBox.Text,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out _);
+    }
+
+    private async Task CommitValidDraftAfterDelay(CancellationTokenSource pending)
+    {
+        try
+        {
+            await Task.Delay(ValidDraftCommitDelay, pending.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            pending.Dispose();
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!ReferenceEquals(_validDraftCommitCancellation, pending)
+                || pending.IsCancellationRequested)
+            {
+                pending.Dispose();
+                return;
+            }
+
+            _validDraftCommitCancellation = null;
+            pending.Dispose();
+            if (HasValidDraft())
+            {
+                CommitCurrentValue();
+            }
+        });
+    }
+
+    private void CancelPendingValidDraftCommit()
+    {
+        var pending = _validDraftCommitCancellation;
+        _validDraftCommitCancellation = null;
+        pending?.Cancel();
     }
 
     private static TextBlock CreateLabel(string text)

@@ -44,6 +44,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
+    ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
@@ -1538,6 +1539,45 @@ static void NumericDictionaryFieldsSeparateCurrentValuesFromDrafts()
     Equal(0.4m, decimalDraft);
     True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "draft", out _));
     True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "2", out _));
+}
+
+static void ValidIntegerPairsCommitAfterEditingPause()
+{
+    var control = new DictionaryIntegerPairControl(
+        new FieldDefinition(
+            "test.size",
+            "Size",
+            ValueKind.IntegerPair,
+            PairLabels: new PairFieldLabels("W", "H")),
+        "112|48");
+    var committed = "";
+    var commitCount = 0;
+    control.ValueCommitted += (_, value) =>
+    {
+        committed = value;
+        commitCount++;
+    };
+    var first = typeof(DictionaryIntegerPairControl)
+        .GetField("_firstTextBox", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?.GetValue(control) as TextBox
+        ?? throw new InvalidOperationException("Missing first Integer Pair editor.");
+
+    first.Text = "300";
+    for (var attempt = 0; attempt < 10 && committed.Length == 0; attempt++)
+    {
+        Thread.Sleep(100);
+        Dispatcher.UIThread.RunJobs();
+    }
+    Equal("300|48", committed);
+    Equal(1, commitCount);
+
+    first.Text = "";
+    for (var attempt = 0; attempt < 5; attempt++)
+    {
+        Thread.Sleep(100);
+        Dispatcher.UIThread.RunJobs();
+    }
+    Equal(1, commitCount);
 }
 
 static void PreviewActionContractsAreStrict()
