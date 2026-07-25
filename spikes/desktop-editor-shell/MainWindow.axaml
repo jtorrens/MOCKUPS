@@ -97,9 +97,9 @@
                                 <editor:EditorInstantComboBox x:Name="ProductionComboBox"
                                                               Grid.Column="0"
                                                               MinHeight="34" />
-                                <Button x:Name="ProductionEditButton"
+                                <Button x:Name="ProductionActionButton"
                                         Grid.Column="1"
-                                        Width="30"
+                                        Width="34"
                                         Height="34"
                                         Padding="0"
                                         BorderThickness="0"

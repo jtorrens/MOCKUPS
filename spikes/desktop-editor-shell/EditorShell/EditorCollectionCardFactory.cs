@@ -105,13 +105,12 @@ internal sealed class EditorCollectionCardFactory
             ],
             ProjectTreeNodeKind.Shot =>
                 ShotCards(node),
-            ProjectTreeNodeKind.ProductionDataRoot
-                when node.Parent?.Kind == ProjectTreeNodeKind.Project =>
+            ProjectTreeNodeKind.Project =>
                 [new ShotManagerIntegrationCollectionEditor(
                     _database,
                     _domainDialogs,
                     _showInfo,
-                    _reloadAndSelect).Create(node.Parent, node)],
+                    _reloadAndSelect).Create(node)],
             _ => [],
         };
 

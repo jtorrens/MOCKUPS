@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell;
@@ -88,7 +89,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
-    ("Production Data exposes the optional Shot Manager association card", ProductionDataExposesShotManagerAssociation),
+    ("Production Shot Manager action owns and reveals the optional association", ProductionShotManagerActionOwnsAssociation),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
@@ -8202,7 +8203,7 @@ static void ProductionDataOwnsConcreteResources()
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
 }
 
-static void ProductionDataExposesShotManagerAssociation()
+static void ProductionShotManagerActionOwnsAssociation()
 {
     var source = Path.Combine(
         Directory.GetCurrentDirectory(),
@@ -8215,6 +8216,29 @@ static void ProductionDataExposesShotManagerAssociation()
     File.Copy(source, temporary, overwrite: true);
     try
     {
+        var database = new SpikeDatabase(temporary);
+        var project = database.LoadProjectTree().Single();
+        var remoteProduction = new ShotManagerCatalogProduction(
+            "sm-navigation-production",
+            "Navigation Series",
+            "NAV",
+            "SERIES",
+            "EPISODE_SHOT");
+        var remoteSeason = new ShotManagerSeason(
+            "sm-navigation-season",
+            remoteProduction.Id,
+            1,
+            "S01",
+            "Season 1");
+        new ShotManagerAssociationService(database).Synchronize(
+            project.Id,
+            new ShotManagerProductionSnapshot(
+                Path.GetTempPath(),
+                remoteProduction,
+                [remoteSeason],
+                []),
+            remoteSeason.Id);
+
         using var session =
             HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
@@ -8225,31 +8249,16 @@ static void ProductionDataExposesShotManagerAssociation()
                 Height = 900,
             };
             window.Show();
-            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
-                .GetField(
-                    "_treeRoots",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window)
-                ?? throw new InvalidOperationException(
-                    "Missing MainWindow tree state.");
-            var productionData = treeRoots.SelectMany(DescendantsAndSelf)
-                .Single((node) =>
-                    node.Kind == ProjectTreeNodeKind.ProductionDataRoot);
-            var selectNode = typeof(MainWindow).GetMethod(
-                "SelectNodeById",
-                BindingFlags.Instance | BindingFlags.NonPublic,
-                binder: null,
-                types: [typeof(string)],
-                modifiers: null)
-                ?? throw new InvalidOperationException(
-                    "Missing MainWindow node selection boundary.");
-            if (!(bool)(selectNode.Invoke(
-                    window,
-                    [productionData.Id]) ?? false))
-            {
-                throw new InvalidOperationException(
-                    "Production Data could not be selected.");
-            }
+            var action = Required(
+                window.FindControl<Button>("ProductionActionButton"));
+            var foreground = Required(action.Foreground as SolidColorBrush).Color;
+            True(foreground == Color.Parse("#F0B429")
+                || foreground == Color.Parse("#A56600"));
+            var background = Required(action.Background as SolidColorBrush).Color;
+            True(background == Color.Parse("#463711")
+                || background == Color.Parse("#F2DEAA"));
+
+            action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             var editorContent = typeof(MainWindow)
                 .GetField(
@@ -8258,8 +8267,27 @@ static void ProductionDataExposesShotManagerAssociation()
                 ?.GetValue(window) as EditorContentController
                 ?? throw new InvalidOperationException(
                     "Missing MainWindow editor content owner.");
-            True(editorContent.Cards.Any((card) =>
-                card.SessionStateId == "integration:shot-manager"));
+            var integrationCard = editorContent.Cards.Single((card) =>
+                card.SessionStateId == "integration:shot-manager");
+            True(integrationCard.IsExpanded);
+            var selectedNode = typeof(MainWindow)
+                .GetField(
+                    "_selectedNode",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as ProjectTreeNode
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow selection state.");
+            Equal(ProjectTreeNodeKind.Project, selectedNode.Kind);
+
+            new ShotManagerAssociationService(database).Disconnect(project.Id);
+            typeof(MainWindow).GetMethod(
+                "RefreshProductionPicker",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.Invoke(window, null);
+            var disconnectedForeground =
+                Required(action.Foreground as SolidColorBrush).Color;
+            True(disconnectedForeground != Color.Parse("#F0B429")
+                && disconnectedForeground != Color.Parse("#A56600"));
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }

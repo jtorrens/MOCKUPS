@@ -45,6 +45,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorReferenceUsageNavigator _referenceUsageNavigator;
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorVariantHistoryService _variantHistory;
+    private readonly EditorProductionNavigationActions _productionNavigationActions;
     private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorNodeSelectionState _nodeSelection = new();
     private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
@@ -266,14 +267,17 @@ public partial class MainWindow : SukiWindow
         ApplyHeaderUtilityButton(ShellSettingsButton);
         EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
-        ProductionEditButton.Content = EditorIcons.Create(EditorIcons.Edit, 15);
+        _productionNavigationActions = new EditorProductionNavigationActions(
+            ProductionActionButton,
+            _database,
+            () => _themeController.IsDark,
+            OpenSelectedProductionCard);
         _shellState.Restore();
         _workspace = EditorWorkspaceNavigation.Parse(_shellState.Workspace);
         _selectedProductionId = _shellState.ProductionId;
         DesignWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Design);
         ProductionWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Production);
         ProductionComboBox.SelectionChanged += (_, _) => SelectProductionFromPicker();
-        ProductionEditButton.Click += (_, _) => OpenSelectedProduction();
         UpdateWorkspaceButtons();
         _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
         _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
@@ -780,7 +784,10 @@ public partial class MainWindow : SukiWindow
             ProductionComboBox.ItemsSource = options;
             ProductionComboBox.SelectedItem = options.FirstOrDefault((option) => option.Value == _selectedProductionId)
                 ?? options.FirstOrDefault();
-            ProductionEditButton.IsEnabled = ProductionComboBox.SelectedItem is not null;
+            _productionNavigationActions.Refresh(
+                ProductionComboBox.SelectedItem is null
+                    ? null
+                    : _selectedProductionId);
         }
         finally
         {
@@ -807,12 +814,20 @@ public partial class MainWindow : SukiWindow
         RebuildNavigationCards();
     }
 
-    private void OpenSelectedProduction()
+    private void OpenSelectedProductionCard(string cardSessionStateId)
     {
         var production = _treeRoots.FirstOrDefault((project) => project.Id == _selectedProductionId);
         if (production is null) return;
 
         ShowNode(production);
+        var card = _editorContent.Cards.FirstOrDefault((candidate) =>
+            candidate.SessionStateId.Equals(
+                cardSessionStateId,
+                StringComparison.Ordinal));
+        if (card is not null)
+        {
+            card.IsExpanded = true;
+        }
     }
 
     private static void ApplyWorkspaceButton(Button button, bool isActive, IBrush activeBrush, IBrush inactiveBrush, IBrush activeBackground)

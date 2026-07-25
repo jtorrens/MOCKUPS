@@ -26,8 +26,7 @@ while preserving each editor's session context.
 Production exposes:
 
 - Episodes, Shots and Screens in the sequence tree;
-- one **Production Data** card containing the optional Shot Manager
-  association plus Actors, Devices, Production Fonts and Render Presets.
+- one **Production Data** card containing Actors, Devices, Production Fonts and Render Presets.
 
 Render Presets live in Production Data because their selection belongs to a
 Production, even though a normal workflow can carry common presets between
@@ -62,7 +61,9 @@ creates new stable ids.
 
 A Project may associate with one exact VFX Shot Manager Production and Season.
 The integration is optional: without an association, Episodes and Shots keep
-the independent workflow above.
+the independent workflow above. The Shot Manager action beside the active
+Production selector opens this Project-owned association. Its icon is amber
+only while that Project has an association.
 
 With an association:
 

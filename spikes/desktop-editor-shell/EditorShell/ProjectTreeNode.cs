@@ -124,7 +124,8 @@ internal sealed class ProjectTreeNode
         or ProjectTreeNodeKind.ProductionFont
         || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected && !IsLocked)
         || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected && !IsLocked);
-    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.SystemDataRoot
+    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
+        and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
         and not ProjectTreeNodeKind.IconThemesRoot
