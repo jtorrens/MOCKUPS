@@ -133,7 +133,10 @@ internal sealed class RenderQueueDialog
                     || route.SelectedItem is null)
                 {
                     validation.Text = route.SelectedItem is null
-                        ? "Choose one of the predefined Shot Manager output routes."
+                        ? string.IsNullOrWhiteSpace(
+                            currentDraft.RouteStatusMessage)
+                            ? "Choose one of the predefined Shot Manager output routes."
+                            : currentDraft.RouteStatusMessage
                         : "Complete every render option.";
                     proposal.Text = "";
                     add.IsEnabled = false;
@@ -160,9 +163,7 @@ internal sealed class RenderQueueDialog
                 proposal.Text =
                     $"Version v{currentPlan.Version.ToString().PadLeft(routeContract.VersionPadding, '0')} · "
                     + string.Join(" · ", names);
-                validation.Text = currentDraft.UsesCachedRoot
-                    ? "Shot Manager is offline. Using the last known root for this workstation."
-                    : "";
+                validation.Text = currentDraft.RouteStatusMessage;
                 add.IsEnabled = true;
             }
             catch (Exception exception)
@@ -335,16 +336,19 @@ internal sealed class RenderQueueDialog
                 route.SelectedItem = routeOptions.FirstOrDefault(
                     (option) => option.Value.Equals(
                         rememberedRoute,
-                        StringComparison.Ordinal));
+                        StringComparison.Ordinal))
+                    ?? routeOptions.FirstOrDefault();
                 baseName.Text = currentDraft.SuggestedBaseName;
                 actorValue.Text = currentDraft.ActorName;
                 shotDetails.Text =
-                    $"{currentDraft.TotalFrames} frames · "
+                    $"Shot {currentDraft.ShotNumber} · "
+                    + $"{currentDraft.TotalFrames} frames · "
                     + $"{currentDraft.Fps} fps · no audio";
                 foreach (var control in draftControls)
                 {
                     control.IsEnabled = true;
                 }
+                route.IsEnabled = currentDraft.Routes.Count > 0;
                 RefreshProposal();
             }
             catch (OperationCanceledException)

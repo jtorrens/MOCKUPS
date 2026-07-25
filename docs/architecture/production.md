@@ -47,12 +47,15 @@ An Episode owns ordered Shots. A Shot owns:
 - ordered Screens;
 - aggregate duration.
 
-Shot creation requires an Actor selection. The Shot editor never offers an
-empty owner. The Actor may be changed later to another Actor in the same
-Project.
+Shot creation requires an Actor selection and an explicit positive Shot
+number. The Shot editor never offers an empty owner. The Actor may be changed
+later to another Actor in the same Project. The number is stable, unique
+inside its Episode and exists even when the Project is not associated with
+Shot Manager.
 
-Duplicating an Episode or Shot preserves every current persisted column and
-creates new stable ids.
+Duplicating an Episode preserves every current Shot number because the copies
+belong to a different Episode. Duplicating one Shot requires a new number in
+the same Episode and creates a new stable id.
 
 ## Optional Shot Manager governance
 
@@ -78,34 +81,39 @@ With an association:
   payload and animation;
 - creating or duplicating a Shot requires an explicit positive Shot number and
   Actor;
-- Shot Manager returns a read-only, non-reserving plan; MOCKUPS validates and
-  creates its directories, then atomically persists the local Shot and the
-  exact portable layout snapshot;
+- Shot Manager returns a read-only, non-reserving plan; MOCKUPS validates it
+  and stores its exact portable render contract without creating directories;
 - no external Shot identity exists or is manufactured.
 
-The persisted snapshot contains portable relative directories, stable
+The cached contract contains portable relative directories, stable
 structure-entry identities plus the source prefix and version padding for
 every planned output. MOCKUPS uses the stable entry identity and relative
-directory but owns the final render name. Workstation roots, resolved absolute paths, discovery
-data and bearer credentials remain local and transient. Repair
-resolves the current workstation root through Shot Manager and recreates only
-directories missing from the stored snapshot; a later Shot Manager template
-change does not reinterpret an existing Shot.
+directory but owns the final render name. Workstation roots, resolved absolute
+paths, discovery data and bearer credentials remain local and transient.
+Opening the Render Queue modal asks Shot Manager for a fresh plan from the
+exact Production, Season, Episode and local Shot number. A successful plan
+replaces the cache; if the service is unavailable, the last matching contract
+and workstation root may be used.
 
 Episode rename, creation, duplication and deletion are unavailable while the
 association governs that hierarchy. Synchronization may remove a governed
 Episode only while it contains no local Shots. Disconnecting retains the local
-Episodes, Shots and folder snapshots and removes only association ownership.
-Deleting a governed Shot removes its local database content but deliberately
-retains its production folders. No ordinary lifecycle action deletes external
-folders.
+Episodes, Shots and render-contract caches and removes only association
+ownership. Deleting a Shot removes its local database content but deliberately
+retains any production output folders. No ordinary lifecycle action deletes
+external folders.
 
 ## Render Queue
 
 The Render action is a persistent icon on every Shot row. It always opens an
-add modal with that exact Shot selected. If the Shot has no stored Shot Manager
-output contract, the modal explains that prerequisite and disables enqueue;
-governed output never falls back to a free folder picker.
+add modal with that exact Shot selected. Actor, Device, Theme and local Shot
+details load independently of routing. The modal resolves a fresh route and
+technical name from Shot Manager using the Project association, Episode
+binding and stable Shot number. A Shot created before the association follows
+the same path. If neither a fresh plan nor a matching cached contract is
+available, the modal keeps the local details visible, explains the route
+problem and disables enqueue. Governed output never falls back to a free
+folder picker.
 
 The add modal exposes:
 
@@ -113,7 +121,8 @@ The add modal exposes:
 - Device and Theme defaulted from that Actor, with same-Project job-only
   overrides;
 - Light, Dark or Both;
-- one of the predefined output routes stored from Shot Manager;
+- one of the predefined output routes returned by Shot Manager or its matching
+  cached contract;
 - a job-owned output mode;
 - an editable safe base name.
 
@@ -145,12 +154,13 @@ clean Production canvas, with no editor chrome or device frame, at the selected
 Device metrics and Shot FPS. Jobs run sequentially, can be paused or canceled,
 and active work returns to Pending after application restart.
 
-The selected route is stored by stable Shot Manager `entryId`. The
-first render requires an explicit choice; a later modal may restore the last route for that
-Project. Its relative directory and version padding come from the stored
-portable contract. The workstation root is refreshed from the on-demand Shot
-Manager service and cached locally so a previously synchronized Production can
-still render if that service cannot start.
+The selected route is stored by stable Shot Manager `entryId`. The modal
+restores the last route used by the Project when it remains available and
+otherwise proposes the first predefined route. Its relative directory and
+version padding come from the freshly resolved or matching cached portable
+contract. The workstation root comes from the on-demand Shot Manager plan and
+is cached locally so a previously synchronized Production can still render if
+that service cannot start.
 
 The predefined relative route does not need to exist when the batch is
 planned. The worker validates its containment under the existing workstation
@@ -161,7 +171,7 @@ still refuses an existing final output.
 
 Monitoring is separate from batch creation. The permanent Production
 **Render Queue** panel is available even when it is empty, when Shot Manager is
-offline and when no Shot has a stored output route. It groups child jobs by
+offline and when no Shot has a cached output route. It groups child jobs by
 batch and owns pause/resume, cancel, retry, reveal, remove and clear-finished
 actions together with progress, error and output-path reporting. The add modal
 and this panel share one workstation-local queue manager.

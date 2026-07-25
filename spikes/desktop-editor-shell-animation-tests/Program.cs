@@ -80,7 +80,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
     ("Shot Manager client requires exact loopback discovery and parses the read-only plan", ShotManagerClientRequiresExactDiscovery),
     ("Shot Manager client starts the registered headless service on demand", ShotManagerClientStartsRegisteredService),
-    ("Shot Manager integration keeps Shots local and materializes portable folder plans", ShotManagerIntegrationKeepsShotsLocal),
+    ("Shot Manager integration keeps Shots local and caches portable render plans", ShotManagerIntegrationKeepsShotsLocal),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
@@ -2921,10 +2921,19 @@ static void CurrentSchemaHasNoLegacyRenderPresetPersistence()
     using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
     connection.Open();
     Equal(
-        3L,
+        4L,
         SqliteCommandExecutor.ScalarLong(
             connection,
             "PRAGMA user_version"));
+    Equal(
+        1L,
+        SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM pragma_table_info('shots')
+            WHERE name = 'shot_number'
+            """));
     Equal(
         0L,
         SqliteCommandExecutor.ScalarLong(
@@ -6776,7 +6785,9 @@ static void ShotRepositoryPreservesFacadeContract()
         var settings = database.GetShotSettings(node.Id);
 
         Equal(original.ProjectId, settings.ProjectId);
+        Equal(original.EpisodeId, settings.EpisodeId);
         Equal(original.Slug, settings.Slug);
+        Equal(original.ShotNumber, settings.ShotNumber);
         Equal(original.Version, settings.Version);
         Equal(original.DurationFrames, settings.DurationFrames);
         Equal(original.OwnerActorId, settings.OwnerActorId);
@@ -6824,8 +6835,13 @@ static void ShotRepositoryPreservesFacadeContract()
                 connection,
                 original.Id,
                 $"shot_repository_{Guid.NewGuid():N}",
-                $"{original.Name} repository copy");
+                $"{original.Name} repository copy",
+                original.OwnerActorId,
+                repository.SuggestShotNumber(
+                    connection,
+                    original.EpisodeId));
             Equal(original.OwnerActorId, duplicate.OwnerActorId);
+            True(original.ShotNumber != duplicate.ShotNumber);
             Equal(original.CanvasJson, duplicate.CanvasJson);
             Equal(original.MetadataJson, duplicate.MetadataJson);
             repository.Delete(connection, duplicate.Id);
@@ -7444,23 +7460,91 @@ static void ShotManagerIntegrationKeepsShotsLocal()
                     $"{fullName}_comp_v",
                     3),
             ]);
-        var materializer = new ShotManagerFolderMaterializer();
-        var creation = materializer.CreateAsync(plan)
+        const string legacyFullName = "SMS_S02_EP_01_SH0001";
+        var legacyRelatives = relatives
+            .Select((relative) => relative.Replace(
+                fullName,
+                legacyFullName,
+                StringComparison.Ordinal))
+            .ToList();
+        var legacyDirectories = legacyRelatives.Select((relative) =>
+            new ShotManagerPlanDirectory(
+                relative,
+                Path.Combine(
+                    [productionRoot, .. relative.Split('/')])))
+            .ToList();
+        var legacyPlan = plan with
+        {
+            ShotNumber = 1,
+            ShotCode = "SH0001",
+            FullName = legacyFullName,
+            Directories = legacyDirectories,
+            ShotOwnedDirectories = legacyDirectories.Skip(2).ToList(),
+            StructureEntries =
+            [
+                new ShotManagerPlanEntry(
+                    "structure-comp",
+                    $"S02/EP_01/{legacyFullName}/comp",
+                    Path.Combine(
+                        productionRoot,
+                        "S02",
+                        "EP_01",
+                        legacyFullName,
+                        "comp")),
+            ],
+            OutputContracts =
+            [
+                new ShotManagerPlanOutputContract(
+                    "structure-comp",
+                    $"S02/EP_01/{legacyFullName}/comp",
+                    $"{legacyFullName}_comp_v",
+                    3),
+            ],
+        };
+        var legacyShot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == "shot_001");
+        var legacyDraft = new RenderJobSnapshotFactory(
+                database,
+                new FixedShotManagerClient(legacyPlan, snapshot),
+                workstationRoots)
+            .LoadDraftAsync(legacyShot)
             .GetAwaiter()
             .GetResult();
-        True(creation.CreatedDirectories.Count > 0);
-        True(Directory.Exists(Path.Combine(
+        Equal("Alex", legacyDraft.ActorName);
+        Equal(1, legacyDraft.ShotNumber);
+        Equal(legacyFullName, legacyDraft.SuggestedBaseName);
+        Equal(1, legacyDraft.Routes.Count);
+        Equal(
+            $"S02/EP_01/{legacyFullName}/comp",
+            legacyDraft.Routes[0].RelativeDirectory);
+        Equal(
+            legacyFullName,
+            Required(
+                database.GetShotManagerShotStructure(legacyShot.Id))
+                .FullName);
+        True(!Directory.Exists(Path.Combine(
+            productionRoot,
+            "S02",
+            "EP_01",
+            legacyFullName,
+            "comp")));
+        var actorId = database.GetRequiredActorOptions(project.Id).First().Value;
+        var shot = new ShotManagerShotCreationService(
+                database,
+                new FixedShotManagerClient(plan, snapshot),
+                workstationRoots)
+            .CreateAsync(
+                governedEpisode,
+                actorId,
+                plan.ShotNumber)
+            .GetAwaiter()
+            .GetResult();
+        True(!Directory.Exists(Path.Combine(
             productionRoot,
             "S02",
             "EP_01",
             fullName,
             "comp")));
-
-        var actorId = database.GetRequiredActorOptions(project.Id).First().Value;
-        var shot = database.AddShotFromShotManager(
-            governedEpisode,
-            actorId,
-            plan);
         var stored = Required(database.GetShotManagerShotStructure(shot.Id));
         Equal(10, stored.ShotNumber);
         Equal(fullName, stored.FullName);
@@ -7490,21 +7574,34 @@ static void ShotManagerIntegrationKeepsShotsLocal()
         Equal(
             $"S02/EP_01/{fullName}/comp",
             offlineRenderDraft.Routes[0].RelativeDirectory);
-        Throws<InvalidOperationException>(() =>
-            database.UpdateShotField(
-                shot.Id,
-                "shot.slug",
-                "changed"));
-        Throws<InvalidOperationException>(() =>
-            database.RenameDirectNode(
-                shot,
-                "Locally renamed governed Shot"));
+        database.UpdateShotField(
+            shot.Id,
+            "shot.slug",
+            "changed");
+        Equal(
+            "changed",
+            database.GetShotSettings(shot.Id).Slug);
+        database.UpdateShotField(
+            shot.Id,
+            "shot.slug",
+            plan.ShotCode);
+        var renamed = database.RenameDirectNode(
+            shot,
+            "Locally renamed governed Shot");
+        Equal(
+            "Locally renamed governed Shot",
+            Descendants(database.LoadProjectTree())
+                .Single((candidate) => candidate.Id == shot.Id)
+                .Name);
+        database.RenameDirectNode(
+            renamed,
+            fullName);
 
         database.Delete(shot);
         Equal(
             null,
             database.GetShotManagerShotStructure(shot.Id));
-        True(Directory.Exists(Path.Combine(
+        True(!Directory.Exists(Path.Combine(
             productionRoot,
             "S02",
             "EP_01",
@@ -7512,9 +7609,9 @@ static void ShotManagerIntegrationKeepsShotsLocal()
 
         var unsafePlan = plan with
         {
-            ShotNumber = 20,
-            ShotCode = "SH0020",
-            FullName = "SMS_S02_EP_01_SH0020",
+            ShotNumber = 1,
+            ShotCode = "SH0001",
+            FullName = "SMS_S02_EP_01_SH0001",
             Directories =
             [
                 new ShotManagerPlanDirectory(
@@ -7529,10 +7626,10 @@ static void ShotManagerIntegrationKeepsShotsLocal()
                     Path.Combine(productionRoot, "..", "escape")),
             ],
         };
-        Throws<IOException>(() =>
-            materializer.CreateAsync(unsafePlan)
-                .GetAwaiter()
-                .GetResult());
+        Throws<InvalidOperationException>(() =>
+            database.StoreShotManagerPlan(
+                legacyShot.Id,
+                unsafePlan));
 
         new ShotManagerAssociationService(
             database,
@@ -7690,9 +7787,13 @@ static void ShotActorContextIsExplicit()
         var episode = Descendants(tree)
             .First((node) => node.Kind == ProjectTreeNodeKind.Episode && node.Id == "episode_002");
         Throws<InvalidOperationException>(() => database.AddChild(episode));
-        Throws<InvalidOperationException>(() => database.AddShot(episode, ""));
+        Throws<InvalidOperationException>(() =>
+            database.AddShot(episode, "", 1));
 
-        var shot = database.AddShot(episode, "actor_alex");
+        var shot = database.AddShot(
+            episode,
+            "actor_alex",
+            database.SuggestShotNumber(episode.Id));
         Equal("actor_alex", database.GetShotSettings(shot.Id).OwnerActorId);
         var module = database.GetAvailableShotModules(shot.Id).First();
         var variant = database.GetModuleVariantOptions(module.Id).First();
@@ -11439,6 +11540,57 @@ internal sealed class UnavailableShotManagerClient :
             new ShotManagerIntegrationException(
                 "unavailable",
                 "Unavailable for test."));
+}
+
+internal sealed class FixedShotManagerClient(
+    ShotManagerExternalShotPlan plan,
+    ShotManagerProductionSnapshot snapshot) :
+    IShotManagerIntegrationClient
+{
+    public Task<ShotManagerStatus> GetStatusAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(new ShotManagerStatus(
+            true,
+            "Connected for test."));
+
+    public Task<IReadOnlyList<ShotManagerCatalogProduction>> GetCatalogAsync(
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<ShotManagerCatalogProduction>>(
+            [plan.Production]);
+
+    public Task<ShotManagerProductionSnapshot> GetSnapshotAsync(
+        string productionId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!plan.Production.Id.Equals(
+                productionId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Unexpected Production in fixed Shot Manager test client.");
+        }
+        return Task.FromResult(snapshot);
+    }
+
+    public Task<ShotManagerExternalShotPlan> PlanShotAsync(
+        string productionId,
+        string episodeId,
+        int shotNumber,
+        CancellationToken cancellationToken = default)
+    {
+        if (!plan.Production.Id.Equals(
+                productionId,
+                StringComparison.Ordinal)
+            || !plan.Episode.Id.Equals(
+                episodeId,
+                StringComparison.Ordinal)
+            || plan.ShotNumber != shotNumber)
+        {
+            throw new InvalidOperationException(
+                "Unexpected Shot plan context in fixed Shot Manager test client.");
+        }
+        return Task.FromResult(plan);
+    }
 }
 
 internal sealed class ShotManagerTestHandler(

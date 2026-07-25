@@ -6,7 +6,9 @@ internal sealed partial class SpikeDatabase
 {
     public sealed record ShotSettings(
         string ProjectId,
+        string EpisodeId,
         string Slug,
+        int ShotNumber,
         int Version,
         int SortOrder,
         int ProjectDefaultFps,

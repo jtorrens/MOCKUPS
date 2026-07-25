@@ -4551,6 +4551,8 @@ for (const renderQueueContract of [
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueContracts.cs", "public const string Both"],
   ["spikes/desktop-editor-shell/EditorShell/RenderOutputPlanner.cs", "_v{version.ToString().PadLeft(versionPadding, '0')}"],
   ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "CreateProductionRender("],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PlanShotAsync("],
+  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "StoreShotManagerPlan("],
   ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PreviewAssetRegistry.TryResolve"],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "RecoverInterruptedJobs()"],
   ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "Environment.SpecialFolder.LocalApplicationData"],
@@ -4578,7 +4580,7 @@ for (const renderQueueDocumentationContract of [
   "Both reserves one free version across the pair",
   "Every Screen resolves its exact Module appearance contract.",
   "no editor chrome or device frame",
-  "first render requires an explicit choice",
+  "otherwise proposes the first predefined route",
 ]) {
   assertContains(
     "docs/architecture/production.md",
@@ -4631,10 +4633,10 @@ if (!existsSync(desktopDatabasePath)) {
   const database = new Database(desktopDatabasePath, { readonly: true, fileMustExist: true });
   try {
     const userVersion = database.pragma("user_version", { simple: true }) as number;
-    if (userVersion !== 3) {
+    if (userVersion !== 4) {
       addViolation(
         "data/desktop-editor-spike.sqlite",
-        `the committed current database must use schema version 3, found ${userVersion}`,
+        `the committed current database must use schema version 4, found ${userVersion}`,
       );
     }
     const renderPresetTables = database
@@ -4652,15 +4654,22 @@ if (!existsSync(desktopDatabasePath)) {
         "Render Presets must be completely retired from current tables, Shot columns and editor layouts",
       );
     }
-    const parityShots = database
-      .prepare("SELECT id, episode_id FROM shots ORDER BY id")
-      .all() as { id: string; episode_id: string }[];
-    if (parityShots.length !== 1
-      || parityShots[0]?.id !== "shot_001"
-      || parityShots[0]?.episode_id !== "episode_001") {
+    if (!shotColumns.some((column) => column.name === "shot_number")) {
       addViolation(
         "data/desktop-editor-spike.sqlite",
-        "canonical parity data must retain only episode_001 / shot_001",
+        "every current Shot must retain its stable shot_number",
+      );
+    }
+    const parityShots = database
+      .prepare("SELECT id, episode_id, shot_number FROM shots ORDER BY id")
+      .all() as { id: string; episode_id: string; shot_number: number }[];
+    if (parityShots.length !== 1
+      || parityShots[0]?.id !== "shot_001"
+      || parityShots[0]?.episode_id !== "episode_001"
+      || parityShots[0]?.shot_number !== 1) {
+      addViolation(
+        "data/desktop-editor-spike.sqlite",
+        "canonical parity data must retain only episode_001 / shot_001 with stable number 1",
       );
     }
     const parityModuleInstances = database

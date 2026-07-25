@@ -25,11 +25,6 @@ internal sealed partial class SpikeDatabase
         return _shotManagerIntegrationRepository.GetShotStructure(shotId);
     }
 
-    public int SuggestShotManagerShotNumber(string episodeId)
-    {
-        return _shotManagerIntegrationRepository.SuggestShotNumber(episodeId);
-    }
-
     public IReadOnlyList<ShotManagerLocalEpisodeRecord>
         LoadShotManagerLocalEpisodes(string projectId)
     {
@@ -77,12 +72,14 @@ internal sealed partial class SpikeDatabase
                     connection,
                     episode.Id,
                     actorId,
+                    plan.ShotNumber,
                     plan.FullName,
                     plan.ShotCode)
                 : _shotRepository.PrepareGovernedDuplicate(
                     connection,
                     duplicateSourceShotId,
                     actorId,
+                    plan.ShotNumber,
                     plan.FullName,
                     plan.ShotCode);
             if (!shot.EpisodeId.Equals(
@@ -90,12 +87,12 @@ internal sealed partial class SpikeDatabase
                 StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "A governed Shot can only be duplicated inside its original Episode.");
+                    "A Shot with a Shot Manager plan can only be duplicated inside its original Episode.");
             }
             var timestamp = DateTimeOffset.UtcNow.ToString("O");
             using var transaction = connection.BeginTransaction();
             _shotRepository.InsertPrepared(connection, transaction, shot);
-            _shotManagerIntegrationRepository.InsertShotStructure(
+            _shotManagerIntegrationRepository.UpsertShotStructure(
                 connection,
                 transaction,
                 new ShotManagerShotStructureRecord(
@@ -117,6 +114,45 @@ internal sealed partial class SpikeDatabase
                 shot.Notes,
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot),
                 episode);
+        }
+    }
+
+    public ShotManagerShotStructureRecord StoreShotManagerPlan(
+        string shotId,
+        ShotManagerExternalShotPlan plan)
+    {
+        var portableStructure = plan.ToPortableStructure();
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var shot = _shotRepository.Get(connection, shotId);
+            if (shot.ShotNumber != plan.ShotNumber)
+            {
+                throw new InvalidOperationException(
+                    "Shot Manager returned a plan for another Shot number.");
+            }
+            _shotManagerIntegrationRepository.ValidateGovernedShotContext(
+                connection,
+                shot.EpisodeId,
+                plan.Production.Id,
+                plan.Season.Id,
+                plan.Episode.Id);
+            var record = new ShotManagerShotStructureRecord(
+                shot.Id,
+                plan.PlanVersion,
+                plan.Production.Id,
+                plan.Season.Id,
+                plan.Episode.Id,
+                plan.ShotNumber,
+                plan.ShotCode,
+                plan.FullName,
+                portableStructure.ToJson(),
+                DateTimeOffset.UtcNow.ToString("O"));
+            _shotManagerIntegrationRepository.UpsertShotStructure(
+                connection,
+                transaction: null,
+                record);
+            return record;
         }
     }
 }

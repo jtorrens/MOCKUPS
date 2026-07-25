@@ -104,22 +104,25 @@ transport control disabled.
 
 ## Render Queue
 
-Every governed Shot row keeps one compact Render action visible independently
-of selection. The action remains enabled when the Shot has no available
-output route: it still opens the add modal and explains the missing
-prerequisite in place.
+Every Shot row keeps one compact Render action visible independently of
+selection. The action remains enabled when no output route is currently
+available: it still opens the add modal, shows the local Actor and defaults,
+asks Shot Manager to resolve the route from the stable Shot number and explains
+any missing prerequisite in place.
 
 That modal owns only creation of a new batch. Actor is informative and
 immutable. Device, Theme, appearance, output mode, predefined route and base
-name are explicit. The route control shows the stored relative directory and
-has no arbitrary folder alternative. The proposed automatic version and final
+name are explicit. The route control shows a relative directory returned by
+Shot Manager or its matching local cache, proposes the first available option
+when no prior selection applies and has no arbitrary folder alternative. The
+proposed automatic version and final
 child names update before enqueue. A missing physical route directory does not
 disable the form: the render worker creates it from the selected stored route
 when the job starts.
 
 Production also exposes a permanent **Render Queue** section alongside
 Episodes and Production Data. Its central panel remains accessible with an
-empty queue or without governed Shots. It groups Light/Dark children by batch
+empty queue or without cached Shot Manager routes. It groups Light/Dark children by batch
 and shows phase, frame progress, errors and final output. Pending or active
 work can be canceled; failed or canceled jobs retain a retry snapshot while
 available; completed work can reveal its output; terminal history can be

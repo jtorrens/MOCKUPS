@@ -9,7 +9,6 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RenderQueueController
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
     private readonly RenderQueueManager _queue;
     private readonly RenderJobSnapshotFactory _snapshots;
     private bool _dialogOpen;
@@ -21,7 +20,6 @@ internal sealed class RenderQueueController
         RenderJobSnapshotFactory? snapshots = null)
     {
         _owner = owner;
-        _database = database;
         _queue = queue ?? new RenderQueueManager();
         _snapshots = snapshots ?? new RenderJobSnapshotFactory(database);
     }
@@ -29,24 +27,8 @@ internal sealed class RenderQueueController
     public EditorNavigationRowAction? NavigationAction(ProjectTreeNode node)
     {
         if (!OwnsNavigationAction(node)) return null;
-        var available = false;
-        try
-        {
-            var record = _database.GetShotManagerShotStructure(node.Id);
-            available = record is not null
-                && ShotManagerPortableStructure.Parse(
-                    record.StructureJson,
-                    $"Shot Manager Shot '{node.Id}' structure")
-                    .OutputContracts.Count > 0;
-        }
-        catch
-        {
-            available = false;
-        }
         return new EditorNavigationRowAction(
-            available
-                ? $"Add {node.Name} to Render Queue"
-                : $"Open Render Queue for {node.Name} · output route unavailable",
+            $"Add {node.Name} to Render Queue",
             EditorIcons.Render,
             () => _ = OpenAsync(node),
             true);

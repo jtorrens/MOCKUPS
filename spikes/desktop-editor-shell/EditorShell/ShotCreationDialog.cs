@@ -13,7 +13,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record ShotCreationDraft(
     string ActorId,
-    int? ShotNumber);
+    int ShotNumber);
 
 internal sealed class ShotCreationDialog
 {
@@ -41,13 +41,12 @@ internal sealed class ShotCreationDialog
             throw new InvalidOperationException(
                 "Synchronize this Episode with Shot Manager before adding a Shot.");
         }
-        var isGoverned = episodeBinding is not null;
         var actors = _database.GetRequiredActorOptions(project.Id).ToList();
         var dialog = new SukiWindow
         {
             Title = "Add Shot",
             Width = 460,
-            Height = isGoverned ? 330 : 250,
+            Height = 330,
             MinWidth = 420,
             MinHeight = 240,
             CanResize = false,
@@ -79,27 +78,21 @@ internal sealed class ShotCreationDialog
         };
         actorCombo.SelectionChanged += (_, _) => addButton.IsEnabled = actorCombo.SelectedItem is not null;
         cancelButton.Click += (_, _) => dialog.Close(null);
-        var shotNumber = isGoverned
-            ? _database.SuggestShotManagerShotNumber(episode.Id).ToString()
-            : "";
-        DictionaryFieldControl? shotNumberField = null;
-        if (isGoverned)
-        {
-            var definition = new FieldDefinition(
-                "shotManager.creation.shotNumber",
-                "Shot number",
-                ValueKind.Integer,
-                DefaultValue: shotNumber,
-                Number: new NumberDefinition(
-                    Minimum: 1,
-                    Maximum: 99_999_999,
-                    Increment: 1,
-                    DecimalPlaces: 0));
-            shotNumberField = new DictionaryFieldControl(
-                new FieldValue(definition, shotNumber));
-            shotNumberField.ValueChanged += (_, value) => shotNumber = value;
-            shotNumberField.ValueCommitted += (_, value) => shotNumber = value;
-        }
+        var shotNumber = _database.SuggestShotNumber(episode.Id).ToString();
+        var definition = new FieldDefinition(
+            "shot.creation.shotNumber",
+            "Shot number",
+            ValueKind.Integer,
+            DefaultValue: shotNumber,
+            Number: new NumberDefinition(
+                Minimum: 1,
+                Maximum: 99_999_999,
+                Increment: 1,
+                DecimalPlaces: 0));
+        var shotNumberField = new DictionaryFieldControl(
+            new FieldValue(definition, shotNumber));
+        shotNumberField.ValueChanged += (_, value) => shotNumber = value;
+        shotNumberField.ValueCommitted += (_, value) => shotNumber = value;
         addButton.Click += (_, _) =>
         {
             if (actorCombo.SelectedItem is null)
@@ -108,7 +101,7 @@ internal sealed class ShotCreationDialog
             }
             dialog.Close(new ShotCreationDraft(
                 actorCombo.SelectedItem.Value,
-                isGoverned ? int.Parse(shotNumber) : null));
+                int.Parse(shotNumber)));
         };
 
         var actorLabel = new TextBlock
@@ -146,16 +139,15 @@ internal sealed class ShotCreationDialog
                 fields,
             },
         };
-        if (shotNumberField is not null)
+        content.Children.Add(shotNumberField);
+        content.Children.Add(new TextBlock
         {
-            content.Children.Add(shotNumberField);
-            content.Children.Add(new TextBlock
-            {
-                Text = "Shot Manager will calculate the technical name and folder structure. The number becomes immutable after creation.",
-                Opacity = 0.72,
-                TextWrapping = TextWrapping.Wrap,
-            });
-        }
+            Text = episodeBinding is null
+                ? "The Shot number is stable and will identify its future production route."
+                : "Shot Manager will use this stable number to calculate the technical name and output routes.",
+            Opacity = 0.72,
+            TextWrapping = TextWrapping.Wrap,
+        });
         var root = new Grid
         {
             RowDefinitions = new RowDefinitions("*,Auto"),

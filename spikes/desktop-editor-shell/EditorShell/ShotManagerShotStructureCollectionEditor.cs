@@ -4,22 +4,17 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
-using System;
-using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ShotManagerShotStructureCollectionEditor
 {
     private readonly SpikeDatabase _database;
-    private readonly Func<string, string, Task> _showInfo;
 
     public ShotManagerShotStructureCollectionEditor(
-        SpikeDatabase database,
-        Func<string, string, Task> showInfo)
+        SpikeDatabase database)
     {
         _database = database;
-        _showInfo = showInfo;
     }
 
     public InstantEditorCard? Create(ProjectTreeNode shot)
@@ -41,52 +36,22 @@ internal sealed class ShotManagerShotStructureCollectionEditor
                 },
                 new TextBlock
                 {
-                    Text = $"{record.ShotCode} · {structure.Directories.Count} managed folders",
+                    Text = $"{record.ShotCode} · {structure.OutputContracts.Count} render destinations",
                     Opacity = 0.72,
                 },
                 new TextBlock
                 {
-                    Text = "The stored portable snapshot is not reinterpreted when the Production template changes.",
+                    Text = "This is the last route contract received from Shot Manager. Missing destination folders are created when a render starts.",
                     Opacity = 0.72,
                     TextWrapping = TextWrapping.Wrap,
                 },
             },
         };
-        var repair = new Button
-        {
-            Content = "Create missing folders",
-            HorizontalAlignment = HorizontalAlignment.Left,
-        };
-        repair.Click += async (_, _) =>
-        {
-            repair.IsEnabled = false;
-            try
-            {
-                var count = await new ShotManagerShotCreationService(_database)
-                    .RepairAsync(shot.Id);
-                await _showInfo(
-                    "Shot folders checked",
-                    count == 0
-                        ? "All stored Shot folders already exist."
-                        : $"Created {count} missing folder(s) from the stored snapshot.");
-            }
-            catch (Exception exception)
-            {
-                await _showInfo(
-                    "Shot folder repair failed",
-                    exception.Message);
-            }
-            finally
-            {
-                repair.IsEnabled = true;
-            }
-        };
-        body.Children.Add(repair);
 
         return new InstantEditorCard(
             EditorCardHeader.Create(
-                "Shot Manager folders",
-                "Portable creation snapshot",
+                "Shot Manager render routes",
+                "Last synchronized contract",
                 EditorIcons.CreateSemantic(
                     "Shot Manager folders",
                     EditorIcons.Folder,
@@ -99,7 +64,7 @@ internal sealed class ShotManagerShotStructureCollectionEditor
             isExpanded: false)
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "integration:shot-manager-folders",
+            SessionStateId = "integration:shot-manager-render-routes",
         };
     }
 }

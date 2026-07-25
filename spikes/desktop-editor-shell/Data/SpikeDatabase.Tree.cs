@@ -533,7 +533,18 @@ internal sealed partial class SpikeDatabase
         throw new InvalidOperationException($"Cannot add a child to {parent.Kind}.");
     }
 
-    public ProjectTreeNode AddShot(ProjectTreeNode episode, string actorId)
+    public int SuggestShotNumber(string episodeId)
+    {
+        using var connection = OpenConnection();
+        return _shotRepository.SuggestShotNumber(
+            connection,
+            episodeId);
+    }
+
+    public ProjectTreeNode AddShot(
+        ProjectTreeNode episode,
+        string actorId,
+        int shotNumber)
     {
         if (episode.Kind != ProjectTreeNodeKind.Episode)
         {
@@ -542,7 +553,11 @@ internal sealed partial class SpikeDatabase
 
         using var connection = OpenConnection();
         _moduleInstanceThemeContextService.RequireEpisodeActor(connection, episode.Id, actorId);
-        var shot = _shotRepository.Create(connection, episode.Id, actorId);
+        var shot = _shotRepository.Create(
+            connection,
+            episode.Id,
+            actorId,
+            shotNumber);
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Shot,
@@ -651,7 +666,16 @@ internal sealed partial class SpikeDatabase
         if (node.Kind == ProjectTreeNodeKind.Shot)
         {
             var id = $"shot_{Guid.NewGuid():N}";
-            var duplicate = _shotRepository.Duplicate(connection, node.Id, id, $"{node.Name} copy");
+            var source = _shotRepository.Get(connection, node.Id);
+            var duplicate = _shotRepository.Duplicate(
+                connection,
+                node.Id,
+                id,
+                $"{node.Name} copy",
+                source.OwnerActorId,
+                _shotRepository.SuggestShotNumber(
+                    connection,
+                    source.EpisodeId));
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Shot,
                 duplicate.Id,
@@ -758,6 +782,34 @@ internal sealed partial class SpikeDatabase
         }
 
         throw new InvalidOperationException($"Cannot duplicate {node.Kind}.");
+    }
+
+    public ProjectTreeNode DuplicateShot(
+        ProjectTreeNode shot,
+        string actorId,
+        int shotNumber)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot
+            || shot.Parent?.Kind != ProjectTreeNodeKind.Episode)
+        {
+            throw new InvalidOperationException(
+                "Only a concrete Shot inside an Episode can be duplicated.");
+        }
+        using var connection = OpenConnection();
+        var duplicate = _shotRepository.Duplicate(
+            connection,
+            shot.Id,
+            $"shot_{Guid.NewGuid():N}",
+            $"{shot.Name} copy",
+            actorId,
+            shotNumber);
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.Shot,
+            duplicate.Id,
+            duplicate.Name,
+            duplicate.Notes,
+            shot.RecordClassId,
+            shot.Parent);
     }
 
     public void Delete(ProjectTreeNode node)
@@ -935,16 +987,6 @@ internal sealed partial class SpikeDatabase
 
         if (node.Kind == ProjectTreeNodeKind.Shot)
         {
-            var structure =
-                _shotManagerIntegrationRepository.GetShotStructure(node.Id);
-            if (structure is not null
-                && !node.Name.Equals(
-                    structure.FullName,
-                    StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    "The technical name of a Shot with created Shot Manager folders is immutable.");
-            }
             _shotRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
             return;
         }

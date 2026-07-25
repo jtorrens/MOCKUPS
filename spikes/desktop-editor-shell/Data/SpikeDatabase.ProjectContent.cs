@@ -18,7 +18,9 @@ internal sealed partial class SpikeDatabase
 
         return new ShotSettings(
             record.ProjectId,
+            record.EpisodeId,
             record.Slug,
+            record.ShotNumber,
             record.Version,
             record.SortOrder,
             project.DefaultFps,
@@ -33,12 +35,6 @@ internal sealed partial class SpikeDatabase
     public void UpdateShotField(string shotId, string fieldId, string value)
     {
         using var connection = OpenConnection();
-        if (fieldId == "shot.slug"
-            && _shotManagerIntegrationRepository.GetShotStructure(shotId) is not null)
-        {
-            throw new InvalidOperationException(
-                "The technical code of a Shot with created Shot Manager folders is immutable.");
-        }
         if (fieldId == "shot.fps" && value == "inherited")
         {
             _shotRepository.ClearFpsOverride(connection, shotId);

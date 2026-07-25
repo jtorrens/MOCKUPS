@@ -372,10 +372,26 @@ internal sealed partial class SpikeDatabase
         {
             entries.Add(
                 $"{reader.GetString(0)}:{reader.GetString(1)}",
-                Regex.Replace(reader.GetString(2).Trim(), @"\s+", " "));
+                NormalizeSchemaSql(reader.GetString(2)));
         }
 
         return entries;
+    }
+
+    private static string NormalizeSchemaSql(string sql)
+    {
+        var whitespace = Regex.Replace(
+            sql.Trim(),
+            @"\s+",
+            " ");
+        var commas = Regex.Replace(
+            whitespace,
+            @"\s*,\s*",
+            ", ");
+        return Regex.Replace(
+            commas,
+            @"\s+\)",
+            ")");
     }
 
     private void ValidateCurrentJsonColumns(SqliteConnection connection)
@@ -426,6 +442,15 @@ internal sealed partial class SpikeDatabase
     private void ValidateCurrentReferences(SqliteConnection connection)
     {
         RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN episodes e ON e.id = s.episode_id WHERE e.id IS NULL", "shot without episode");
+        RequireNoRows(
+            connection,
+            """
+            SELECT 1
+            FROM shot_manager_shot_structures structure
+            JOIN shots ON shots.id = structure.shot_id
+            WHERE structure.shot_number <> shots.shot_number
+            """,
+            "Shot Manager render contract with another local Shot number");
         RequireNoRows(connection, "SELECT 1 FROM apps a LEFT JOIN projects p ON p.id = a.project_id WHERE p.id IS NULL", "app without project");
         RequireNoRows(connection, "SELECT 1 FROM modules m LEFT JOIN apps a ON a.id = m.app_id WHERE a.id IS NULL", "module without app");
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN shots s ON s.id = mi.shot_id WHERE s.id IS NULL", "module instance without shot");

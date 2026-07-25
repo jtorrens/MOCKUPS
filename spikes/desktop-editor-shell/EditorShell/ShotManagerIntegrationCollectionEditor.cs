@@ -59,8 +59,8 @@ internal sealed class ShotManagerIntegrationCollectionEditor
                 new TextBlock
                 {
                     Text = association is null
-                        ? "Connect optionally to synchronize Episodes and create official Shot Manager folder layouts."
-                        : "Episodes use stable Shot Manager identities. Shots and their creative content remain owned by MOCKUPS.",
+                        ? "Connect optionally to synchronize Episodes and resolve official render routes."
+                        : "Episodes use stable Shot Manager identities. Shots, numbers and creative content remain owned by MOCKUPS.",
                     Opacity = 0.72,
                     TextWrapping = TextWrapping.Wrap,
                 },

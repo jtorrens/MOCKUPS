@@ -41,8 +41,12 @@ internal sealed partial class SpikeDatabase
           duration_frames INTEGER NOT NULL DEFAULT 240,
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
-          metadata_json TEXT NOT NULL DEFAULT '{}'
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0)
         );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_number
+          ON shots(episode_id, shot_number);
 
         CREATE TABLE IF NOT EXISTS shot_manager_project_associations (
           project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
@@ -211,7 +215,7 @@ internal sealed partial class SpikeDatabase
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 3;
+        PRAGMA user_version = 4;
         """;
 
 }

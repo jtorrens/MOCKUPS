@@ -123,7 +123,7 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmAction(
             "Disconnect Shot Manager",
             $"Disconnect {productionName} · {seasonCode}?",
-            "Local Episodes, Shots and stored folder snapshots are retained. New official Shots require reconnecting and synchronizing.",
+            "Local Episodes, Shots and cached render routes are retained. Reconnect and synchronize before resolving new Shot Manager routes.",
             "Disconnect",
             width: 500,
             height: 240);

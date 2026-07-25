@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `3` is the only current schema. Every row belongs directly or
+Schema version `4` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -14,13 +14,16 @@ The current tables are:
 | --- | --- | --- |
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
-| Optional Shot Manager governance | `shot_manager_project_associations`, `shot_manager_episode_bindings`, `shot_manager_shot_structures` | exact Project/Season association → stable Episode bindings → immutable local Shot folder snapshot |
+| Optional Shot Manager governance | `shot_manager_project_associations`, `shot_manager_episode_bindings`, `shot_manager_shot_structures` | exact Project/Season association → stable Episode bindings → last portable Shot render contract |
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
 | Visual resources | `palette_colors`, `themes`, `icon_themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
+`shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
+inside its Episode. It exists independently of Shot Manager association or the
+date on which the Shot was created.
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
@@ -99,7 +102,8 @@ array
   production_fonts.files_json
 ```
 
-`shot_manager_shot_structures.structure_json` is a strict portable object with
+`shot_manager_shot_structures.structure_json` is the last successfully
+synchronized render plan for its local Shot. It is a strict portable object with
 `schemaVersion`, unique `/`-separated relative `directories`, the exact
 `shotOwnedDirectories` subset supplied by the file-layout owner, and complete
 `entries` containing only `entryId` and `relativePath`. Its
@@ -126,9 +130,11 @@ root is local machine state and is never copied into the portable Project.
 Interrupted active jobs return to Pending on the next application start.
 
 The Project association stores one exact external Production and Season.
-Episode bindings store stable external identities. A Shot structure stores the
-technical identity returned at creation and its portable plan snapshot, but no
-external Shot id because MOCKUPS owns that Shot.
+Episode bindings store stable external identities. Render planning supplies
+Shot Manager with the local stable Shot number and updates the portable
+contract cache. The cache stores the returned technical identity but no
+external Shot id because MOCKUPS owns that Shot. Missing physical destination
+directories are never created by this persistence write.
 
 Component and Module Variant arrays are required current data. Every Variant is
 a complete named snapshot with:

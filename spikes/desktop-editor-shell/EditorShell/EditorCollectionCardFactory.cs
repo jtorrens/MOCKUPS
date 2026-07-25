@@ -137,8 +137,7 @@ internal sealed class EditorCollectionCardFactory
                 _previewPlaybackState).Create(node),
         };
         var structure = new ShotManagerShotStructureCollectionEditor(
-            _database,
-            _showInfo).Create(node);
+            _database).Create(node);
         if (structure is not null)
         {
             cards.Add(structure);

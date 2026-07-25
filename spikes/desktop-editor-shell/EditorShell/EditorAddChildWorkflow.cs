@@ -71,12 +71,15 @@ internal sealed class EditorAddChildWorkflow
             {
                 var draft = await new ShotCreationDialog(_owner, _database).Show(parent);
                 if (draft is null) return null;
-                return draft.ShotNumber is null
-                    ? _database.AddShot(parent, draft.ActorId)
+                return _database.GetShotManagerEpisodeBinding(parent.Id) is null
+                    ? _database.AddShot(
+                        parent,
+                        draft.ActorId,
+                        draft.ShotNumber)
                     : await new ShotManagerShotCreationService(_database).CreateAsync(
                         parent,
                         draft.ActorId,
-                        draft.ShotNumber.Value);
+                        draft.ShotNumber);
             }
             catch (Exception exception)
             {

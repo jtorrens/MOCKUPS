@@ -58,19 +58,40 @@ internal sealed class ShotRepository : IShotRepository
         return ReadAll(command);
     }
 
-    public ShotRecord Create(SqliteConnection connection, string episodeId, string actorId)
+    public int SuggestShotNumber(
+        SqliteConnection connection,
+        string episodeId)
+    {
+        var maximum = SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COALESCE(MAX(shot_number), 0)
+            FROM shots
+            WHERE episode_id = $episodeId
+            """,
+            ("$episodeId", episodeId));
+        return checked((int)maximum + 1);
+    }
+
+    public ShotRecord Create(
+        SqliteConnection connection,
+        string episodeId,
+        string actorId,
+        int shotNumber)
     {
         if (string.IsNullOrWhiteSpace(actorId))
         {
             throw new InvalidOperationException("A Shot requires an explicit owner Actor.");
         }
+        RequireAvailableShotNumber(connection, episodeId, shotNumber);
         var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "shots", "episode_id", episodeId);
         var record = new ShotRecord(
             $"shot_{Guid.NewGuid():N}",
             episodeId,
             RequiredProjectId(connection, episodeId),
-            $"Shot {sortOrder + 1:00}",
-            $"shot-{sortOrder + 1:00}",
+            $"Shot {shotNumber:00}",
+            $"shot-{shotNumber:00}",
+            shotNumber,
             1,
             "New shot created in the desktop shell spike.",
             sortOrder,
@@ -87,6 +108,7 @@ internal sealed class ShotRepository : IShotRepository
         SqliteConnection connection,
         string episodeId,
         string actorId,
+        int shotNumber,
         string fullName,
         string shotCode)
     {
@@ -96,8 +118,9 @@ internal sealed class ShotRepository : IShotRepository
         }
         if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(shotCode))
         {
-            throw new InvalidOperationException("A governed Shot requires its exact technical identity.");
+            throw new InvalidOperationException("A Shot Manager plan requires its exact technical identity.");
         }
+        RequireAvailableShotNumber(connection, episodeId, shotNumber);
 
         var projectId = RequiredProjectId(connection, episodeId);
         ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -114,8 +137,9 @@ internal sealed class ShotRepository : IShotRepository
             projectId,
             fullName,
             shotCode,
+            shotNumber,
             1,
-            "Shot created in MOCKUPS with the official Shot Manager folder plan.",
+            "Shot created in MOCKUPS with an official Shot Manager render plan.",
             sortOrder,
             null,
             240,
@@ -138,6 +162,7 @@ internal sealed class ShotRepository : IShotRepository
         SqliteConnection connection,
         string sourceShotId,
         string actorId,
+        int shotNumber,
         string fullName,
         string shotCode)
     {
@@ -149,12 +174,17 @@ internal sealed class ShotRepository : IShotRepository
             actorId,
             $"Shot '{fullName}' owner Actor",
             required: true);
+        RequireAvailableShotNumber(
+            connection,
+            source.EpisodeId,
+            shotNumber);
         var duplicate = source with
         {
             Id = $"shot_{Guid.NewGuid():N}",
             Name = fullName,
             Slug = shotCode,
-            Notes = "Shot duplicated in MOCKUPS with a new official Shot Manager folder plan.",
+            ShotNumber = shotNumber,
+            Notes = "Shot duplicated in MOCKUPS with a new official Shot Manager render plan.",
             SortOrder = SqliteCommandExecutor.NextSortOrder(
                 connection,
                 "shots",
@@ -166,19 +196,38 @@ internal sealed class ShotRepository : IShotRepository
         return duplicate;
     }
 
-    public ShotRecord Duplicate(SqliteConnection connection, string sourceId, string id, string name)
+    public ShotRecord Duplicate(
+        SqliteConnection connection,
+        string sourceId,
+        string id,
+        string name,
+        string actorId,
+        int shotNumber)
     {
         var source = Get(connection, sourceId);
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            source.ProjectId,
+            ProjectReferenceKind.Actor,
+            actorId,
+            $"Shot '{name}' owner Actor",
+            required: true);
+        RequireAvailableShotNumber(
+            connection,
+            source.EpisodeId,
+            shotNumber);
         var duplicate = source with
         {
             Id = id,
             Name = name,
             Slug = $"{source.Slug}-copy",
+            ShotNumber = shotNumber,
             SortOrder = SqliteCommandExecutor.NextSortOrder(
                 connection,
                 "shots",
                 "episode_id",
                 source.EpisodeId),
+            OwnerActorId = actorId,
         };
         Insert(connection, duplicate);
         return Get(connection, id);
@@ -328,10 +377,10 @@ internal sealed class ShotRepository : IShotRepository
             """
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
-              duration_frames, owner_actor_id, canvas_json, metadata_json)
+              duration_frames, owner_actor_id, canvas_json, metadata_json, shot_number)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
-              $durationFrames, $ownerActorId, $canvasJson, $metadataJson)
+              $durationFrames, $ownerActorId, $canvasJson, $metadataJson, $shotNumber)
             """,
             ("$id", record.Id),
             ("$episodeId", record.EpisodeId),
@@ -344,7 +393,8 @@ internal sealed class ShotRepository : IShotRepository
             ("$durationFrames", record.DurationFrames),
             ("$ownerActorId", record.OwnerActorId),
             ("$canvasJson", record.CanvasJson),
-            ("$metadataJson", record.MetadataJson));
+            ("$metadataJson", record.MetadataJson),
+            ("$shotNumber", record.ShotNumber));
     }
 
     private static IReadOnlyList<ShotRecord> ReadAll(SqliteCommand command)
@@ -364,13 +414,14 @@ internal sealed class ShotRepository : IShotRepository
             reader.GetString(3),
             SqliteCommandExecutor.ReadString(reader, 4),
             reader.GetInt32(5),
-            SqliteCommandExecutor.ReadString(reader, 6),
-            reader.GetInt32(7),
-            reader.IsDBNull(8) ? null : reader.GetInt32(8),
-            reader.GetInt32(9),
-            SqliteCommandExecutor.ReadString(reader, 10),
+            reader.GetInt32(6),
+            SqliteCommandExecutor.ReadString(reader, 7),
+            reader.GetInt32(8),
+            reader.IsDBNull(9) ? null : reader.GetInt32(9),
+            reader.GetInt32(10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            SqliteCommandExecutor.ReadString(reader, 12));
+            SqliteCommandExecutor.ReadString(reader, 12),
+            SqliteCommandExecutor.ReadString(reader, 13));
         Validate(record);
         return record;
     }
@@ -387,6 +438,11 @@ internal sealed class ShotRepository : IShotRepository
         if (string.IsNullOrWhiteSpace(record.OwnerActorId))
         {
             throw new InvalidOperationException($"Shot '{record.Id}' requires an explicit owner Actor.");
+        }
+        if (record.ShotNumber <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Shot '{record.Id}' requires a positive stable number.");
         }
         if (record.DurationFrames <= 0)
         {
@@ -405,8 +461,35 @@ internal sealed class ShotRepository : IShotRepository
             ?? throw new InvalidOperationException($"Missing episode '{episodeId}'.");
     }
 
+    private static void RequireAvailableShotNumber(
+        SqliteConnection connection,
+        string episodeId,
+        int shotNumber)
+    {
+        if (shotNumber <= 0)
+        {
+            throw new InvalidOperationException(
+                "A Shot requires a positive stable number.");
+        }
+        if (SqliteCommandExecutor.ScalarLong(
+                connection,
+                """
+                SELECT COUNT(*)
+                FROM shots
+                WHERE episode_id = $episodeId
+                  AND shot_number = $shotNumber
+                """,
+                ("$episodeId", episodeId),
+                ("$shotNumber", shotNumber)) != 0)
+        {
+            throw new InvalidOperationException(
+                $"Shot number {shotNumber} already exists in this Episode.");
+        }
+    }
+
     private const string SelectCurrentRows = """
-        SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.version, s.notes,
+        SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.shot_number,
+               s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.owner_actor_id,
                s.canvas_json, s.metadata_json
         FROM shots s

@@ -84,8 +84,9 @@ never resolve across Projects.
 - A Screen is a persisted Module Instance with one exact Module Variant,
   payload, transition, duration and animation document.
 - Shot time is the ordered aggregate of its Screens.
-- An associated Project stores exact external Episode bindings and one
-  immutable portable folder snapshot per locally owned governed Shot.
+- An associated Project stores exact external Episode bindings. Every Shot
+  owns a stable local number; its last portable Shot Manager render contract
+  is a refreshable cache rather than a creation-time requirement.
 
 ### Preview
 

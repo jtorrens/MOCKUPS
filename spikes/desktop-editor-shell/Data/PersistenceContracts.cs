@@ -24,6 +24,7 @@ internal sealed record ShotRecord(
     string ProjectId,
     string Name,
     string Slug,
+    int ShotNumber,
     int Version,
     string Notes,
     int SortOrder,
@@ -294,12 +295,19 @@ internal interface IShotRepository
 
     IReadOnlyList<ShotRecord> QueryByEpisode(SqliteConnection connection, string episodeId);
 
-    ShotRecord Create(SqliteConnection connection, string episodeId, string actorId);
+    int SuggestShotNumber(SqliteConnection connection, string episodeId);
+
+    ShotRecord Create(
+        SqliteConnection connection,
+        string episodeId,
+        string actorId,
+        int shotNumber);
 
     ShotRecord PrepareGoverned(
         SqliteConnection connection,
         string episodeId,
         string actorId,
+        int shotNumber,
         string fullName,
         string shotCode);
 
@@ -307,6 +315,7 @@ internal interface IShotRepository
         SqliteConnection connection,
         string sourceShotId,
         string actorId,
+        int shotNumber,
         string fullName,
         string shotCode);
 
@@ -315,7 +324,13 @@ internal interface IShotRepository
         SqliteTransaction transaction,
         ShotRecord record);
 
-    ShotRecord Duplicate(SqliteConnection connection, string sourceId, string id, string name);
+    ShotRecord Duplicate(
+        SqliteConnection connection,
+        string sourceId,
+        string id,
+        string name,
+        string actorId,
+        int shotNumber);
 
     void DuplicateForEpisode(
         SqliteConnection connection,
@@ -341,8 +356,6 @@ internal interface IShotManagerIntegrationRepository
 
     ShotManagerShotStructureRecord? GetShotStructure(string shotId);
 
-    int SuggestShotNumber(string episodeId);
-
     IReadOnlyList<ShotManagerLocalEpisodeRecord> LoadLocalEpisodes(string projectId);
 
     void ApplyAssociation(ShotManagerAssociationWritePlan plan);
@@ -356,9 +369,9 @@ internal interface IShotManagerIntegrationRepository
         string seasonId,
         string externalEpisodeId);
 
-    void InsertShotStructure(
+    void UpsertShotStructure(
         SqliteConnection connection,
-        SqliteTransaction transaction,
+        SqliteTransaction? transaction,
         ShotManagerShotStructureRecord record);
 }
 

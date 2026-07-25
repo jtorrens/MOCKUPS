@@ -10,18 +10,15 @@ internal sealed class ShotManagerShotCreationService
 {
     private readonly SpikeDatabase _database;
     private readonly IShotManagerIntegrationClient _client;
-    private readonly ShotManagerFolderMaterializer _folders;
     private readonly ShotManagerWorkstationRootStore _roots;
 
     public ShotManagerShotCreationService(
         SpikeDatabase database,
         IShotManagerIntegrationClient? client = null,
-        ShotManagerFolderMaterializer? folders = null,
         ShotManagerWorkstationRootStore? roots = null)
     {
         _database = database;
         _client = client ?? new ShotManagerIntegrationClient();
-        _folders = folders ?? new ShotManagerFolderMaterializer();
         _roots = roots ?? new ShotManagerWorkstationRootStore();
     }
 
@@ -34,7 +31,7 @@ internal sealed class ShotManagerShotCreationService
     {
         var binding = _database.GetShotManagerEpisodeBinding(episode.Id)
             ?? throw new InvalidOperationException(
-                "Synchronize this Episode with Shot Manager before creating an official Shot.");
+                "Synchronize this Episode with Shot Manager before resolving an official Shot route.");
         var association = _database.GetShotManagerAssociation(binding.ProjectId)
             ?? throw new InvalidOperationException(
                 "The Project is no longer associated with Shot Manager.");
@@ -57,52 +54,11 @@ internal sealed class ShotManagerShotCreationService
                 "Shot Manager returned a plan outside the associated Production, Season or Episode.");
         }
         _roots.Remember(plan.Production.Id, plan.RootPath);
-        var creation = await _folders.CreateAsync(plan, cancellationToken);
-        try
-        {
-            return _database.AddShotFromShotManager(
-                episode,
-                actorId,
-                plan,
-                duplicateSourceShotId);
-        }
-        catch (Exception databaseError)
-        {
-            try
-            {
-                await _folders.RollbackAsync(
-                    creation,
-                    CancellationToken.None);
-            }
-            catch (Exception rollbackError)
-            {
-                throw new AggregateException(
-                    "The Shot could not be saved and its newly created folders could not be completely rolled back.",
-                    databaseError,
-                    rollbackError);
-            }
-            throw;
-        }
+        return _database.AddShotFromShotManager(
+            episode,
+            actorId,
+            plan,
+            duplicateSourceShotId);
     }
 
-    public async Task<int> RepairAsync(
-        string shotId,
-        CancellationToken cancellationToken = default)
-    {
-        var record = _database.GetShotManagerShotStructure(shotId)
-            ?? throw new InvalidOperationException(
-                "This Shot has no stored Shot Manager folder snapshot.");
-        var structure = ShotManagerPortableStructure.Parse(
-            record.StructureJson,
-            $"Shot Manager Shot '{shotId}' structure");
-        var snapshot = await _client.GetSnapshotAsync(
-            record.ProductionId,
-            cancellationToken);
-        _roots.Remember(record.ProductionId, snapshot.RootPath);
-        var creation = await _folders.RepairAsync(
-            snapshot.RootPath,
-            structure,
-            cancellationToken);
-        return creation.CreatedDirectories.Count;
-    }
 }

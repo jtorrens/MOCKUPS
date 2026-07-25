@@ -129,8 +129,7 @@ internal sealed class EditorNodeCommandController
                 "Shot Manager governs this Episode. Disconnect the Project before duplicating its local hierarchy.");
             return;
         }
-        if (node.Kind == ProjectTreeNodeKind.Shot
-            && _database.GetShotManagerShotStructure(node.Id) is not null)
+        if (node.Kind == ProjectTreeNodeKind.Shot)
         {
             try
             {
@@ -138,14 +137,20 @@ internal sealed class EditorNodeCommandController
                 var draft = await new ShotCreationDialog(
                     _owner,
                     _database).Show(episode);
-                if (draft is null || draft.ShotNumber is null) return;
-                var governedCopy = await new ShotManagerShotCreationService(_database)
-                    .CreateAsync(
-                        episode,
-                        draft.ActorId,
-                        draft.ShotNumber.Value,
-                        node.Id);
-                _reloadAndSelect(governedCopy);
+                if (draft is null) return;
+                var copy =
+                    _database.GetShotManagerEpisodeBinding(episode.Id) is null
+                        ? _database.DuplicateShot(
+                            node,
+                            draft.ActorId,
+                            draft.ShotNumber)
+                        : await new ShotManagerShotCreationService(_database)
+                            .CreateAsync(
+                                episode,
+                                draft.ActorId,
+                                draft.ShotNumber,
+                                node.Id);
+                _reloadAndSelect(copy);
             }
             catch (Exception exception)
             {

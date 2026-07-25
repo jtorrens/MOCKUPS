@@ -60,23 +60,6 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
         return reader.Read() ? ReadShotStructure(reader) : null;
     }
 
-    public int SuggestShotNumber(string episodeId)
-    {
-        using var connection = _context.OpenConnection();
-        var maximum = SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COALESCE(MAX(structure.shot_number), 0)
-            FROM shot_manager_shot_structures structure
-            JOIN shots ON shots.id = structure.shot_id
-            WHERE shots.episode_id = $episodeId
-            """,
-            ("$episodeId", episodeId));
-        return maximum <= 0
-            ? 10
-            : checked((int)((maximum / 10 + 1) * 10));
-    }
-
     public IReadOnlyList<ShotManagerLocalEpisodeRecord> LoadLocalEpisodes(string projectId)
     {
         using var connection = _context.OpenConnection();
@@ -304,9 +287,9 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
         }
     }
 
-    public void InsertShotStructure(
+    public void UpsertShotStructure(
         SqliteConnection connection,
-        SqliteTransaction transaction,
+        SqliteTransaction? transaction,
         ShotManagerShotStructureRecord record)
     {
         ValidateShotStructure(record);
@@ -320,6 +303,16 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
             VALUES (
               $shotId, $planVersion, $productionId, $seasonId, $episodeId,
               $shotNumber, $shotCode, $fullName, $structureJson, $createdAt)
+            ON CONFLICT(shot_id) DO UPDATE SET
+              plan_version = excluded.plan_version,
+              production_id = excluded.production_id,
+              season_id = excluded.season_id,
+              episode_id = excluded.episode_id,
+              shot_number = excluded.shot_number,
+              shot_code = excluded.shot_code,
+              full_name = excluded.full_name,
+              structure_json = excluded.structure_json,
+              created_at = excluded.created_at
             """,
             ("$shotId", record.ShotId),
             ("$planVersion", record.PlanVersion),
