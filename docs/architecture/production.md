@@ -26,7 +26,8 @@ while preserving each editor's session context.
 Production exposes:
 
 - Episodes, Shots and Screens in the sequence tree;
-- one **Production Data** card containing Actors, Devices, Production Fonts and Render Presets.
+- one **Production Data** card containing the optional Shot Manager
+  association plus Actors, Devices, Production Fonts and Render Presets.
 
 Render Presets live in Production Data because their selection belongs to a
 Production, even though a normal workflow can carry common presets between

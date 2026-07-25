@@ -88,6 +88,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices fonts and render presets", ProductionDataOwnsConcreteResources),
+    ("Production Data exposes the optional Shot Manager association card", ProductionDataExposesShotManagerAssociation),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
@@ -8199,6 +8200,73 @@ static void ProductionDataOwnsConcreteResources()
         and not ProjectTreeNodeKind.ActorsRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
+}
+
+static void ProductionDataExposesShotManagerAssociation()
+{
+    var source = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        "desktop-editor-spike.sqlite");
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-shot-manager-card-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session =
+            HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = new MainWindow(temporary)
+            {
+                Width = 1440,
+                Height = 900,
+            };
+            window.Show();
+            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
+                .GetField(
+                    "_treeRoots",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow tree state.");
+            var productionData = treeRoots.SelectMany(DescendantsAndSelf)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.ProductionDataRoot);
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow node selection boundary.");
+            if (!(bool)(selectNode.Invoke(
+                    window,
+                    [productionData.Id]) ?? false))
+            {
+                throw new InvalidOperationException(
+                    "Production Data could not be selected.");
+            }
+            Dispatcher.UIThread.RunJobs();
+            var editorContent = typeof(MainWindow)
+                .GetField(
+                    "_editorContent",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow editor content owner.");
+            True(editorContent.Cards.Any((card) =>
+                card.SessionStateId == "integration:shot-manager"));
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void TrackActivationCreatesInitialKeyframe()

@@ -31,7 +31,9 @@ internal sealed class ShotManagerIntegrationCollectionEditor
         _client = client ?? new ShotManagerIntegrationClient();
     }
 
-    public InstantEditorCard Create(ProjectTreeNode project)
+    public InstantEditorCard Create(
+        ProjectTreeNode project,
+        ProjectTreeNode selectionNode)
     {
         var association = _database.GetShotManagerAssociation(project.Id);
         var status = new TextBlock
@@ -102,7 +104,7 @@ internal sealed class ShotManagerIntegrationCollectionEditor
                         snapshot,
                         association.SeasonId);
                 }
-                _reloadAndSelect(project);
+                _reloadAndSelect(selectionNode);
             }
             catch (Exception exception)
             {
@@ -131,7 +133,7 @@ internal sealed class ShotManagerIntegrationCollectionEditor
                 }
                 new ShotManagerAssociationService(_database)
                     .Disconnect(project.Id);
-                _reloadAndSelect(project);
+                _reloadAndSelect(selectionNode);
             };
             actions.Children.Add(disconnect);
         }
