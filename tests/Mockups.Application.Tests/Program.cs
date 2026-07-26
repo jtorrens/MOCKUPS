@@ -7,6 +7,7 @@ var tests = new (string Name, Action Run)[]
     ("tree refresh replaces a deleted selection with a valid fallback", DeletedSelectionFallsBack),
     ("tree refresh replaces a deleted Production", DeletedProductionFallsBack),
     ("Production selection commits its first exact Production node", ProductionSelectionIsExact),
+    ("synthetic Production navigation selects and restores Render Queue", SyntheticProductionNavigationIsSelectable),
     ("typed reference navigation changes workspace and exact Production", ReferenceNavigationChangesWorkspace),
     ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
@@ -132,6 +133,41 @@ static void ProductionSelectionIsExact()
         "missing",
         "production-picker",
         out _));
+}
+
+static void SyntheticProductionNavigationIsSelectable()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    coordinator.SwitchWorkspace(EditorWorkspace.Production);
+    var project = coordinator.State.TreeRoots.Single();
+    var queue = EditorWorkspaceNavigation
+        .SectionRoots(project, EditorWorkspace.Production)
+        .Single((node) =>
+            node.Kind == ProjectTreeNodeKind.RenderQueueRoot);
+
+    True(coordinator.TrySelectNode(
+        queue,
+        "render-queue",
+        out var transition));
+
+    Equal(queue.Id, coordinator.State.SelectedNode?.Id);
+    Equal(
+        ProjectTreeNodeKind.RenderQueueRoot,
+        coordinator.State.SelectedNode?.Kind);
+    Equal(
+        coordinator.State.Revision,
+        coordinator.State.Preview.Revision);
+    True(transition.Effects.HasFlag(EditorSessionEffects.Editor));
+
+    coordinator.SwitchWorkspace(EditorWorkspace.Design);
+    coordinator.SwitchWorkspace(EditorWorkspace.Production);
+
+    Equal(queue.Id, coordinator.State.SelectedNode?.Id);
+    Equal(
+        ProjectTreeNodeKind.RenderQueueRoot,
+        coordinator.State.SelectedNode?.Kind);
 }
 
 static void ReferenceNavigationChangesWorkspace()

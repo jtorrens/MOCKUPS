@@ -254,8 +254,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         lock (_stateGate)
         {
             ThrowIfDisposed();
-            var currentNode = EditorNodeSelectionState.FindNodeById(
+            var currentNode = EditorWorkspaceNavigation.FindNode(
                 _state.TreeRoots,
+                _state.Workspace,
                 node.Id);
             if (currentNode is null)
             {
@@ -307,8 +308,10 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         string source,
         out EditorSessionTransition transition)
     {
-        var node = EditorNodeSelectionState.FindNodeById(
-            State.TreeRoots,
+        var state = State;
+        var node = EditorWorkspaceNavigation.FindNode(
+            state.TreeRoots,
+            state.Workspace,
             nodeId);
         if (node is null)
         {
@@ -327,8 +330,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         lock (_stateGate)
         {
             ThrowIfDisposed();
-            var node = EditorNodeSelectionState.FindNodeById(
+            var node = EditorWorkspaceNavigation.FindNode(
                 _state.TreeRoots,
+                workspace,
                 nodeId);
             if (node is null
                 || !EditorWorkspaceNavigation.Contains(workspace, node))
@@ -550,8 +554,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     {
         var selected = previous.SelectedNode is null
             ? null
-            : EditorNodeSelectionState.FindNodeById(
+            : EditorWorkspaceNavigation.FindNode(
                 roots,
+                workspace,
                 previous.SelectedNode.Id);
         selected = IsValid(selected, workspace) ? selected : null;
         if (selected is null
@@ -559,8 +564,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 workspace,
                 out var selectionId))
         {
-            var remembered = EditorNodeSelectionState.FindNodeById(
+            var remembered = EditorWorkspaceNavigation.FindNode(
                 roots,
+                workspace,
                 selectionId);
             selected = IsValid(remembered, workspace) ? remembered : null;
         }

@@ -114,6 +114,31 @@ public static class EditorWorkspaceNavigation
         return Includes(EditorWorkspacePolicy.Scope(node.Kind), workspace);
     }
 
+    public static ProjectTreeNode? FindNode(
+        IReadOnlyList<ProjectTreeNode> treeRoots,
+        EditorWorkspace workspace,
+        string nodeId)
+    {
+        foreach (var project in treeRoots)
+        {
+            if (project.Id.Equals(nodeId, StringComparison.Ordinal))
+            {
+                return project;
+            }
+            foreach (var root in SectionRoots(project, workspace))
+            {
+                var node = DescendantsAndSelf(root)
+                    .FirstOrDefault((candidate) =>
+                        candidate.Id.Equals(nodeId, StringComparison.Ordinal));
+                if (node is not null)
+                {
+                    return node;
+                }
+            }
+        }
+        return null;
+    }
+
     public static ProjectTreeNode? FirstSelectable(
         IReadOnlyList<ProjectTreeNode> treeRoots,
         EditorWorkspace workspace)
