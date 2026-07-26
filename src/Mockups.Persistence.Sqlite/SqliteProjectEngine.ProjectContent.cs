@@ -90,7 +90,7 @@ internal sealed partial class SqliteProjectEngine
 
     public AppSettings GetAppSettings(string appId)
     {
-        var record = _appModuleRepository.GetApp(appId);
+        var record = _designOwner.AppModuleRepository.GetApp(appId);
 
         return new AppSettings(
             record.ProjectId,
@@ -102,7 +102,7 @@ internal sealed partial class SqliteProjectEngine
 
     public ModuleSettings GetModuleSettings(string moduleId)
     {
-        var record = _appModuleRepository.GetModule(moduleId);
+        var record = _designOwner.AppModuleRepository.GetModule(moduleId);
 
         return new ModuleSettings(
             record.ProjectId,
@@ -115,12 +115,12 @@ internal sealed partial class SqliteProjectEngine
 
     public void UpdateModuleDesignPreviewJson(string moduleId, string designPreviewJson)
     {
-        _appModuleRepository.UpdateModuleDesignPreview(moduleId, designPreviewJson);
+        _designOwner.AppModuleRepository.UpdateModuleDesignPreview(moduleId, designPreviewJson);
     }
 
     public AppSettings GetModuleAppSettings(string moduleId)
     {
-        var record = _appModuleRepository.GetModuleApp(moduleId);
+        var record = _designOwner.AppModuleRepository.GetModuleApp(moduleId);
 
         return new AppSettings(
             record.ProjectId,
@@ -133,7 +133,7 @@ internal sealed partial class SqliteProjectEngine
     public void UpdateModuleField(string moduleId, string fieldId, string value)
     {
         using var connection = OpenConnection();
-        var module = _appModuleRepository.GetModule(connection, moduleId);
+        var module = _designOwner.AppModuleRepository.GetModule(connection, moduleId);
         if (fieldId == "module.appearanceMode"
             || fieldId.StartsWith("module.conversation.", StringComparison.Ordinal)
             || fieldId.StartsWith("module.lockScreen.", StringComparison.Ordinal)
@@ -149,12 +149,12 @@ internal sealed partial class SqliteProjectEngine
         switch (fieldId)
         {
             case "module.sortOrder":
-                _appModuleRepository.UpdateModuleSortOrder(connection, moduleId, NumericText.Int32(value, 0));
+                _designOwner.AppModuleRepository.UpdateModuleSortOrder(connection, moduleId, NumericText.Int32(value, 0));
                 return;
             case "module.metadata":
                 var metadata = ParseJsonObject(value);
                 VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-                _appModuleRepository.UpdateModuleMetadata(connection, moduleId, value);
+                _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, value);
                 return;
             case "module.recordClassId":
                 return;
@@ -262,7 +262,7 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         if (fieldId.StartsWith("app.wallpaper.", StringComparison.Ordinal))
         {
-            if (_appModuleRepository.GetApp(connection, appId).AppType == "system")
+            if (_designOwner.AppModuleRepository.GetApp(connection, appId).AppType == "system")
             {
                 throw new InvalidOperationException("System apps inherit Actor wallpaper and cannot own wallpaper fields.");
             }
@@ -276,7 +276,7 @@ internal sealed partial class SqliteProjectEngine
             return;
         }
 
-        _appModuleRepository.UpdateAppDirectField(connection, appId, fieldId, value);
+        _designOwner.AppModuleRepository.UpdateAppDirectField(connection, appId, fieldId, value);
     }
 
     public string GetAppConfigFieldValue(string appId, string fieldId)
@@ -314,7 +314,7 @@ internal sealed partial class SqliteProjectEngine
 
     private void UpdateAppConfigField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var config = ParseJsonObject(_appModuleRepository.GetApp(connection, appId).ConfigJson);
+        var config = ParseJsonObject(_designOwner.AppModuleRepository.GetApp(connection, appId).ConfigJson);
         switch (fieldId)
         {
             case "app.wallpaper.kind":
@@ -341,12 +341,12 @@ internal sealed partial class SqliteProjectEngine
                 throw new InvalidOperationException($"Unknown app config field '{fieldId}'.");
         }
 
-        _appModuleRepository.UpdateAppConfig(connection, appId, config.ToJsonString());
+        _designOwner.AppModuleRepository.UpdateAppConfig(connection, appId, config.ToJsonString());
     }
 
     private void UpdateAppMetadataField(SqliteConnection connection, string appId, string fieldId, string value)
     {
-        var metadata = ParseJsonObject(_appModuleRepository.GetApp(connection, appId).MetadataJson);
+        var metadata = ParseJsonObject(_designOwner.AppModuleRepository.GetApp(connection, appId).MetadataJson);
         switch (fieldId)
         {
             case "app.note":
@@ -365,16 +365,16 @@ internal sealed partial class SqliteProjectEngine
                 throw new InvalidOperationException($"Unknown app metadata field '{fieldId}'.");
         }
 
-        _appModuleRepository.UpdateAppMetadata(connection, appId, metadata.ToJsonString());
+        _designOwner.AppModuleRepository.UpdateAppMetadata(connection, appId, metadata.ToJsonString());
     }
 
     private void UpdateModuleConfigField(SqliteConnection connection, string moduleId, string fieldId, string value)
     {
-        var module = _appModuleRepository.GetModule(connection, moduleId);
+        var module = _designOwner.AppModuleRepository.GetModule(connection, moduleId);
         var config = ParseJsonObject(module.ConfigJson);
 
         UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
-        _appModuleRepository.UpdateModuleConfig(connection, moduleId, config.ToJsonString());
+        _designOwner.AppModuleRepository.UpdateModuleConfig(connection, moduleId, config.ToJsonString());
     }
 
     private void UpdateModuleConfigFieldValue(

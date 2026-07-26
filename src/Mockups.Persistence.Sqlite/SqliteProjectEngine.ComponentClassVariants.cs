@@ -22,7 +22,7 @@ internal sealed partial class SqliteProjectEngine
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            _componentClassRepository.Rename(connection, node.Id, nextName);
+            _designOwner.ComponentClassRepository.Rename(connection, node.Id, nextName);
         }
 
         return new ProjectTreeNode(
@@ -60,7 +60,7 @@ internal sealed partial class SqliteProjectEngine
                 .DeepClone()
                 .AsObject();
             variants.Add(VariantEnvelopeContract.CreateSource(copyId, copyName, copyConfig));
-            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -100,7 +100,7 @@ internal sealed partial class SqliteProjectEngine
             var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
             var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
             variants.Add(VariantEnvelopeContract.CreateSource(variantId, variantName, sourceConfig));
-            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -150,7 +150,7 @@ internal sealed partial class SqliteProjectEngine
                 }
 
                 variants.RemoveAt(index);
-                _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+                _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
                 return;
             }
         }
@@ -180,7 +180,7 @@ internal sealed partial class SqliteProjectEngine
             var variant = VariantEnvelopeContract.FindSource(variants, variantId)
                 ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
             variant["name"] = nextName;
-            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
         }
 
         return new ProjectTreeNode(
@@ -227,7 +227,7 @@ internal sealed partial class SqliteProjectEngine
 
             var nextLocked = !JsonBool(variant, ["locked"]);
             variant["locked"] = nextLocked;
-            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ComponentVariant,
@@ -276,7 +276,7 @@ internal sealed partial class SqliteProjectEngine
             }
 
             variant["config"] = nextConfig;
-            _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
         }
     }
 

@@ -15,7 +15,7 @@ internal sealed partial class SqliteProjectEngine
         string moduleInstanceId)
     {
         var instance = _productionOwner.ModuleInstanceRepository.Get(connection, moduleInstanceId);
-        var module = _appModuleRepository.GetModule(connection, instance.ModuleId);
+        var module = _designOwner.AppModuleRepository.GetModule(connection, instance.ModuleId);
         var original = instance.ContentJson;
         var content = ParseJsonObject(original);
         var contract = EffectiveModuleInstanceContract(
@@ -112,7 +112,7 @@ internal sealed partial class SqliteProjectEngine
         var instances = shotId is null
             ? _productionOwner.ModuleInstanceRepository.QueryAll(connection)
             : _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId);
-        var modules = _appModuleRepository.QueryModules(connection)
+        var modules = _designOwner.AppModuleRepository.QueryModules(connection)
             .ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var updates = new List<(string Id, int Duration)>();
         foreach (var instance in instances)
@@ -327,7 +327,7 @@ internal sealed partial class SqliteProjectEngine
     private JsonObject ModuleInstanceRuntimeContract(string moduleInstanceId)
     {
         var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
-        var module = _appModuleRepository.GetModule(instance.ModuleId);
+        var module = _designOwner.AppModuleRepository.GetModule(instance.ModuleId);
         return EffectiveModuleInstanceContract(
             module.Id,
             module.MetadataJson,

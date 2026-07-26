@@ -21,7 +21,7 @@ internal sealed partial class SqliteProjectEngine
     public string GetModuleInstanceModuleName(string moduleInstanceId)
     {
         var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
-        return _appModuleRepository.GetModule(instance.ModuleId).Name;
+        return _designOwner.AppModuleRepository.GetModule(instance.ModuleId).Name;
     }
 
     public string GetModuleInstanceTransitionType(string moduleInstanceId)
@@ -293,7 +293,7 @@ internal sealed partial class SqliteProjectEngine
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
     {
         using var connection = OpenConnection();
-        var modules = _appModuleRepository.QueryModules(connection)
+        var modules = _designOwner.AppModuleRepository.QueryModules(connection)
             .ToDictionary((module) => module.Id, (module) => module.Name, StringComparer.Ordinal);
         return _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId)
             .Select((instance) => new ModuleInstanceSlot(
@@ -312,12 +312,12 @@ internal sealed partial class SqliteProjectEngine
     {
         using var connection = OpenConnection();
         var shot = _productionOwner.ShotRepository.Get(connection, shotId);
-        var apps = _appModuleRepository.QueryApps(connection)
+        var apps = _designOwner.AppModuleRepository.QueryApps(connection)
             .Where((app) => app.ProjectId == shot.ProjectId)
             .OrderBy((app) => app.SortOrder)
             .ThenBy((app) => app.Name)
             .ToDictionary((app) => app.Id, StringComparer.Ordinal);
-        return _appModuleRepository.QueryModules(connection)
+        return _designOwner.AppModuleRepository.QueryModules(connection)
             .Where((module) => apps.ContainsKey(module.AppId))
             .OrderBy((module) => apps[module.AppId].SortOrder)
             .ThenBy((module) => apps[module.AppId].Name)

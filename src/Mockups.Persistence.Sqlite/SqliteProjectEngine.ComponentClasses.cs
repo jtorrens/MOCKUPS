@@ -13,7 +13,7 @@ internal sealed partial class SqliteProjectEngine
 {
     public ComponentClassSettings GetComponentClassSettings(string componentClassId)
     {
-        return ComponentClassSettingsFrom(_componentClassRepository.Get(componentClassId));
+        return ComponentClassSettingsFrom(_designOwner.ComponentClassRepository.Get(componentClassId));
     }
 
     public ComponentClassSettings GetComponentVariantSettings(ProjectTreeNode variantNode)
@@ -23,7 +23,7 @@ internal sealed partial class SqliteProjectEngine
     }
 
     public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson) =>
-        _componentClassRepository.UpdateDesignPreview(componentClassId, designPreviewJson);
+        _designOwner.ComponentClassRepository.UpdateDesignPreview(componentClassId, designPreviewJson);
 
     private ComponentClassSettings GetComponentVariantSettings(SqliteConnection connection, ProjectTreeNode variantNode)
     {
@@ -99,7 +99,7 @@ internal sealed partial class SqliteProjectEngine
 
     private ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
     {
-        return ComponentClassSettingsFrom(_componentClassRepository.Get(connection, componentClassId));
+        return ComponentClassSettingsFrom(_designOwner.ComponentClassRepository.Get(connection, componentClassId));
     }
 
     private static ComponentClassSettings ComponentClassSettingsFrom(ComponentClassDefinitionRecord record)
@@ -317,7 +317,7 @@ internal sealed partial class SqliteProjectEngine
                 $"Component class '{componentClassId}' config_json");
             ValidateEmbeddedSlotVariantReferences(connection, settings.ProjectId, config);
             SetDefaultComponentVariantConfig(metadata, config);
-            _componentClassRepository.UpdateConfigAndMetadata(
+            _designOwner.ComponentClassRepository.UpdateConfigAndMetadata(
                 connection,
                 componentClassId,
                 config.ToJsonString(),
@@ -614,7 +614,7 @@ internal sealed partial class SqliteProjectEngine
                 else
                     SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value, moduleDescriptor.Id));
                 if (ownerNode.Kind == ProjectTreeNodeKind.Module)
-                    _appModuleRepository.UpdateModuleConfig(connection, ownerNode.Id, config.ToJsonString());
+                    _designOwner.AppModuleRepository.UpdateModuleConfig(connection, ownerNode.Id, config.ToJsonString());
                 else
                     ReplaceModuleVariantConfig(ownerNode, config.ToJsonString());
             }
@@ -691,14 +691,14 @@ internal sealed partial class SqliteProjectEngine
         JsonObject config,
         JsonObject metadata)
     {
-        var component = _componentClassRepository.Get(connection, componentClassId);
+        var component = _designOwner.ComponentClassRepository.Get(connection, componentClassId);
         CurrentComponentConfigContract.Validate(
             component.ComponentType,
             config,
             $"Component class '{componentClassId}' Default Variant config");
         ValidateEmbeddedSlotVariantReferences(connection, component.ProjectId, config);
         SetDefaultComponentVariantConfig(metadata, config);
-        _componentClassRepository.UpdateConfigAndMetadata(
+        _designOwner.ComponentClassRepository.UpdateConfigAndMetadata(
             connection,
             componentClassId,
             config.ToJsonString(),
@@ -716,7 +716,7 @@ internal sealed partial class SqliteProjectEngine
         {
             throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
         }
-        var component = _componentClassRepository.Get(connection, componentClassId);
+        var component = _designOwner.ComponentClassRepository.Get(connection, componentClassId);
         CurrentComponentConfigContract.Validate(
             component.ComponentType,
             config,
@@ -727,11 +727,11 @@ internal sealed partial class SqliteProjectEngine
             PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
             return;
         }
-        _componentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
+        _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
     }
 
     private IReadOnlyList<ComponentClassDefinitionRecord> QueryComponentClassRows(SqliteConnection connection) =>
-        _componentClassRepository.QueryAll(connection);
+        _designOwner.ComponentClassRepository.QueryAll(connection);
     private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
     {
         if (descriptor.ValueKind == ValueKind.EmbeddedComponent)

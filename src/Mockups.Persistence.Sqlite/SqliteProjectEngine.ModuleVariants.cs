@@ -251,7 +251,7 @@ internal sealed partial class SqliteProjectEngine
                 variantId,
                 variantName,
                 ParseJsonObject(settings.ConfigJson)));
-            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
             return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, VariantReferenceId.Format(moduleId, variantId),
                 variantName, "Module variant", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant), sourceNode.Parent);
         }
@@ -262,7 +262,7 @@ internal sealed partial class SqliteProjectEngine
         var nextName = name.Trim();
         if (string.IsNullOrWhiteSpace(nextName)) throw new InvalidOperationException("Module name cannot be empty.");
         using var connection = OpenConnection();
-        _appModuleRepository.RenameModule(connection, node.Id, nextName);
+        _designOwner.AppModuleRepository.RenameModule(connection, node.Id, nextName);
         return new ProjectTreeNode(ProjectTreeNodeKind.Module, node.Id, nextName, node.Notes,
             node.RecordClassId, node.Parent, isUsed: node.IsUsed, isProtected: node.IsProtected, isLocked: node.IsLocked);
     }
@@ -296,7 +296,7 @@ internal sealed partial class SqliteProjectEngine
                     break;
                 }
             }
-            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }
     }
 
@@ -355,7 +355,7 @@ internal sealed partial class SqliteProjectEngine
             var config = variant["config"] as JsonObject ?? throw new InvalidOperationException("Module variant has no config.");
             UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
             variant["config"] = config;
-            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }
     }
 
@@ -377,7 +377,7 @@ internal sealed partial class SqliteProjectEngine
             var metadata = ParseJsonObject(module.MetadataJson);
             var variant = FindModuleVariant(metadata, node.Id);
             update(variant);
-            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
             return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, node.Id,
                 JsonPath.String(variant, "name", name), node.Notes, node.RecordClassId, node.Parent,
                 isUsed: node.IsUsed, isProtected: JsonBool(variant, ["protected"]), isLocked: JsonBool(variant, ["locked"]));
@@ -400,7 +400,7 @@ internal sealed partial class SqliteProjectEngine
                     JsonBool(variant, ["locked"])))
                 throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
             update(variant);
-            _appModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }
     }
 

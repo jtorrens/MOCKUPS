@@ -42,7 +42,9 @@ SQLite production code is split across independent persistence projects.
 write gate, command execution, cross-Project reference integrity and the
 current schema. `Mockups.Persistence.Sqlite.Contracts` owns only internal
 focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
-Module, Component Class and editor-layout persistence.
+Module, Component Class and editor-layout persistence. `SqliteDesignOwner`
+constructs its definition repositories; composition no longer constructs
+those implementations directly.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

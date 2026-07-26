@@ -14,7 +14,7 @@ internal sealed partial class SqliteProjectEngine
         JsonObject content)
     {
         var instance = _productionOwner.ModuleInstanceRepository.Get(connection, moduleInstanceId);
-        var module = _appModuleRepository.GetModule(connection, instance.ModuleId);
+        var module = _designOwner.AppModuleRepository.GetModule(connection, instance.ModuleId);
         var actorIds = _resourceOwner.ActorRepository.QueryAll(connection)
             .Where((actor) => actor.ProjectId.Equals(module.ProjectId, StringComparison.Ordinal))
             .Select((actor) => actor.Id)
@@ -41,7 +41,7 @@ internal sealed partial class SqliteProjectEngine
 
     private void ValidateCurrentModuleRuntimeDocuments(SqliteConnection connection)
     {
-        var modules = _appModuleRepository.QueryModules(connection)
+        var modules = _designOwner.AppModuleRepository.QueryModules(connection)
             .ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var actorIdsByProject = _resourceOwner.ActorRepository.QueryAll(connection)
             .GroupBy((actor) => actor.ProjectId, StringComparer.Ordinal)

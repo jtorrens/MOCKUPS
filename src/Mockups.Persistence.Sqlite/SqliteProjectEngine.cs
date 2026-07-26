@@ -9,8 +9,7 @@ internal sealed partial class SqliteProjectEngine
 {
     private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
-    private readonly IAppModuleRepository _appModuleRepository;
-    private readonly IComponentClassRepository _componentClassRepository;
+    private readonly SqliteDesignOwner _designOwner;
     private readonly SqliteProductionOwner _productionOwner;
     private readonly SqliteResourceOwner _resourceOwner;
     private readonly IReferenceUsageService _referenceUsageService;
@@ -30,8 +29,7 @@ internal sealed partial class SqliteProjectEngine
     {
         _context = context;
         _productionOwner = new SqliteProductionOwner(_context);
-        _appModuleRepository = new AppModuleRepository(_context);
-        _componentClassRepository = new ComponentClassRepository(_context);
+        _designOwner = new SqliteDesignOwner(_context);
         _resourceOwner = new SqliteResourceOwner(
             _context,
             _productionOwner.ProjectEpisodeRepository,

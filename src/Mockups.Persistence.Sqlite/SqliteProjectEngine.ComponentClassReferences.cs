@@ -165,7 +165,7 @@ internal sealed partial class SqliteProjectEngine
         var configs = new JsonObject();
         var variants = new JsonObject();
         var variantTypes = new JsonObject();
-        foreach (var row in _componentClassRepository.QueryByProject(connection, projectId))
+        foreach (var row in _designOwner.ComponentClassRepository.QueryByProject(connection, projectId))
         {
             AddComponentVariantConfigs(connection, variants, row);
             foreach (var variant in RequiredComponentClassVariants(row))
@@ -587,7 +587,7 @@ internal sealed partial class SqliteProjectEngine
     private IReadOnlyList<FieldOption> EmbeddedComponentOptions(string projectId, string recordClassId)
     {
         using var connection = OpenConnection();
-        var name = _componentClassRepository.QueryByProject(connection, projectId)
+        var name = _designOwner.ComponentClassRepository.QueryByProject(connection, projectId)
             .FirstOrDefault((row) => row.RecordClassId.Equals(recordClassId, StringComparison.Ordinal))
             ?.Name;
         return [new FieldOption(recordClassId, string.IsNullOrWhiteSpace(name) ? recordClassId : name)];

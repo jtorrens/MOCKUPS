@@ -17,8 +17,8 @@ internal sealed partial class SqliteProjectEngine
         var episodes = _productionOwner.QueryEpisodeRows(connection);
         var shots = _productionOwner.ShotRepository.QueryAll(connection);
         var moduleInstances = _productionOwner.ModuleInstanceRepository.QueryAll(connection);
-        var apps = _appModuleRepository.QueryApps(connection);
-        var modules = _appModuleRepository.QueryModules(connection);
+        var apps = _designOwner.AppModuleRepository.QueryApps(connection);
+        var modules = _designOwner.AppModuleRepository.QueryModules(connection);
         var moduleNames = modules.ToDictionary(
             (module) => module.Id,
             (module) => module.Name,
@@ -977,19 +977,19 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.App)
         {
-            _appModuleRepository.UpdateAppNode(connection, node.Id, node.Name, node.Notes);
+            _designOwner.AppModuleRepository.UpdateAppNode(connection, node.Id, node.Name, node.Notes);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Module)
         {
-            _appModuleRepository.UpdateModuleNode(connection, node.Id, node.Name, node.Notes);
+            _designOwner.AppModuleRepository.UpdateModuleNode(connection, node.Id, node.Name, node.Notes);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.ComponentClass)
         {
-            _componentClassRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
+            _designOwner.ComponentClassRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
             return;
         }
 
@@ -1077,7 +1077,7 @@ internal sealed partial class SqliteProjectEngine
         }
 
         using var connection = OpenConnection();
-        _appModuleRepository.RenameApp(connection, node.Id, nextName);
+        _designOwner.AppModuleRepository.RenameApp(connection, node.Id, nextName);
         return new ProjectTreeNode(ProjectTreeNodeKind.App, node.Id, nextName, node.Notes,
             node.RecordClassId, node.Parent, isUsed: node.IsUsed, isProtected: node.IsProtected, isLocked: node.IsLocked);
     }
