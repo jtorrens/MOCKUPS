@@ -147,7 +147,9 @@ transaction primitives, cross-Project reference guard and current schema.
 contracts shared by composition and their exact implementation owner.
 `Mockups.Persistence.Sqlite.Design` owns App, Module, Component Class and
 editor-layout repositories; `Mockups.Persistence.Sqlite.Production` owns
-Episode, Shot, Screen and Shot Manager repositories; and
+Episode, Shot, Screen and Shot Manager repositories. Its owner already
+contains Project/Episode and Shot Manager application operations; remaining
+Screen and timeline operations are the next extraction boundary.
 `Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
 Production Font and Icon Theme repositories and their resource-specific field,
 asset and token behavior. Resource behavior that needs Production context

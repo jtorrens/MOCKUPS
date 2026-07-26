@@ -13,8 +13,8 @@ internal sealed partial class SqliteProjectEngine
     public ShotSettings GetShotSettings(string shotId)
     {
         using var connection = OpenConnection();
-        var record = _shotRepository.Get(connection, shotId);
-        var project = _projectEpisodeRepository.GetProjectSettings(connection, record.ProjectId);
+        var record = _productionOwner.ShotRepository.Get(connection, shotId);
+        var project = _productionOwner.ProjectEpisodeRepository.GetProjectSettings(connection, record.ProjectId);
 
         return new ShotSettings(
             record.ProjectId,
@@ -37,16 +37,16 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         if (fieldId == "shot.fps" && value == "inherited")
         {
-            _shotRepository.ClearFpsOverride(connection, shotId);
+            _productionOwner.ShotRepository.ClearFpsOverride(connection, shotId);
             return;
         }
 
         if (fieldId == "shot.ownerActorId")
         {
-            _moduleInstanceThemeContextService.RequireShotOwnerChange(connection, shotId, value);
+            _productionOwner.ModuleInstanceThemeContextService.RequireShotOwnerChange(connection, shotId, value);
         }
 
-        _shotRepository.UpdateField(connection, shotId, fieldId, value);
+        _productionOwner.ShotRepository.UpdateField(connection, shotId, fieldId, value);
         if (fieldId == "shot.ownerActorId")
         {
             SynchronizeTimelineDurations(connection, shotId);
@@ -55,20 +55,20 @@ internal sealed partial class SqliteProjectEngine
 
     public string GetShotRenderName(string shotId)
     {
-        var governed = _shotManagerIntegrationRepository.GetShotStructure(shotId);
+        var governed = _productionOwner.ShotManagerIntegrationRepository.GetShotStructure(shotId);
         if (governed is not null)
         {
             return governed.FullName;
         }
         using var connection = OpenConnection();
-        var shot = _shotRepository.Get(connection, shotId);
-        var episode = _projectEpisodeRepository.QueryEpisodes(connection)
+        var shot = _productionOwner.ShotRepository.Get(connection, shotId);
+        var episode = _productionOwner.ProjectEpisodeRepository.QueryEpisodes(connection)
             .SingleOrDefault((candidate) => candidate.Id == shot.EpisodeId)
             ?? throw new InvalidOperationException($"Missing episode '{shot.EpisodeId}'.");
-        var project = _projectEpisodeRepository.QueryProjects(connection)
+        var project = _productionOwner.ProjectEpisodeRepository.QueryProjects(connection)
             .SingleOrDefault((candidate) => candidate.Id == shot.ProjectId)
             ?? throw new InvalidOperationException($"Missing project '{shot.ProjectId}'.");
-        var projectSettings = _projectEpisodeRepository.GetProjectSettings(connection, project.Id);
+        var projectSettings = _productionOwner.ProjectEpisodeRepository.GetProjectSettings(connection, project.Id);
         var projectSlug = SlugOrName(projectSettings.Slug, project.Name, "project");
         var episodeSlug = SlugOrName(episode.Slug, episode.Name, "episode");
         var shotSlug = SlugOrName(shot.Slug, shot.Name, "shot");
@@ -78,7 +78,7 @@ internal sealed partial class SqliteProjectEngine
     public string GetShotOwnerDeviceName(string shotId)
     {
         using var connection = OpenConnection();
-        var shot = _shotRepository.Get(connection, shotId);
+        var shot = _productionOwner.ShotRepository.Get(connection, shotId);
         var actor = _resourceOwner.ActorRepository.QueryAll(connection)
             .SingleOrDefault((candidate) => candidate.Id == shot.OwnerActorId)
             ?? throw new InvalidOperationException($"Missing Actor '{shot.OwnerActorId}'.");

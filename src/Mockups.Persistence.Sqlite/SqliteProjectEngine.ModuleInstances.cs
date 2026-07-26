@@ -11,7 +11,7 @@ internal sealed partial class SqliteProjectEngine
 {
     public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
     {
-        var record = _moduleInstanceRepository.Get(moduleInstanceId);
+        var record = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
         return new ModuleInstanceSettings(
             record.ShotId, record.AppId, record.ModuleId, record.Name, record.Notes,
             record.SortOrder, record.DurationFrames, record.TransitionJson, record.ContentJson,
@@ -20,7 +20,7 @@ internal sealed partial class SqliteProjectEngine
 
     public string GetModuleInstanceModuleName(string moduleInstanceId)
     {
-        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
+        var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
         return _appModuleRepository.GetModule(instance.ModuleId).Name;
     }
 
@@ -61,7 +61,7 @@ internal sealed partial class SqliteProjectEngine
             animationJson,
             $"Module Instance '{moduleInstanceId}' animation_json");
         using var connection = OpenConnection();
-        _moduleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
+        _productionOwner.ModuleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
@@ -190,7 +190,7 @@ internal sealed partial class SqliteProjectEngine
         ModuleInstanceAnimationDocumentContract.Validate(
             animation,
             $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateContentAndAnimation(
+        _productionOwner.ModuleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
             content.ToJsonString(),
@@ -222,7 +222,7 @@ internal sealed partial class SqliteProjectEngine
         ModuleInstanceAnimationDocumentContract.Validate(
             animation,
             $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateContentAndAnimation(
+        _productionOwner.ModuleInstanceRepository.UpdateContentAndAnimation(
             connection,
             moduleInstanceId,
             content.ToJsonString(),
@@ -286,7 +286,7 @@ internal sealed partial class SqliteProjectEngine
     {
         using var connection = OpenConnection();
         ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
-        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
+        _productionOwner.ModuleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
         SynchronizeTimelineDurations(connection);
     }
 
@@ -295,7 +295,7 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         var modules = _appModuleRepository.QueryModules(connection)
             .ToDictionary((module) => module.Id, (module) => module.Name, StringComparer.Ordinal);
-        return _moduleInstanceRepository.QueryByShot(connection, shotId)
+        return _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId)
             .Select((instance) => new ModuleInstanceSlot(
                 instance.Id,
                 instance.Name,
@@ -311,7 +311,7 @@ internal sealed partial class SqliteProjectEngine
     public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
     {
         using var connection = OpenConnection();
-        var shot = _shotRepository.Get(connection, shotId);
+        var shot = _productionOwner.ShotRepository.Get(connection, shotId);
         var apps = _appModuleRepository.QueryApps(connection)
             .Where((app) => app.ProjectId == shot.ProjectId)
             .OrderBy((app) => app.SortOrder)
@@ -346,11 +346,11 @@ internal sealed partial class SqliteProjectEngine
             throw new InvalidOperationException("A Module Instance name is required.");
         var initialDuration = RuntimeDurationContract.InitialDurationFrames(GetModuleSettings(module.Id).DesignPreviewJson);
         using var connection = OpenConnection();
-        _moduleInstanceThemeContextService.RequireShotContext(connection, shot.Id);
-        var index = _moduleInstanceRepository.NextSortOrder(connection, shot.Id);
+        _productionOwner.ModuleInstanceThemeContextService.RequireShotContext(connection, shot.Id);
+        var index = _productionOwner.ModuleInstanceRepository.NextSortOrder(connection, shot.Id);
         var id = $"module_instance_{Guid.NewGuid():N}";
-        var name = _moduleInstanceRepository.UniqueName(connection, shot.Id, requestedName);
-        _moduleInstanceRepository.Insert(
+        var name = _productionOwner.ModuleInstanceRepository.UniqueName(connection, shot.Id, requestedName);
+        _productionOwner.ModuleInstanceRepository.Insert(
             connection,
             new ModuleInstanceRecord(
                 id,
@@ -371,7 +371,7 @@ internal sealed partial class SqliteProjectEngine
             }.ToJsonString()));
         ReconcileModuleInstanceRuntimePayload(connection, id);
         SynchronizeTimelineDurations(connection);
-        var duration = _moduleInstanceRepository.Get(connection, id).DurationFrames;
+        var duration = _productionOwner.ModuleInstanceRepository.Get(connection, id).DurationFrames;
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             id,
@@ -389,7 +389,7 @@ internal sealed partial class SqliteProjectEngine
         if (requestedName.Length == 0)
             throw new InvalidOperationException("A Module Instance name is required.");
         using var connection = OpenConnection();
-        _moduleInstanceRepository.Rename(connection, node.Id, requestedName);
+        _productionOwner.ModuleInstanceRepository.Rename(connection, node.Id, requestedName);
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
             node.Id,
@@ -412,7 +412,7 @@ internal sealed partial class SqliteProjectEngine
         var currentSlot = slots[currentIndex];
         var targetSlot = slots[targetIndex];
         using var connection = OpenConnection();
-        _moduleInstanceRepository.SwapSortOrder(
+        _productionOwner.ModuleInstanceRepository.SwapSortOrder(
             connection,
             currentSlot.Id,
             currentSlot.SortOrder,
@@ -433,7 +433,7 @@ internal sealed partial class SqliteProjectEngine
                     throw new InvalidOperationException("Calculated Screen duration cannot be edited.");
                 using (var connection = OpenConnection())
                 {
-                    _moduleInstanceRepository.UpdateDuration(
+                    _productionOwner.ModuleInstanceRepository.UpdateDuration(
                         connection,
                         moduleInstanceId,
                         Math.Max(1, NumericText.Int32(value, 1)));

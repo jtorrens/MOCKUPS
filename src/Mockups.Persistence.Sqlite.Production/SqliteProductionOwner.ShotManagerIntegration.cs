@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteProductionOwner
 {
     public ShotManagerProjectAssociationRecord? GetShotManagerAssociation(
         string projectId)

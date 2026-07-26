@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteProductionOwner
 {
     public ProjectSettings GetProjectSettings(string projectId)
     {
@@ -31,17 +31,17 @@ internal sealed partial class SqliteProjectEngine
         _projectEpisodeRepository.UpdateEpisodeField(episodeId, fieldId, value);
     }
 
-    private IReadOnlyList<ProjectRecord> QueryProjectRows(SqliteConnection connection)
+    internal IReadOnlyList<ProjectRecord> QueryProjectRows(SqliteConnection connection)
     {
         return _projectEpisodeRepository.QueryProjects(connection);
     }
 
-    private IReadOnlyList<EpisodeRecord> QueryEpisodeRows(SqliteConnection connection)
+    internal IReadOnlyList<EpisodeRecord> QueryEpisodeRows(SqliteConnection connection)
     {
         return _projectEpisodeRepository.QueryEpisodes(connection);
     }
 
-    private ProjectSettings GetProjectSettings(SqliteConnection connection, string projectId)
+    internal ProjectSettings GetProjectSettings(SqliteConnection connection, string projectId)
     {
         return _projectEpisodeRepository.GetProjectSettings(connection, projectId);
     }

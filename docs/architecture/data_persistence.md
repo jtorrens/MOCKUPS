@@ -44,7 +44,10 @@ current schema. `Mockups.Persistence.Sqlite.Contracts` owns only internal
 focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
 Module, Component Class and editor-layout persistence.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
-Shot Manager persistence. `Mockups.Persistence.Sqlite.Resources` owns Palette,
+Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
+and Shot Manager operations; the aggregate delegates those operations and no
+longer constructs Production repositories itself.
+`Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.
 The three owner assemblies reference Contracts and Core, never another owner

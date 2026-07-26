@@ -135,7 +135,7 @@ internal sealed partial class SqliteProjectEngine
         ModuleInstanceAnimationDocumentContract.Validate(
             animation,
             $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateVariantDocuments(
+        _productionOwner.ModuleInstanceRepository.UpdateVariantDocuments(
             connection,
             moduleInstanceId,
             metadata.ToJsonString(),
@@ -286,7 +286,7 @@ internal sealed partial class SqliteProjectEngine
             var variant = FindModuleVariant(metadata, node.Id);
             if (JsonBool(variant, ["protected"])) throw new InvalidOperationException("Protected module variants cannot be deleted.");
             if (JsonBool(variant, ["locked"])) throw new InvalidOperationException("Locked module variants cannot be deleted.");
-            if (_moduleInstanceRepository.CountVariantReferences(connection, moduleId, node.Id) > 0)
+            if (_productionOwner.ModuleInstanceRepository.CountVariantReferences(connection, moduleId, node.Id) > 0)
                 throw new InvalidOperationException("This module variant is still used and cannot be deleted.");
             for (var index = 0; index < variants.Count; index++)
             {

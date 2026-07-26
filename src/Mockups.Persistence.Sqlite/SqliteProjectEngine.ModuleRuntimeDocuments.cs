@@ -13,7 +13,7 @@ internal sealed partial class SqliteProjectEngine
         string moduleInstanceId,
         JsonObject content)
     {
-        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+        var instance = _productionOwner.ModuleInstanceRepository.Get(connection, moduleInstanceId);
         var module = _appModuleRepository.GetModule(connection, instance.ModuleId);
         var actorIds = _resourceOwner.ActorRepository.QueryAll(connection)
             .Where((actor) => actor.ProjectId.Equals(module.ProjectId, StringComparison.Ordinal))
@@ -49,7 +49,7 @@ internal sealed partial class SqliteProjectEngine
                 (group) => group.Key,
                 (group) => group.Select((actor) => actor.Id).ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
-        foreach (var instance in _moduleInstanceRepository.QueryAll(connection))
+        foreach (var instance in _productionOwner.ModuleInstanceRepository.QueryAll(connection))
         {
             if (!modules.TryGetValue(instance.ModuleId, out var module))
             {

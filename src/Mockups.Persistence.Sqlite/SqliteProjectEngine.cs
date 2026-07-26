@@ -9,15 +9,11 @@ internal sealed partial class SqliteProjectEngine
 {
     private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
-    private readonly IShotRepository _shotRepository;
-    private readonly IProjectEpisodeRepository _projectEpisodeRepository;
     private readonly IAppModuleRepository _appModuleRepository;
     private readonly IComponentClassRepository _componentClassRepository;
-    private readonly IModuleInstanceRepository _moduleInstanceRepository;
-    private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
+    private readonly SqliteProductionOwner _productionOwner;
     private readonly SqliteResourceOwner _resourceOwner;
     private readonly IReferenceUsageService _referenceUsageService;
-    private readonly IShotManagerIntegrationRepository _shotManagerIntegrationRepository;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
@@ -33,18 +29,14 @@ internal sealed partial class SqliteProjectEngine
     internal SqliteProjectEngine(SqliteProjectContext context)
     {
         _context = context;
-        _shotRepository = new ShotRepository(_context);
-        _projectEpisodeRepository = new ProjectEpisodeRepository(_context, _shotRepository);
+        _productionOwner = new SqliteProductionOwner(_context);
         _appModuleRepository = new AppModuleRepository(_context);
         _componentClassRepository = new ComponentClassRepository(_context);
-        _moduleInstanceRepository = new ModuleInstanceRepository(_context);
-        _moduleInstanceThemeContextService = new ModuleInstanceThemeContextService(_context);
         _resourceOwner = new SqliteResourceOwner(
             _context,
-            _projectEpisodeRepository,
-            _moduleInstanceThemeContextService);
+            _productionOwner.ProjectEpisodeRepository,
+            _productionOwner.ModuleInstanceThemeContextService);
         _referenceUsageService = new ReferenceUsageService(_context);
-        _shotManagerIntegrationRepository = new ShotManagerIntegrationRepository(_context);
 
         Initialize();
     }

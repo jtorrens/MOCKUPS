@@ -14,7 +14,7 @@ internal sealed partial class SqliteProjectEngine
         SqliteConnection connection,
         string moduleInstanceId)
     {
-        var instance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+        var instance = _productionOwner.ModuleInstanceRepository.Get(connection, moduleInstanceId);
         var module = _appModuleRepository.GetModule(connection, instance.ModuleId);
         var original = instance.ContentJson;
         var content = ParseJsonObject(original);
@@ -104,14 +104,14 @@ internal sealed partial class SqliteProjectEngine
         var next = content.ToJsonString();
         if (next == original) return;
         ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
-        _moduleInstanceRepository.UpdateContent(connection, moduleInstanceId, next);
+        _productionOwner.ModuleInstanceRepository.UpdateContent(connection, moduleInstanceId, next);
     }
 
     private void SynchronizeTimelineDurations(SqliteConnection connection, string? shotId = null)
     {
         var instances = shotId is null
-            ? _moduleInstanceRepository.QueryAll(connection)
-            : _moduleInstanceRepository.QueryByShot(connection, shotId);
+            ? _productionOwner.ModuleInstanceRepository.QueryAll(connection)
+            : _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId);
         var modules = _appModuleRepository.QueryModules(connection)
             .ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var updates = new List<(string Id, int Duration)>();
@@ -132,25 +132,25 @@ internal sealed partial class SqliteProjectEngine
                 instance.ContentJson,
                 instance.AnimationJson,
                 instance.DurationFrames,
-                _moduleInstanceThemeContextService.GetTokensJson(connection, instance.Id));
+                _productionOwner.ModuleInstanceThemeContextService.GetTokensJson(connection, instance.Id));
             if (duration != instance.DurationFrames) updates.Add((instance.Id, duration));
         }
         foreach (var update in updates)
         {
-            _moduleInstanceRepository.UpdateDuration(connection, update.Id, update.Duration);
+            _productionOwner.ModuleInstanceRepository.UpdateDuration(connection, update.Id, update.Duration);
         }
 
-        var durationByShot = _moduleInstanceRepository.QueryAll(connection)
+        var durationByShot = _productionOwner.ModuleInstanceRepository.QueryAll(connection)
             .GroupBy((instance) => instance.ShotId, StringComparer.Ordinal)
             .ToDictionary(
                 (group) => group.Key,
                 (group) => Math.Max(1, group.Sum((instance) => instance.DurationFrames)),
                 StringComparer.Ordinal);
-        foreach (var shot in _shotRepository.QueryAll(connection))
+        foreach (var shot in _productionOwner.ShotRepository.QueryAll(connection))
         {
             var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
             if (duration == shot.DurationFrames) continue;
-            _shotRepository.UpdateDuration(connection, shot.Id, duration);
+            _productionOwner.ShotRepository.UpdateDuration(connection, shot.Id, duration);
         }
     }
 
@@ -326,7 +326,7 @@ internal sealed partial class SqliteProjectEngine
 
     private JsonObject ModuleInstanceRuntimeContract(string moduleInstanceId)
     {
-        var instance = _moduleInstanceRepository.Get(moduleInstanceId);
+        var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
         var module = _appModuleRepository.GetModule(instance.ModuleId);
         return EffectiveModuleInstanceContract(
             module.Id,
