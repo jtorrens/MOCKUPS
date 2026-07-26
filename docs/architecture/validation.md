@@ -143,6 +143,8 @@ Use focused checks while iterating:
 npm run test:focus:preview -- tests/animation/<owner>.test.ts
 npm run test:focus:desktop -- --exact "<desktop test name>"
 npm run test:focus:desktop -- --filter "<stable name fragment>"
+npm run animation:test:desktop:owner -- --owner "component:<manifest id>"
+npm run animation:test:desktop:owner -- --owner "module:<manifest id>"
 npm run test:guard
 npm run check:architecture
 npm run validate:contracts
@@ -157,17 +159,22 @@ npm run desktop:db:validate
 git diff --check
 ```
 
-An exact desktop name that does not exist, an unknown selector or a filter that
-matches nothing fails explicitly. A local owner change starts with its focused
-test and the shared guard. The focused desktop command reaches Preview
-generation through the Desktop project before running, so it cannot exercise
-stale web output. Changes to
-manifests, registries, shared Preview
-helpers, persistence, schemas, generated scaffolding or generic desktop
-surfaces expand to their owning suite. `npm test` remains mandatory once, after
-the intended revision stops changing. An unchanged successful gate is not
-repeated; any subsequent source, contract, database, asset or generated-file
-change invalidates it.
+An exact desktop name or Preview owner that does not exist, an unknown selector
+or a filter that matches nothing fails explicitly. Owner selectors use the
+exact stable manifest key, such as `component:label` or
+`module:module.core.chat`; more than one `--owner` may be supplied in one run.
+A local owner change starts with its owner-specific Preview and Desktop tests
+plus the shared guard. These commands reach Preview generation through the
+Desktop project before running, so they cannot exercise stale web output.
+
+The manifest-wide Desktop exhaustive process is reserved for changes that can
+affect more than one owner: manifest or registry changes, common Preview
+helpers, generic renderer or bridge changes, shared resolver contracts,
+persistence/schema/fixture changes, generated scaffolding, broad Desktop
+surfaces, phase handoff, merge or publication. `npm test` and CI keep that
+complete sweep. An unchanged successful focused gate is not repeated; any
+subsequent source, contract, database, asset or generated-file change
+invalidates the applicable result.
 
 ## Architecture enforcement
 

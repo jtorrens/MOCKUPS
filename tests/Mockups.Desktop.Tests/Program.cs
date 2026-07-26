@@ -42,6 +42,9 @@ if (args.Length == 2
     return;
 }
 
+var selectedManifestOwners = new HashSet<string>(
+    StringComparer.Ordinal);
+
 var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
@@ -4383,7 +4386,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     }
 }
 
-static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
+void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -4401,6 +4404,12 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
 
         foreach (var componentType in DesktopPreviewManifest.Components.Keys.Order(StringComparer.Ordinal))
         {
+            var ownerSelector = $"component:{componentType}";
+            if (selectedManifestOwners.Count > 0
+                && !selectedManifestOwners.Contains(ownerSelector))
+            {
+                continue;
+            }
             try
             {
                 var components = nodes.Where((node) =>
@@ -4446,6 +4455,7 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                         }
                     }
                 }
+                Console.WriteLine($"PASS OWNER {ownerSelector}");
             }
             catch (Exception exception)
             {
@@ -4457,6 +4467,12 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
 
         foreach (var moduleClass in DesktopPreviewManifest.Modules.Keys.Order(StringComparer.Ordinal))
         {
+            var ownerSelector = $"module:{moduleClass}";
+            if (selectedManifestOwners.Count > 0
+                && !selectedManifestOwners.Contains(ownerSelector))
+            {
+                continue;
+            }
             try
             {
                 var modules = nodes.Where((node) =>
@@ -4489,6 +4505,7 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                         }
                     }
                 }
+                Console.WriteLine($"PASS OWNER {ownerSelector}");
             }
             catch (Exception exception)
             {
@@ -9229,11 +9246,13 @@ if (group is not ("all" or "core" or "ui" or "exhaustive"))
 }
 var exactNames = ArgumentValues(args, "--exact");
 var filters = ArgumentValues(args, "--filter");
+var ownerSelectors = ArgumentValues(args, "--owner");
 var knownArguments = new HashSet<string>(StringComparer.Ordinal)
 {
     "--group",
     "--exact",
     "--filter",
+    "--owner",
     "--list",
 };
 for (var index = 0; index < args.Length; index++)
@@ -9251,6 +9270,32 @@ foreach (var exactName in exactNames)
     {
         throw new InvalidOperationException($"Unknown exact desktop test '{exactName}'.");
     }
+}
+var knownOwnerSelectors = DesktopPreviewManifest.Components.Keys
+    .Select((owner) => $"component:{owner}")
+    .Concat(DesktopPreviewManifest.Modules.Keys.Select((owner) => $"module:{owner}"))
+    .ToHashSet(StringComparer.Ordinal);
+foreach (var ownerSelector in ownerSelectors)
+{
+    if (!knownOwnerSelectors.Contains(ownerSelector))
+    {
+        throw new InvalidOperationException(
+            $"Unknown Preview owner selector '{ownerSelector}'.");
+    }
+}
+if (ownerSelectors.Count > 0)
+{
+    if (group != "exhaustive")
+    {
+        throw new InvalidOperationException(
+            "Preview owner selection requires '--group exhaustive'.");
+    }
+    if (exactNames.Count > 0 || filters.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "Preview owner selection cannot be combined with exact-name or text filters.");
+    }
+    selectedManifestOwners.UnionWith(ownerSelectors);
 }
 var selectedTests = tests
     .Where((test) => group switch

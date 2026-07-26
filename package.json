@@ -47,6 +47,7 @@
     "animation:test:desktop:core": "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj -- --group core",
     "animation:test:desktop:ui": "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj -- --group ui",
     "animation:test:desktop:exhaustive": "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj -- --group exhaustive",
+    "animation:test:desktop:owner": "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj -- --group exhaustive",
     "animation:test:desktop": "npm run animation:test:desktop:core && npm run animation:test:desktop:ui && npm run animation:test:desktop:exhaustive",
     "animation:test": "npm run animation:test:preview && npm run animation:test:desktop",
     "test:focus:preview": "tsx --test",

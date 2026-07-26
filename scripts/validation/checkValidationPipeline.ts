@@ -123,17 +123,21 @@ export function checkValidationPipeline({
   if (packageScripts["test:focus:preview"] !== "tsx --test"
       || !(packageScripts["test:focus:desktop"] ?? "").endsWith(" --")
       || !(packageScripts["test:focus:desktop"] ?? "").startsWith("dotnet run ")
+      || !(packageScripts["animation:test:desktop:owner"] ?? "")
+        .endsWith("-- --group exhaustive")
       || !(packageScripts["test:guard"] ?? "").includes("npm run check:architecture")) {
     addViolation(
       "package.json",
-      "focused Preview and desktop selectors plus the shared architecture guard must remain available",
+      "focused Preview, desktop and manifest-owner selectors plus the shared architecture guard must remain available",
     );
   }
   for (const requiredTerm of [
     `SingleArgumentValue(args, "--group")`,
     `ArgumentValues(args, "--exact")`,
     `ArgumentValues(args, "--filter")`,
+    `ArgumentValues(args, "--owner")`,
     "Unknown exact desktop test",
+    "Unknown Preview owner selector",
     "Desktop test selection matched no tests.",
     `"core" => !isolatedUiTests.Contains(test.Name)`,
     `"ui" => isolatedUiTests.Contains(test.Name)`,
