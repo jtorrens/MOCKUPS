@@ -37,9 +37,13 @@ Component Variant of their exact declared type.
 
 ## Repository ownership
 
-SQLite production code lives in the independent
-`src/Mockups.Persistence.Sqlite` project. Its compile-time dependencies point
-only to Application and Domain; UI packages are unavailable to that assembly.
+SQLite production code is split across independent persistence projects.
+`Mockups.Persistence.Sqlite.Core` owns connection construction, the per-context
+write gate, command execution and the current schema.
+`Mockups.Persistence.Sqlite.Design` owns editor-layout persistence.
+`Mockups.Persistence.Sqlite` temporarily composes those projects with the
+remaining repositories while their owners are extracted. UI packages are
+unavailable to every persistence assembly.
 `Mockups.Desktop.Host` is the only executable composition project allowed to
 see both Desktop and Persistence.Sqlite. It opens a composition-only
 `SqliteProjectSession` and passes its named ports into Desktop. SQL packages
@@ -70,13 +74,15 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 - `ActorRepository`
 - `ProductionFontRepository`
 - `IconThemeRepository`
-- `EditorLayoutRepository`
+- `SqliteEditorLayoutStore`
 - `ShotManagerIntegrationRepository`
 
 There is no universal persistence facade. `SqlitePersistence` validates one
-current database and returns its session descriptor. New SQL, connection
-construction, table mapping or write synchronization belongs in the focused
-repository that owns the table.
+current database and returns its session descriptor. `EditorLayouts` is backed
+directly by `Mockups.Persistence.Sqlite.Design`; the temporary aggregate no
+longer implements that port. New SQL, connection construction, table mapping
+or write synchronization belongs in the focused assembly and repository that
+own the table.
 
 Every `SqliteProjectContext` owns its own write gate. Focused repositories route
 writes through that exact context, and a compound write holds the same gate for

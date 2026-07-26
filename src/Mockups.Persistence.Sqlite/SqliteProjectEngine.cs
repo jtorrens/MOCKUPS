@@ -9,7 +9,6 @@ internal sealed partial class SqliteProjectEngine
 {
     private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
-    private readonly IEditorLayoutRepository _editorLayoutRepository;
     private readonly IShotRepository _shotRepository;
     private readonly IProjectEpisodeRepository _projectEpisodeRepository;
     private readonly IPaletteRepository _paletteRepository;
@@ -27,10 +26,16 @@ internal sealed partial class SqliteProjectEngine
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
+    internal SqliteProjectContext Context => _context;
+
     internal SqliteProjectEngine(string databasePath)
+        : this(new SqliteProjectContext(databasePath))
     {
-        _context = new SqliteProjectContext(databasePath);
-        _editorLayoutRepository = new EditorLayoutRepository(_context);
+    }
+
+    internal SqliteProjectEngine(SqliteProjectContext context)
+    {
+        _context = context;
         _shotRepository = new ShotRepository(_context);
         _projectEpisodeRepository = new ProjectEpisodeRepository(_context, _shotRepository);
         _paletteRepository = new PaletteRepository(_context);

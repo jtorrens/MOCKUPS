@@ -156,13 +156,6 @@ internal sealed record ReferenceUsageRecord(
     ReferenceUsageScope Scope,
     ReferenceEmbeddedContext? EmbeddedContext = null);
 
-internal interface IEditorLayoutRepository
-{
-    EditorLayout Load(string recordClassId);
-
-    void Save(string recordClassId, EditorLayout layout);
-}
-
 internal interface IProjectEpisodeRepository
 {
     ProjectSettings GetProjectSettings(string projectId);

@@ -6,16 +6,16 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed class EditorLayoutRepository : IEditorLayoutRepository
+internal sealed class SqliteEditorLayoutStore : IEditorLayoutStore
 {
     private readonly SqliteProjectContext _context;
 
-    public EditorLayoutRepository(SqliteProjectContext context)
+    public SqliteEditorLayoutStore(SqliteProjectContext context)
     {
         _context = context;
     }
 
-    public EditorLayout Load(string recordClassId)
+    public EditorLayout LoadEditorLayout(string recordClassId)
     {
         using var connection = _context.OpenConnection();
         using var command = connection.CreateCommand();
@@ -34,7 +34,7 @@ internal sealed class EditorLayoutRepository : IEditorLayoutRepository
             ?? throw new InvalidOperationException($"Invalid editor layout JSON for record class '{recordClassId}'.");
     }
 
-    public void Save(string recordClassId, EditorLayout layout)
+    public void SaveEditorLayout(string recordClassId, EditorLayout layout)
     {
         using var connection = _context.OpenConnection();
         _context.Execute(

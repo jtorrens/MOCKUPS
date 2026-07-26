@@ -6,7 +6,8 @@ namespace Mockups.DesktopEditorShell.Data;
 public sealed class SqliteProjectSession
 {
     internal SqliteProjectSession(
-        SqliteProjectEngine engine)
+        SqliteProjectEngine engine,
+        IEditorLayoutStore layouts)
     {
         ProjectPaths = engine.ProjectPaths;
         Navigation = new SqliteEditorNavigationPort(engine);
@@ -30,7 +31,7 @@ public sealed class SqliteProjectSession
             new SqliteComponentDocumentPort(engine);
         Header = new SqliteEditorHeaderPort(engine);
         Collections = new SqliteEditorCollectionPort(engine);
-        Layouts = new SqliteEditorLayoutPort(engine);
+        Layouts = new SqliteEditorLayoutPort(layouts);
         ActorPreview = new SqliteActorPreviewPort(engine);
     }
 

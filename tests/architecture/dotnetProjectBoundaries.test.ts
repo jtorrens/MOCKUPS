@@ -92,10 +92,37 @@ const expectedProjects = new Map([
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
+        "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+        "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
       ],
       packageReferences: [
         "Microsoft.Data.Sqlite",
         "SQLitePCLRaw.bundle_e_sqlite3",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+      ],
+      packageReferences: [
+        "Microsoft.Data.Sqlite",
+        "SQLitePCLRaw.bundle_e_sqlite3",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Domain/Mockups.Domain.csproj",
+        "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+      ],
+      packageReferences: [
+        "Microsoft.Data.Sqlite",
       ],
     },
   ],
@@ -123,6 +150,21 @@ const expectedFriends = new Map([
     "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
     ["Mockups.DesktopEditorShell.AnimationTests"],
   ],
+  [
+    "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+    [
+      "Mockups.DesktopEditorShell.AnimationTests",
+      "Mockups.Persistence.Sqlite",
+      "Mockups.Persistence.Sqlite.Design",
+    ],
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
+    [
+      "Mockups.DesktopEditorShell.AnimationTests",
+      "Mockups.Persistence.Sqlite",
+    ],
+  ],
 ]);
 
 const expectedExternalResources = new Map([
@@ -134,6 +176,8 @@ const expectedExternalResources = new Map([
   ["src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj", []],
   ["src/Mockups.Domain/Mockups.Domain.csproj", []],
   ["src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj", []],
+  ["src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj", []],
+  ["src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj", []],
 ]);
 
 function projectFiles(directory: string): string[] {
@@ -422,11 +466,46 @@ test("Persistence can see Application and Domain but has no UI package capabilit
     [
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Domain/Mockups.Domain.csproj",
+      "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+      "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
     ],
   );
   assert.deepEqual(
     persistence.Items.PackageReference.map((item) => item.Identity).sort(),
     ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
+  );
+});
+
+test("SQLite Core and Design owners expose only their declared persistence capabilities", () => {
+  const core = evaluate(
+    "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+  );
+  assert.deepEqual(
+    core.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity)),
+    ["src/Mockups.Application/Mockups.Application.csproj"],
+  );
+  assert.deepEqual(
+    core.Items.PackageReference.map((item) => item.Identity).sort(),
+    ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
+  );
+
+  const design = evaluate(
+    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
+  );
+  assert.deepEqual(
+    design.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
+      .sort(),
+    [
+      "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Domain/Mockups.Domain.csproj",
+      "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
+    ],
+  );
+  assert.deepEqual(
+    design.Items.PackageReference.map((item) => item.Identity),
+    ["Microsoft.Data.Sqlite"],
   );
 });
 

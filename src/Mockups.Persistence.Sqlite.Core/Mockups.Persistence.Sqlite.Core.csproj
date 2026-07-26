@@ -12,12 +12,11 @@
 
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
-    <ProjectReference Include="../Mockups.Domain/Mockups.Domain.csproj" />
-    <ProjectReference Include="../Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj" />
-    <ProjectReference Include="../Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Mockups.Persistence.Sqlite" />
+    <InternalsVisibleTo Include="Mockups.Persistence.Sqlite.Design" />
     <InternalsVisibleTo Include="Mockups.DesktopEditorShell.AnimationTests" />
   </ItemGroup>
 </Project>

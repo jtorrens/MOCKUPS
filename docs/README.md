@@ -28,7 +28,7 @@ document. Do not fill a gap from the historical archive.
 - `docs/architecture/README.md`: canonical architecture index.
 - `src/desktop-preview/desktopPreviewManifest.json`: current Preview route
   manifest.
-- `src/Mockups.Persistence.Sqlite/CurrentSqliteSchema.cs`: current physical
+- `src/Mockups.Persistence.Sqlite.Core/CurrentSqliteSchema.cs`: current physical
   SQLite schema.
 - `src/Mockups.Persistence.Sqlite/SqliteProjectEngine.Validation.cs`: executable
   current-database validation.

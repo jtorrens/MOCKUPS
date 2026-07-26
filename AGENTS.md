@@ -99,7 +99,9 @@ composition-only `SqliteProjectSession`: it exposes distinct focused adapters
 and contains no general data operations. Do not introduce a universal database
 facade or make one adapter implement unrelated Application ports. Add SQL,
 connection construction, table mapping and write synchronization only to their
-owning context or focused repository.
+owning context or focused repository. A focused persistence assembly never
+references another owner assembly; cross-owner reads use an Application
+contract or are composed explicitly by the outer persistence composition.
 
 Repositories contain no UI, Variant selection, Runtime Input forwarding,
 timing, context inference, Preview resolution or migration behavior.

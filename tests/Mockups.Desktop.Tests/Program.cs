@@ -1164,7 +1164,7 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
         var invalidFields = new List<string>();
         foreach (var component in components)
         {
-            var fields = database.LoadEditorLayout(component.RecordClassId).Cards
+            var fields = EditorLayouts(database).LoadEditorLayout(component.RecordClassId).Cards
                 .SelectMany((card) => card.VisibleGroups)
                 .SelectMany((group) => group.VisibleFields)
                 .Select((field) => field.Id)
@@ -1265,7 +1265,7 @@ static void RecordScalarWritesRejectInvalidValues()
         var palette = tree.First((node) => node.Kind == ProjectTreeNodeKind.PaletteColor);
         var theme = tree.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var app = tree.First((node) => node.Kind == ProjectTreeNodeKind.App
-            && database.LoadEditorLayout(node.RecordClassId).Cards
+            && EditorLayouts(database).LoadEditorLayout(node.RecordClassId).Cards
                 .SelectMany((card) => card.VisibleGroups)
                 .SelectMany((group) => group.VisibleFields)
                 .Any((field) => field.Id == "app.wallpaper.opacity"));
@@ -1341,7 +1341,7 @@ static void ResourceScalarReadsRejectWrongShapes()
         var beforeValidReads = SHA256.HashData(File.ReadAllBytes(temporary));
         foreach (var node in nodes.Where((candidate) => checkedKinds.Contains(candidate.Kind)))
         {
-            foreach (var fieldId in database.LoadEditorLayout(node.RecordClassId).Cards
+            foreach (var fieldId in EditorLayouts(database).LoadEditorLayout(node.RecordClassId).Cards
                          .SelectMany((card) => card.VisibleGroups)
                          .SelectMany((group) => group.VisibleFields)
                          .Select((field) => field.Id)
@@ -1409,7 +1409,7 @@ static void ResourceScalarReadsRejectWrongShapes()
         ReplaceJson("themes", "tokens_json", theme.Id, themeTokensJson);
 
         var app = nodes.First((node) => node.Kind == ProjectTreeNodeKind.App
-            && database.LoadEditorLayout(node.RecordClassId).Cards
+            && EditorLayouts(database).LoadEditorLayout(node.RecordClassId).Cards
                 .SelectMany((card) => card.VisibleGroups)
                 .SelectMany((group) => group.VisibleFields)
                 .Any((field) => field.Id == "app.wallpaper.opacity"));
@@ -2765,7 +2765,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
                 "Android Icon Row config"),
             "itemSizingMode",
             "Android Icon Row config"));
-    True(database.LoadEditorLayout("component.iconRow").Cards
+    True(EditorLayouts(database).LoadEditorLayout("component.iconRow").Cards
         .SelectMany((card) => card.Groups)
         .SelectMany((group) => group.Fields)
         .Any((field) => field.Id == "component.iconRow.itemSizingMode"));
@@ -5228,7 +5228,7 @@ static void SystemBarItemsUseFixedDictionaryCollections()
             ("component.navigation_bar", navigationField.Id),
         })
         {
-            var layout = database.LoadEditorLayout(recordClassId);
+            var layout = EditorLayouts(database).LoadEditorLayout(recordClassId);
             True(layout.Cards.SelectMany((card) => card.Groups)
                 .SelectMany((group) => group.Fields)
                 .Any((field) => field.Id == fieldId && field.Visible));
@@ -5382,8 +5382,8 @@ static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
     try
     {
         var database = new SqliteProjectEngine(temporary);
-        var layout = database.LoadEditorLayout("component.keypad");
-        database.SaveEditorLayout("component.keypad", layout);
+        var layout = EditorLayouts(database).LoadEditorLayout("component.keypad");
+        EditorLayouts(database).SaveEditorLayout("component.keypad", layout);
         using var connection = new SqliteConnection($"Data Source={temporary}");
         connection.Open();
         using var command = connection.CreateCommand();
@@ -5410,7 +5410,7 @@ static void ExtractedRepositoriesPreserveFacadeContract()
     {
         var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
-        IEditorLayoutRepository layoutRepository = new EditorLayoutRepository(context);
+        IEditorLayoutStore layoutRepository = new SqliteEditorLayoutStore(context);
         IShotRepository shotRepository = new ShotRepository(context);
         IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context, shotRepository);
 
@@ -5421,11 +5421,11 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         Equal(database.GetProjectSettings(project.Id), projectEpisodeRepository.GetProjectSettings(project.Id));
         Equal(database.GetEpisodeSettings(episode.Id), projectEpisodeRepository.GetEpisodeSettings(episode.Id));
 
-        var facadeLayout = database.LoadEditorLayout("component.keypad");
-        var repositoryLayout = layoutRepository.Load("component.keypad");
+        var facadeLayout = EditorLayouts(database).LoadEditorLayout("component.keypad");
+        var repositoryLayout = layoutRepository.LoadEditorLayout("component.keypad");
         Equal(facadeLayout.Cards.Count, repositoryLayout.Cards.Count);
-        layoutRepository.Save("component.keypad", repositoryLayout);
-        Equal(repositoryLayout.Cards.Count, database.LoadEditorLayout("component.keypad").Cards.Count);
+        layoutRepository.SaveEditorLayout("component.keypad", repositoryLayout);
+        Equal(repositoryLayout.Cards.Count, EditorLayouts(database).LoadEditorLayout("component.keypad").Cards.Count);
 
         using (var connection = context.OpenConnection())
         {
@@ -5996,7 +5996,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             .First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
         var designContext = new EditorEmbeddedContext(audioVariant, [surfaceSlot]);
-        var embeddedFieldId = database.LoadEditorLayout(surfaceSlot.RecordClassId).Cards
+        var embeddedFieldId = EditorLayouts(database).LoadEditorLayout(surfaceSlot.RecordClassId).Cards
             .Where((card) => card.Visible)
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)
@@ -9191,7 +9191,7 @@ static void LabelSubtextPlacementUsesCurrentContract()
     True(label["subtextPlacement"] is null);
     True(label["subtextVerticalPosition"] is JsonValue);
     True(label["subtextHorizontalAlign"] is JsonValue);
-    var subtextFields = database.LoadEditorLayout("component.label").Cards
+    var subtextFields = EditorLayouts(database).LoadEditorLayout("component.label").Cards
         .SelectMany((card) => card.VisibleGroups)
         .Single((group) => group.Id == "labelSubtext")
         .VisibleFields.OrderBy((field) => field.Order).Select((field) => field.Id).ToList();
@@ -11265,7 +11265,7 @@ static void ComponentStackSeedOpensAndRenders()
         var nestedRuntimeContext = runtimeContext.Nested(surfaceSlot);
         Equal(surfaceSlot.RecordClassId, nestedRuntimeContext.RecordClassId);
         Equal(surfaceSlot.EmbeddedComponentType, nestedRuntimeContext.ComponentType);
-        var nestedFieldId = database.LoadEditorLayout(surfaceSlot.RecordClassId).Cards
+        var nestedFieldId = EditorLayouts(database).LoadEditorLayout(surfaceSlot.RecordClassId).Cards
             .Where((card) => card.Visible)
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)
@@ -11285,7 +11285,7 @@ static void ComponentStackSeedOpensAndRenders()
                 avatarSelection.ConfigJson,
                 new JsonObject(),
                 (_) => { }));
-        foreach (var avatarFieldId in database.LoadEditorLayout(avatarSelection.RecordClassId).Cards
+        foreach (var avatarFieldId in EditorLayouts(database).LoadEditorLayout(avatarSelection.RecordClassId).Cards
                      .Where((card) => card.Visible)
                      .SelectMany((card) => card.VisibleGroups)
                      .SelectMany((group) => group.VisibleFields)
@@ -11295,7 +11295,7 @@ static void ComponentStackSeedOpensAndRenders()
         {
             _ = embeddedDocuments.CreateFieldValue(avatarContext, avatarFieldId);
         }
-        var selectedLayout = database.LoadEditorLayout(selectedComponent.RecordClassId);
+        var selectedLayout = EditorLayouts(database).LoadEditorLayout(selectedComponent.RecordClassId);
         foreach (var fieldId in selectedLayout.Cards
                      .Where((card) => card.Visible)
                      .OrderBy((card) => card.Order)
@@ -11448,7 +11448,7 @@ static void NotificationsSeedOpensAndRenders()
         Equal("component.label", Required(EmbeddedComponentSlotCatalog.Get("component.notification.summaryLabel.editor")).RecordClassId);
         Equal("component.label", Required(EmbeddedComponentSlotCatalog.Get("component.notification.detailLabel.editor")).RecordClassId);
         Equal("component.badge", Required(EmbeddedComponentSlotCatalog.Get("component.notifications.badge.editor")).RecordClassId);
-        var avatarLayout = database.LoadEditorLayout("component.avatar");
+        var avatarLayout = EditorLayouts(database).LoadEditorLayout("component.avatar");
         SequenceEqual(
             ["component.avatar.badge.editor", "component.avatar.badge.placement"],
             avatarLayout.Cards.Single((card) => card.Id == "avatar").VisibleGroups
@@ -11458,7 +11458,7 @@ static void NotificationsSeedOpensAndRenders()
                 .ToList());
         var notificationVariant = notification.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var notificationsVariant = notifications.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
-        var notificationLayout = database.LoadEditorLayout("component.notification");
+        var notificationLayout = EditorLayouts(database).LoadEditorLayout("component.notification");
         Equal("component.notification", EditorContentController.OwnerLayoutRecordClassId(notificationVariant));
         SequenceEqual(["general", "layout", "avatar", "summaryLabel", "detailLabel"],
             notificationLayout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
@@ -11511,7 +11511,7 @@ static void NotificationsSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Notifications collection fields.");
         True(notificationsCollectionFields.Contains("present"));
         True(!notificationsCollectionFields.Overlaps(["variantReference", "presenceMotion", "alignment", "gapBeforeMode", "gapBeforeToken", "gapBeforeWeight"]));
-        var notificationsLayout = database.LoadEditorLayout("component.notifications");
+        var notificationsLayout = EditorLayouts(database).LoadEditorLayout("component.notifications");
         SequenceEqual(["general", "layout"], notificationsLayout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
         SequenceEqual(
             ["stack", "notification", "badge", "motion"],
@@ -11683,7 +11683,7 @@ static void KeypadSeedOpensAndRenders()
         Equal("System", keypad.Parent?.Name ?? "");
         var defaultVariant = keypad.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
         var settings = database.GetComponentClassSettings(keypad.Id);
-        var layout = database.LoadEditorLayout("component.keypad");
+        var layout = EditorLayouts(database).LoadEditorLayout("component.keypad");
         SequenceEqual(["general", "layout", "keys", "states"],
             layout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
         Equal("stacked", layout.Cards.Single((card) => card.Id == "layout").GroupLayout);
@@ -11757,7 +11757,7 @@ static void PasswordSeedOpensAndRenders()
         Equal("System", password.Parent?.Name ?? "");
         var defaultVariant = password.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant && node.IsProtected);
         var settings = database.GetComponentClassSettings(password.Id);
-        var layout = database.LoadEditorLayout("component.password");
+        var layout = EditorLayouts(database).LoadEditorLayout("component.password");
         SequenceEqual(["general", "layout", "labels", "indicator", "modes", "iconBar"],
             layout.Cards.OrderBy((card) => card.Order).Select((card) => card.Id).ToList());
         Equal("verticalCards", layout.Cards.Single((card) => card.Id == "labels").GroupLayout);
@@ -11917,7 +11917,7 @@ static void LockScreenComposesRuntimeStack()
         var systemConfig = JsonNode.Parse(database.GetAppSettings(systemApp.Id).ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing System app config.");
         True(systemConfig["wallpaper"] is null);
-        True(database.LoadEditorLayout("app.system").Cards
+        True(EditorLayouts(database).LoadEditorLayout("app.system").Cards
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)
             .All((field) => !field.Id.StartsWith("app.wallpaper.", StringComparison.Ordinal)));
@@ -11969,7 +11969,7 @@ static void LockScreenComposesRuntimeStack()
         Equal("firstMatchingValue",
             variantConfig["lockScreen"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["projection"]?["childCollection"]?["animationTimeline"]?["ownerOrigin"]?["kind"]?.GetValue<string>()
             ?? "");
-        var lockScreenFields = database.LoadEditorLayout("module.core.lockScreen").Cards
+        var lockScreenFields = EditorLayouts(database).LoadEditorLayout("module.core.lockScreen").Cards
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)
             .Select((field) => field.Id)
@@ -12259,7 +12259,7 @@ static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
             .Distinct(StringComparer.Ordinal);
         foreach (var recordClassId in componentRecordClasses)
         {
-            var layout = database.LoadEditorLayout(recordClassId);
+            var layout = EditorLayouts(database).LoadEditorLayout(recordClassId);
             True(layout.Cards
                 .SelectMany((card) => card.Groups)
                 .SelectMany((group) => group.Fields)
@@ -12424,6 +12424,10 @@ static string ParityDatabasePath()
         ? Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite")
         : Path.GetFullPath(configured);
 }
+
+static IEditorLayoutStore EditorLayouts(
+    SqliteProjectEngine database) =>
+    new SqliteEditorLayoutStore(database.Context);
 
 static IReadOnlyList<string> ArgumentValues(string[] arguments, string key)
 {

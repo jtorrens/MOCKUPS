@@ -141,13 +141,17 @@ Application may reference Domain and has no package
 capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
 
-`Mockups.Persistence.Sqlite` owns the SQLite context, focused repository
-implementations, table mapping and focused Application-port adapters.
+`Mockups.Persistence.Sqlite.Core` owns the SQLite context, connection and
+transaction primitives and current schema. `Mockups.Persistence.Sqlite.Design`
+owns the editor-layout store and cannot reference the remaining persistence
+composition assembly. The temporary `Mockups.Persistence.Sqlite` assembly owns
+composition, validation and repositories not yet extracted; each owner moves
+out without adding a reverse reference.
 `SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
 session has no data methods and each exposed port is a distinct adapter that
 cannot be cast to an unrelated port. Persistence may reference Application and
-Domain and is the only production project allowed to reference the SQLite
-packages. It cannot reference Avalonia or Desktop. Each SQLite context owns its write
+Domain and only persistence projects may reference SQLite packages. They
+cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global
 write lock.
 
