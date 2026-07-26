@@ -167,6 +167,11 @@ the authored owner store only in the Desktop document adapter.
 `IEditorNodeCommandStore` has no Usage read capability; workflows that guard a
 delete declare both ports explicitly.
 
+Render Queue receives the explicit aggregate `IRenderSnapshotDataSource`
+because creating its immutable job snapshot requires the prepared Preview,
+Actor, Component, timeline and Theme reads declared by that contract. It is
+not presented as a general Production-navigation store.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and

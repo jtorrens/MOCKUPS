@@ -753,11 +753,11 @@ internal sealed class SqliteDictionaryFieldContextPort(
 
 }
 
-internal sealed class SqliteProductionNavigationPort(
-    Mockups.DesktopEditorShell.Data.IProductionNavigationStore target)
-    : Mockups.DesktopEditorShell.Data.IProductionNavigationStore
+internal sealed class SqliteRenderSnapshotPort(
+    Mockups.DesktopEditorShell.Data.IRenderSnapshotDataSource target)
+    : Mockups.DesktopEditorShell.Data.IRenderSnapshotDataSource
 {
-    private readonly Mockups.DesktopEditorShell.Data.IProductionNavigationStore _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.IRenderSnapshotDataSource _target = target;
 
     public string GetModuleInstanceThemeTokensJson(
         string moduleInstanceId)

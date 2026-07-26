@@ -129,7 +129,7 @@ public partial class MainWindow : SukiWindow
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
-            data.ProductionNavigation,
+            data.RenderSnapshots,
             data.ProjectPaths,
             application.ProductionOutputRoots,
             () => _themeController.IsDark,

@@ -19,7 +19,7 @@ internal sealed record DesktopApplicationDataPorts(
     IDictionaryFieldContextRepository Dictionary,
     IEditorChildStore Children,
     IEditorNodeCommandStore NodeCommands,
-    IProductionNavigationStore ProductionNavigation,
+    IRenderSnapshotDataSource RenderSnapshots,
     IEditorPresentationContextRepository Presentation,
     IModuleInstanceCollectionStore ModuleInstances,
     IIconThemeAssetStore IconThemes,

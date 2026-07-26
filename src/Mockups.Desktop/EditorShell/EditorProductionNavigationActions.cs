@@ -17,7 +17,7 @@ internal sealed class EditorProductionNavigationActions : IDisposable
     public EditorProductionNavigationActions(
         Window owner,
         Button actionButton,
-        IProductionNavigationStore database,
+        IRenderSnapshotDataSource database,
         IProjectPathResolver projectPaths,
         ProductionOutputRootStore productionOutputRoots,
         Func<bool> isDark,

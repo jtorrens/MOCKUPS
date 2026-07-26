@@ -468,7 +468,3 @@ public interface IRenderSnapshotDataSource :
 {
     ProductionOutputShotPlan GetProductionOutputShotPlan(string shotId);
 }
-
-public interface IProductionNavigationStore : IRenderSnapshotDataSource
-{
-}

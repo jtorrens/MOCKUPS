@@ -3134,7 +3134,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         project.Dictionary,
         project.Children,
         project.NodeCommands,
-        project.ProductionNavigation,
+        project.RenderSnapshots,
         project.Presentation,
         project.ModuleInstances,
         project.IconThemes,

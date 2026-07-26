@@ -265,6 +265,11 @@ store and Usage query as independent capabilities. The Node Command session
 adapter contains only the members declared by its port and cannot recover
 child, Module Instance or timeline operations by casting its target.
 
+Render Queue is the sole Desktop consumer of the aggregate
+`IRenderSnapshotDataSource`. The session names that capability
+`RenderSnapshots`; there is no alias that presents the same broad read surface
+as a generic Production-navigation dependency.
+
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite session and composes the named narrow Application

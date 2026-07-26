@@ -30,8 +30,8 @@ public sealed class SqliteProjectSession
         Children = new SqliteEditorChildPort(engine);
         NodeCommands =
             new SqliteEditorNodeCommandPort(engine);
-        ProductionNavigation =
-            new SqliteProductionNavigationPort(engine);
+        RenderSnapshots =
+            new SqliteRenderSnapshotPort(engine);
         Presentation =
             new SqliteEditorPresentationPort(engine.Resources);
         ModuleInstances =
@@ -85,7 +85,7 @@ public sealed class SqliteProjectSession
 
     public IEditorNodeCommandStore NodeCommands { get; }
 
-    public IProductionNavigationStore ProductionNavigation { get; }
+    public IRenderSnapshotDataSource RenderSnapshots { get; }
 
     public IEditorPresentationContextRepository Presentation { get; }
 
