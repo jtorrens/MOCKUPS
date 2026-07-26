@@ -38,4 +38,13 @@ internal sealed partial class SqliteProjectEngine
         string moduleId,
         string fieldId) =>
         _designOwner.GetModuleConfigFieldValue(moduleId, fieldId);
+
+    public void UpdateModuleField(
+        string moduleId,
+        string fieldId,
+        string value) =>
+        _designOwner.UpdateModuleField(
+            moduleId,
+            fieldId,
+            value);
 }

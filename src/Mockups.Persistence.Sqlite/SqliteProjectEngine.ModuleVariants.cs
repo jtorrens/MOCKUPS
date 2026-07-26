@@ -353,7 +353,13 @@ internal sealed partial class SqliteProjectEngine
                     JsonBool(variant, ["locked"])))
                 throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
             var config = variant["config"] as JsonObject ?? throw new InvalidOperationException("Module variant has no config.");
-            UpdateModuleConfigFieldValue(connection, module.ProjectId, module.RecordClassId, config, fieldId, value);
+            _designOwner.UpdateModuleConfigFieldValue(
+                connection,
+                module.ProjectId,
+                module.RecordClassId,
+                config,
+                fieldId,
+                value);
             variant["config"] = config;
             _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
         }

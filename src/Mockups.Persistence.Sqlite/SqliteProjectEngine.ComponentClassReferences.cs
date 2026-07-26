@@ -497,42 +497,13 @@ internal sealed partial class SqliteProjectEngine
         string projectId,
         string componentType,
         string reference,
-        bool allowEmpty = false)
-    {
-        if (string.IsNullOrWhiteSpace(reference))
-        {
-            if (allowEmpty)
-            {
-                return "";
-            }
-
-            throw new InvalidOperationException(
-                $"A {componentType} component variant reference is required.");
-        }
-
-        if (!VariantReferenceId.TryParse(reference, out var componentClassId, out var variantId))
-        {
-            throw new InvalidOperationException(
-                $"Component variant reference '{reference}' must use the full componentClassId::variant::variantId form.");
-        }
-
-        var componentClass = ComponentClassRowsByType(connection, projectId, componentType)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(componentClassId, StringComparison.Ordinal));
-        if (componentClass is null)
-        {
-            throw new InvalidOperationException(
-                $"Component variant reference '{reference}' does not name a {componentType} class in project '{projectId}'.");
-        }
-
-        if (!RequiredComponentClassVariants(componentClass)
-                .Any((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal)))
-        {
-            throw new InvalidOperationException(
-                $"Component variant reference '{reference}' names a missing variant on '{componentClassId}'.");
-        }
-
-        return reference;
-    }
+        bool allowEmpty = false) =>
+        _designOwner.ValidateComponentVariantReference(
+            connection,
+            projectId,
+            componentType,
+            reference,
+            allowEmpty);
 
     private List<ComponentClassDefinitionRecord> ComponentClassRowsByType(
         SqliteConnection connection,
