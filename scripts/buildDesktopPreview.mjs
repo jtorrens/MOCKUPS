@@ -4,9 +4,19 @@ import { readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import {
+  desktopPreviewSourceHash,
+  requireDesktopPreviewSourceStamp,
+  writeDesktopPreviewSourceStamp,
+} from "./desktopPreviewBuildInputs.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outdir = resolve(repoRoot, "dist", "desktop-preview");
+const sourceStampPath = resolve(
+  repoRoot,
+  "dist",
+  "desktop-preview.source.json",
+);
 const outfile = resolve(outdir, "renderDesignPreviewHtml.cjs");
 const serverOutfile = resolve(outdir, "renderDesignPreviewHtmlServer.cjs");
 const rasterServerOutfile = resolve(outdir, "renderPreviewRasterServer.cjs");
@@ -17,8 +27,11 @@ if (artifactsOnly && manifestOnly) {
   throw new Error("Desktop Preview build modes are mutually exclusive.");
 }
 
+const sourceHash = await desktopPreviewSourceHash(repoRoot);
+
 if (!manifestOnly) {
   await rm(outdir, { force: true, recursive: true });
+  await rm(sourceStampPath, { force: true });
 
   await build({
     entryPoints: [resolve(repoRoot, "src", "desktop-preview", "renderDesignPreviewHtml.tsx")],
@@ -56,6 +69,23 @@ if (!manifestOnly) {
     legalComments: "none",
     logLevel: "info",
   });
+
+  const sourceHashAfterBuild =
+    await desktopPreviewSourceHash(repoRoot);
+  if (sourceHashAfterBuild !== sourceHash) {
+    throw new Error(
+      "Desktop Preview source inputs changed while the artifacts were being built.",
+    );
+  }
+  await writeDesktopPreviewSourceStamp(
+    sourceStampPath,
+    sourceHash,
+  );
+} else {
+  await requireDesktopPreviewSourceStamp(
+    sourceStampPath,
+    sourceHash,
+  );
 }
 
 if (!artifactsOnly) {
@@ -89,9 +119,10 @@ if (!artifactsOnly) {
     resolve(outdir, "manifest.json"),
     `${JSON.stringify(
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
         commit: commitResult.stdout.trim(),
         builtAt: new Date().toISOString(),
+        sourceHash,
         bundleHash,
         artifacts,
       },

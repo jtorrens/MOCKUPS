@@ -11,7 +11,7 @@ namespace Mockups.DesktopEditorShell;
 
 internal static class DesktopPreviewBundle
 {
-    private const int CurrentSchemaVersion = 1;
+    private const int CurrentSchemaVersion = 2;
     private static readonly string[] RequiredArtifacts =
     [
         "renderDesignPreviewHtml.cjs",
@@ -59,6 +59,7 @@ internal static class DesktopPreviewBundle
         }
 
         var expectedBundleHash = RequiredHash(manifest, "bundleHash");
+        _ = RequiredHash(manifest, "sourceHash");
         var artifactDocument = manifest["artifacts"] as JsonObject
             ?? throw new InvalidDataException(
                 "Desktop Preview bundle manifest requires an artifacts object.");

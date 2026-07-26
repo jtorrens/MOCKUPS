@@ -97,12 +97,14 @@ It includes:
 - desktop application build.
 
 The executable `Mockups.Desktop.Host` MSBuild target regenerates Preview
-artifacts incrementally when a TypeScript or build input changes, then
-refreshes their manifest for the current build. npm orchestration does not run
-a second implicit generation step. Direct `dotnet build`, `dotnet run` and
-`dotnet publish` therefore produce the same manifested bundle. Startup and
-tooling tests verify its schema, required artifacts, per-file SHA-256 hashes
-and aggregate hash. The desktop suite runs
+artifacts incrementally when a TypeScript, TSX, Preview JSON manifest or build
+input changes, then refreshes their manifest for the current build. A separate
+source stamp prevents manifest-only generation from accepting artifacts built
+from another source hash. npm orchestration does not run a second implicit
+generation step. Direct `dotnet build`, `dotnet run` and `dotnet publish`
+therefore produce the same manifested bundle. Startup and tooling tests verify
+its schema, source hash, required artifacts, per-file SHA-256 hashes and
+aggregate hash. The desktop suite runs
 in three fresh processes: `core`, native visual-tree `ui`, and manifest-wide
 `exhaustive`.
 This preserves complete coverage while preventing native UI state from leaking
@@ -186,7 +188,8 @@ do not inspect source text. The .NET suite evaluates the actual MSBuild graph,
 project references, package references and resolved compiler assemblies. It
 also compiles negative fixture projects that must fail when a consumer tries to
 use a transitive Domain or SQLite capability. The Preview suite parses every
-static, exported and dynamic TypeScript import with the TypeScript compiler,
+static, exported, import-assignment, `require` and dynamic TypeScript import
+recursively with TypeScript module resolution, rejects computed module loads,
 then derives permitted concrete owner edges from the current manifest.
 
 That structural suite also requires:

@@ -228,8 +228,12 @@ The executable Desktop Host MSBuild project owns web Preview generation. Every `
 `PrepareDesktopPreview` before compiling and includes the resulting manifest
 and artifacts, so npm wrappers and direct .NET entrypoints have the same
 dependency graph. The manifest records its schema, source commit, build time,
-per-artifact hashes and aggregate bundle hash. Desktop startup rejects a
-missing or stale bundle before opening the project database.
+exact source-input hash, per-artifact hashes and aggregate bundle hash. The
+artifact build writes a separate source stamp; manifest-only preparation
+refuses to label those artifacts as current when the source hash differs.
+TypeScript, TSX and the Preview owner manifest are explicit MSBuild inputs, so a
+manifest-only owner change rebuilds the artifacts. Desktop startup rejects a
+missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.

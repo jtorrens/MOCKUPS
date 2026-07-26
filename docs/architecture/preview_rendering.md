@@ -100,6 +100,12 @@ declared owner files, exact registry route, permitted dependency edges and
 committed database parity. A behavior change is incomplete until its focused
 tests change in the same revision.
 
+The dependency graph is collected recursively and each literal module
+specifier is resolved with the TypeScript resolver before ownership is
+compared. Static imports, exports, import assignments, `require` and dynamic
+imports are covered. Computed module loads are invalid because their owner edge
+cannot be proven structurally.
+
 A renderable consumes only the state resolved for the requested frame. It never
 reads the playhead, frame rate or animation document and never derives
 write-on, playback, presence, fade or motion progress. A parent resolver may

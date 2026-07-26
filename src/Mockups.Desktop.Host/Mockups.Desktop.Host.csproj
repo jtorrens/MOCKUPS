@@ -6,6 +6,7 @@
     <ApplicationManifest>../Mockups.Desktop/app.manifest</ApplicationManifest>
     <MockupsRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../..'))</MockupsRepositoryRoot>
     <DesktopPreviewOutputDirectory>$(MockupsRepositoryRoot)/dist/desktop-preview</DesktopPreviewOutputDirectory>
+    <DesktopPreviewSourceStamp>$(MockupsRepositoryRoot)/dist/desktop-preview.source.json</DesktopPreviewSourceStamp>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <DesktopPreviewBuildInput Include="$(MockupsRepositoryRoot)/src/**/*.ts;$(MockupsRepositoryRoot)/src/**/*.tsx;$(MockupsRepositoryRoot)/package.json;$(MockupsRepositoryRoot)/package-lock.json;$(MockupsRepositoryRoot)/tsconfig.json;$(MockupsRepositoryRoot)/scripts/buildDesktopPreview.mjs" />
+    <DesktopPreviewBuildInput Include="$(MockupsRepositoryRoot)/src/**/*.ts;$(MockupsRepositoryRoot)/src/**/*.tsx;$(MockupsRepositoryRoot)/src/desktop-preview/**/*.json;$(MockupsRepositoryRoot)/package.json;$(MockupsRepositoryRoot)/package-lock.json;$(MockupsRepositoryRoot)/tsconfig.json;$(MockupsRepositoryRoot)/scripts/buildDesktopPreview.mjs;$(MockupsRepositoryRoot)/scripts/desktopPreviewBuildInputs.mjs" />
     <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs" Link="scripts/icon-themes/sync-icon-theme-token.cjs" CopyToOutputDirectory="PreserveNewest" />
     <Content
       Include="$(DesktopPreviewOutputDirectory)/manifest.json;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs.map;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs.map;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs.map"
@@ -44,7 +45,7 @@
     BeforeTargets="PrepareForBuild"
     Condition="'$(SkipDesktopPreviewBuild)' != 'true'"
     Inputs="@(DesktopPreviewBuildInput)"
-    Outputs="$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs.map;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs.map;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs.map">
+    Outputs="$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs.map;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs.map;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs.map;$(DesktopPreviewSourceStamp)">
     <Exec
       WorkingDirectory="$(MockupsRepositoryRoot)"
       Command="node scripts/buildDesktopPreview.mjs --artifacts-only" />

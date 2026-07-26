@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -44,6 +44,18 @@ test("the executable Desktop Host owns Preview generation for every .NET entrypo
   assert.match(desktopHostProject, /--artifacts-only/u);
   assert.match(desktopHostProject, /--manifest-only/u);
   assert.match(desktopHostProject, /Inputs="@\(DesktopPreviewBuildInput\)"/u);
+  assert.match(
+    desktopHostProject,
+    /src\/desktop-preview\/\*\*\/\*\.json/u,
+  );
+  assert.match(
+    desktopHostProject,
+    /desktopPreviewBuildInputs\.mjs/u,
+  );
+  assert.match(
+    desktopHostProject,
+    /DesktopPreviewSourceStamp/u,
+  );
   assert.match(desktopHostProject, /Outputs="[^"]+renderDesignPreviewHtml\.cjs/u);
   assert.match(desktopHostProject, /dist\/desktop-preview/u);
   assert.match(desktopHostProject, /manifest\.json/u);
@@ -68,12 +80,14 @@ test("the generated Preview bundle is manifested and routes an integrated scaffo
     schemaVersion: number;
     commit: string;
     builtAt: string;
+    sourceHash: string;
     bundleHash: string;
     artifacts: Record<string, string>;
   };
-  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.schemaVersion, 2);
   assert.match(manifest.commit, /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/u);
   assert.equal(Number.isNaN(Date.parse(manifest.builtAt)), false);
+  assert.match(manifest.sourceHash, /^[0-9a-f]{64}$/u);
   for (const requiredArtifact of [
     "renderDesignPreviewHtml.cjs",
     "renderDesignPreviewHtmlServer.cjs",
@@ -121,4 +135,62 @@ test("the generated Preview bundle is manifested and routes an integrated scaffo
   };
   assert.equal(response.id, request.id);
   assert.equal(response.ok, true, response.error);
+});
+
+test("manifest-only generation rejects artifacts built from different sources", () => {
+  const stampPath = path.join(
+    repositoryRoot,
+    "dist",
+    "desktop-preview.source.json",
+  );
+  const originalStamp = readFileSync(stampPath, "utf8");
+  try {
+    writeFileSync(
+      stampPath,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        sourceHash: "0".repeat(64),
+      })}\n`,
+      "utf8",
+    );
+    const stale = spawnSync(
+      process.execPath,
+      [
+        path.join(
+          repositoryRoot,
+          "scripts",
+          "buildDesktopPreview.mjs",
+        ),
+        "--manifest-only",
+      ],
+      {
+        cwd: repositoryRoot,
+        encoding: "utf8",
+      },
+    );
+    assert.notEqual(stale.status, 0);
+    assert.match(
+      `${stale.stderr}\n${stale.stdout}`,
+      /artifacts are stale for the current source inputs/u,
+    );
+  } finally {
+    writeFileSync(stampPath, originalStamp, "utf8");
+  }
+
+  const current = spawnSync(
+    process.execPath,
+    [
+      path.join(
+        repositoryRoot,
+        "scripts",
+        "buildDesktopPreview.mjs",
+      ),
+      "--manifest-only",
+    ],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+    },
+  );
+  assert.equal(current.status, 0, current.stderr || current.stdout);
 });
