@@ -153,6 +153,7 @@ internal sealed class EditorCollectionCardFactory
         {
             new ShotModuleInstancesCollectionEditor(
                 _moduleInstances,
+                _timeline,
                 _moduleInstanceThemes,
                 _onChanged,
                 _reloadAndSelect,

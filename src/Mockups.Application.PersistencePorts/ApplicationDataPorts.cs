@@ -409,7 +409,7 @@ public interface IModuleInstanceAnimationStore : IModuleInstanceTimelineStore
         string animationJson);
 }
 
-public interface IModuleInstanceCollectionStore : IModuleInstanceTimelineStore
+public interface IModuleInstanceCollectionStore
 {
     EditorShell.ProjectTreeNode AddModuleInstance(
         EditorShell.ProjectTreeNode shot,

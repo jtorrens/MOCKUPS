@@ -12,6 +12,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ShotModuleInstancesCollectionEditor
 {
     private readonly IModuleInstanceCollectionStore _database;
+    private readonly IModuleInstanceTimelineStore _timeline;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
@@ -22,6 +23,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
     public ShotModuleInstancesCollectionEditor(
         IModuleInstanceCollectionStore database,
+        IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
@@ -31,6 +33,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         PreviewPlaybackState playbackState)
     {
         _database = database;
+        _timeline = timeline;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
         _defineModuleInstance = defineModuleInstance;
@@ -39,13 +42,13 @@ internal sealed class ShotModuleInstancesCollectionEditor
         _playbackState = playbackState;
         _timelineDataSource =
             new ModuleInstanceTimelineDataSource(
-                database,
+                timeline,
                 moduleInstanceThemes);
     }
 
     public InstantEditorCard Create(ProjectTreeNode shot)
     {
-        var slots = _database.GetShotModuleInstanceSlots(shot.Id);
+        var slots = _timeline.GetShotModuleInstanceSlots(shot.Id);
         var body = new StackPanel { Spacing = 8 };
         var activeIndicators = new Dictionary<string, Control>(StringComparer.Ordinal);
         var frameRanges = ProductionScreenPlaybackState.FrameRanges(_timelineDataSource, shot.Id);

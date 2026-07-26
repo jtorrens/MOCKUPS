@@ -3180,6 +3180,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                 .Select((method) => method.Name)
                 .OrderBy((name) => name, StringComparer.Ordinal)));
     True(project.ModuleInstances is not IIconThemeAssetStore);
+    True(project.ModuleInstances is not IModuleInstanceTimelineStore);
     True(project.IconThemes is not IThemeTokenQuery);
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);
     True(project.Components is not IPreviewInputRepository);

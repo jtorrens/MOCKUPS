@@ -133,32 +133,6 @@ internal sealed class SqliteModuleInstanceCollectionPort(
     public IReadOnlyList<FieldOption> GetModuleVariantOptions(
         string moduleId) =>
         target.GetModuleVariantOptions(moduleId);
-
-    public ModuleInstanceSettings GetModuleInstanceSettings(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceSettings(moduleInstanceId);
-
-    public ModuleSettings GetModuleInstanceVariantSettings(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceVariantSettings(moduleInstanceId);
-
-    public string GetModuleInstanceModuleName(string moduleInstanceId) =>
-        target.GetModuleInstanceModuleName(moduleInstanceId);
-
-    public string GetModuleInstanceTransitionType(string moduleInstanceId) =>
-        target.GetModuleInstanceTransitionType(moduleInstanceId);
-
-    public string GetModuleInstanceEffectiveContractJson(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceEffectiveContractJson(moduleInstanceId);
-
-    public string GetModuleInstanceRuntimePreviewJson(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
-    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
-        string shotId) =>
-        target.GetShotModuleInstanceSlots(shotId);
 }
 
 internal sealed class SqliteIconThemeAssetPort(IIconThemeAssetStore target)

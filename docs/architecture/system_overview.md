@@ -236,6 +236,10 @@ Theme access. Effective Module Instance Theme tokens are a separate Resources
 query. Timeline calculations that need natural motion pacing receive both
 ports explicitly at the application boundary.
 
+Module Instance collection commands do not inherit timeline reads. The Shot
+collection surface declares collection mutation, Production timeline and
+Resources Theme-token capabilities independently.
+
 Module Instance animation persistence is also backed directly by Production.
 Runtime Input Instance writes do not inherit animation or timeline capability;
 the Runtime collection editor receives payload writes, animation writes and
