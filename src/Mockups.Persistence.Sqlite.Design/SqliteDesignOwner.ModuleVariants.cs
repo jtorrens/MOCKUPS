@@ -22,6 +22,10 @@ internal sealed partial class SqliteDesignOwner
             .ToList();
     }
 
+    public IReadOnlyList<ModuleVariant> GetModuleVariants(
+        string moduleId) =>
+        ModuleVariants(GetModuleSettings(moduleId).MetadataJson);
+
     public ModuleSettings GetModuleVariantSettings(
         ProjectTreeNode variantNode)
     {
@@ -48,7 +52,7 @@ internal sealed partial class SqliteDesignOwner
 
     public IReadOnlyList<FieldOption> GetModuleVariantOptions(
         string moduleId) =>
-        ModuleVariants(GetModuleSettings(moduleId).MetadataJson)
+        GetModuleVariants(moduleId)
             .Select((variant) => new FieldOption(
                 VariantReferenceId.Format(moduleId, variant.Id),
                 variant.Name))

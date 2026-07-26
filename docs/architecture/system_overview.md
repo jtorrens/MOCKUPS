@@ -158,8 +158,11 @@ Component Class authoring remains the next Design cut.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining
-Shot settings and render identity reads also execute there. Shot edits, Screen
-and timeline operations are the next Production extraction boundary.
+Shot settings and render identity reads also execute there. Screen settings
+and effective Module Variant resolution now execute in Production through the
+narrow `IModuleVariantCatalog`; Production cannot reference or construct the
+Design owner. Shot edits and remaining Screen/timeline mutations are the next
+Production extraction boundary.
 `Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
 Production Font and Icon Theme repositories and their resource-specific field,
 asset and token behavior. Resource behavior that needs Production context

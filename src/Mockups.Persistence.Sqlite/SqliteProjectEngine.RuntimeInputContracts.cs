@@ -18,11 +18,9 @@ internal sealed partial class SqliteProjectEngine
         var module = _designOwner.AppModuleRepository.GetModule(connection, instance.ModuleId);
         var original = instance.ContentJson;
         var content = ParseJsonObject(original);
-        var contract = EffectiveModuleInstanceContract(
+        var contract = _productionOwner.ResolveModuleInstanceContract(
             module.Id,
-            module.MetadataJson,
-            instance.MetadataJson,
-            module.DesignPreviewJson);
+            instance.MetadataJson);
         foreach (var input in RuntimeDefinitionObjects(
                      contract,
                      "inputs",
@@ -121,11 +119,9 @@ internal sealed partial class SqliteProjectEngine
             {
                 throw new InvalidOperationException($"Missing module '{instance.ModuleId}'.");
             }
-            var contract = EffectiveModuleInstanceContract(
+            var contract = _productionOwner.ResolveModuleInstanceContract(
                 module.Id,
-                module.MetadataJson,
-                instance.MetadataJson,
-                module.DesignPreviewJson);
+                instance.MetadataJson);
             if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit) continue;
             var duration = RuntimeTimeline.DurationFrames(
                 contract.ToJsonString(),
@@ -328,11 +324,9 @@ internal sealed partial class SqliteProjectEngine
     {
         var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
         var module = _designOwner.AppModuleRepository.GetModule(instance.ModuleId);
-        return EffectiveModuleInstanceContract(
+        return _productionOwner.ResolveModuleInstanceContract(
             module.Id,
-            module.MetadataJson,
-            instance.MetadataJson,
-            module.DesignPreviewJson);
+            instance.MetadataJson);
     }
 
     private static void ValidateCurrentRuntimeValues(

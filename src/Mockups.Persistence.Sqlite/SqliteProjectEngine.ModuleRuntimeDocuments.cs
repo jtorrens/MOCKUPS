@@ -19,11 +19,9 @@ internal sealed partial class SqliteProjectEngine
             .Where((actor) => actor.ProjectId.Equals(module.ProjectId, StringComparison.Ordinal))
             .Select((actor) => actor.Id)
             .ToHashSet(StringComparer.Ordinal);
-        var contract = EffectiveModuleInstanceContract(
+        var contract = _productionOwner.ResolveModuleInstanceContract(
             module.Id,
-            module.MetadataJson,
-            instance.MetadataJson,
-            module.DesignPreviewJson);
+            instance.MetadataJson);
         ValidateCurrentRuntimeCollections(
             contract,
             content,
@@ -63,11 +61,9 @@ internal sealed partial class SqliteProjectEngine
                 var content = ParseRequiredObject(
                     instance.ContentJson,
                     $"Module Instance '{instance.Id}' content_json");
-                var contract = EffectiveModuleInstanceContract(
+                var contract = _productionOwner.ResolveModuleInstanceContract(
                     module.Id,
-                    module.MetadataJson,
-                    instance.MetadataJson,
-                    module.DesignPreviewJson);
+                    instance.MetadataJson);
                 ValidateCurrentRuntimeCollections(
                     contract,
                     content,

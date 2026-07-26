@@ -28,8 +28,10 @@ internal sealed partial class SqliteProjectEngine
     internal SqliteProjectEngine(SqliteProjectContext context)
     {
         _context = context;
-        _productionOwner = new SqliteProductionOwner(_context);
         _designOwner = new SqliteDesignOwner(_context);
+        _productionOwner = new SqliteProductionOwner(
+            _context,
+            _designOwner);
         _resourceOwner = new SqliteResourceOwner(
             _context,
             _productionOwner.ProjectEpisodeRepository,

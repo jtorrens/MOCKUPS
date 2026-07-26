@@ -19,77 +19,29 @@ internal sealed partial class SqliteProjectEngine
         ProjectTreeNode variantNode) =>
         _designOwner.GetModuleVariantSettings(variantNode);
 
-    public ModuleSettings GetModuleInstanceVariantSettings(string moduleInstanceId)
-    {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var reference = GetModuleInstanceVariantReference(moduleInstanceId);
-        if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId)
-            || !moduleId.Equals(instance.ModuleId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"Module instance '{moduleInstanceId}' has an invalid module variant reference.");
-        }
+    public ModuleSettings GetModuleInstanceVariantSettings(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceVariantSettings(
+            moduleInstanceId);
 
-        var settings = GetModuleSettings(moduleId);
-        var variant = ModuleVariants(settings.MetadataJson)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"Missing module variant '{reference}'.");
-        return settings with { ConfigJson = variant.ConfigJson };
-    }
+    public string GetModuleInstanceEffectiveContractJson(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceEffectiveContractJson(
+            moduleInstanceId);
 
-    public string GetModuleInstanceEffectiveContractJson(string moduleInstanceId)
-    {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleSettings(instance.ModuleId);
-        return EffectiveModuleInstanceContract(
-            instance.ModuleId,
-            module.MetadataJson,
-            instance.MetadataJson,
-            module.DesignPreviewJson).ToJsonString();
-    }
+    public string GetModuleInstanceVariantReference(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceVariantReference(
+            moduleInstanceId);
 
-    public string GetModuleInstanceVariantReference(string moduleInstanceId)
-    {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var metadata = ParseJsonObject(instance.MetadataJson);
-        return metadata["moduleVariantReference"]?.GetValue<string>()
-            ?? throw new InvalidOperationException($"Module instance '{moduleInstanceId}' has no explicit module variant reference.");
-    }
-
-    public string GetModuleInstanceVariantName(string moduleInstanceId)
-    {
-        var reference = GetModuleInstanceVariantReference(moduleInstanceId);
-        if (!VariantReferenceId.TryParse(reference, out var moduleId, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid module variant reference '{reference}'.");
-        }
-
-        return ModuleVariants(GetModuleSettings(moduleId).MetadataJson)
-            .First((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal)).Name;
-    }
+    public string GetModuleInstanceVariantName(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceVariantName(
+            moduleInstanceId);
 
     public IReadOnlyList<FieldOption> GetModuleVariantOptions(
         string moduleId) =>
         _designOwner.GetModuleVariantOptions(moduleId);
-
-    private static JsonObject EffectiveModuleInstanceContract(
-        string moduleId,
-        string moduleMetadataJson,
-        string instanceMetadataJson,
-        string designPreviewJson)
-    {
-        var instanceMetadata = ParseJsonObject(instanceMetadataJson);
-        var reference = instanceMetadata["moduleVariantReference"]?.GetValue<string>()
-            ?? throw new InvalidOperationException("Module instance has no explicit module variant reference.");
-        if (!VariantReferenceId.TryParse(reference, out var referencedModuleId, out var variantId)
-            || referencedModuleId != moduleId)
-            throw new InvalidOperationException($"Invalid module variant reference '{reference}'.");
-        var variant = ModuleVariants(moduleMetadataJson)
-            .FirstOrDefault((candidate) => candidate.Id == variantId)
-            ?? throw new InvalidOperationException($"Missing module variant '{reference}'.");
-        return RuntimeInputForwardingContract.EffectivePreview(
-            ParseJsonObject(designPreviewJson),
-            ParseJsonObject(variant.ConfigJson));
-    }
 
     public void UpdateModuleInstanceVariant(string moduleInstanceId, string reference)
     {
@@ -104,8 +56,9 @@ internal sealed partial class SqliteProjectEngine
         var metadata = ParseJsonObject(instance.MetadataJson);
         metadata["moduleVariantReference"] = reference;
         var module = GetModuleSettings(moduleId);
-        var contract = EffectiveModuleInstanceContract(
-            moduleId, module.MetadataJson, metadata.ToJsonString(), module.DesignPreviewJson);
+        var contract = _productionOwner.ResolveModuleInstanceContract(
+            moduleId,
+            metadata.ToJsonString());
         var content = RuntimeContentForContract(ParseJsonObject(instance.ContentJson), contract);
         var animation = RemoveOrphanedAnimationTracks(ParseJsonObject(instance.AnimationJson), contract, content);
         using var connection = OpenConnection();

@@ -9,14 +9,9 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProjectEngine
 {
-    public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
-    {
-        var record = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
-        return new ModuleInstanceSettings(
-            record.ShotId, record.AppId, record.ModuleId, record.Name, record.Notes,
-            record.SortOrder, record.DurationFrames, record.TransitionJson, record.ContentJson,
-            record.BehaviorJson, record.AnimationJson, record.MetadataJson);
-    }
+    public ModuleInstanceSettings GetModuleInstanceSettings(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceSettings(moduleInstanceId);
 
     public string GetModuleInstanceModuleName(string moduleInstanceId)
     {

@@ -468,6 +468,13 @@ internal interface IAppModuleRepository
     void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes);
 }
 
+internal interface IModuleVariantCatalog
+{
+    ModuleSettings GetModuleSettings(string moduleId);
+
+    IReadOnlyList<ModuleVariant> GetModuleVariants(string moduleId);
+}
+
 internal interface IComponentClassRepository
 {
     ComponentClassDefinitionRecord Get(string componentClassId);
