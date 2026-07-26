@@ -32,7 +32,7 @@ public sealed class SqliteProjectSession
         Header = new SqliteEditorHeaderPort(engine);
         Collections = new SqliteEditorCollectionPort(engine);
         Layouts = new SqliteEditorLayoutPort(layouts);
-        ActorPreview = new SqliteActorPreviewPort(engine);
+        ActorPreview = new SqliteActorPreviewPort(engine.Resources);
     }
 
     public IProjectPathResolver ProjectPaths { get; }

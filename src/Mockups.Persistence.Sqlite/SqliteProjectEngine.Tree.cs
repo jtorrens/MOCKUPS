@@ -23,12 +23,12 @@ internal sealed partial class SqliteProjectEngine
             (module) => module.Id,
             (module) => module.Name,
             StringComparer.Ordinal);
-        var paletteColors = QueryPaletteColorRows(connection);
-        var devices = QueryDeviceRows(connection);
-        var actors = QueryActorRows(connection);
-        var themes = _themeRepository.QueryAll(connection);
-        var productionFonts = _productionFontRepository.QueryAll(connection);
-        var iconThemes = _iconThemeRepository.QueryAll(connection);
+        var paletteColors = _resourceOwner.QueryPaletteColorRows(connection);
+        var devices = _resourceOwner.QueryDeviceRows(connection);
+        var actors = _resourceOwner.QueryActorRows(connection);
+        var themes = _resourceOwner.ThemeRepository.QueryAll(connection);
+        var productionFonts = _resourceOwner.ProductionFontRepository.QueryAll(connection);
+        var iconThemes = _resourceOwner.IconThemeRepository.QueryAll(connection);
         var componentClasses = QueryComponentClassRows(connection);
         var referenceUsageIndex = _referenceUsageService.BuildIndex(connection);
 
@@ -270,7 +270,7 @@ internal sealed partial class SqliteProjectEngine
                 ProjectTreeNodeKind.Theme,
                 theme.Id,
                 theme.Name,
-                $"{theme.Family} · {ThemeReferenceSummary(theme)}",
+                $"{theme.Family} · {SqliteResourceOwner.ThemeReferenceSummary(theme)}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
                 themesRoot,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.Theme, theme.Id)));
@@ -284,7 +284,7 @@ internal sealed partial class SqliteProjectEngine
                 ProjectTreeNodeKind.ProductionFont,
                 font.Id,
                 font.FamilyName,
-                $"{font.Category} · {ProductionFontFileCount(font.FilesJson)} files",
+                $"{font.Category} · {SqliteResourceOwner.ProductionFontFileCount(font.FilesJson)} files",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
                 fontsRoot,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ProductionFont, font.Id)));
@@ -298,7 +298,7 @@ internal sealed partial class SqliteProjectEngine
                 ProjectTreeNodeKind.IconTheme,
                 iconTheme.Id,
                 iconTheme.Name,
-                $"{IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
+                $"{SqliteResourceOwner.IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
                 iconThemesRoot,
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
@@ -449,7 +449,7 @@ internal sealed partial class SqliteProjectEngine
         if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
         {
             var project = ProjectAncestor(parent);
-            var color = _paletteRepository.Create(connection, project.Id);
+            var color = _resourceOwner.PaletteRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteColor,
@@ -465,7 +465,7 @@ internal sealed partial class SqliteProjectEngine
         if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
         {
             var project = ProjectAncestor(parent);
-            var device = _deviceRepository.Create(connection, project.Id);
+            var device = _resourceOwner.DeviceRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Device,
@@ -479,7 +479,7 @@ internal sealed partial class SqliteProjectEngine
         if (parent.Kind == ProjectTreeNodeKind.ActorsRoot)
         {
             var project = ProjectAncestor(parent);
-            var actor = _actorRepository.Create(connection, project.Id);
+            var actor = _resourceOwner.ActorRepository.Create(connection, project.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.Actor,
@@ -577,7 +577,7 @@ internal sealed partial class SqliteProjectEngine
 
         using var connection = OpenConnection();
         var project = ProjectAncestor(devicesRoot);
-        var imported = _deviceRepository.CreateImported(
+        var imported = _resourceOwner.DeviceRepository.CreateImported(
             connection,
             project.Id,
             device.Name,
@@ -605,13 +605,13 @@ internal sealed partial class SqliteProjectEngine
         family = family is "ios" or "android" ? family : "custom";
         using var connection = OpenConnection();
         var project = ProjectAncestor(themesRoot);
-        var iconThemeId = _iconThemeRepository.QueryAll(connection)
+        var iconThemeId = _resourceOwner.IconThemeRepository.QueryAll(connection)
             .Where((iconTheme) => iconTheme.ProjectId == project.Id)
             .OrderBy((iconTheme) => iconTheme.Name)
             .ThenBy((iconTheme) => iconTheme.Id)
             .Select((iconTheme) => iconTheme.Id)
             .FirstOrDefault() ?? "";
-        var productionFonts = _productionFontRepository.QueryAll(connection)
+        var productionFonts = _resourceOwner.ProductionFontRepository.QueryAll(connection)
             .Where((font) => font.ProjectId == project.Id)
             .ToList();
         var textFontId = productionFonts
@@ -628,21 +628,21 @@ internal sealed partial class SqliteProjectEngine
             .FirstOrDefault() ?? "";
         var statusBarId = DefaultComponentVariantReference(connection, project.Id, "status_bar");
         var navigationBarId = DefaultComponentVariantReference(connection, project.Id, "navigation_bar");
-        var created = _themeRepository.Create(
+        var created = _resourceOwner.ThemeRepository.Create(
             connection,
             project.Id,
             family,
             iconThemeId,
             statusBarId,
             navigationBarId,
-            DefaultThemeTokensJson(family, textFontId, emojiFontId),
+            SqliteResourceOwner.DefaultThemeTokensJson(family, textFontId, emojiFontId),
             JsonSerializer.Serialize(new { note = $"{family} production theme." }));
 
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Theme,
             created.Id,
             created.Name,
-            $"{created.Family} · {ThemeReferenceSummary(created)}",
+            $"{created.Family} · {SqliteResourceOwner.ThemeReferenceSummary(created)}",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme),
             themesRoot);
     }
@@ -710,7 +710,7 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.PaletteColor)
         {
-            var copy = _paletteRepository.Duplicate(connection, node.Id);
+            var copy = _resourceOwner.PaletteRepository.Duplicate(connection, node.Id);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteColor,
@@ -725,36 +725,41 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.Device)
         {
-            var copy = _deviceRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
+            var copy = _resourceOwner.DeviceRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
             return new ProjectTreeNode(ProjectTreeNodeKind.Device, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Actor)
         {
-            var copy = _actorRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
+            var copy = _resourceOwner.ActorRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
             return new ProjectTreeNode(ProjectTreeNodeKind.Actor, copy.Id, copy.DisplayName, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.Theme)
         {
-            var copy = _themeRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
+            var copy = _resourceOwner.ThemeRepository.Duplicate(connection, node.Id, $"{node.Name} copy");
 
             return new ProjectTreeNode(ProjectTreeNodeKind.Theme, copy.Id, copy.Name, node.Notes, node.RecordClassId, node.Parent);
         }
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            var source = _iconThemeRepository.Get(connection, node.Id);
+            var source = _resourceOwner.IconThemeRepository.Get(connection, node.Id);
             var id = $"icon_theme_{Guid.NewGuid():N}";
-            var duplicatedAssets = DuplicateIconThemeAssets(connection, source, $"{node.Name} copy");
+            var duplicatedAssets = _resourceOwner.DuplicateIconThemeAssets(connection, source, $"{node.Name} copy");
             var name = duplicatedAssets.Name;
             var assetRoot = duplicatedAssets.AssetRoot;
-            var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, source.ProjectId, assetRoot), name);
+            var metadata = SqliteResourceOwner.IconThemeMetadata(
+                _resourceOwner.IconThemeAssetDirectory(
+                    connection,
+                    source.ProjectId,
+                    assetRoot),
+                name);
             try
             {
-                _iconThemeRepository.CreateDuplicate(
+                _resourceOwner.IconThemeRepository.CreateDuplicate(
                     connection,
                     node.Id,
                     id,
@@ -764,7 +769,7 @@ internal sealed partial class SqliteProjectEngine
             }
             catch
             {
-                DeleteIconThemeAssetDirectory(connection, source.ProjectId, assetRoot);
+                _resourceOwner.DeleteIconThemeAssetDirectory(connection, source.ProjectId, assetRoot);
                 throw;
             }
 
@@ -849,16 +854,19 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {
-            DeleteProductionFontFiles(connection, node.Id);
-            _productionFontRepository.Delete(connection, node.Id);
+            _resourceOwner.DeleteProductionFontFiles(connection, node.Id);
+            _resourceOwner.ProductionFontRepository.Delete(connection, node.Id);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            var iconTheme = _iconThemeRepository.Get(connection, node.Id);
-            DeleteIconThemeAssetDirectory(connection, iconTheme.ProjectId, iconTheme.AssetRoot);
-            _iconThemeRepository.Delete(connection, node.Id);
+            var iconTheme = _resourceOwner.IconThemeRepository.Get(connection, node.Id);
+            _resourceOwner.DeleteIconThemeAssetDirectory(
+                connection,
+                iconTheme.ProjectId,
+                iconTheme.AssetRoot);
+            _resourceOwner.IconThemeRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -875,25 +883,25 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.PaletteColor)
         {
-            _paletteRepository.Delete(connection, node.Id);
+            _resourceOwner.PaletteRepository.Delete(connection, node.Id);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Device)
         {
-            _deviceRepository.Delete(connection, node.Id);
+            _resourceOwner.DeviceRepository.Delete(connection, node.Id);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Actor)
         {
-            _actorRepository.Delete(connection, node.Id);
+            _resourceOwner.ActorRepository.Delete(connection, node.Id);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Theme)
         {
-            _themeRepository.Delete(connection, node.Id);
+            _resourceOwner.ThemeRepository.Delete(connection, node.Id);
             return;
         }
 
@@ -939,31 +947,31 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.PaletteColor)
         {
-            _paletteRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
+            _resourceOwner.PaletteRepository.UpdateNode(connection, node.Id, node.Name, node.Notes);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Device)
         {
-            _deviceRepository.Rename(connection, node.Id, node.Name);
+            _resourceOwner.DeviceRepository.Rename(connection, node.Id, node.Name);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Actor)
         {
-            _actorRepository.Rename(connection, node.Id, node.Name);
+            _resourceOwner.ActorRepository.Rename(connection, node.Id, node.Name);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.Theme)
         {
-            _themeRepository.Rename(connection, node.Id, node.Name);
+            _resourceOwner.ThemeRepository.Rename(connection, node.Id, node.Name);
             return;
         }
 
         if (node.Kind == ProjectTreeNodeKind.ProductionFont)
         {
-            _productionFontRepository.Rename(connection, node.Id, node.Name);
+            _resourceOwner.ProductionFontRepository.Rename(connection, node.Id, node.Name);
             return;
         }
 
@@ -993,10 +1001,18 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.IconTheme)
         {
-            var row = _iconThemeRepository.Get(connection, node.Id);
-            var renamedAssets = RenameIconThemeAssets(connection, row, node.Name);
-            var metadata = IconThemeMetadata(IconThemeAssetDirectory(connection, row.ProjectId, renamedAssets.AssetRoot), renamedAssets.Name);
-            _iconThemeRepository.UpdateIdentity(
+            var row = _resourceOwner.IconThemeRepository.Get(connection, node.Id);
+            var renamedAssets = _resourceOwner.RenameIconThemeAssets(
+                connection,
+                row,
+                node.Name);
+            var metadata = SqliteResourceOwner.IconThemeMetadata(
+                _resourceOwner.IconThemeAssetDirectory(
+                    connection,
+                    row.ProjectId,
+                    renamedAssets.AssetRoot),
+                renamedAssets.Name);
+            _resourceOwner.IconThemeRepository.UpdateIdentity(
                 connection,
                 node.Id,
                 renamedAssets.Name,

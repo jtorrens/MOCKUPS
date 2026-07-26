@@ -6,9 +6,9 @@ using System.Text.Json;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
-    private IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
+    internal IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
         var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))
@@ -27,7 +27,7 @@ internal sealed partial class SqliteProjectEngine
             Path.GetFileName(targetDirectory));
     }
 
-    private IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
+    internal IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
         var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))
@@ -59,7 +59,7 @@ internal sealed partial class SqliteProjectEngine
             Path.GetFileName(targetDirectory));
     }
 
-    private string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    internal string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
         return Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
@@ -118,7 +118,7 @@ internal sealed partial class SqliteProjectEngine
         }
     }
 
-    private void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    internal void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
     {
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
         var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));

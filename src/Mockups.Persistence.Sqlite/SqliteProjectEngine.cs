@@ -11,22 +11,19 @@ internal sealed partial class SqliteProjectEngine
     private readonly SqliteProjectContext _context;
     private readonly IShotRepository _shotRepository;
     private readonly IProjectEpisodeRepository _projectEpisodeRepository;
-    private readonly IPaletteRepository _paletteRepository;
-    private readonly IDeviceRepository _deviceRepository;
-    private readonly IActorRepository _actorRepository;
-    private readonly IThemeRepository _themeRepository;
-    private readonly IProductionFontRepository _productionFontRepository;
-    private readonly IIconThemeRepository _iconThemeRepository;
     private readonly IAppModuleRepository _appModuleRepository;
     private readonly IComponentClassRepository _componentClassRepository;
     private readonly IModuleInstanceRepository _moduleInstanceRepository;
     private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
+    private readonly SqliteResourceOwner _resourceOwner;
     private readonly IReferenceUsageService _referenceUsageService;
     private readonly IShotManagerIntegrationRepository _shotManagerIntegrationRepository;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
     internal SqliteProjectContext Context => _context;
+
+    internal SqliteResourceOwner Resources => _resourceOwner;
 
     internal SqliteProjectEngine(string databasePath)
         : this(new SqliteProjectContext(databasePath))
@@ -38,16 +35,14 @@ internal sealed partial class SqliteProjectEngine
         _context = context;
         _shotRepository = new ShotRepository(_context);
         _projectEpisodeRepository = new ProjectEpisodeRepository(_context, _shotRepository);
-        _paletteRepository = new PaletteRepository(_context);
-        _deviceRepository = new DeviceRepository(_context);
-        _actorRepository = new ActorRepository(_context);
-        _themeRepository = new ThemeRepository(_context);
-        _productionFontRepository = new ProductionFontRepository(_context);
-        _iconThemeRepository = new IconThemeRepository(_context);
         _appModuleRepository = new AppModuleRepository(_context);
         _componentClassRepository = new ComponentClassRepository(_context);
         _moduleInstanceRepository = new ModuleInstanceRepository(_context);
         _moduleInstanceThemeContextService = new ModuleInstanceThemeContextService(_context);
+        _resourceOwner = new SqliteResourceOwner(
+            _context,
+            _projectEpisodeRepository,
+            _moduleInstanceThemeContextService);
         _referenceUsageService = new ReferenceUsageService(_context);
         _shotManagerIntegrationRepository = new ShotManagerIntegrationRepository(_context);
 

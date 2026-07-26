@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId)
     {
@@ -99,7 +99,7 @@ internal sealed partial class SqliteProjectEngine
             .ToList();
     }
 
-    private IReadOnlyList<DeviceRecord> QueryDeviceRows(SqliteConnection connection)
+    internal IReadOnlyList<DeviceRecord> QueryDeviceRows(SqliteConnection connection)
     {
         return _deviceRepository.QueryAll(connection);
     }

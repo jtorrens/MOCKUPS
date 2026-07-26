@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     public IReadOnlyList<FieldOption> GetIconThemeOptions(string projectId)
     {
@@ -288,7 +288,7 @@ internal sealed partial class SqliteProjectEngine
             .ToList();
     }
 
-    private static int IconThemeTokenCount(string mappingJson)
+    internal static int IconThemeTokenCount(string mappingJson)
     {
         return IconThemeTokens(mappingJson).Count;
     }
@@ -309,7 +309,7 @@ internal sealed partial class SqliteProjectEngine
         return ProjectIdForIconTheme(connection, iconThemeId);
     }
 
-    private static JsonObject IconThemeMetadata(string directory, string setName)
+    internal static JsonObject IconThemeMetadata(string directory, string setName)
     {
         var manifestPath = Path.Combine(directory, "manifest.json");
         var metadata = new JsonObject

@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     private const int IconThemeScriptTimeoutMilliseconds = 30_000;
 

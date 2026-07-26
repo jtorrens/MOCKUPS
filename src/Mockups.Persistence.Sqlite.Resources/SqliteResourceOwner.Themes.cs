@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths =
         ThemeColorTokenCatalog.ColorTokens.ToDictionary(
@@ -185,7 +185,7 @@ internal sealed partial class SqliteProjectEngine
         }
     }
 
-    private static string ThemeReferenceSummary(ThemeRecord theme)
+    internal static string ThemeReferenceSummary(ThemeRecord theme)
     {
         return ThemeReferenceSummary(theme.IconThemeId, theme.StatusBarId, theme.NavigationBarId);
     }
@@ -328,7 +328,7 @@ internal sealed partial class SqliteProjectEngine
         _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
     }
 
-    private static string DefaultThemeTokensJson(
+    internal static string DefaultThemeTokensJson(
         string family,
         string textFontFamilyId = "",
         string emojiFontFamilyId = "")

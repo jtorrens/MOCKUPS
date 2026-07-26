@@ -79,11 +79,11 @@ internal sealed partial class SqliteProjectEngine
     {
         using var connection = OpenConnection();
         var shot = _shotRepository.Get(connection, shotId);
-        var actor = _actorRepository.QueryAll(connection)
+        var actor = _resourceOwner.ActorRepository.QueryAll(connection)
             .SingleOrDefault((candidate) => candidate.Id == shot.OwnerActorId)
             ?? throw new InvalidOperationException($"Missing Actor '{shot.OwnerActorId}'.");
         if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId)) return "No default device";
-        return _deviceRepository.QueryAll(connection)
+        return _resourceOwner.DeviceRepository.QueryAll(connection)
             .SingleOrDefault((candidate) => candidate.Id == actor.DefaultDeviceId)?.Name
             ?? throw new InvalidOperationException($"Missing Device '{actor.DefaultDeviceId}'.");
     }

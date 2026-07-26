@@ -149,7 +149,10 @@ contracts shared by composition and their exact implementation owner.
 editor-layout repositories; `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories; and
 `Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
-Production Font and Icon Theme repositories. These owner projects can see
+Production Font and Icon Theme repositories and their resource-specific field,
+asset and token behavior. Resource behavior that needs Production context
+receives its narrow contract; Resources still cannot see the Production
+implementation. These owner projects can see
 Contracts and Core, but cannot reference the composition assembly or one
 another. The temporary `Mockups.Persistence.Sqlite` assembly owns composition,
 validation and application operations not yet extracted; each remaining owner
@@ -161,6 +164,10 @@ Domain and only persistence projects may reference SQLite packages. They
 cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global
 write lock.
+
+The session's Actor Preview port is backed directly by the Resources owner.
+It does not pass through the temporary aggregate. Remaining broad cross-domain
+ports move to focused owners as their Application contracts are decomposed.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     public IReadOnlyList<FieldOption> GetProductionFontOptions(string projectId, string? category = null)
     {
@@ -123,7 +123,7 @@ internal sealed partial class SqliteProjectEngine
         _productionFontRepository.UpdateField(fontId, fieldId, value);
     }
 
-    private static int ProductionFontFileCount(string filesJson)
+    internal static int ProductionFontFileCount(string filesJson)
     {
         return ProductionFontFilesContract.ParseRequired(filesJson, "Production Font files").Count;
     }
@@ -246,7 +246,7 @@ internal sealed partial class SqliteProjectEngine
         return familyName.Contains("emoji", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
+    internal void DeleteProductionFontFiles(SqliteConnection connection, string fontId)
     {
         var font = _productionFontRepository.Get(connection, fontId);
         var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, font.ProjectId).MediaRoot);

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     public PaletteColorSettings GetPaletteColorSettings(string colorId)
     {
@@ -34,7 +34,7 @@ internal sealed partial class SqliteProjectEngine
         return _paletteRepository.GetNeutralMap(projectId);
     }
 
-    private IReadOnlyList<PaletteColorRecord> QueryPaletteColorRows(SqliteConnection connection)
+    internal IReadOnlyList<PaletteColorRecord> QueryPaletteColorRows(SqliteConnection connection)
     {
         return _paletteRepository.QueryAll(connection);
     }

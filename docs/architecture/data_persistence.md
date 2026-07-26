@@ -45,7 +45,8 @@ focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
 Module, Component Class and editor-layout persistence.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `Mockups.Persistence.Sqlite.Resources` owns Palette,
-Theme, Device, Actor, Production Font and Icon Theme persistence.
+Theme, Device, Actor, Production Font and Icon Theme persistence plus their
+resource-specific field, token and asset operations.
 The three owner assemblies reference Contracts and Core, never another owner
 or the temporary composition assembly. The compiler therefore rejects a
 Design repository that tries to call a Production or Resources implementation,
@@ -68,6 +69,12 @@ each port is backed by a different adapter object that implements only that
 port and its declared inherited capabilities. Neither Desktop controllers,
 `EditorWorkspaceCoordinator` nor its state contract can compile a SQLite
 reference.
+
+`ActorPreview` is composed directly from `SqliteResourceOwner`. Its Production
+theme-context validation arrives through an internal contract declared outside
+the Production implementation, so Resources cannot call Production code.
+The temporary aggregate delegates resource operations to that owner while
+older cross-domain ports are separated incrementally.
 
 Focused repositories own table SQL, row mapping and prepared complete writes:
 

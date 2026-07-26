@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteResourceOwner
 {
     public ActorSettings GetActorSettings(string actorId)
     {
@@ -64,7 +64,7 @@ internal sealed partial class SqliteProjectEngine
             .ToList();
     }
 
-    private IReadOnlyList<ActorRecord> QueryActorRows(SqliteConnection connection)
+    internal IReadOnlyList<ActorRecord> QueryActorRows(SqliteConnection connection)
     {
         return _actorRepository.QueryAll(connection);
     }
