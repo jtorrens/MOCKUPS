@@ -3167,6 +3167,8 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);
     True(project.Components is not IPreviewInputRepository);
     True(project.RuntimeInputOwners is not IRuntimeInputInstanceStore);
+    True(project.RuntimeInputOwners is not
+        IModuleInstanceTimelineStore);
     True(project.RuntimeInputInstances is not
         IModuleInstanceAnimationStore);
     True(project.Animation is not IRuntimeInputInstanceStore);
@@ -6351,7 +6353,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var store = new RuntimeInputOwnerDocumentStore(database);
+        var store = new RuntimeInputOwnerDocumentStore(database.Design, database);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
         var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);

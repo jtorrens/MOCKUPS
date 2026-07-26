@@ -9,6 +9,7 @@ internal sealed partial class SqliteDesignOwner :
     IModuleVariantCatalog,
     IComponentFieldDesignOptionSource,
     IComponentPreviewInputRepository,
+    IRuntimeInputOwnerStore,
     IVariantHistoryStore
 {
     private object WriteGate => _context.WriteGate;

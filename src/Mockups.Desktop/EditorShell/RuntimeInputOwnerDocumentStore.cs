@@ -27,10 +27,14 @@ internal sealed record RuntimeComponentVariantSelectionSource(
 internal sealed class RuntimeInputOwnerDocumentStore
 {
     private readonly IRuntimeInputOwnerStore _database;
+    private readonly IModuleInstanceTimelineStore _timeline;
 
-    public RuntimeInputOwnerDocumentStore(IRuntimeInputOwnerStore database)
+    public RuntimeInputOwnerDocumentStore(
+        IRuntimeInputOwnerStore database,
+        IModuleInstanceTimelineStore timeline)
     {
         _database = database;
+        _timeline = timeline;
     }
 
     public RuntimeInputOwnerDocumentSource Load(ProjectTreeNode node)
@@ -72,10 +76,11 @@ internal sealed class RuntimeInputOwnerDocumentStore
 
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
-            var module = _database.GetModuleInstanceVariantSettings(node.Id);
+            var module =
+                _timeline.GetModuleInstanceVariantSettings(node.Id);
             return new RuntimeInputOwnerDocumentSource(
                 module.ConfigJson,
-                _database.GetModuleInstanceRuntimePreviewJson(node.Id),
+                _timeline.GetModuleInstanceRuntimePreviewJson(node.Id),
                 true,
                 RuntimeInputDesignPreviewOwnerKind.None,
                 "");

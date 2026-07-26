@@ -245,6 +245,11 @@ Cross-owner Runtime Input Instance mutation is implemented by the focused
 coordinates Production contract validation with the exact same-Project Actor
 set from Resources while exposing only Runtime payload mutation capability.
 
+Authored Runtime owner documents are backed directly by Design. The
+`IRuntimeInputOwnerStore` contains no Screen or timeline reads; the Desktop
+document adapter receives the Production timeline separately when the selected
+node is a Module Instance.
+
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite session and composes the named narrow Application

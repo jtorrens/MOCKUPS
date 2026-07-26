@@ -336,8 +336,6 @@ public interface IRuntimeInputOwnerStore
     ModuleSettings GetModuleSettings(string moduleId);
     ModuleSettings GetModuleVariantSettings(
         EditorShell.ProjectTreeNode variantNode);
-    ModuleSettings GetModuleInstanceVariantSettings(string moduleInstanceId);
-    string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId);
     void UpdateComponentClassDesignPreviewJson(
         string componentClassId,
         string designPreviewJson);

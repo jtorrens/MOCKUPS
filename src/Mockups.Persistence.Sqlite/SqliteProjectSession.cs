@@ -42,7 +42,7 @@ public sealed class SqliteProjectSession
         Components =
             new SqliteComponentDocumentPort(engine);
         RuntimeInputOwners =
-            new SqliteRuntimeInputOwnerPort(engine);
+            new SqliteRuntimeInputOwnerPort(engine.Design);
         RuntimeInputInstances =
             new SqliteRuntimeInputInstancePort(
                 new SqliteRuntimeInputInstanceStore(

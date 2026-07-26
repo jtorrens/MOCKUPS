@@ -260,14 +260,6 @@ internal sealed class SqliteRuntimeInputOwnerPort(
         ProjectTreeNode variantNode) =>
         target.GetModuleVariantSettings(variantNode);
 
-    public ModuleSettings GetModuleInstanceVariantSettings(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceVariantSettings(moduleInstanceId);
-
-    public string GetModuleInstanceRuntimePreviewJson(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
     public void UpdateComponentClassDesignPreviewJson(
         string componentClassId,
         string designPreviewJson) =>

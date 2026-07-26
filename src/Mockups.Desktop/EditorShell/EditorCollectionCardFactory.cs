@@ -18,6 +18,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly IDictionaryFieldContextRepository _dictionary;
     private readonly IActorPreviewRepository _actors;
     private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
+    private readonly IModuleInstanceTimelineStore _timeline;
     private readonly IRuntimeInputInstanceStore _runtimeInputInstances;
     private readonly IModuleInstanceAnimationStore _animation;
     private readonly IModuleInstanceThemeTokenQuery _moduleInstanceThemes;
@@ -53,6 +54,7 @@ internal sealed class EditorCollectionCardFactory
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore runtimeInputOwners,
+        IModuleInstanceTimelineStore timeline,
         IRuntimeInputInstanceStore runtimeInputInstances,
         IModuleInstanceAnimationStore animation,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
@@ -87,6 +89,7 @@ internal sealed class EditorCollectionCardFactory
         _dictionary = dictionary;
         _actors = actors;
         _runtimeInputOwners = runtimeInputOwners;
+        _timeline = timeline;
         _runtimeInputInstances = runtimeInputInstances;
         _animation = animation;
         _moduleInstanceThemes = moduleInstanceThemes;
@@ -220,6 +223,7 @@ internal sealed class EditorCollectionCardFactory
             _dictionary,
             _actors,
             _runtimeInputOwners,
+            _timeline,
             _runtimeInputInstances,
             _animation,
             _moduleInstanceThemes,

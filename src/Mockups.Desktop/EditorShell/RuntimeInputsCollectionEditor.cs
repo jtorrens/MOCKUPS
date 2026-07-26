@@ -49,6 +49,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore ownerStore,
+        IModuleInstanceTimelineStore timeline,
         IRuntimeInputInstanceStore instanceStore,
         IModuleInstanceAnimationStore animationStore,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
@@ -77,7 +78,10 @@ internal sealed class RuntimeInputsCollectionEditor
             new ComponentPreviewInputDataSource(
                 componentPreview,
                 actors);
-        _ownerDocuments = new RuntimeInputOwnerDocumentStore(ownerStore);
+        _ownerDocuments =
+            new RuntimeInputOwnerDocumentStore(
+                ownerStore,
+                timeline);
         _instanceDocuments =
             new RuntimeInputInstanceDocumentStore(
                 instanceStore,
