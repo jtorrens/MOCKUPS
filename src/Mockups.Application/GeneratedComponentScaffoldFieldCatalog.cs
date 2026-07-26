@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal static partial class ComponentClassFieldCatalog
+public static partial class ComponentClassFieldCatalog
 {
     static partial void AddGeneratedFields(
         Dictionary<string, ComponentClassFieldDescriptor> fields)

@@ -485,7 +485,7 @@ export function loadComponentScaffoldInventory(
 
   const valueKindPath = resolveRepositoryPath(
     repositoryRoot,
-    "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
+    "src/Mockups.Application/FieldDefinition.cs",
   );
   const valueKinds = parseValueKinds(readFileSync(valueKindPath, "utf8"));
 
@@ -748,7 +748,7 @@ export function createComponentScaffoldPlan(
       },
       {
         owner: "dictionary",
-        path: "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+        path: "src/Mockups.Application/ComponentClassFieldCatalog.cs",
         description: `Register ${spec.dictionaryFields.length} explicit dictionary field descriptors.`,
       },
       {
@@ -1357,7 +1357,7 @@ function ownerFile(
 }
 
 function parseValueKinds(source: string) {
-  const match = source.match(/internal\s+enum\s+ValueKind\s*\{([\s\S]*?)\}/);
+  const match = source.match(/(?:public|internal)\s+enum\s+ValueKind\s*\{([\s\S]*?)\}/);
   if (!match) throw new Error("Could not derive current ValueKind names from FieldDefinition.cs.");
   const values = (match[1] ?? "")
     .split(",")

@@ -20,9 +20,19 @@ const repositoryRoot = process.cwd();
 
 const expectedProjects = new Map([
   [
-    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+    "src/Mockups.Application/Mockups.Application.csproj",
     {
       projectReferences: ["src/Mockups.Domain/Mockups.Domain.csproj"],
+      packageReferences: [],
+    },
+  ],
+  [
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Domain/Mockups.Domain.csproj",
+      ],
       packageReferences: [
         "Avalonia",
         "Avalonia.Controls.ColorPicker",
@@ -111,4 +121,13 @@ test("Domain compiles without project or package capabilities", () => {
   const domain = evaluate("src/Mockups.Domain/Mockups.Domain.csproj");
   assert.deepEqual(domain.Items.ProjectReference, []);
   assert.deepEqual(domain.Items.PackageReference, []);
+});
+
+test("Application can see Domain but has no UI or persistence package capabilities", () => {
+  const application = evaluate("src/Mockups.Application/Mockups.Application.csproj");
+  assert.deepEqual(
+    application.Items.ProjectReference.map((item) => repositoryPath(item.FullPath ?? item.Identity)),
+    ["src/Mockups.Domain/Mockups.Domain.csproj"],
+  );
+  assert.deepEqual(application.Items.PackageReference, []);
 });

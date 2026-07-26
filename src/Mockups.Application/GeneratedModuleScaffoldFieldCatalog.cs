@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal static class GeneratedModuleScaffoldFieldCatalog
+public static class GeneratedModuleScaffoldFieldCatalog
 {
     public static void AddFields(
         Dictionary<string, RecordClassFieldDescriptor> fields)

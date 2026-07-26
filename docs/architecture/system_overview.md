@@ -125,6 +125,10 @@ consume Domain, but Domain cannot see Avalonia, SQLite, Preview runtime or the
 desktop assembly. Each later extraction must preserve that direction and add
 its exact allowed edge to the project-boundary test.
 
+`Mockups.Application` owns UI-independent application contracts and DTOs. It
+may reference Domain and has no package capabilities. In particular, its
+project cannot compile a reference to Avalonia or `Microsoft.Data.Sqlite`.
+
 ### SQLite and repositories
 
 Repositories own table SQL, row mapping and prepared writes. They do not own

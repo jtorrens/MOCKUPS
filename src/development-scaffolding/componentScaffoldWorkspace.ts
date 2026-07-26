@@ -352,8 +352,8 @@ export function verifyComponentScaffoldImplementation(
   checked.push(...registryPaths);
 
   const fieldSources = [
-    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
-    "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
+    "src/Mockups.Application/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Application/GeneratedComponentScaffoldFieldCatalog.cs",
   ]
     .map((candidate) => scaffoldTarget(repositoryRoot, candidate))
     .filter(existsSync)
@@ -378,7 +378,7 @@ export function verifyComponentScaffoldImplementation(
     }
   }
   checked.push(
-    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Application/ComponentClassFieldCatalog.cs",
     generatedDesktopFieldCatalogPath,
   );
 

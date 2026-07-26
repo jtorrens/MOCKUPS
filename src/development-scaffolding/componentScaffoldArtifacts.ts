@@ -19,7 +19,7 @@ export const integratedComponentSpecRoot = "scaffolding/components";
 export const generatedComponentRegistryPath =
   "src/desktop-preview/generatedComponentScaffoldRegistry.ts";
 export const generatedDesktopFieldCatalogPath =
-  "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs";
+  "src/Mockups.Application/GeneratedComponentScaffoldFieldCatalog.cs";
 export const generatedDesktopConfigRegistryPath =
   "src/Mockups.Desktop/Data/GeneratedComponentScaffoldConfigRegistry.cs";
 
@@ -128,7 +128,7 @@ function renderFieldCatalog(specs: readonly ComponentScaffoldSpec[]) {
   return `// Generated from scaffolding/components/*.json. Do not edit manually.\n`
     + `using System.Collections.Generic;\n\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
-    + `internal static partial class ComponentClassFieldCatalog\n`
+    + `public static partial class ComponentClassFieldCatalog\n`
     + `{\n`
     + `    static partial void AddGeneratedFields(\n`
     + `        Dictionary<string, ComponentClassFieldDescriptor> fields)\n`

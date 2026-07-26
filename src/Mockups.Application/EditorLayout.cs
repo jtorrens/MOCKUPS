@@ -4,13 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class EditorLayout
+public sealed class EditorLayout
 {
     [JsonPropertyName("cards")]
     public List<EditorLayoutCard> Cards { get; init; } = [];
 }
 
-internal sealed class EditorLayoutCard
+public sealed class EditorLayoutCard
 {
     [JsonPropertyName("id")]
     public string Id { get; init; } = "";
@@ -44,7 +44,7 @@ internal sealed class EditorLayoutCard
         Groups.Where((group) => group.Visible).OrderBy((group) => group.Order).ThenBy((group) => group.Label);
 }
 
-internal sealed class EditorLayoutGroup
+public sealed class EditorLayoutGroup
 {
     [JsonPropertyName("id")]
     public string Id { get; init; } = "";
@@ -86,7 +86,7 @@ internal sealed class EditorLayoutGroup
             .ThenBy((layoutField) => layoutField.Id);
 }
 
-internal sealed class EditorLayoutField
+public sealed class EditorLayoutField
 {
     [JsonPropertyName("id")]
     public string Id { get; init; } = "";

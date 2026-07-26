@@ -178,7 +178,7 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
   });
 }
 
-for (const directory of ["src/desktop-preview", "src/Mockups.Domain", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
+for (const directory of ["src/desktop-preview", "src/Mockups.Domain", "src/Mockups.Application", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
   for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
     const source = readText(relative(filePath));
     for (const retired of retiredTimeFields) {
@@ -1501,22 +1501,22 @@ for (const retiredSystemBarItemEditorPath of [
   }
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Application/ComponentClassFieldCatalog.cs",
   '["component.statusBar.items"] = new',
   "Status Bar Items must be a catalogued dictionary field",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Application/ComponentClassFieldCatalog.cs",
   '["component.navigationBar.items"] = new',
   "Navigation Bar Items must be a catalogued dictionary field",
 );
 assertMatches(
-  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Application/ComponentClassFieldCatalog.cs",
   /StatusBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
   "Status Bar Items must remain a fixed structured collection",
 );
 assertMatches(
-  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Application/ComponentClassFieldCatalog.cs",
   /NavigationBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
   "Navigation Bar Items must remain a fixed structured collection",
 );
@@ -2531,8 +2531,8 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
   const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
-  const valueKindSource = readText("src/Mockups.Desktop/EditorShell/FieldDefinition.cs");
-  const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(valueKindSource);
+  const valueKindSource = readText("src/Mockups.Application/FieldDefinition.cs");
+  const valueKindBlock = /(?:public|internal) enum ValueKind\s*\{([\s\S]*?)\}/.exec(valueKindSource);
   const valueKinds = new Set(
     (valueKindBlock?.[1] ?? "")
       .split(",")
@@ -3074,8 +3074,8 @@ function assertComponentEditorLayoutsUseKnownFields() {
   const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const catalog = [
-    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
-    "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
+    "src/Mockups.Application/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Application/GeneratedComponentScaffoldFieldCatalog.cs",
   ].map(readText).join("\n");
   const knownFields = new Set(
     [
@@ -3543,7 +3543,7 @@ assertContains(
 for (const currentManifestOwner of [
   "src/desktop-preview/desktopPreviewManifest.json",
   "src/desktop-preview/desktopPreviewComponents.ts",
-  "src/Mockups.Desktop/Common/DesktopPreviewManifest.cs",
+  "src/Mockups.Application/DesktopPreviewManifest.cs",
 ]) {
   assertDoesNotContain(
     currentManifestOwner,
@@ -5009,19 +5009,19 @@ assertNoTerms("src/Mockups.Desktop/MainWindow.axaml.cs", [
   }
 }
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.ComponentClassesRoot",
   "component class root must not expose Add; parent component classes are internal",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.StatusBarsRoot",
   "legacy status bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockContainsKind(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanAddChild",
   "AppsRoot",
   false,
@@ -5030,7 +5030,7 @@ assertPropertyBlockContainsKind(
 for (const propertyName of ["CanDuplicate", "CanDelete"]) {
   for (const kind of ["App", "Module"]) {
     assertPropertyBlockContainsKind(
-      "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+      "src/Mockups.Application/ProjectTreeNode.cs",
       propertyName,
       kind,
       false,
@@ -5040,7 +5040,7 @@ for (const propertyName of ["CanDuplicate", "CanDelete"]) {
 }
 for (const kind of ["App", "Module", "ModuleVariant"]) {
   assertPropertyBlockContainsKind(
-    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Application/ProjectTreeNode.cs",
     "CanRenameDirectly",
     kind,
     true,
@@ -5048,43 +5048,43 @@ for (const kind of ["App", "Module", "ModuleVariant"]) {
   );
 }
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.NavigationBarsRoot",
   "legacy navigation bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Duplicate; use Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.StatusBar",
   "legacy status bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.NavigationBar",
   "legacy navigation bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Delete; they are internal",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.StatusBar",
   "legacy status bars must not expose Delete; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.NavigationBar",
   "legacy navigation bars must not expose Delete; use Component Variants instead",
@@ -5126,7 +5126,7 @@ for (const forbiddenLegacyTreeTerm of [
   "ProjectTreeNodeKind.NavigationBar",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Application/ProjectTreeNode.cs",
     forbiddenLegacyTreeTerm,
     `legacy system bar tree term ${forbiddenLegacyTreeTerm} must not return; use Component Variants`,
   );
@@ -5157,7 +5157,7 @@ for (const forbiddenComponentInputControl of [
   );
 }
 for (const recordReferenceSpecializationPath of [
-  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Application/FieldDefinition.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   for (const forbiddenRecordReferenceSpecialization of [
@@ -5415,7 +5415,7 @@ for (const legacyComponentRecordClassId of [
   "component.button_icon",
   "component.text_input_bar",
 ]) {
-  const filePath = "src/Mockups.Desktop/EditorShell/EmbeddedComponentSlotCatalog.cs";
+  const filePath = "src/Mockups.Application/EmbeddedComponentSlotCatalog.cs";
   assertDoesNotContain(
     filePath,
     legacyComponentRecordClassId,
@@ -5423,7 +5423,7 @@ for (const legacyComponentRecordClassId of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Application/FieldDefinition.cs",
   "ComponentVariant",
   "embedded Component Variant selection must have a dedicated dictionary value kind",
 );
@@ -5433,8 +5433,8 @@ assertContains(
   "Component Variant fields must use their dedicated dictionary control",
 );
 {
-  const fieldDefinitionSource = readText("src/Mockups.Desktop/EditorShell/FieldDefinition.cs");
-  const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(fieldDefinitionSource);
+  const fieldDefinitionSource = readText("src/Mockups.Application/FieldDefinition.cs");
+  const valueKindBlock = /(?:public|internal) enum ValueKind\s*\{([\s\S]*?)\}/.exec(fieldDefinitionSource);
   const valueKinds = new Set(
     (valueKindBlock?.[1] ?? "")
       .split(",")
@@ -6466,7 +6466,7 @@ assertContains(
   "Runtime Input pair labels must be validated by the shared current-definition owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Application/FieldDefinition.cs",
   "NumberDefinition? Number = null,\n    PairFieldLabels? PairLabels = null,\n    string ComponentType = \"\",",
   "Component Input binding projections must retain explicit pair labels",
 );
@@ -6545,7 +6545,7 @@ assertContains(
   "the numeric slider must keep invalid interactive drafts separate from current state",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Application/RecordClassFieldCatalog.cs",
   '"device.metrics.cornerRadius",\n            "Corner radius",\n            ValueKind.Decimal',
   "Device corner radius must preserve its declared fractional design-unit values",
 );
@@ -6604,9 +6604,9 @@ assertNoTerms("src/Mockups.Desktop/EditorShell/DictionaryFieldControl.cs", [
   "ValueKind.ImageFilePath",
 ]);
 assertContains(
-  "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+  "src/Mockups.Application/Mockups.Application.csproj",
   "desktopPreviewManifest.json",
-  "desktop app must embed the canonical preview manifest",
+  "Application must embed the canonical Preview manifest consumed by its contracts",
 );
 assertContains(
   "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
@@ -6619,14 +6619,14 @@ assertDoesNotContain(
   "component navigation must not infer category from a hard-coded component type switch",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Application/RecordClassFieldCatalog.cs",
   "DesktopPreviewManifest.Modules",
   "module class options must come from the canonical preview manifest",
 );
 for (const retiredGenericModulePath of [
   "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
-  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
+  "src/Mockups.Application/RecordClassFieldCatalog.cs",
 ]) {
   assertDoesNotContain(
     retiredGenericModulePath,
@@ -6636,8 +6636,8 @@ for (const retiredGenericModulePath of [
 }
 for (const retiredGenericAppPath of [
   "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
-  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
+  "src/Mockups.Application/RecordClassFieldCatalog.cs",
 ]) {
   assertDoesNotContain(
     retiredGenericAppPath,
@@ -6697,7 +6697,7 @@ assertDoesNotContain(
   "editor icon thumbnails must use lightweight vector controls instead of one web view per icon",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Application/ComponentClassFieldCatalog.cs",
   "component.label.textGap\"",
   "Label text separation must use the canonical spacing-token field",
 );
@@ -6717,7 +6717,7 @@ for (const embeddedVariantField of [
     );
   }
   assertMatches(
-    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Application/ComponentClassFieldCatalog.cs",
     new RegExp(`\\["${embeddedVariantField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
     `embedded Variant field "${embeddedVariantField}" must keep the slot Variant route, not generic recordReference`,
   );
@@ -6755,7 +6755,7 @@ assertContains(
 );
 for (const kind of ["ComponentClass", "ComponentVariant"]) {
   assertPropertyBlockContainsKind(
-    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Application/ProjectTreeNode.cs",
     "CanRenameDirectly",
     kind,
     true,
@@ -6763,7 +6763,7 @@ for (const kind of ["ComponentClass", "ComponentVariant"]) {
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected)",
   "Component Variant rename must not be coupled to delete protection",
 );
@@ -6773,7 +6773,7 @@ assertContains(
   "Component Variant rename must use the standard editor rename icon",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Application/ProjectTreeNode.cs",
   "Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected",
   "protected Component Variants must not be deletable",
 );
@@ -6824,13 +6824,13 @@ assertAnyContains(
 );
 for (const themeVariantField of ["theme.statusBarId", "theme.navigationBarId"]) {
   assertMatches(
-    "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+    "src/Mockups.Application/RecordClassFieldCatalog.cs",
     new RegExp(`\\[\"${themeVariantField.replaceAll(".", "\\.")}\"\\][\\s\\S]*?ValueKind\\.ComponentVariant`),
     `${themeVariantField} must use the typed Component Variant dictionary control`,
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/MotionVariantValue.cs",
+  "src/Mockups.Domain/MotionVariantValue.cs",
   "legacyKey",
   "motion parser must not accept legacy transition keys",
 );
@@ -6907,7 +6907,7 @@ for (const retiredInstanceEditorTerm of [
   "ConversationMessagesCollectionEditor",
 ]) {
   for (const file of [
-    "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+    "src/Mockups.Application/RecordClassFieldCatalog.cs",
     "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   ]) {
     assertDoesNotContain(
@@ -7322,12 +7322,12 @@ assertContains(
   "vertical-card rows must own full-width separators up to the navigation divider",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/EditorLayout.cs",
+  "src/Mockups.Application/EditorLayout.cs",
   '[JsonPropertyName("groupLayout")]',
   "editor cards must declare reusable child-group organization through layout metadata",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/EditorLayout.cs",
+  "src/Mockups.Application/EditorLayout.cs",
   '[JsonPropertyName("presentation")]',
   "individual editor groups must be able to declare a reusable presentation block",
 );
@@ -7715,7 +7715,7 @@ for (const renameableKind of [
   "ProductionFont",
 ]) {
   assertPropertyBlockContainsKind(
-    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Application/ProjectTreeNode.cs",
     "CanRenameDirectly",
     renameableKind,
     true,
@@ -10168,7 +10168,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     '"component.iconRow.items"',
   ]) {
     assertContains(
-      "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+      "src/Mockups.Application/ComponentClassFieldCatalog.cs",
       requiredVariantField,
       `Text Box and Icon Row Variant ownership requires ${requiredVariantField}`,
     );
@@ -10196,7 +10196,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     );
   }
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Application/ComponentClassFieldCatalog.cs",
     "button::variant::default",
     "static dictionary defaults must not contain a short or project-inferred Button Variant reference",
   );
@@ -10514,7 +10514,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "component.list.listItem",
   ]) {
     assertContains(
-      "src/Mockups.Desktop/EditorShell/EmbeddedComponentSlotCatalog.cs",
+      "src/Mockups.Application/EmbeddedComponentSlotCatalog.cs",
       `"${fixedSlotField}"`,
       `List fixed slot '${fixedSlotField}' must retain one typed reference owner`,
     );

@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal static class CollectionFieldAvailability
+public static class CollectionFieldAvailability
 {
     public static bool IsEnabled(
         JsonObject item,

@@ -397,7 +397,7 @@ export function loadModuleScaffoldInventory(
   const modules = requiredObject(manifest.modules, "Desktop Preview manifest modules");
   const components = requiredObject(manifest.components, "Desktop Preview manifest components");
   const valueKinds = parseValueKinds(readFileSync(
-    repositoryPath(repositoryRoot, "src/Mockups.Desktop/EditorShell/FieldDefinition.cs"),
+    repositoryPath(repositoryRoot, "src/Mockups.Application/FieldDefinition.cs"),
     "utf8",
   ));
   const database = new Database(databasePath, { fileMustExist: true, readonly: true });
@@ -613,7 +613,7 @@ export function createModuleScaffoldPlan(
       },
       {
         owner: "dictionary",
-        path: "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs",
+        path: "src/Mockups.Application/GeneratedModuleScaffoldFieldCatalog.cs",
         description: `Register ${spec.dictionaryFields.length} Module dictionary fields.`,
       },
       {
@@ -1148,7 +1148,7 @@ function requireOutsideArchive(candidate: string, archive: string) {
 }
 
 function parseValueKinds(source: string) {
-  const match = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(source);
+  const match = /(?:public|internal) enum ValueKind\s*\{([\s\S]*?)\}/.exec(source);
   if (!match) throw new Error("Unable to read current ValueKind declarations.");
   return new Set(
     match[1]!.split(",").map((entry) => entry.trim()).filter(Boolean),

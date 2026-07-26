@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record EmbeddedComponentSlotDefinition(
+public sealed record EmbeddedComponentSlotDefinition(
     string FieldId,
     string EmbeddedComponentType,
     string Label,
     string RecordClassId,
     string[] SlotPath);
 
-internal static class EmbeddedComponentSlotCatalog
+public static class EmbeddedComponentSlotCatalog
 {
     private static readonly EmbeddedComponentSlotDefinition[] Slots =
     [

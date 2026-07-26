@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record RecordClassFieldDescriptor(
+public sealed record RecordClassFieldDescriptor(
     string Id,
     string Label,
     ValueKind ValueKind,
@@ -22,7 +22,7 @@ internal sealed record RecordClassFieldDescriptor(
     string RuntimeCollectionComponentVariantFieldId = "",
     MotionTimingDefinition? MotionTiming = null);
 
-internal static class RecordClassFieldCatalog
+public static class RecordClassFieldCatalog
 {
     static RecordClassFieldCatalog()
     {
@@ -460,7 +460,7 @@ internal static class RecordClassFieldCatalog
 
     };
 
-    internal static IReadOnlyCollection<RecordClassFieldDescriptor> All => Fields.Values;
+    public static IReadOnlyCollection<RecordClassFieldDescriptor> All => Fields.Values;
 
     public static RecordClassFieldDescriptor Get(string fieldId)
     {

@@ -5,7 +5,7 @@ using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record ComponentClassFieldDescriptor(
+public sealed record ComponentClassFieldDescriptor(
     string Id,
     string Label,
     ValueKind ValueKind,
@@ -21,7 +21,7 @@ internal sealed record ComponentClassFieldDescriptor(
     string RuntimeInputComponentVariantFieldId = "",
     string Unit = "");
 
-internal static partial class ComponentClassFieldCatalog
+public static partial class ComponentClassFieldCatalog
 {
     public const string EmptyIconSlots = "[]";
 
@@ -85,7 +85,7 @@ internal static partial class ComponentClassFieldCatalog
         new("theme.radii.full", "radii.full"),
     ];
 
-    internal static readonly FieldOption[] TypographySizeOptions =
+    public static readonly FieldOption[] TypographySizeOptions =
     [
         new("theme.typography.sizes.xs", "typography.sizes.xs"),
         new("theme.typography.sizes.s", "typography.sizes.s"),
@@ -94,7 +94,7 @@ internal static partial class ComponentClassFieldCatalog
         new("theme.typography.sizes.xl", "typography.sizes.xl"),
     ];
 
-    internal static readonly FieldOption[] IconSizeTokenOptions =
+    public static readonly FieldOption[] IconSizeTokenOptions =
     [
         new("theme.iconSizes.xs", "iconSizes.xs"),
         new("theme.iconSizes.s", "iconSizes.s"),
@@ -126,7 +126,7 @@ internal static partial class ComponentClassFieldCatalog
     private static readonly FieldOption[] IconRowSizeSourceOptions = [new("shared", "Shared"), new("perButton", "Per button")];
     private static readonly FieldOption[] IconBarSizeSourceOptions = [new("shared", "Shared"), new("perRow", "Per row")];
 
-    internal static readonly FieldOption[] SpacingTokenOptions =
+    public static readonly FieldOption[] SpacingTokenOptions =
     [
         new("theme.spacing.none", "spacing.none"),
         new("theme.spacing.xs", "spacing.xs"),
@@ -171,7 +171,7 @@ internal static partial class ComponentClassFieldCatalog
         new("bottom", "Bottom"),
     ];
 
-    internal static readonly FieldOption[] BubbleStatusStateOptions =
+    public static readonly FieldOption[] BubbleStatusStateOptions =
     [
         new("none", "None"),
         new("sent", "Sent"),
@@ -348,7 +348,7 @@ internal static partial class ComponentClassFieldCatalog
             Number: new NumberDefinition(1, 100, 1, 0)),
     ];
 
-    internal static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
+    public static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
     {
         return componentType switch
         {
@@ -359,7 +359,7 @@ internal static partial class ComponentClassFieldCatalog
         };
     }
 
-    internal static IReadOnlyList<ComponentInputBindingDefinition> VariantInputBindingsForComponent(string componentType)
+    public static IReadOnlyList<ComponentInputBindingDefinition> VariantInputBindingsForComponent(string componentType)
     {
         return componentType switch
         {
@@ -453,7 +453,7 @@ internal static partial class ComponentClassFieldCatalog
             ["kind"],
             72,
             "",
-            EditorIcons.Status,
+            "status",
             new Dictionary<string, string>()),
         CanEditStructure: false);
 
@@ -482,7 +482,7 @@ internal static partial class ComponentClassFieldCatalog
             ["kind"],
             72,
             "",
-            EditorIcons.Navigation,
+            "navigation",
             new Dictionary<string, string>()),
         CanEditStructure: false);
 

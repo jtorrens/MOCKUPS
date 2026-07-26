@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal enum ValueKind
+public enum ValueKind
 {
     StringSingleLine,
     StringReadOnly,
@@ -40,7 +40,7 @@ internal enum ValueKind
     Boolean,
 }
 
-internal sealed record FieldOption(
+public sealed record FieldOption(
     string Value,
     string Label,
     string? ColorHex = null,
@@ -55,47 +55,47 @@ internal sealed record FieldOption(
     }
 }
 
-internal sealed record PairFieldLabels(string First, string Second);
+public sealed record PairFieldLabels(string First, string Second);
 
-internal sealed record NumberDefinition(
+public sealed record NumberDefinition(
     decimal? Minimum = null,
     decimal? Maximum = null,
     decimal Increment = 1,
     int DecimalPlaces = 0,
     bool UseSlider = false);
 
-internal sealed record RecordReferenceDefinition(string TableId);
+public sealed record RecordReferenceDefinition(string TableId);
 
-internal sealed record AnimationFieldDefinition(
+public sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,
     bool ExtendsOwnerDuration = true);
 
-internal sealed record BehaviorTimingDefinition(
+public sealed record BehaviorTimingDefinition(
     string SourceFieldId,
     string Unit,
     double BaseFramesPerUnit);
 
-internal sealed record MotionTimingDefinition(
+public sealed record MotionTimingDefinition(
     bool ShowDuration = true,
     bool ShowDelay = true,
     bool ShowEasing = true,
     bool ShowIntensity = true);
 
-internal enum ComponentInputBindingSource
+public enum ComponentInputBindingSource
 {
     Variant,
     Runtime,
     Calculated,
 }
 
-internal sealed record ComponentInputTransitionDefinition(
+public sealed record ComponentInputTransitionDefinition(
     string TargetInputId,
     IReadOnlyList<string> TriggerValues,
     string ReplacementValue,
     string TargetValuePattern = "",
     bool ForwardedTargetOnly = false);
 
-internal sealed record ComponentInputBindingDefinition(
+public sealed record ComponentInputBindingDefinition(
     string Id,
     string Label,
     string JsonKey,
@@ -118,19 +118,19 @@ internal sealed record ComponentInputBindingDefinition(
     BehaviorTimingDefinition? BehaviorTiming = null,
     bool ActionOnly = false);
 
-internal enum ImagePreviewMode
+public enum ImagePreviewMode
 {
     Aspect,
     SquareCrop,
 }
 
-internal sealed record ImagePreviewDefinition(
+public sealed record ImagePreviewDefinition(
     ImagePreviewMode Mode,
     int BaseSize = 0,
     string? ScaleFieldId = null,
     string? OffsetFieldId = null);
 
-internal sealed record FieldDefinition(
+public sealed record FieldDefinition(
     string Id,
     string Label,
     ValueKind ValueKind,
@@ -160,7 +160,7 @@ internal sealed record FieldDefinition(
         : $"{Label} ({Unit})";
 }
 
-internal sealed record FieldValue(
+public sealed record FieldValue(
     FieldDefinition Definition,
     string Value,
     bool IsInherited = false,

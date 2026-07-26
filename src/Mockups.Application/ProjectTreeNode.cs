@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal enum ProjectTreeNodeKind
+public enum ProjectTreeNodeKind
 {
     Project,
     ProductionDataRoot,
@@ -35,7 +35,7 @@ internal enum ProjectTreeNodeKind
     ProductionFont,
 }
 
-internal sealed class ProjectTreeNode
+public sealed class ProjectTreeNode
 {
     public ProjectTreeNode(
         ProjectTreeNodeKind kind,

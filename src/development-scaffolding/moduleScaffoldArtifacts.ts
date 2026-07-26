@@ -14,11 +14,11 @@ export const integratedModuleSpecRoot = "scaffolding/modules";
 export const generatedModuleRegistryPath =
   "src/desktop-preview/generatedModuleScaffoldRegistry.ts";
 export const generatedModuleFieldCatalogPath =
-  "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs";
+  "src/Mockups.Application/GeneratedModuleScaffoldFieldCatalog.cs";
 export const generatedModuleConfigRegistryPath =
   "src/Mockups.Desktop/Data/GeneratedModuleScaffoldConfigRegistry.cs";
 export const generatedModuleEmbeddedSlotsPath =
-  "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldEmbeddedSlots.cs";
+  "src/Mockups.Application/GeneratedModuleScaffoldEmbeddedSlots.cs";
 
 export function loadIntegratedModuleScaffoldSpecs(
   repositoryRoot: string,
@@ -87,7 +87,7 @@ function renderFieldCatalog(specs: readonly ModuleScaffoldSpec[]) {
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
     + `using System.Collections.Generic;\n\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
-    + `internal static class GeneratedModuleScaffoldFieldCatalog\n`
+    + `public static class GeneratedModuleScaffoldFieldCatalog\n`
     + `{\n`
     + `    public static void AddFields(\n`
     + `        Dictionary<string, RecordClassFieldDescriptor> fields)\n`
@@ -182,7 +182,7 @@ function renderEmbeddedSlots(specs: readonly ModuleScaffoldSpec[]) {
     }).join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
-    + `internal static class GeneratedModuleScaffoldEmbeddedSlots\n`
+    + `public static class GeneratedModuleScaffoldEmbeddedSlots\n`
     + `{\n`
     + `    public static EmbeddedComponentSlotDefinition[] All { get; } =\n`
     + `    [\n`

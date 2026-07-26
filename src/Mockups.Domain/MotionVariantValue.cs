@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record MotionVariantValue(
+public sealed record MotionVariantValue(
     string Transition,
     string Direction,
     string Bounds,

@@ -7,32 +7,32 @@ using System.Text.Json.Serialization;
 
 namespace Mockups.DesktopEditorShell.Common;
 
-internal enum DesktopPreviewComponentCategory
+public enum DesktopPreviewComponentCategory
 {
     Component,
     Atom,
     System,
 }
 
-internal sealed record DesktopPreviewComponentManifestEntry(
+public sealed record DesktopPreviewComponentManifestEntry(
     [property: JsonPropertyName("category")] string Category,
     [property: JsonPropertyName("contract")] string Contract,
     [property: JsonPropertyName("resolver")] string Resolver,
     [property: JsonPropertyName("renderable")] string Renderable,
     [property: JsonPropertyName("embeds")] IReadOnlyList<string> Embeds);
 
-internal sealed record DesktopPreviewModuleManifestEntry(
+public sealed record DesktopPreviewModuleManifestEntry(
     [property: JsonPropertyName("label")] string Label,
     [property: JsonPropertyName("resolver")] string Resolver,
     [property: JsonPropertyName("renderable")] string Renderable,
     [property: JsonPropertyName("embeds")] IReadOnlyList<string> Embeds);
 
-internal sealed record DesktopPreviewManifestDocument(
+public sealed record DesktopPreviewManifestDocument(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
     [property: JsonPropertyName("components")] IReadOnlyDictionary<string, DesktopPreviewComponentManifestEntry> Components,
     [property: JsonPropertyName("modules")] IReadOnlyDictionary<string, DesktopPreviewModuleManifestEntry> Modules);
 
-internal static class DesktopPreviewManifest
+public static class DesktopPreviewManifest
 {
     private const string ResourceName = "Mockups.DesktopPreviewManifest.json";
     private static readonly Lazy<DesktopPreviewManifestDocument> Current = new(Load);
