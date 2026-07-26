@@ -13,8 +13,11 @@
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
     <ProjectReference Include="../Mockups.Domain/Mockups.Domain.csproj" />
+    <ProjectReference Include="../Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj" />
     <ProjectReference Include="../Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj" />
     <ProjectReference Include="../Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj" />
+    <ProjectReference Include="../Mockups.Persistence.Sqlite.Production/Mockups.Persistence.Sqlite.Production.csproj" />
+    <ProjectReference Include="../Mockups.Persistence.Sqlite.Resources/Mockups.Persistence.Sqlite.Resources.csproj" />
   </ItemGroup>
 
   <ItemGroup>

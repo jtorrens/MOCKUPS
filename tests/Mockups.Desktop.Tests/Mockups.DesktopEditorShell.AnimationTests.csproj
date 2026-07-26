@@ -16,7 +16,10 @@
     <ProjectReference Include="../../src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj" />
     <ProjectReference Include="../../src/Mockups.Domain/Mockups.Domain.csproj" />
     <ProjectReference Include="../../src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj" />
+    <ProjectReference Include="../../src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj" />
     <ProjectReference Include="../../src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj" />
     <ProjectReference Include="../../src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj" />
+    <ProjectReference Include="../../src/Mockups.Persistence.Sqlite.Production/Mockups.Persistence.Sqlite.Production.csproj" />
+    <ProjectReference Include="../../src/Mockups.Persistence.Sqlite.Resources/Mockups.Persistence.Sqlite.Resources.csproj" />
   </ItemGroup>
 </Project>

@@ -39,11 +39,19 @@ Component Variant of their exact declared type.
 
 SQLite production code is split across independent persistence projects.
 `Mockups.Persistence.Sqlite.Core` owns connection construction, the per-context
-write gate, command execution and the current schema.
-`Mockups.Persistence.Sqlite.Design` owns editor-layout persistence.
-`Mockups.Persistence.Sqlite` temporarily composes those projects with the
-remaining repositories while their owners are extracted. UI packages are
-unavailable to every persistence assembly.
+write gate, command execution, cross-Project reference integrity and the
+current schema. `Mockups.Persistence.Sqlite.Contracts` owns only internal
+focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
+Module, Component Class and editor-layout persistence.
+`Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
+Shot Manager persistence. `Mockups.Persistence.Sqlite.Resources` owns Palette,
+Theme, Device, Actor, Production Font and Icon Theme persistence.
+The three owner assemblies reference Contracts and Core, never another owner
+or the temporary composition assembly. The compiler therefore rejects a
+Design repository that tries to call a Production or Resources implementation,
+and the same rule applies in every direction. `Mockups.Persistence.Sqlite`
+temporarily composes those projects with validation and application operations
+not yet extracted. UI packages are unavailable to every persistence assembly.
 `Mockups.Desktop.Host` is the only executable composition project allowed to
 see both Desktop and Persistence.Sqlite. It opens a composition-only
 `SqliteProjectSession` and passes its named ports into Desktop. SQL packages
@@ -80,9 +88,11 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 There is no universal persistence facade. `SqlitePersistence` validates one
 current database and returns its session descriptor. `EditorLayouts` is backed
 directly by `Mockups.Persistence.Sqlite.Design`; the temporary aggregate no
-longer implements that port. New SQL, connection construction, table mapping
-or write synchronization belongs in the focused assembly and repository that
-own the table.
+longer implements that port. Repository implementations already live in their
+Design, Production or Resources owner; the remaining aggregate coordinates
+legacy application operations during the incremental extraction. New SQL,
+connection construction, table mapping or write synchronization belongs in
+the focused assembly and repository that own the table.
 
 Every `SqliteProjectContext` owns its own write gate. Focused repositories route
 writes through that exact context, and a compound write holds the same gate for

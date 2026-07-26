@@ -142,11 +142,18 @@ capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
 
 `Mockups.Persistence.Sqlite.Core` owns the SQLite context, connection and
-transaction primitives and current schema. `Mockups.Persistence.Sqlite.Design`
-owns the editor-layout store and cannot reference the remaining persistence
-composition assembly. The temporary `Mockups.Persistence.Sqlite` assembly owns
-composition, validation and repositories not yet extracted; each owner moves
-out without adding a reverse reference.
+transaction primitives, cross-Project reference guard and current schema.
+`Mockups.Persistence.Sqlite.Contracts` owns the internal focused repository
+contracts shared by composition and their exact implementation owner.
+`Mockups.Persistence.Sqlite.Design` owns App, Module, Component Class and
+editor-layout repositories; `Mockups.Persistence.Sqlite.Production` owns
+Episode, Shot, Screen and Shot Manager repositories; and
+`Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
+Production Font and Icon Theme repositories. These owner projects can see
+Contracts and Core, but cannot reference the composition assembly or one
+another. The temporary `Mockups.Persistence.Sqlite` assembly owns composition,
+validation and application operations not yet extracted; each remaining owner
+moves out without adding a reverse reference.
 `SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
 session has no data methods and each exposed port is a distinct adapter that
 cannot be cast to an unrelated port. Persistence may reference Application and
