@@ -1426,7 +1426,7 @@ static void ResourceScalarReadsRejectWrongShapes()
         var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         var fields = new RecordClassFieldValueService(
-            database,
+            RecordFields(database),
             database.Production,
             database.Resources);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -3269,6 +3269,10 @@ static IEditorNodeCommandStore NodeCommands(
     SqliteProjectEngine database) =>
     new SqliteEditorNodeCommandPort(database.NodeCommands);
 
+static IRecordClassFieldStore RecordFields(
+    SqliteProjectEngine database) =>
+    new SqliteRecordClassFieldPort(database.RecordFields);
+
 static void PreviewResourceSelectionHasOneSessionRule()
 {
     var options = new[]
@@ -4367,7 +4371,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
 
             var database = new SqliteProjectEngine(temporary);
             var fieldValues = new RecordClassFieldValueService(
-                database,
+                RecordFields(database),
                 database.Production,
                 database.Resources);
             var projectId = treeRoots
@@ -11865,7 +11869,7 @@ static void LockScreenComposesRuntimeStack()
         var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
         var values = new RecordClassFieldValueService(
-            database,
+            RecordFields(database),
             database.Production,
             database.Resources);
         True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);

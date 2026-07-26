@@ -12,7 +12,8 @@ public sealed class SqliteProjectSession
         ProjectPaths = engine.ProjectPaths;
         Navigation = new SqliteEditorNavigationPort(engine);
         CoreFields = new SqliteCoreFieldPort(engine.CoreFields);
-        RecordFields = new SqliteRecordClassFieldPort(engine);
+        RecordFields =
+            new SqliteRecordClassFieldPort(engine.RecordFields);
         ComponentFields =
             new SqliteComponentClassFieldPort(
                 engine.ComponentDocuments);
