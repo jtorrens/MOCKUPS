@@ -19,14 +19,19 @@ internal sealed class ShotCreationDialog
 {
     private readonly Window _owner;
     private readonly IEditorChildStore _database;
+    private readonly EditorOperationCoordinator _operations;
 
-    public ShotCreationDialog(Window owner, IEditorChildStore database)
+    public ShotCreationDialog(
+        Window owner,
+        IEditorChildStore database,
+        EditorOperationCoordinator operations)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
     }
 
-    public Task<ShotCreationDraft?> Show(
+    public async Task<ShotCreationDraft?> Show(
         ProjectTreeNode episode,
         bool preserveExistingActor = false)
     {
@@ -36,7 +41,13 @@ internal sealed class ShotCreationDialog
         }
 
         var project = ProjectAncestor(episode);
-        var actors = _database.GetRequiredActorOptions(project.Id).ToList();
+        var startup = await _operations.ExecuteAsync(
+            () => (
+                Actors: _database.GetRequiredActorOptions(
+                    project.Id).ToList(),
+                ShotNumber: _database.SuggestShotNumber(
+                    episode.Id).ToString()));
+        var actors = startup.Actors;
         var fixedActor = preserveExistingActor
             ? new FieldOption("__preserve__", "the original Actor")
             : null;
@@ -77,7 +88,7 @@ internal sealed class ShotCreationDialog
         actorCombo.SelectionChanged += (_, _) =>
             addButton.IsEnabled = actorCombo.SelectedItem is not null;
         cancelButton.Click += (_, _) => dialog.Close(null);
-        var shotNumber = _database.SuggestShotNumber(episode.Id).ToString();
+        var shotNumber = startup.ShotNumber;
         var definition = new FieldDefinition(
             "shot.creation.shotNumber",
             "Shot number",
@@ -162,7 +173,7 @@ internal sealed class ShotCreationDialog
             Padding = EditorUiDensity.CardThickness(18),
             Child = root,
         };
-        return dialog.ShowDialog<ShotCreationDraft?>(_owner);
+        return await dialog.ShowDialog<ShotCreationDraft?>(_owner);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

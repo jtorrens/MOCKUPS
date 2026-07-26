@@ -60,12 +60,11 @@ internal sealed class EditorFieldValueRouter
             : fieldValue.Value;
     }
 
-    public void Commit(ProjectTreeNode node, string fieldId, string value)
+    public void Persist(ProjectTreeNode node, string fieldId, string value)
     {
         if (_recordClassFields.CanHandle(node.Kind, fieldId))
         {
             _recordClassFields.CommitFieldValue(node, fieldId, value);
-            _postCommitEffects.Apply(node, fieldId, value);
             return;
         }
 
@@ -78,6 +77,17 @@ internal sealed class EditorFieldValueRouter
         if (_coreFields.CanHandle(fieldId))
         {
             _coreFields.CommitFieldValue(node, fieldId, value);
+        }
+    }
+
+    public void ApplyPostCommitEffects(
+        ProjectTreeNode node,
+        string fieldId,
+        string value)
+    {
+        if (_recordClassFields.CanHandle(node.Kind, fieldId)
+            || _coreFields.CanHandle(fieldId))
+        {
             _postCommitEffects.Apply(node, fieldId, value);
         }
     }

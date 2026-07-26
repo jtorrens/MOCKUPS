@@ -17,16 +17,32 @@ internal sealed class ShotModulePickerDialog
 {
     private readonly Window _owner;
     private readonly IModuleInstanceCollectionStore _database;
+    private readonly EditorOperationCoordinator _operations;
 
-    public ShotModulePickerDialog(Window owner, IModuleInstanceCollectionStore database)
+    public ShotModulePickerDialog(
+        Window owner,
+        IModuleInstanceCollectionStore database,
+        EditorOperationCoordinator operations)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
     }
 
-    public Task<ShotModuleInstanceDraft?> Show(string shotId)
+    public async Task<ShotModuleInstanceDraft?> Show(string shotId)
     {
-        var modules = _database.GetAvailableShotModules(shotId);
+        var startup = await _operations.ExecuteAsync(
+            () =>
+            {
+                var modules = _database.GetAvailableShotModules(
+                    shotId);
+                var variants = modules.ToDictionary(
+                    (module) => module.Id,
+                    (module) => _database.GetModuleVariantOptions(
+                        module.Id).ToList());
+                return (Modules: modules, Variants: variants);
+            });
+        var modules = startup.Modules;
         var dialog = new SukiWindow
         {
             Title = "Add Screen to Shot",
@@ -92,7 +108,9 @@ internal sealed class ShotModulePickerDialog
         void RefreshVariants()
         {
             var module = SelectedModule();
-            var options = module is null ? [] : _database.GetModuleVariantOptions(module.Id).ToList();
+            var options = module is null
+                ? []
+                : startup.Variants[module.Id];
             variantCombo.ItemsSource = options;
             variantCombo.SelectedItem = options.FirstOrDefault();
             ApplyDefaultName();
@@ -175,7 +193,7 @@ internal sealed class ShotModulePickerDialog
             RefreshAddButton();
             if (modules.Count == 0) moduleCombo.IsEnabled = false;
         };
-        return dialog.ShowDialog<ShotModuleInstanceDraft?>(_owner);
+        return await dialog.ShowDialog<ShotModuleInstanceDraft?>(_owner);
 
         void AddField(string label, Control control, int row)
         {

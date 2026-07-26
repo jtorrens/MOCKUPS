@@ -142,6 +142,11 @@ contract; it does not reimplement those semantics.
 Application may reference Domain and has no package
 capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
+`EditorOperationCoordinator` is the session-owned execution boundary for
+ordinary editor persistence. It serializes submitted operations, runs their
+synchronous repository work on a controlled worker and cancels queued work
+when the session closes. Visual controls apply successful results only after
+the worker completes; UI effects never execute inside that worker.
 
 `Mockups.Persistence.Sqlite.Core` owns the SQLite context, connection and
 transaction primitives, cross-Project reference guard and current schema.
@@ -260,8 +265,9 @@ editor-card composition, Preview host wiring, generic modal hosting and
 application of coordinator transitions to visual controls. It does not retain
 parallel mutable copies of workspace session state.
 Window closing disposes both workspace coordination and the Preview controller;
-no tree read, playback preparation, preload, timer, frame reservation or
-external rasterizer process may outlive that window.
+it also cancels queued editor persistence. No tree read, field or lifecycle
+write, playback preparation, preload, timer, frame reservation or external
+rasterizer process may outlive that window.
 
 Editor-specific fields, collections, persistence rules, asset logic and domain
 dialogs live in their owning editor or shared editor service.

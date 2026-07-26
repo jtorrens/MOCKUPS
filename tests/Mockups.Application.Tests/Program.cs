@@ -25,6 +25,9 @@ var tests = new (string Name, Action Run)[]
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
+    ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
+    ("editor operations preserve their submission order", EditorOperationsAreSerialized),
+    ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
 
 var failures = new List<string>();
@@ -46,6 +49,73 @@ foreach (var (name, run) in tests)
 Console.WriteLine(
     $"Application workspace tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
+
+static void EditorOperationsRunOnWorker()
+{
+    using var coordinator = new EditorOperationCoordinator();
+    var callerThread = Environment.CurrentManagedThreadId;
+    var operationThread = coordinator.ExecuteAsync(
+            () => Environment.CurrentManagedThreadId)
+        .GetAwaiter()
+        .GetResult();
+
+    True(operationThread != callerThread);
+}
+
+static void EditorOperationsAreSerialized()
+{
+    using var coordinator = new EditorOperationCoordinator();
+    using var firstStarted = new ManualResetEventSlim();
+    using var releaseFirst = new ManualResetEventSlim();
+    var order = new List<int>();
+    var first = coordinator.ExecuteAsync(
+        () =>
+        {
+            firstStarted.Set();
+            if (!releaseFirst.Wait(TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException(
+                    "Timed out waiting to release the first editor operation.");
+            }
+            order.Add(1);
+        });
+    True(firstStarted.Wait(TimeSpan.FromSeconds(10)));
+    var second = coordinator.ExecuteAsync(() => order.Add(2));
+    Thread.Sleep(50);
+    Equal(0, order.Count);
+
+    releaseFirst.Set();
+    Task.WhenAll(first, second).GetAwaiter().GetResult();
+    Equal(2, order.Count);
+    Equal(1, order[0]);
+    Equal(2, order[1]);
+}
+
+static void DisposeCancelsQueuedEditorOperations()
+{
+    var coordinator = new EditorOperationCoordinator();
+    using var firstStarted = new ManualResetEventSlim();
+    using var releaseFirst = new ManualResetEventSlim();
+    var secondRan = false;
+    var first = coordinator.ExecuteAsync(
+        () =>
+        {
+            firstStarted.Set();
+            if (!releaseFirst.Wait(TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException(
+                    "Timed out waiting to release the first editor operation.");
+            }
+        });
+    True(firstStarted.Wait(TimeSpan.FromSeconds(10)));
+    var second = coordinator.ExecuteAsync(() => secondRan = true);
+    coordinator.Dispose();
+    releaseFirst.Set();
+    first.GetAwaiter().GetResult();
+    Throws<OperationCanceledException>(
+        () => second.GetAwaiter().GetResult());
+    True(!secondRan);
+}
 
 static void RuntimeDefinitionsPreserveOwner()
 {

@@ -12,6 +12,7 @@ internal sealed class EditorNodeCommandController
     private readonly Window _owner;
     private readonly IEditorNodeCommandStore _database;
     private readonly IProjectPathResolver _projectPaths;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Func<Task<bool>> _loadProjectTree;
@@ -23,6 +24,7 @@ internal sealed class EditorNodeCommandController
         Window owner,
         IEditorNodeCommandStore database,
         IProjectPathResolver projectPaths,
+        EditorOperationCoordinator operations,
         Func<bool> isDark,
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Func<Task<bool>> loadProjectTree,
@@ -33,6 +35,7 @@ internal sealed class EditorNodeCommandController
         _owner = owner;
         _database = database;
         _projectPaths = projectPaths;
+        _operations = operations;
         _isDark = isDark;
         _treeRoots = treeRoots;
         _loadProjectTree = loadProjectTree;
@@ -54,12 +57,16 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            var variant = node.Kind switch
-            {
-                ProjectTreeNodeKind.ComponentVariant => _database.SaveComponentVariant(node, variantName),
-                ProjectTreeNodeKind.ModuleVariant => _database.SaveModuleVariant(node, variantName),
-                _ => throw new InvalidOperationException("Variants can only be saved from a selected variant."),
-            };
+            var variant = await _operations.ExecuteAsync(
+                () => node.Kind switch
+                {
+                    ProjectTreeNodeKind.ComponentVariant =>
+                        _database.SaveComponentVariant(node, variantName),
+                    ProjectTreeNodeKind.ModuleVariant =>
+                        _database.SaveModuleVariant(node, variantName),
+                    _ => throw new InvalidOperationException(
+                        "Variants can only be saved from a selected variant."),
+                });
             _reloadAndSelect(variant);
         }
         catch (Exception exception)
@@ -93,10 +100,22 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
-                _database.ReplaceComponentVariantConfig(node, snapshot.ConfigJson);
-            else
-                _database.ReplaceModuleVariantConfig(node, snapshot.ConfigJson);
+            await _operations.ExecuteAsync(
+                () =>
+                {
+                    if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
+                    {
+                        _database.ReplaceComponentVariantConfig(
+                            node,
+                            snapshot.ConfigJson);
+                    }
+                    else
+                    {
+                        _database.ReplaceModuleVariantConfig(
+                            node,
+                            snapshot.ConfigJson);
+                    }
+                });
             _reloadAndSelect(node);
         }
         catch (Exception exception)
@@ -111,6 +130,7 @@ internal sealed class EditorNodeCommandController
             _owner,
             _database,
             _projectPaths,
+            _operations,
             ShowInfoDialog);
         var child = await workflow.TryAdd(parent);
         if (child is null) return;
@@ -135,13 +155,15 @@ internal sealed class EditorNodeCommandController
                 var episode = node.Parent;
                 var draft = await new ShotCreationDialog(
                     _owner,
-                    _database).Show(
+                    _database,
+                    _operations).Show(
                         episode,
                         preserveExistingActor: true);
                 if (draft is null) return;
-                var copy = _database.DuplicateShot(
-                    node,
-                    draft.ShotNumber);
+                var copy = await _operations.ExecuteAsync(
+                    () => _database.DuplicateShot(
+                        node,
+                        draft.ShotNumber));
                 _reloadAndSelect(copy);
             }
             catch (Exception exception)
@@ -154,7 +176,8 @@ internal sealed class EditorNodeCommandController
         }
         try
         {
-            var copy = _database.Duplicate(node);
+            var copy = await _operations.ExecuteAsync(
+                () => _database.Duplicate(node));
             _reloadAndSelect(copy);
         }
         catch (Exception exception)
@@ -180,7 +203,8 @@ internal sealed class EditorNodeCommandController
 
         try
         {
-            var renamed = _database.RenameDirectNode(node, nextName);
+            var renamed = await _operations.ExecuteAsync(
+                () => _database.RenameDirectNode(node, nextName));
             _reloadAndSelect(renamed);
         }
         catch (Exception exception)
@@ -189,26 +213,25 @@ internal sealed class EditorNodeCommandController
         }
     }
 
-    public Task ToggleVariantLock(ProjectTreeNode node)
+    public async Task ToggleVariantLock(ProjectTreeNode node)
     {
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         try
         {
-            var toggled = node.Kind == ProjectTreeNodeKind.ComponentVariant
-                ? _database.ToggleComponentVariantLock(node)
-                : _database.ToggleModuleVariantLock(node);
+            var toggled = await _operations.ExecuteAsync(
+                () => node.Kind == ProjectTreeNodeKind.ComponentVariant
+                    ? _database.ToggleComponentVariantLock(node)
+                    : _database.ToggleModuleVariantLock(node));
             _reloadAndSelect(toggled);
         }
         catch (Exception exception)
         {
             _messages.Error($"Toggle variant lock {node.Name}", exception);
         }
-
-        return Task.CompletedTask;
     }
 
     public async Task DeleteNode(ProjectTreeNode node)
@@ -223,7 +246,8 @@ internal sealed class EditorNodeCommandController
         node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
         if (node.Parent is null) return;
 
-        var usages = _database.GetReferenceUsageDetails(node);
+        var usages = await _operations.ExecuteAsync(
+            () => _database.GetReferenceUsageDetails(node));
         if (usages.Count > 0)
         {
             var selected = await new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages);
@@ -248,7 +272,8 @@ internal sealed class EditorNodeCommandController
         var nextSelectionId = node.Parent.Id;
         try
         {
-            _database.Delete(node);
+            await _operations.ExecuteAsync(
+                () => _database.Delete(node));
         }
         catch (Exception exception)
         {

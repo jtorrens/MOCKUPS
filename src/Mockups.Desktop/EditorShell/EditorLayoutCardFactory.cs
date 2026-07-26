@@ -263,16 +263,20 @@ internal sealed class EditorLayoutCardFactory
             _openRuntimeComponentOverrides);
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
-        control.ValueCommitted += (_, value) =>
+        control.ValueCommitted += async (_, value) =>
         {
             try
             {
-                _fieldCommitCoordinator.Commit(
+                await _fieldCommitCoordinator.CommitAsync(
                     control,
                     value,
                     (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
                     () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
-                    (storedValue) => _fieldValues.Commit(node, field.Definition.Id, storedValue));
+                    (storedValue) => _fieldValues.Persist(node, field.Definition.Id, storedValue));
+                _fieldValues.ApplyPostCommitEffects(
+                    node,
+                    field.Definition.Id,
+                    control.Value);
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 _activeFieldControls.RefreshPreviews();
                 _refreshPreview();
@@ -301,20 +305,24 @@ internal sealed class EditorLayoutCardFactory
             _openRuntimeComponentOverrides);
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
-        control.ValueCommitted += (_, value) =>
+        control.ValueCommitted += async (_, value) =>
         {
             try
             {
                 if (value == field.Definition.InheritedStorageValue)
                 {
-                    _componentClassFieldValues.CommitEmbeddedFieldValue(context, field.Definition.Id, value);
+                    await _fieldCommitCoordinator.ExecuteAsync(
+                        () => _componentClassFieldValues.CommitEmbeddedFieldValue(
+                            context,
+                            field.Definition.Id,
+                            value));
                     control.AcceptInheritedValueAsDefault();
                     _activeFieldControls.RefreshPreviews();
                     _refreshPreview();
                     return;
                 }
 
-                _fieldCommitCoordinator.Commit(
+                await _fieldCommitCoordinator.CommitAsync(
                     control,
                     value,
                     (draftValue) => draftValue,

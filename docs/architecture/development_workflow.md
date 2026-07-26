@@ -246,6 +246,10 @@ valid prepared session is the only route to `MainWindow`; a typed missing or
 invalid result opens the controlled recovery surface and performs no repair.
 Subsequent workspace reads use the public asynchronous coordinator boundary.
 Desktop cannot compile calls to its internal synchronous loading helpers.
+Ordinary field commits and node lifecycle commands use the separate
+session-owned `EditorOperationCoordinator`. Repository work remains
+synchronous behind that boundary, while control updates, navigation and error
+presentation resume on the visual context only after completion.
 
 The visual editor is a single-instance workstation application. The Host owns
 the operating-system lease. A second launch exits before constructing Avalonia,

@@ -46,7 +46,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorProductionNavigationActions _productionNavigationActions;
     private readonly EditorTreeExpansionState _treeExpansion = new();
-    private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator = new();
+    private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator;
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly EditorWorkspaceCoordinator _workspaceCoordinator;
     private bool _isUpdatingProductionPicker;
@@ -73,6 +73,8 @@ public partial class MainWindow : SukiWindow
         _componentClassFieldValues = application.ComponentClassFieldValues;
         _productionShotContext = application.ProductionShotContext;
         _workspaceCoordinator = application.WorkspaceCoordinator;
+        _fieldCommitCoordinator = new EditorFieldCommitCoordinator(
+            application.Operations);
         InitializeComponent();
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _inlinePreviews = EditorInlinePreviewControllerFactory.Create(
@@ -108,6 +110,7 @@ public partial class MainWindow : SukiWindow
             this,
             data.NodeCommands,
             data.ProjectPaths,
+            application.Operations,
             () => _themeController.IsDark,
             () => Session.TreeRoots,
             LoadProjectTreeAsync,
@@ -155,6 +158,7 @@ public partial class MainWindow : SukiWindow
         _domainDialogs = new EditorDomainDialogService(
             this,
             data.DomainDialogs,
+            application.Operations,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
@@ -317,6 +321,7 @@ public partial class MainWindow : SukiWindow
         {
             _shellState.Save(CreateSessionHistoryState());
             _productionNavigationActions.Dispose();
+            application.Operations.Dispose();
             _workspaceCoordinator.Dispose();
             _previewController.Dispose();
         };

@@ -18,17 +18,20 @@ internal sealed class EditorAddChildWorkflow
     private readonly Window _owner;
     private readonly IEditorChildStore _database;
     private readonly IProjectPathResolver _projectPaths;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<string, string, Task> _showInfo;
 
     public EditorAddChildWorkflow(
         Window owner,
         IEditorChildStore database,
         IProjectPathResolver projectPaths,
+        EditorOperationCoordinator operations,
         Func<string, string, Task> showInfo)
     {
         _owner = owner;
         _database = database;
         _projectPaths = projectPaths;
+        _operations = operations;
         _showInfo = showInfo;
     }
 
@@ -53,7 +56,10 @@ internal sealed class EditorAddChildWorkflow
         if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
         {
             var startingPoint = await ChooseThemeStartingPoint();
-            return startingPoint is null ? null : _database.AddTheme(parent, startingPoint);
+            return startingPoint is null
+                ? null
+                : await _operations.ExecuteAsync(
+                    () => _database.AddTheme(parent, startingPoint));
         }
 
         if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
@@ -63,20 +69,30 @@ internal sealed class EditorAddChildWorkflow
 
         if (parent.Kind == ProjectTreeNodeKind.Shot)
         {
-            var draft = await new ShotModulePickerDialog(_owner, _database).Show(parent.Id);
-            return draft is null ? null : _database.AddModuleInstance(parent, draft);
+            var draft = await new ShotModulePickerDialog(
+                _owner,
+                _database,
+                _operations).Show(parent.Id);
+            return draft is null
+                ? null
+                : await _operations.ExecuteAsync(
+                    () => _database.AddModuleInstance(parent, draft));
         }
 
         if (parent.Kind == ProjectTreeNodeKind.Episode)
         {
             try
             {
-                var draft = await new ShotCreationDialog(_owner, _database).Show(parent);
+                var draft = await new ShotCreationDialog(
+                    _owner,
+                    _database,
+                    _operations).Show(parent);
                 if (draft is null) return null;
-                return _database.AddShot(
-                    parent,
-                    draft.ActorId,
-                    draft.ShotNumber);
+                return await _operations.ExecuteAsync(
+                    () => _database.AddShot(
+                        parent,
+                        draft.ActorId,
+                        draft.ShotNumber));
             }
             catch (Exception exception)
             {
@@ -85,7 +101,8 @@ internal sealed class EditorAddChildWorkflow
             }
         }
 
-        return _database.AddChild(parent);
+        return await _operations.ExecuteAsync(
+            () => _database.AddChild(parent));
     }
 
     private async Task<ProjectTreeNode?> ImportDevice(ProjectTreeNode devicesRoot)
@@ -95,8 +112,17 @@ internal sealed class EditorAddChildWorkflow
             var dialog = new DeviceImportDialog(_owner, new LabsViewportsDeviceCatalogProvider());
             var result = await dialog.ShowAsync();
             if (result is null) return null;
-            if (result.CreateBlank) return _database.AddChild(devicesRoot);
-            return result.Draft is null ? null : _database.AddImportedDevice(devicesRoot, result.Draft);
+            if (result.CreateBlank)
+            {
+                return await _operations.ExecuteAsync(
+                    () => _database.AddChild(devicesRoot));
+            }
+            return result.Draft is null
+                ? null
+                : await _operations.ExecuteAsync(
+                    () => _database.AddImportedDevice(
+                        devicesRoot,
+                        result.Draft));
         }
         catch (Exception exception)
         {
@@ -109,7 +135,8 @@ internal sealed class EditorAddChildWorkflow
     {
         try
         {
-            var result = _database.RefreshIconThemeSets(parent);
+            var result = await _operations.ExecuteAsync(
+                () => _database.RefreshIconThemeSets(parent));
             await _showInfo("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s) not present in every set.");
         }
         catch (Exception exception)
@@ -209,7 +236,8 @@ internal sealed class EditorAddChildWorkflow
         };
 
         var project = ProjectAncestor(fontsRoot);
-        var mediaRoot = _database.GetProjectSettings(project.Id).MediaRoot;
+        var mediaRoot = await _operations.ExecuteAsync(
+            () => _database.GetProjectSettings(project.Id).MediaRoot);
         var fullMediaRoot = ResolveProjectMediaRoot(mediaRoot);
         if (!string.IsNullOrWhiteSpace(fullMediaRoot) && Directory.Exists(fullMediaRoot))
         {
@@ -221,7 +249,10 @@ internal sealed class EditorAddChildWorkflow
 
         try
         {
-            return _database.ImportProductionFont(fontsRoot, files.Select((file) => file.Path.LocalPath).ToList());
+            return await _operations.ExecuteAsync(
+                () => _database.ImportProductionFont(
+                    fontsRoot,
+                    files.Select((file) => file.Path.LocalPath).ToList()));
         }
         catch (Exception exception)
         {

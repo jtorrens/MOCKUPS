@@ -11,6 +11,7 @@ internal sealed class EditorDomainDialogService
 {
     private readonly Window _owner;
     private readonly IEditorDomainDialogStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<Task<string?>> _browseSvgFile;
@@ -19,6 +20,7 @@ internal sealed class EditorDomainDialogService
     public EditorDomainDialogService(
         Window owner,
         IEditorDomainDialogStore database,
+        EditorOperationCoordinator operations,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         Func<Task<string?>> browseSvgFile,
@@ -26,6 +28,7 @@ internal sealed class EditorDomainDialogService
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
         _isDark = isDark;
         _showInfo = showInfo;
         _browseSvgFile = browseSvgFile;
@@ -86,7 +89,10 @@ internal sealed class EditorDomainDialogService
 
     public Task<ShotModuleInstanceDraft?> DefineModuleInstanceForShot(string shotId)
     {
-        return new ShotModulePickerDialog(_owner, _database).Show(shotId);
+        return new ShotModulePickerDialog(
+            _owner,
+            _database,
+            _operations).Show(shotId);
     }
 
     public Task<bool> ConfirmModuleInstanceDelete(ProjectTreeNode node)

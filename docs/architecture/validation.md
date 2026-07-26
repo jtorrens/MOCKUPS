@@ -39,6 +39,8 @@ It includes:
 - per-context SQLite write coordination, covering an independent write while a
   second database gate is held and serialized concurrent writes inside one
   database context;
+- UI-independent editor-operation coordination, covering worker execution,
+  submission ordering and cancellation of queued work at session disposal;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread

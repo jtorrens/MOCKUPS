@@ -32,6 +32,7 @@ internal sealed record DesktopApplicationServices(
     ComponentClassFieldValueService ComponentClassFieldValues,
     ProductionShotContextService ProductionShotContext,
     EditorWorkspaceCoordinator WorkspaceCoordinator,
+    EditorOperationCoordinator Operations,
     ProductionOutputRootStore ProductionOutputRoots)
 {
     public static DesktopApplicationServices Create(
@@ -49,6 +50,7 @@ internal sealed record DesktopApplicationServices(
             new ProductionShotContextService(
                 new ProductionShotContextDataSource(data.Preview)),
             new EditorWorkspaceCoordinator(data.Navigation),
+            new EditorOperationCoordinator(),
             productionOutputRoots);
     }
 }
