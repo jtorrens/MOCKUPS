@@ -113,6 +113,18 @@ immutable output.
 
 ## Layer ownership
 
+### Physical .NET boundaries
+
+Every extracted layer is a separate project. A source file cannot cross a
+layer unless its project declares that exact `ProjectReference`; the evaluated
+project graph is an executable repository contract.
+
+`Mockups.Domain` owns dependency-free current value objects and strict document
+rules. It has no project or package references. The desktop application may
+consume Domain, but Domain cannot see Avalonia, SQLite, Preview runtime or the
+desktop assembly. Each later extraction must preserve that direction and add
+its exact allowed edge to the project-boundary test.
+
 ### SQLite and repositories
 
 Repositories own table SQL, row mapping and prepared writes. They do not own

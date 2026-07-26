@@ -178,7 +178,7 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
   });
 }
 
-for (const directory of ["src/desktop-preview", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
+for (const directory of ["src/desktop-preview", "src/Mockups.Domain", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
   for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
     const source = readText(relative(filePath));
     for (const retired of retiredTimeFields) {
@@ -885,9 +885,9 @@ assertContains(
   "Runtime option action normalization must consume the shared strict option projection",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/DevicePreviewMetrics.cs",
-  "internal sealed record DevicePreviewMetrics(",
-  "resolved Device Preview metrics must be a common top-level DTO",
+  "src/Mockups.Domain/DevicePreviewMetrics.cs",
+  "public sealed record DevicePreviewMetrics(",
+  "resolved Device Preview metrics must be a public Domain DTO",
 );
 assertDoesNotContain(
   "src/Mockups.Desktop/Data/SpikeDatabase.Records.cs",
@@ -1206,7 +1206,7 @@ assertContains(
   "the animation document store must delegate one explicit complete document write",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/ModuleInstanceAnimationDocumentContract.cs",
+  "src/Mockups.Domain/ModuleInstanceAnimationDocumentContract.cs",
   "keyframes must be stored in ascending frame order",
   "the common animation document owner must require persisted owner-local keyframe order",
 );
@@ -1713,7 +1713,7 @@ assertContains(
   "the Module repository must validate every complete Variant config through its owner",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/ModuleAppearanceModeContract.cs",
+  "src/Mockups.Domain/ModuleAppearanceModeContract.cs",
   "public static string Resolve(JsonObject config, string inheritedMode, string owner)",
   "Module appearance mode validation and inheritance must have one common owner",
 );
@@ -1759,12 +1759,12 @@ assertDoesNotContain(
   "the web renderer must not recompute effective Theme mode",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/TypographyStyleValue.cs",
+  "src/Mockups.Domain/TypographyStyleValue.cs",
   'JsonPath.ParseRequiredObject(value, "Typography Style value")',
   "Typography Style must parse every non-sentinel value as a required object",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/TypographyStyleValue.cs",
+  "src/Mockups.Domain/TypographyStyleValue.cs",
   "as JsonObject ?? []",
   "Typography Style must not reinterpret a wrong JSON root as inherited",
 );
@@ -1804,7 +1804,7 @@ for (const nodeProcessConsumer of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/VariantReferenceId.cs",
+  "src/Mockups.Domain/VariantReferenceId.cs",
   'public const string Separator = "::variant::";',
   "Component and Module Variants must share one full-reference grammar",
 );
@@ -1886,13 +1886,13 @@ for (const retiredVariantEnvelopeHelper of [
 }
 for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId(", "CreateSource("]) {
   assertContains(
-    "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
+    "src/Mockups.Domain/VariantEnvelopeContract.cs",
     sharedVariantEnvelopeOperation,
     `Variant envelope contract must own ${sharedVariantEnvelopeOperation}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Domain/VariantEnvelopeContract.cs",
   'public const string DefaultId = "default";',
   "Component and Module Variants must share one stable Default Variant id",
 );
@@ -1954,7 +1954,7 @@ for (const retiredInactiveSource of [
   }
 }
 assertContains(
-  "src/Mockups.Desktop/Common/ConversationMessageActorContract.cs",
+  "src/Mockups.Domain/ConversationMessageActorContract.cs",
   'public const string ConversationRecordClassId = "module.core.chat"',
   "the Module runtime-document registry must route Conversation by its exact stable record class",
 );
@@ -2201,12 +2201,12 @@ function assertDesktopJsonRootsAreCanonical() {
 }
 assertDesktopJsonRootsAreCanonical();
 assertContains(
-  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Domain/VariantEnvelopeContract.cs",
   "RequiredBoolean",
   "the shared Variant envelope must require explicit boolean flags",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Domain/VariantEnvelopeContract.cs",
   "must contain the stable Default Variant id '{DefaultId}'",
   "the shared Variant envelope must require the stable Default id",
 );
@@ -4208,7 +4208,7 @@ for (const requiredProductionFontDocumentTerm of [
   "normalized safe relative path",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Common/ProductionFontFilesContract.cs",
+    "src/Mockups.Domain/ProductionFontFilesContract.cs",
     requiredProductionFontDocumentTerm,
     `Production Font file documents must require ${requiredProductionFontDocumentTerm}`,
   );
@@ -5247,7 +5247,7 @@ for (const legacyTextBoxComponentInput of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/DeviceMetricRules.cs",
+  "src/Mockups.Domain/DeviceMetricRules.cs",
   "JsonPath.NumberAt(metrics,",
   "device preview metric reads must be strict; defaults belong in seed/import normalization, not preview rendering",
 );
@@ -5641,12 +5641,12 @@ for (const retiredRuntimeReconciliationRepair of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/BehaviorTimingValue.cs",
+  "src/Mockups.Domain/BehaviorTimingValue.cs",
   "catch",
   "Behavior Timing must not catch invalid current values and return a plausible default",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/BehaviorTimingValue.cs",
+  "src/Mockups.Domain/BehaviorTimingValue.cs",
   "JsonPath.ParseRequiredObject(json, context)",
   "Behavior Timing must require its current object document",
 );
@@ -5707,7 +5707,7 @@ assertDoesNotContain(
   "web Behavior Timing must not coerce invalid cadence, sibling or Theme path data",
 );
 for (const themeNumericDurationConsumer of [
-  "src/Mockups.Desktop/Common/BehaviorTimingResolver.cs",
+  "src/Mockups.Domain/BehaviorTimingResolver.cs",
   "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
@@ -5726,7 +5726,7 @@ for (const requiredThemeNumericOwnerTerm of [
   "must be positive",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Common/ThemeNumericTokenValue.cs",
+    "src/Mockups.Domain/ThemeNumericTokenValue.cs",
     requiredThemeNumericOwnerTerm,
     `numeric Theme values must keep strict owner rule '${requiredThemeNumericOwnerTerm}'`,
   );
@@ -5752,7 +5752,7 @@ assertContains(
   "Design Preview actions must reject undeclared additional Theme duration tokens",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/ThemeNumericTokenCatalog.cs",
+  "src/Mockups.Domain/ThemeNumericTokenCatalog.cs",
   'Token("theme.motion.reflowDurationMs",',
   "generic State/Reflow action timing must use the declared numeric Theme-token catalog",
 );
@@ -5823,7 +5823,7 @@ for (const retiredActionRuntimeFallback of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "must be positive.",
   "desktop runtime owner timeline must reject non-positive active finite action durations",
 );
@@ -5843,12 +5843,12 @@ assertDoesNotContain(
   "web runtime owner timeline must not treat durationInputId as a JSON storage key",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "FieldValue(item, fields, durationInputId)",
   "desktop runtime owner timeline must resolve durationInputId through its stable field definition",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "item[durationInputId]",
   "desktop runtime owner timeline must not treat durationInputId as a JSON storage key",
 );
@@ -6199,12 +6199,12 @@ assertDoesNotContain(
   "animation target discovery must not skip a malformed declared item Runtime contract",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "src/Mockups.Domain/RuntimeComponentCollectionItemDocumentContract.cs",
   "VariantReferenceId.TryParse(reference",
   "non-empty embedded collection references must use the full stable Variant grammar",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "src/Mockups.Domain/RuntimeComponentCollectionItemDocumentContract.cs",
   "if (reference.Length == 0) return reference;",
   "the explicit empty Component State sentinel must remain distinct from malformed references",
 );
@@ -6312,7 +6312,7 @@ for (const strictEmbeddedDocumentMessage of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/JsonPath.cs",
+  "src/Mockups.Domain/JsonPath.cs",
   'return ParseRequiredNumberNode(value, "Numeric value");',
   "record numeric writes must use the common required finite-number parser",
 );
@@ -6321,7 +6321,7 @@ for (const retiredNumericWriteFallback of [
   "? integerValue : 0",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/JsonPath.cs",
+    "src/Mockups.Domain/JsonPath.cs",
     retiredNumericWriteFallback,
     `numeric document writes must not coerce invalid text to zero (${retiredNumericWriteFallback})`,
   );
@@ -6356,7 +6356,7 @@ for (const requiredResourceScalarHelper of [
   "public static string RequiredStringPair(",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Common/JsonPath.cs",
+    "src/Mockups.Domain/JsonPath.cs",
     requiredResourceScalarHelper,
     `current resource fields must use exact JSON scalar helpers (${requiredResourceScalarHelper})`,
   );
@@ -6388,7 +6388,7 @@ for (const retiredResourceReadFallback of [
   ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "{}"'],
   ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "light"'],
   ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "normal"'],
-  ["src/Mockups.Desktop/Common/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
+  ["src/Mockups.Domain/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
   ["src/Mockups.Desktop/Data/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
 ] as const) {
   assertDoesNotContain(
@@ -6410,7 +6410,7 @@ for (const strictPairValueKindCase of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/PaletteAlphaPair.cs",
+  "src/Mockups.Domain/PaletteAlphaPair.cs",
   "public static PaletteAlphaPair ParseRequired(string value, string context)",
   "Palette color-alpha pairs must own their complete required envelope",
 );
@@ -6420,7 +6420,7 @@ for (const retiredPaletteAlphaFallback of [
   "SplitPair(string value, string firstFallback, string secondFallback)",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/PaletteAlphaPair.cs",
+    "src/Mockups.Domain/PaletteAlphaPair.cs",
     retiredPaletteAlphaFallback,
     `Palette color-alpha current values must not reconstruct missing members (${retiredPaletteAlphaFallback})`,
   );
@@ -6935,12 +6935,12 @@ assertSourceContains(
   "a module runtime contract must declare which action defines its finite instance duration",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "DeclaredBaseDuration(contract)",
   "module-instance duration must be evaluated generically from the declared runtime action",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'if (action["extendsModuleDuration"]?.GetValue<bool>() != true) continue;',
   "finite collection-item actions must be able to extend module duration through their declarative contract",
 );
@@ -7186,7 +7186,7 @@ assertMatches(
   "Bubble must explicitly bind its embedded Audio badge visibility at the child boundary",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'Timeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false',
   "field metadata must decide whether a field advances serial owner duration",
 );
@@ -7854,7 +7854,7 @@ assertSourceContains(
   "Lock Screen must declare its explicit duration policy in its own module contract",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Domain/RuntimeDurationContract.cs",
   "lockScreen",
   "the generic duration contract must not know concrete modules",
 );
@@ -7869,7 +7869,7 @@ assertDoesNotContain(
   "keyframe edits must refresh their local animation surface without rebuilding the editor",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "firstMatchingValue",
   "entity-owned keyframes must support a generic stable first-appearance origin",
 );
@@ -7921,7 +7921,7 @@ assertContains(
   "Retime off must remove the persisted target-duration override",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "FieldReferenceDurationFrames",
   "reference-duration lanes must resolve through the common owner timeline",
 );
@@ -7951,52 +7951,52 @@ assertContains(
   "the generic preview owner timeline must support late fields that do not advance collection sequencing",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract")',
   "the desktop owner timeline must preserve optional absence but reject a present invalid collections envelope",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.ObjectItems(values, $"Runtime owner collection \'{key}\'")',
   "the desktop owner timeline must reject malformed collection items instead of filtering them",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline")',
   "the desktop owner timeline must preserve exact pre/post duration field-id lists",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "if (!collectionKeys.Add(key))",
   "the desktop owner timeline must reject duplicate effective collection keys",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "if (!_items.TryAdd(targetId, new ItemTiming(",
   "the desktop owner timeline must reject duplicate stable target ids instead of overwriting owners",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'return JsonPath.RequiredString(collection, key, "Runtime owner collection");',
   "the desktop owner timeline must validate the first explicitly declared collection key",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'ValidateUniqueFieldIds(fields, "Runtime owner item fields")',
   "the desktop owner timeline must reject ambiguous direct/projected field ids",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "ValidateTemporalActions(",
   "the desktop owner timeline must validate every present temporal action flag and reference",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   '"durationEnabledInputId",',
   "finite desktop actions must declare the exact owner boolean used for base activation",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "references missing play field",
   "finite desktop actions must not disappear when their play field is missing",
 );
@@ -8012,7 +8012,7 @@ for (const permissiveRuntimeTimelineEnvelope of [
   'enabled.TryGetValue<bool>(out var enabledValue)',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
     permissiveRuntimeTimelineEnvelope,
     `the desktop owner timeline must not filter malformed contract envelopes (${permissiveRuntimeTimelineEnvelope})`,
   );
@@ -8109,32 +8109,32 @@ for (const permissiveWebRuntimeTimelineEnvelope of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "ValidateAnimationEnvelope(animation);",
   "the desktop timeline must validate every present transient animation calculation envelope",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalObjectArray(_animation, "tracks", "Runtime owner animation")',
   "the desktop timeline must read present tracks as an exact object array",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime")',
   "the desktop timeline must reject invalid present root retime durations",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "var trackTargets = new HashSet<(string FieldId, string TargetId)>();",
   "the desktop transient timeline must keep each field/target track address unique",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "if (!frames.Add(frame))",
   "the desktop transient timeline must reject duplicate frames within a track",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "if (frame < previousFrame)",
   "the desktop transient timeline must reject out-of-order frames instead of sorting them into plausibility",
 );
@@ -8144,7 +8144,7 @@ for (const permissiveDesktopAnimationEnvelope of [
   '(_runtime[sourceCollectionKey] as JsonArray)?.OfType<JsonObject>()',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
     permissiveDesktopAnimationEnvelope,
     `the desktop timeline must not filter malformed animation entries (${permissiveDesktopAnimationEnvelope})`,
   );
@@ -9310,17 +9310,17 @@ for (const permissiveComplexStyleConsumer of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   "foreach (var field in fields) ValidateFieldTimeline(field);",
   "the desktop owner timeline must validate direct and projected field timing metadata",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   'owner[jsonKey],\n            $"Runtime animation duration field \'{fieldId}\' value")',
   "the desktop owner timeline must require exact referenced duration values",
 );
@@ -9333,7 +9333,7 @@ for (const permissiveDesktopTimingMetadata of [
   'Math.Max(2, (int)Number(completionDefinition?["minimumEnabledKeyframes"], 2))',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
     permissiveDesktopTimingMetadata,
     `the desktop timeline must not default invalid temporal metadata (${permissiveDesktopTimingMetadata})`,
   );
@@ -9359,7 +9359,7 @@ assertContains(
   "the web owner timeline must preserve the explicit forwarded field timeline null sentinel",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Domain/RuntimeAnimationFrameOrigin.cs",
   '!field.TryGetPropertyValue("animationTimeline", out var node) || node is null',
   "the desktop owner timeline must preserve the explicit forwarded field timeline null sentinel",
 );
@@ -9382,12 +9382,12 @@ for (const permissiveWebTimingMetadata of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Domain/RuntimeDurationContract.cs",
   'JsonPath.OptionalObject(\n            contract,\n            "animationTimeline",\n            "Runtime duration contract")',
   "Screen duration policy must default to calculated only by structural absence",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Domain/RuntimeDurationContract.cs",
   'JsonPath.RequiredInteger(\n            timeline,\n            "defaultDurationFrames"',
   "explicit Screen duration must require an exact integer default",
 );
@@ -9396,7 +9396,7 @@ for (const permissiveDurationPolicyRead of [
   '(contract["animationTimeline"] as JsonObject)?["defaultDurationFrames"]?.GetValue<int>() ?? 0',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
+    "src/Mockups.Domain/RuntimeDurationContract.cs",
     permissiveDurationPolicyRead,
     `Screen duration policy must not coerce a present invalid timeline (${permissiveDurationPolicyRead})`,
   );
@@ -9471,7 +9471,7 @@ assertSourceMatches(
   "Theme Typography must remain split into semantic vertical cards",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Common/ThemeNumericTokenCatalog.cs",
+  "src/Mockups.Domain/ThemeNumericTokenCatalog.cs",
   'Token("theme.typography.size",',
   "the retired singular typography size token must not remain in the numeric token catalog",
 );
