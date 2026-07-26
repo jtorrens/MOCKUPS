@@ -7,6 +7,8 @@ var tests = new (string Name, Action Run)[]
     ("tree refresh replaces a deleted selection with a valid fallback", DeletedSelectionFallsBack),
     ("tree refresh replaces a deleted Production", DeletedProductionFallsBack),
     ("Production selection commits its first exact Production node", ProductionSelectionIsExact),
+    ("typed reference navigation changes workspace and exact Production", ReferenceNavigationChangesWorkspace),
+    ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
     ("a selection transition invalidates an in-flight tree result", SelectionInvalidatesInFlightLoad),
@@ -130,6 +132,40 @@ static void ProductionSelectionIsExact()
         "missing",
         "production-picker",
         out _));
+}
+
+static void ReferenceNavigationChangesWorkspace()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+
+    True(coordinator.TrySelectNodeInWorkspace(
+        EditorWorkspace.Production,
+        "shot-a",
+        "reference-usage",
+        out var transition));
+
+    Equal(EditorWorkspace.Production, coordinator.State.Workspace);
+    Equal("project-a", coordinator.State.ProductionId);
+    Equal("shot-a", coordinator.State.SelectedNode?.Id);
+    True(transition.Effects.HasFlag(EditorSessionEffects.Workspace));
+}
+
+static void InvalidSelectionIsRejected()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    var previous = coordinator.State;
+
+    True(!coordinator.TrySelectNodeById(
+        "missing",
+        "invalid-selection",
+        out var transition));
+
+    Equal(EditorSessionEffects.None, transition.Effects);
+    True(ReferenceEquals(previous, coordinator.State));
 }
 
 static void ActiveEditorRefreshRebasesEmbeddedContext()

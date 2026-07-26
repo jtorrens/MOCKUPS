@@ -43,7 +43,7 @@ canonical active document.
 
 - window initialization;
 - three-panel composition;
-- selected tree state and navigation wiring;
+- navigation event wiring and rendering of coordinator transitions;
 - generic editor-card composition from layout metadata;
 - Preview host wiring;
 - generic modal hosting and delegation;
@@ -53,6 +53,10 @@ It must not contain editor-specific fields, collections, business rules,
 pickers, dialogs, assets, fonts, icons, palette logic or one-off layout fixes.
 Place special behavior in its owning editor. Extract behavior shared by more
 than one editor into a common shell service.
+
+`EditorWorkspaceCoordinator` is the single owner of loaded tree, workspace,
+active Production, selection, embedded editor context and transition revision.
+`MainWindow` must not retain parallel mutable copies of that session state.
 
 ## Hard rule: one semantic owner
 
