@@ -163,10 +163,11 @@ boundary writes for Component Classes, Component Variants, Modules and Module
 Variants now execute in that same Design owner. Component reference lookup,
 embedded Variant traversal, complete Preview base-config projection and
 Variant Runtime Input projection also execute in Design. The temporary
-composition layer still owns Component editor-field projection and aggregates
-field options when one dictionary field combines Design-owned Component
-choices with Resource-owned palette or font choices. Moving that field
-projection behind narrow owner contracts is the next Design extraction.
+composition layer resolves the field-option list when one dictionary field
+combines Design-owned Component choices with Resource-owned palette or font
+choices, then passes that data into Design. Basic Component Class and Variant
+field-value projection now executes in Design. Inherited embedded and Runtime
+Override field projection remains the next Design extraction.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining

@@ -3,8 +3,6 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -52,70 +50,30 @@ internal sealed partial class SqliteProjectEngine
             connection,
             componentClassId);
 
-    public FieldValue CreateComponentClassFieldValue(string componentClassId, string fieldId)
+    public FieldValue CreateComponentClassFieldValue(
+        string componentClassId,
+        string fieldId)
     {
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var value = fieldId == "component.type"
-            ? EditorUiText.IdentifierLabel(settings.ComponentType)
-            : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is
-                ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-            && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
-            && SqliteDesignOwner.EmbeddedComponentHasOverrides(
-                settings.ConfigJson,
-                slot);
-
-        return new FieldValue(
-            new FieldDefinition(
-                descriptor.Id,
-                descriptor.Label,
-                descriptor.ValueKind,
-                descriptor.IsEditable,
-                descriptor.DefaultValue,
-                Options: options,
-                PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings,
-                StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
-                Unit: descriptor.Unit),
-            value,
-            IsHighlighted: isHighlighted);
+        return _designOwner.CreateComponentFieldValue(
+            settings,
+            descriptor,
+            options);
     }
 
-    public FieldValue CreateComponentVariantFieldValue(ProjectTreeNode variantNode, string fieldId)
+    public FieldValue CreateComponentVariantFieldValue(
+        ProjectTreeNode variantNode,
+        string fieldId)
     {
         var settings = GetComponentVariantSettings(variantNode);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var value = fieldId == "component.type"
-            ? EditorUiText.IdentifierLabel(settings.ComponentType)
-            : ComponentConfigFieldValue(settings.ConfigJson, descriptor);
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
-        var isHighlighted = descriptor.ValueKind is
-                ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-            && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
-            && SqliteDesignOwner.EmbeddedComponentHasOverrides(
-                settings.ConfigJson,
-                slot);
-
-        return new FieldValue(
-            new FieldDefinition(
-                descriptor.Id,
-                descriptor.Label,
-                descriptor.ValueKind,
-                descriptor.IsEditable,
-                descriptor.DefaultValue,
-                Options: options,
-                PairLabels: descriptor.PairLabels,
-                Number: descriptor.Number,
-                ComponentInputBindings: descriptor.ComponentInputBindings,
-                StructuredCollection: descriptor.StructuredCollection,
-                RuntimeInputComponentVariantFieldId: descriptor.RuntimeInputComponentVariantFieldId,
-                Unit: descriptor.Unit),
-            value,
-            IsHighlighted: isHighlighted);
+        return _designOwner.CreateComponentFieldValue(
+            settings,
+            descriptor,
+            options);
     }
 
     public FieldValue CreateRuntimeComponentOverrideFieldValue(
@@ -125,10 +83,15 @@ internal sealed partial class SqliteProjectEngine
         string fieldId)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var inheritedValue = ComponentConfigFieldValue(baseConfigJson, descriptor);
+        var inheritedValue =
+            SqliteDesignOwner.ComponentConfigFieldValue(
+                baseConfigJson,
+                descriptor);
         var hasOverride = GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride
-            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            ? SqliteDesignOwner.ComponentConfigFieldValue(
+                overrides.ToJsonString(),
+                descriptor)
             : inheritedValue;
         return new FieldValue(
             new FieldDefinition(
@@ -167,11 +130,16 @@ internal sealed partial class SqliteProjectEngine
         var effectiveOwnerConfig = ParseJsonObject(baseConfigJson);
         ComponentConfigOverrideMerger.MergeInto(effectiveOwnerConfig, overrides);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, projectId, effectiveOwnerConfig, slots);
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var inheritedValue =
+            SqliteDesignOwner.ComponentConfigFieldValue(
+                inheritedConfig.ToJsonString(),
+                descriptor);
         var localOverrides = EmbeddedOverrides(overrides, slots, createIfMissing: false);
         var hasOverride = localOverrides is not null && GetJsonValue(localOverrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && localOverrides is not null
-            ? ComponentConfigFieldValue(localOverrides.ToJsonString(), descriptor)
+            ? SqliteDesignOwner.ComponentConfigFieldValue(
+                localOverrides.ToJsonString(),
+                descriptor)
             : inheritedValue;
         var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var nestedSlot)
@@ -272,11 +240,16 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfigJson = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, [slot]).ToJsonString();
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfigJson, descriptor);
+        var inheritedValue =
+            SqliteDesignOwner.ComponentConfigFieldValue(
+                inheritedConfigJson,
+                descriptor);
         var overrides = EmbeddedOverrides(config, slot, createIfMissing: false);
         var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
-            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            ? SqliteDesignOwner.ComponentConfigFieldValue(
+                overrides.ToJsonString(),
+                descriptor)
             : inheritedValue;
 
         return new FieldValue(
@@ -313,11 +286,16 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var inheritedValue =
+            SqliteDesignOwner.ComponentConfigFieldValue(
+                inheritedConfig.ToJsonString(),
+                descriptor);
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
         var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
-            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            ? SqliteDesignOwner.ComponentConfigFieldValue(
+                overrides.ToJsonString(),
+                descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
@@ -364,11 +342,16 @@ internal sealed partial class SqliteProjectEngine
             using var moduleConnection = OpenConnection();
             var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
             var moduleInheritedConfig = EffectiveEmbeddedBaseConfig(moduleConnection, moduleSettings.ProjectId, moduleConfig, slots);
-            var moduleInheritedValue = ComponentConfigFieldValue(moduleInheritedConfig.ToJsonString(), moduleDescriptor);
+            var moduleInheritedValue =
+                SqliteDesignOwner.ComponentConfigFieldValue(
+                    moduleInheritedConfig.ToJsonString(),
+                    moduleDescriptor);
             var moduleOverrides = EmbeddedOverrides(moduleConfig, slots, createIfMissing: false);
             var moduleHasOverride = moduleOverrides is not null && GetJsonValue(moduleOverrides, moduleDescriptor.JsonPath) is not null;
             var moduleLocalValue = moduleHasOverride && moduleOverrides is not null
-                ? ComponentConfigFieldValue(moduleOverrides.ToJsonString(), moduleDescriptor)
+                ? SqliteDesignOwner.ComponentConfigFieldValue(
+                    moduleOverrides.ToJsonString(),
+                    moduleDescriptor)
                 : moduleInheritedValue;
             return new FieldValue(
                 new FieldDefinition(moduleDescriptor.Id, moduleDescriptor.Label, moduleDescriptor.ValueKind, moduleDescriptor.IsEditable,
@@ -393,11 +376,16 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(connection, settings.ProjectId, config, slots);
-        var inheritedValue = ComponentConfigFieldValue(inheritedConfig.ToJsonString(), descriptor);
+        var inheritedValue =
+            SqliteDesignOwner.ComponentConfigFieldValue(
+                inheritedConfig.ToJsonString(),
+                descriptor);
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
         var hasOverride = overrides is not null && GetJsonValue(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
-            ? ComponentConfigFieldValue(overrides.ToJsonString(), descriptor)
+            ? SqliteDesignOwner.ComponentConfigFieldValue(
+                overrides.ToJsonString(),
+                descriptor)
             : inheritedValue;
         var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
         var isHighlighted = descriptor.ValueKind is ValueKind.EmbeddedComponent or ValueKind.ComponentVariant
@@ -499,42 +487,6 @@ internal sealed partial class SqliteProjectEngine
 
     private IReadOnlyList<ComponentClassDefinitionRecord> QueryComponentClassRows(SqliteConnection connection) =>
         _designOwner.ComponentClassRepository.QueryAll(connection);
-    private static string ComponentConfigFieldValue(string configJson, ComponentClassFieldDescriptor descriptor)
-    {
-        if (descriptor.ValueKind == ValueKind.EmbeddedComponent)
-        {
-            return descriptor.DefaultValue;
-        }
-
-        var config = ParseJsonObject(configJson);
-        var node = GetJsonValue(config, descriptor.JsonPath);
-        if (node is null)
-        {
-            return descriptor.DefaultValue;
-        }
-
-        var owner = $"Component field '{descriptor.Id}'";
-        RuntimeInputValueKindContract.ValidateValue(descriptor.ValueKind, node, owner);
-        return descriptor.ValueKind switch
-        {
-            ValueKind.Boolean => BoolToString(node.GetValue<bool>()),
-            ValueKind.Integer or ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
-                node.ToJsonString(),
-            ValueKind.TypographyStyle or ValueKind.TypographySystemStyle =>
-                TypographyStyleValue.Parse(node).ToJsonString(),
-            ValueKind.AlignmentPlacement
-                or ValueKind.Motion
-                or ValueKind.MotionTiming
-                or ValueKind.IconTokenList
-                or ValueKind.IconSlots
-                or ValueKind.ComponentInputBindings
-                or ValueKind.ComponentVariantSlot
-                or ValueKind.StructuredCollection
-                or ValueKind.BehaviorTiming => node.ToJsonString(),
-            _ => node.GetValue<string>(),
-        };
-    }
-
     private static JsonNode ComponentConfigJsonValue(
         ValueKind valueKind,
         string value,

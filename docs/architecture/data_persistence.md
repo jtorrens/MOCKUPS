@@ -68,10 +68,12 @@ only the exact local Override document and preserves the selected full Variant
 reference. Component reference lookup, embedded Variant traversal, complete
 Preview base-config projection and Component Variant Runtime Input projection
 are read models of the same Design owner. Composition does not reconstruct
-those read models. Component editor-field projection remains temporarily in
-composition, including dictionary-option aggregation where one field needs
-both Design-owned Component choices and Resource-owned palette or font
-choices.
+those read models. Basic Component Class and Variant field values are also
+projected in Design from an explicit option list. Composition supplies that
+data list only because a dictionary field may combine Design-owned Component
+choices with Resource-owned palette or font choices; Design receives no
+Resource service. Inherited embedded and Runtime Override field projection
+remains temporarily in composition.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no
