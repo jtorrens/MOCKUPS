@@ -31,7 +31,6 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
-        "src/Mockups.Domain/Mockups.Domain.csproj",
       ],
       packageReferences: [
         "Avalonia",
@@ -200,7 +199,6 @@ test("Desktop can see UI and Application but cannot compile against SQLite", () 
       .sort(),
     [
       "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
     ],
   );
   assert.equal(

@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
-    <ProjectReference Include="../Mockups.Domain/Mockups.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
