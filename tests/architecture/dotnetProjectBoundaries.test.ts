@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -8,6 +8,8 @@ type EvaluatedItem = {
   Identity: string;
   FullPath?: string;
   PrivateAssets?: string;
+  DefiningProjectFullPath?: string;
+  IsImplicitlyDefined?: string;
 };
 
 type EvaluatedProject = {
@@ -17,6 +19,17 @@ type EvaluatedProject = {
   Items: {
     ProjectReference: EvaluatedItem[];
     PackageReference: EvaluatedItem[];
+  };
+};
+
+type EvaluatedPhysicalChannels = {
+  Items: {
+    Reference: EvaluatedItem[];
+    Analyzer: EvaluatedItem[];
+    Compile: EvaluatedItem[];
+    EmbeddedResource: EvaluatedItem[];
+    Content: EvaluatedItem[];
+    InternalsVisibleTo: EvaluatedItem[];
   };
 };
 
@@ -88,6 +101,41 @@ const expectedProjects = new Map([
   ],
 ]);
 
+const expectedFriends = new Map([
+  [
+    "src/Mockups.Application/Mockups.Application.csproj",
+    [
+      "Mockups.Application.Tests",
+      "Mockups.DesktopEditorShell.AnimationTests",
+      "Mockups.Persistence.Sqlite",
+    ],
+  ],
+  [
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+    ["Mockups.Desktop.Host"],
+  ],
+  [
+    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+    ["Mockups.DesktopEditorShell.AnimationTests"],
+  ],
+  ["src/Mockups.Domain/Mockups.Domain.csproj", []],
+  [
+    "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
+    ["Mockups.DesktopEditorShell.AnimationTests"],
+  ],
+]);
+
+const expectedExternalResources = new Map([
+  [
+    "src/Mockups.Application/Mockups.Application.csproj",
+    ["src/desktop-preview/desktopPreviewManifest.json"],
+  ],
+  ["src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj", []],
+  ["src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj", []],
+  ["src/Mockups.Domain/Mockups.Domain.csproj", []],
+  ["src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj", []],
+]);
+
 function projectFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const fullPath = path.join(directory, entry.name);
@@ -119,6 +167,42 @@ function evaluate(projectPath: string): EvaluatedProject {
     },
   );
   return JSON.parse(output) as EvaluatedProject;
+}
+
+function evaluatePhysicalChannels(
+  projectPath: string,
+): EvaluatedPhysicalChannels {
+  const output = execFileSync(
+    "dotnet",
+    [
+      "msbuild",
+      projectPath,
+      "-getItem:Reference",
+      "-getItem:Analyzer",
+      "-getItem:Compile",
+      "-getItem:EmbeddedResource",
+      "-getItem:Content",
+      "-getItem:InternalsVisibleTo",
+      "-p:SkipDesktopPreviewBuild=true",
+    ],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      maxBuffer: 4 * 1024 * 1024,
+    },
+  );
+  return JSON.parse(output) as EvaluatedPhysicalChannels;
+}
+
+function normalizedFullPath(item: EvaluatedItem): string {
+  return path.resolve(item.FullPath ?? item.Identity);
+}
+
+function isInside(parent: string, candidate: string): boolean {
+  const relative = path.relative(parent, candidate);
+  return relative === ""
+    || (!relative.startsWith(`..${path.sep}`) && relative !== ".."
+      && !path.isAbsolute(relative));
 }
 
 function resolvedReferenceNames(projectPath: string): Set<string> {
@@ -213,6 +297,88 @@ test("the evaluated .NET project graph exposes only declared dependencies", () =
           ?.split(";")
           .includes("compile"),
         `${projectPath} exposes compile assets from ${packageReference.Identity}`,
+      );
+    }
+  }
+});
+
+test("production projects expose only allowlisted physical compilation channels", () => {
+  for (const projectPath of expectedProjects.keys()) {
+    const absoluteProjectPath = path.resolve(projectPath);
+    const projectDirectory = path.dirname(absoluteProjectPath);
+    const source = readFileSync(absoluteProjectPath, "utf8");
+    assert.match(
+      source,
+      /^\uFEFF?<Project Sdk="Microsoft\.NET\.Sdk">/,
+      `${projectPath} uses an unapproved SDK`,
+    );
+    assert.doesNotMatch(
+      source,
+      /<(?:Import|UsingTask)\b/,
+      `${projectPath} declares an unapproved MSBuild extension`,
+    );
+
+    const channels = evaluatePhysicalChannels(projectPath).Items;
+    assert.deepEqual(
+      channels.Reference,
+      [],
+      `${projectPath} declares an assembly Reference outside ProjectReference and PackageReference`,
+    );
+    for (const analyzer of channels.Analyzer) {
+      assert.equal(
+        analyzer.IsImplicitlyDefined,
+        "true",
+        `${projectPath} declares analyzer ${analyzer.Identity}`,
+      );
+    }
+    for (const compile of channels.Compile) {
+      assert.ok(
+        isInside(projectDirectory, normalizedFullPath(compile)),
+        `${projectPath} compiles external source ${compile.Identity}`,
+      );
+    }
+
+    const externalResources = channels.EmbeddedResource
+      .map(normalizedFullPath)
+      .filter((candidate) => !isInside(projectDirectory, candidate))
+      .map(repositoryPath)
+      .sort();
+    assert.deepEqual(
+      externalResources,
+      [...(expectedExternalResources.get(projectPath) ?? [])].sort(),
+      `${projectPath} embeds an undeclared external resource`,
+    );
+
+    const friends = channels.InternalsVisibleTo
+      .map((item) => item.Identity)
+      .sort();
+    assert.deepEqual(
+      friends,
+      [...(expectedFriends.get(projectPath) ?? [])].sort(),
+      `${projectPath} exposes internals to an undeclared assembly`,
+    );
+
+    if (projectPath !== "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj") {
+      const externalContent = channels.Content
+        .map(normalizedFullPath)
+        .filter((candidate) => !isInside(projectDirectory, candidate));
+      assert.deepEqual(
+        externalContent,
+        [],
+        `${projectPath} links undeclared external Content`,
+      );
+      continue;
+    }
+
+    for (const content of channels.Content) {
+      const candidate = normalizedFullPath(content);
+      if (isInside(projectDirectory, candidate)) continue;
+      const relative = repositoryPath(candidate);
+      assert.ok(
+        relative === "scripts/icon-themes/sync-icon-theme-token.cjs"
+          || relative.startsWith("dist/desktop-preview/")
+          || relative.startsWith("assets/system/system_icons/"),
+        `Host links undeclared external Content ${relative}`,
       );
     }
   }

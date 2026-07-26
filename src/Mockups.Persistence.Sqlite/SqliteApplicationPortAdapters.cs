@@ -1,3 +1,5 @@
+#nullable disable
+
 // Each adapter deliberately implements only one public Application port.
 // Repetition here prevents a consumer from recovering unrelated SQLite
 // capabilities by casting the dependency it received.
