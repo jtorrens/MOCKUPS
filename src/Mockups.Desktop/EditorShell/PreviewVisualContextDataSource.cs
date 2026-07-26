@@ -7,10 +7,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class PreviewVisualContextDataSource
 {
     private readonly IPreviewInputRepository _database;
+    private readonly IProjectSettingsQuery _projects;
 
-    public PreviewVisualContextDataSource(IPreviewInputRepository database)
+    public PreviewVisualContextDataSource(
+        IPreviewInputRepository database,
+        IProjectSettingsQuery projects)
     {
         _database = database;
+        _projects = projects;
     }
 
     public IReadOnlyList<FieldOption> DeviceOptions(string projectId)
@@ -25,7 +29,7 @@ internal sealed class PreviewVisualContextDataSource
 
     public string ProjectMediaRoot(string projectId)
     {
-        return _database.GetProjectSettings(projectId).MediaRoot;
+        return _projects.GetProjectSettings(projectId).MediaRoot;
     }
 
     public DevicePreviewMetrics DeviceMetrics(string deviceId)

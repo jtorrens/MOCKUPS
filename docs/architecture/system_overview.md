@@ -223,8 +223,12 @@ Icon Theme assets, Theme tokens, Component documents, Runtime Input owner and
 instance writes, animation and Reference Usage as separate capabilities. The
 desktop composition passes those capabilities independently; it has no
 dialog-, header- or collection-wide persistence store. Actor Preview is backed
-directly by the Resources owner. Remaining broad read contracts move to focused
-owners as their Application contracts are decomposed.
+directly by the Resources owner. Component Preview and Variant History are
+backed directly by the Design owner. Generic Preview input, Component Preview,
+Module Instance timeline, Actor Preview and dictionary context are independent
+ports; no one of them can be cast to another. Remaining cross-domain
+application operations move to focused owners as their contracts are
+decomposed.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

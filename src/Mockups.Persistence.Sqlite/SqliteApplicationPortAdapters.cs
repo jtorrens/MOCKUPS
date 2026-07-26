@@ -1098,12 +1098,10 @@ internal sealed class SqliteEditorPresentationPort(
 }
 
 internal sealed class SqliteEditorDomainDialogPort(
-    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
-    : Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore,
-      Mockups.DesktopEditorShell.Data.IIconThemeAssetStore,
-      Mockups.DesktopEditorShell.Data.IThemeTokenQuery
+    Mockups.DesktopEditorShell.Data.IIconThemeAssetStore target)
+    : Mockups.DesktopEditorShell.Data.IIconThemeAssetStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.IIconThemeAssetStore _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddModuleInstance(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode shot,
@@ -1291,10 +1289,10 @@ internal sealed class SqliteComponentDocumentPort(
 }
 
 internal sealed class SqliteEditorHeaderPort(
-    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
+    Mockups.DesktopEditorShell.Data.IComponentDocumentStore target)
     : Mockups.DesktopEditorShell.Data.IComponentDocumentStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.IComponentDocumentStore _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateEmbeddedComponentFieldValue(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
@@ -1502,10 +1500,10 @@ internal sealed class SqliteEditorHeaderPort(
 }
 
 internal sealed class SqliteEditorCollectionPort(
-    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
+    Mockups.DesktopEditorShell.Data.IRuntimeInputOwnerStore target)
     : Mockups.DesktopEditorShell.Data.IRuntimeInputOwnerStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.IRuntimeInputOwnerStore _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddModuleInstance(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode shot,

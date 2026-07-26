@@ -18,6 +18,9 @@ internal sealed class EditorDictionaryFieldServices
 
     public EditorDictionaryFieldServices(
         IDictionaryFieldContextRepository database,
+        IPreviewInputRepository preview,
+        IModuleInstanceTimelineStore timeline,
+        IActorPreviewRepository actors,
         IProjectPathResolver projectPaths,
         EditorPathBrowser pathBrowser,
         EditorDomainDialogService domainDialogs,
@@ -26,10 +29,14 @@ internal sealed class EditorDictionaryFieldServices
     {
         _contextData = new DictionaryFieldContextDataSource(
             database,
+            preview,
+            timeline,
+            actors,
             projectPaths);
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
-        _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
+        _runtimeInputOptions =
+            new RuntimeInputOptionsDataSource(database, actors);
         _selectedThemeId = selectedThemeId;
         _setRuntimeTestValue = setRuntimeTestValue;
     }

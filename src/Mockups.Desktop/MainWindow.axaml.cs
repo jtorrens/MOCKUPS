@@ -86,7 +86,10 @@ public partial class MainWindow : SukiWindow
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
             data.Preview,
+            data.ComponentPreview,
+            data.Timeline,
             data.Dictionary,
+            data.ActorPreview,
             data.ProjectPaths,
             PreviewDeviceComboBox,
             PreviewThemeComboBox,
@@ -170,6 +173,9 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(
             data.Dictionary,
+            data.Preview,
+            data.Timeline,
+            data.ActorPreview,
             data.ProjectPaths,
             _pathBrowser,
             _domainDialogs,
@@ -219,6 +225,7 @@ public partial class MainWindow : SukiWindow
             EditorHeaderActionsPanel,
             data.Components,
             data.Preview,
+            data.Timeline,
             () => Session.SelectedNode,
             _workspaceCoordinator.PreferredVariantNode,
             _workspaceCoordinator.PreferredModuleVariantNode,
@@ -233,8 +240,9 @@ public partial class MainWindow : SukiWindow
         _collectionCards = new EditorCollectionCardFactory(
             data.ModuleInstances,
             data.IconThemes,
-            data.Preview,
+            data.ComponentPreview,
             data.Dictionary,
+            data.ActorPreview,
             data.RuntimeInputOwners,
             data.RuntimeInputInstances,
             data.Animation,

@@ -6,15 +6,19 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ComponentPreviewInputDataSource
 {
     private readonly IComponentPreviewInputRepository _database;
+    private readonly IProjectSettingsQuery _projects;
 
-    public ComponentPreviewInputDataSource(IComponentPreviewInputRepository database)
+    public ComponentPreviewInputDataSource(
+        IComponentPreviewInputRepository database,
+        IProjectSettingsQuery projects)
     {
         _database = database;
+        _projects = projects;
     }
 
     public int ProjectDefaultFrameRate(string projectId)
     {
-        return _database.GetProjectSettings(projectId).DefaultFps;
+        return _projects.GetProjectSettings(projectId).DefaultFps;
     }
 
     public JsonObject ComponentVariantConfig(string variantReference)

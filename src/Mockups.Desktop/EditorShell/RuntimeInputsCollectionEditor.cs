@@ -45,8 +45,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
-        IPreviewInputRepository preview,
+        IComponentPreviewInputRepository componentPreview,
         IDictionaryFieldContextRepository dictionary,
+        IActorPreviewRepository actors,
         IRuntimeInputOwnerStore ownerStore,
         IRuntimeInputInstanceStore instanceStore,
         EditorDictionaryFieldServices dictionaryServices,
@@ -70,12 +71,15 @@ internal sealed class RuntimeInputsCollectionEditor
         ModuleInstanceAnimationEditor? animationEditor = null,
         Action<ProjectTreeNode>? reloadAndSelect = null)
     {
-        _previewInputData = new ComponentPreviewInputDataSource(preview);
+        _previewInputData =
+            new ComponentPreviewInputDataSource(
+                componentPreview,
+                actors);
         _ownerDocuments = new RuntimeInputOwnerDocumentStore(ownerStore);
         _instanceDocuments =
             new RuntimeInputInstanceDocumentStore(instanceStore);
         _runtimeInputOptions =
-            new RuntimeInputOptionsDataSource(dictionary);
+            new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _triggerAction = triggerAction;

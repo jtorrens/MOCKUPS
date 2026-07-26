@@ -7,7 +7,9 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner :
     IModuleVariantCatalog,
-    IComponentFieldDesignOptionSource
+    IComponentFieldDesignOptionSource,
+    IComponentPreviewInputRepository,
+    IVariantHistoryStore
 {
     private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;

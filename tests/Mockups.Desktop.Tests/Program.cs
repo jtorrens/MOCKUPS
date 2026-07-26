@@ -329,6 +329,8 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
         "component_project_foqn_s2_list");
     var session = new ComponentPreviewInputSession(
         database,
+        database,
+        database,
         database.ProjectPaths,
         () => { });
     session.UpdateForPayload(payload, settings.ProjectId);
@@ -418,11 +420,13 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
         "List Runtime item 1");
     var action = ComponentPreviewActions.ReadWithEmbedded(
             preview,
-            new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
+            new ComponentPreviewInputDataSource(database, database).ComponentVariantRuntimeContract)
         .Single((candidate) =>
             candidate.CollectionItemId == firstItemId
             && candidate.Label == "Presence");
     var session = new ComponentPreviewInputSession(
+        database,
+        database,
         database,
         database.ProjectPaths,
         () => { })
@@ -1856,6 +1860,8 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
     var payload = Required(CreatePreviewPayload(database, textBoxVariant, theme.Id));
     var session = new ComponentPreviewInputSession(
         database,
+        database,
+        database,
         database.ProjectPaths,
         () => { });
     session.UpdateForPayload(payload, settings.ProjectId);
@@ -3017,6 +3023,8 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         "component_project_foqn_s2_iconRow::variant::default";
     var session = new ComponentPreviewInputSession(
         database,
+        database,
+        database,
         database.ProjectPaths,
         () => { });
     var emptyPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
@@ -3120,6 +3128,8 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         project.ComponentFields,
         project.VariantHistory,
         project.Preview,
+        project.ComponentPreview,
+        project.Timeline,
         project.Dictionary,
         project.Children,
         project.NodeCommands,
@@ -3139,6 +3149,12 @@ static void SqliteSessionExposesDistinctFocusedPorts()
 
     Equal(ports.Length, ports.Distinct().Count());
     True(project.Navigation is not IPreviewInputRepository);
+    True(project.Preview is not IActorPreviewRepository);
+    True(project.Preview is not IComponentPreviewInputRepository);
+    True(project.Preview is not IModuleInstanceTimelineStore);
+    True(project.Dictionary is not IPreviewInputRepository);
+    True(project.ComponentPreview is not IPreviewInputRepository);
+    True(project.Timeline is not IPreviewInputRepository);
     True(project.Layouts is not IRecordClassFieldStore);
     True(project.ActorPreview is not IEditorNodeCommandStore);
     True(project.Children is not IEditorNodeCommandStore);
@@ -4037,6 +4053,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             var listPayload = Required(DesignPreviewPayloadFactory.Create(
                 new DesignPreviewPayloadDataSource(
                     database,
+                    database,
+                    database,
                     database.ProjectPaths),
                 selectedListNode,
                 selectedTheme.Id,
@@ -4546,6 +4564,8 @@ void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                                 Equal(frame, payload.LocalFrame);
                                 var inputSession =
                                     new ComponentPreviewInputSession(
+                                        database,
+                                        database,
                                         database,
                                         database.ProjectPaths,
                                         () => { });
@@ -5802,7 +5822,7 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new RuntimeInputOptionsDataSource(database);
+        var dataSource = new RuntimeInputOptionsDataSource(database, database);
         var project = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
 
@@ -6019,8 +6039,13 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DictionaryFieldContextDataSource(
             database,
+            database,
+            database,
+            database,
             database.ProjectPaths);
         var payloadData = new DesignPreviewPayloadDataSource(
+            database,
+            database,
             database,
             database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -6227,7 +6252,7 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
         var database = new SqliteProjectEngine(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
-        var source = new ProductionScreenPresentationDataSource(database).Load(screen.Id);
+        var source = new ProductionScreenPresentationDataSource(database, database).Load(screen.Id);
 
         Equal(database.GetModuleInstanceModuleName(screen.Id), source.Module);
         Equal(database.GetModuleInstanceVariantName(screen.Id), source.Variant);
@@ -6274,7 +6299,7 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ComponentPreviewInputDataSource(database);
+        var dataSource = new ComponentPreviewInputDataSource(database, database);
         var componentClass = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
         var variant = componentClass.Children
@@ -6573,7 +6598,7 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new PreviewVisualContextDataSource(database);
+        var dataSource = new PreviewVisualContextDataSource(database, database);
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -6605,7 +6630,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ProductionPreviewSessionDataSource(database);
+        var dataSource = new ProductionPreviewSessionDataSource(database, database);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -7577,6 +7602,8 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         var payload = DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
                 database,
+                database,
+                database,
                 database.ProjectPaths),
             shot,
             themeId,
@@ -8402,7 +8429,7 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ProductionShotContextDataSource(database);
+        var dataSource = new ProductionShotContextDataSource(database, database);
         var service = new ProductionShotContextService(dataSource);
         var shot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -8437,6 +8464,8 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
     {
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database,
             database,
             database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -8500,6 +8529,8 @@ static void ProductionPayloadPreservesActorAndAnimation()
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database,
             database,
             database.ProjectPaths);
         var screens = Descendants(database.LoadProjectTree())
@@ -8582,6 +8613,8 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
     {
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database,
             database,
             database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -8677,7 +8710,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             JsonPath.ParseRequiredObject(moduleVariant.ConfigJson, "Conversation Variant config"))
             .Single((collection) => collection.Id == "messages");
         var actorField = messageCollection.Fields.Single((field) => field.Id == "actor");
-        var optionsSource = new RuntimeInputOptionsDataSource(database);
+        var optionsSource = new RuntimeInputOptionsDataSource(database, database);
         var incomingActorOptions = RuntimeInputFieldDefinitionFactory.Create(
             optionsSource,
             screen,
@@ -8693,6 +8726,8 @@ static void ConversationMessageActorsFollowDirectionContract()
 
         var payload = Required(DesignPreviewPayloadFactory.Create(
             new DesignPreviewPayloadDataSource(
+                database,
+                database,
                 database,
                 database.ProjectPaths),
             screen,
@@ -9200,7 +9235,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
         var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(
                 effective,
-                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
+                new ComponentPreviewInputDataSource(database, database).ComponentVariantRuntimeContract)
             .Single((action) => action.Label == "Enter password");
         Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
         Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
@@ -9225,6 +9260,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var payload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         var session = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -10813,6 +10850,8 @@ static void ComponentStackSeedOpensAndRenders()
         var refreshCount = 0;
         var inputSession = new ComponentPreviewInputSession(
             database,
+            database,
+            database,
             database.ProjectPaths,
             () => refreshCount++);
         inputSession.UpdateForPayload(payload, settings.ProjectId);
@@ -10831,7 +10870,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(audioInputs["showBadge"] is JsonValue);
         Equal("icon", audioInputs["badgeContentMode"]?.GetValue<string>() ?? "");
         True(RuntimeInputFieldDefinitionFactory.Create(
-            new RuntimeInputOptionsDataSource(database),
+            new RuntimeInputOptionsDataSource(database, database),
             defaultVariant,
             alternatives.Fields.Single((field) => field.Id == "variantReference")).SelectComponentClass);
         var runtimeItem = new JsonObject
@@ -10980,6 +11019,8 @@ static void ComponentStackSeedOpensAndRenders()
         var populatedPayloadSource = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var populatedInputSession = new ComponentPreviewInputSession(
             database,
+            database,
+            database,
             database.ProjectPaths,
             () => { });
         populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
@@ -11049,6 +11090,8 @@ static void CollectionStackSeedOpensAndRenders()
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, variants[0], theme.Id));
         var inputSession = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -11164,6 +11207,8 @@ static void NotificationsSeedOpensAndRenders()
             var payload = Required(CreatePreviewPayload(database, variant, theme.Id));
             var inputSession = new ComponentPreviewInputSession(
                 database,
+                database,
+                database,
                 database.ProjectPaths,
                 () => { });
             inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
@@ -11178,9 +11223,11 @@ static void NotificationsSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Notification transition preview.");
         var transitionAction = ComponentPreviewActions.ReadWithEmbedded(
                 transitionPreview,
-                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
+                new ComponentPreviewInputDataSource(database, database).ComponentVariantRuntimeContract)
             .Single((action) => action.Id == "changeDisplayMode");
         var transitionSession = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -11221,6 +11268,8 @@ static void NotificationsSeedOpensAndRenders()
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
         var wrappingPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
         var wrappingSession = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -11269,6 +11318,8 @@ static void NotificationsSeedOpensAndRenders()
         var populated = Required(CreatePreviewPayload(database, notificationsVariant, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(
             database,
+            database,
+            database,
             database.ProjectPaths,
             () => { });
         populatedSession.UpdateForPayload(populated, settings.ProjectId);
@@ -11276,7 +11327,7 @@ static void NotificationsSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
         var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(
                 populatedContract,
-                new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
+                new ComponentPreviewInputDataSource(database, database).ComponentVariantRuntimeContract)
             .Where((action) => action.TargetInputId == "displayMode")
             .ToList();
         Equal(2, embeddedActions.Count);
@@ -11363,6 +11414,8 @@ static void KeypadSeedOpensAndRenders()
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var inputSession = new ComponentPreviewInputSession(
             database,
+            database,
+            database,
             database.ProjectPaths,
             () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
@@ -11441,6 +11494,8 @@ static void PasswordSeedOpensAndRenders()
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var inputSession = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -11728,6 +11783,8 @@ static void LockScreenComposesRuntimeStack()
         var payload = Required(CreatePreviewPayload(database, module, theme.Id));
         var session = new ComponentPreviewInputSession(
             database,
+            database,
+            database,
             database.ProjectPaths,
             () => { });
         session.UpdateForPayload(payload, settings.ProjectId);
@@ -11789,6 +11846,8 @@ static void LockScreenComposesRuntimeStack()
         }.ToJsonString());
         var populatedPayload = Required(CreatePreviewPayload(database, module, theme.Id));
         var populatedSession = new ComponentPreviewInputSession(
+            database,
+            database,
             database,
             database.ProjectPaths,
             () => { });
@@ -12117,6 +12176,8 @@ static DesignPreviewPayload? CreatePreviewPayload(
     int timelineFrame = 0) =>
     DesignPreviewPayloadFactory.Create(
         new DesignPreviewPayloadDataSource(
+            database,
+            database,
             database,
             database.ProjectPaths),
         node,

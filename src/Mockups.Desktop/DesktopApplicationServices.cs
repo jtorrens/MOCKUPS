@@ -13,6 +13,8 @@ internal sealed record DesktopApplicationDataPorts(
     IComponentClassFieldStore ComponentFields,
     IVariantHistoryStore VariantHistory,
     IPreviewInputRepository Preview,
+    IComponentPreviewInputRepository ComponentPreview,
+    IModuleInstanceTimelineStore Timeline,
     IDictionaryFieldContextRepository Dictionary,
     IEditorChildStore Children,
     IEditorNodeCommandStore NodeCommands,
@@ -53,7 +55,9 @@ internal sealed record DesktopApplicationServices(
                 productionOutputRoots),
             new ComponentClassFieldValueService(data.ComponentFields),
             new ProductionShotContextService(
-                new ProductionShotContextDataSource(data.Preview)),
+                new ProductionShotContextDataSource(
+                    data.Preview,
+                    data.ActorPreview)),
             new EditorWorkspaceCoordinator(data.Navigation),
             new EditorOperationCoordinator(),
             productionOutputRoots);

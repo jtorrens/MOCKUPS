@@ -11,10 +11,12 @@ internal sealed class ProductionShotContextDataSource
     private readonly IPreviewInputRepository _database;
     private readonly ActorPreviewDataSource _actorDataSource;
 
-    public ProductionShotContextDataSource(IPreviewInputRepository database)
+    public ProductionShotContextDataSource(
+        IPreviewInputRepository database,
+        IActorPreviewRepository actors)
     {
         _database = database;
-        _actorDataSource = new ActorPreviewDataSource(database);
+        _actorDataSource = new ActorPreviewDataSource(actors);
     }
 
     public string LoadShotOwnerActorId(string shotId)

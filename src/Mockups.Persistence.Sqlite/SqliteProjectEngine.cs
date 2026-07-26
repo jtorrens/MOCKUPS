@@ -20,6 +20,8 @@ internal sealed partial class SqliteProjectEngine
 
     internal SqliteProjectContext Context => _context;
 
+    internal SqliteDesignOwner Design => _designOwner;
+
     internal SqliteResourceOwner Resources => _resourceOwner;
 
     internal SqliteProjectEngine(string databasePath)

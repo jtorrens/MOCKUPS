@@ -36,6 +36,7 @@ internal sealed class EditorHeaderController
         Panel actionsPanel,
         IComponentDocumentStore components,
         IPreviewInputRepository preview,
+        IModuleInstanceTimelineStore timeline,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
@@ -52,7 +53,10 @@ internal sealed class EditorHeaderController
         _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
         _embeddedDocuments = new EmbeddedComponentDocumentStore(components);
-        _screenPresentation = new ProductionScreenPresentationDataSource(preview);
+        _screenPresentation =
+            new ProductionScreenPresentationDataSource(
+                preview,
+                timeline);
         _selectedNode = selectedNode;
         _preferredVariantNode = preferredVariantNode;
         _preferredModuleVariantNode = preferredModuleVariantNode;

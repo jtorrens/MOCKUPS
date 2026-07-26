@@ -14,8 +14,9 @@ internal sealed class EditorCollectionCardFactory
 {
     private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IIconThemeAssetStore _iconThemes;
-    private readonly IPreviewInputRepository _preview;
+    private readonly IComponentPreviewInputRepository _componentPreview;
     private readonly IDictionaryFieldContextRepository _dictionary;
+    private readonly IActorPreviewRepository _actors;
     private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
     private readonly IRuntimeInputInstanceStore _runtimeInputInstances;
     private readonly IModuleInstanceAnimationStore _animation;
@@ -47,8 +48,9 @@ internal sealed class EditorCollectionCardFactory
     public EditorCollectionCardFactory(
         IModuleInstanceCollectionStore moduleInstances,
         IIconThemeAssetStore iconThemes,
-        IPreviewInputRepository preview,
+        IComponentPreviewInputRepository componentPreview,
         IDictionaryFieldContextRepository dictionary,
+        IActorPreviewRepository actors,
         IRuntimeInputOwnerStore runtimeInputOwners,
         IRuntimeInputInstanceStore runtimeInputInstances,
         IModuleInstanceAnimationStore animation,
@@ -79,8 +81,9 @@ internal sealed class EditorCollectionCardFactory
     {
         _moduleInstances = moduleInstances;
         _iconThemes = iconThemes;
-        _preview = preview;
+        _componentPreview = componentPreview;
         _dictionary = dictionary;
+        _actors = actors;
         _runtimeInputOwners = runtimeInputOwners;
         _runtimeInputInstances = runtimeInputInstances;
         _animation = animation;
@@ -194,6 +197,7 @@ internal sealed class EditorCollectionCardFactory
         return new ModuleInstanceAnimationEditor(
             _animation,
             _dictionary,
+            _actors,
             _dictionaryServices,
             _onChanged,
             _sessionUiState,
@@ -207,8 +211,9 @@ internal sealed class EditorCollectionCardFactory
         ModuleInstanceAnimationEditor? animationEditor)
     {
         return new RuntimeInputsCollectionEditor(
-            _preview,
+            _componentPreview,
             _dictionary,
+            _actors,
             _runtimeInputOwners,
             _runtimeInputInstances,
             _dictionaryServices,

@@ -15,8 +15,12 @@ public sealed class SqliteProjectSession
         RecordFields = new SqliteRecordClassFieldPort(engine);
         ComponentFields =
             new SqliteComponentClassFieldPort(engine);
-        VariantHistory = new SqliteVariantHistoryPort(engine);
+        VariantHistory =
+            new SqliteVariantHistoryPort(engine.Design);
         Preview = new SqlitePreviewInputPort(engine);
+        ComponentPreview =
+            new SqliteComponentPreviewInputPort(engine.Design);
+        Timeline = new SqliteModuleInstanceTimelinePort(engine);
         Dictionary =
             new SqliteDictionaryFieldContextPort(engine);
         Children = new SqliteEditorChildPort(engine);
@@ -28,8 +32,9 @@ public sealed class SqliteProjectSession
             new SqliteEditorPresentationPort(engine);
         ModuleInstances =
             new SqliteModuleInstanceCollectionPort(engine);
-        IconThemes = new SqliteIconThemeAssetPort(engine);
-        ThemeTokens = new SqliteThemeTokenPort(engine);
+        IconThemes =
+            new SqliteIconThemeAssetPort(engine.Resources);
+        ThemeTokens = new SqliteThemeTokenPort(engine.Resources);
         Components =
             new SqliteComponentDocumentPort(engine);
         RuntimeInputOwners =
@@ -56,6 +61,10 @@ public sealed class SqliteProjectSession
     public IVariantHistoryStore VariantHistory { get; }
 
     public IPreviewInputRepository Preview { get; }
+
+    public IComponentPreviewInputRepository ComponentPreview { get; }
+
+    public IModuleInstanceTimelineStore Timeline { get; }
 
     public IDictionaryFieldContextRepository Dictionary { get; }
 

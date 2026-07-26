@@ -3,6 +3,64 @@ using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
+internal sealed class SqliteComponentPreviewInputPort(
+    IComponentPreviewInputRepository target)
+    : IComponentPreviewInputRepository
+{
+    public JsonObject GetComponentVariantConfig(string variantReference) =>
+        target.GetComponentVariantConfig(variantReference);
+
+    public JsonObject GetComponentVariantRuntimeContract(
+        string variantReference) =>
+        target.GetComponentVariantRuntimeContract(variantReference);
+
+    public string ValidateComponentVariantReferenceValue(
+        string projectId,
+        string componentType,
+        string reference,
+        bool allowEmpty = false) =>
+        target.ValidateComponentVariantReferenceValue(
+            projectId,
+            componentType,
+            reference,
+            allowEmpty);
+}
+
+internal sealed class SqliteModuleInstanceTimelinePort(
+    IModuleInstanceTimelineStore target)
+    : IModuleInstanceTimelineStore
+{
+    public ModuleInstanceSettings GetModuleInstanceSettings(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceSettings(moduleInstanceId);
+
+    public ModuleSettings GetModuleInstanceVariantSettings(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceVariantSettings(moduleInstanceId);
+
+    public string GetModuleInstanceModuleName(string moduleInstanceId) =>
+        target.GetModuleInstanceModuleName(moduleInstanceId);
+
+    public string GetModuleInstanceTransitionType(string moduleInstanceId) =>
+        target.GetModuleInstanceTransitionType(moduleInstanceId);
+
+    public string GetModuleInstanceEffectiveContractJson(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceEffectiveContractJson(moduleInstanceId);
+
+    public string GetModuleInstanceRuntimePreviewJson(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
+
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
+
+    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
+        string shotId) =>
+        target.GetShotModuleInstanceSlots(shotId);
+}
+
 internal sealed class SqliteEditorChildPort(IEditorChildStore target)
     : IEditorChildStore
 {

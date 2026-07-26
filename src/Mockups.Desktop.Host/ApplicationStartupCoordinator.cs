@@ -146,6 +146,8 @@ public sealed class ApplicationStartupCoordinator
                 project.ComponentFields,
                 project.VariantHistory,
                 project.Preview,
+                project.ComponentPreview,
+                project.Timeline,
                 project.Dictionary,
                 project.Children,
                 project.NodeCommands,

@@ -10,10 +10,12 @@ internal sealed class RuntimeInputOptionsDataSource
     private readonly IDictionaryFieldContextRepository _database;
     private readonly ActorPreviewDataSource _actorDataSource;
 
-    public RuntimeInputOptionsDataSource(IDictionaryFieldContextRepository database)
+    public RuntimeInputOptionsDataSource(
+        IDictionaryFieldContextRepository database,
+        IActorPreviewRepository actors)
     {
         _database = database;
-        _actorDataSource = new ActorPreviewDataSource(database);
+        _actorDataSource = new ActorPreviewDataSource(actors);
     }
 
     public IReadOnlyList<FieldOption> ActorOptions(string projectId, bool includeNone)

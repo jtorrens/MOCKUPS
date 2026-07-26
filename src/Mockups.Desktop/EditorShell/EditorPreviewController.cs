@@ -248,7 +248,10 @@ internal sealed class EditorPreviewController : IDisposable
 
     public EditorPreviewController(
         IPreviewInputRepository preview,
+        IComponentPreviewInputRepository componentPreview,
+        IModuleInstanceTimelineStore timeline,
         IDictionaryFieldContextRepository dictionary,
+        IActorPreviewRepository actors,
         IProjectPathResolver projectPaths,
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
@@ -273,10 +276,15 @@ internal sealed class EditorPreviewController : IDisposable
         _designPreviewPane = new DesignWebPreviewPane(projectPaths);
         _previewPayloadData = new DesignPreviewPayloadDataSource(
             preview,
+            timeline,
+            actors,
             projectPaths);
-        _visualContextData = new PreviewVisualContextDataSource(preview);
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(preview);
-        _productionPreviewData = new ProductionPreviewSessionDataSource(preview);
+        _visualContextData =
+            new PreviewVisualContextDataSource(preview, actors);
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(timeline);
+        _productionPreviewData =
+            new ProductionPreviewSessionDataSource(preview, timeline);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -294,14 +302,16 @@ internal sealed class EditorPreviewController : IDisposable
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(
-            preview,
+            actors,
             projectPaths);
         _productionShotContext = new ProductionShotContextService(
-            new ProductionShotContextDataSource(preview));
+            new ProductionShotContextDataSource(preview, actors));
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(
+            componentPreview,
             dictionary,
+            actors,
             projectPaths,
             Refresh,
             PreparePlaybackFramesAsync);

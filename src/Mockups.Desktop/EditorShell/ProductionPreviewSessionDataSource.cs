@@ -5,15 +5,19 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ProductionPreviewSessionDataSource
 {
     private readonly IPreviewInputRepository _database;
+    private readonly IModuleInstanceTimelineStore _timeline;
 
-    public ProductionPreviewSessionDataSource(IPreviewInputRepository database)
+    public ProductionPreviewSessionDataSource(
+        IPreviewInputRepository database,
+        IModuleInstanceTimelineStore timeline)
     {
         _database = database;
+        _timeline = timeline;
     }
 
     public string ModuleInstanceShotId(string moduleInstanceId)
     {
-        return _database.GetModuleInstanceSettings(moduleInstanceId).ShotId;
+        return _timeline.GetModuleInstanceSettings(moduleInstanceId).ShotId;
     }
 
     public int ShotFrameRate(string shotId)
@@ -23,6 +27,8 @@ internal sealed class ProductionPreviewSessionDataSource
 
     public string ModuleInstanceVariantConfigJson(string moduleInstanceId)
     {
-        return _database.GetModuleInstanceVariantSettings(moduleInstanceId).ConfigJson;
+        return _timeline
+            .GetModuleInstanceVariantSettings(moduleInstanceId)
+            .ConfigJson;
     }
 }

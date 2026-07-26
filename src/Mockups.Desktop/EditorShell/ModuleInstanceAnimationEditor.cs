@@ -29,6 +29,7 @@ internal sealed class ModuleInstanceAnimationEditor
     public ModuleInstanceAnimationEditor(
         IModuleInstanceAnimationStore animation,
         IDictionaryFieldContextRepository dictionary,
+        IActorPreviewRepository actors,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         EditorSessionUiState sessionUiState,
@@ -43,7 +44,7 @@ internal sealed class ModuleInstanceAnimationEditor
             animation,
             _timelineDataSource);
         _runtimeInputOptions =
-            new RuntimeInputOptionsDataSource(dictionary);
+            new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _sessionUiState = sessionUiState;

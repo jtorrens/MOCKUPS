@@ -62,6 +62,8 @@ internal sealed class RenderJobSnapshotFactory
         _roots = roots ?? new ProductionOutputRootStore();
         _payloadData = new DesignPreviewPayloadDataSource(
             database,
+            database,
+            database,
             projectPaths);
     }
 

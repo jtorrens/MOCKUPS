@@ -12,19 +12,24 @@ internal sealed class ProductionScreenPresentationDataSource
 {
     private readonly IPreviewInputRepository _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
+    private readonly IModuleInstanceTimelineStore _timeline;
 
-    public ProductionScreenPresentationDataSource(IPreviewInputRepository database)
+    public ProductionScreenPresentationDataSource(
+        IPreviewInputRepository database,
+        IModuleInstanceTimelineStore timeline)
     {
         _database = database;
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _timeline = timeline;
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(timeline);
     }
 
     public ProductionScreenPresentationSource Load(string moduleInstanceId)
     {
         return new ProductionScreenPresentationSource(
-            _database.GetModuleInstanceModuleName(moduleInstanceId),
+            _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             _database.GetModuleInstanceVariantName(moduleInstanceId),
             ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId),
-            _database.GetModuleInstanceTransitionType(moduleInstanceId));
+            _timeline.GetModuleInstanceTransitionType(moduleInstanceId));
     }
 }

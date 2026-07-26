@@ -58,18 +58,25 @@ internal sealed class DesignPreviewPayloadDataSource
 {
     private readonly IPreviewInputRepository _database;
     private readonly IProjectPathResolver _projectPaths;
+    private readonly IModuleInstanceTimelineStore _timeline;
+    private readonly IActorPreviewRepository _actors;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ActorPreviewDataSource _actorDataSource;
     private readonly NestedRuntimeRecordReferenceResolver _nestedRuntimeRecordReferenceResolver;
 
     public DesignPreviewPayloadDataSource(
         IPreviewInputRepository database,
+        IModuleInstanceTimelineStore timeline,
+        IActorPreviewRepository actors,
         IProjectPathResolver projectPaths)
     {
         _database = database;
+        _timeline = timeline;
+        _actors = actors;
         _projectPaths = projectPaths;
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
-        _actorDataSource = new ActorPreviewDataSource(database);
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(timeline);
+        _actorDataSource = new ActorPreviewDataSource(actors);
         _nestedRuntimeRecordReferenceResolver =
             new NestedRuntimeRecordReferenceResolver(
                 _actorDataSource,
@@ -125,7 +132,7 @@ internal sealed class DesignPreviewPayloadDataSource
             _database.GetPaletteColorMap(theme.ProjectId),
             _database.GetPaletteNeutralMap(theme.ProjectId),
             _projectPaths.ResolveProjectPath(
-                _database.GetProjectSettings(theme.ProjectId).MediaRoot),
+                _actors.GetProjectSettings(theme.ProjectId).MediaRoot),
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
             _database.GetProductionFontFaces(theme.ProjectId),
@@ -180,8 +187,9 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId)
     {
-        var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
-        var module = _database.GetModuleInstanceVariantSettings(moduleInstanceId);
+        var instance = _timeline.GetModuleInstanceSettings(moduleInstanceId);
+        var module =
+            _timeline.GetModuleInstanceVariantSettings(moduleInstanceId);
         var app = _database.GetAppSettings(instance.AppId);
         var shot = _database.GetShotSettings(instance.ShotId);
         return new DesignPreviewModuleInstanceSource(
@@ -189,7 +197,7 @@ internal sealed class DesignPreviewPayloadDataSource
             instance.ShotId,
             module.RecordClassId,
             module.ConfigJson,
-            _database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
+            _timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
             _database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
             instance.AnimationJson,
@@ -199,7 +207,7 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public IReadOnlyList<DesignPreviewShotSlot> LoadShotSlots(string shotId)
     {
-        return _database.GetShotModuleInstanceSlots(shotId)
+        return _timeline.GetShotModuleInstanceSlots(shotId)
             .Select((slot) => new DesignPreviewShotSlot(
                 slot.Id,
                 slot.Name,
@@ -291,5 +299,5 @@ internal sealed class DesignPreviewPayloadDataSource
     private string ShotIdFor(ProjectTreeNode node) =>
         node.Kind == ProjectTreeNodeKind.Shot
             ? node.Id
-            : _database.GetModuleInstanceSettings(node.Id).ShotId;
+            : _timeline.GetModuleInstanceSettings(node.Id).ShotId;
 }

@@ -20,11 +20,16 @@ internal sealed class DictionaryFieldContextDataSource
 
     public DictionaryFieldContextDataSource(
         IDictionaryFieldContextRepository database,
+        IPreviewInputRepository preview,
+        IModuleInstanceTimelineStore timeline,
+        IActorPreviewRepository actors,
         IProjectPathResolver projectPaths)
     {
         _database = database;
         _previewPayloadData = new DesignPreviewPayloadDataSource(
-            database,
+            preview,
+            timeline,
+            actors,
             projectPaths);
     }
 

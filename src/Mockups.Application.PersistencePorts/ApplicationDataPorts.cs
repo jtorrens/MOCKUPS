@@ -134,7 +134,7 @@ public interface IVariantHistoryStore
         EditorShell.ProjectTreeNode variantNode);
 }
 
-public interface IComponentPreviewInputRepository : IProjectSettingsQuery
+public interface IComponentPreviewInputRepository
 {
     JsonObject GetComponentVariantConfig(string variantReference);
     JsonObject GetComponentVariantRuntimeContract(string variantReference);
@@ -145,10 +145,7 @@ public interface IComponentPreviewInputRepository : IProjectSettingsQuery
         bool allowEmpty = false);
 }
 
-public interface IPreviewInputRepository :
-    IActorPreviewRepository,
-    IComponentPreviewInputRepository,
-    IModuleInstanceTimelineStore
+public interface IPreviewInputRepository
 {
     ShotSettings GetShotSettings(string shotId);
     AppSettings GetAppSettings(string appId);
@@ -195,8 +192,12 @@ public interface IEditorPresentationContextRepository
     string GetProductionFontFieldValue(string fontId, string fieldId);
 }
 
-public interface IDictionaryFieldContextRepository : IPreviewInputRepository
+public interface IDictionaryFieldContextRepository
 {
+    ThemeSettings GetThemeSettings(string themeId);
+    string GetModuleInstanceThemeTokensJson(string moduleInstanceId);
+    IReadOnlyList<EditorShell.FieldOption> GetPaletteColorOptions(
+        string projectId);
     ComponentVariantSelectionSettings GetComponentVariantSelectionSettings(
         string variantReference);
     JsonObject GetComponentVariantRuntimeInputs(string variantReference);
@@ -458,7 +459,11 @@ public interface IReferenceUsageQuery
         EditorShell.ProjectTreeNode node);
 }
 
-public interface IRenderSnapshotDataSource : IPreviewInputRepository
+public interface IRenderSnapshotDataSource :
+    IPreviewInputRepository,
+    IActorPreviewRepository,
+    IComponentPreviewInputRepository,
+    IModuleInstanceTimelineStore
 {
     ProductionOutputShotPlan GetProductionOutputShotPlan(string shotId);
 }

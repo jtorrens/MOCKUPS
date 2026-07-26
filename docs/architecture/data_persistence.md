@@ -124,6 +124,13 @@ Runtime Input owner writes, Runtime Input instance writes, animation and
 Reference Usage use distinct adapter instances. A Desktop controller that
 needs more than one capability declares each one in its constructor.
 
+Preview reads are also separated by owner. Generic authored Preview input does
+not inherit Actor, Component Preview or Module Instance timeline access, and
+dictionary context does not inherit generic Preview. Payload preparation
+declares every read capability it coordinates. Component Preview and Variant
+history route directly to Design; Actor, Icon Theme and Theme-token reads route
+directly to Resources.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and
