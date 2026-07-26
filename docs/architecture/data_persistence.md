@@ -142,6 +142,9 @@ directly to Resources.
 Generic Preview composes Production Shot/Screen identity, Design authored
 documents and Resources visual data explicitly; `SqliteProjectEngine` does not
 implement the Preview input port.
+Dictionary context likewise composes authored Component data from Design with
+Theme, palette and Icon Theme data from Resources; the project engine does not
+implement the Dictionary port.
 
 Editor presentation context also routes directly to Resources. It exposes only
 Project, Theme and Production Font presentation reads and does not pass through

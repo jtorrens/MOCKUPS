@@ -517,39 +517,40 @@ internal sealed class SqlitePreviewInputPort(
 }
 
 internal sealed class SqliteDictionaryFieldContextPort(
-    IDictionaryFieldContextRepository target)
+    SqliteDesignOwner design,
+    SqliteResourceOwner resources)
     : IDictionaryFieldContextRepository
 {
     public ThemeSettings GetThemeSettings(string themeId) =>
-        target.GetThemeSettings(themeId);
+        resources.GetThemeSettings(themeId);
 
     public string GetModuleInstanceThemeTokensJson(
         string moduleInstanceId) =>
-        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
+        resources.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(
         string projectId) =>
-        target.GetPaletteColorOptions(projectId);
+        resources.GetPaletteColorOptions(projectId);
 
     public ComponentVariantSelectionSettings
         GetComponentVariantSelectionSettings(string variantReference) =>
-            target.GetComponentVariantSelectionSettings(
+            design.GetComponentVariantSelectionSettings(
                 variantReference);
 
     public JsonObject GetComponentVariantRuntimeInputs(
         string variantReference) =>
-        target.GetComponentVariantRuntimeInputs(variantReference);
+        design.GetComponentVariantRuntimeInputs(variantReference);
 
     public IReadOnlyList<ComponentInputBindingDefinition>
         GetComponentVariantRuntimeInputBindings(
             string variantReference) =>
-            target.GetComponentVariantRuntimeInputBindings(
+            design.GetComponentVariantRuntimeInputBindings(
                 variantReference);
 
     public IReadOnlyList<RuntimeInputCollectionDefinition>
         GetComponentVariantRuntimeCollections(
             string variantReference) =>
-            target.GetComponentVariantRuntimeCollections(
+            design.GetComponentVariantRuntimeCollections(
                 variantReference);
 
     public IReadOnlyList<FieldOption>
@@ -557,7 +558,7 @@ internal sealed class SqliteDictionaryFieldContextPort(
             string projectId,
             string componentType,
             bool includeNone) =>
-            target.GetComponentVariantReferenceOptionsByType(
+            design.GetComponentVariantReferenceOptionsByType(
                 projectId,
                 componentType,
                 includeNone);
@@ -566,7 +567,7 @@ internal sealed class SqliteDictionaryFieldContextPort(
         string projectId,
         string componentTypeSelector,
         bool includeNone) =>
-        target.GetComponentVariantReferenceOptions(
+        design.GetComponentVariantReferenceOptions(
             projectId,
             componentTypeSelector,
             includeNone);
@@ -575,19 +576,19 @@ internal sealed class SqliteDictionaryFieldContextPort(
         string variantReference,
         JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
-        target.GetRuntimeComponentVariantName(
+        design.GetRuntimeComponentVariantName(
             variantReference,
             overrides,
             slots);
 
     public IReadOnlyList<IconThemeToken> GetIconThemeTokens(
         string iconThemeId) =>
-        target.GetIconThemeTokens(iconThemeId);
+        resources.GetIconThemeTokens(iconThemeId);
 
     public string ResolveIconThemeAssetPath(
         string iconThemeId,
         string file) =>
-        target.ResolveIconThemeAssetPath(iconThemeId, file);
+        resources.ResolveIconThemeAssetPath(iconThemeId, file);
 }
 
 internal sealed class SqliteRenderSnapshotPort(

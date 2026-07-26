@@ -16,6 +16,8 @@ internal sealed partial class SqliteProjectEngine
         _componentFieldOptions;
     private readonly ReferenceUsageService _referenceUsageService;
     private readonly IPreviewInputRepository _previewInputs;
+    private readonly IDictionaryFieldContextRepository
+        _dictionaryContext;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
@@ -32,6 +34,9 @@ internal sealed partial class SqliteProjectEngine
 
     internal IPreviewInputRepository PreviewInputs =>
         _previewInputs;
+
+    internal IDictionaryFieldContextRepository DictionaryContext =>
+        _dictionaryContext;
 
     internal SqliteProjectEngine(string databasePath)
         : this(new SqliteProjectContext(databasePath))
@@ -55,6 +60,9 @@ internal sealed partial class SqliteProjectEngine
         _referenceUsageService = new ReferenceUsageService(_context);
         _previewInputs = new SqlitePreviewInputPort(
             _productionOwner,
+            _designOwner,
+            _resourceOwner);
+        _dictionaryContext = new SqliteDictionaryFieldContextPort(
             _designOwner,
             _resourceOwner);
 

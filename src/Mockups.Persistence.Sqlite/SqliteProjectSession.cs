@@ -25,8 +25,7 @@ public sealed class SqliteProjectSession
         ModuleInstanceThemes =
             new SqliteModuleInstanceThemeTokenPort(
                 engine.Resources);
-        Dictionary =
-            new SqliteDictionaryFieldContextPort(engine);
+        Dictionary = engine.DictionaryContext;
         Children = new SqliteEditorChildPort(engine);
         NodeCommands =
             new SqliteEditorNodeCommandPort(engine);
