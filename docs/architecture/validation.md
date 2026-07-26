@@ -83,10 +83,9 @@ It includes:
   while preserving matching stable-id values;
 - generic Runtime action completion, visual-tree reattachment, repeat from the
   captured origin, Restore and exact prepared-frame reuse;
-- optional Shot Manager governance, including exact Episode adoption,
-  stable local Shot numbers, on-demand portable render-contract caching,
-  unsafe-path rejection, retained output folders on delete and independent
-  data after disconnect;
+- Project-owned Production Output naming, stable Episode/Shot codes,
+  portable route derivation, unsafe-path rejection and retained output folders
+  on Shot deletion;
 - Render Queue naming and shared Light/Dark version resolution, incremental
   content-addressed frame snapshots, bounded one-frame consumption, local
   recovery, strict stored-route containment,
@@ -248,15 +247,14 @@ Database validation is read-only and confirms:
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
 - required Shot Actor and Production context;
-- exact Shot Manager association/binding relationships and strict portable
-  Shot structure documents;
+- exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.
 
 Lifecycle and migration tests operate on disposable database copies.
 
 Repository validation derives its pristine source from the staged parity
-artifact. This keeps personal Shot Manager associations and other local
+artifact. This keeps workstation-local Production Output roots and other local
 authoring changes out of test expectations while still validating the exact
 database intended for the revision.
 
@@ -282,8 +280,8 @@ For any editor or Preview change, exercise at least:
 10. Usage navigation across Design and Production;
 11. tree/editor Rename consistency and destructive confirmation links;
 12. resizable panels, compact layout and scroll restoration.
-13. optional Shot Manager connect/synchronize, Shot creation with a stable
-    number, retained output folders on Shot deletion and disconnect behavior.
+13. Production Output card, generated Shot nomenclature, workstation-local
+    root and retained output folders on Shot deletion.
 14. Shot Render action on a pre-association Shot, Actor loaded before routing,
     automatic route proposal, Device/Theme overrides, Light/Dark/Both naming,
     job-start folder creation, queue progress, cancel/retry/pause and output

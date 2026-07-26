@@ -4,8 +4,7 @@ using Mockups.DesktopEditorShell.Common;
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner :
-    IProjectSettingsQuery,
-    IShotManagerProjectStore
+    IProjectSettingsQuery
 {
     private readonly SqliteProjectContext _context;
     private readonly IShotRepository _shotRepository;
@@ -13,8 +12,6 @@ internal sealed partial class SqliteProductionOwner :
     private readonly IModuleInstanceRepository _moduleInstanceRepository;
     private readonly IModuleInstanceThemeContextService
         _moduleInstanceThemeContextService;
-    private readonly IShotManagerIntegrationRepository
-        _shotManagerIntegrationRepository;
     private readonly IModuleVariantCatalog _moduleVariantCatalog;
 
     internal SqliteProductionOwner(
@@ -30,8 +27,6 @@ internal sealed partial class SqliteProductionOwner :
         _moduleInstanceRepository = new ModuleInstanceRepository(context);
         _moduleInstanceThemeContextService =
             new ModuleInstanceThemeContextService(context);
-        _shotManagerIntegrationRepository =
-            new ShotManagerIntegrationRepository(context);
     }
 
     internal IShotRepository ShotRepository => _shotRepository;
@@ -46,17 +41,8 @@ internal sealed partial class SqliteProductionOwner :
         ModuleInstanceThemeContextService =>
             _moduleInstanceThemeContextService;
 
-    internal IShotManagerIntegrationRepository
-        ShotManagerIntegrationRepository =>
-            _shotManagerIntegrationRepository;
-
     private object WriteGate => _context.WriteGate;
 
     private SqliteConnection OpenConnection() => _context.OpenConnection();
 
-    private static string SlugOrName(
-        string slug,
-        string name,
-        string fallback) =>
-        SlugText.LowerSnakeOrName(slug, name, fallback);
 }

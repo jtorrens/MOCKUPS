@@ -12,7 +12,7 @@ using Mockups.DesktopEditorShell;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
+using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using System.Diagnostics;
 using System.Reflection;
 using System.IO;
@@ -101,9 +101,7 @@ var tests = new (string Name, Action Run)[]
     ("resource scalar reads reject wrong current JSON shapes", ResourceScalarReadsRejectWrongShapes),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
     ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
-    ("Shot Manager client requires exact loopback discovery and parses the read-only plan", ShotManagerClientRequiresExactDiscovery),
-    ("Shot Manager client starts the registered headless service on demand", ShotManagerClientStartsRegisteredService),
-    ("Shot Manager integration keeps Shots local and caches portable render plans", ShotManagerIntegrationKeepsShotsLocal),
+    ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
@@ -122,7 +120,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
-    ("Production Shot Manager action owns and reveals the optional association", ProductionShotManagerActionOwnsAssociation),
+    ("Production Output action reveals the project-owned configuration", ProductionOutputActionOwnsConfiguration),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
@@ -3401,7 +3399,7 @@ static void CurrentSchemaHasNoLegacyRenderPresetPersistence()
     using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
     connection.Open();
     Equal(
-        4L,
+        5L,
         SqliteCommandExecutor.ScalarLong(
             connection,
             "PRAGMA user_version"));
@@ -4832,9 +4830,15 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
     {
         Execute(connection, """
             INSERT INTO projects (
-                id, name, slug, default_fps, notes, media_root, metadata_json)
+                id, name, slug, default_fps, notes, media_root,
+                production_code, production_season_code,
+                output_name_separator, shot_prefix, shot_number_padding,
+                output_version_padding, output_frame_padding,
+                output_relative_directory_template, metadata_json)
             VALUES (
-                'project_cross', 'Cross Project', 'cross-project', 25, '', '', '{}')
+                'project_cross', 'Cross Project', 'cross-project', 25, '', '',
+                'CROSS', 'S01', '_', 'SH', 4, 3, 8,
+                '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
             """);
     }
 
@@ -5535,8 +5539,11 @@ static void ExtractedRepositoriesPreserveFacadeContract()
         Equal(originalProject, projectEpisodeRepository.GetProjectSettings(project.Id));
 
         var originalEpisode = database.GetEpisodeSettings(episode.Id);
-        projectEpisodeRepository.UpdateEpisodeField(episode.Id, "episode.slug", $"{originalEpisode.Slug}-repository");
-        Equal($"{originalEpisode.Slug}-repository", database.GetEpisodeSettings(episode.Id).Slug);
+        projectEpisodeRepository.UpdateEpisodeField(
+            episode.Id,
+            "episode.slug",
+            "EP_99");
+        Equal("EP_99", database.GetEpisodeSettings(episode.Id).Slug);
         database.UpdateEpisodeField(episode.Id, "episode.slug", originalEpisode.Slug);
         Equal(originalEpisode, projectEpisodeRepository.GetEpisodeSettings(episode.Id));
 
@@ -7325,12 +7332,6 @@ static void ShotRepositoryPreservesFacadeContract()
 
         using (var connection = context.OpenConnection())
         {
-            repository.UpdateField(connection, original.Id, "shot.slug", "repository-shot");
-        }
-        Equal("repository-shot", database.GetShotSettings(original.Id).Slug);
-        using (var connection = context.OpenConnection())
-        {
-            repository.UpdateField(connection, original.Id, "shot.slug", original.Slug);
             repository.UpdateField(connection, original.Id, "shot.fps", "30");
         }
         Equal(30, database.GetShotSettings(original.Id).FpsOverride);
@@ -7362,7 +7363,8 @@ static void ShotRepositoryPreservesFacadeContract()
                 original.OwnerActorId,
                 repository.SuggestShotNumber(
                     connection,
-                    original.EpisodeId));
+                    original.EpisodeId),
+                "SH9999");
             Equal(original.OwnerActorId, duplicate.OwnerActorId);
             True(original.ShotNumber != duplicate.ShotNumber);
             Equal(original.CanvasJson, duplicate.CanvasJson);
@@ -8242,508 +8244,6 @@ static void RenderExecutorPublishesCleanPngSequence()
     }
 }
 
-static void ShotManagerIntegrationKeepsShotsLocal()
-{
-    var source = ParityDatabasePath();
-    var temporary = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-shot-manager-{Guid.NewGuid():N}.sqlite");
-    var productionRoot = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-shot-manager-root-{Guid.NewGuid():N}");
-    var workstationRootsPath = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-shot-manager-roots-{Guid.NewGuid():N}.json");
-    File.Copy(source, temporary, overwrite: true);
-    Directory.CreateDirectory(productionRoot);
-    try
-    {
-        var database = new SqliteProjectEngine(temporary);
-        var workstationRoots = new ShotManagerWorkstationRootStore(
-            workstationRootsPath);
-        var project = database.LoadProjectTree().Single();
-        var remoteProduction = new ShotManagerCatalogProduction(
-            "sm-production",
-            "Shot Manager Series",
-            "SMS",
-            "SERIES",
-            "EPISODE_SHOT");
-        var remoteSeason = new ShotManagerSeason(
-            "sm-season-2",
-            remoteProduction.Id,
-            2,
-            "S02",
-            "Season 2");
-        var remoteEpisode = new ShotManagerEpisode(
-            "sm-episode-1",
-            remoteProduction.Id,
-            remoteSeason.Id,
-            1,
-            "E01",
-            "Opening");
-        var snapshot = new ShotManagerProductionSnapshot(
-            productionRoot,
-            remoteProduction,
-            [remoteSeason],
-            [remoteEpisode]);
-        var initialEpisodeCount = Descendants(database.LoadProjectTree())
-            .Count((node) => node.Kind == ProjectTreeNodeKind.Episode);
-        var initialShotCount = Descendants(database.LoadProjectTree())
-            .Count((node) => node.Kind == ProjectTreeNodeKind.Shot);
-        Throws<InvalidOperationException>(() =>
-            new ShotManagerAssociationService(
-                database,
-                workstationRoots).Synchronize(
-                project.Id,
-                snapshot,
-                remoteSeason.Id,
-                []));
-        Equal(null, database.GetShotManagerAssociation(project.Id));
-        Equal(
-            initialEpisodeCount,
-            Descendants(database.LoadProjectTree())
-                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
-        var association = new ShotManagerAssociationService(
-            database,
-            workstationRoots)
-            .Synchronize(
-                project.Id,
-                snapshot,
-                remoteSeason.Id,
-                [
-                    new ShotManagerEpisodeAssociationChoice(
-                        remoteEpisode.Id,
-                        "episode_001"),
-                ]);
-        Equal(remoteProduction.Id, association.ProductionId);
-        Equal(remoteSeason.Id, association.SeasonId);
-        Equal(
-            initialEpisodeCount,
-            Descendants(database.LoadProjectTree())
-                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
-        Equal(
-            initialShotCount,
-            Descendants(database.LoadProjectTree())
-                .Count((node) => node.Kind == ProjectTreeNodeKind.Shot));
-        var binding = Required(
-            database.GetShotManagerEpisodeBinding("episode_001"));
-        Equal(remoteEpisode.Id, binding.ExternalEpisodeId);
-        Equal(remoteEpisode.Code, binding.EpisodeCode);
-
-        var explicitlyCreatedRemoteEpisode = new ShotManagerEpisode(
-            "sm-episode-2",
-            remoteProduction.Id,
-            remoteSeason.Id,
-            2,
-            "E02",
-            "Second");
-        new ShotManagerAssociationService(
-            database,
-            workstationRoots).Synchronize(
-            project.Id,
-            snapshot with
-            {
-                Episodes = [remoteEpisode, explicitlyCreatedRemoteEpisode],
-            },
-            remoteSeason.Id,
-            [
-                new ShotManagerEpisodeAssociationChoice(
-                    explicitlyCreatedRemoteEpisode.Id,
-                    null),
-            ]);
-        Equal(
-            initialEpisodeCount + 1,
-            Descendants(database.LoadProjectTree())
-                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
-        True(database.LoadShotManagerLocalEpisodes(project.Id).Any((local) =>
-            local.Binding?.ExternalEpisodeId
-                == explicitlyCreatedRemoteEpisode.Id
-            && local.Episode.Notes
-                == "Episode synchronized from Shot Manager."));
-        new ShotManagerAssociationService(
-            database,
-            workstationRoots).Synchronize(
-            project.Id,
-            snapshot,
-            remoteSeason.Id,
-            []);
-        Equal(
-            initialEpisodeCount,
-            Descendants(database.LoadProjectTree())
-                .Count((node) => node.Kind == ProjectTreeNodeKind.Episode));
-
-        var governedEpisode = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Id == binding.EpisodeId);
-        var episodesRoot = Required(governedEpisode.Parent);
-        Throws<InvalidOperationException>(() => database.AddChild(episodesRoot));
-        Throws<InvalidOperationException>(() =>
-            database.UpdateEpisodeField(
-                governedEpisode.Id,
-                "episode.slug",
-                "local-change"));
-        Throws<InvalidOperationException>(() => database.Duplicate(governedEpisode));
-        Throws<InvalidOperationException>(() => database.Delete(governedEpisode));
-
-        const string fullName = "SMS_S02_EP_01_SH0010";
-        var relatives = new[]
-        {
-            "S02",
-            "S02/EP_01",
-            $"S02/EP_01/{fullName}",
-            $"S02/EP_01/{fullName}/comp",
-        };
-        var directories = relatives.Select((relative) =>
-            new ShotManagerPlanDirectory(
-                relative,
-                Path.Combine(
-                    [productionRoot, .. relative.Split('/')])))
-            .ToList();
-        var plan = new ShotManagerExternalShotPlan(
-            1,
-            remoteProduction,
-            remoteSeason,
-            remoteEpisode,
-            10,
-            "SH0010",
-            fullName,
-            productionRoot,
-            directories,
-            directories.Skip(2).ToList(),
-            [
-                new ShotManagerPlanEntry(
-                    "structure-comp",
-                    $"S02/EP_01/{fullName}/comp",
-                    Path.Combine(
-                        productionRoot,
-                        "S02",
-                        "EP_01",
-                        fullName,
-                        "comp")),
-            ],
-            [
-                new ShotManagerPlanOutputContract(
-                    "structure-comp",
-                    $"S02/EP_01/{fullName}/comp",
-                    $"{fullName}_comp_v",
-                    3),
-            ]);
-        const string legacyFullName = "SMS_S02_EP_01_SH0001";
-        var legacyRelatives = relatives
-            .Select((relative) => relative.Replace(
-                fullName,
-                legacyFullName,
-                StringComparison.Ordinal))
-            .ToList();
-        var legacyDirectories = legacyRelatives.Select((relative) =>
-            new ShotManagerPlanDirectory(
-                relative,
-                Path.Combine(
-                    [productionRoot, .. relative.Split('/')])))
-            .ToList();
-        var legacyPlan = plan with
-        {
-            ShotNumber = 1,
-            ShotCode = "SH0001",
-            FullName = legacyFullName,
-            Directories = legacyDirectories,
-            ShotOwnedDirectories = legacyDirectories.Skip(2).ToList(),
-            StructureEntries =
-            [
-                new ShotManagerPlanEntry(
-                    "structure-comp",
-                    $"S02/EP_01/{legacyFullName}/comp",
-                    Path.Combine(
-                        productionRoot,
-                        "S02",
-                        "EP_01",
-                        legacyFullName,
-                        "comp")),
-            ],
-            OutputContracts =
-            [
-                new ShotManagerPlanOutputContract(
-                    "structure-comp",
-                    $"S02/EP_01/{legacyFullName}/comp",
-                    $"{legacyFullName}_comp_v",
-                    3),
-            ],
-        };
-        var legacyShot = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Id == "shot_001");
-        var legacyDraft = new RenderJobSnapshotFactory(
-                database,
-                database.ProjectPaths,
-                new FixedShotManagerClient(legacyPlan, snapshot),
-                workstationRoots)
-            .LoadDraftAsync(legacyShot)
-            .GetAwaiter()
-            .GetResult();
-        Equal("Alex", legacyDraft.ActorName);
-        Equal(1, legacyDraft.ShotNumber);
-        Equal(legacyFullName, legacyDraft.SuggestedBaseName);
-        Equal(1, legacyDraft.Routes.Count);
-        Equal(
-            $"S02/EP_01/{legacyFullName}/comp",
-            legacyDraft.Routes[0].RelativeDirectory);
-        Equal(
-            legacyFullName,
-            Required(
-                database.GetShotManagerShotStructure(legacyShot.Id))
-                .FullName);
-        True(!Directory.Exists(Path.Combine(
-            productionRoot,
-            "S02",
-            "EP_01",
-            legacyFullName,
-            "comp")));
-        var actorId = database.GetRequiredActorOptions(project.Id).First().Value;
-        var shot = new ShotManagerShotCreationService(
-                database,
-                new FixedShotManagerClient(plan, snapshot),
-                workstationRoots)
-            .CreateAsync(
-                governedEpisode,
-                actorId,
-                plan.ShotNumber)
-            .GetAwaiter()
-            .GetResult();
-        True(!Directory.Exists(Path.Combine(
-            productionRoot,
-            "S02",
-            "EP_01",
-            fullName,
-            "comp")));
-        var stored = Required(database.GetShotManagerShotStructure(shot.Id));
-        Equal(10, stored.ShotNumber);
-        Equal(fullName, stored.FullName);
-        Equal(fullName, database.GetShotRenderName(shot.Id));
-        var portable = ShotManagerPortableStructure.Parse(
-            stored.StructureJson,
-            "Stored test Shot structure");
-        SequenceEqual(
-            relatives,
-            portable.Directories);
-        Equal(2, portable.SchemaVersion);
-        Equal(1, portable.OutputContracts.Count);
-        Equal(
-            $"{fullName}_comp_v",
-            portable.OutputContracts[0].FileNamePrefix);
-        var offlineRenderDraft = new RenderJobSnapshotFactory(
-                database,
-                database.ProjectPaths,
-                new UnavailableShotManagerClient(),
-                workstationRoots)
-            .LoadDraftAsync(shot)
-            .GetAwaiter()
-            .GetResult();
-        True(offlineRenderDraft.UsesCachedRoot);
-        Equal(productionRoot, offlineRenderDraft.RootPath);
-        Equal(1, offlineRenderDraft.Routes.Count);
-        Equal("structure-comp", offlineRenderDraft.Routes[0].EntryId);
-        Equal(
-            $"S02/EP_01/{fullName}/comp",
-            offlineRenderDraft.Routes[0].RelativeDirectory);
-        database.UpdateShotField(
-            shot.Id,
-            "shot.slug",
-            "changed");
-        Equal(
-            "changed",
-            database.GetShotSettings(shot.Id).Slug);
-        database.UpdateShotField(
-            shot.Id,
-            "shot.slug",
-            plan.ShotCode);
-        var renamed = database.RenameDirectNode(
-            shot,
-            "Locally renamed governed Shot");
-        Equal(
-            "Locally renamed governed Shot",
-            Descendants(database.LoadProjectTree())
-                .Single((candidate) => candidate.Id == shot.Id)
-                .Name);
-        database.RenameDirectNode(
-            renamed,
-            fullName);
-
-        database.Delete(shot);
-        Equal(
-            null,
-            database.GetShotManagerShotStructure(shot.Id));
-        True(!Directory.Exists(Path.Combine(
-            productionRoot,
-            "S02",
-            "EP_01",
-            fullName)));
-
-        var unsafePlan = plan with
-        {
-            ShotNumber = 1,
-            ShotCode = "SH0001",
-            FullName = "SMS_S02_EP_01_SH0001",
-            Directories =
-            [
-                new ShotManagerPlanDirectory(
-                    "../escape",
-                    Path.Combine(productionRoot, "..", "escape")),
-            ],
-            StructureEntries =
-            [
-                new ShotManagerPlanEntry(
-                    "unsafe",
-                    "../escape",
-                    Path.Combine(productionRoot, "..", "escape")),
-            ],
-        };
-        Throws<InvalidOperationException>(() =>
-            database.StoreShotManagerPlan(
-                legacyShot.Id,
-                unsafePlan));
-
-        new ShotManagerAssociationService(
-            database,
-            workstationRoots).Disconnect(project.Id);
-        Equal(null, database.GetShotManagerAssociation(project.Id));
-        Equal(null, database.GetShotManagerEpisodeBinding(governedEpisode.Id));
-        True(Descendants(database.LoadProjectTree()).Any((node) =>
-            node.Id == governedEpisode.Id));
-    }
-    finally
-    {
-        File.Delete(temporary);
-        File.Delete(workstationRootsPath);
-        if (Directory.Exists(productionRoot))
-        {
-            Directory.Delete(productionRoot, recursive: true);
-        }
-    }
-}
-
-static void ShotManagerClientRequiresExactDiscovery()
-{
-    var discoveryPath = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-shot-manager-discovery-{Guid.NewGuid():N}.json");
-    const string token =
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    File.WriteAllText(
-        discoveryPath,
-        $$"""
-        {
-          "version": 1,
-          "apiVersion": 1,
-          "baseUrl": "http://127.0.0.1:43210/api/v1",
-          "token": "{{token}}",
-          "updatedAt": "2026-07-25T12:00:00.000Z"
-        }
-        """);
-    try
-    {
-        var handler = new ShotManagerTestHandler(token);
-        var client = new ShotManagerIntegrationClient(
-            discoveryPath,
-            handler);
-        var status = client.GetStatusAsync().GetAwaiter().GetResult();
-        True(status.Connected);
-        var plan = client.PlanShotAsync(
-            "production-1",
-            "episode-1",
-            10).GetAwaiter().GetResult();
-        Equal("production-1", plan.Production.Id);
-        Equal("season-1", plan.Season.Id);
-        Equal("episode-1", plan.Episode.Id);
-        Equal("SH0010", plan.ShotCode);
-        Equal("PRJ_S01_E01_SH0010", plan.FullName);
-        Equal(1, plan.Directories.Count);
-        Equal(1, plan.StructureEntries.Count);
-        Equal(0, plan.OutputContracts.Count);
-        Equal(4, handler.Requests.Count);
-        True(!handler.Requests[0].Authenticated);
-        True(!handler.Requests[1].Authenticated);
-        True(!handler.Requests[2].Authenticated);
-        True(handler.Requests[3].Authenticated);
-
-        File.WriteAllText(
-            discoveryPath,
-            $$"""
-            {
-              "version": 1,
-              "apiVersion": 1,
-              "baseUrl": "http://localhost:43210/api/v1",
-              "token": "{{token}}",
-              "updatedAt": "2026-07-25T12:00:00.000Z"
-            }
-            """);
-        Throws<ShotManagerIntegrationException>(() =>
-            new ShotManagerIntegrationClient(discoveryPath, handler)
-                .GetCatalogAsync().GetAwaiter().GetResult());
-    }
-    finally
-    {
-        File.Delete(discoveryPath);
-    }
-}
-
-static void ShotManagerClientStartsRegisteredService()
-{
-    var directory = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-shot-manager-service-{Guid.NewGuid():N}");
-    Directory.CreateDirectory(directory);
-    var discoveryPath = Path.Combine(directory, "integration-api.json");
-    var launcherPath = Path.Combine(directory, "integration-service.json");
-    var executablePath = Path.GetFullPath(
-        Path.Combine(directory, "VFX Shot Manager"));
-    const string token =
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    File.WriteAllText(
-        launcherPath,
-        $$"""
-        {
-          "version": 1,
-          "executablePath": "{{executablePath.Replace("\\", "\\\\")}}",
-          "arguments": ["--integration-service"],
-          "updatedAt": "2026-07-25T12:00:00.000Z"
-        }
-        """);
-    var launchCount = 0;
-    try
-    {
-        var handler = new ShotManagerTestHandler(token);
-        var client = new ShotManagerIntegrationClient(
-            discoveryPath,
-            handler,
-            (launchedExecutable, arguments) =>
-            {
-                Equal(executablePath, launchedExecutable);
-                SequenceEqual(
-                    new[] { "--integration-service" },
-                    arguments);
-                launchCount += 1;
-                File.WriteAllText(
-                    discoveryPath,
-                    $$"""
-                    {
-                      "version": 1,
-                      "apiVersion": 1,
-                      "baseUrl": "http://127.0.0.1:43210/api/v1",
-                      "token": "{{token}}",
-                      "updatedAt": "2026-07-25T12:00:00.000Z"
-                    }
-                    """);
-            });
-
-        var status = client.GetStatusAsync().GetAwaiter().GetResult();
-
-        True(status.Connected);
-        Equal(1, launchCount);
-    }
-    finally
-    {
-        Directory.Delete(directory, recursive: true);
-    }
-}
-
 static void ShotActorContextIsExplicit()
 {
     var source = ParityDatabasePath();
@@ -8794,6 +8294,88 @@ static void ShotActorContextIsExplicit()
     finally
     {
         File.Delete(temporary);
+    }
+}
+
+static void ProductionOutputGeneratesExactShotPlans()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-output-{Guid.NewGuid():N}.sqlite");
+    var rootsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-output-roots-{Guid.NewGuid():N}.json");
+    var outputRoot = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-output-files-{Guid.NewGuid():N}");
+    File.Copy(source, temporary, overwrite: true);
+    Directory.CreateDirectory(outputRoot);
+    try
+    {
+        var database = new SqliteProjectEngine(temporary);
+        var plan = database.GetProductionOutputShotPlan("shot_001");
+        Equal("project_foqn_s2", plan.ProjectId);
+        Equal("SH0001", plan.ShotCode);
+        Equal("FOQN_S02_EP_01_SH0001", plan.TechnicalName);
+        Equal("S02/EP_01/FOQN_S02_EP_01_SH0001/comp", plan.RelativeDirectory);
+        Equal("FOQN_S02_EP_01_SH0001_LIGHT_v001",
+            RenderOutputPlanner.FileStem(
+                plan.TechnicalName,
+                RenderQueueAppearance.Light,
+                1,
+                plan.VersionPadding));
+
+        var roots = new ProductionOutputRootStore(rootsPath);
+        roots.Set(plan.ProjectId, outputRoot);
+        Equal(Path.GetFullPath(outputRoot), roots.Get(plan.ProjectId));
+
+        var project = database.LoadProjectTree().Single();
+        var episode = DescendantsAndSelf(project).Single((node) =>
+            node.Id == "episode_001");
+        var created = database.AddShot(
+            episode,
+            "actor_alex",
+            12);
+        Equal("SH0012", database.GetShotSettings(created.Id).Slug);
+        Equal(
+            "FOQN_S02_EP_01_SH0012",
+            database.GetProductionOutputShotPlan(created.Id).TechnicalName);
+        database.UpdateProjectField(
+            plan.ProjectId,
+            "project.shotPrefix",
+            "PL");
+        Equal("PL0001", database.GetShotSettings("shot_001").Slug);
+        Equal("PL0012", database.GetShotSettings(created.Id).Slug);
+        Equal(
+            "FOQN_S02_EP_01_PL0012",
+            database.GetProductionOutputShotPlan(created.Id).TechnicalName);
+        database.UpdateProjectField(
+            plan.ProjectId,
+            "project.shotPrefix",
+            "SH");
+
+        var draft = new RenderJobSnapshotFactory(
+                database,
+                database.ProjectPaths,
+                roots)
+            .LoadDraftAsync(
+                DescendantsAndSelf(
+                        database.LoadProjectTree().Single())
+                    .Single((node) => node.Id == "shot_001"))
+            .GetAwaiter()
+            .GetResult();
+        Equal(plan.TechnicalName, draft.SuggestedBaseName);
+        Equal(outputRoot, draft.RootPath);
+        Equal(1, draft.Routes.Count);
+        Equal(plan.RelativeDirectory, draft.Routes[0].RelativeDirectory);
+        Equal("", draft.RouteStatusMessage);
+    }
+    finally
+    {
+        File.Delete(temporary);
+        File.Delete(rootsPath);
+        Directory.Delete(outputRoot, recursive: true);
     }
 }
 
@@ -9926,107 +9508,58 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
     True(!RenderQueueController.OwnsNavigationAction(queueNode));
 }
 
-static void ProductionShotManagerActionOwnsAssociation()
+static void ProductionOutputActionOwnsConfiguration()
 {
-    var source = ParityDatabasePath();
-    var temporary = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "data",
-        $".mockups-shot-manager-card-{Guid.NewGuid():N}.sqlite");
-    var workstationRootsPath = Path.Combine(
+    var database = new SqliteProjectEngine(ParityDatabasePath());
+    var layout = EditorLayouts(database).LoadEditorLayout("project");
+    var card = layout.Cards.Single((candidate) =>
+        candidate.Id == "production-output");
+    Equal(
+        "layout:production-output",
+        ProductionOutputNavigationAction.CardSessionStateId);
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.productionRoot"));
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.outputRelativeDirectoryTemplate"));
+
+    var rootsPath = Path.Combine(
         Path.GetTempPath(),
-        $"mockups-shot-manager-card-roots-{Guid.NewGuid():N}.json");
-    File.Copy(source, temporary, overwrite: true);
+        $"mockups-production-output-action-{Guid.NewGuid():N}.json");
+    var outputRoot = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-output-action-files-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(outputRoot);
     try
     {
-        var database = new SqliteProjectEngine(temporary);
-        var workstationRoots = new ShotManagerWorkstationRootStore(
-            workstationRootsPath);
-        var project = database.LoadProjectTree().Single();
-        var remoteProduction = new ShotManagerCatalogProduction(
-            "sm-navigation-production",
-            "Navigation Series",
-            "NAV",
-            "SERIES",
-            "EPISODE_SHOT");
-        var remoteSeason = new ShotManagerSeason(
-            "sm-navigation-season",
-            remoteProduction.Id,
-            1,
-            "S01",
-            "Season 1");
-        new ShotManagerAssociationService(
-            database,
-            workstationRoots).Synchronize(
-            project.Id,
-            new ShotManagerProductionSnapshot(
-                Path.GetTempPath(),
-                remoteProduction,
-                [remoteSeason],
-                []),
-            remoteSeason.Id,
-            []);
-
         using var session =
-            HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+            HeadlessUnitTestSession.StartNew(
+                typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
-            window.Width = 1440;
-            window.Height = 900;
-            window.Show();
-            var action = Required(
-                window.FindControl<Button>("ProductionActionButton"));
-            var selector = Required(
-                window.FindControl<Control>("ProductionComboBox"));
-            Equal(0, Grid.GetColumn(action));
-            Equal(1, Grid.GetColumn(selector));
-            var foreground = Required(action.Foreground as SolidColorBrush).Color;
-            True(foreground == Color.Parse("#39D98A")
-                || foreground == Color.Parse("#137A4B"));
-            True(ReferenceEquals(Brushes.Transparent, action.Background));
-            True((ToolTip.GetTip(action)?.ToString() ?? "")
-                .Contains(
-                    "Shot Manager connected to Navigation Series · S01",
-                    StringComparison.Ordinal));
+            var button = new Button();
+            var roots = new ProductionOutputRootStore(rootsPath);
+            var opened = false;
+            var action = new ProductionOutputNavigationAction(
+                button,
+                roots,
+                () => true,
+                () => opened = true);
+            action.Refresh("project_foqn_s2");
+            True(!action.HasLocalRoot);
 
-            action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            var editorContent = typeof(MainWindow)
-                .GetField(
-                    "_editorContent",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as EditorContentController
-                ?? throw new InvalidOperationException(
-                    "Missing MainWindow editor content owner.");
-            var integrationCard = editorContent.Cards.Single((card) =>
-                card.SessionStateId == "integration:shot-manager");
-            True(integrationCard.IsExpanded);
-            var selectedNode = Required(WindowSession(window).SelectedNode);
-            Equal(ProjectTreeNodeKind.Project, selectedNode.Kind);
-
-            new ShotManagerAssociationService(
-                database,
-                workstationRoots).Disconnect(project.Id);
-            typeof(MainWindow).GetMethod(
-                "RefreshProductionPicker",
-                BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.Invoke(window, null);
-            var disconnectedForeground =
-                Required(action.Foreground as SolidColorBrush).Color;
-            True(disconnectedForeground != Color.Parse("#39D98A")
-                && disconnectedForeground != Color.Parse("#137A4B"));
-            True((ToolTip.GetTip(action)?.ToString() ?? "")
-                .Contains(
-                    "Shot Manager is not connected",
-                    StringComparison.Ordinal));
-            window.Hide();
+            roots.Set("project_foqn_s2", outputRoot);
+            action.Refresh("project_foqn_s2");
+            True(action.HasLocalRoot);
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            True(opened);
+            True((ToolTip.GetTip(button)?.ToString() ?? "")
+                .Contains("Production Output configured", StringComparison.Ordinal));
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
     {
-        File.Delete(temporary);
-        File.Delete(workstationRootsPath);
+        File.Delete(rootsPath);
+        Directory.Delete(outputRoot, recursive: true);
     }
 }
 
@@ -12653,174 +12186,6 @@ internal sealed class AppearanceFailingRenderExecutor(
     }
 
     public void Dispose() { }
-}
-
-internal sealed class UnavailableShotManagerClient :
-    IShotManagerIntegrationClient
-{
-    public Task<ShotManagerStatus> GetStatusAsync(
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new ShotManagerStatus(
-            false,
-            "Unavailable for test."));
-
-    public Task<IReadOnlyList<ShotManagerCatalogProduction>> GetCatalogAsync(
-        CancellationToken cancellationToken = default) =>
-        Task.FromException<IReadOnlyList<ShotManagerCatalogProduction>>(
-            new ShotManagerIntegrationException(
-                "unavailable",
-                "Unavailable for test."));
-
-    public Task<ShotManagerProductionSnapshot> GetSnapshotAsync(
-        string productionId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromException<ShotManagerProductionSnapshot>(
-            new ShotManagerIntegrationException(
-                "unavailable",
-                "Unavailable for test."));
-
-    public Task<ShotManagerExternalShotPlan> PlanShotAsync(
-        string productionId,
-        string episodeId,
-        int shotNumber,
-        CancellationToken cancellationToken = default) =>
-        Task.FromException<ShotManagerExternalShotPlan>(
-            new ShotManagerIntegrationException(
-                "unavailable",
-                "Unavailable for test."));
-}
-
-internal sealed class FixedShotManagerClient(
-    ShotManagerExternalShotPlan plan,
-    ShotManagerProductionSnapshot snapshot) :
-    IShotManagerIntegrationClient
-{
-    public Task<ShotManagerStatus> GetStatusAsync(
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new ShotManagerStatus(
-            true,
-            "Connected for test."));
-
-    public Task<IReadOnlyList<ShotManagerCatalogProduction>> GetCatalogAsync(
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<ShotManagerCatalogProduction>>(
-            [plan.Production]);
-
-    public Task<ShotManagerProductionSnapshot> GetSnapshotAsync(
-        string productionId,
-        CancellationToken cancellationToken = default)
-    {
-        if (!plan.Production.Id.Equals(
-                productionId,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                "Unexpected Production in fixed Shot Manager test client.");
-        }
-        return Task.FromResult(snapshot);
-    }
-
-    public Task<ShotManagerExternalShotPlan> PlanShotAsync(
-        string productionId,
-        string episodeId,
-        int shotNumber,
-        CancellationToken cancellationToken = default)
-    {
-        if (!plan.Production.Id.Equals(
-                productionId,
-                StringComparison.Ordinal)
-            || !plan.Episode.Id.Equals(
-                episodeId,
-                StringComparison.Ordinal)
-            || plan.ShotNumber != shotNumber)
-        {
-            throw new InvalidOperationException(
-                "Unexpected Shot plan context in fixed Shot Manager test client.");
-        }
-        return Task.FromResult(plan);
-    }
-}
-
-internal sealed class ShotManagerTestHandler(
-    string expectedToken) : HttpMessageHandler
-{
-    public List<(string Path, bool Authenticated)> Requests { get; } = [];
-
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var path = request.RequestUri?.AbsolutePath
-            ?? throw new InvalidOperationException("Missing test request URI.");
-        var authenticated =
-            request.Headers.Authorization?.Scheme == "Bearer"
-            && request.Headers.Authorization.Parameter == expectedToken;
-        Requests.Add((path, authenticated));
-        var json = path.EndsWith("/health", StringComparison.Ordinal)
-            ? """
-              {
-                "apiVersion": 1,
-                "data": {
-                  "service": "vfx-shot-manager",
-                  "readOnly": true
-                }
-              }
-              """
-            : """
-              {
-                "apiVersion": 1,
-                "data": {
-                  "planVersion": 1,
-                  "production": {
-                    "id": "production-1",
-                    "name": "Production",
-                    "code": "PRJ",
-                    "productionType": "SERIES",
-                    "seriesShotStructure": "EPISODE_SHOT"
-                  },
-                  "season": {
-                    "id": "season-1",
-                    "number": 1,
-                    "code": "S01",
-                    "name": "Season 1"
-                  },
-                  "episode": {
-                    "id": "episode-1",
-                    "number": 1,
-                    "code": "E01",
-                    "title": "Episode 1"
-                  },
-                  "shotNumber": 10,
-                  "shotCode": "SH0010",
-                  "fullName": "PRJ_S01_E01_SH0010",
-                  "rootPath": "/tmp/shot-manager-production",
-                  "directories": [{
-                    "relativePath": "S01/E01/PRJ_S01_E01_SH0010/comp",
-                    "resolvedPath": "/tmp/shot-manager-production/S01/E01/PRJ_S01_E01_SH0010/comp"
-                  }],
-                  "shotOwnedDirectories": [{
-                    "relativePath": "S01/E01/PRJ_S01_E01_SH0010/comp",
-                    "resolvedPath": "/tmp/shot-manager-production/S01/E01/PRJ_S01_E01_SH0010/comp"
-                  }],
-                  "structureEntries": [{
-                    "entryId": "structure-comp",
-                    "relativePath": "S01/E01/PRJ_S01_E01_SH0010/comp",
-                    "resolvedPath": "/tmp/shot-manager-production/S01/E01/PRJ_S01_E01_SH0010/comp"
-                  }],
-                  "outputContracts": [],
-                  "persisted": false,
-                  "reserved": false
-                }
-              }
-              """;
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(
-                json,
-                Encoding.UTF8,
-                "application/json"),
-        });
-    }
 }
 
 internal static class HeadlessTestApplication

@@ -120,6 +120,7 @@ public partial class MainWindow : SukiWindow
             ProductionActionButton,
             data.ProductionNavigation,
             data.ProjectPaths,
+            application.ProductionOutputRoots,
             () => _themeController.IsDark,
             OpenSelectedProductionCard);
         _navigationRenderer = new EditorNavigationRenderer(
@@ -144,7 +145,8 @@ public partial class MainWindow : SukiWindow
             SetEditorRootTitle,
             RebuildNavigationCards,
             RefreshPreviewDevice,
-            RefreshPreviewOptions);
+            RefreshPreviewOptions,
+            RefreshProductionPicker);
         _pathBrowser = new EditorPathBrowser(
             StorageProvider,
             data.Presentation,

@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
+using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using System;
 using System.Collections.Generic;
 
@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorProductionNavigationActions : IDisposable
 {
-    private readonly ShotManagerProductionNavigationAction _shotManager;
+    private readonly ProductionOutputNavigationAction _productionOutput;
     private readonly RenderQueueManager _queue;
     private readonly RenderQueueController _renderQueue;
     private readonly RenderQueueEditorSurface _renderQueueSurface;
@@ -19,18 +19,21 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         Button actionButton,
         IProductionNavigationStore database,
         IProjectPathResolver projectPaths,
+        ProductionOutputRootStore productionOutputRoots,
         Func<bool> isDark,
         Action<string> openProductionCard)
     {
-        _shotManager = new ShotManagerProductionNavigationAction(
+        _productionOutput = new ProductionOutputNavigationAction(
             actionButton,
-            database,
+            productionOutputRoots,
             isDark,
-            () => openProductionCard("integration:shot-manager"));
+            () => openProductionCard(
+                ProductionOutputNavigationAction.CardSessionStateId));
         _queue = new RenderQueueManager();
         var snapshots = new RenderJobSnapshotFactory(
             database,
-            projectPaths);
+            projectPaths,
+            productionOutputRoots);
         _renderQueue = new RenderQueueController(
             owner,
             database,
@@ -44,7 +47,7 @@ internal sealed class EditorProductionNavigationActions : IDisposable
 
     public void Refresh(string? projectId)
     {
-        _shotManager.Refresh(projectId);
+        _productionOutput.Refresh(projectId);
     }
 
     public EditorNavigationRowAction? NodeAction(ProjectTreeNode node)

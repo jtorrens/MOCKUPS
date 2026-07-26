@@ -29,7 +29,6 @@ internal sealed partial class SqliteProjectEngine
         ("episodes", "metadata_json", "object"),
         ("shots", "canvas_json", "object"),
         ("shots", "metadata_json", "object"),
-        ("shot_manager_shot_structures", "structure_json", "object"),
         ("apps", "config_json", "object"),
         ("apps", "metadata_json", "object"),
         ("modules", "config_json", "object"),
@@ -60,7 +59,7 @@ internal sealed partial class SqliteProjectEngine
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
-        ValidateCurrentShotManagerStructures(connection);
+        ValidateCurrentProductionOutput(connection);
         ValidateCurrentProductionFontFiles(connection);
         ValidateCurrentEditorLayouts(connection);
         ValidateCurrentDefinitionLifecycle(connection);
@@ -73,24 +72,60 @@ internal sealed partial class SqliteProjectEngine
         ValidateForeignKeyIntegrity(connection);
     }
 
-    private void ValidateCurrentShotManagerStructures(
+    private void ValidateCurrentProductionOutput(
         SqliteConnection connection)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT shot_id, structure_json
-            FROM shot_manager_shot_structures
-            ORDER BY shot_id
-            """;
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
+        var projects = _productionOwner.QueryProjectRows(connection)
+            .ToDictionary(
+                (project) => project.Id,
+                (project) => _productionOwner.GetProjectSettings(
+                    connection,
+                    project.Id),
+                StringComparer.Ordinal);
+        var episodes = _productionOwner.QueryEpisodeRows(connection)
+            .ToDictionary(
+                (episode) => episode.Id,
+                StringComparer.Ordinal);
+        foreach (var episode in episodes.Values)
         {
-            var shotId = reader.GetString(0);
             try
             {
-                ShotManagerPortableStructure.Parse(
-                    reader.GetString(1),
-                    $"Shot Manager Shot '{shotId}' structure_json");
+                _ = ProductionOutputContract.RequireEpisodeCode(
+                    episode.Slug,
+                    $"Episode '{episode.Id}' Production code");
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(exception.Message);
+            }
+        }
+        foreach (var shot in _productionOwner.ShotRepository.QueryAll(
+                     connection))
+        {
+            if (!projects.TryGetValue(
+                    shot.ProjectId,
+                    out var project)
+                || !episodes.TryGetValue(
+                    shot.EpisodeId,
+                    out var episode))
+            {
+                continue;
+            }
+            try
+            {
+                var plan = ProductionOutputContract.Resolve(
+                    shot.ProjectId,
+                    shot.Id,
+                    shot.ShotNumber,
+                    episode.Slug,
+                    project.ProductionOutput);
+                if (!shot.Slug.Equals(
+                        plan.ShotCode,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Shot '{shot.Id}' code must be '{plan.ShotCode}'.");
+                }
             }
             catch (InvalidOperationException exception)
             {
@@ -442,15 +477,6 @@ internal sealed partial class SqliteProjectEngine
     private void ValidateCurrentReferences(SqliteConnection connection)
     {
         RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN episodes e ON e.id = s.episode_id WHERE e.id IS NULL", "shot without episode");
-        RequireNoRows(
-            connection,
-            """
-            SELECT 1
-            FROM shot_manager_shot_structures structure
-            JOIN shots ON shots.id = structure.shot_id
-            WHERE structure.shot_number <> shots.shot_number
-            """,
-            "Shot Manager render contract with another local Shot number");
         RequireNoRows(connection, "SELECT 1 FROM apps a LEFT JOIN projects p ON p.id = a.project_id WHERE p.id IS NULL", "app without project");
         RequireNoRows(connection, "SELECT 1 FROM modules m LEFT JOIN apps a ON a.id = m.app_id WHERE a.id IS NULL", "module without app");
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN shots s ON s.id = mi.shot_id WHERE s.id IS NULL", "module instance without shot");

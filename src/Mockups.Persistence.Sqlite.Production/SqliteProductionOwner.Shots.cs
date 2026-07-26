@@ -31,13 +31,12 @@ internal sealed partial class SqliteProductionOwner
 
     public string GetShotRenderName(string shotId)
     {
-        var governed = _shotManagerIntegrationRepository.GetShotStructure(
-            shotId);
-        if (governed is not null)
-        {
-            return governed.FullName;
-        }
+        return GetProductionOutputShotPlan(shotId).TechnicalName;
+    }
 
+    public ProductionOutputShotPlan GetProductionOutputShotPlan(
+        string shotId)
+    {
         using var connection = OpenConnection();
         var shot = _shotRepository.Get(connection, shotId);
         var episode = _projectEpisodeRepository.QueryEpisodes(connection)
@@ -45,25 +44,78 @@ internal sealed partial class SqliteProductionOwner
                 (candidate) => candidate.Id == shot.EpisodeId)
             ?? throw new InvalidOperationException(
                 $"Missing episode '{shot.EpisodeId}'.");
-        var project = _projectEpisodeRepository.QueryProjects(connection)
-            .SingleOrDefault(
-                (candidate) => candidate.Id == shot.ProjectId)
-            ?? throw new InvalidOperationException(
-                $"Missing project '{shot.ProjectId}'.");
         var projectSettings =
             _projectEpisodeRepository.GetProjectSettings(
                 connection,
-                project.Id);
-        var projectSlug = SlugOrName(
-            projectSettings.Slug,
-            project.Name,
-            "project");
-        var episodeSlug = SlugOrName(
+                shot.ProjectId);
+        return ProductionOutputContract.Resolve(
+            shot.ProjectId,
+            shot.Id,
+            shot.ShotNumber,
             episode.Slug,
-            episode.Name,
-            "episode");
-        var shotSlug = SlugOrName(shot.Slug, shot.Name, "shot");
-        return $"{projectSlug}_{episodeSlug}_{shotSlug}_v{Math.Max(0, shot.Version):00}";
+            projectSettings.ProductionOutput);
+    }
+
+    internal ShotRecord CreateShot(
+        SqliteConnection connection,
+        string episodeId,
+        string actorId,
+        int shotNumber)
+    {
+        var plan = ResolveNewShotPlan(
+            connection,
+            episodeId,
+            shotNumber);
+        return _shotRepository.Create(
+            connection,
+            episodeId,
+            actorId,
+            shotNumber,
+            plan.ShotCode);
+    }
+
+    internal ShotRecord DuplicateShot(
+        SqliteConnection connection,
+        string sourceShotId,
+        string id,
+        string name,
+        string actorId,
+        int shotNumber)
+    {
+        var source = _shotRepository.Get(connection, sourceShotId);
+        var plan = ResolveNewShotPlan(
+            connection,
+            source.EpisodeId,
+            shotNumber);
+        return _shotRepository.Duplicate(
+            connection,
+            sourceShotId,
+            id,
+            name,
+            actorId,
+            shotNumber,
+            plan.ShotCode);
+    }
+
+    private ProductionOutputShotPlan ResolveNewShotPlan(
+        SqliteConnection connection,
+        string episodeId,
+        int shotNumber)
+    {
+        var episode = _projectEpisodeRepository.QueryEpisodes(connection)
+            .SingleOrDefault((candidate) =>
+                candidate.Id == episodeId)
+            ?? throw new InvalidOperationException(
+                $"Missing episode '{episodeId}'.");
+        var project = _projectEpisodeRepository.GetProjectSettings(
+            connection,
+            episode.ProjectId);
+        return ProductionOutputContract.Resolve(
+            episode.ProjectId,
+            "new-shot",
+            shotNumber,
+            episode.Slug,
+            project.ProductionOutput);
     }
 
     internal bool UpdateShotField(

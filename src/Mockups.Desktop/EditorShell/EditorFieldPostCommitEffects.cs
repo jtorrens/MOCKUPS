@@ -12,6 +12,7 @@ internal sealed class EditorFieldPostCommitEffects
     private readonly Action _rebuildNavigation;
     private readonly Action _refreshPreview;
     private readonly Action _refreshPreviewOptions;
+    private readonly Action _refreshProductionNavigation;
 
     public EditorFieldPostCommitEffects(
         IEditorPresentationContextRepository database,
@@ -19,7 +20,8 @@ internal sealed class EditorFieldPostCommitEffects
         Action<string> setEditorTitle,
         Action rebuildNavigation,
         Action refreshPreview,
-        Action refreshPreviewOptions)
+        Action refreshPreviewOptions,
+        Action refreshProductionNavigation)
     {
         _contextData = new EditorPresentationContextDataSource(database);
         _selectedPreviewDeviceId = selectedPreviewDeviceId;
@@ -27,6 +29,7 @@ internal sealed class EditorFieldPostCommitEffects
         _rebuildNavigation = rebuildNavigation;
         _refreshPreview = refreshPreview;
         _refreshPreviewOptions = refreshPreviewOptions;
+        _refreshProductionNavigation = refreshProductionNavigation;
     }
 
     public void Apply(ProjectTreeNode node, string fieldId, string value)
@@ -36,6 +39,15 @@ internal sealed class EditorFieldPostCommitEffects
             _setEditorTitle(node.Name);
             _rebuildNavigation();
             _refreshPreviewOptions();
+            return;
+        }
+
+        if (node.Kind == ProjectTreeNodeKind.Project
+            && fieldId.StartsWith(
+                "project.production",
+                StringComparison.Ordinal))
+        {
+            _refreshProductionNavigation();
             return;
         }
 

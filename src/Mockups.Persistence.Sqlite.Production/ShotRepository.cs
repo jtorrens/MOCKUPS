@@ -77,7 +77,8 @@ internal sealed class ShotRepository : IShotRepository
         SqliteConnection connection,
         string episodeId,
         string actorId,
-        int shotNumber)
+        int shotNumber,
+        string shotCode)
     {
         if (string.IsNullOrWhiteSpace(actorId))
         {
@@ -90,7 +91,7 @@ internal sealed class ShotRepository : IShotRepository
             episodeId,
             RequiredProjectId(connection, episodeId),
             $"Shot {shotNumber:00}",
-            $"shot-{shotNumber:00}",
+            shotCode,
             shotNumber,
             1,
             "New shot created in the desktop shell spike.",
@@ -104,105 +105,14 @@ internal sealed class ShotRepository : IShotRepository
         return Get(connection, record.Id);
     }
 
-    public ShotRecord PrepareGoverned(
-        SqliteConnection connection,
-        string episodeId,
-        string actorId,
-        int shotNumber,
-        string fullName,
-        string shotCode)
-    {
-        if (string.IsNullOrWhiteSpace(actorId))
-        {
-            throw new InvalidOperationException("A Shot requires an explicit owner Actor.");
-        }
-        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(shotCode))
-        {
-            throw new InvalidOperationException("A Shot Manager plan requires its exact technical identity.");
-        }
-        RequireAvailableShotNumber(connection, episodeId, shotNumber);
-
-        var projectId = RequiredProjectId(connection, episodeId);
-        ProjectReferenceIntegrity.RequireSameProjectReference(
-            connection,
-            projectId,
-            ProjectReferenceKind.Actor,
-            actorId,
-            $"Shot '{fullName}' owner Actor",
-            required: true);
-        var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "shots", "episode_id", episodeId);
-        var record = new ShotRecord(
-            $"shot_{Guid.NewGuid():N}",
-            episodeId,
-            projectId,
-            fullName,
-            shotCode,
-            shotNumber,
-            1,
-            "Shot created in MOCKUPS with an official Shot Manager render plan.",
-            sortOrder,
-            null,
-            240,
-            actorId,
-            "{}",
-            "{}");
-        Validate(record);
-        return record;
-    }
-
-    public void InsertPrepared(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        ShotRecord record)
-    {
-        InsertRow(connection, transaction, record);
-    }
-
-    public ShotRecord PrepareGovernedDuplicate(
-        SqliteConnection connection,
-        string sourceShotId,
-        string actorId,
-        int shotNumber,
-        string fullName,
-        string shotCode)
-    {
-        var source = Get(connection, sourceShotId);
-        ProjectReferenceIntegrity.RequireSameProjectReference(
-            connection,
-            source.ProjectId,
-            ProjectReferenceKind.Actor,
-            actorId,
-            $"Shot '{fullName}' owner Actor",
-            required: true);
-        RequireAvailableShotNumber(
-            connection,
-            source.EpisodeId,
-            shotNumber);
-        var duplicate = source with
-        {
-            Id = $"shot_{Guid.NewGuid():N}",
-            Name = fullName,
-            Slug = shotCode,
-            ShotNumber = shotNumber,
-            Notes = "Shot duplicated in MOCKUPS with a new official Shot Manager render plan.",
-            SortOrder = SqliteCommandExecutor.NextSortOrder(
-                connection,
-                "shots",
-                "episode_id",
-                source.EpisodeId),
-            OwnerActorId = actorId,
-        };
-        Validate(duplicate);
-        return duplicate;
-    }
-
     public ShotRecord Duplicate(
         SqliteConnection connection,
         string sourceId,
         string id,
         string name,
         string actorId,
-        int shotNumber)
+        int shotNumber,
+        string shotCode)
     {
         var source = Get(connection, sourceId);
         ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -220,7 +130,7 @@ internal sealed class ShotRepository : IShotRepository
         {
             Id = id,
             Name = name,
-            Slug = $"{source.Slug}-copy",
+            Slug = shotCode,
             ShotNumber = shotNumber,
             SortOrder = SqliteCommandExecutor.NextSortOrder(
                 connection,
@@ -273,7 +183,6 @@ internal sealed class ShotRepository : IShotRepository
 
         var column = fieldId switch
         {
-            "shot.slug" => "slug",
             "shot.version" => "version",
             "shot.sortOrder" => "sort_order",
             "shot.fps" => "fps_override",
@@ -324,6 +233,22 @@ internal sealed class ShotRepository : IShotRepository
             "UPDATE shots SET duration_frames = $duration WHERE id = $id",
             ("$id", shotId),
             ("$duration", durationFrames));
+    }
+
+    public void UpdateGeneratedCodes(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        IReadOnlyDictionary<string, string> shotCodes)
+    {
+        foreach (var (shotId, shotCode) in shotCodes)
+        {
+            _context.Execute(
+                connection,
+                transaction,
+                "UPDATE shots SET slug = $slug WHERE id = $id",
+                ("$id", shotId),
+                ("$slug", shotCode));
+        }
     }
 
     public void UpdateNode(SqliteConnection connection, string shotId, string name, string notes)

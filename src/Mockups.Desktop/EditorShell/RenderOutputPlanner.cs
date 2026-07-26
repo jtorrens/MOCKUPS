@@ -159,16 +159,16 @@ internal static class RenderOutputPathSecurity
         if (!Path.IsPathFullyQualified(rootPath))
         {
             throw new InvalidOperationException(
-                "The Shot Manager workstation root is unavailable.");
+                "The local Production Output root is unavailable.");
         }
         var root = Path.GetFullPath(rootPath);
-        RequireRealDirectory(root, "Shot Manager Production root");
+        RequireRealDirectory(root, "Production Output root");
         if (string.IsNullOrWhiteSpace(relativeDirectory)
             || Path.IsPathFullyQualified(relativeDirectory)
             || relativeDirectory.Contains('\\', StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "The stored Shot Manager output route is not portable.");
+                "The Production Output route is not portable.");
         }
         var segments = relativeDirectory.Split('/');
         if (segments.Any((segment) =>
@@ -176,7 +176,7 @@ internal static class RenderOutputPathSecurity
             || segment is "." or ".."))
         {
             throw new InvalidOperationException(
-                "The stored Shot Manager output route is unsafe.");
+                "The Production Output route is unsafe.");
         }
         var current = root;
         foreach (var segment in segments)
@@ -186,20 +186,20 @@ internal static class RenderOutputPathSecurity
             {
                 RequireRealDirectory(
                     current,
-                    "Shot Manager output route");
+                    "Production Output route");
                 continue;
             }
             if (File.Exists(current))
             {
                 throw new IOException(
-                    $"Shot Manager output route crosses a file: {current}");
+                    $"Production Output route crosses a file: {current}");
             }
             if (createMissing)
             {
                 Directory.CreateDirectory(current);
                 RequireRealDirectory(
                     current,
-                    "Shot Manager output route");
+                    "Production Output route");
             }
         }
         var relative = Path.GetRelativePath(root, current);
@@ -210,7 +210,7 @@ internal static class RenderOutputPathSecurity
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
-                "The Shot Manager output route escapes the Production root.");
+                "The Production Output route escapes its local root.");
         }
         return current;
     }
@@ -239,7 +239,7 @@ internal static class RenderOutputPathSecurity
             comparer))
         {
             throw new InvalidOperationException(
-                "The queued output path does not match its frozen Shot Manager route and MOCKUPS name.");
+                "The queued output path does not match its frozen Production Output route and MOCKUPS name.");
         }
         if (File.Exists(expected) || Directory.Exists(expected))
         {

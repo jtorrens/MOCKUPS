@@ -105,12 +105,6 @@ internal sealed class EditorCollectionCardFactory
             ],
             ProjectTreeNodeKind.Shot =>
                 ShotCards(node),
-            ProjectTreeNodeKind.Project =>
-                [new ShotManagerIntegrationCollectionEditor(
-                    _database,
-                    _domainDialogs,
-                    _showInfo,
-                    _reloadAndSelect).Create(node)],
             _ => [],
         };
 
@@ -136,12 +130,6 @@ internal sealed class EditorCollectionCardFactory
                 _shotFrame,
                 _previewPlaybackState).Create(node),
         };
-        var structure = new ShotManagerShotStructureCollectionEditor(
-            _database).Create(node);
-        if (structure is not null)
-        {
-            cards.Add(structure);
-        }
         return cards;
     }
 

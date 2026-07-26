@@ -787,29 +787,14 @@ internal sealed class SqliteEditorNodeCommandPort(
         int shotNumber)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).AddShot(episode, actorId, shotNumber);
 
-    public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddShotFromShotManager(
-        Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode episode,
-        string actorId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan,
-        string duplicateSourceShotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).AddShotFromShotManager(episode, actorId, plan, duplicateSourceShotId);
-
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddTheme(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode themesRoot,
         string family)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).AddTheme(themesRoot, family);
 
-    public void ApplyShotManagerAssociation(
-        Mockups.DesktopEditorShell.Data.ShotManagerAssociationWritePlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).ApplyShotManagerAssociation(plan);
-
     public void Delete(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore)_target).Delete(node);
-
-    public void DisconnectShotManager(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).DisconnectShotManager(projectId);
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode Duplicate(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
@@ -817,9 +802,8 @@ internal sealed class SqliteEditorNodeCommandPort(
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode DuplicateShot(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode shot,
-        string actorId,
         int shotNumber)
-        => ((Mockups.DesktopEditorShell.Data.IEditorNodeCommandStore)_target).DuplicateShot(shot, actorId, shotNumber);
+        => ((Mockups.DesktopEditorShell.Data.IEditorNodeCommandStore)_target).DuplicateShot(shot, shotNumber);
 
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ShotModuleChoice> GetAvailableShotModules(
         string shotId)
@@ -869,18 +853,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         string projectId)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).GetRequiredActorOptions(projectId);
 
-    public Mockups.DesktopEditorShell.Data.ShotManagerProjectAssociationRecord GetShotManagerAssociation(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerAssociation(projectId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerEpisodeBindingRecord GetShotManagerEpisodeBinding(
-        string episodeId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerEpisodeBinding(episodeId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord GetShotManagerShotStructure(
-        string shotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerShotStructure(shotId);
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetShotModuleInstanceSlots(shotId);
@@ -889,10 +861,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode fontsRoot,
         System.Collections.Generic.IReadOnlyList<string> selectedFilePaths)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).ImportProductionFont(fontsRoot, selectedFilePaths);
-
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ShotManagerLocalEpisodeRecord> LoadShotManagerLocalEpisodes(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).LoadShotManagerLocalEpisodes(projectId);
 
     public void MoveModuleInstance(
         string moduleInstanceId,
@@ -928,11 +896,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         string name)
         => ((Mockups.DesktopEditorShell.Data.IEditorNodeCommandStore)_target).SaveModuleVariant(sourceNode, name);
 
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).StoreShotManagerPlan(shotId, plan);
-
     public int SuggestShotNumber(
         string episodeId)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).SuggestShotNumber(episodeId);
@@ -953,20 +916,9 @@ internal sealed class SqliteProductionNavigationPort(
 {
     private readonly Mockups.DesktopEditorShell.Data.IProductionNavigationStore _target = target;
 
-    public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddShotFromShotManager(
-        Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode episode,
-        string actorId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan,
-        string duplicateSourceShotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).AddShotFromShotManager(episode, actorId, plan, duplicateSourceShotId);
-
-    public void ApplyShotManagerAssociation(
-        Mockups.DesktopEditorShell.Data.ShotManagerAssociationWritePlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).ApplyShotManagerAssociation(plan);
-
-    public void DisconnectShotManager(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).DisconnectShotManager(projectId);
+    public Mockups.DesktopEditorShell.Data.ProductionOutputShotPlan GetProductionOutputShotPlan(
+        string shotId)
+        => ((Mockups.DesktopEditorShell.Data.IRenderSnapshotDataSource)_target).GetProductionOutputShotPlan(shotId);
 
     public string GetActorFieldValue(
         string actorId,
@@ -1089,18 +1041,6 @@ internal sealed class SqliteProductionNavigationPort(
         string projectId)
         => ((Mockups.DesktopEditorShell.Data.IActorPreviewRepository)_target).GetRequiredActorOptions(projectId);
 
-    public Mockups.DesktopEditorShell.Data.ShotManagerProjectAssociationRecord GetShotManagerAssociation(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerAssociation(projectId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerEpisodeBindingRecord GetShotManagerEpisodeBinding(
-        string episodeId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerEpisodeBinding(episodeId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord GetShotManagerShotStructure(
-        string shotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerShotStructure(shotId);
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetShotModuleInstanceSlots(shotId);
@@ -1121,15 +1061,6 @@ internal sealed class SqliteProductionNavigationPort(
     public Mockups.DesktopEditorShell.Data.ThemeSettings GetThemeSettings(
         string themeId)
         => ((Mockups.DesktopEditorShell.Data.IPreviewInputRepository)_target).GetThemeSettings(themeId);
-
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ShotManagerLocalEpisodeRecord> LoadShotManagerLocalEpisodes(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).LoadShotManagerLocalEpisodes(projectId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).StoreShotManagerPlan(shotId, plan);
 
     public string ValidateComponentVariantReferenceValue(
         string projectId,
@@ -1177,17 +1108,6 @@ internal sealed class SqliteEditorDomainDialogPort(
         Mockups.DesktopEditorShell.Data.ShotModuleInstanceDraft draft)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore)_target).AddModuleInstance(shot, draft);
 
-    public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddShotFromShotManager(
-        Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode episode,
-        string actorId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan,
-        string duplicateSourceShotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).AddShotFromShotManager(episode, actorId, plan, duplicateSourceShotId);
-
-    public void ApplyShotManagerAssociation(
-        Mockups.DesktopEditorShell.Data.ShotManagerAssociationWritePlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).ApplyShotManagerAssociation(plan);
-
     public void Delete(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore)_target).Delete(node);
@@ -1196,10 +1116,6 @@ internal sealed class SqliteEditorDomainDialogPort(
         string iconThemeId,
         string token)
         => ((Mockups.DesktopEditorShell.Data.IIconThemeAssetStore)_target).DeleteIconThemeToken(iconThemeId, token);
-
-    public void DisconnectShotManager(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).DisconnectShotManager(projectId);
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode Duplicate(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
@@ -1255,18 +1171,6 @@ internal sealed class SqliteEditorDomainDialogPort(
         string moduleId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore)_target).GetModuleVariantOptions(moduleId);
 
-    public Mockups.DesktopEditorShell.Data.ShotManagerProjectAssociationRecord GetShotManagerAssociation(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerAssociation(projectId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerEpisodeBindingRecord GetShotManagerEpisodeBinding(
-        string episodeId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerEpisodeBinding(episodeId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord GetShotManagerShotStructure(
-        string shotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerShotStructure(shotId);
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetShotModuleInstanceSlots(shotId);
@@ -1279,10 +1183,6 @@ internal sealed class SqliteEditorDomainDialogPort(
         string projectId,
         string themeId)
         => ((Mockups.DesktopEditorShell.Data.IThemeTokenQuery)_target).GetThemeTokenOptions(projectId, themeId);
-
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ShotManagerLocalEpisodeRecord> LoadShotManagerLocalEpisodes(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).LoadShotManagerLocalEpisodes(projectId);
 
     public void MoveModuleInstance(
         string moduleInstanceId,
@@ -1313,11 +1213,6 @@ internal sealed class SqliteEditorDomainDialogPort(
         string query,
         System.Threading.CancellationToken cancellationToken)
         => ((Mockups.DesktopEditorShell.Data.IIconThemeAssetStore)_target).SearchIconThemeSources(query, cancellationToken);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).StoreShotManagerPlan(shotId, plan);
 
     public Mockups.DesktopEditorShell.Data.IconThemeWriteAllSvgResult WriteIconThemeTokenSvgToAllSets(
         string iconThemeId,
@@ -1621,17 +1516,6 @@ internal sealed class SqliteEditorCollectionPort(
         System.Text.Json.Nodes.JsonObject item)
         => ((Mockups.DesktopEditorShell.Data.IRuntimeInputInstanceStore)_target).AddModuleInstanceRuntimeCollectionItem(moduleInstanceId, collectionJsonKey, item);
 
-    public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddShotFromShotManager(
-        Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode episode,
-        string actorId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan,
-        string duplicateSourceShotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).AddShotFromShotManager(episode, actorId, plan, duplicateSourceShotId);
-
-    public void ApplyShotManagerAssociation(
-        Mockups.DesktopEditorShell.Data.ShotManagerAssociationWritePlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).ApplyShotManagerAssociation(plan);
-
     public void Delete(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore)_target).Delete(node);
@@ -1646,10 +1530,6 @@ internal sealed class SqliteEditorCollectionPort(
         string collectionJsonKey,
         string itemId)
         => ((Mockups.DesktopEditorShell.Data.IRuntimeInputInstanceStore)_target).DeleteModuleInstanceRuntimeCollectionItem(moduleInstanceId, collectionJsonKey, itemId);
-
-    public void DisconnectShotManager(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).DisconnectShotManager(projectId);
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode Duplicate(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
@@ -1844,18 +1724,6 @@ internal sealed class SqliteEditorCollectionPort(
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots)
         => ((Mockups.DesktopEditorShell.Data.IDictionaryFieldContextRepository)_target).GetRuntimeComponentVariantName(variantReference, overrides, slots);
 
-    public Mockups.DesktopEditorShell.Data.ShotManagerProjectAssociationRecord GetShotManagerAssociation(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerAssociation(projectId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerEpisodeBindingRecord GetShotManagerEpisodeBinding(
-        string episodeId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerEpisodeBinding(episodeId);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord GetShotManagerShotStructure(
-        string shotId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).GetShotManagerShotStructure(shotId);
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetShotModuleInstanceSlots(shotId);
@@ -1888,10 +1756,6 @@ internal sealed class SqliteEditorCollectionPort(
         string afterItemId,
         System.Text.Json.Nodes.JsonObject item)
         => ((Mockups.DesktopEditorShell.Data.IRuntimeInputInstanceStore)_target).InsertModuleInstanceRuntimeCollectionItemAfter(moduleInstanceId, collectionJsonKey, afterItemId, item);
-
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ShotManagerLocalEpisodeRecord> LoadShotManagerLocalEpisodes(
-        string projectId)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).LoadShotManagerLocalEpisodes(projectId);
 
     public void MoveModuleInstance(
         string moduleInstanceId,
@@ -1929,11 +1793,6 @@ internal sealed class SqliteEditorCollectionPort(
         string query,
         System.Threading.CancellationToken cancellationToken)
         => ((Mockups.DesktopEditorShell.Data.IIconThemeAssetStore)_target).SearchIconThemeSources(query, cancellationToken);
-
-    public Mockups.DesktopEditorShell.Data.ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        Mockups.DesktopEditorShell.Integrations.ShotManager.ShotManagerExternalShotPlan plan)
-        => ((Mockups.DesktopEditorShell.Data.IShotManagerProjectStore)_target).StoreShotManagerPlan(shotId, plan);
 
     public void UpdateComponentClassDesignPreviewJson(
         string componentClassId,

@@ -108,7 +108,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 await RasterFramesAsync(
                     snapshot,
                     temporaryRoot,
-                    (index) => $"{stem}_{index + 1:D8}.png",
+                    (index) =>
+                        $"{stem}_{(index + 1).ToString($"D{snapshot.Output.FramePadding}")}.png",
                     progress,
                     cancellationToken);
             }
@@ -139,7 +140,9 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     "-format", "half",
                     "-pix_fmt", "gbrapf32le",
                     "-start_number", "1",
-                    Path.Combine(converted, $"{stem}_%08d.exr"),
+                    Path.Combine(
+                        converted,
+                        $"{stem}_%0{snapshot.Output.FramePadding}d.exr"),
                 ],
                     cancellationToken);
                 moveSource = converted;

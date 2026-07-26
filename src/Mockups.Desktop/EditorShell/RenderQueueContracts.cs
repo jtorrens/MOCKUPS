@@ -136,7 +136,8 @@ internal sealed record RenderOutputTarget(
     int Version,
     int VersionPadding,
     string OutputModeId,
-    string OutputPath);
+    string OutputPath,
+    int FramePadding = 8);
 
 internal sealed record RenderFrameStoreReference(
     string BatchRootPath,
@@ -180,6 +181,7 @@ internal sealed record RenderJobSnapshot(
             || Output.Appearance != RequestedAppearance
             || Output.Version <= 0
             || Output.VersionPadding is < 1 or > 8
+            || Output.FramePadding is < 1 or > 8
             || string.IsNullOrWhiteSpace(Output.OutputPath))
         {
             throw new InvalidOperationException(
@@ -223,7 +225,7 @@ internal sealed class RenderQueueJob
             "",
             "",
             0,
-            new RenderOutputTarget("", "", "", "", "", "", 0, 3, "", ""));
+            new RenderOutputTarget("", "", "", "", "", "", 0, 3, "", "", 8));
     public string? Error { get; set; }
 }
 

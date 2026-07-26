@@ -511,11 +511,6 @@ internal sealed partial class SqliteProjectEngine
         if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
         {
             var project = ProjectAncestor(parent);
-            if (_productionOwner.ShotManagerIntegrationRepository.GetAssociation(project.Id) is not null)
-            {
-                throw new InvalidOperationException(
-                    "Shot Manager governs this Project's Episodes.");
-            }
             var episode = _productionOwner.ProjectEpisodeRepository.CreateEpisode(connection, project.Id);
 
             return new ProjectTreeNode(
@@ -556,7 +551,7 @@ internal sealed partial class SqliteProjectEngine
 
         using var connection = OpenConnection();
         _productionOwner.ModuleInstanceThemeContextService.RequireEpisodeActor(connection, episode.Id, actorId);
-        var shot = _productionOwner.ShotRepository.Create(
+        var shot = _productionOwner.CreateShot(
             connection,
             episode.Id,
             actorId,
@@ -663,11 +658,6 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
-            if (_productionOwner.ShotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
-            {
-                throw new InvalidOperationException(
-                    "Shot Manager governs this Episode and it cannot be duplicated locally.");
-            }
             var copy = _productionOwner.ProjectEpisodeRepository.DuplicateEpisode(connection, node.Id, $"{node.Name} copy");
 
             return new ProjectTreeNode(ProjectTreeNodeKind.Episode, copy.Id, copy.Name, copy.Notes, node.RecordClassId, node.Parent);
@@ -675,12 +665,11 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.Shot)
         {
-            var id = $"shot_{Guid.NewGuid():N}";
             var source = _productionOwner.ShotRepository.Get(connection, node.Id);
-            var duplicate = _productionOwner.ShotRepository.Duplicate(
+            var duplicate = _productionOwner.DuplicateShot(
                 connection,
                 node.Id,
-                id,
+                $"shot_{Guid.NewGuid():N}",
                 $"{node.Name} copy",
                 source.OwnerActorId,
                 _productionOwner.ShotRepository.SuggestShotNumber(
@@ -801,7 +790,6 @@ internal sealed partial class SqliteProjectEngine
 
     public ProjectTreeNode DuplicateShot(
         ProjectTreeNode shot,
-        string actorId,
         int shotNumber)
     {
         if (shot.Kind != ProjectTreeNodeKind.Shot
@@ -811,12 +799,15 @@ internal sealed partial class SqliteProjectEngine
                 "Only a concrete Shot inside an Episode can be duplicated.");
         }
         using var connection = OpenConnection();
-        var duplicate = _productionOwner.ShotRepository.Duplicate(
+        var source = _productionOwner.ShotRepository.Get(
+            connection,
+            shot.Id);
+        var duplicate = _productionOwner.DuplicateShot(
             connection,
             shot.Id,
             $"shot_{Guid.NewGuid():N}",
             $"{shot.Name} copy",
-            actorId,
+            source.OwnerActorId,
             shotNumber);
         return new ProjectTreeNode(
             ProjectTreeNodeKind.Shot,
@@ -882,11 +873,6 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
-            if (_productionOwner.ShotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
-            {
-                throw new InvalidOperationException(
-                    "Shot Manager governs this Episode and it cannot be deleted locally.");
-            }
             _productionOwner.ProjectEpisodeRepository.DeleteEpisode(connection, node.Id);
             return;
         }
@@ -946,11 +932,6 @@ internal sealed partial class SqliteProjectEngine
 
         if (node.Kind == ProjectTreeNodeKind.Episode)
         {
-            if (_productionOwner.ShotManagerIntegrationRepository.GetEpisodeBinding(node.Id) is not null)
-            {
-                throw new InvalidOperationException(
-                    "Shot Manager governs this Episode. Change it there and synchronize.");
-            }
             _productionOwner.ProjectEpisodeRepository.UpdateEpisodeNode(connection, node.Id, node.Name, node.Notes);
             return;
         }

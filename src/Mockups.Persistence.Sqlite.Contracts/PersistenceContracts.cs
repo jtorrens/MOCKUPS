@@ -199,28 +199,8 @@ internal interface IShotRepository
         SqliteConnection connection,
         string episodeId,
         string actorId,
-        int shotNumber);
-
-    ShotRecord PrepareGoverned(
-        SqliteConnection connection,
-        string episodeId,
-        string actorId,
         int shotNumber,
-        string fullName,
         string shotCode);
-
-    ShotRecord PrepareGovernedDuplicate(
-        SqliteConnection connection,
-        string sourceShotId,
-        string actorId,
-        int shotNumber,
-        string fullName,
-        string shotCode);
-
-    void InsertPrepared(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        ShotRecord record);
 
     ShotRecord Duplicate(
         SqliteConnection connection,
@@ -228,7 +208,8 @@ internal interface IShotRepository
         string id,
         string name,
         string actorId,
-        int shotNumber);
+        int shotNumber,
+        string shotCode);
 
     void DuplicateForEpisode(
         SqliteConnection connection,
@@ -241,36 +222,14 @@ internal interface IShotRepository
 
     void UpdateDuration(SqliteConnection connection, string shotId, int durationFrames);
 
+    void UpdateGeneratedCodes(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        IReadOnlyDictionary<string, string> shotCodes);
+
     void UpdateNode(SqliteConnection connection, string shotId, string name, string notes);
 
     void Delete(SqliteConnection connection, string shotId);
-}
-
-internal interface IShotManagerIntegrationRepository
-{
-    ShotManagerProjectAssociationRecord? GetAssociation(string projectId);
-
-    ShotManagerEpisodeBindingRecord? GetEpisodeBinding(string episodeId);
-
-    ShotManagerShotStructureRecord? GetShotStructure(string shotId);
-
-    IReadOnlyList<ShotManagerLocalEpisodeRecord> LoadLocalEpisodes(string projectId);
-
-    void ApplyAssociation(ShotManagerAssociationWritePlan plan);
-
-    void Disconnect(string projectId);
-
-    void ValidateGovernedShotContext(
-        SqliteConnection connection,
-        string episodeId,
-        string productionId,
-        string seasonId,
-        string externalEpisodeId);
-
-    void UpsertShotStructure(
-        SqliteConnection connection,
-        SqliteTransaction? transaction,
-        ShotManagerShotStructureRecord record);
 }
 
 internal interface IPaletteRepository

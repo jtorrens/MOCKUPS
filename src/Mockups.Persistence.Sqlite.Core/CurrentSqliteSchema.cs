@@ -13,6 +13,18 @@ internal static class CurrentSqliteSchema
           default_fps INTEGER NOT NULL DEFAULT 25,
           notes TEXT NOT NULL DEFAULT '',
           media_root TEXT NOT NULL DEFAULT '',
+          production_code TEXT NOT NULL,
+          production_season_code TEXT NOT NULL,
+          output_name_separator TEXT NOT NULL DEFAULT '_'
+            CHECK(output_name_separator IN ('_', '-', '')),
+          shot_prefix TEXT NOT NULL DEFAULT 'SH',
+          shot_number_padding INTEGER NOT NULL DEFAULT 4
+            CHECK(shot_number_padding BETWEEN 1 AND 8),
+          output_version_padding INTEGER NOT NULL DEFAULT 3
+            CHECK(output_version_padding BETWEEN 1 AND 8),
+          output_frame_padding INTEGER NOT NULL DEFAULT 8
+            CHECK(output_frame_padding BETWEEN 1 AND 8),
+          output_relative_directory_template TEXT NOT NULL,
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
@@ -47,47 +59,6 @@ internal static class CurrentSqliteSchema
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_number
           ON shots(episode_id, shot_number);
-
-        CREATE TABLE IF NOT EXISTS shot_manager_project_associations (
-          project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
-          production_id TEXT NOT NULL,
-          production_name TEXT NOT NULL,
-          season_id TEXT NOT NULL,
-          season_code TEXT NOT NULL,
-          season_name TEXT,
-          updated_at TEXT NOT NULL,
-          UNIQUE(production_id, season_id)
-        );
-
-        CREATE TABLE IF NOT EXISTS shot_manager_episode_bindings (
-          episode_id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES shot_manager_project_associations(project_id) ON DELETE CASCADE,
-          external_episode_id TEXT NOT NULL,
-          episode_number INTEGER NOT NULL CHECK(episode_number > 0),
-          episode_code TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          UNIQUE(project_id, external_episode_id),
-          FOREIGN KEY(episode_id, project_id)
-            REFERENCES episodes(id, project_id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS shot_manager_shot_structures (
-          shot_id TEXT PRIMARY KEY REFERENCES shots(id) ON DELETE CASCADE,
-          plan_version INTEGER NOT NULL CHECK(plan_version = 1),
-          production_id TEXT NOT NULL,
-          season_id TEXT NOT NULL,
-          episode_id TEXT NOT NULL,
-          shot_number INTEGER NOT NULL CHECK(shot_number > 0),
-          shot_code TEXT NOT NULL,
-          full_name TEXT NOT NULL,
-          structure_json TEXT NOT NULL
-            CHECK(json_valid(structure_json) AND json_type(structure_json) = 'object'),
-          created_at TEXT NOT NULL,
-          UNIQUE(production_id, episode_id, shot_number)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_shot_manager_episode_bindings_project
-          ON shot_manager_episode_bindings(project_id, episode_number, external_episode_id);
 
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
@@ -215,7 +186,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 4;
+        PRAGMA user_version = 5;
         """;
 
 }

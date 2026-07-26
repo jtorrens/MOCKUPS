@@ -77,7 +77,7 @@ internal sealed class RenderQueueDialog
         };
         var shotDetails = new TextBlock
         {
-            Text = "Resolving Shot Manager routes…",
+            Text = "Resolving the Production Output route…",
             Opacity = 0.68,
         };
         var proposal = new TextBlock
@@ -135,7 +135,7 @@ internal sealed class RenderQueueDialog
                     validation.Text = route.SelectedItem is null
                         ? string.IsNullOrWhiteSpace(
                             currentDraft.RouteStatusMessage)
-                            ? "Choose one of the predefined Shot Manager output routes."
+                            ? "Choose the configured Production Output route."
                             : currentDraft.RouteStatusMessage
                         : "Complete every render option.";
                     proposal.Text = "";

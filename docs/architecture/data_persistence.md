@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `4` is the only current schema. Every row belongs directly or
+Schema version `5` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -14,7 +14,6 @@ The current tables are:
 | --- | --- | --- |
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
-| Optional Shot Manager governance | `shot_manager_project_associations`, `shot_manager_episode_bindings`, `shot_manager_shot_structures` | exact Project/Season association → stable Episode bindings → last portable Shot render contract |
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
 | Visual resources | `palette_colors`, `themes`, `icon_themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
@@ -22,8 +21,8 @@ The current tables are:
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
-inside its Episode. It exists independently of Shot Manager association or the
-date on which the Shot was created.
+inside its Episode. `shots.slug` stores its generated Shot code. The Project
+stores the portable Production Output naming and route contract.
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
@@ -79,9 +78,9 @@ Inherited embedded and Runtime Override field projection,
 including local inheritance removal and nested slot traversal, also executes
 inside Design. Composition routes the authored owner and supplies resolved
 option data only.
-`Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
-Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
-and Shot Manager operations; the aggregate delegates those operations and no
+`Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot and Screen
+persistence. `SqliteProductionOwner` also owns the derived Production Output
+operations; the aggregate delegates those operations and no
 longer constructs Production repositories itself. Shot settings and portable
 render-name resolution and Shot field writes execute in Production as well.
 Screen reads, identity, transition projection, ordering, renaming and effective
@@ -115,7 +114,7 @@ referencing Persistence. A project that intentionally spans layers, such as an
 integration-test project, must declare every capability it compiles against.
 
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
-dictionary, document, Usage, Render and Shot Manager consumers receive their
+dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and
 each port is backed by a different adapter object that implements only that
 port and its declared inherited capabilities. Neither Desktop controllers,
@@ -147,7 +146,6 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 - `ProductionFontRepository`
 - `IconThemeRepository`
 - `SqliteEditorLayoutStore`
-- `ShotManagerIntegrationRepository`
 
 There is no universal persistence facade. `SqlitePersistence` validates one
 current database and returns its session descriptor. `EditorLayouts` is backed
@@ -188,7 +186,6 @@ object
   episodes.metadata_json
   shots.canvas_json
   shots.metadata_json
-  shot_manager_shot_structures.structure_json
   apps.config_json
   apps.metadata_json
   modules.config_json
@@ -215,17 +212,9 @@ array
   production_fonts.files_json
 ```
 
-`shot_manager_shot_structures.structure_json` is the last successfully
-synchronized render plan for its local Shot. It is a strict portable object with
-`schemaVersion`, unique `/`-separated relative `directories`, the exact
-`shotOwnedDirectories` subset supplied by the file-layout owner, and complete
-`entries` containing only `entryId` and `relativePath`. Its
-`outputContracts` retain the exact output entry, relative directory, source
-file-name prefix and version padding returned by Shot Manager. The Render
-Queue selects by stable entry id but MOCKUPS owns its final
-`Shot_Appearance_Version` output name. The portable snapshot never
-persists a workstation root, resolved absolute path, discovery document or
-credential.
+The `projects` row stores the portable Production Output contract. Validation
+requires one exact naming grammar and one portable relative route template.
+The resolved Shot plan is derived data and is never cached in a second table.
 
 ## Local render state
 
@@ -238,7 +227,7 @@ each workstation contains:
   documents and assets plus one ordered manifest per Light/Dark child;
 - terminal history, compacted after completion;
 - the last selected output route per Project;
-- the last successfully resolved absolute root per Shot Manager Production.
+- the absolute Production Output root per stable Project id.
 
 Snapshot preparation writes one resolved frame document at a time and never
 retains the complete Shot frame set in memory. Fonts, media and repeated frame
@@ -253,12 +242,9 @@ never copied into the portable Project. Interrupted active jobs with a complete
 snapshot return to Pending on the next application start; incomplete
 preparation fails explicitly and its orphaned local files are removed.
 
-The Project association stores one exact external Production and Season.
-Episode bindings store stable external identities. Render planning supplies
-Shot Manager with the local stable Shot number and updates the portable
-contract cache. The cache stores the returned technical identity but no
-external Shot id because MOCKUPS owns that Shot. Missing physical destination
-directories are never created by this persistence write.
+Render planning derives the technical identity and route from the Project
+contract, Episode code and stable Shot number. Missing physical destination
+directories are never created by a persistence write.
 
 Component and Module Variant arrays are required current data. Every Variant is
 a complete named snapshot with:

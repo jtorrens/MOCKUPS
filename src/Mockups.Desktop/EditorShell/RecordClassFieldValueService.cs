@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
@@ -9,11 +10,16 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RecordClassFieldValueService
 {
     private readonly IRecordClassFieldStore _database;
+    private readonly ProductionOutputRootStore _productionOutputRoots;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
-    public RecordClassFieldValueService(IRecordClassFieldStore database)
+    public RecordClassFieldValueService(
+        IRecordClassFieldStore database,
+        ProductionOutputRootStore? productionOutputRoots = null)
     {
         _database = database;
+        _productionOutputRoots =
+            productionOutputRoots ?? new ProductionOutputRootStore();
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
     }
 
@@ -142,6 +148,15 @@ internal sealed class RecordClassFieldValueService
         switch (node.Kind)
         {
             case ProjectTreeNodeKind.Project when fieldId.StartsWith("project.", StringComparison.Ordinal):
+                if (fieldId == "project.productionRoot")
+                {
+                    _productionOutputRoots.Set(node.Id, value);
+                    return;
+                }
+                if (fieldId == "project.outputExample")
+                {
+                    return;
+                }
                 _database.UpdateProjectField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.App when fieldId.StartsWith("app.", StringComparison.Ordinal):
@@ -192,6 +207,31 @@ internal sealed class RecordClassFieldValueService
             "project.slug" => settings.Slug,
             "project.defaultFps" => settings.DefaultFps.ToString(),
             "project.mediaRoot" => settings.MediaRoot,
+            "project.productionRoot" =>
+                _productionOutputRoots.Get(projectId) ?? "",
+            "project.productionCode" =>
+                settings.ProductionOutput.TechnicalCode,
+            "project.productionSeasonCode" =>
+                settings.ProductionOutput.SeasonCode,
+            "project.outputNameSeparator" =>
+                settings.ProductionOutput.NameSeparator,
+            "project.shotPrefix" =>
+                settings.ProductionOutput.ShotPrefix,
+            "project.shotNumberPadding" =>
+                settings.ProductionOutput.ShotNumberPadding.ToString(),
+            "project.outputVersionPadding" =>
+                settings.ProductionOutput.VersionPadding.ToString(),
+            "project.outputFramePadding" =>
+                settings.ProductionOutput.FramePadding.ToString(),
+            "project.outputRelativeDirectoryTemplate" =>
+                settings.ProductionOutput.RelativeDirectoryTemplate,
+            "project.outputExample" =>
+                ProductionOutputContract.Resolve(
+                    projectId,
+                    "example",
+                    1,
+                    "EP_01",
+                    settings.ProductionOutput).TechnicalName,
             _ => throw new InvalidOperationException($"Unknown project field '{fieldId}'."),
         };
     }

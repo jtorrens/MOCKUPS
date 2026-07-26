@@ -59,11 +59,49 @@ public static class RecordClassFieldCatalog
         ["project.slug"] = new("project.slug", "Slug", ValueKind.StringSingleLine),
         ["project.defaultFps"] = new("project.defaultFps", "Default FPS", ValueKind.Integer),
         ["project.mediaRoot"] = new("project.mediaRoot", "Media Root", ValueKind.DirectoryPath),
+        ["project.productionRoot"] = new("project.productionRoot", "Local Production Root", ValueKind.DirectoryPath),
+        ["project.productionCode"] = new("project.productionCode", "Production Code", ValueKind.StringSingleLine),
+        ["project.productionSeasonCode"] = new("project.productionSeasonCode", "Season Code", ValueKind.StringSingleLine),
+        ["project.outputNameSeparator"] = new(
+            "project.outputNameSeparator",
+            "Name Separator",
+            ValueKind.OptionToken,
+            Options:
+            [
+                new("_", "Underscore (_)"),
+                new("-", "Hyphen (-)"),
+                new("", "None"),
+            ]),
+        ["project.shotPrefix"] = new("project.shotPrefix", "Shot Prefix", ValueKind.StringSingleLine),
+        ["project.shotNumberPadding"] = new(
+            "project.shotNumberPadding",
+            "Shot Number Digits",
+            ValueKind.Integer,
+            Number: new NumberDefinition(1, 8, 1, 0)),
+        ["project.outputVersionPadding"] = new(
+            "project.outputVersionPadding",
+            "Version Digits",
+            ValueKind.Integer,
+            Number: new NumberDefinition(1, 8, 1, 0)),
+        ["project.outputFramePadding"] = new(
+            "project.outputFramePadding",
+            "Frame Digits",
+            ValueKind.Integer,
+            Number: new NumberDefinition(1, 8, 1, 0)),
+        ["project.outputRelativeDirectoryTemplate"] = new(
+            "project.outputRelativeDirectoryTemplate",
+            "Relative Output Route",
+            ValueKind.StringSingleLine),
+        ["project.outputExample"] = new(
+            "project.outputExample",
+            "Generated Shot Example",
+            ValueKind.StringReadOnly,
+            IsEditable: false),
 
         ["episode.slug"] = new("episode.slug", "Slug", ValueKind.StringSingleLine),
         ["episode.sortOrder"] = new("episode.sortOrder", "Sort Order", ValueKind.Integer),
 
-        ["shot.slug"] = new("shot.slug", "Slug", ValueKind.StringSingleLine),
+        ["shot.slug"] = new("shot.slug", "Shot Code", ValueKind.StringReadOnly, IsEditable: false),
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration", ValueKind.Integer, IsEditable: false, Unit: "frames"),

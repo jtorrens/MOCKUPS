@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
+namespace Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 
-internal sealed class ShotManagerWorkstationRootStore
+internal sealed class ProductionOutputRootStore
 {
     private readonly string _path;
     private readonly object _gate = new();
 
-    public ShotManagerWorkstationRootStore(string? path = null)
+    public ProductionOutputRootStore(string? path = null)
     {
         _path = path ?? DefaultPath();
     }
 
-    public string? Get(string productionId)
+    public string? Get(string projectId)
     {
-        if (string.IsNullOrWhiteSpace(productionId)) return null;
+        if (string.IsNullOrWhiteSpace(projectId)) return null;
         lock (_gate)
         {
             var document = Read();
-            if (!document.ProductionRoots.TryGetValue(productionId, out var root)
+            if (!document.ProjectRoots.TryGetValue(projectId, out var root)
                 || !Path.IsPathFullyQualified(root))
             {
                 return null;
@@ -30,18 +30,35 @@ internal sealed class ShotManagerWorkstationRootStore
         }
     }
 
-    public void Remember(string productionId, string rootPath)
+    public void Set(string projectId, string rootPath)
     {
-        if (string.IsNullOrWhiteSpace(productionId)
-            || !Path.IsPathFullyQualified(rootPath))
+        if (string.IsNullOrWhiteSpace(projectId))
         {
             throw new InvalidOperationException(
-                "Shot Manager workstation roots require an exact Production and absolute local path.");
+                "Production output root requires one exact Project.");
         }
         lock (_gate)
         {
             var document = Read();
-            document.ProductionRoots[productionId] = Path.GetFullPath(rootPath);
+            if (string.IsNullOrWhiteSpace(rootPath))
+            {
+                document.ProjectRoots.Remove(projectId);
+            }
+            else
+            {
+                if (!Path.IsPathFullyQualified(rootPath))
+                {
+                    throw new InvalidOperationException(
+                        "Production output root must be an absolute local directory.");
+                }
+                var normalized = Path.GetFullPath(rootPath);
+                if (!Directory.Exists(normalized))
+                {
+                    throw new DirectoryNotFoundException(
+                        $"Production output root does not exist: {normalized}");
+                }
+                document.ProjectRoots[projectId] = normalized;
+            }
             Write(document);
         }
     }
@@ -53,19 +70,19 @@ internal sealed class ShotManagerWorkstationRootStore
         {
             var document = JsonSerializer.Deserialize<RootDocument>(
                 File.ReadAllText(_path));
-            if (document?.Schema != "mockups_shot_manager_workstation_roots"
+            if (document?.Schema != "mockups_production_output_roots"
                 || document.Version != 1
-                || document.ProductionRoots is null)
+                || document.ProjectRoots is null)
             {
                 throw new InvalidOperationException(
-                    "The local Shot Manager root cache is not a current document.");
+                    "The local Production output root document is not current.");
             }
             return document;
         }
         catch (JsonException exception)
         {
             throw new InvalidOperationException(
-                "The local Shot Manager root cache is malformed.",
+                "The local Production output root document is malformed.",
                 exception);
         }
     }
@@ -74,7 +91,7 @@ internal sealed class ShotManagerWorkstationRootStore
     {
         var directory = Path.GetDirectoryName(_path)
             ?? throw new InvalidOperationException(
-                "The local Shot Manager root cache has no parent directory.");
+                "The local Production output root document has no parent directory.");
         Directory.CreateDirectory(directory);
         var temporary = $"{_path}.{Guid.NewGuid():N}.tmp";
         try
@@ -100,15 +117,18 @@ internal sealed class ShotManagerWorkstationRootStore
         {
             root = Path.GetTempPath();
         }
-        return Path.Combine(root, "MOCKUPS", "shot-manager-roots.json");
+        return Path.Combine(
+            root,
+            "MOCKUPS",
+            "production-output-roots.json");
     }
 
     private sealed class RootDocument
     {
         public string Schema { get; init; } =
-            "mockups_shot_manager_workstation_roots";
+            "mockups_production_output_roots";
         public int Version { get; init; } = 1;
-        public Dictionary<string, string> ProductionRoots { get; init; } =
+        public Dictionary<string, string> ProjectRoots { get; init; } =
             new(StringComparer.Ordinal);
     }
 }

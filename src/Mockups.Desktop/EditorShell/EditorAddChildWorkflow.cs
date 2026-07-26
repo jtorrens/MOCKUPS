@@ -5,7 +5,6 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using SukiUI.Controls;
 using System;
 using System.IO;
@@ -74,31 +73,14 @@ internal sealed class EditorAddChildWorkflow
             {
                 var draft = await new ShotCreationDialog(_owner, _database).Show(parent);
                 if (draft is null) return null;
-                return _database.GetShotManagerEpisodeBinding(parent.Id) is null
-                    ? _database.AddShot(
-                        parent,
-                        draft.ActorId,
-                        draft.ShotNumber)
-                    : await new ShotManagerShotCreationService(_database).CreateAsync(
-                        parent,
-                        draft.ActorId,
-                        draft.ShotNumber);
+                return _database.AddShot(
+                    parent,
+                    draft.ActorId,
+                    draft.ShotNumber);
             }
             catch (Exception exception)
             {
                 await _showInfo("Shot creation failed", exception.Message);
-                return null;
-            }
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
-        {
-            var project = ProjectAncestor(parent);
-            if (_database.GetShotManagerAssociation(project.Id) is not null)
-            {
-                await _showInfo(
-                    "Episode creation unavailable",
-                    "Shot Manager governs this Project's Episodes. Create the Episode there and synchronize.");
                 return null;
             }
         }

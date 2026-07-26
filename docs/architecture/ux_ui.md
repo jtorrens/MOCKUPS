@@ -110,13 +110,13 @@ transport control disabled.
 Every Shot row keeps one compact Render action visible independently of
 selection. The action remains enabled when no output route is currently
 available: it still opens the add modal, shows the local Actor and defaults,
-asks Shot Manager to resolve the route from the stable Shot number and explains
-any missing prerequisite in place.
+derives the route from the Project contract and stable Shot number, and
+explains a missing workstation root in place.
 
 That modal owns only creation of a new batch. Actor is informative and
 immutable. Device, Theme, appearance, output mode, predefined route and base
-name are explicit. The route control shows a relative directory returned by
-Shot Manager or its matching local cache, proposes the first available option
+name are explicit. The route control shows the Project-owned relative
+directory, proposes the first available option
 when no prior selection applies and has no arbitrary folder alternative. The
 proposed automatic version and final
 child names update before enqueue. A missing physical route directory does not
@@ -131,7 +131,7 @@ the children are independent queue jobs.
 
 Production also exposes a permanent **Render Queue** section alongside
 Episodes and Production Data. Its central panel remains accessible with an
-empty queue or without cached Shot Manager routes. It groups Light/Dark children by batch
+empty queue or without a configured local Production Output root. It groups Light/Dark children by batch
 and shows phase, frame progress, errors and final output. Pending or active
 work can be canceled; failed or canceled jobs retain a retry snapshot while
 available; completed work can reveal its output; terminal history can be

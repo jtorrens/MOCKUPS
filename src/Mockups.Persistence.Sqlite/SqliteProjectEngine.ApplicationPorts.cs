@@ -25,7 +25,6 @@ internal sealed partial class SqliteProjectEngine :
     IModuleInstanceCollectionStore,
     IIconThemeAssetStore,
     IReferenceUsageQuery,
-    IShotManagerProjectStore,
     IRenderSnapshotDataSource,
     IProductionNavigationStore
 {

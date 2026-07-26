@@ -26,7 +26,9 @@ internal sealed class ShotCreationDialog
         _database = database;
     }
 
-    public Task<ShotCreationDraft?> Show(ProjectTreeNode episode)
+    public Task<ShotCreationDraft?> Show(
+        ProjectTreeNode episode,
+        bool preserveExistingActor = false)
     {
         if (episode.Kind != ProjectTreeNodeKind.Episode)
         {
@@ -34,14 +36,10 @@ internal sealed class ShotCreationDialog
         }
 
         var project = ProjectAncestor(episode);
-        var association = _database.GetShotManagerAssociation(project.Id);
-        var episodeBinding = _database.GetShotManagerEpisodeBinding(episode.Id);
-        if (association is not null && episodeBinding is null)
-        {
-            throw new InvalidOperationException(
-                "Synchronize this Episode with Shot Manager before adding a Shot.");
-        }
         var actors = _database.GetRequiredActorOptions(project.Id).ToList();
+        var fixedActor = preserveExistingActor
+            ? new FieldOption("__preserve__", "the original Actor")
+            : null;
         var dialog = new SukiWindow
         {
             Title = "Add Shot",
@@ -61,22 +59,23 @@ internal sealed class ShotCreationDialog
         var actorCombo = new EditorInstantComboBox
         {
             ItemsSource = actors,
-            SelectedItem = null,
+            SelectedItem = fixedActor,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            IsEnabled = actors.Count > 0,
+            IsEnabled = actors.Count > 0 && !preserveExistingActor,
         };
         var addButton = new Button
         {
             Content = "Add",
             MinWidth = 92,
-            IsEnabled = false,
+            IsEnabled = fixedActor is not null,
         };
         var cancelButton = new Button
         {
             Content = "Cancel",
             MinWidth = 92,
         };
-        actorCombo.SelectionChanged += (_, _) => addButton.IsEnabled = actorCombo.SelectedItem is not null;
+        actorCombo.SelectionChanged += (_, _) =>
+            addButton.IsEnabled = actorCombo.SelectedItem is not null;
         cancelButton.Click += (_, _) => dialog.Close(null);
         var shotNumber = _database.SuggestShotNumber(episode.Id).ToString();
         var definition = new FieldDefinition(
@@ -131,20 +130,23 @@ internal sealed class ShotCreationDialog
             {
                 new TextBlock
                 {
-                    Text = actors.Count > 0
+                    Text = fixedActor is not null
+                        ? $"The duplicated Shot keeps its Actor: {fixedActor.Label}."
+                        : actors.Count > 0
                         ? "Choose the Actor that owns this Shot. You can change it later, but a Shot can never be ownerless."
                         : "Create an Actor before adding a Shot.",
                     TextWrapping = TextWrapping.Wrap,
                 },
-                fields,
             },
         };
+        if (fixedActor is null)
+        {
+            content.Children.Add(fields);
+        }
         content.Children.Add(shotNumberField);
         content.Children.Add(new TextBlock
         {
-            Text = episodeBinding is null
-                ? "The Shot number is stable and will identify its future production route."
-                : "Shot Manager will use this stable number to calculate the technical name and output routes.",
+            Text = "The technical Shot code, render name and output route are generated from this stable number.",
             Opacity = 0.72,
             TextWrapping = TextWrapping.Wrap,
         });

@@ -1,5 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
+using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record RenderQueueRouteOption(
     string EntryId,
     string RelativeDirectory,
-    int VersionPadding);
+    int VersionPadding,
+    int FramePadding);
 
 internal sealed record RenderSnapshotFreezeProgress(
     int Current,
@@ -32,7 +33,6 @@ internal sealed record RenderBatchSnapshotPreparation(
 internal sealed record RenderQueueShotDraft(
     ProjectTreeNode Shot,
     string ProjectId,
-    string ProductionId,
     string ActorId,
     string ActorName,
     string DefaultDeviceId,
@@ -42,7 +42,6 @@ internal sealed record RenderQueueShotDraft(
     int TotalFrames,
     string SuggestedBaseName,
     string RootPath,
-    bool UsesCachedRoot,
     string RouteStatusMessage,
     IReadOnlyList<FieldOption> Devices,
     IReadOnlyList<FieldOption> Themes,
@@ -50,37 +49,27 @@ internal sealed record RenderQueueShotDraft(
 
 internal sealed class RenderJobSnapshotFactory
 {
-    private sealed record RouteResolution(
-        string ProductionId,
-        string SuggestedBaseName,
-        string RootPath,
-        bool UsesCachedRoot,
-        string StatusMessage,
-        IReadOnlyList<RenderQueueRouteOption> Routes);
-
     private readonly IRenderSnapshotDataSource _database;
-    private readonly IShotManagerIntegrationClient _shotManager;
-    private readonly ShotManagerWorkstationRootStore _roots;
+    private readonly ProductionOutputRootStore _roots;
     private readonly DesignPreviewPayloadDataSource _payloadData;
 
     public RenderJobSnapshotFactory(
         IRenderSnapshotDataSource database,
         IProjectPathResolver projectPaths,
-        IShotManagerIntegrationClient? shotManager = null,
-        ShotManagerWorkstationRootStore? roots = null)
+        ProductionOutputRootStore? roots = null)
     {
         _database = database;
-        _shotManager = shotManager ?? new ShotManagerIntegrationClient();
-        _roots = roots ?? new ShotManagerWorkstationRootStore();
+        _roots = roots ?? new ProductionOutputRootStore();
         _payloadData = new DesignPreviewPayloadDataSource(
             database,
             projectPaths);
     }
 
-    public async Task<RenderQueueShotDraft> LoadDraftAsync(
+    public Task<RenderQueueShotDraft> LoadDraftAsync(
         ProjectTreeNode shot,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (shot.Kind != ProjectTreeNodeKind.Shot)
         {
             throw new InvalidOperationException(
@@ -94,15 +83,14 @@ internal sealed class RenderJobSnapshotFactory
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' must define a default Device and Theme before rendering.");
         }
-        var routeResolution = await ResolveRoutesAsync(
-            shot,
-            shotSettings,
-            cancellationToken);
-
-        return new RenderQueueShotDraft(
+        var plan = _database.GetProductionOutputShotPlan(shot.Id);
+        var rootPath = _roots.Get(shotSettings.ProjectId) ?? "";
+        var status = string.IsNullOrWhiteSpace(rootPath)
+            ? "Configure this Project's local Production Output root before rendering."
+            : "";
+        return Task.FromResult(new RenderQueueShotDraft(
             shot,
             shotSettings.ProjectId,
-            routeResolution.ProductionId,
             shotSettings.OwnerActorId,
             actor.DisplayName,
             actor.DefaultDeviceId,
@@ -110,185 +98,18 @@ internal sealed class RenderJobSnapshotFactory
             shotSettings.ShotNumber,
             shotSettings.Fps,
             shotSettings.DurationFrames,
-            routeResolution.SuggestedBaseName,
-            routeResolution.RootPath,
-            routeResolution.UsesCachedRoot,
-            routeResolution.StatusMessage,
+            plan.TechnicalName,
+            rootPath,
+            status,
             _database.GetDeviceOptions(shotSettings.ProjectId),
             _database.GetThemeOptions(shotSettings.ProjectId),
-            routeResolution.Routes);
-    }
-
-    private async Task<RouteResolution> ResolveRoutesAsync(
-        ProjectTreeNode shot,
-        ShotSettings shotSettings,
-        CancellationToken cancellationToken)
-    {
-        var association = _database.GetShotManagerAssociation(
-            shotSettings.ProjectId);
-        var binding = _database.GetShotManagerEpisodeBinding(
-            shotSettings.EpisodeId);
-        var cachedRecord = _database.GetShotManagerShotStructure(shot.Id);
-        Exception? planError = null;
-
-        if (association is not null && binding is not null)
-        {
-            try
-            {
-                var plan = await _shotManager.PlanShotAsync(
-                    association.ProductionId,
-                    binding.ExternalEpisodeId,
-                    shotSettings.ShotNumber,
-                    cancellationToken);
-                if (plan.OutputContracts.Count == 0)
-                {
-                    throw new InvalidOperationException(
-                        "Shot Manager did not define an output route for this Shot.");
-                }
-                var stored = _database.StoreShotManagerPlan(
-                    shot.Id,
-                    plan);
-                _roots.Remember(plan.Production.Id, plan.RootPath);
-                return Resolution(
-                    stored,
-                    plan.RootPath,
-                    usesCachedRoot: false,
-                    statusMessage: "");
-            }
-            catch (OperationCanceledException)
-                when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                planError = exception;
-            }
-        }
-
-        var usableCache = CachedRecordMatchesCurrentContext(
-            cachedRecord,
-            shotSettings,
-            association,
-            binding)
-            ? cachedRecord
-            : null;
-        if (usableCache is not null)
-        {
-            var rootPath = _roots.Get(usableCache.ProductionId);
-            if (string.IsNullOrWhiteSpace(rootPath))
-            {
-                try
-                {
-                    var snapshot = await _shotManager.GetSnapshotAsync(
-                        usableCache.ProductionId,
-                        cancellationToken);
-                    rootPath = snapshot.RootPath;
-                    _roots.Remember(
-                        usableCache.ProductionId,
-                        rootPath);
-                }
-                catch (OperationCanceledException)
-                    when (cancellationToken.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (Exception exception)
-                {
-                    planError ??= exception;
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(rootPath))
-            {
-                try
-                {
-                    return Resolution(
-                        usableCache,
-                        rootPath,
-                        usesCachedRoot: true,
-                        statusMessage:
-                            "Using the last Shot Manager route and workstation root.");
-                }
-                catch (Exception exception)
-                {
-                    planError ??= exception;
-                }
-            }
-        }
-
-        var status = association is null
-            ? "Associate this Project with Shot Manager to resolve its output route."
-            : binding is null
-                ? "Synchronize this Episode with Shot Manager to resolve its output route."
-                : planError?.Message
-                    ?? "Shot Manager could not resolve an output route for this Shot.";
-        return new RouteResolution(
-            association?.ProductionId
-                ?? usableCache?.ProductionId
-                ?? "",
-            RenderOutputPlanner.SuggestedBaseName(shot.Name),
-            "",
-            false,
-            status,
-            []);
-    }
-
-    private static bool CachedRecordMatchesCurrentContext(
-        ShotManagerShotStructureRecord? record,
-        ShotSettings shotSettings,
-        ShotManagerProjectAssociationRecord? association,
-        ShotManagerEpisodeBindingRecord? binding)
-    {
-        if (record is null
-            || record.ShotNumber != shotSettings.ShotNumber)
-        {
-            return false;
-        }
-        if (association is null)
-        {
-            return true;
-        }
-        return binding is not null
-            && record.ProductionId.Equals(
-                association.ProductionId,
-                StringComparison.Ordinal)
-            && record.SeasonId.Equals(
-                association.SeasonId,
-                StringComparison.Ordinal)
-            && record.EpisodeId.Equals(
-                binding.ExternalEpisodeId,
-                StringComparison.Ordinal);
-    }
-
-    private static RouteResolution Resolution(
-        ShotManagerShotStructureRecord record,
-        string rootPath,
-        bool usesCachedRoot,
-        string statusMessage)
-    {
-        var structure = ShotManagerPortableStructure.Parse(
-            record.StructureJson,
-            $"Shot Manager Shot '{record.ShotId}' structure");
-        if (structure.OutputContracts.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "Shot Manager did not define an output route for this Shot.");
-        }
-        return new RouteResolution(
-            record.ProductionId,
-            RenderOutputPlanner.SuggestedBaseName(record.FullName),
-            rootPath,
-            usesCachedRoot,
-            statusMessage,
-            structure.OutputContracts
-                .Select((output) => new RenderQueueRouteOption(
-                    output.EntryId,
-                    output.RelativeDirectory,
-                    output.VersionPadding))
-                .OrderBy(
-                    (output) => output.RelativeDirectory,
-                    StringComparer.Ordinal)
-                .ToList());
+            [
+                new RenderQueueRouteOption(
+                    plan.RouteId,
+                    plan.RelativeDirectory,
+                    plan.VersionPadding,
+                    plan.FramePadding),
+            ]));
     }
 
     public RenderBatchSnapshotPreparation PlanBatch(
@@ -314,7 +135,7 @@ internal sealed class RenderJobSnapshotFactory
                 structureEntryId,
                 StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
-                "Select a stored Shot Manager output route.");
+                "Select the configured Production Output route.");
         var appearances = RenderQueueAppearance.Expand(appearance);
         if (!appearances.ToHashSet(StringComparer.Ordinal)
                 .SetEquals(outputPlan.OutputPaths.Keys))
@@ -333,7 +154,7 @@ internal sealed class RenderJobSnapshotFactory
         var summaries = appearances.Select((requestedAppearance) =>
         {
             var output = new RenderOutputTarget(
-                draft.ProductionId,
+                draft.ProjectId,
                 route.EntryId,
                 draft.RootPath,
                 route.RelativeDirectory,
@@ -342,7 +163,8 @@ internal sealed class RenderJobSnapshotFactory
                 outputPlan.Version,
                 route.VersionPadding,
                 outputModeId,
-                outputPlan.OutputPaths[requestedAppearance]);
+                outputPlan.OutputPaths[requestedAppearance],
+                route.FramePadding);
             return new RenderJobSummary(
                 context,
                 device.Label,

@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
+using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 
 namespace Mockups.DesktopEditorShell;
 
@@ -30,17 +31,24 @@ internal sealed record DesktopApplicationServices(
     RecordClassFieldValueService RecordClassFieldValues,
     ComponentClassFieldValueService ComponentClassFieldValues,
     ProductionShotContextService ProductionShotContext,
-    EditorWorkspaceCoordinator WorkspaceCoordinator)
+    EditorWorkspaceCoordinator WorkspaceCoordinator,
+    ProductionOutputRootStore ProductionOutputRoots)
 {
     public static DesktopApplicationServices Create(
-        DesktopApplicationDataPorts data) =>
-        new(
+        DesktopApplicationDataPorts data)
+    {
+        var productionOutputRoots = new ProductionOutputRootStore();
+        return new(
             data,
             new EditorVariantHistoryService(data.VariantHistory),
             new CoreFieldValueService(data.CoreFields),
-            new RecordClassFieldValueService(data.RecordFields),
+            new RecordClassFieldValueService(
+                data.RecordFields,
+                productionOutputRoots),
             new ComponentClassFieldValueService(data.ComponentFields),
             new ProductionShotContextService(
                 new ProductionShotContextDataSource(data.Preview)),
-            new EditorWorkspaceCoordinator(data.Navigation));
+            new EditorWorkspaceCoordinator(data.Navigation),
+            productionOutputRoots);
+    }
 }

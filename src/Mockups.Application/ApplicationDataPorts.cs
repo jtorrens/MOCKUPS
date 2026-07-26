@@ -1,4 +1,3 @@
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -222,8 +221,7 @@ public interface IDictionaryFieldContextRepository : IPreviewInputRepository
 }
 
 public interface IEditorChildStore :
-    IModuleInstanceCollectionStore,
-    IShotManagerProjectStore
+    IModuleInstanceCollectionStore
 {
     EditorShell.ProjectTreeNode AddChild(EditorShell.ProjectTreeNode parent);
     EditorShell.ProjectTreeNode AddImportedDevice(
@@ -257,7 +255,6 @@ public interface IThemeTokenQuery
 
 public interface IEditorDomainDialogStore :
     IModuleInstanceCollectionStore,
-    IShotManagerProjectStore,
     IIconThemeAssetStore,
     IThemeTokenQuery
 {
@@ -294,7 +291,6 @@ public interface IEditorNodeCommandStore : IEditorChildStore
 {
     EditorShell.ProjectTreeNode DuplicateShot(
         EditorShell.ProjectTreeNode shot,
-        string actorId,
         int shotNumber);
     IReadOnlyList<ReferenceUsageDetail> GetReferenceUsageDetails(
         EditorShell.ProjectTreeNode node);
@@ -493,41 +489,11 @@ public interface IReferenceUsageQuery
         EditorShell.ProjectTreeNode node);
 }
 
-public interface IShotManagerProjectStore
-{
-    ShotManagerProjectAssociationRecord? GetShotManagerAssociation(
-        string projectId);
-    ShotManagerEpisodeBindingRecord? GetShotManagerEpisodeBinding(
-        string episodeId);
-    ShotManagerShotStructureRecord? GetShotManagerShotStructure(string shotId);
-    IReadOnlyList<ShotManagerLocalEpisodeRecord> LoadShotManagerLocalEpisodes(
-        string projectId);
-    void ApplyShotManagerAssociation(ShotManagerAssociationWritePlan plan);
-    void DisconnectShotManager(string projectId);
-    EditorShell.ProjectTreeNode AddShotFromShotManager(
-        EditorShell.ProjectTreeNode episode,
-        string actorId,
-        ShotManagerExternalShotPlan plan,
-        string? duplicateSourceShotId = null);
-    ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        ShotManagerExternalShotPlan plan);
-}
-
 public interface IRenderSnapshotDataSource : IPreviewInputRepository
 {
-    ShotManagerProjectAssociationRecord? GetShotManagerAssociation(
-        string projectId);
-    ShotManagerEpisodeBindingRecord? GetShotManagerEpisodeBinding(
-        string episodeId);
-    ShotManagerShotStructureRecord? GetShotManagerShotStructure(string shotId);
-    ShotManagerShotStructureRecord StoreShotManagerPlan(
-        string shotId,
-        ShotManagerExternalShotPlan plan);
+    ProductionOutputShotPlan GetProductionOutputShotPlan(string shotId);
 }
 
-public interface IProductionNavigationStore :
-    IShotManagerProjectStore,
-    IRenderSnapshotDataSource
+public interface IProductionNavigationStore : IRenderSnapshotDataSource
 {
 }

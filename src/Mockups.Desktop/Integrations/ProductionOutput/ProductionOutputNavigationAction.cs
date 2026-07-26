@@ -1,30 +1,33 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
+using System.IO;
 
-namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
+namespace Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 
-internal sealed class ShotManagerProductionNavigationAction
+internal sealed class ProductionOutputNavigationAction
 {
+    internal const string CardSessionStateId =
+        "layout:production-output";
+
     private readonly Button _button;
-    private readonly IShotManagerProjectStore _database;
+    private readonly ProductionOutputRootStore _roots;
     private readonly Func<bool> _isDark;
     private readonly Control _icon;
 
-    public ShotManagerProductionNavigationAction(
+    public ProductionOutputNavigationAction(
         Button button,
-        IShotManagerProjectStore database,
+        ProductionOutputRootStore roots,
         Func<bool> isDark,
         Action open)
     {
         _button = button;
-        _database = database;
+        _roots = roots;
         _isDark = isDark;
         _icon = EditorIcons.CreateSemantic(
-            "Shot Manager",
+            "Production Output",
             EditorIcons.Structure,
             17);
         _button.Content = _icon;
@@ -32,18 +35,19 @@ internal sealed class ShotManagerProductionNavigationAction
         Refresh(null);
     }
 
-    internal bool IsAssociated { get; private set; }
+    internal bool HasLocalRoot { get; private set; }
 
     public void Refresh(string? projectId)
     {
         _button.IsEnabled = !string.IsNullOrWhiteSpace(projectId);
-        var association = string.IsNullOrWhiteSpace(projectId)
+        var root = string.IsNullOrWhiteSpace(projectId)
             ? null
-            : _database.GetShotManagerAssociation(projectId);
-        IsAssociated = association is not null;
+            : _roots.Get(projectId);
+        HasLocalRoot = !string.IsNullOrWhiteSpace(root)
+            && Directory.Exists(root);
 
-        var foreground = IsAssociated
-            ? ConnectedForeground(_isDark())
+        var foreground = HasLocalRoot
+            ? ConfiguredForeground(_isDark())
             : EditorUiVisuals.SecondaryTextBrush(_isDark());
         _button.Foreground = foreground;
         _button.Background = Brushes.Transparent;
@@ -51,11 +55,13 @@ internal sealed class ShotManagerProductionNavigationAction
         EditorIcons.ApplyBrush(_icon, foreground);
         EditorAccessibility.Describe(
             _button,
-            IsAssociated
-                ? $"Shot Manager connected to {association!.ProductionName} · {association.SeasonCode}. Open association"
-                : "Shot Manager is not connected. Open to associate this Production");
+            HasLocalRoot
+                ? $"Production Output configured at {root}. Open settings"
+                : string.IsNullOrWhiteSpace(root)
+                    ? "Production Output has no local root. Open settings"
+                    : $"Production Output root is unavailable at {root}. Open settings");
     }
 
-    internal static IBrush ConnectedForeground(bool isDark) =>
+    internal static IBrush ConfiguredForeground(bool isDark) =>
         new SolidColorBrush(Color.Parse(isDark ? "#39D98A" : "#137A4B"));
 }

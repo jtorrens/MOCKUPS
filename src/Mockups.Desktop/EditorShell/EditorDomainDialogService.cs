@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Mockups.DesktopEditorShell.Data;
-using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -93,40 +92,6 @@ internal sealed class EditorDomainDialogService
     public Task<bool> ConfirmModuleInstanceDelete(ProjectTreeNode node)
     {
         return new EditorDialogService(_owner, _isDark()).ConfirmDelete(node);
-    }
-
-    public Task<ShotManagerAssociationSelection?> ShowShotManagerAssociation(
-        string projectId)
-    {
-        return new ShotManagerAssociationDialog(
-            _owner,
-            _database,
-            projectId).Show();
-    }
-
-    public Task<IReadOnlyList<ShotManagerEpisodeAssociationChoice>?>
-        ShowShotManagerEpisodeMappings(
-            string projectId,
-            ShotManagerProductionSnapshot snapshot,
-            string seasonId)
-    {
-        return new ShotManagerEpisodeMappingDialog(
-            _owner,
-            _database,
-            projectId).Show(snapshot, seasonId);
-    }
-
-    public Task<bool> ConfirmShotManagerDisconnect(
-        string productionName,
-        string seasonCode)
-    {
-        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
-            "Disconnect Shot Manager",
-            $"Disconnect {productionName} · {seasonCode}?",
-            "Local Episodes, Shots and cached render routes are retained. Reconnect and synchronize before resolving new Shot Manager routes.",
-            "Disconnect",
-            width: 500,
-            height: 240);
     }
 
     public Task ShowIconThemeSearch(ProjectTreeNode node)

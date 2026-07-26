@@ -5,7 +5,8 @@ namespace Mockups.DesktopEditorShell.Data;
 public sealed record ProjectSettings(
     string Slug,
     int DefaultFps,
-    string MediaRoot);
+    string MediaRoot,
+    ProductionOutputSettings ProductionOutput);
 
 public sealed record EpisodeSettings(
     string Slug,
@@ -198,51 +199,6 @@ public sealed record ModuleInstanceSlot(
     int SortOrder,
     string TransitionType,
     int StoredDurationFrames);
-
-public sealed record ShotManagerProjectAssociationRecord(
-    string ProjectId,
-    string ProductionId,
-    string ProductionName,
-    string SeasonId,
-    string SeasonCode,
-    string? SeasonName,
-    string UpdatedAt);
-
-public sealed record ShotManagerEpisodeBindingRecord(
-    string EpisodeId,
-    string ProjectId,
-    string ExternalEpisodeId,
-    int EpisodeNumber,
-    string EpisodeCode,
-    string UpdatedAt);
-
-public sealed record ShotManagerShotStructureRecord(
-    string ShotId,
-    int PlanVersion,
-    string ProductionId,
-    string SeasonId,
-    string EpisodeId,
-    int ShotNumber,
-    string ShotCode,
-    string FullName,
-    string StructureJson,
-    string CreatedAt);
-
-public sealed record ShotManagerLocalEpisodeRecord(
-    EpisodeRecord Episode,
-    ShotManagerEpisodeBindingRecord? Binding,
-    bool HasShots);
-
-public sealed record ShotManagerEpisodeWrite(
-    EpisodeRecord Episode,
-    string ExternalEpisodeId,
-    int EpisodeNumber,
-    string EpisodeCode);
-
-public sealed record ShotManagerAssociationWritePlan(
-    ShotManagerProjectAssociationRecord Association,
-    IReadOnlyList<ShotManagerEpisodeWrite> Upserts,
-    IReadOnlyList<string> DeleteEpisodeIds);
 
 public sealed record PaletteColorSettings(
     string Token,

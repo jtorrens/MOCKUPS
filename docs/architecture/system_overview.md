@@ -21,10 +21,8 @@ creates one immutable child job per requested appearance. Output mode, route,
 name and version belong to that queued job; they are not authored Shot or
 Project records.
 
-An optional local integration may let VFX Shot Manager govern a Project's
-Production, Season and Episode identities, technical Shot names and directory
-layout. MOCKUPS still creates and owns the Shot, its Actor, Screens and
-creative data.
+MOCKUPS owns the Production hierarchy and derives technical Shot names and
+portable output routes from one Project-owned Production Output contract.
 
 ## System map
 
@@ -39,11 +37,11 @@ SQLite current project data
         │       ├── structured collections
         │       └── owner-relative animation
         │
-        ├── optional Shot Manager integration
-        │       ├── strict loopback read-only client
-        │       ├── Episode identity synchronization
-        │       ├── validated local folder materialization
-        │       └── portable predefined output routes
+        ├── Project-owned Production Output
+        │       ├── strict portable naming contract
+        │       ├── stable Episode and Shot codes
+        │       ├── workstation-local root
+        │       └── validated folder materialization
         │
         ├── Preview payload preparation
         │       ├── explicit context and forwarding
@@ -84,9 +82,8 @@ never resolve across Projects.
 - A Screen is a persisted Module Instance with one exact Module Variant,
   payload, transition, duration and animation document.
 - Shot time is the ordered aggregate of its Screens.
-- An associated Project stores exact external Episode bindings. Every Shot
-  owns a stable local number; its last portable Shot Manager render contract
-  is a refreshable cache rather than a creation-time requirement.
+- Every Shot owns a stable number. Its code, technical render name and portable
+  route are derived from its Project and Episode contracts.
 
 ### Preview
 
@@ -106,10 +103,10 @@ database.
 
 Production exposes that owner through a permanent Render Queue section. Shot
 rows open a separate batch-creation modal; the central queue panel monitors
-the shared worker and remains accessible independently of Shot Manager route
-availability. Shot Manager owns the portable relative route; the worker
-securely creates its missing directories at job start before publishing the
-immutable output.
+the shared worker and remains accessible independently of local-root
+availability. The Project owns the portable relative route; the worker securely
+creates its missing directories at job start before publishing the immutable
+output.
 
 ## Layer ownership
 
@@ -180,9 +177,9 @@ in Design. Composition only routes the authored owner and supplies the
 resolved option data; it does not calculate inheritance or traverse embedded
 slots.
 `Mockups.Persistence.Sqlite.Production` owns
-Episode, Shot, Screen and Shot Manager repositories. Its owner already
-contains Project/Episode and Shot Manager application operations; remaining
-Shot settings, field writes and render identity reads also execute there.
+Episode, Shot and Screen repositories. Its owner contains Project/Episode and
+Production Output application operations; Shot settings, field writes and
+render identity reads also execute there.
 Screen settings, identity, transition projection, ordering, renaming and
 effective Module Variant resolution execute in Production through the narrow
 `IModuleVariantCatalog`; Production cannot reference or construct the Design
@@ -312,10 +309,10 @@ shell
 → focused repository
 → SQLite context
 
-Shot Manager editor
-→ integration coordination service
-→ authenticated read-only client + folder materializer
-→ focused integration and Shot repositories
+Production Output card
+→ Project-owned portable contract + workstation-local root
+→ derived Shot plan
+→ Render Queue folder materializer
 
 payload factory
 → manifest route
