@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -7,50 +8,61 @@ namespace Mockups.DesktopEditorShell;
 
 internal sealed class DesktopVisualInstanceLease : IDisposable
 {
-    private Mutex? _mutex;
+    private FileStream? _lockFile;
 
-    private DesktopVisualInstanceLease(Mutex mutex)
+    private DesktopVisualInstanceLease(
+        FileStream lockFile)
     {
-        _mutex = mutex;
+        _lockFile = lockFile;
     }
 
     public static DesktopVisualInstanceLease? TryAcquire(
         string? identity = null)
     {
-        var mutex = new Mutex(
-            initiallyOwned: false,
-            MutexName(identity));
-        var acquired = false;
+        var path = LockFilePath(identity);
+        Directory.CreateDirectory(
+            Path.GetDirectoryName(path)!);
         try
         {
-            acquired = mutex.WaitOne(0);
+            var lockFile = new FileStream(
+                path,
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.None);
+            return new DesktopVisualInstanceLease(
+                lockFile);
         }
-        catch (AbandonedMutexException)
+        catch (IOException)
         {
-            acquired = true;
-        }
-        if (!acquired)
-        {
-            mutex.Dispose();
             return null;
         }
-        return new DesktopVisualInstanceLease(mutex);
+    }
+
+    public static bool TryRun(
+        Action visualLifetime,
+        string? identity = null)
+    {
+        ArgumentNullException.ThrowIfNull(visualLifetime);
+        using var lease = TryAcquire(identity);
+        if (lease is null)
+        {
+            return false;
+        }
+
+        visualLifetime();
+        return true;
     }
 
     public void Dispose()
     {
-        var mutex = Interlocked.Exchange(
-            ref _mutex,
+        var lockFile = Interlocked.Exchange(
+            ref _lockFile,
             null);
-        if (mutex is null)
-        {
-            return;
-        }
-        mutex.ReleaseMutex();
-        mutex.Dispose();
+        lockFile?.Dispose();
     }
 
-    private static string MutexName(string? identity)
+    private static string LockFilePath(
+        string? identity)
     {
         var source = string.IsNullOrWhiteSpace(identity)
             ? "MOCKUPS.Desktop.VisualEditor.v1"
@@ -59,6 +71,9 @@ internal sealed class DesktopVisualInstanceLease : IDisposable
                 SHA256.HashData(
                     Encoding.UTF8.GetBytes(source)))
             .ToLowerInvariant();
-        return $"mockups-desktop-visual-{hash}";
+        return Path.Combine(
+            Path.GetTempPath(),
+            "mockups-desktop",
+            $"visual-{hash}.lock");
     }
 }

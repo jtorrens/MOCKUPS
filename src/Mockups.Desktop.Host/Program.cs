@@ -24,17 +24,14 @@ internal static class Program
             return;
         }
 
-        using var visualInstance =
-            DesktopVisualInstanceLease.TryAcquire();
-        if (visualInstance is null)
+        if (!DesktopVisualInstanceLease.TryRun(
+                () => BuildAvaloniaApp()
+                    .StartWithClassicDesktopLifetime(
+                        avaloniaArgs)))
         {
-            BuildVisualInstanceConflictApp()
-                .StartWithClassicDesktopLifetime(avaloniaArgs);
-            return;
+            Console.Error.WriteLine(
+                "MOCKUPS is already open.");
         }
-
-        BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(avaloniaArgs);
     }
 
     public static AppBuilder BuildAvaloniaApp()
@@ -46,9 +43,4 @@ internal static class Program
             .WithInterFont()
             .LogToTrace();
 
-    private static AppBuilder BuildVisualInstanceConflictApp()
-        => AppBuilder.Configure<VisualInstanceConflictApp>()
-            .UsePlatformDetect()
-            .WithInterFont()
-            .LogToTrace();
 }

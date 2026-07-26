@@ -244,8 +244,9 @@ Subsequent workspace reads use the public asynchronous coordinator boundary.
 Desktop cannot compile calls to its internal synchronous loading helpers.
 
 The visual editor is a single-instance workstation application. The Host owns
-the operating-system lease and a second launch shows the controlled
-already-running surface without composing a session or opening SQLite.
+the operating-system lease. A second launch exits before constructing Avalonia,
+composing a session or opening SQLite; it never creates a second visual process
+that waits for user interaction.
 Maintenance commands run before visual startup. Render Queue raster and
 encoding child processes are separate non-visual workers, do not acquire the
 lease and continue to consume immutable snapshots without Project reads.

@@ -26,12 +26,19 @@ using System.Text.Json.Nodes;
 
 if (args.Length == 2
     && args[0].Equals(
-        "--desktop-instance-probe",
+        "--desktop-instance-lifetime-probe",
         StringComparison.Ordinal))
 {
-    using var probe =
-        DesktopVisualInstanceLease.TryAcquire(args[1]);
-    Environment.ExitCode = probe is null ? 23 : 0;
+    var visualLifetimeStarted = false;
+    var ran = DesktopVisualInstanceLease.TryRun(
+        () => visualLifetimeStarted = true,
+        args[1]);
+    Environment.ExitCode = (ran, visualLifetimeStarted) switch
+    {
+        (false, false) => 23,
+        (true, true) => 0,
+        _ => 24,
+    };
     return;
 }
 
@@ -752,13 +759,18 @@ static void DesktopVisualInstanceLeaseIsExclusive()
            DesktopVisualInstanceLease.TryAcquire(identity))
     {
         True(first is not null);
-        Equal(23, RunDesktopInstanceProbe(identity));
+        Equal(
+            23,
+            RunDesktopInstanceLifetimeProbe(identity));
     }
 
-    Equal(0, RunDesktopInstanceProbe(identity));
+    Equal(
+        0,
+        RunDesktopInstanceLifetimeProbe(identity));
 }
 
-static int RunDesktopInstanceProbe(string identity)
+static int RunDesktopInstanceLifetimeProbe(
+    string identity)
 {
     var executable = Environment.ProcessPath
         ?? throw new InvalidOperationException(
@@ -767,7 +779,8 @@ static int RunDesktopInstanceProbe(string identity)
     {
         UseShellExecute = false,
     };
-    start.ArgumentList.Add("--desktop-instance-probe");
+    start.ArgumentList.Add(
+        "--desktop-instance-lifetime-probe");
     start.ArgumentList.Add(identity);
     using var process = Process.Start(start)
         ?? throw new InvalidOperationException(
