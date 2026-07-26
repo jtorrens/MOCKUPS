@@ -236,6 +236,10 @@ Theme access. Effective Module Instance Theme tokens are a separate Resources
 query. Timeline calculations that need natural motion pacing receive both
 ports explicitly at the application boundary.
 
+Editor presentation context is backed directly by Resources because its exact
+contract is Project, Theme and Production Font presentation data. The project
+engine does not implement that application port.
+
 Module Instance collection commands do not inherit timeline reads. The Shot
 collection surface declares collection mutation, Production timeline and
 Resources Theme-token capabilities independently.

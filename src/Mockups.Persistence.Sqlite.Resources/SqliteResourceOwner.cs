@@ -12,6 +12,7 @@ internal sealed record IconThemeAssetMoveResult(
 
 internal sealed partial class SqliteResourceOwner :
     IActorPreviewRepository,
+    IEditorPresentationContextRepository,
     IThemeTokenQuery,
     IModuleInstanceThemeTokenQuery,
     IIconThemeAssetStore,

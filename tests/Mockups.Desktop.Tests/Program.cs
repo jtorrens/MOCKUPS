@@ -3159,6 +3159,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Timeline is not IModuleInstanceThemeTokenQuery);
     True(project.ModuleInstanceThemes is not IModuleInstanceTimelineStore);
     True(project.Layouts is not IRecordClassFieldStore);
+    True(project.Presentation is not IPreviewInputRepository);
     True(project.ActorPreview is not IEditorNodeCommandStore);
     True(project.Children is not IEditorNodeCommandStore);
     True(project.NodeCommands is not IEditorChildStore);
@@ -6245,21 +6246,26 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new EditorPresentationContextDataSource(database);
+        var dataSource =
+            new EditorPresentationContextDataSource(database.Resources);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var productionFont = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ProductionFont);
-        var themeSettings = database.GetThemeSettings(theme.Id);
+        var themeSettings = database.Resources.GetThemeSettings(theme.Id);
 
-        Equal(database.GetProjectSettings(project.Id).MediaRoot, dataSource.ProjectMediaRoot(project.Id));
+        Equal(
+            database.Resources.GetProjectSettings(project.Id).MediaRoot,
+            dataSource.ProjectMediaRoot(project.Id));
         var themeSource = dataSource.ThemeNavigation(theme.Id);
         Equal(themeSettings.Family, themeSource.Family);
         Equal(themeSettings.IconThemeId, themeSource.IconThemeId);
         Equal(themeSettings.StatusBarId, themeSource.StatusBarId);
         Equal(themeSettings.NavigationBarId, themeSource.NavigationBarId);
         Equal(
-            database.GetProductionFontFieldValue(productionFont.Id, "font.files"),
+            database.Resources.GetProductionFontFieldValue(
+                productionFont.Id,
+                "font.files"),
             dataSource.ProductionFontFiles(productionFont.Id));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

@@ -33,7 +33,7 @@ public sealed class SqliteProjectSession
         ProductionNavigation =
             new SqliteProductionNavigationPort(engine);
         Presentation =
-            new SqliteEditorPresentationPort(engine);
+            new SqliteEditorPresentationPort(engine.Resources);
         ModuleInstances =
             new SqliteModuleInstanceCollectionPort(engine);
         IconThemes =

@@ -136,6 +136,10 @@ declares every read capability it coordinates. Component Preview and Variant
 history route directly to Design; Actor, Icon Theme and Theme-token reads route
 directly to Resources.
 
+Editor presentation context also routes directly to Resources. It exposes only
+Project, Theme and Production Font presentation reads and does not pass through
+the project engine.
+
 Module Instance row, slot, contract and Runtime Preview reads route directly to
 Production. Effective Theme-token resolution is not part of that timeline
 contract: it is a separate Resources capability composed only by consumers
