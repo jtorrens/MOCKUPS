@@ -186,8 +186,9 @@ Shot settings, field writes and render identity reads also execute there.
 Screen settings, identity, transition projection, ordering, renaming and
 effective Module Variant resolution execute in Production through the narrow
 `IModuleVariantCatalog`; Production cannot reference or construct the Design
-owner. Timeline synchronization remains a temporary composition concern after
-owner-validated Shot or Screen writes.
+owner. Production also owns calculated Screen duration resolution and Shot
+duration synchronization; composition only invokes that owner after a
+cross-owner operation that can affect the timeline.
 `Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
 Production Font and Icon Theme repositories and their resource-specific field,
 asset and token behavior. Resource behavior that needs Production context

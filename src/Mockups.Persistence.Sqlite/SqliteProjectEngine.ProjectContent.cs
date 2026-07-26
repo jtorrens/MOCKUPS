@@ -14,7 +14,9 @@ internal sealed partial class SqliteProjectEngine
                 fieldId,
                 value))
         {
-            SynchronizeTimelineDurations(connection, shotId);
+            _productionOwner.SynchronizeTimelineDurations(
+                connection,
+                shotId);
         }
     }
 

@@ -707,7 +707,7 @@ internal sealed partial class SqliteProjectEngine
                 id,
                 copyName,
                 sortOrder);
-            SynchronizeTimelineDurations(connection);
+            _productionOwner.SynchronizeTimelineDurations(connection);
 
             return new ProjectTreeNode(
                 ProjectTreeNodeKind.ModuleInstance,
@@ -918,7 +918,7 @@ internal sealed partial class SqliteProjectEngine
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
             _productionOwner.ModuleInstanceRepository.Delete(connection, node.Id);
-            SynchronizeTimelineDurations(connection);
+            _productionOwner.SynchronizeTimelineDurations(connection);
             return;
         }
 

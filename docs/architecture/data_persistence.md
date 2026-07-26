@@ -89,8 +89,9 @@ Module Variant resolution execute there through `IModuleVariantCatalog`, a
 read-only contract implemented by Design and declared in Contracts. Batch
 module-name projection avoids per-Screen database reads. Production has no
 project reference to Design and cannot access its repositories or authoring
-operations. Composition invokes timeline synchronization only after the
-Production owner reports that a Shot owner change requires it.
+operations. Production owns calculated Screen duration resolution and Shot
+duration synchronization. Composition invokes that operation only after a
+cross-owner write that can affect the timeline.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

@@ -54,7 +54,7 @@ internal sealed partial class SqliteProjectEngine
             $"Module Instance '{moduleInstanceId}' animation_json");
         using var connection = OpenConnection();
         _productionOwner.ModuleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
     }
 
     public void UpdateModuleInstanceRuntimeCollectionValue(
@@ -187,7 +187,7 @@ internal sealed partial class SqliteProjectEngine
             moduleInstanceId,
             content.ToJsonString(),
             animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
     }
 
     public void DeleteModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, string itemId)
@@ -219,7 +219,7 @@ internal sealed partial class SqliteProjectEngine
             moduleInstanceId,
             content.ToJsonString(),
             animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
     }
 
     private static HashSet<string> CollectionTargetIds(JsonNode root)
@@ -279,7 +279,7 @@ internal sealed partial class SqliteProjectEngine
         using var connection = OpenConnection();
         ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
         _productionOwner.ModuleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
     }
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
@@ -348,7 +348,7 @@ internal sealed partial class SqliteProjectEngine
                 ["moduleVariantReference"] = draft.VariantReference,
             }.ToJsonString()));
         ReconcileModuleInstanceRuntimePayload(connection, id);
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
         var duration = _productionOwner.ModuleInstanceRepository.Get(connection, id).DurationFrames;
         return new ProjectTreeNode(
             ProjectTreeNodeKind.ModuleInstance,
@@ -386,7 +386,7 @@ internal sealed partial class SqliteProjectEngine
                         connection,
                         moduleInstanceId,
                         Math.Max(1, NumericText.Int32(value, 1)));
-                    SynchronizeTimelineDurations(connection);
+                    _productionOwner.SynchronizeTimelineDurations(connection);
                 }
                 return;
             default:

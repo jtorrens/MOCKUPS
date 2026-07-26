@@ -105,51 +105,6 @@ internal sealed partial class SqliteProjectEngine
         _productionOwner.ModuleInstanceRepository.UpdateContent(connection, moduleInstanceId, next);
     }
 
-    private void SynchronizeTimelineDurations(SqliteConnection connection, string? shotId = null)
-    {
-        var instances = shotId is null
-            ? _productionOwner.ModuleInstanceRepository.QueryAll(connection)
-            : _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId);
-        var modules = _designOwner.AppModuleRepository.QueryModules(connection)
-            .ToDictionary((module) => module.Id, StringComparer.Ordinal);
-        var updates = new List<(string Id, int Duration)>();
-        foreach (var instance in instances)
-        {
-            if (!modules.TryGetValue(instance.ModuleId, out var module))
-            {
-                throw new InvalidOperationException($"Missing module '{instance.ModuleId}'.");
-            }
-            var contract = _productionOwner.ResolveModuleInstanceContract(
-                module.Id,
-                instance.MetadataJson);
-            if (RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit) continue;
-            var duration = RuntimeTimeline.DurationFrames(
-                contract.ToJsonString(),
-                instance.ContentJson,
-                instance.AnimationJson,
-                instance.DurationFrames,
-                _productionOwner.ModuleInstanceThemeContextService.GetTokensJson(connection, instance.Id));
-            if (duration != instance.DurationFrames) updates.Add((instance.Id, duration));
-        }
-        foreach (var update in updates)
-        {
-            _productionOwner.ModuleInstanceRepository.UpdateDuration(connection, update.Id, update.Duration);
-        }
-
-        var durationByShot = _productionOwner.ModuleInstanceRepository.QueryAll(connection)
-            .GroupBy((instance) => instance.ShotId, StringComparer.Ordinal)
-            .ToDictionary(
-                (group) => group.Key,
-                (group) => Math.Max(1, group.Sum((instance) => instance.DurationFrames)),
-                StringComparer.Ordinal);
-        foreach (var shot in _productionOwner.ShotRepository.QueryAll(connection))
-        {
-            var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
-            if (duration == shot.DurationFrames) continue;
-            _productionOwner.ShotRepository.UpdateDuration(connection, shot.Id, duration);
-        }
-    }
-
     private JsonArray RequireDeclaredRuntimeCollection(
         string moduleInstanceId,
         string collectionJsonKey,

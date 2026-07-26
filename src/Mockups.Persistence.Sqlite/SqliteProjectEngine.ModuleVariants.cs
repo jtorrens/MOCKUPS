@@ -73,7 +73,7 @@ internal sealed partial class SqliteProjectEngine
             content.ToJsonString(),
             animation.ToJsonString());
         ReconcileModuleInstanceRuntimePayload(connection, moduleInstanceId);
-        SynchronizeTimelineDurations(connection);
+        _productionOwner.SynchronizeTimelineDurations(connection);
     }
 
     private static JsonObject RuntimeContentForContract(JsonObject current, JsonObject contract)
