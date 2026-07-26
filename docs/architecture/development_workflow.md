@@ -32,6 +32,14 @@ Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the owner when behavior is
 generic. A one-off exception is not an implementation shortcut.
 
+## Central package versions
+
+Every .NET project consumes package versions from `Directory.Packages.props`.
+Projects declare only the packages they use and never override a central
+version locally. Avalonia packages stay on the same release whenever that
+release exists. `Avalonia.Controls.WebView` remains on its latest published
+12.x version when no package matching the core Avalonia patch is available.
+
 ## Atom and Component scaffolding
 
 Given a user description, Codex first converts it into an explicit authoring
