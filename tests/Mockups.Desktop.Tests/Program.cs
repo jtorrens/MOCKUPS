@@ -3251,6 +3251,9 @@ static IComponentClassFieldStore ComponentFields(
     SqliteProjectEngine database) =>
     new SqliteComponentClassFieldPort(database.ComponentDocuments);
 
+static ICoreFieldStore CoreFields(SqliteProjectEngine database) =>
+    new SqliteCoreFieldPort(database.CoreFields);
+
 static IComponentDocumentStore ComponentDocuments(
     SqliteProjectEngine database) =>
     new SqliteComponentDocumentPort(database.ComponentDocuments);
@@ -12129,7 +12132,8 @@ static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
         var currentScreen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var originalName = currentScreen.Name;
         var editorName = $"{originalName} editor rename";
-        var coreFields = new CoreFieldValueService(database);
+        var coreFields = new CoreFieldValueService(
+            CoreFields(database));
 
         True(coreFields.CreateFieldValue(currentScreen, "core.name").Definition.IsEditable);
         coreFields.CommitFieldValue(currentScreen, "core.name", editorName);

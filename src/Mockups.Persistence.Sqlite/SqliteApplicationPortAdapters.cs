@@ -18,19 +18,17 @@ internal sealed class SqliteEditorNavigationPort(
 }
 
 internal sealed class SqliteCoreFieldPort(
-    Mockups.DesktopEditorShell.Data.ICoreFieldStore target)
+    SqliteCoreFieldStore target)
     : Mockups.DesktopEditorShell.Data.ICoreFieldStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.ICoreFieldStore _target = target;
-
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode RenameDirectNode(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node,
         string name)
-        => ((Mockups.DesktopEditorShell.Data.ICoreFieldStore)_target).RenameDirectNode(node, name);
+        => target.RenameDirectNode(node, name);
 
     public void UpdateNode(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
-        => ((Mockups.DesktopEditorShell.Data.ICoreFieldStore)_target).UpdateNode(node);
+        => target.UpdateNode(node);
 
 }
 
