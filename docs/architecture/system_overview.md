@@ -148,7 +148,9 @@ contracts shared by composition and their exact implementation owner.
 `Mockups.Persistence.Sqlite.Design` owns App, Module, Component Class and
 editor-layout repositories. `SqliteDesignOwner` is their only production
 constructor; the aggregate can use only the owner's focused contract
-properties. `Mockups.Persistence.Sqlite.Production` owns
+properties. App configuration and metadata reads and edits already execute
+inside this owner; Module and Component behavior remain the next Design cut.
+`Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining
 Screen and timeline operations are the next extraction boundary.

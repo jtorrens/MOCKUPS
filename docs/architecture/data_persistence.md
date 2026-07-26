@@ -44,7 +44,9 @@ current schema. `Mockups.Persistence.Sqlite.Contracts` owns only internal
 focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
 Module, Component Class and editor-layout persistence. `SqliteDesignOwner`
 constructs its definition repositories; composition no longer constructs
-those implementations directly.
+those implementations directly. App configuration and metadata operations
+execute in that Design owner and are exposed through temporary delegations
+while the broad application ports are decomposed.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no
