@@ -12,33 +12,12 @@ internal sealed partial class SqliteProjectEngine
 {
     internal static IReadOnlyList<ModuleVariant> ModuleVariants(
         string metadataJson,
-        string owner = "Module metadata")
-    {
-        var metadata = ParseJsonObject(metadataJson);
-        return VariantEnvelopeContract.Read(metadata, "variants", owner)
-            .Select((variant) => new ModuleVariant(
-                variant.Id,
-                variant.Name,
-                variant.IsProtected,
-                variant.IsLocked,
-                variant.Config.ToJsonString()))
-            .ToList();
-    }
+        string owner = "Module metadata") =>
+        SqliteDesignOwner.ModuleVariants(metadataJson, owner);
 
-    public ModuleSettings GetModuleVariantSettings(ProjectTreeNode variantNode)
-    {
-        if (variantNode.Kind != ProjectTreeNodeKind.ModuleVariant
-            || !VariantReferenceId.TryParse(variantNode.Id, out var moduleId, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid module variant node id '{variantNode.Id}'.");
-        }
-
-        var settings = GetModuleSettings(moduleId);
-        var variant = ModuleVariants(settings.MetadataJson)
-            .FirstOrDefault((candidate) => candidate.Id.Equals(variantId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"Missing module variant '{variantId}'.");
-        return settings with { ConfigJson = variant.ConfigJson };
-    }
+    public ModuleSettings GetModuleVariantSettings(
+        ProjectTreeNode variantNode) =>
+        _designOwner.GetModuleVariantSettings(variantNode);
 
     public ModuleSettings GetModuleInstanceVariantSettings(string moduleInstanceId)
     {
@@ -88,10 +67,9 @@ internal sealed partial class SqliteProjectEngine
             .First((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal)).Name;
     }
 
-    public IReadOnlyList<FieldOption> GetModuleVariantOptions(string moduleId) =>
-        ModuleVariants(GetModuleSettings(moduleId).MetadataJson)
-            .Select((variant) => new FieldOption(VariantReferenceId.Format(moduleId, variant.Id), variant.Name))
-            .ToList();
+    public IReadOnlyList<FieldOption> GetModuleVariantOptions(
+        string moduleId) =>
+        _designOwner.GetModuleVariantOptions(moduleId);
 
     private static JsonObject EffectiveModuleInstanceContract(
         string moduleId,
@@ -229,193 +207,69 @@ internal sealed partial class SqliteProjectEngine
         }
     }
 
-    public ProjectTreeNode SaveModuleVariant(ProjectTreeNode sourceNode, string name)
-    {
-        if (sourceNode.Kind != ProjectTreeNodeKind.ModuleVariant
-            || !VariantReferenceId.TryParse(sourceNode.Id, out var moduleId, out _))
-        {
-            throw new InvalidOperationException("Module variants can only be saved from an active selected variant.");
-        }
+    public ProjectTreeNode SaveModuleVariant(
+        ProjectTreeNode sourceNode,
+        string name) =>
+        _designOwner.SaveModuleVariant(sourceNode, name);
 
-        var variantName = name.Trim();
-        if (string.IsNullOrWhiteSpace(variantName)) throw new InvalidOperationException("Variant name cannot be empty.");
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var settings = GetModuleVariantSettings(sourceNode);
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-            var variantId = VariantEnvelopeContract.UniqueId(variants, variantName);
-            variants.Add(VariantEnvelopeContract.CreateSource(
-                variantId,
-                variantName,
-                ParseJsonObject(settings.ConfigJson)));
-            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
-            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, VariantReferenceId.Format(moduleId, variantId),
-                variantName, "Module variant", ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant), sourceNode.Parent);
-        }
-    }
+    private ProjectTreeNode RenameModuleClass(
+        ProjectTreeNode node,
+        string name) =>
+        _designOwner.RenameModuleClass(node, name);
 
-    private ProjectTreeNode RenameModuleClass(ProjectTreeNode node, string name)
-    {
-        var nextName = name.Trim();
-        if (string.IsNullOrWhiteSpace(nextName)) throw new InvalidOperationException("Module name cannot be empty.");
-        using var connection = OpenConnection();
-        _designOwner.AppModuleRepository.RenameModule(connection, node.Id, nextName);
-        return new ProjectTreeNode(ProjectTreeNodeKind.Module, node.Id, nextName, node.Notes,
-            node.RecordClassId, node.Parent, isUsed: node.IsUsed, isProtected: node.IsProtected, isLocked: node.IsLocked);
-    }
-
-    public ProjectTreeNode RenameModuleVariant(ProjectTreeNode node, string name) =>
-        UpdateModuleVariantMetadata(node, (variant) =>
-        {
-            variant["name"] = name.Trim();
-        }, name.Trim());
+    public ProjectTreeNode RenameModuleVariant(
+        ProjectTreeNode node,
+        string name) =>
+        _designOwner.RenameModuleVariant(node, name);
 
     public void DeleteModuleVariant(ProjectTreeNode node)
     {
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
-            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-            var variant = FindModuleVariant(metadata, node.Id);
-            if (JsonBool(variant, ["protected"])) throw new InvalidOperationException("Protected module variants cannot be deleted.");
-            if (JsonBool(variant, ["locked"])) throw new InvalidOperationException("Locked module variants cannot be deleted.");
-            if (_productionOwner.ModuleInstanceRepository.CountVariantReferences(connection, moduleId, node.Id) > 0)
-                throw new InvalidOperationException("This module variant is still used and cannot be deleted.");
-            for (var index = 0; index < variants.Count; index++)
-            {
-                if (variants[index] is JsonObject candidate && JsonPath.String(candidate, "id", "") == variantId)
-                {
-                    variants.RemoveAt(index);
-                    break;
-                }
-            }
-            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
-        }
-    }
-
-    public ProjectTreeNode ToggleModuleVariantLock(ProjectTreeNode node)
-    {
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
-            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
-
-        if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
-        {
-            var nextLocked = ToggleDefaultVariantSessionLock(moduleId, variantId);
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.ModuleVariant,
+        if (!VariantReferenceId.TryParse(
                 node.Id,
-                node.Name,
-                node.Notes,
-                node.RecordClassId,
-                node.Parent,
-                isUsed: node.IsUsed,
-                isProtected: node.IsProtected,
-                isLocked: nextLocked);
-        }
-
-        return UpdateModuleVariantMetadata(
-            node,
-            (variant) => variant["locked"] = !JsonBool(variant, ["locked"]),
-            node.Name);
-    }
-
-    public void ReplaceModuleVariantConfig(ProjectTreeNode node, string configJson)
-    {
-        var config = ParseJsonObject(configJson);
-        UpdateModuleVariantConfig(node, (variant) => variant["config"] = config);
-    }
-
-    public void UpdateModuleVariantField(ProjectTreeNode node, string fieldId, string value)
-    {
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
-            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
-        if (fieldId is "module.sortOrder" or "module.metadata" or "module.recordClassId")
+                out var moduleId,
+                out _))
         {
-            UpdateModuleField(moduleId, fieldId, value);
-            return;
+            throw new InvalidOperationException(
+                $"Invalid module variant '{node.Id}'.");
         }
+
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variant = FindModuleVariant(metadata, node.Id);
-            if (IsVariantLockedForEditing(
-                    moduleId,
-                    variantId,
-                    JsonBool(variant, ["locked"])))
-                throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
-            var config = variant["config"] as JsonObject ?? throw new InvalidOperationException("Module variant has no config.");
-            _designOwner.UpdateModuleConfigFieldValue(
+            _designOwner.RequireModuleVariantDeleteAllowed(
                 connection,
-                module.ProjectId,
-                module.RecordClassId,
-                config,
-                fieldId,
-                value);
-            variant["config"] = config;
-            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
+                node);
+            if (_productionOwner.ModuleInstanceRepository
+                    .CountVariantReferences(
+                        connection,
+                        moduleId,
+                        node.Id) > 0)
+            {
+                throw new InvalidOperationException(
+                    "This module variant is still used and cannot be deleted.");
+            }
+
+            _designOwner.DeleteModuleVariant(connection, node);
         }
     }
 
-    public string GetModuleVariantConfigFieldValue(ProjectTreeNode node, string fieldId) =>
-        SqliteDesignOwner.ModuleConfigFieldValue(
-            GetModuleVariantSettings(node).RecordClassId,
-            GetModuleVariantSettings(node).ConfigJson,
-            fieldId);
+    public ProjectTreeNode ToggleModuleVariantLock(
+        ProjectTreeNode node) =>
+        _designOwner.ToggleModuleVariantLock(node);
 
-    private ProjectTreeNode UpdateModuleVariantMetadata(ProjectTreeNode node, Action<JsonObject> update, string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) throw new InvalidOperationException("Variant name cannot be empty.");
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out _))
-            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variant = FindModuleVariant(metadata, node.Id);
-            update(variant);
-            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
-            return new ProjectTreeNode(ProjectTreeNodeKind.ModuleVariant, node.Id,
-                JsonPath.String(variant, "name", name), node.Notes, node.RecordClassId, node.Parent,
-                isUsed: node.IsUsed, isProtected: JsonBool(variant, ["protected"]), isLocked: JsonBool(variant, ["locked"]));
-        }
-    }
+    public void ReplaceModuleVariantConfig(
+        ProjectTreeNode node,
+        string configJson) =>
+        _designOwner.ReplaceModuleVariantConfig(node, configJson);
 
-    private void UpdateModuleVariantConfig(ProjectTreeNode node, Action<JsonObject> update)
-    {
-        if (!VariantReferenceId.TryParse(node.Id, out var moduleId, out var variantId))
-            throw new InvalidOperationException($"Invalid module variant '{node.Id}'.");
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var module = GetModuleSettings(moduleId);
-            var metadata = ParseJsonObject(module.MetadataJson);
-            var variant = FindModuleVariant(metadata, node.Id);
-            if (IsVariantLockedForEditing(
-                    moduleId,
-                    variantId,
-                    JsonBool(variant, ["locked"])))
-                throw new InvalidOperationException($"Module variant '{node.Name}' is locked.");
-            update(variant);
-            _designOwner.AppModuleRepository.UpdateModuleMetadata(connection, moduleId, metadata.ToJsonString());
-        }
-    }
+    public void UpdateModuleVariantField(
+        ProjectTreeNode node,
+        string fieldId,
+        string value) =>
+        _designOwner.UpdateModuleVariantField(node, fieldId, value);
 
-    private static JsonObject FindModuleVariant(JsonObject metadata, string nodeId)
-    {
-        if (!VariantReferenceId.TryParse(nodeId, out var moduleId, out var variantId))
-            throw new InvalidOperationException($"Invalid module variant '{nodeId}'.");
-        var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Module '{moduleId}'");
-        return VariantEnvelopeContract.FindSource(variants, variantId)
-            ?? throw new InvalidOperationException($"Missing module variant '{variantId}'.");
-    }
+    public string GetModuleVariantConfigFieldValue(
+        ProjectTreeNode node,
+        string fieldId) =>
+        _designOwner.GetModuleVariantConfigFieldValue(node, fieldId);
 }

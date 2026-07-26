@@ -7,6 +7,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner
 {
+    private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
     private readonly IAppModuleRepository _appModuleRepository;
     private readonly IComponentClassRepository _componentClassRepository;
@@ -33,6 +34,11 @@ internal sealed partial class SqliteDesignOwner
         JsonObject root,
         IReadOnlyList<string> path) =>
         JsonPath.String(root, path);
+
+    private static bool JsonBool(
+        JsonObject root,
+        IReadOnlyList<string> path) =>
+        JsonPath.Bool(root, path);
 
     private static void SetPair(
         JsonObject root,

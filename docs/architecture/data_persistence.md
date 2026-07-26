@@ -47,9 +47,12 @@ constructs its definition repositories; composition no longer constructs
 those implementations directly. App configuration and metadata operations
 execute in that Design owner and are exposed through temporary delegations
 while the broad application ports are decomposed. Module definition reads,
-strict configuration projection and field writes follow the same owner.
-Component Variant references written into Module configuration are validated
-inside Design against the exact Project, class type and stable Variant id.
+strict configuration projection, field writes, Variant mutation and
+session-only Default Variant editing state follow the same owner. Component
+Variant references written into Module configuration are validated inside
+Design against the exact Project, class type and stable Variant id. Deleting a
+Module Variant is split deliberately: composition queries its Production
+usage, while Design alone validates and mutates the authored Variant array.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

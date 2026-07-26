@@ -1,49 +1,20 @@
-using Mockups.DesktopEditorShell.Common;
-using System;
-using System.Collections.Generic;
-
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProjectEngine
 {
-    private readonly object _variantEditingSessionGate = new();
-    private readonly HashSet<string> _sessionUnlockedDefaultVariants = new(StringComparer.Ordinal);
-
     private bool IsVariantLockedForEditing(
         string ownerId,
         string variantId,
-        bool persistedLocked)
-    {
-        if (!variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
-        {
-            return persistedLocked;
-        }
+        bool persistedLocked) =>
+        _designOwner.IsVariantLockedForEditing(
+            ownerId,
+            variantId,
+            persistedLocked);
 
-        var reference = VariantReferenceId.Format(ownerId, variantId);
-        lock (_variantEditingSessionGate)
-        {
-            return !_sessionUnlockedDefaultVariants.Contains(reference);
-        }
-    }
-
-    private bool ToggleDefaultVariantSessionLock(string ownerId, string variantId)
-    {
-        if (!variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Variant '{variantId}' is not the stable Default Variant.");
-        }
-
-        var reference = VariantReferenceId.Format(ownerId, variantId);
-        lock (_variantEditingSessionGate)
-        {
-            if (_sessionUnlockedDefaultVariants.Remove(reference))
-            {
-                return true;
-            }
-
-            _sessionUnlockedDefaultVariants.Add(reference);
-            return false;
-        }
-    }
+    private bool ToggleDefaultVariantSessionLock(
+        string ownerId,
+        string variantId) =>
+        _designOwner.ToggleDefaultVariantSessionLock(
+            ownerId,
+            variantId);
 }
