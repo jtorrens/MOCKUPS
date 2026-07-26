@@ -44,6 +44,9 @@ It includes:
   selections, Production removal, embedded-context rebasing, worker-thread
   execution, public async-only loading, rapid workspace reversal, cancellation,
   disposal and obsolete revision rejection;
+- window-close Preview lifetime coverage, including cancellation of Design and
+  Production preparation, ahead preload and playback timing plus release of
+  frame-cache and external rasterizer resources;
 - Component scaffolding contract, collision, no-overwrite draft
   materialization, semantic integration transaction, deterministic generated
   routes, persisted-spec adoption and integrated-owner verification tests;
@@ -201,6 +204,11 @@ capability. The Preview suite parses every
 static, exported, import-assignment, `require` and dynamic TypeScript import
 recursively with TypeScript module resolution, rejects computed module loads,
 then derives permitted concrete owner edges from the current manifest.
+Pipeline validation parses its ordered command stages and compares the exact
+declared owner sequence. It does not accept a command merely because an
+expected substring appears somewhere in it. The shared validation context has
+no implementation-source blacklist API; remaining text-presence checks belong
+only to normative documentation, where prose is the contract being validated.
 
 That structural suite also requires:
 

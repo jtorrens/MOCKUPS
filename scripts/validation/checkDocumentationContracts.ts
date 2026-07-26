@@ -22,7 +22,7 @@ export function checkDocumentationContracts({
   root,
   readText,
   addViolation,
-  assertContains,
+  assertDocumentContains,
 }: ArchitectureValidationContext) {
   const canonicalArchitectureEntries = new Set<string>([
     "README.md",
@@ -44,20 +44,20 @@ export function checkDocumentationContracts({
       addViolation(relativePath, "canonical architecture document is missing");
       continue;
     }
-    assertContains(
+    assertDocumentContains(
       relativePath,
       "Status: normative.",
       "canonical architecture document must be normative",
     );
-    assertContains("AGENTS.md", relativePath, `AGENTS must require ${relativePath}`);
-    assertContains(
+    assertDocumentContains("AGENTS.md", relativePath, `AGENTS must require ${relativePath}`);
+    assertDocumentContains(
       "docs/architecture/README.md",
       document,
       `the architecture index must include ${document}`,
     );
   }
   for (const archiveRuleOwner of ["AGENTS.md", "docs/README.md"]) {
-    assertContains(
+    assertDocumentContains(
       archiveRuleOwner,
       "open, search, read, quote, summarize, cite",
       `${archiveRuleOwner} must prohibit historical archive consultation`,
@@ -68,7 +68,7 @@ export function checkDocumentationContracts({
     "Integration rejects missing assets",
     "Module contract planning",
   ]) {
-    assertContains(
+    assertDocumentContains(
       "docs/architecture/development_workflow.md",
       requiredTerm,
       "the normative development workflow must retain its scaffolding boundaries",

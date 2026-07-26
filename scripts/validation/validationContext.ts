@@ -10,8 +10,11 @@ export type ArchitectureValidationContext = {
   };
   readText(relativePath: string): string;
   addViolation(filePath: string, message: string): void;
-  assertContains(relativePath: string, term: string, message: string): void;
-  assertDoesNotContain(relativePath: string, term: string, message: string): void;
+  assertDocumentContains(
+    relativePath: string,
+    term: string,
+    message: string,
+  ): void;
 };
 
 export function createArchitectureValidationContext(
@@ -49,20 +52,13 @@ export function createArchitectureValidationContext(
     violations.push(`${filePath}: ${message}`);
   }
 
-  function assertContains(relativePath: string, term: string, message: string) {
-    const source = readText(relativePath);
-    if (!source.includes(term)) {
-      addViolation(relativePath, message);
-    }
-  }
-
-  function assertDoesNotContain(
+  function assertDocumentContains(
     relativePath: string,
     term: string,
     message: string,
   ) {
     const source = readText(relativePath);
-    if (source.includes(term)) {
+    if (!source.includes(term)) {
       addViolation(relativePath, message);
     }
   }
@@ -73,8 +69,7 @@ export function createArchitectureValidationContext(
     resolveRepositoryPath,
     readText,
     addViolation,
-    assertContains,
-    assertDoesNotContain,
+    assertDocumentContains,
   };
 }
 

@@ -5,6 +5,24 @@ type WorkflowStep = {
   run?: string;
 };
 
+function commandStages(command: string): string[] {
+  return command
+    .split(/\s*&&\s*/)
+    .map((stage) => stage.trim())
+    .filter(Boolean);
+}
+
+function sameStages(
+  actualCommand: string,
+  expectedStages: readonly string[],
+): boolean {
+  const actualStages = commandStages(actualCommand);
+  return actualStages.length === expectedStages.length
+    && actualStages.every(
+      (stage, index) => stage === expectedStages[index],
+    );
+}
+
 function workflowSteps(
   readText: ArchitectureValidationContext["readText"],
   relativePath: string,
@@ -46,30 +64,30 @@ export function checkValidationPipeline({
     scripts?: Record<string, string>;
   }).scripts ?? {};
   const repositoryTestScript = packageScripts["test:repository"] ?? "";
-  for (const [scriptName, expectedOwner] of [
-    ["validate:contracts", "runValidationModule.ts contracts"],
-    ["validate:generated", "runValidationModule.ts generated"],
-    ["validate:pipeline", "runValidationModule.ts pipeline"],
-    ["validate:retired", "runValidationModule.ts retired"],
+  for (const [scriptName, expectedCommand] of [
+    ["validate:contracts", "tsx scripts/validation/runValidationModule.ts contracts"],
+    ["validate:generated", "tsx scripts/validation/runValidationModule.ts generated"],
+    ["validate:pipeline", "tsx scripts/validation/runValidationModule.ts pipeline"],
+    ["validate:retired", "tsx scripts/validation/runValidationModule.ts retired"],
     ["validate:architecture", "npm run test:architecture"],
   ] as const) {
-    if (!(packageScripts[scriptName] ?? "").includes(expectedOwner)) {
+    if ((packageScripts[scriptName] ?? "") !== expectedCommand) {
       addViolation(
         "package.json",
         `${scriptName} must execute its focused validation owner`,
       );
     }
   }
-  if (!(packageScripts["check:architecture"] ?? "")
-    .includes("npm run validate:contracts")
-      || !(packageScripts["check:architecture"] ?? "")
-        .includes("npm run validate:generated")
-      || !(packageScripts["check:architecture"] ?? "")
-        .includes("npm run validate:pipeline")
-      || !(packageScripts["check:architecture"] ?? "")
-        .includes("npm run validate:retired")
-      || !(packageScripts["check:architecture"] ?? "")
-        .includes("npm run validate:architecture")) {
+  if (!sameStages(
+    packageScripts["check:architecture"] ?? "",
+    [
+      "npm run validate:contracts",
+      "npm run validate:generated",
+      "npm run validate:pipeline",
+      "npm run validate:retired",
+      "npm run validate:architecture",
+    ],
+  )) {
     addViolation(
       "package.json",
       "the architecture aggregate must execute every focused validation owner",
@@ -87,9 +105,11 @@ export function checkValidationPipeline({
       "the public repository gate must isolate the staged parity database through its validation owner",
     );
   }
+  const desktopTestCommand =
+    "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj --";
   for (const group of ["core", "ui", "exhaustive"]) {
-    if (!(packageScripts[`animation:test:desktop:${group}`] ?? "")
-      .includes(`--group ${group}`)) {
+    if ((packageScripts[`animation:test:desktop:${group}`] ?? "")
+      !== `${desktopTestCommand} --group ${group}`) {
       addViolation(
         "package.json",
         `the desktop suite must expose the isolated ${group} group`,
@@ -97,18 +117,29 @@ export function checkValidationPipeline({
     }
   }
   if (packageScripts["test:focus:preview"] !== "tsx --test"
-      || !(packageScripts["test:focus:desktop"] ?? "").endsWith(" --")
-      || !(packageScripts["test:focus:desktop"] ?? "").startsWith("dotnet run ")
-      || !(packageScripts["animation:test:desktop:owner"] ?? "")
-        .endsWith("-- --group exhaustive")
-      || !(packageScripts["test:guard"] ?? "").includes("npm run check:architecture")) {
+      || packageScripts["test:focus:desktop"] !== desktopTestCommand
+      || packageScripts["animation:test:desktop:owner"]
+        !== `${desktopTestCommand} --group exhaustive`
+      || !sameStages(
+        packageScripts["test:guard"] ?? "",
+        [
+          "npm run typecheck",
+          "npm run check:architecture",
+          "git diff --check",
+        ],
+      )) {
     addViolation(
       "package.json",
       "focused Preview, desktop and manifest-owner selectors plus the shared architecture guard must remain available",
     );
   }
-  if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
-      || !(packageScripts["test:cold"] ?? "").includes("npm test")) {
+  if (!sameStages(
+    packageScripts["test:cold"] ?? "",
+    [
+      "dotnet clean src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+      "npm test",
+    ],
+  )) {
     addViolation(
       "package.json",
       "test:cold must clear desktop build outputs before running the complete repository gate",
