@@ -3120,35 +3120,86 @@ static void SqliteSessionExposesDistinctFocusedPorts()
 {
     var project = SqlitePersistence.OpenCurrent(
         ParityDatabasePath());
-    object[] ports =
+    (object Port, Type Contract)[] capabilities =
     [
-        project.Navigation,
-        project.CoreFields,
-        project.RecordFields,
-        project.ComponentFields,
-        project.VariantHistory,
-        project.Preview,
-        project.ComponentPreview,
-        project.Timeline,
-        project.ModuleInstanceThemes,
-        project.Dictionary,
-        project.Children,
-        project.NodeCommands,
-        project.RenderSnapshots,
-        project.Presentation,
-        project.ModuleInstances,
-        project.IconThemes,
-        project.ThemeTokens,
-        project.Components,
-        project.RuntimeInputOwners,
-        project.RuntimeInputInstances,
-        project.Animation,
-        project.ReferenceUsage,
-        project.Layouts,
-        project.ActorPreview,
+        (project.ProjectPaths, typeof(IProjectPathResolver)),
+        (project.Navigation, typeof(IEditorNavigationDataSource)),
+        (project.CoreFields, typeof(ICoreFieldStore)),
+        (project.RecordFields, typeof(IRecordClassFieldStore)),
+        (project.ComponentFields, typeof(IComponentClassFieldStore)),
+        (project.VariantHistory, typeof(IVariantHistoryStore)),
+        (project.Preview, typeof(IPreviewInputRepository)),
+        (project.ComponentPreview,
+            typeof(IComponentPreviewInputRepository)),
+        (project.Timeline, typeof(IModuleInstanceTimelineStore)),
+        (project.ModuleInstanceThemes,
+            typeof(IModuleInstanceThemeTokenQuery)),
+        (project.Dictionary,
+            typeof(IDictionaryFieldContextRepository)),
+        (project.Children, typeof(IEditorChildStore)),
+        (project.NodeCommands, typeof(IEditorNodeCommandStore)),
+        (project.RenderSnapshots, typeof(IRenderSnapshotDataSource)),
+        (project.Presentation,
+            typeof(IEditorPresentationContextRepository)),
+        (project.ModuleInstances,
+            typeof(IModuleInstanceCollectionStore)),
+        (project.IconThemes, typeof(IIconThemeAssetStore)),
+        (project.ThemeTokens, typeof(IThemeTokenQuery)),
+        (project.Components, typeof(IComponentDocumentStore)),
+        (project.RuntimeInputOwners, typeof(IRuntimeInputOwnerStore)),
+        (project.RuntimeInputInstances,
+            typeof(IRuntimeInputInstanceStore)),
+        (project.Animation, typeof(IModuleInstanceAnimationStore)),
+        (project.ReferenceUsage, typeof(IReferenceUsageQuery)),
+        (project.Layouts, typeof(IEditorLayoutStore)),
+        (project.ActorPreview, typeof(IActorPreviewRepository)),
     ];
+    var ports = capabilities
+        .Select((capability) => capability.Port)
+        .ToArray();
 
     Equal(ports.Length, ports.Distinct().Count());
+    var capabilityLeaks = capabilities
+        .Select((capability) =>
+        {
+            var expected = capability.Contract
+                .GetInterfaces()
+                .Append(capability.Contract)
+                .SelectMany((contract) => contract.GetMethods(
+                    BindingFlags.Instance
+                    | BindingFlags.Public
+                    | BindingFlags.DeclaredOnly))
+                .Select(MethodSignature)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy((signature) => signature, StringComparer.Ordinal)
+                .ToArray();
+            var actual = capability.Port.GetType()
+                .GetMethods(
+                    BindingFlags.Instance
+                    | BindingFlags.Public
+                    | BindingFlags.DeclaredOnly)
+                .Select(MethodSignature)
+                .OrderBy((signature) => signature, StringComparer.Ordinal)
+                .ToArray();
+            return (
+                capability.Contract.Name,
+                Expected: string.Join("|", expected),
+                Actual: string.Join("|", actual));
+        })
+        .Where((capability) =>
+            !capability.Expected.Equals(
+                capability.Actual,
+                StringComparison.Ordinal))
+        .ToList();
+    if (capabilityLeaks.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "SQLite session capability membranes expose undeclared members:\n"
+            + string.Join(
+                "\n",
+                capabilityLeaks.Select((capability) =>
+                    $"{capability.Name}\nexpected: {capability.Expected}\nactual: {capability.Actual}")));
+    }
     True(project.Navigation is not IPreviewInputRepository);
     True(project.Preview is not IActorPreviewRepository);
     True(project.Preview is not IComponentPreviewInputRepository);
@@ -3164,22 +3215,6 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Children is not IEditorNodeCommandStore);
     True(project.NodeCommands is not IEditorChildStore);
     True(project.NodeCommands is not IReferenceUsageQuery);
-    Equal(
-        string.Join(
-            "|",
-            typeof(IEditorNodeCommandStore)
-                .GetMethods()
-                .Select((method) => method.Name)
-                .OrderBy((name) => name, StringComparer.Ordinal)),
-        string.Join(
-            "|",
-            project.NodeCommands.GetType()
-                .GetMethods(
-                    BindingFlags.Instance
-                    | BindingFlags.Public
-                    | BindingFlags.DeclaredOnly)
-                .Select((method) => method.Name)
-                .OrderBy((name) => name, StringComparer.Ordinal)));
     True(project.ModuleInstances is not IIconThemeAssetStore);
     True(project.ModuleInstances is not IModuleInstanceTimelineStore);
     True(project.IconThemes is not IThemeTokenQuery);
@@ -3194,6 +3229,10 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
     True(project.ReferenceUsage is not IEditorNodeCommandStore);
 }
+
+static string MethodSignature(MethodInfo method) =>
+    $"{method.Name}({string.Join(",", method.GetParameters().Select(
+        (parameter) => parameter.ParameterType.FullName))})";
 
 static void PreviewResourceSelectionHasOneSessionRule()
 {

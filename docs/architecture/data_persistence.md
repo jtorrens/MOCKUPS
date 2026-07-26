@@ -128,6 +128,10 @@ retired area-wide adapters are removed with their contracts.
 The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no
 child creation, Module Instance, timeline or Reference Usage members and uses
 no runtime casts to recover them.
+Every public session capability is tested against its declared interface:
+the concrete adapter may expose no additional public method. This applies
+equally to Preview and Dictionary, whose retired sibling capabilities are not
+present on their runtime adapter types.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

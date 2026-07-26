@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -433,4 +434,156 @@ internal sealed class SqliteEditorNodeCommandPort(
     public ProjectTreeNode ToggleModuleVariantLock(
         ProjectTreeNode node) =>
         target.ToggleModuleVariantLock(node);
+}
+
+internal sealed class SqlitePreviewInputPort(
+    IPreviewInputRepository target)
+    : IPreviewInputRepository
+{
+    public ShotSettings GetShotSettings(string shotId) =>
+        target.GetShotSettings(shotId);
+
+    public AppSettings GetAppSettings(string appId) =>
+        target.GetAppSettings(appId);
+
+    public AppSettings GetModuleAppSettings(string moduleId) =>
+        target.GetModuleAppSettings(moduleId);
+
+    public ModuleSettings GetModuleSettings(string moduleId) =>
+        target.GetModuleSettings(moduleId);
+
+    public ModuleSettings GetModuleVariantSettings(
+        ProjectTreeNode variantNode) =>
+        target.GetModuleVariantSettings(variantNode);
+
+    public string GetModuleInstanceVariantName(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceVariantName(moduleInstanceId);
+
+    public ComponentClassSettings GetComponentClassSettings(
+        string componentClassId) =>
+        target.GetComponentClassSettings(componentClassId);
+
+    public ComponentClassSettings GetComponentVariantSettings(
+        ProjectTreeNode variantNode) =>
+        target.GetComponentVariantSettings(variantNode);
+
+    public string GetComponentClassBaseConfigsJson(string projectId) =>
+        target.GetComponentClassBaseConfigsJson(projectId);
+
+    public string ValidateComponentVariantReferencesForPreview(
+        string projectId,
+        string configJson) =>
+        target.ValidateComponentVariantReferencesForPreview(
+            projectId,
+            configJson);
+
+    public DeviceSettings GetDeviceSettings(string deviceId) =>
+        target.GetDeviceSettings(deviceId);
+
+    public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId) =>
+        target.GetDevicePreviewMetrics(deviceId);
+
+    public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId) =>
+        target.GetDeviceOptions(projectId);
+
+    public ThemeSettings GetThemeSettings(string themeId) =>
+        target.GetThemeSettings(themeId);
+
+    public string GetThemeFieldValue(
+        string themeId,
+        string fieldId) =>
+        target.GetThemeFieldValue(themeId, fieldId);
+
+    public IReadOnlyList<FieldOption> GetThemeOptions(string projectId) =>
+        target.GetThemeOptions(projectId);
+
+    public IReadOnlyDictionary<string, string> GetPaletteColorMap(
+        string projectId) =>
+        target.GetPaletteColorMap(projectId);
+
+    public IReadOnlyDictionary<string, bool> GetPaletteNeutralMap(
+        string projectId) =>
+        target.GetPaletteNeutralMap(projectId);
+
+    public IReadOnlyList<ProductionFontFace> GetProductionFontFaces(
+        string projectId) =>
+        target.GetProductionFontFaces(projectId);
+
+    public IconThemeSettings GetIconThemeSettings(string iconThemeId) =>
+        target.GetIconThemeSettings(iconThemeId);
+}
+
+internal sealed class SqliteDictionaryFieldContextPort(
+    IDictionaryFieldContextRepository target)
+    : IDictionaryFieldContextRepository
+{
+    public ThemeSettings GetThemeSettings(string themeId) =>
+        target.GetThemeSettings(themeId);
+
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
+
+    public IReadOnlyList<FieldOption> GetPaletteColorOptions(
+        string projectId) =>
+        target.GetPaletteColorOptions(projectId);
+
+    public ComponentVariantSelectionSettings
+        GetComponentVariantSelectionSettings(string variantReference) =>
+            target.GetComponentVariantSelectionSettings(
+                variantReference);
+
+    public JsonObject GetComponentVariantRuntimeInputs(
+        string variantReference) =>
+        target.GetComponentVariantRuntimeInputs(variantReference);
+
+    public IReadOnlyList<ComponentInputBindingDefinition>
+        GetComponentVariantRuntimeInputBindings(
+            string variantReference) =>
+            target.GetComponentVariantRuntimeInputBindings(
+                variantReference);
+
+    public IReadOnlyList<RuntimeInputCollectionDefinition>
+        GetComponentVariantRuntimeCollections(
+            string variantReference) =>
+            target.GetComponentVariantRuntimeCollections(
+                variantReference);
+
+    public IReadOnlyList<FieldOption>
+        GetComponentVariantReferenceOptionsByType(
+            string projectId,
+            string componentType,
+            bool includeNone) =>
+            target.GetComponentVariantReferenceOptionsByType(
+                projectId,
+                componentType,
+                includeNone);
+
+    public IReadOnlyList<FieldOption> GetComponentVariantReferenceOptions(
+        string projectId,
+        string componentTypeSelector,
+        bool includeNone) =>
+        target.GetComponentVariantReferenceOptions(
+            projectId,
+            componentTypeSelector,
+            includeNone);
+
+    public string GetRuntimeComponentVariantName(
+        string variantReference,
+        JsonObject overrides,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
+        target.GetRuntimeComponentVariantName(
+            variantReference,
+            overrides,
+            slots);
+
+    public IReadOnlyList<IconThemeToken> GetIconThemeTokens(
+        string iconThemeId) =>
+        target.GetIconThemeTokens(iconThemeId);
+
+    public string ResolveIconThemeAssetPath(
+        string iconThemeId,
+        string file) =>
+        target.ResolveIconThemeAssetPath(iconThemeId, file);
 }
