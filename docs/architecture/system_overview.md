@@ -154,7 +154,11 @@ field writes and Variant authoring execute there as well, including exact
 Component Variant reference validation and session-only Default Variant
 editing state. The temporary composition layer performs only the cross-owner
 Production usage check before asking Design to delete a Module Variant.
-Component Class authoring remains the next Design cut.
+Component Class settings, Variant catalogs and Variant lifecycle mutations
+also execute in Design. The temporary composition layer performs the
+cross-domain Usage check before asking Design to delete a Component Variant.
+Component configuration-field and embedded-boundary edits remain the next
+Design cut.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining

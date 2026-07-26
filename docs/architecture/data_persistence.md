@@ -53,6 +53,11 @@ Variant references written into Module configuration are validated inside
 Design against the exact Project, class type and stable Variant id. Deleting a
 Module Variant is split deliberately: composition queries its Production
 usage, while Design alone validates and mutates the authored Variant array.
+Component Class settings, Design Preview documents and Variant lifecycle
+mutations are owned by the same Design assembly. Component Variant deletion
+uses the same split: composition queries typed cross-domain Usage edges, then
+Design alone validates protection/lock state and mutates the authored Variant
+array. This does not grant Design access to the Usage implementation.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

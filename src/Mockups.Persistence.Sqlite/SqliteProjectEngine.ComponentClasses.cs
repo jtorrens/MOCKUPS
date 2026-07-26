@@ -11,53 +11,27 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProjectEngine
 {
-    public ComponentClassSettings GetComponentClassSettings(string componentClassId)
-    {
-        return ComponentClassSettingsFrom(_designOwner.ComponentClassRepository.Get(componentClassId));
-    }
+    public ComponentClassSettings GetComponentClassSettings(
+        string componentClassId) =>
+        _designOwner.GetComponentClassSettings(componentClassId);
 
-    public ComponentClassSettings GetComponentVariantSettings(ProjectTreeNode variantNode)
-    {
-        using var connection = OpenConnection();
-        return GetComponentVariantSettings(connection, variantNode);
-    }
+    public ComponentClassSettings GetComponentVariantSettings(
+        ProjectTreeNode variantNode) =>
+        _designOwner.GetComponentVariantSettings(variantNode);
 
-    public void UpdateComponentClassDesignPreviewJson(string componentClassId, string designPreviewJson) =>
-        _designOwner.ComponentClassRepository.UpdateDesignPreview(componentClassId, designPreviewJson);
+    public void UpdateComponentClassDesignPreviewJson(
+        string componentClassId,
+        string designPreviewJson) =>
+        _designOwner.UpdateComponentClassDesignPreviewJson(
+            componentClassId,
+            designPreviewJson);
 
-    private ComponentClassSettings GetComponentVariantSettings(SqliteConnection connection, ProjectTreeNode variantNode)
-    {
-        if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
-            || !VariantReferenceId.TryParse(variantNode.Id, out var componentClassId, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
-        }
-
-        var settings = GetComponentClassSettings(connection, componentClassId);
-        var metadata = ParseJsonObject(settings.MetadataJson);
-        var variants = VariantEnvelopeContract.RequiredArray(
-            metadata,
-            "variants",
-            $"Component class '{componentClassId}'");
-
-        var variant = VariantEnvelopeContract.FindSource(variants, variantId)
-            ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
-        if (variant["config"] is not JsonObject configObject)
-        {
-            throw new InvalidOperationException($"Component variant '{variantId}' has no config.");
-        }
-
-        var config = configObject.ToJsonString();
-        var variantName = JsonPath.String(variant, "name", variantId);
-
-        return settings with
-        {
-            Name = string.IsNullOrWhiteSpace(variantName)
-                ? settings.Name
-                : $"{settings.Name} · {variantName}",
-            ConfigJson = config,
-        };
-    }
+    private ComponentClassSettings GetComponentVariantSettings(
+        SqliteConnection connection,
+        ProjectTreeNode variantNode) =>
+        _designOwner.GetComponentVariantSettings(
+            connection,
+            variantNode);
 
     private JsonObject ComponentVariantConfigForUpdate(
         SqliteConnection connection,
@@ -97,23 +71,12 @@ internal sealed partial class SqliteProjectEngine
     }
 
 
-    private ComponentClassSettings GetComponentClassSettings(SqliteConnection connection, string componentClassId)
-    {
-        return ComponentClassSettingsFrom(_designOwner.ComponentClassRepository.Get(connection, componentClassId));
-    }
-
-    private static ComponentClassSettings ComponentClassSettingsFrom(ComponentClassDefinitionRecord record)
-    {
-        return new ComponentClassSettings(
-            record.ProjectId,
-            record.ComponentType,
-            record.RecordClassId,
-            record.Name,
-            record.Notes,
-            DefaultComponentVariantConfigJson(record.MetadataJson, $"Component class '{record.Id}'"),
-            record.DesignPreviewJson,
-            record.MetadataJson);
-    }
+    private ComponentClassSettings GetComponentClassSettings(
+        SqliteConnection connection,
+        string componentClassId) =>
+        _designOwner.GetComponentClassSettings(
+            connection,
+            componentClassId);
 
     public FieldValue CreateComponentClassFieldValue(string componentClassId, string fieldId)
     {
@@ -655,27 +618,17 @@ internal sealed partial class SqliteProjectEngine
 
     private static IReadOnlyList<ComponentClassVariant> ComponentClassVariants(
         string metadataJson,
-        string owner = "Component class metadata")
-    {
-        var metadata = ParseJsonObject(metadataJson);
-        return VariantEnvelopeContract.Read(metadata, "variants", owner)
-            .Select((variant) => new ComponentClassVariant(
-                variant.Id,
-                variant.Name,
-                variant.IsProtected,
-                variant.IsLocked,
-                variant.Config.ToJsonString()))
-            .OrderBy((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal) ? 0 : 1)
-            .ThenBy((variant) => variant.Name, StringComparer.Ordinal)
-            .ToList();
-    }
+        string owner = "Component class metadata") =>
+        SqliteDesignOwner.ComponentClassVariants(
+            metadataJson,
+            owner);
 
-    private static string DefaultComponentVariantConfigJson(string metadataJson, string owner)
-    {
-        return ComponentClassVariants(metadataJson, owner)
-            .Single((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
-            .ConfigJson;
-    }
+    private static string DefaultComponentVariantConfigJson(
+        string metadataJson,
+        string owner) =>
+        SqliteDesignOwner.DefaultComponentVariantConfigJson(
+            metadataJson,
+            owner);
 
     private static void SetDefaultComponentVariantConfig(JsonObject metadata, JsonObject config)
     {
