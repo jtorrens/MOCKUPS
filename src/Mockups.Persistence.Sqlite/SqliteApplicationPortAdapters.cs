@@ -6,14 +6,12 @@
 
 namespace Mockups.DesktopEditorShell.Data;
 internal sealed class SqliteEditorNavigationPort(
-    Mockups.DesktopEditorShell.EditorShell.IEditorNavigationDataSource target)
+    System.Func<System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode>> loadProjectTree)
     : Mockups.DesktopEditorShell.EditorShell.IEditorNavigationDataSource
 {
-    private readonly Mockups.DesktopEditorShell.EditorShell.IEditorNavigationDataSource _target = target;
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode> LoadProjectTree(
         )
-        => ((Mockups.DesktopEditorShell.EditorShell.IEditorNavigationDataSource)_target).LoadProjectTree();
+        => loadProjectTree();
 
 }
 

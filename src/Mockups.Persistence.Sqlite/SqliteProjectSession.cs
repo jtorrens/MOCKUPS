@@ -10,7 +10,8 @@ public sealed class SqliteProjectSession
         IEditorLayoutStore layouts)
     {
         ProjectPaths = engine.ProjectPaths;
-        Navigation = new SqliteEditorNavigationPort(engine);
+        Navigation = new SqliteEditorNavigationPort(
+            engine.LoadProjectTree);
         CoreFields = new SqliteCoreFieldPort(engine.CoreFields);
         RecordFields =
             new SqliteRecordClassFieldPort(engine.RecordFields);
