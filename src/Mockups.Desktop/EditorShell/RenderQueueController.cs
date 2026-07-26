@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Threading;
@@ -16,12 +17,14 @@ internal sealed class RenderQueueController
     public RenderQueueController(
         Window owner,
         IRenderSnapshotDataSource database,
+        IProjectPathResolver projectPaths,
         RenderQueueManager? queue = null,
         RenderJobSnapshotFactory? snapshots = null)
     {
         _owner = owner;
         _queue = queue ?? new RenderQueueManager();
-        _snapshots = snapshots ?? new RenderJobSnapshotFactory(database);
+        _snapshots = snapshots
+            ?? new RenderJobSnapshotFactory(database, projectPaths);
     }
 
     public EditorNavigationRowAction? NavigationAction(ProjectTreeNode node)

@@ -32,6 +32,7 @@ internal static class ActorPreviewInputFactory
 
     public static JsonObject Create(
         ActorPreviewDataSource dataSource,
+        IProjectPathResolver projectPaths,
         string actorId,
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
@@ -42,7 +43,9 @@ internal static class ActorPreviewInputFactory
         var textColorToken = ModeValue(source.AvatarTextColorModes, themeMode);
         var useInitials = BooleanText.Parse(source.AvatarUseInitials);
         var offset = SplitPair(source.AvatarOffset);
-        var fullPath = ProjectPathService.ResolveLocalPath(source.AvatarFilePath, source.ProjectMediaRoot);
+        var fullPath = projectPaths.ResolveLocalPath(
+            source.AvatarFilePath,
+            source.ProjectMediaRoot);
         var imageUri = !useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath)
             ? DataUri(fullPath)
             : "";

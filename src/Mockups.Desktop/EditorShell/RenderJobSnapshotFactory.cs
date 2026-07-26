@@ -65,13 +65,16 @@ internal sealed class RenderJobSnapshotFactory
 
     public RenderJobSnapshotFactory(
         IRenderSnapshotDataSource database,
+        IProjectPathResolver projectPaths,
         IShotManagerIntegrationClient? shotManager = null,
         ShotManagerWorkstationRootStore? roots = null)
     {
         _database = database;
         _shotManager = shotManager ?? new ShotManagerIntegrationClient();
         _roots = roots ?? new ShotManagerWorkstationRootStore();
-        _payloadData = new DesignPreviewPayloadDataSource(database);
+        _payloadData = new DesignPreviewPayloadDataSource(
+            database,
+            projectPaths);
     }
 
     public async Task<RenderQueueShotDraft> LoadDraftAsync(

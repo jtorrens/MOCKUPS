@@ -28,12 +28,14 @@ internal sealed record PreviewReferenceOverlay(
 {
     private static readonly Dictionary<string, string> UriCache = new(StringComparer.Ordinal);
 
-    public static PreviewReferenceOverlay Resolve(PreviewReferenceState state)
+    public static PreviewReferenceOverlay Resolve(
+        PreviewReferenceState state,
+        IProjectPathResolver projectPaths)
     {
         var viewMode = state.ViewMode == "split" ? "split" : "preview";
         var sourceUri = viewMode != "split" || string.IsNullOrWhiteSpace(state.SourcePath)
             ? ""
-            : ResolveSourceUri(state);
+            : ResolveSourceUri(state, projectPaths);
         return new PreviewReferenceOverlay(
             sourceUri,
             viewMode,
@@ -42,9 +44,13 @@ internal sealed record PreviewReferenceOverlay(
             Math.Clamp(state.Angle, -80, 80));
     }
 
-    private static string ResolveSourceUri(PreviewReferenceState state)
+    private static string ResolveSourceUri(
+        PreviewReferenceState state,
+        IProjectPathResolver projectPaths)
     {
-        var sourcePath = ProjectPathService.ResolveLocalPath(state.SourcePath, state.ProjectMediaRoot);
+        var sourcePath = projectPaths.ResolveLocalPath(
+            state.SourcePath,
+            state.ProjectMediaRoot);
         if (string.IsNullOrWhiteSpace(sourcePath) || !File.Exists(sourcePath)) return "";
 
         var isVideo = IsVideo(sourcePath);

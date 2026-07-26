@@ -132,7 +132,8 @@ internal sealed class EditorPreviewController
     private readonly Panel _previewTitle;
     private readonly Popup _designContextHistoryPopup;
     private readonly StackPanel _designContextHistoryItems = new() { Spacing = 1 };
-    private readonly DesignWebPreviewPane _designPreviewPane = new();
+    private readonly DesignWebPreviewPane _designPreviewPane;
+    private readonly IProjectPathResolver _projectPaths;
     private readonly ComponentPreviewInputSession _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
     private readonly StackPanel _productionContextHost = new()
@@ -246,6 +247,7 @@ internal sealed class EditorPreviewController
 
     public EditorPreviewController(
         IDictionaryFieldContextRepository database,
+        IProjectPathResolver projectPaths,
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
@@ -265,7 +267,11 @@ internal sealed class EditorPreviewController
         Func<string, bool> selectNodeById,
         Window owner)
     {
-        _previewPayloadData = new DesignPreviewPayloadDataSource(database);
+        _projectPaths = projectPaths;
+        _designPreviewPane = new DesignWebPreviewPane(projectPaths);
+        _previewPayloadData = new DesignPreviewPayloadDataSource(
+            database,
+            projectPaths);
         _visualContextData = new PreviewVisualContextDataSource(database);
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         _productionPreviewData = new ProductionPreviewSessionDataSource(database);
@@ -285,11 +291,17 @@ internal sealed class EditorPreviewController
         _previewTitle = previewTitle;
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
-        _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(database);
+        _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(
+            database,
+            projectPaths);
         _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(database));
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
-        _designInputsPanel = new ComponentPreviewInputSession(database, Refresh, PreparePlaybackFramesAsync);
+        _designInputsPanel = new ComponentPreviewInputSession(
+            database,
+            projectPaths,
+            Refresh,
+            PreparePlaybackFramesAsync);
         _designPreviewPane.FrameStatusChanged += OnDesignPreviewFrameStatusChanged;
         _designPreviewPane.ContextActionRequested += targetId =>
         {
@@ -1119,7 +1131,11 @@ internal sealed class EditorPreviewController
     {
         if (string.IsNullOrWhiteSpace(_projectId)) return;
         var mediaRoot = _visualContextData.ProjectMediaRoot(_projectId);
-        var selected = await EditorPathBrowser.BrowseMediaFile(_owner.StorageProvider, _referenceSource, mediaRoot);
+        var selected = await EditorPathBrowser.BrowseMediaFile(
+            _owner.StorageProvider,
+            _projectPaths,
+            _referenceSource,
+            mediaRoot);
         if (string.IsNullOrWhiteSpace(selected)) return;
 
         _referenceSource = selected;

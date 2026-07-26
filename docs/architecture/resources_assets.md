@@ -10,6 +10,12 @@ those current records and resolved through the owning resource service.
 
 There are no cross-Project records and no cross-Project fallback.
 
+Relative asset paths are resolved by the immutable path resolver associated
+with the database context that owns the current desktop session. Preview,
+dictionary controls and resource workflows receive that resolver explicitly;
+they never read or configure a process-global Project root. Two contexts keep
+independent roots even when they coexist in one process.
+
 ## Palette and Themes
 
 Palette records provide stable semantic color identities. Themes provide

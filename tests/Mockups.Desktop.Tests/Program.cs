@@ -134,6 +134,7 @@ var tests = new (string Name, Action Run)[]
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
+    ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -323,7 +324,10 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
     var payload = Required(CreatePreviewPayload(database, listVariant, theme.Id));
     var settings = database.GetComponentClassSettings(
         "component_project_foqn_s2_list");
-    var session = new ComponentPreviewInputSession(database, () => { });
+    var session = new ComponentPreviewInputSession(
+        database,
+        database.ProjectPaths,
+        () => { });
     session.UpdateForPayload(payload, settings.ProjectId);
 
     var sourcePreview = JsonPath.ParseRequiredObject(
@@ -415,7 +419,10 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
         .Single((candidate) =>
             candidate.CollectionItemId == firstItemId
             && candidate.Label == "Presence");
-    var session = new ComponentPreviewInputSession(database, () => { })
+    var session = new ComponentPreviewInputSession(
+        database,
+        database.ProjectPaths,
+        () => { })
     {
         PresentEveryPlaybackFrame = true,
     };
@@ -1750,7 +1757,10 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
     var payload = Required(CreatePreviewPayload(database, textBoxVariant, theme.Id));
-    var session = new ComponentPreviewInputSession(database, () => { });
+    var session = new ComponentPreviewInputSession(
+        database,
+        database.ProjectPaths,
+        () => { });
     session.UpdateForPayload(payload, settings.ProjectId);
     var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
     var preview = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson);
@@ -2908,7 +2918,10 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         "Incoming Call changed config");
     iconRowSlot["variantReference"] =
         "component_project_foqn_s2_iconRow::variant::default";
-    var session = new ComponentPreviewInputSession(database, () => { });
+    var session = new ComponentPreviewInputSession(
+        database,
+        database.ProjectPaths,
+        () => { });
     var emptyPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
     session.UpdateForPayload(emptyPayload, database.GetComponentClassSettings(incomingCall.Id).ProjectId);
     var emptyResolved = session.ApplyInputs(
@@ -2957,12 +2970,45 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
 static void PreviewReferencesShareProjectMediaPathResolution()
 {
     var mediaRoot = Path.Combine(Path.GetTempPath(), "mockups-media-root");
+    var projectPaths = new ProjectPathResolver(
+        Path.GetTempPath());
     Equal(
         Path.GetFullPath(Path.Combine(mediaRoot, "references", "frame.png")),
-        ProjectPathService.ResolveLocalPath(Path.Combine("references", "frame.png"), mediaRoot));
+        projectPaths.ResolveLocalPath(
+            Path.Combine("references", "frame.png"),
+            mediaRoot));
 
     var absolute = Path.GetFullPath(Path.Combine(mediaRoot, "absolute.png"));
-    Equal(absolute, ProjectPathService.ResolveLocalPath(absolute, mediaRoot));
+    Equal(absolute, projectPaths.ResolveLocalPath(absolute, mediaRoot));
+}
+
+static void SqliteContextsRetainIndependentProjectRoots()
+{
+    var rootA = Path.GetFullPath(Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-path-context-a-{Guid.NewGuid():N}"));
+    var rootB = Path.GetFullPath(Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-path-context-b-{Guid.NewGuid():N}"));
+    var contextA = new SqliteProjectContext(
+        Path.Combine(rootA, "data", "project-a.sqlite"));
+    var resolvedBeforeB =
+        contextA.ProjectPaths.ResolveProjectPath(
+            Path.Combine("assets", "a.png"));
+    var contextB = new SqliteProjectContext(
+        Path.Combine(rootB, "data", "project-b.sqlite"));
+
+    Equal(
+        Path.Combine(rootA, "assets", "a.png"),
+        resolvedBeforeB);
+    Equal(
+        Path.Combine(rootB, "assets", "b.png"),
+        contextB.ProjectPaths.ResolveProjectPath(
+            Path.Combine("assets", "b.png")));
+    Equal(
+        resolvedBeforeB,
+        contextA.ProjectPaths.ResolveProjectPath(
+            Path.Combine("assets", "a.png")));
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()
@@ -3848,7 +3894,9 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 .SelectMany(DescendantsAndSelf)
                 .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
             var listPayload = Required(DesignPreviewPayloadFactory.Create(
-                new DesignPreviewPayloadDataSource(database),
+                new DesignPreviewPayloadDataSource(
+                    database,
+                    database.ProjectPaths),
                 selectedListNode,
                 selectedTheme.Id,
                 "light"));
@@ -4349,7 +4397,11 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                                     themeMode: themeMode,
                                     timelineFrame: frame));
                                 Equal(frame, payload.LocalFrame);
-                                var inputSession = new ComponentPreviewInputSession(database, () => { });
+                                var inputSession =
+                                    new ComponentPreviewInputSession(
+                                        database,
+                                        database.ProjectPaths,
+                                        () => { });
                                 inputSession.UpdateForPayload(payload, projectId);
                                 payload = inputSession.ApplyInputs(payload, themeMode, projectId);
                                 Equal(themeMode, payload.ThemeMode);
@@ -5544,8 +5596,18 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
             dataSource.PaletteColorOptions(settings.ProjectId).Select((option) => option.Value));
 
         var paletteColors = database.GetPaletteColorMap(settings.ProjectId);
-        var lightPayload = ActorPreviewInputFactory.Create(dataSource, actor.Id, "light", paletteColors);
-        var darkPayload = ActorPreviewInputFactory.Create(dataSource, actor.Id, "dark", paletteColors);
+        var lightPayload = ActorPreviewInputFactory.Create(
+            dataSource,
+            database.ProjectPaths,
+            actor.Id,
+            "light",
+            paletteColors);
+        var darkPayload = ActorPreviewInputFactory.Create(
+            dataSource,
+            database.ProjectPaths,
+            actor.Id,
+            "dark",
+            paletteColors);
         Equal(actor.Id, lightPayload["id"]!.GetValue<string>());
         Equal(settings.DisplayName, lightPayload["displayName"]!.GetValue<string>());
         Equal(
@@ -5791,8 +5853,12 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SpikeDatabase(temporary);
-        var dataSource = new DictionaryFieldContextDataSource(database);
-        var payloadData = new DesignPreviewPayloadDataSource(database);
+        var dataSource = new DictionaryFieldContextDataSource(
+            database,
+            database.ProjectPaths);
+        var payloadData = new DesignPreviewPayloadDataSource(
+            database,
+            database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
@@ -7350,7 +7416,9 @@ static void ProductionRenderOverridesRespectScreenAppearance()
                     StringComparison.Ordinal))
             ?? actor.DefaultThemeId;
         var payload = DesignPreviewPayloadFactory.CreateProductionRender(
-            new DesignPreviewPayloadDataSource(database),
+            new DesignPreviewPayloadDataSource(
+                database,
+                database.ProjectPaths),
             shot,
             themeId,
             deviceId,
@@ -8261,6 +8329,7 @@ static void ShotManagerIntegrationKeepsShotsLocal()
             .Single((node) => node.Id == "shot_001");
         var legacyDraft = new RenderJobSnapshotFactory(
                 database,
+                database.ProjectPaths,
                 new FixedShotManagerClient(legacyPlan, snapshot),
                 workstationRoots)
             .LoadDraftAsync(legacyShot)
@@ -8318,6 +8387,7 @@ static void ShotManagerIntegrationKeepsShotsLocal()
             portable.OutputContracts[0].FileNamePrefix);
         var offlineRenderDraft = new RenderJobSnapshotFactory(
                 database,
+                database.ProjectPaths,
                 new UnavailableShotManagerClient(),
                 workstationRoots)
             .LoadDraftAsync(shot)
@@ -8627,7 +8697,9 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
     try
     {
         var database = new SpikeDatabase(temporary);
-        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var screen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var component = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
@@ -8688,7 +8760,9 @@ static void ProductionPayloadPreservesActorAndAnimation()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SpikeDatabase(temporary);
-        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database.ProjectPaths);
         var screens = Descendants(database.LoadProjectTree())
             .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
             .ToList();
@@ -8768,7 +8842,9 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
     try
     {
         var database = new SpikeDatabase(temporary);
-        var dataSource = new DesignPreviewPayloadDataSource(database);
+        var dataSource = new DesignPreviewPayloadDataSource(
+            database,
+            database.ProjectPaths);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var componentVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
@@ -8877,7 +8953,9 @@ static void ConversationMessageActorsFollowDirectionContract()
         True(systemActorOptions.Any((option) => string.IsNullOrWhiteSpace(option.Value)));
 
         var payload = Required(DesignPreviewPayloadFactory.Create(
-            new DesignPreviewPayloadDataSource(database),
+            new DesignPreviewPayloadDataSource(
+                database,
+                database.ProjectPaths),
             screen,
             null));
         var preparedMessages = DesignPreviewTestValues.Parse(payload.DesignPreviewJson)["messages"]?.AsArray()
@@ -8886,7 +8964,9 @@ static void ConversationMessageActorsFollowDirectionContract()
             .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
             .All((message) => message["actorId"]?.GetValue<string>() == shotOwnerActorId));
 
-        var resolved = new ProductionPreviewRuntimeResolver(database).Resolve(payload, "light");
+        var resolved = new ProductionPreviewRuntimeResolver(
+            database,
+            database.ProjectPaths).Resolve(payload, "light");
         var resolvedMessages = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson)["messages"]?.AsArray()
             ?? throw new InvalidOperationException("Resolved Conversation payload has no messages.");
         Equal(
@@ -9377,7 +9457,10 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var theme = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var payload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
-        var session = new ComponentPreviewInputSession(database, () => { });
+        var session = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         session.UpdateForPayload(payload, settings.ProjectId);
         var deletedStateId = items[0]?["alternatives"]?[1]?["id"]?.GetValue<string>() ?? "";
         True(session.TriggerAction(stateAction.Id, deletedStateId));
@@ -11010,7 +11093,10 @@ static void ComponentStackSeedOpensAndRenders()
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
         var refreshCount = 0;
-        var inputSession = new ComponentPreviewInputSession(database, () => refreshCount++);
+        var inputSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => refreshCount++);
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
         var resolvedPreview = DesignPreviewTestValues.Parse(resolvedPayload.DesignPreviewJson);
@@ -11174,7 +11260,10 @@ static void ComponentStackSeedOpensAndRenders()
         designPreview["items"] = new JsonArray(runtimeItem.DeepClone());
         database.UpdateComponentClassDesignPreviewJson(stack.Id, designPreview.ToJsonString());
         var populatedPayloadSource = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
-        var populatedInputSession = new ComponentPreviewInputSession(database, () => { });
+        var populatedInputSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
         var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", settings.ProjectId);
         var populatedPreview = DesignPreviewTestValues.Parse(populatedPayload.DesignPreviewJson);
@@ -11241,7 +11330,10 @@ static void CollectionStackSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, variants[0], theme.Id));
-        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        var inputSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
@@ -11352,7 +11444,10 @@ static void NotificationsSeedOpensAndRenders()
         foreach (var variant in new[] { notificationVariant, notificationsVariant })
         {
             var payload = Required(CreatePreviewPayload(database, variant, theme.Id));
-            var inputSession = new ComponentPreviewInputSession(database, () => { });
+            var inputSession = new ComponentPreviewInputSession(
+                database,
+                database.ProjectPaths,
+                () => { });
             inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
             var html = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id), false,
@@ -11367,7 +11462,10 @@ static void NotificationsSeedOpensAndRenders()
                 transitionPreview,
                 new ComponentPreviewInputDataSource(database).ComponentVariantRuntimeContract)
             .Single((action) => action.Id == "changeDisplayMode");
-        var transitionSession = new ComponentPreviewInputSession(database, () => { });
+        var transitionSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         var transitionBusy = false;
         transitionSession.PlaybackBusyChanged += (value) => transitionBusy = value;
         transitionSession.UpdateForPayload(transitionPayload, database.GetComponentClassSettings(notification.Id).ProjectId);
@@ -11404,7 +11502,10 @@ static void NotificationsSeedOpensAndRenders()
         wrappingPreview["summaryText"] = "A deliberately long notification title that must wrap";
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingPreview.ToJsonString());
         var wrappingPayload = Required(CreatePreviewPayload(database, notificationVariant, theme.Id));
-        var wrappingSession = new ComponentPreviewInputSession(database, () => { });
+        var wrappingSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
         var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), false,
@@ -11448,7 +11549,10 @@ static void NotificationsSeedOpensAndRenders()
         preview["distributionMode"] = "stacked";
         database.UpdateComponentClassDesignPreviewJson(notifications.Id, preview.ToJsonString());
         var populated = Required(CreatePreviewPayload(database, notificationsVariant, theme.Id));
-        var populatedSession = new ComponentPreviewInputSession(database, () => { });
+        var populatedSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         populatedSession.UpdateForPayload(populated, settings.ProjectId);
         var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
@@ -11539,7 +11643,10 @@ static void KeypadSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
-        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        var inputSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         inputSession.UpdateForPayload(payload, settings.ProjectId);
         inputSession.SetExternalInputValue("activeKey", "5");
         inputSession.SetExternalInputValue("pushedKey", "5");
@@ -11615,7 +11722,10 @@ static void PasswordSeedOpensAndRenders()
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
-        var inputSession = new ComponentPreviewInputSession(database, () => { });
+        var inputSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         var playbackBusy = false;
         inputSession.PlaybackBusyChanged += (value) => playbackBusy = value;
         inputSession.UpdateForPayload(payload, settings.ProjectId);
@@ -11898,7 +12008,10 @@ static void LockScreenComposesRuntimeStack()
                 $"incorrect={completedPasswordHtml.Contains("Password incorrect", StringComparison.Ordinal)}).");
 
         var payload = Required(CreatePreviewPayload(database, module, theme.Id));
-        var session = new ComponentPreviewInputSession(database, () => { });
+        var session = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         session.UpdateForPayload(payload, settings.ProjectId);
         var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
         var resolvedPreview = JsonNode.Parse(resolved.DesignPreviewJson) as JsonObject
@@ -11957,7 +12070,10 @@ static void LockScreenComposesRuntimeStack()
             },
         }.ToJsonString());
         var populatedPayload = Required(CreatePreviewPayload(database, module, theme.Id));
-        var populatedSession = new ComponentPreviewInputSession(database, () => { });
+        var populatedSession = new ComponentPreviewInputSession(
+            database,
+            database.ProjectPaths,
+            () => { });
         populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
         var populatedPreview = JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject();
         var populatedConfig = JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject();
@@ -12278,7 +12394,9 @@ static DesignPreviewPayload? CreatePreviewPayload(
     string themeMode = "light",
     int timelineFrame = 0) =>
     DesignPreviewPayloadFactory.Create(
-        new DesignPreviewPayloadDataSource(database),
+        new DesignPreviewPayloadDataSource(
+            database,
+            database.ProjectPaths),
         node,
         themeId,
         themeMode,

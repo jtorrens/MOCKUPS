@@ -39,14 +39,14 @@ public sealed partial class SpikeDatabase
         return SlugText.LowerSnakeOrName(slug, name, fallback);
     }
 
-    private static string ResolveProjectPath(string path)
+    private string ResolveProjectPath(string path)
     {
-        return ProjectPathService.ResolveProjectPath(path);
+        return _context.ProjectPaths.ResolveProjectPath(path);
     }
 
-    private static string NormalizeRelativePath(string path)
+    private string NormalizeRelativePath(string path)
     {
-        return ProjectPathService.NormalizeRelativePath(path);
+        return _context.ProjectPaths.NormalizeRelativePath(path);
     }
 
     private static string MetadataString(string metadataJson, string key)

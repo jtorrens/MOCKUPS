@@ -14,10 +14,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ActorAvatarPreviewFactory
 {
     private readonly ActorPreviewDataSource _dataSource;
+    private readonly IProjectPathResolver _projectPaths;
 
-    public ActorAvatarPreviewFactory(ActorPreviewDataSource dataSource)
+    public ActorAvatarPreviewFactory(
+        ActorPreviewDataSource dataSource,
+        IProjectPathResolver projectPaths)
     {
         _dataSource = dataSource;
+        _projectPaths = projectPaths;
     }
 
     public Control Create(
@@ -51,7 +55,9 @@ internal sealed class ActorAvatarPreviewFactory
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-        var fullPath = ProjectPathService.ResolveLocalPath(imagePath, source.ProjectMediaRoot);
+        var fullPath = _projectPaths.ResolveLocalPath(
+            imagePath,
+            source.ProjectMediaRoot);
         if (!useInitials && !string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
         {
             try
@@ -97,7 +103,9 @@ internal sealed class ActorAvatarPreviewFactory
     public string? RelativeActorMediaPath(string actorId, string path)
     {
         var source = _dataSource.LoadPreview(actorId);
-        return ProjectPathService.RelativePathIfInsideMediaRoot(path, source.ProjectMediaRoot);
+        return _projectPaths.RelativePathIfInsideMediaRoot(
+            path,
+            source.ProjectMediaRoot);
     }
 
     private static string PreviewField(

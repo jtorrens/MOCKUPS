@@ -1788,6 +1788,7 @@ internal abstract class WebPreviewPane : Grid
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
+    private readonly IProjectPathResolver _projectPaths;
     private int _referenceUpdateVersion;
     private DesignPreviewUpdate? _pendingUpdate;
     private DesignPreviewUpdate? _renderingUpdate;
@@ -1799,8 +1800,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
     public event Action<string>? ContextActionRequested;
 
-    public DesignWebPreviewPane()
+    public DesignWebPreviewPane(IProjectPathResolver projectPaths)
     {
+        _projectPaths = projectPaths;
         WebView.WebMessageReceived += (_, args) =>
         {
             var message = args.Body?.ToString() ?? "";
@@ -1975,7 +1977,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private async Task RenderUpdateAsync(DesignPreviewUpdate update)
     {
         var stopwatch = Stopwatch.StartNew();
-        var reference = PreviewReferenceOverlay.Resolve(update.Reference);
+        var reference = PreviewReferenceOverlay.Resolve(
+            update.Reference,
+            _projectPaths);
         if (update.ContextState.Kind is PreviewContextStateKind.NonRenderable or PreviewContextStateKind.Error)
         {
             if (_lastRenderedUpdate is null)
@@ -2225,7 +2229,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             showDesignMarks: false,
             showDeviceFrame: false,
             bodyContent: "",
-            reference: PreviewReferenceOverlay.Resolve(update.Reference),
+            reference: PreviewReferenceOverlay.Resolve(
+                update.Reference,
+                _projectPaths),
             initialContextState: state));
         _hasResidentDocument = true;
     }
@@ -2284,7 +2290,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     public async Task UpdateReferenceOverlayAsync(PreviewReferenceState state)
     {
         var version = Interlocked.Increment(ref _referenceUpdateVersion);
-        var reference = await Task.Run(() => PreviewReferenceOverlay.Resolve(state));
+        var reference = await Task.Run(
+            () => PreviewReferenceOverlay.Resolve(
+                state,
+                _projectPaths));
         if (version != _referenceUpdateVersion) return;
         await UpdateReferenceOverlayAsync(reference);
     }

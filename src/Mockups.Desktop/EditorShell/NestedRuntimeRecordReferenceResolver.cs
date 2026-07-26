@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,9 +15,13 @@ internal sealed class NestedRuntimeRecordReferenceResolver
 {
     private readonly ComponentPreviewRecordInputResolver _recordInputResolver;
 
-    public NestedRuntimeRecordReferenceResolver(ActorPreviewDataSource actorDataSource)
+    public NestedRuntimeRecordReferenceResolver(
+        ActorPreviewDataSource actorDataSource,
+        IProjectPathResolver projectPaths)
     {
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(
+            actorDataSource,
+            projectPaths);
     }
 
     public void Resolve(

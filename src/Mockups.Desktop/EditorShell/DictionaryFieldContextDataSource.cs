@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -17,10 +18,14 @@ internal sealed class DictionaryFieldContextDataSource
     private readonly IDictionaryFieldContextRepository _database;
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
 
-    public DictionaryFieldContextDataSource(IDictionaryFieldContextRepository database)
+    public DictionaryFieldContextDataSource(
+        IDictionaryFieldContextRepository database,
+        IProjectPathResolver projectPaths)
     {
         _database = database;
-        _previewPayloadData = new DesignPreviewPayloadDataSource(database);
+        _previewPayloadData = new DesignPreviewPayloadDataSource(
+            database,
+            projectPaths);
     }
 
     public string IconThemeId(ProjectTreeNode node, string? selectedThemeId)

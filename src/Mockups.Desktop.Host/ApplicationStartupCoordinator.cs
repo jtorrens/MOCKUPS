@@ -139,6 +139,7 @@ public sealed class ApplicationStartupCoordinator
                 currentDatabasePath);
             cancellationToken.ThrowIfCancellationRequested();
             var ports = new DesktopApplicationDataPorts(
+                database.ProjectPaths,
                 database,
                 database,
                 database,

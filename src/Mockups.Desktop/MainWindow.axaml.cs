@@ -77,12 +77,14 @@ public partial class MainWindow : SukiWindow
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _inlinePreviews = EditorInlinePreviewControllerFactory.Create(
             data.ActorPreview,
+            data.ProjectPaths,
             () => _themeController.IsDark);
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
             data.Dictionary,
+            data.ProjectPaths,
             PreviewDeviceComboBox,
             PreviewThemeComboBox,
             PreviewModeComboBox,
@@ -105,6 +107,7 @@ public partial class MainWindow : SukiWindow
         _nodeCommands = new EditorNodeCommandController(
             this,
             data.NodeCommands,
+            data.ProjectPaths,
             () => _themeController.IsDark,
             () => Session.TreeRoots,
             LoadProjectTreeAsync,
@@ -116,6 +119,7 @@ public partial class MainWindow : SukiWindow
             this,
             ProductionActionButton,
             data.ProductionNavigation,
+            data.ProjectPaths,
             () => _themeController.IsDark,
             OpenSelectedProductionCard);
         _navigationRenderer = new EditorNavigationRenderer(
@@ -144,6 +148,7 @@ public partial class MainWindow : SukiWindow
         _pathBrowser = new EditorPathBrowser(
             StorageProvider,
             data.Presentation,
+            data.ProjectPaths,
             () => Session.SelectedNode);
         _domainDialogs = new EditorDomainDialogService(
             this,
@@ -154,6 +159,7 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(
             data.Dictionary,
+            data.ProjectPaths,
             _pathBrowser,
             _domainDialogs,
             () => _previewController.SelectedThemeId,

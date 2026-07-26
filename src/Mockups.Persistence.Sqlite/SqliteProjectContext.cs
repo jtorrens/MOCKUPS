@@ -13,7 +13,8 @@ internal sealed class SqliteProjectContext
     public SqliteProjectContext(string databasePath)
     {
         DatabasePath = Path.GetFullPath(databasePath);
-        ProjectPathService.ConfigureProjectRoot(ProjectRootForDatabase(DatabasePath));
+        ProjectPaths = new ProjectPathResolver(
+            ProjectRootForDatabase(DatabasePath));
         _connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = DatabasePath,
@@ -30,6 +31,8 @@ internal sealed class SqliteProjectContext
     public object WriteGate { get; } = new();
 
     public string DatabasePath { get; }
+
+    public IProjectPathResolver ProjectPaths { get; }
 
     public SqliteConnection OpenConnection()
     {

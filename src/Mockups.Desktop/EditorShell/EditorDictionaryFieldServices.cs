@@ -18,12 +18,15 @@ internal sealed class EditorDictionaryFieldServices
 
     public EditorDictionaryFieldServices(
         IDictionaryFieldContextRepository database,
+        IProjectPathResolver projectPaths,
         EditorPathBrowser pathBrowser,
         EditorDomainDialogService domainDialogs,
         Func<string?> selectedThemeId,
         Action<string, string> setRuntimeTestValue)
     {
-        _contextData = new DictionaryFieldContextDataSource(database);
+        _contextData = new DictionaryFieldContextDataSource(
+            database,
+            projectPaths);
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
         _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);

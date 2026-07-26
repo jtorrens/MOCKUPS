@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.IO;
 
@@ -23,6 +24,8 @@ public sealed partial class SpikeDatabase
     private readonly IModuleInstanceThemeContextService _moduleInstanceThemeContextService;
     private readonly IReferenceUsageService _referenceUsageService;
     private readonly IShotManagerIntegrationRepository _shotManagerIntegrationRepository;
+
+    public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
     internal SpikeDatabase(string databasePath)
     {

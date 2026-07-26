@@ -78,14 +78,19 @@ internal sealed class ComponentPreviewInputSession
 
     public ComponentPreviewInputSession(
         IDictionaryFieldContextRepository database,
+        IProjectPathResolver projectPaths,
         Action refreshPreview,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {
         _previewInputData = new ComponentPreviewInputDataSource(database);
         _inputOptionsData = new RuntimeInputOptionsDataSource(database);
         var actorDataSource = new ActorPreviewDataSource(database);
-        _recordInputResolver = new ComponentPreviewRecordInputResolver(actorDataSource);
-        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
+        _recordInputResolver = new ComponentPreviewRecordInputResolver(
+            actorDataSource,
+            projectPaths);
+        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(
+            actorDataSource,
+            projectPaths);
         _refreshPreview = refreshPreview;
         _preparePlaybackFrames = preparePlaybackFrames;
         _playbackTimer = new DispatcherTimer

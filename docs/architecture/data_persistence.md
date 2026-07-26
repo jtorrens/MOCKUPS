@@ -81,6 +81,12 @@ the complete explicit transaction. No process-global SQLite write lock exists:
 two different database files do not serialize one another, while concurrent
 writes inside one context remain ordered.
 
+The context also creates one immutable `IProjectPathResolver` from its database
+location. That resolver travels explicitly with the desktop session and is the
+only authority for Project-relative media and asset paths. Opening another
+database creates another resolver; it cannot change the root observed by an
+already open context. There is no process-global current Project root.
+
 Repositories return current validated records. Interpretation, Variant
 selection, forwarding, animation, context resolution, Preview preparation and
 UI behavior stay outside persistence.

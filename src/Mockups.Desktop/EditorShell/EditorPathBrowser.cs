@@ -11,15 +11,18 @@ internal sealed class EditorPathBrowser
 {
     private readonly IStorageProvider _storageProvider;
     private readonly EditorPresentationContextDataSource _contextData;
+    private readonly IProjectPathResolver _projectPaths;
     private readonly Func<ProjectTreeNode?> _selectedNode;
 
     public EditorPathBrowser(
         IStorageProvider storageProvider,
         IEditorPresentationContextRepository database,
+        IProjectPathResolver projectPaths,
         Func<ProjectTreeNode?> selectedNode)
     {
         _storageProvider = storageProvider;
         _contextData = new EditorPresentationContextDataSource(database);
+        _projectPaths = projectPaths;
         _selectedNode = selectedNode;
     }
 
@@ -27,8 +30,16 @@ internal sealed class EditorPathBrowser
     {
         return valueKind switch
         {
-            ValueKind.ImageFilePath => BrowseImageFile(_storageProvider, currentPath, SelectedProjectMediaRoot()),
-            ValueKind.MediaFilePath => BrowseMediaFile(_storageProvider, currentPath, SelectedProjectMediaRoot()),
+            ValueKind.ImageFilePath => BrowseImageFile(
+                _storageProvider,
+                _projectPaths,
+                currentPath,
+                SelectedProjectMediaRoot()),
+            ValueKind.MediaFilePath => BrowseMediaFile(
+                _storageProvider,
+                _projectPaths,
+                currentPath,
+                SelectedProjectMediaRoot()),
             _ => BrowseDirectory(currentPath),
         };
     }
@@ -53,7 +64,7 @@ internal sealed class EditorPathBrowser
         var mediaRoot = SelectedProjectMediaRoot();
         if (!string.IsNullOrWhiteSpace(mediaRoot))
         {
-            var fullMediaRoot = ProjectPathService.ResolveProjectPath(mediaRoot);
+            var fullMediaRoot = _projectPaths.ResolveProjectPath(mediaRoot);
             if (Directory.Exists(fullMediaRoot))
             {
                 options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(fullMediaRoot);
@@ -66,7 +77,9 @@ internal sealed class EditorPathBrowser
 
     public string? ResolveImagePath(string path)
     {
-        return ProjectPathService.ResolveLocalPath(path, SelectedProjectMediaRoot());
+        return _projectPaths.ResolveLocalPath(
+            path,
+            SelectedProjectMediaRoot());
     }
 
     private async Task<string?> BrowseDirectory(string currentPath)
@@ -79,7 +92,7 @@ internal sealed class EditorPathBrowser
 
         if (!string.IsNullOrWhiteSpace(currentPath))
         {
-            var fullPath = ProjectPathService.ResolveProjectPath(currentPath);
+            var fullPath = _projectPaths.ResolveProjectPath(currentPath);
             if (Directory.Exists(fullPath))
             {
                 options.SuggestedStartLocation = await _storageProvider.TryGetFolderFromPathAsync(fullPath);
@@ -101,6 +114,7 @@ internal sealed class EditorPathBrowser
 
     public static async Task<string?> BrowseImageFile(
         IStorageProvider storageProvider,
+        IProjectPathResolver projectPaths,
         string currentPath,
         string? mediaRoot)
     {
@@ -124,8 +138,8 @@ internal sealed class EditorPathBrowser
             var fullPath = Path.IsPathFullyQualified(currentPath)
                 ? currentPath
                 : !string.IsNullOrWhiteSpace(mediaRoot)
-                    ? Path.GetFullPath(Path.Combine(ProjectPathService.ResolveProjectPath(mediaRoot), currentPath))
-                    : ProjectPathService.ResolveProjectPath(currentPath);
+                    ? Path.GetFullPath(Path.Combine(projectPaths.ResolveProjectPath(mediaRoot), currentPath))
+                    : projectPaths.ResolveProjectPath(currentPath);
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
@@ -137,11 +151,14 @@ internal sealed class EditorPathBrowser
         if (files.Count == 0) return null;
 
         var selectedPath = files[0].Path.LocalPath;
-        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
+        return projectPaths.RelativePathIfInsideMediaRoot(
+            selectedPath,
+            mediaRoot);
     }
 
     public static async Task<string?> BrowseMediaFile(
         IStorageProvider storageProvider,
+        IProjectPathResolver projectPaths,
         string currentPath,
         string? mediaRoot)
     {
@@ -165,8 +182,8 @@ internal sealed class EditorPathBrowser
             var fullPath = Path.IsPathFullyQualified(currentPath)
                 ? currentPath
                 : !string.IsNullOrWhiteSpace(mediaRoot)
-                    ? Path.GetFullPath(Path.Combine(ProjectPathService.ResolveProjectPath(mediaRoot), currentPath))
-                    : ProjectPathService.ResolveProjectPath(currentPath);
+                    ? Path.GetFullPath(Path.Combine(projectPaths.ResolveProjectPath(mediaRoot), currentPath))
+                    : projectPaths.ResolveProjectPath(currentPath);
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrWhiteSpace(parent) && Directory.Exists(parent))
             {
@@ -178,7 +195,9 @@ internal sealed class EditorPathBrowser
         if (files.Count == 0) return null;
 
         var selectedPath = files[0].Path.LocalPath;
-        return ProjectPathService.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot) ?? selectedPath;
+        return projectPaths.RelativePathIfInsideMediaRoot(
+            selectedPath,
+            mediaRoot) ?? selectedPath;
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

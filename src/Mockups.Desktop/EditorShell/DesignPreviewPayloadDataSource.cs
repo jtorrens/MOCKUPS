@@ -57,17 +57,23 @@ internal sealed record DesignPreviewShotSlot(
 internal sealed class DesignPreviewPayloadDataSource
 {
     private readonly IPreviewInputRepository _database;
+    private readonly IProjectPathResolver _projectPaths;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ActorPreviewDataSource _actorDataSource;
     private readonly NestedRuntimeRecordReferenceResolver _nestedRuntimeRecordReferenceResolver;
 
-    public DesignPreviewPayloadDataSource(IPreviewInputRepository database)
+    public DesignPreviewPayloadDataSource(
+        IPreviewInputRepository database,
+        IProjectPathResolver projectPaths)
     {
         _database = database;
+        _projectPaths = projectPaths;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         _actorDataSource = new ActorPreviewDataSource(database);
         _nestedRuntimeRecordReferenceResolver =
-            new NestedRuntimeRecordReferenceResolver(_actorDataSource);
+            new NestedRuntimeRecordReferenceResolver(
+                _actorDataSource,
+                projectPaths);
     }
 
     public DesignPreviewThemeContext? LoadThemeContext(
@@ -118,7 +124,8 @@ internal sealed class DesignPreviewPayloadDataSource
             theme.TokensJson,
             _database.GetPaletteColorMap(theme.ProjectId),
             _database.GetPaletteNeutralMap(theme.ProjectId),
-            ProjectPathService.ResolveProjectPath(_database.GetProjectSettings(theme.ProjectId).MediaRoot),
+            _projectPaths.ResolveProjectPath(
+                _database.GetProjectSettings(theme.ProjectId).MediaRoot),
             iconTheme?.AssetRoot ?? "",
             iconTheme?.MappingJson ?? "{}",
             _database.GetProductionFontFaces(theme.ProjectId),
@@ -212,7 +219,12 @@ internal sealed class DesignPreviewPayloadDataSource
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        return ActorPreviewInputFactory.Create(_actorDataSource, actorId, themeMode, paletteColors);
+        return ActorPreviewInputFactory.Create(
+            _actorDataSource,
+            _projectPaths,
+            actorId,
+            themeMode,
+            paletteColors);
     }
 
     public void ResolveNestedRuntimeRecordReferences(

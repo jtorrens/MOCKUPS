@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
@@ -7,10 +8,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ComponentPreviewRecordInputResolver
 {
     private readonly ActorPreviewDataSource _actorDataSource;
+    private readonly IProjectPathResolver _projectPaths;
 
-    public ComponentPreviewRecordInputResolver(ActorPreviewDataSource actorDataSource)
+    public ComponentPreviewRecordInputResolver(
+        ActorPreviewDataSource actorDataSource,
+        IProjectPathResolver projectPaths)
     {
         _actorDataSource = actorDataSource;
+        _projectPaths = projectPaths;
     }
 
     public IReadOnlyList<FieldOption> Options(string projectId, string tableId, string inputId)
@@ -34,7 +39,12 @@ internal sealed class ComponentPreviewRecordInputResolver
         return tableId switch
         {
             "actors" => !string.IsNullOrWhiteSpace(recordId)
-                ? ActorPreviewInputFactory.Create(_actorDataSource, recordId, themeMode, paletteColors)
+                ? ActorPreviewInputFactory.Create(
+                    _actorDataSource,
+                    _projectPaths,
+                    recordId,
+                    themeMode,
+                    paletteColors)
                 : allowEmpty
                     ? new JsonObject()
                     : ActorPreviewInputFactory.CreateSample(),

@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
@@ -17,6 +18,7 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         Window owner,
         Button actionButton,
         IProductionNavigationStore database,
+        IProjectPathResolver projectPaths,
         Func<bool> isDark,
         Action<string> openProductionCard)
     {
@@ -26,10 +28,13 @@ internal sealed class EditorProductionNavigationActions : IDisposable
             isDark,
             () => openProductionCard("integration:shot-manager"));
         _queue = new RenderQueueManager();
-        var snapshots = new RenderJobSnapshotFactory(database);
+        var snapshots = new RenderJobSnapshotFactory(
+            database,
+            projectPaths);
         _renderQueue = new RenderQueueController(
             owner,
             database,
+            projectPaths,
             _queue,
             snapshots);
         _renderQueueSurface = new RenderQueueEditorSurface(

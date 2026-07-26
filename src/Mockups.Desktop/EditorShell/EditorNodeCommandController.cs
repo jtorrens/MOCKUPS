@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
 using System;
@@ -11,6 +12,7 @@ internal sealed class EditorNodeCommandController
 {
     private readonly Window _owner;
     private readonly IEditorNodeCommandStore _database;
+    private readonly IProjectPathResolver _projectPaths;
     private readonly Func<bool> _isDark;
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Func<Task<bool>> _loadProjectTree;
@@ -21,6 +23,7 @@ internal sealed class EditorNodeCommandController
     public EditorNodeCommandController(
         Window owner,
         IEditorNodeCommandStore database,
+        IProjectPathResolver projectPaths,
         Func<bool> isDark,
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Func<Task<bool>> loadProjectTree,
@@ -30,6 +33,7 @@ internal sealed class EditorNodeCommandController
     {
         _owner = owner;
         _database = database;
+        _projectPaths = projectPaths;
         _isDark = isDark;
         _treeRoots = treeRoots;
         _loadProjectTree = loadProjectTree;
@@ -104,7 +108,11 @@ internal sealed class EditorNodeCommandController
 
     public async Task AddChild(ProjectTreeNode parent)
     {
-        var workflow = new EditorAddChildWorkflow(_owner, _database, ShowInfoDialog);
+        var workflow = new EditorAddChildWorkflow(
+            _owner,
+            _database,
+            _projectPaths,
+            ShowInfoDialog);
         var child = await workflow.TryAdd(parent);
         if (child is null) return;
 

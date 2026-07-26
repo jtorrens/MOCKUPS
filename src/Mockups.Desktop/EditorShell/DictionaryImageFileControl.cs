@@ -155,7 +155,8 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
         _previewImage.Source = null;
         _previewImage.RenderTransform = null;
 
-        var resolvedPath = _resolveImagePath?.Invoke(_value) ?? ProjectPathService.ResolveLocalPath(_value, null);
+        var resolvedPath = _resolveImagePath?.Invoke(_value)
+            ?? (Path.IsPathFullyQualified(_value) ? _value : null);
         if (!string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath))
         {
             try

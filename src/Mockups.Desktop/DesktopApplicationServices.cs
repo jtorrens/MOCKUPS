@@ -1,9 +1,11 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell;
 
 internal sealed record DesktopApplicationDataPorts(
+    IProjectPathResolver ProjectPaths,
     IEditorNavigationDataSource Navigation,
     ICoreFieldStore CoreFields,
     IRecordClassFieldStore RecordFields,

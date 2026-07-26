@@ -14,10 +14,15 @@ internal sealed class ProductionPreviewRuntimeResolver
 {
     private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
 
-    public ProductionPreviewRuntimeResolver(IActorPreviewRepository database)
+    public ProductionPreviewRuntimeResolver(
+        IActorPreviewRepository database,
+        IProjectPathResolver projectPaths)
     {
         var actorDataSource = new ActorPreviewDataSource(database);
-        _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);
+        _nestedRecordInputResolver =
+            new NestedRuntimeRecordReferenceResolver(
+                actorDataSource,
+                projectPaths);
     }
 
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)

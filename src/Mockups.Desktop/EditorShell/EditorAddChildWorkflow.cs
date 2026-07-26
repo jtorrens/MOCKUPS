@@ -18,15 +18,18 @@ internal sealed class EditorAddChildWorkflow
 {
     private readonly Window _owner;
     private readonly IEditorChildStore _database;
+    private readonly IProjectPathResolver _projectPaths;
     private readonly Func<string, string, Task> _showInfo;
 
     public EditorAddChildWorkflow(
         Window owner,
         IEditorChildStore database,
+        IProjectPathResolver projectPaths,
         Func<string, string, Task> showInfo)
     {
         _owner = owner;
         _database = database;
+        _projectPaths = projectPaths;
         _showInfo = showInfo;
     }
 
@@ -256,8 +259,8 @@ internal sealed class EditorAddChildWorkflow
         return current;
     }
 
-    private static string ResolveProjectMediaRoot(string mediaRoot)
+    private string ResolveProjectMediaRoot(string mediaRoot)
     {
-        return ProjectPathService.ResolveProjectPath(mediaRoot);
+        return _projectPaths.ResolveProjectPath(mediaRoot);
     }
 }
