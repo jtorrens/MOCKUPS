@@ -3252,6 +3252,11 @@ static IComponentDocumentStore ComponentDocuments(
     SqliteProjectEngine database) =>
     new SqliteComponentDocumentPort(database.ComponentDocuments);
 
+static IModuleInstanceCollectionStore ModuleInstances(
+    SqliteProjectEngine database) =>
+    new SqliteModuleInstanceCollectionPort(
+        database.ModuleInstanceCollection);
+
 static void PreviewResourceSelectionHasOneSessionRule()
 {
     var options = new[]
@@ -8395,6 +8400,7 @@ static void ShotActorContextIsExplicit()
     try
     {
         var database = new SqliteProjectEngine(temporary);
+        var moduleInstances = ModuleInstances(database);
         var tree = database.LoadProjectTree();
         var episode = Descendants(tree)
             .First((node) => node.Kind == ProjectTreeNodeKind.Episode && node.Id == "episode_002");
@@ -8407,9 +8413,13 @@ static void ShotActorContextIsExplicit()
             "actor_alex",
             database.SuggestShotNumber(episode.Id));
         Equal("actor_alex", database.GetShotSettings(shot.Id).OwnerActorId);
-        var module = database.GetAvailableShotModules(shot.Id).First();
-        var variant = database.GetModuleVariantOptions(module.Id).First();
-        var screen = database.AddModuleInstance(
+        var module = moduleInstances
+            .GetAvailableShotModules(shot.Id)
+            .First();
+        var variant = moduleInstances
+            .GetModuleVariantOptions(module.Id)
+            .First();
+        var screen = moduleInstances.AddModuleInstance(
             shot,
             new ShotModuleInstanceDraft(
                 module,
@@ -8430,9 +8440,15 @@ static void ShotActorContextIsExplicit()
         Throws<InvalidOperationException>(() => database.UpdateShotField(shot.Id, "shot.ownerActorId", "missing_actor"));
         Throws<InvalidOperationException>(() => database.UpdateActorField("actor_sam", "actor.defaultThemeId", ""));
 
-        database.Delete(screen);
+        var duplicate = moduleInstances.Duplicate(screen);
+        moduleInstances.MoveModuleInstance(duplicate.Id, -1);
+        moduleInstances.Delete(duplicate);
+        moduleInstances.Delete(screen);
         database.Delete(shot);
-        True(Descendants(database.LoadProjectTree()).All((node) => node.Id != shot.Id && node.Id != screen.Id));
+        True(Descendants(database.LoadProjectTree()).All((node) =>
+            node.Id != shot.Id
+            && node.Id != screen.Id
+            && node.Id != duplicate.Id));
     }
     finally
     {
@@ -8965,6 +8981,7 @@ static void ModuleVariantsAreExplicit()
     try
     {
         var database = new SqliteProjectEngine(temporary);
+        var moduleInstances = ModuleInstances(database);
         var roots = database.LoadProjectTree();
         var module = Descendants(roots).First((node) => node.Kind == ProjectTreeNodeKind.Module
             && node.RecordClassId == "module.core.lockScreen");
@@ -8978,12 +8995,18 @@ static void ModuleVariantsAreExplicit()
 
         var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
-        var screen = database.AddModuleInstance(shot, new ShotModuleInstanceDraft(
-            new ShotModuleChoice(
-                module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId),
-            defaultVariant.Id,
-            defaultVariant.Name,
-            $"{module.Name} · {defaultVariant.Name}"));
+        var screen = moduleInstances.AddModuleInstance(
+            shot,
+            new ShotModuleInstanceDraft(
+                new ShotModuleChoice(
+                    module.Id,
+                    module.Name,
+                    module.Parent!.Name,
+                    appId,
+                    module.RecordClassId),
+                defaultVariant.Id,
+                defaultVariant.Name,
+                $"{module.Name} · {defaultVariant.Name}"));
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
             connection.Open();
@@ -9003,7 +9026,8 @@ static void ModuleVariantsAreExplicit()
 
         database.UpdateModuleInstanceVariant(screen.Id, defaultVariant.Id);
         database.DeleteModuleVariant(android);
-        True(!database.GetModuleVariantOptions(module.Id).Any((option) => option.Value == android.Id));
+        True(!moduleInstances.GetModuleVariantOptions(module.Id)
+            .Any((option) => option.Value == android.Id));
     }
     finally
     {

@@ -20,6 +20,8 @@ internal sealed partial class SqliteProjectEngine
         _dictionaryContext;
     private readonly SqliteComponentDocumentStore
         _componentDocuments;
+    private readonly SqliteModuleInstanceCollectionStore
+        _moduleInstanceCollection;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
@@ -42,6 +44,10 @@ internal sealed partial class SqliteProjectEngine
 
     internal SqliteComponentDocumentStore ComponentDocuments =>
         _componentDocuments;
+
+    internal SqliteModuleInstanceCollectionStore
+        ModuleInstanceCollection =>
+            _moduleInstanceCollection;
 
     internal SqliteProjectEngine(string databasePath)
         : this(new SqliteProjectContext(databasePath))
@@ -74,6 +80,13 @@ internal sealed partial class SqliteProjectEngine
             _designOwner,
             _componentFieldOptions,
             _referenceUsageService);
+        _moduleInstanceCollection =
+            new SqliteModuleInstanceCollectionStore(
+                _context,
+                _designOwner,
+                _productionOwner,
+                _resourceOwner,
+                _referenceUsageService);
 
         Initialize();
     }

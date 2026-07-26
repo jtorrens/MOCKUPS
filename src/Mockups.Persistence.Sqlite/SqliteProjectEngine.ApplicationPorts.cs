@@ -4,7 +4,6 @@ internal sealed partial class SqliteProjectEngine :
     ICoreFieldStore,
     IRecordClassFieldStore,
     IEditorChildStore,
-    IEditorNodeCommandStore,
-    IModuleInstanceCollectionStore
+    IEditorNodeCommandStore
 {
 }

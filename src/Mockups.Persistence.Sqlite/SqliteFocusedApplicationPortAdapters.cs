@@ -110,7 +110,7 @@ internal sealed class SqliteEditorChildPort(IEditorChildStore target)
 }
 
 internal sealed class SqliteModuleInstanceCollectionPort(
-    IModuleInstanceCollectionStore target)
+    SqliteModuleInstanceCollectionStore target)
     : IModuleInstanceCollectionStore
 {
     public ProjectTreeNode AddModuleInstance(

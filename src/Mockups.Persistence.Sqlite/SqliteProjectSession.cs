@@ -41,7 +41,8 @@ public sealed class SqliteProjectSession
         Presentation =
             new SqliteEditorPresentationPort(engine.Resources);
         ModuleInstances =
-            new SqliteModuleInstanceCollectionPort(engine);
+            new SqliteModuleInstanceCollectionPort(
+                engine.ModuleInstanceCollection);
         IconThemes =
             new SqliteIconThemeAssetPort(engine.Resources);
         ThemeTokens = new SqliteThemeTokenPort(engine.Resources);
