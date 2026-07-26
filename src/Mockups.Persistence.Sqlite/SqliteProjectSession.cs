@@ -31,7 +31,13 @@ public sealed class SqliteProjectSession
         NodeCommands =
             new SqliteEditorNodeCommandPort(engine);
         RenderSnapshots =
-            new SqliteRenderSnapshotPort(engine);
+            new SqliteRenderSnapshotPort(
+                engine,
+                engine.Resources,
+                engine.Design,
+                engine.Production,
+                engine.Resources,
+                engine.Production);
         Presentation =
             new SqliteEditorPresentationPort(engine.Resources);
         ModuleInstances =

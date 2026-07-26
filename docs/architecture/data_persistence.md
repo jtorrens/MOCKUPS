@@ -175,6 +175,9 @@ Render Queue receives the explicit aggregate `IRenderSnapshotDataSource`
 because creating its immutable job snapshot requires the prepared Preview,
 Actor, Component, timeline and Theme reads declared by that contract. It is
 not presented as a general Production-navigation store.
+The SQLite implementation composes those exact owner ports plus the Production
+Output plan; `SqliteProjectEngine` does not implement Render Snapshot or
+timeline merely to satisfy Render Queue.
 
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their

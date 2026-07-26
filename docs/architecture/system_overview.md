@@ -271,7 +271,9 @@ child, Module Instance or timeline operations by casting its target.
 Render Queue is the sole Desktop consumer of the aggregate
 `IRenderSnapshotDataSource`. The session names that capability
 `RenderSnapshots`; there is no alias that presents the same broad read surface
-as a generic Production-navigation dependency.
+as a generic Production-navigation dependency. Its SQLite membrane composes
+the focused Preview, Actor, Component, timeline, Theme and Production Output
+owners; the project engine is not the Render Snapshot target.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

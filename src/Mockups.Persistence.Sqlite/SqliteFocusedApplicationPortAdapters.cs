@@ -587,3 +587,165 @@ internal sealed class SqliteDictionaryFieldContextPort(
         string file) =>
         target.ResolveIconThemeAssetPath(iconThemeId, file);
 }
+
+internal sealed class SqliteRenderSnapshotPort(
+    IPreviewInputRepository preview,
+    IActorPreviewRepository actors,
+    IComponentPreviewInputRepository components,
+    IModuleInstanceTimelineStore timeline,
+    IModuleInstanceThemeTokenQuery moduleInstanceThemes,
+    SqliteProductionOwner output)
+    : IRenderSnapshotDataSource
+{
+    public ProductionOutputShotPlan GetProductionOutputShotPlan(
+        string shotId) =>
+        output.GetProductionOutputShotPlan(shotId);
+
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId) =>
+        moduleInstanceThemes.GetModuleInstanceThemeTokensJson(
+            moduleInstanceId);
+
+    public ActorSettings GetActorSettings(string actorId) =>
+        actors.GetActorSettings(actorId);
+
+    public string GetActorFieldValue(
+        string actorId,
+        string fieldId) =>
+        actors.GetActorFieldValue(actorId, fieldId);
+
+    public IReadOnlyList<FieldOption> GetActorOptions(string projectId) =>
+        actors.GetActorOptions(projectId);
+
+    public IReadOnlyList<FieldOption> GetRequiredActorOptions(
+        string projectId) =>
+        actors.GetRequiredActorOptions(projectId);
+
+    public IReadOnlyList<FieldOption> GetPaletteColorOptions(
+        string projectId) =>
+        actors.GetPaletteColorOptions(projectId);
+
+    public ProjectSettings GetProjectSettings(string projectId) =>
+        actors.GetProjectSettings(projectId);
+
+    public JsonObject GetComponentVariantConfig(
+        string variantReference) =>
+        components.GetComponentVariantConfig(variantReference);
+
+    public JsonObject GetComponentVariantRuntimeContract(
+        string variantReference) =>
+        components.GetComponentVariantRuntimeContract(variantReference);
+
+    public string ValidateComponentVariantReferenceValue(
+        string projectId,
+        string componentType,
+        string reference,
+        bool allowEmpty) =>
+        components.ValidateComponentVariantReferenceValue(
+            projectId,
+            componentType,
+            reference,
+            allowEmpty);
+
+    public ModuleInstanceSettings GetModuleInstanceSettings(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceSettings(moduleInstanceId);
+
+    public ModuleSettings GetModuleInstanceVariantSettings(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceVariantSettings(moduleInstanceId);
+
+    public string GetModuleInstanceModuleName(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceModuleName(moduleInstanceId);
+
+    public string GetModuleInstanceTransitionType(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceTransitionType(moduleInstanceId);
+
+    public string GetModuleInstanceEffectiveContractJson(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceEffectiveContractJson(
+            moduleInstanceId);
+
+    public string GetModuleInstanceRuntimePreviewJson(
+        string moduleInstanceId) =>
+        timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
+
+    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
+        string shotId) =>
+        timeline.GetShotModuleInstanceSlots(shotId);
+
+    public ShotSettings GetShotSettings(string shotId) =>
+        preview.GetShotSettings(shotId);
+
+    public AppSettings GetAppSettings(string appId) =>
+        preview.GetAppSettings(appId);
+
+    public AppSettings GetModuleAppSettings(string moduleId) =>
+        preview.GetModuleAppSettings(moduleId);
+
+    public ModuleSettings GetModuleSettings(string moduleId) =>
+        preview.GetModuleSettings(moduleId);
+
+    public ModuleSettings GetModuleVariantSettings(
+        ProjectTreeNode variantNode) =>
+        preview.GetModuleVariantSettings(variantNode);
+
+    public string GetModuleInstanceVariantName(
+        string moduleInstanceId) =>
+        preview.GetModuleInstanceVariantName(moduleInstanceId);
+
+    public ComponentClassSettings GetComponentClassSettings(
+        string componentClassId) =>
+        preview.GetComponentClassSettings(componentClassId);
+
+    public ComponentClassSettings GetComponentVariantSettings(
+        ProjectTreeNode variantNode) =>
+        preview.GetComponentVariantSettings(variantNode);
+
+    public string GetComponentClassBaseConfigsJson(string projectId) =>
+        preview.GetComponentClassBaseConfigsJson(projectId);
+
+    public string ValidateComponentVariantReferencesForPreview(
+        string projectId,
+        string configJson) =>
+        preview.ValidateComponentVariantReferencesForPreview(
+            projectId,
+            configJson);
+
+    public DeviceSettings GetDeviceSettings(string deviceId) =>
+        preview.GetDeviceSettings(deviceId);
+
+    public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId) =>
+        preview.GetDevicePreviewMetrics(deviceId);
+
+    public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId) =>
+        preview.GetDeviceOptions(projectId);
+
+    public ThemeSettings GetThemeSettings(string themeId) =>
+        preview.GetThemeSettings(themeId);
+
+    public string GetThemeFieldValue(
+        string themeId,
+        string fieldId) =>
+        preview.GetThemeFieldValue(themeId, fieldId);
+
+    public IReadOnlyList<FieldOption> GetThemeOptions(string projectId) =>
+        preview.GetThemeOptions(projectId);
+
+    public IReadOnlyDictionary<string, string> GetPaletteColorMap(
+        string projectId) =>
+        preview.GetPaletteColorMap(projectId);
+
+    public IReadOnlyDictionary<string, bool> GetPaletteNeutralMap(
+        string projectId) =>
+        preview.GetPaletteNeutralMap(projectId);
+
+    public IReadOnlyList<ProductionFontFace> GetProductionFontFaces(
+        string projectId) =>
+        preview.GetProductionFontFaces(projectId);
+
+    public IconThemeSettings GetIconThemeSettings(string iconThemeId) =>
+        preview.GetIconThemeSettings(iconThemeId);
+}
