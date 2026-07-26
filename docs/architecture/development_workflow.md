@@ -99,7 +99,7 @@ Variant as the current config snapshot.
 
 The dry-run stage writes neither source nor database. Materialization persists
 the exact spec under `scaffolding/drafts` and creates, without overwriting,
-the contract, resolver, renderable, strict desktop config owner and focused
+the contract, resolver, renderable, strict Application config owner and focused
 test. Every generated owner carries an explicit semantic marker and remains
 unregistered: materialization never edits the manifest, registry or database.
 
@@ -108,7 +108,7 @@ renderable, strict config validation and focused characterization. Explicit
 integration then moves the reviewed spec into `scaffolding/components`, adds
 its exact manifest route and polymorphic Stack declarations, inserts the
 Component Class and editor layout in one maintenance transaction, and
-regenerates the registry route, dictionary descriptors and desktop config
+regenerates the registry route, dictionary descriptors and Application config
 route. Integration rejects missing assets, owner markers, identity collisions
 and partial ownership before writing anything.
 
@@ -182,7 +182,7 @@ any declared id.
 
 Materialization stores the reviewed draft and creates non-overwriting semantic
 owner skeletons without registering the Module. Integration is allowed only
-after the contract, resolver, renderable, strict desktop config owner and
+after the contract, resolver, renderable, strict Application config owner and
 focused test have replaced every semantic marker. It then adds the manifest
 route, current Module row and editor layout in one maintenance transaction and
 regenerates the Module registry, dictionary descriptors, config route and
@@ -223,7 +223,7 @@ npm run desktop:open:mac
 npm run desktop:launch:mac
 ```
 
-The Desktop MSBuild project owns web Preview generation. Every `dotnet build`,
+The executable Desktop Host MSBuild project owns web Preview generation. Every `dotnet build`,
 `dotnet run` and `dotnet publish` entrypoint executes
 `PrepareDesktopPreview` before compiling and includes the resulting manifest
 and artifacts, so npm wrappers and direct .NET entrypoints have the same

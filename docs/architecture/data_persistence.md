@@ -40,12 +40,17 @@ Component Variant of their exact declared type.
 SQLite production code lives in the independent
 `src/Mockups.Persistence.Sqlite` project. Its compile-time dependencies point
 only to Application and Domain; UI packages are unavailable to that assembly.
-The current Desktop host still composes the transitional compatibility facade,
-but SQL packages and source files are no longer part of the Desktop assembly.
-Workspace coordination consumes the facade only through
-`IEditorNavigationDataSource`. The SQLite assembly implements that narrow
-read boundary; neither `EditorWorkspaceCoordinator` nor its state contract can
-compile a SQLite reference.
+`Mockups.Desktop.Host` is the only executable composition project allowed to
+see both Desktop and Persistence.Sqlite. It opens the transitional
+compatibility facade and projects it into the narrow ports declared by
+Application. SQL packages and Persistence source files are unavailable to the
+Desktop assembly.
+
+Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
+dictionary, document, Usage, Render and Shot Manager consumers receive their
+own read or write capability instead of the facade. Desktop controllers cannot
+name `SpikeDatabase`, and neither `EditorWorkspaceCoordinator` nor its state
+contract can compile a SQLite reference.
 
 Focused repositories own table SQL, row mapping and prepared complete writes:
 

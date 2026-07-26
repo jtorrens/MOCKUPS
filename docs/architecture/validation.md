@@ -86,13 +86,13 @@ It includes:
 - architecture enforcement;
 - desktop application build.
 
-The Desktop MSBuild target regenerates Preview artifacts incrementally when a
-TypeScript or build input changes, then refreshes their manifest for the
-current build. npm orchestration does not run a second implicit generation
-step. Direct `dotnet build`, `dotnet run` and `dotnet publish` therefore
-produce the same manifested bundle. Startup and tooling tests verify its
-schema, required artifacts, per-file SHA-256 hashes and aggregate hash. The
-desktop suite runs
+The executable `Mockups.Desktop.Host` MSBuild target regenerates Preview
+artifacts incrementally when a TypeScript or build input changes, then
+refreshes their manifest for the current build. npm orchestration does not run
+a second implicit generation step. Direct `dotnet build`, `dotnet run` and
+`dotnet publish` therefore produce the same manifested bundle. Startup and
+tooling tests verify its schema, required artifacts, per-file SHA-256 hashes
+and aggregate hash. The desktop suite runs
 in three fresh processes: `core`, native visual-tree `ui`, and manifest-wide
 `exhaustive`.
 This preserves complete coverage while preventing native UI state from leaking
