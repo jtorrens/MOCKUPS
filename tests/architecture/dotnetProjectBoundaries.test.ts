@@ -32,7 +32,6 @@ const expectedProjects = new Map([
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
-        "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
       ],
       packageReferences: [
         "Avalonia",
@@ -43,6 +42,22 @@ const expectedProjects = new Map([
         "Avalonia.Themes.Fluent",
         "AvaloniaUI.DiagnosticsSupport",
         "SukiUI",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+        "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
+      ],
+      packageReferences: [
+        "Avalonia",
+        "Avalonia.Desktop",
+        "Avalonia.Fonts.Inter",
+        "AvaloniaUI.DiagnosticsSupport",
       ],
     },
   ],
@@ -172,5 +187,41 @@ test("Persistence can see Application and Domain but has no UI package capabilit
   assert.deepEqual(
     persistence.Items.PackageReference.map((item) => item.Identity).sort(),
     ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
+  );
+});
+
+test("Desktop can see UI and Application but cannot compile against SQLite", () => {
+  const desktop = evaluate(
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+  );
+  assert.deepEqual(
+    desktop.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
+      .sort(),
+    [
+      "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Domain/Mockups.Domain.csproj",
+    ],
+  );
+  assert.equal(
+    desktop.Items.PackageReference
+      .some((item) => item.Identity.includes("Sqlite")),
+    false,
+  );
+});
+
+test("the executable Host is the only composition project that sees Desktop and Persistence", () => {
+  const host = evaluate(
+    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+  );
+  assert.deepEqual(
+    host.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
+      .sort(),
+    [
+      "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+      "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
+    ],
   );
 });

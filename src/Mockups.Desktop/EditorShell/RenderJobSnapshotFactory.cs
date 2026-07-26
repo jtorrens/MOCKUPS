@@ -58,13 +58,13 @@ internal sealed class RenderJobSnapshotFactory
         string StatusMessage,
         IReadOnlyList<RenderQueueRouteOption> Routes);
 
-    private readonly SpikeDatabase _database;
+    private readonly IRenderSnapshotDataSource _database;
     private readonly IShotManagerIntegrationClient _shotManager;
     private readonly ShotManagerWorkstationRootStore _roots;
     private readonly DesignPreviewPayloadDataSource _payloadData;
 
     public RenderJobSnapshotFactory(
-        SpikeDatabase database,
+        IRenderSnapshotDataSource database,
         IShotManagerIntegrationClient? shotManager = null,
         ShotManagerWorkstationRootStore? roots = null)
     {

@@ -4,9 +4,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ProductionPreviewSessionDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IPreviewInputRepository _database;
 
-    public ProductionPreviewSessionDataSource(SpikeDatabase database)
+    public ProductionPreviewSessionDataSource(IPreviewInputRepository database)
     {
         _database = database;
     }

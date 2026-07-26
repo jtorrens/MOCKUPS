@@ -14,7 +14,7 @@ internal sealed class ProductionPreviewRuntimeResolver
 {
     private readonly NestedRuntimeRecordReferenceResolver _nestedRecordInputResolver;
 
-    public ProductionPreviewRuntimeResolver(SpikeDatabase database)
+    public ProductionPreviewRuntimeResolver(IActorPreviewRepository database)
     {
         var actorDataSource = new ActorPreviewDataSource(database);
         _nestedRecordInputResolver = new NestedRuntimeRecordReferenceResolver(actorDataSource);

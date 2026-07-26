@@ -10,9 +10,9 @@ internal sealed record EditorThemeNavigationSource(
 
 internal sealed class EditorPresentationContextDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IEditorPresentationContextRepository _database;
 
-    public EditorPresentationContextDataSource(SpikeDatabase database)
+    public EditorPresentationContextDataSource(IEditorPresentationContextRepository database)
     {
         _database = database;
     }

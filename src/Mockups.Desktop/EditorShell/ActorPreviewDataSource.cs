@@ -25,9 +25,9 @@ internal sealed record ActorPreviewSource(
 
 internal sealed class ActorPreviewDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IActorPreviewRepository _database;
 
-    public ActorPreviewDataSource(SpikeDatabase database)
+    public ActorPreviewDataSource(IActorPreviewRepository database)
     {
         _database = database;
     }

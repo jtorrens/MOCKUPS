@@ -8,10 +8,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RecordClassFieldValueService
 {
-    private readonly SpikeDatabase _database;
+    private readonly IRecordClassFieldStore _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
-    public RecordClassFieldValueService(SpikeDatabase database)
+    public RecordClassFieldValueService(IRecordClassFieldStore database)
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);

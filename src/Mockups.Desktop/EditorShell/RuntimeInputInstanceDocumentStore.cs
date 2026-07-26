@@ -6,10 +6,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RuntimeInputInstanceDocumentStore
 {
-    private readonly SpikeDatabase _database;
+    private readonly IRuntimeInputInstanceStore _database;
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
 
-    public RuntimeInputInstanceDocumentStore(SpikeDatabase database)
+    public RuntimeInputInstanceDocumentStore(IRuntimeInputInstanceStore database)
     {
         _database = database;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(

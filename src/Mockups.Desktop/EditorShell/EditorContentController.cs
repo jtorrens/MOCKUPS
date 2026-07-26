@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorContentController
 {
-    private readonly SpikeDatabase _database;
+    private readonly IEditorLayoutStore _database;
     private readonly EditorCardHostController _cardHost;
     private readonly EditorActiveFieldControls _activeFieldControls;
     private readonly IEditorInlinePreviewController _inlinePreviews;
@@ -19,7 +19,7 @@ internal sealed class EditorContentController
         _specialCards;
 
     public EditorContentController(
-        SpikeDatabase database,
+        IEditorLayoutStore database,
         Panel host,
         Func<double>? availableWidth,
         Control? widthObserver,

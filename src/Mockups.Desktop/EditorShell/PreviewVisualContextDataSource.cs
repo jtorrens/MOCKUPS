@@ -6,9 +6,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class PreviewVisualContextDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IPreviewInputRepository _database;
 
-    public PreviewVisualContextDataSource(SpikeDatabase database)
+    public PreviewVisualContextDataSource(IPreviewInputRepository database)
     {
         _database = database;
     }

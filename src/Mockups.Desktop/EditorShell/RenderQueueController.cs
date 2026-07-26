@@ -15,7 +15,7 @@ internal sealed class RenderQueueController
 
     public RenderQueueController(
         Window owner,
-        SpikeDatabase database,
+        IRenderSnapshotDataSource database,
         RenderQueueManager? queue = null,
         RenderJobSnapshotFactory? snapshots = null)
     {

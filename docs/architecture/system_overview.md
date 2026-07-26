@@ -139,11 +139,13 @@ compatibility facade. It may reference Application and Domain and is the only
 production project allowed to reference the SQLite packages. It cannot
 reference Avalonia or Desktop.
 
-`DesktopCompositionRoot` is the only Desktop owner that opens the current
-SQLite compatibility facade and constructs the non-visual application
-services required by a window session, including the workspace coordinator.
-`MainWindow` receives that composed session and does not construct the
-database context directly.
+`Mockups.Desktop.Host` is the executable composition boundary and the only
+production project allowed to reference both Desktop and Persistence.Sqlite.
+It opens the current SQLite compatibility facade and projects it into the
+narrow Application ports required by one desktop session.
+`Mockups.Desktop` references Application and Domain only. `MainWindow`
+receives an already composed session and cannot compile a reference to the
+database context, SQLite packages or the Persistence assembly.
 
 ### SQLite and repositories
 

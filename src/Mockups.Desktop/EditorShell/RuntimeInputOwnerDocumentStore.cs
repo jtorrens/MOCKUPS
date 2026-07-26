@@ -26,9 +26,9 @@ internal sealed record RuntimeComponentVariantSelectionSource(
 
 internal sealed class RuntimeInputOwnerDocumentStore
 {
-    private readonly SpikeDatabase _database;
+    private readonly IRuntimeInputOwnerStore _database;
 
-    public RuntimeInputOwnerDocumentStore(SpikeDatabase database)
+    public RuntimeInputOwnerDocumentStore(IRuntimeInputOwnerStore database)
     {
         _database = database;
     }

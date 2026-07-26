@@ -7,11 +7,11 @@ namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
 
 internal sealed class ShotManagerAssociationService
 {
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly ShotManagerWorkstationRootStore _roots;
 
     public ShotManagerAssociationService(
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         ShotManagerWorkstationRootStore? roots = null)
     {
         _database = database;

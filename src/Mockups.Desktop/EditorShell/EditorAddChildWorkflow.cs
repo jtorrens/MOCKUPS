@@ -17,12 +17,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorAddChildWorkflow
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IEditorChildStore _database;
     private readonly Func<string, string, Task> _showInfo;
 
     public EditorAddChildWorkflow(
         Window owner,
-        SpikeDatabase database,
+        IEditorChildStore database,
         Func<string, string, Task> showInfo)
     {
         _owner = owner;

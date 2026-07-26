@@ -11,7 +11,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ShotModuleInstancesCollectionEditor
 {
-    private readonly SpikeDatabase _database;
+    private readonly IModuleInstanceCollectionStore _database;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
@@ -21,7 +21,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public ShotModuleInstancesCollectionEditor(
-        SpikeDatabase database,
+        IModuleInstanceCollectionStore database,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,

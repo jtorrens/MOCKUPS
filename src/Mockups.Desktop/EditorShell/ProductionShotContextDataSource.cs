@@ -8,10 +8,10 @@ internal sealed record ProductionThemeContextSource(
 
 internal sealed class ProductionShotContextDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IPreviewInputRepository _database;
     private readonly ActorPreviewDataSource _actorDataSource;
 
-    public ProductionShotContextDataSource(SpikeDatabase database)
+    public ProductionShotContextDataSource(IPreviewInputRepository database)
     {
         _database = database;
         _actorDataSource = new ActorPreviewDataSource(database);

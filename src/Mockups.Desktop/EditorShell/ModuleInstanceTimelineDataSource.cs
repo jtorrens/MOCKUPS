@@ -15,9 +15,9 @@ internal sealed record ModuleInstanceTimelineSource(
 
 internal sealed class ModuleInstanceTimelineDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IModuleInstanceTimelineStore _database;
 
-    public ModuleInstanceTimelineDataSource(SpikeDatabase database)
+    public ModuleInstanceTimelineDataSource(IModuleInstanceTimelineStore database)
     {
         _database = database;
     }

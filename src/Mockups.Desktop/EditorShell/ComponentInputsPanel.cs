@@ -77,7 +77,7 @@ internal sealed class ComponentPreviewInputSession
     }
 
     public ComponentPreviewInputSession(
-        SpikeDatabase database,
+        IDictionaryFieldContextRepository database,
         Action refreshPreview,
         Func<ComponentPreviewActionDefinition, Task<bool>>? preparePlaybackFrames = null)
     {

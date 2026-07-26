@@ -16,7 +16,7 @@ internal sealed class EditorProductionNavigationActions : IDisposable
     public EditorProductionNavigationActions(
         Window owner,
         Button actionButton,
-        SpikeDatabase database,
+        IProductionNavigationStore database,
         Func<bool> isDark,
         Action<string> openProductionCard)
     {

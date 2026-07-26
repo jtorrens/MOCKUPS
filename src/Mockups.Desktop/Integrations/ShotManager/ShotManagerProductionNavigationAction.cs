@@ -10,13 +10,13 @@ namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
 internal sealed class ShotManagerProductionNavigationAction
 {
     private readonly Button _button;
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly Func<bool> _isDark;
     private readonly Control _icon;
 
     public ShotManagerProductionNavigationAction(
         Button button,
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         Func<bool> isDark,
         Action open)
     {

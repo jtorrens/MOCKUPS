@@ -9,7 +9,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorEmbeddedUsageNavigator
 {
-    private readonly SpikeDatabase _database;
+    private readonly IComponentDocumentStore _database;
     private readonly Window _owner;
     private readonly Func<bool> _isDark;
     private readonly Func<string, bool> _selectNodeById;
@@ -19,7 +19,7 @@ internal sealed class EditorEmbeddedUsageNavigator
     private readonly IEditorShellMessageSink _messages;
 
     public EditorEmbeddedUsageNavigator(
-        SpikeDatabase database,
+        IComponentDocumentStore database,
         Window owner,
         Func<bool> isDark,
         Func<string, bool> selectNodeById,

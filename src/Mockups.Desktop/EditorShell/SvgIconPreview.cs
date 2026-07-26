@@ -21,7 +21,7 @@ internal static class SvgIconPreview
     private sealed record CachedSvg(DateTime LastWriteUtc, long Length, string Content);
     private static readonly ConcurrentDictionary<string, CachedSvg> SvgCache = new(StringComparer.Ordinal);
 
-    public static Control CreateIconThemePreview(SpikeDatabase database, string iconThemeId, string file, double size)
+    public static Control CreateIconThemePreview(IIconThemeAssetStore database, string iconThemeId, string file, double size)
     {
         try
         {
@@ -36,7 +36,7 @@ internal static class SvgIconPreview
         }
     }
 
-    public static Control CreateIconTokenPreview(SpikeDatabase database, string iconThemeId, string token, double size)
+    public static Control CreateIconTokenPreview(IIconThemeAssetStore database, string iconThemeId, string token, double size)
     {
         return CreateIconTokenPreview(
             token,

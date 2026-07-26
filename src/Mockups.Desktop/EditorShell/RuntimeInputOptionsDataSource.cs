@@ -7,10 +7,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RuntimeInputOptionsDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IDictionaryFieldContextRepository _database;
     private readonly ActorPreviewDataSource _actorDataSource;
 
-    public RuntimeInputOptionsDataSource(SpikeDatabase database)
+    public RuntimeInputOptionsDataSource(IDictionaryFieldContextRepository database)
     {
         _database = database;
         _actorDataSource = new ActorPreviewDataSource(database);

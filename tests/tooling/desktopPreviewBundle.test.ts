@@ -11,17 +11,17 @@ const repositoryRoot = process.cwd();
 const packageJson = JSON.parse(
   readFileSync(path.join(repositoryRoot, "package.json"), "utf8"),
 ) as { scripts: Record<string, string> };
-const desktopProject = readFileSync(
+const desktopHostProject = readFileSync(
   path.join(
     repositoryRoot,
     "src",
-    "Mockups.Desktop",
-    "Mockups.DesktopEditorShell.csproj",
+    "Mockups.Desktop.Host",
+    "Mockups.Desktop.Host.csproj",
   ),
   "utf8",
 );
 
-test("the Desktop project owns Preview generation for every .NET entrypoint", () => {
+test("the executable Desktop Host owns Preview generation for every .NET entrypoint", () => {
   assert.match(
     packageJson.scripts.desktop ?? "",
     /^dotnet run /u,
@@ -38,15 +38,15 @@ test("the Desktop project owns Preview generation for every .NET entrypoint", ()
     packageJson.scripts["test:focus:desktop"] ?? "",
     /^dotnet run /u,
   );
-  assert.match(desktopProject, /Name="PrepareDesktopPreview"/u);
-  assert.match(desktopProject, /Name="BuildDesktopPreviewArtifacts"/u);
-  assert.match(desktopProject, /BeforeTargets="PrepareForBuild"/u);
-  assert.match(desktopProject, /--artifacts-only/u);
-  assert.match(desktopProject, /--manifest-only/u);
-  assert.match(desktopProject, /Inputs="@\(DesktopPreviewBuildInput\)"/u);
-  assert.match(desktopProject, /Outputs="[^"]+renderDesignPreviewHtml\.cjs/u);
-  assert.match(desktopProject, /dist\/desktop-preview/u);
-  assert.match(desktopProject, /manifest\.json/u);
+  assert.match(desktopHostProject, /Name="PrepareDesktopPreview"/u);
+  assert.match(desktopHostProject, /Name="BuildDesktopPreviewArtifacts"/u);
+  assert.match(desktopHostProject, /BeforeTargets="PrepareForBuild"/u);
+  assert.match(desktopHostProject, /--artifacts-only/u);
+  assert.match(desktopHostProject, /--manifest-only/u);
+  assert.match(desktopHostProject, /Inputs="@\(DesktopPreviewBuildInput\)"/u);
+  assert.match(desktopHostProject, /Outputs="[^"]+renderDesignPreviewHtml\.cjs/u);
+  assert.match(desktopHostProject, /dist\/desktop-preview/u);
+  assert.match(desktopHostProject, /manifest\.json/u);
 });
 
 test("the generated Preview bundle is manifested and routes an integrated scaffold Component", () => {

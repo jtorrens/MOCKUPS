@@ -11,14 +11,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ShotManagerIntegrationCollectionEditor
 {
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly EditorDomainDialogService _dialogs;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly IShotManagerIntegrationClient _client;
 
     public ShotManagerIntegrationCollectionEditor(
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         EditorDomainDialogService dialogs,
         Func<string, string, Task> showInfo,
         Action<ProjectTreeNode> reloadAndSelect,

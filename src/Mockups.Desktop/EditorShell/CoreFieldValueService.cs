@@ -5,9 +5,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class CoreFieldValueService
 {
-    private readonly SpikeDatabase _database;
+    private readonly ICoreFieldStore _database;
 
-    public CoreFieldValueService(SpikeDatabase database)
+    public CoreFieldValueService(ICoreFieldStore database)
     {
         _database = database;
     }

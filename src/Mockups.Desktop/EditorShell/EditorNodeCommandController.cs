@@ -10,7 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorNodeCommandController
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IEditorNodeCommandStore _database;
     private readonly Func<bool> _isDark;
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Action _loadProjectTree;
@@ -20,7 +20,7 @@ internal sealed class EditorNodeCommandController
 
     public EditorNodeCommandController(
         Window owner,
-        SpikeDatabase database,
+        IEditorNodeCommandStore database,
         Func<bool> isDark,
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Action loadProjectTree,

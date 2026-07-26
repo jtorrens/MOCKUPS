@@ -17,7 +17,6 @@ public partial class MainWindow : SukiWindow
     private const string PreviewUtilityAuthoringDataId = "authoring-data";
     private const string PreviewUtilitySetupId = "setup";
     private const string PreviewUtilityControlsId = "controls";
-    private readonly SpikeDatabase _database;
     private readonly CoreFieldValueService _coreFieldValues;
     private readonly RecordClassFieldValueService _recordClassFieldValues;
     private readonly ComponentClassFieldValueService _componentClassFieldValues;
@@ -55,15 +54,16 @@ public partial class MainWindow : SukiWindow
     private string _renderedPreviewNavigationNodeId = "";
     private EditorSessionState Session => _workspaceCoordinator.State;
 
+    [Obsolete("MainWindow must be created by Mockups.Desktop.Host.")]
     public MainWindow()
-        : this(DesktopCompositionRoot.DefaultDatabasePath())
     {
+        throw new InvalidOperationException(
+            "MainWindow requires a validated desktop application session.");
     }
 
-    public MainWindow(string databasePath)
+    internal MainWindow(DesktopApplicationServices application)
     {
-        var application = new DesktopCompositionRoot().Create(databasePath);
-        _database = application.Database;
+        var data = application.Data;
         _variantHistory = application.VariantHistory;
         _coreFieldValues = application.CoreFieldValues;
         _recordClassFieldValues = application.RecordClassFieldValues;
@@ -72,12 +72,14 @@ public partial class MainWindow : SukiWindow
         _workspaceCoordinator = application.WorkspaceCoordinator;
         InitializeComponent();
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
-        _inlinePreviews = EditorInlinePreviewControllerFactory.Create(_database, () => _themeController.IsDark);
+        _inlinePreviews = EditorInlinePreviewControllerFactory.Create(
+            data.ActorPreview,
+            () => _themeController.IsDark);
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
-            _database,
+            data.Dictionary,
             PreviewDeviceComboBox,
             PreviewThemeComboBox,
             PreviewModeComboBox,
@@ -99,7 +101,7 @@ public partial class MainWindow : SukiWindow
         _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
         _nodeCommands = new EditorNodeCommandController(
             this,
-            _database,
+            data.NodeCommands,
             () => _themeController.IsDark,
             () => Session.TreeRoots,
             LoadProjectTree,
@@ -110,7 +112,7 @@ public partial class MainWindow : SukiWindow
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
-            _database,
+            data.ProductionNavigation,
             () => _themeController.IsDark,
             OpenSelectedProductionCard);
         _navigationRenderer = new EditorNavigationRenderer(
@@ -130,7 +132,7 @@ public partial class MainWindow : SukiWindow
             _productionNavigationActions.NodeAction);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
-            _database,
+            data.Presentation,
             () => _previewController.SelectedDeviceId,
             SetEditorRootTitle,
             RebuildNavigationCards,
@@ -138,17 +140,17 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewOptions);
         _pathBrowser = new EditorPathBrowser(
             StorageProvider,
-            _database,
+            data.Presentation,
             () => Session.SelectedNode);
         _domainDialogs = new EditorDomainDialogService(
             this,
-            _database,
+            data.DomainDialogs,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
         _dictionaryFieldServices = new EditorDictionaryFieldServices(
-            _database,
+            data.Dictionary,
             _pathBrowser,
             _domainDialogs,
             () => _previewController.SelectedThemeId,
@@ -179,7 +181,7 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewDevice,
             _editorSessionUiState);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
-            _database,
+            data.Components,
             this,
             () => _themeController.IsDark,
             SelectNodeById,
@@ -195,7 +197,7 @@ public partial class MainWindow : SukiWindow
             EditorBreadcrumbPanel,
             EditorContextStripHost,
             EditorHeaderActionsPanel,
-            _database,
+            data.Header,
             () => Session.SelectedNode,
             _workspaceCoordinator.PreferredVariantNode,
             _workspaceCoordinator.PreferredModuleVariantNode,
@@ -208,7 +210,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.RestoreVariantSnapshot,
             _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
-            _database,
+            data.Collections,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _domainDialogs,
@@ -232,7 +234,7 @@ public partial class MainWindow : SukiWindow
             _previewController.ToggleProductionPlayback,
             _editorSessionUiState);
         _editorContent = new EditorContentController(
-            _database,
+            data.Layouts,
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
             EditorScrollViewer,

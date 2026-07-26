@@ -5,9 +5,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentPreviewInputDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IComponentPreviewInputRepository _database;
 
-    public ComponentPreviewInputDataSource(SpikeDatabase database)
+    public ComponentPreviewInputDataSource(IComponentPreviewInputRepository database)
     {
         _database = database;
     }

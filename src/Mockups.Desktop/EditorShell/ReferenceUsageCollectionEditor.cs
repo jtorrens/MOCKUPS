@@ -12,12 +12,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ReferenceUsageCollectionEditor
 {
-    private readonly SpikeDatabase _database;
+    private readonly IReferenceUsageQuery _database;
     private readonly bool _isDark;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
 
     public ReferenceUsageCollectionEditor(
-        SpikeDatabase database,
+        IReferenceUsageQuery database,
         bool isDark,
         Func<ReferenceUsageDetail, Task> navigateToUsage)
     {

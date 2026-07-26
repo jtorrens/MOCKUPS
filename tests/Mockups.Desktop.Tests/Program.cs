@@ -2753,11 +2753,9 @@ static void EditorViewStateSurvivesRealNavigation()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary)
-            {
-                Width = 1440,
-                Height = 480,
-            };
+            var window = DesktopHost.CreateWindow(temporary);
+            window.Width = 1440;
+            window.Height = 480;
             window.Show();
 
             var treeRoots = WindowSession(window).TreeRoots;
@@ -3031,7 +3029,7 @@ static void PreviewShellVisualTreeIsResponsive()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary);
+            var window = DesktopHost.CreateWindow(temporary);
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
@@ -3210,11 +3208,9 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary)
-            {
-                Width = 3000,
-                Height = 900,
-            };
+            var window = DesktopHost.CreateWindow(temporary);
+            window.Width = 3000;
+            window.Height = 900;
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
@@ -3709,11 +3705,9 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary)
-            {
-                Width = 3000,
-                Height = 900,
-            };
+            var window = DesktopHost.CreateWindow(temporary);
+            window.Width = 3000;
+            window.Height = 900;
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
@@ -9292,11 +9286,9 @@ static void ProductionShotManagerActionOwnsAssociation()
             HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = new MainWindow(temporary)
-            {
-                Width = 1440,
-                Height = 900,
-            };
+            var window = DesktopHost.CreateWindow(temporary);
+            window.Width = 1440;
+            window.Height = 900;
             window.Show();
             var action = Required(
                 window.FindControl<Button>("ProductionActionButton"));

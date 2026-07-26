@@ -5,7 +5,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorInlinePreviewControllerFactory
 {
-    public static IEditorInlinePreviewController Create(SpikeDatabase database, Func<bool> isDark)
+    public static IEditorInlinePreviewController Create(IActorPreviewRepository database, Func<bool> isDark)
     {
         return new ActorAvatarPreviewController(new ActorPreviewDataSource(database), isDark);
     }

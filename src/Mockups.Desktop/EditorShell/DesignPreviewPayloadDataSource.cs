@@ -56,12 +56,12 @@ internal sealed record DesignPreviewShotSlot(
 
 internal sealed class DesignPreviewPayloadDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IPreviewInputRepository _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ActorPreviewDataSource _actorDataSource;
     private readonly NestedRuntimeRecordReferenceResolver _nestedRuntimeRecordReferenceResolver;
 
-    public DesignPreviewPayloadDataSource(SpikeDatabase database)
+    public DesignPreviewPayloadDataSource(IPreviewInputRepository database)
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);

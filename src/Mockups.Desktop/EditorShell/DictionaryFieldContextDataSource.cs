@@ -14,10 +14,10 @@ internal sealed record DictionaryComponentVariantSelectionSource(
 
 internal sealed class DictionaryFieldContextDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IDictionaryFieldContextRepository _database;
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
 
-    public DictionaryFieldContextDataSource(SpikeDatabase database)
+    public DictionaryFieldContextDataSource(IDictionaryFieldContextRepository database)
     {
         _database = database;
         _previewPayloadData = new DesignPreviewPayloadDataSource(database);

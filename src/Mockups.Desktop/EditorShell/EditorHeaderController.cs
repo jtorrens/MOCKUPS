@@ -34,7 +34,7 @@ internal sealed class EditorHeaderController
         Panel breadcrumbPanel,
         Panel contextStripHost,
         Panel actionsPanel,
-        SpikeDatabase database,
+        IEditorHeaderStore database,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,

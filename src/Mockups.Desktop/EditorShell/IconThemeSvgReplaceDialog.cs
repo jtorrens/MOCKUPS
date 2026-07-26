@@ -20,13 +20,13 @@ internal sealed class IconThemeSvgReplaceDialog
     private const double DefaultCornerRadius = 0;
     private const double DefaultStrokeWidth = 0;
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IIconThemeAssetStore _database;
     private readonly Func<Task<string?>> _browseSvgFile;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeSvgReplaceDialog(
         Window owner,
-        SpikeDatabase database,
+        IIconThemeAssetStore database,
         Func<Task<string?>> browseSvgFile,
         Action<ProjectTreeNode> reloadAndSelect)
     {

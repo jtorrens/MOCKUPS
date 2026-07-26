@@ -15,12 +15,12 @@ internal sealed record EditorVariantHistorySnapshot(
 internal sealed class EditorVariantHistoryService
 {
     private const int MaxSnapshotsPerVariant = 10;
-    private readonly SpikeDatabase _database;
+    private readonly IVariantHistoryStore _database;
     private readonly Dictionary<string, string> _activeEntryConfigJsonByVariant = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<EditorVariantHistorySnapshot>> _snapshotsByVariant = new(StringComparer.Ordinal);
     private int _sequence;
 
-    public EditorVariantHistoryService(SpikeDatabase database)
+    public EditorVariantHistoryService(IVariantHistoryStore database)
     {
         _database = database;
     }

@@ -245,7 +245,7 @@ internal sealed class EditorPreviewController
     private string _activeProductionModuleInstanceId = "";
 
     public EditorPreviewController(
-        SpikeDatabase database,
+        IDictionaryFieldContextRepository database,
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,

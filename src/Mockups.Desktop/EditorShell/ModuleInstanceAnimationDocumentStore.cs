@@ -11,11 +11,11 @@ internal sealed record ModuleInstanceAnimationSource(
 
 internal sealed class ModuleInstanceAnimationDocumentStore
 {
-    private readonly SpikeDatabase _database;
+    private readonly IModuleInstanceAnimationStore _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public ModuleInstanceAnimationDocumentStore(
-        SpikeDatabase database,
+        IModuleInstanceAnimationStore database,
         ModuleInstanceTimelineDataSource timelineDataSource)
     {
         _database = database;

@@ -27,7 +27,7 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly Action _togglePlayback;
 
     public ModuleInstanceAnimationEditor(
-        SpikeDatabase database,
+        IModuleInstanceAnimationEditorStore database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         EditorSessionUiState sessionUiState,

@@ -41,7 +41,7 @@ test("display wake policy stays outside the Avalonia application", () => {
     path.join(
       repositoryRoot,
       "src",
-      "Mockups.Desktop",
+      "Mockups.Desktop.Host",
       "Program.cs",
     ),
     "utf8",

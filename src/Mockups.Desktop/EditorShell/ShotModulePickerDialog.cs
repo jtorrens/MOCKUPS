@@ -16,9 +16,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ShotModulePickerDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IModuleInstanceCollectionStore _database;
 
-    public ShotModulePickerDialog(Window owner, SpikeDatabase database)
+    public ShotModulePickerDialog(Window owner, IModuleInstanceCollectionStore database)
     {
         _owner = owner;
         _database = database;

@@ -12,7 +12,7 @@ internal sealed record EditorPreviewAuthoringSurface(string Header, Control Cont
 
 internal sealed class EditorCollectionCardFactory
 {
-    private readonly SpikeDatabase _database;
+    private readonly IEditorCollectionStore _database;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly EditorDomainDialogService _domainDialogs;
@@ -38,7 +38,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly EditorSessionUiState _sessionUiState;
 
     public EditorCollectionCardFactory(
-        SpikeDatabase database,
+        IEditorCollectionStore database,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         EditorDomainDialogService domainDialogs,

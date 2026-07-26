@@ -14,7 +14,7 @@ internal sealed class EditorFieldPostCommitEffects
     private readonly Action _refreshPreviewOptions;
 
     public EditorFieldPostCommitEffects(
-        SpikeDatabase database,
+        IEditorPresentationContextRepository database,
         Func<string?> selectedPreviewDeviceId,
         Action<string> setEditorTitle,
         Action rebuildNavigation,

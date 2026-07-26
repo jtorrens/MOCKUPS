@@ -17,7 +17,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
 
     public EditorDictionaryFieldServices(
-        SpikeDatabase database,
+        IDictionaryFieldContextRepository database,
         EditorPathBrowser pathBrowser,
         EditorDomainDialogService domainDialogs,
         Func<string?> selectedThemeId,

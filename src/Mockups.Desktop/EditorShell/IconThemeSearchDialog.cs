@@ -15,13 +15,13 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class IconThemeSearchDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IIconThemeAssetStore _database;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeSearchDialog(
         Window owner,
-        SpikeDatabase database,
+        IIconThemeAssetStore database,
         Func<string, string, Task> showInfo,
         Action<ProjectTreeNode> reloadAndSelect)
     {

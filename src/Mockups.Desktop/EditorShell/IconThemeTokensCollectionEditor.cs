@@ -12,7 +12,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class IconThemeTokensCollectionEditor
 {
-    private readonly SpikeDatabase _database;
+    private readonly IIconThemeAssetStore _database;
     private readonly bool _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<string, Task<bool>> _confirmDelete;
@@ -21,7 +21,7 @@ internal sealed class IconThemeTokensCollectionEditor
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeTokensCollectionEditor(
-        SpikeDatabase database,
+        IIconThemeAssetStore database,
         bool isDark,
         Func<string, string, Task> showInfo,
         Func<string, Task<bool>> confirmDelete,

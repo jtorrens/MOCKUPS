@@ -18,9 +18,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class IconTokenPickerDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IIconThemeAssetStore _database;
 
-    public IconTokenPickerDialog(Window owner, SpikeDatabase database)
+    public IconTokenPickerDialog(Window owner, IIconThemeAssetStore database)
     {
         _owner = owner;
         _database = database;

@@ -15,9 +15,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ThemeTokenPickerDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IThemeTokenQuery _database;
 
-    public ThemeTokenPickerDialog(Window owner, SpikeDatabase database)
+    public ThemeTokenPickerDialog(Window owner, IThemeTokenQuery database)
     {
         _owner = owner;
         _database = database;

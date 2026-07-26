@@ -10,10 +10,10 @@ internal sealed record ProductionScreenPresentationSource(
 
 internal sealed class ProductionScreenPresentationDataSource
 {
-    private readonly SpikeDatabase _database;
+    private readonly IPreviewInputRepository _database;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
-    public ProductionScreenPresentationDataSource(SpikeDatabase database)
+    public ProductionScreenPresentationDataSource(IPreviewInputRepository database)
     {
         _database = database;
         _timelineDataSource = new ModuleInstanceTimelineDataSource(database);

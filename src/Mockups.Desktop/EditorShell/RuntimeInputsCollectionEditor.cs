@@ -45,7 +45,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private Action _testValuesChanged = () => { };
 
     public RuntimeInputsCollectionEditor(
-        SpikeDatabase database,
+        IRuntimeInputsEditorStore database,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         Action<string, string?> triggerAction,

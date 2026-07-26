@@ -21,13 +21,13 @@ internal sealed record ShotManagerAssociationSelection(
 internal sealed class ShotManagerAssociationDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly string _projectId;
     private readonly IShotManagerIntegrationClient _client;
 
     public ShotManagerAssociationDialog(
         Window owner,
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         string projectId,
         IShotManagerIntegrationClient? client = null)
     {

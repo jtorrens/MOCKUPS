@@ -11,7 +11,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorDomainDialogService
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IEditorDomainDialogStore _database;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<Task<string?>> _browseSvgFile;
@@ -19,7 +19,7 @@ internal sealed class EditorDomainDialogService
 
     public EditorDomainDialogService(
         Window owner,
-        SpikeDatabase database,
+        IEditorDomainDialogStore database,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         Func<Task<string?>> browseSvgFile,

@@ -4,9 +4,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EmbeddedComponentDocumentStore
 {
-    private readonly SpikeDatabase _database;
+    private readonly IComponentDocumentStore _database;
 
-    public EmbeddedComponentDocumentStore(SpikeDatabase database)
+    public EmbeddedComponentDocumentStore(IComponentDocumentStore database)
     {
         _database = database;
     }

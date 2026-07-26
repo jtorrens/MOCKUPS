@@ -19,7 +19,7 @@ internal sealed class ShotManagerEpisodeMappingEditor
         new(StringComparer.Ordinal);
 
     public ShotManagerEpisodeMappingEditor(
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         string projectId,
         ShotManagerProductionSnapshot snapshot,
         string seasonId)

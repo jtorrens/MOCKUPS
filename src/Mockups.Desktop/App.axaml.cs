@@ -1,6 +1,8 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using System;
 
 namespace Mockups.DesktopEditorShell;
 
@@ -15,11 +17,13 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var databasePath = DesktopEditorLaunchOptions.DatabasePath
-                ?? DesktopCompositionRoot.DefaultDatabasePath();
-            desktop.MainWindow = new MainWindow(databasePath);
+            desktop.MainWindow = CreateMainWindow();
         }
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    protected virtual Window CreateMainWindow() =>
+        throw new InvalidOperationException(
+            "The desktop UI requires an executable composition host.");
 }

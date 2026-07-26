@@ -6,10 +6,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ComponentClassFieldValueService
 {
-    private readonly SpikeDatabase _database;
+    private readonly IComponentClassFieldStore _database;
     private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
 
-    public ComponentClassFieldValueService(SpikeDatabase database)
+    public ComponentClassFieldValueService(IComponentClassFieldStore database)
     {
         _database = database;
         _embeddedDocuments = new EmbeddedComponentDocumentStore(database);

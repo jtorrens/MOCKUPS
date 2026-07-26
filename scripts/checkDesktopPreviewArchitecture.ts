@@ -302,8 +302,8 @@ assertContains(
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Preview payload data source must own the factory route's database dependency",
+  "private readonly IPreviewInputRepository _database",
+  "the Preview payload data source must consume only the typed Application port",
 );
 for (const forbiddenPreviewDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -324,8 +324,8 @@ assertDoesNotContain(
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/ModuleInstanceTimelineDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the timeline data source must own the timeline route's database dependency",
+  "private readonly IModuleInstanceTimelineStore _database",
+  "the timeline data source must consume only the typed Application port",
 );
 for (const forbiddenTimelineDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -352,8 +352,8 @@ for (const actorPreviewConsumer of [
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/ActorPreviewDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Actor Preview data source must own the Actor Preview database dependency",
+  "private readonly IActorPreviewRepository _database",
+  "the Actor Preview data source must consume only the typed Application port",
 );
 for (const forbiddenActorPreviewSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -379,8 +379,8 @@ assertDoesNotContain(
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/ProductionShotContextDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Production Shot context data source must own that route's database dependency",
+  "private readonly IPreviewInputRepository _database",
+  "the Production Shot context data source must consume only the typed Application port",
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/ProductionShotContextDataSource.cs",
@@ -395,12 +395,12 @@ for (const forbiddenProductionContextSql of ["SELECT ", "INSERT ", "UPDATE ", "D
   );
 }
 for (const productionContextConsumer of [
-  "src/Mockups.Desktop/DesktopCompositionRoot.cs",
+  "src/Mockups.Desktop/DesktopApplicationServices.cs",
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(
     productionContextConsumer,
-    "new ProductionShotContextService(new ProductionShotContextDataSource(",
+    "new ProductionShotContextDataSource(",
     "navigation and Preview must compose the typed Production Shot context boundary",
   );
 }
@@ -433,8 +433,8 @@ for (const runtimeInputOptionFactory of [
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/RuntimeInputOptionsDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Runtime Input options data source must own the option route's database dependency",
+  "private readonly IDictionaryFieldContextRepository _database",
+  "the Runtime Input options data source must consume only its typed Application port",
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/RuntimeInputOptionsDataSource.cs",
@@ -511,8 +511,8 @@ for (const genericWebPreviewFile of [
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/PreviewVisualContextDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Preview visual context data source must own that route's database dependency",
+  "private readonly IPreviewInputRepository _database",
+  "the Preview visual context data source must consume only its typed Application port",
 );
 for (const forbiddenPreviewVisualContextSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -540,8 +540,8 @@ for (const forbiddenPreviewControllerRead of [
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/ProductionPreviewSessionDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Production Preview session data source must own that route's database dependency",
+  "private readonly IPreviewInputRepository _database",
+  "the Production Preview session data source must consume only its typed Application port",
 );
 for (const forbiddenProductionPreviewSessionSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -748,8 +748,8 @@ assertContains(
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/ComponentPreviewInputDataSource.cs",
-  "private readonly SpikeDatabase _database",
-  "the Component Preview input data source must own that route's database dependency",
+  "private readonly IComponentPreviewInputRepository _database",
+  "the Component Preview input data source must consume only its typed Application port",
 );
 for (const forbiddenComponentPreviewInputSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -802,8 +802,8 @@ for (const componentPreviewActionConsumer of [
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
-  "private readonly SpikeDatabase _database",
-  "the animation document store must own the editor's database dependency",
+  "private readonly IModuleInstanceAnimationStore _database",
+  "the animation document store must consume only its typed Application port",
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
@@ -873,8 +873,8 @@ for (const forbiddenTimelineMutation of ["SaveAnimationJson", "UpdateModuleInsta
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/RuntimeInputOwnerDocumentStore.cs",
-  "private readonly SpikeDatabase _database",
-  "the Runtime Input owner store must own that route's database dependency",
+  "private readonly IRuntimeInputOwnerStore _database",
+  "the Runtime Input owner store must consume only its typed Application port",
 );
 for (const forbiddenRuntimeInputOwnerStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
@@ -1659,8 +1659,8 @@ assertContains(
 }
 assertContains(
   "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",
-  "private readonly SpikeDatabase _database",
-  "the Runtime Input instance store must own that route's database dependency",
+  "private readonly IRuntimeInputInstanceStore _database",
+  "the Runtime Input instance store must consume only its typed Application port",
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",

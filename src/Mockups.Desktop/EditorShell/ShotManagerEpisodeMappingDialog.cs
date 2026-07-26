@@ -14,12 +14,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ShotManagerEpisodeMappingDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly string _projectId;
 
     public ShotManagerEpisodeMappingDialog(
         Window owner,
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         string projectId)
     {
         _owner = owner;

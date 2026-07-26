@@ -8,12 +8,12 @@ namespace Mockups.DesktopEditorShell.Integrations.ShotManager;
 
 internal sealed class ShotManagerShotCreationService
 {
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
     private readonly IShotManagerIntegrationClient _client;
     private readonly ShotManagerWorkstationRootStore _roots;
 
     public ShotManagerShotCreationService(
-        SpikeDatabase database,
+        IShotManagerProjectStore database,
         IShotManagerIntegrationClient? client = null,
         ShotManagerWorkstationRootStore? roots = null)
     {

@@ -9,10 +9,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ShotManagerShotStructureCollectionEditor
 {
-    private readonly SpikeDatabase _database;
+    private readonly IShotManagerProjectStore _database;
 
     public ShotManagerShotStructureCollectionEditor(
-        SpikeDatabase database)
+        IShotManagerProjectStore database)
     {
         _database = database;
     }

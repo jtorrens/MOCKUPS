@@ -15,7 +15,7 @@ internal sealed class EditorPathBrowser
 
     public EditorPathBrowser(
         IStorageProvider storageProvider,
-        SpikeDatabase database,
+        IEditorPresentationContextRepository database,
         Func<ProjectTreeNode?> selectedNode)
     {
         _storageProvider = storageProvider;

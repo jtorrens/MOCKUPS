@@ -18,9 +18,9 @@ internal sealed record ShotCreationDraft(
 internal sealed class ShotCreationDialog
 {
     private readonly Window _owner;
-    private readonly SpikeDatabase _database;
+    private readonly IEditorChildStore _database;
 
-    public ShotCreationDialog(Window owner, SpikeDatabase database)
+    public ShotCreationDialog(Window owner, IEditorChildStore database)
     {
         _owner = owner;
         _database = database;

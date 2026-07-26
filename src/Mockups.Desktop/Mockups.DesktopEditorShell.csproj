@@ -1,12 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <MockupsRepositoryRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../..'))</MockupsRepositoryRoot>
-    <DesktopPreviewOutputDirectory>$(MockupsRepositoryRoot)/dist/desktop-preview</DesktopPreviewOutputDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,40 +22,9 @@
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
     <ProjectReference Include="../Mockups.Domain/Mockups.Domain.csproj" />
-    <ProjectReference Include="../Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <DesktopPreviewBuildInput Include="$(MockupsRepositoryRoot)/src/**/*.ts;$(MockupsRepositoryRoot)/src/**/*.tsx;$(MockupsRepositoryRoot)/package.json;$(MockupsRepositoryRoot)/package-lock.json;$(MockupsRepositoryRoot)/tsconfig.json;$(MockupsRepositoryRoot)/scripts/buildDesktopPreview.mjs" />
-    <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs" Link="scripts/icon-themes/sync-icon-theme-token.cjs" CopyToOutputDirectory="PreserveNewest" />
-    <Content
-      Include="$(DesktopPreviewOutputDirectory)/manifest.json;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs.map;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs.map;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs.map"
-      Link="desktop-preview/%(Filename)%(Extension)"
-      CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="../../assets/system/system_icons/**/*.svg" Link="assets/system/system_icons/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <InternalsVisibleTo Include="Mockups.Desktop.Host" />
   </ItemGroup>
-
-  <Target
-    Name="BuildDesktopPreviewArtifacts"
-    BeforeTargets="PrepareForBuild"
-    Condition="'$(SkipDesktopPreviewBuild)' != 'true'"
-    Inputs="@(DesktopPreviewBuildInput)"
-    Outputs="$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtml.cjs.map;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs;$(DesktopPreviewOutputDirectory)/renderDesignPreviewHtmlServer.cjs.map;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs;$(DesktopPreviewOutputDirectory)/renderPreviewRasterServer.cjs.map">
-    <Exec
-      WorkingDirectory="$(MockupsRepositoryRoot)"
-      Command="node scripts/buildDesktopPreview.mjs --artifacts-only" />
-  </Target>
-
-  <Target
-    Name="PrepareDesktopPreview"
-    BeforeTargets="PrepareForBuild"
-    DependsOnTargets="BuildDesktopPreviewArtifacts">
-    <Exec
-      Condition="'$(SkipDesktopPreviewBuild)' != 'true'"
-      WorkingDirectory="$(MockupsRepositoryRoot)"
-      Command="node scripts/buildDesktopPreview.mjs --manifest-only" />
-    <Error
-      Condition="!Exists('$(DesktopPreviewOutputDirectory)/manifest.json')"
-      Text="Desktop Preview bundle manifest is missing. Build it with npm run desktop-preview:build or omit SkipDesktopPreviewBuild." />
-  </Target>
 </Project>
