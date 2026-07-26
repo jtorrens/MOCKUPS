@@ -8,19 +8,11 @@ internal sealed partial class SqliteProjectEngine
     public void UpdateShotField(string shotId, string fieldId, string value)
     {
         using var connection = OpenConnection();
-        if (fieldId == "shot.fps" && value == "inherited")
-        {
-            _productionOwner.ShotRepository.ClearFpsOverride(connection, shotId);
-            return;
-        }
-
-        if (fieldId == "shot.ownerActorId")
-        {
-            _productionOwner.ModuleInstanceThemeContextService.RequireShotOwnerChange(connection, shotId, value);
-        }
-
-        _productionOwner.ShotRepository.UpdateField(connection, shotId, fieldId, value);
-        if (fieldId == "shot.ownerActorId")
+        if (_productionOwner.UpdateShotField(
+                connection,
+                shotId,
+                fieldId,
+                value))
         {
             SynchronizeTimelineDurations(connection, shotId);
         }

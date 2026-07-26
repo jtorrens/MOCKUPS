@@ -473,6 +473,11 @@ internal interface IModuleVariantCatalog
     ModuleSettings GetModuleSettings(string moduleId);
 
     IReadOnlyList<ModuleVariant> GetModuleVariants(string moduleId);
+
+    string GetModuleName(string moduleId);
+
+    IReadOnlyDictionary<string, string> GetModuleNames(
+        IReadOnlyCollection<string> moduleIds);
 }
 
 internal interface IComponentClassRepository

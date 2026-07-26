@@ -13,17 +13,14 @@ internal sealed partial class SqliteProjectEngine
         string moduleInstanceId) =>
         _productionOwner.GetModuleInstanceSettings(moduleInstanceId);
 
-    public string GetModuleInstanceModuleName(string moduleInstanceId)
-    {
-        var instance = _productionOwner.ModuleInstanceRepository.Get(moduleInstanceId);
-        return _designOwner.AppModuleRepository.GetModule(instance.ModuleId).Name;
-    }
+    public string GetModuleInstanceModuleName(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceModuleName(moduleInstanceId);
 
-    public string GetModuleInstanceTransitionType(string moduleInstanceId)
-    {
-        var transition = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).TransitionJson);
-        return transition["type"]?.GetValue<string>() ?? "cut";
-    }
+    public string GetModuleInstanceTransitionType(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceTransitionType(
+            moduleInstanceId);
 
     public string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId)
     {
@@ -285,23 +282,9 @@ internal sealed partial class SqliteProjectEngine
         SynchronizeTimelineDurations(connection);
     }
 
-    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(string shotId)
-    {
-        using var connection = OpenConnection();
-        var modules = _designOwner.AppModuleRepository.QueryModules(connection)
-            .ToDictionary((module) => module.Id, (module) => module.Name, StringComparer.Ordinal);
-        return _productionOwner.ModuleInstanceRepository.QueryByShot(connection, shotId)
-            .Select((instance) => new ModuleInstanceSlot(
-                instance.Id,
-                instance.Name,
-                modules.TryGetValue(instance.ModuleId, out var moduleName)
-                    ? moduleName
-                    : throw new InvalidOperationException($"Missing module '{instance.ModuleId}'."),
-                instance.SortOrder,
-                ParseJsonObject(instance.TransitionJson)["type"]?.GetValue<string>() ?? "cut",
-                instance.DurationFrames))
-            .ToList();
-    }
+    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
+        string shotId) =>
+        _productionOwner.GetShotModuleInstanceSlots(shotId);
 
     public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
     {
@@ -376,44 +359,15 @@ internal sealed partial class SqliteProjectEngine
             shot);
     }
 
-    public ProjectTreeNode RenameModuleInstance(ProjectTreeNode node, string name)
-    {
-        if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
-            throw new InvalidOperationException("Only a Module Instance can be renamed here.");
-        var requestedName = name.Trim();
-        if (requestedName.Length == 0)
-            throw new InvalidOperationException("A Module Instance name is required.");
-        using var connection = OpenConnection();
-        _productionOwner.ModuleInstanceRepository.Rename(connection, node.Id, requestedName);
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.ModuleInstance,
-            node.Id,
-            requestedName,
-            node.Notes,
-            node.RecordClassId,
-            node.Parent);
-    }
+    public ProjectTreeNode RenameModuleInstance(
+        ProjectTreeNode node,
+        string name) =>
+        _productionOwner.RenameModuleInstance(node, name);
 
-    public void MoveModuleInstance(string moduleInstanceId, int offset)
-    {
-        if (offset == 0) return;
-
-        var current = GetModuleInstanceSettings(moduleInstanceId);
-        var slots = GetShotModuleInstanceSlots(current.ShotId).ToList();
-        var currentIndex = slots.FindIndex((slot) => slot.Id == moduleInstanceId);
-        var targetIndex = currentIndex + offset;
-        if (currentIndex < 0 || targetIndex < 0 || targetIndex >= slots.Count) return;
-
-        var currentSlot = slots[currentIndex];
-        var targetSlot = slots[targetIndex];
-        using var connection = OpenConnection();
-        _productionOwner.ModuleInstanceRepository.SwapSortOrder(
-            connection,
-            currentSlot.Id,
-            currentSlot.SortOrder,
-            targetSlot.Id,
-            targetSlot.SortOrder);
-    }
+    public void MoveModuleInstance(
+        string moduleInstanceId,
+        int offset) =>
+        _productionOwner.MoveModuleInstance(moduleInstanceId, offset);
 
     public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)
     {

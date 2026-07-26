@@ -57,11 +57,14 @@ usage, while Design alone validates and mutates the authored Variant array.
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no
 longer constructs Production repositories itself. Shot settings and portable
-render-name resolution execute in Production as well. Screen reads and
-effective Module Variant resolution execute there through
-`IModuleVariantCatalog`, a read-only contract implemented by Design and
-declared in Contracts. Production has no project reference to Design and
-cannot access its repositories or authoring operations.
+render-name resolution and Shot field writes execute in Production as well.
+Screen reads, identity, transition projection, ordering, renaming and effective
+Module Variant resolution execute there through `IModuleVariantCatalog`, a
+read-only contract implemented by Design and declared in Contracts. Batch
+module-name projection avoids per-Screen database reads. Production has no
+project reference to Design and cannot access its repositories or authoring
+operations. Composition invokes timeline synchronization only after the
+Production owner reports that a Shot owner change requires it.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

@@ -21,6 +21,22 @@ internal sealed partial class SqliteDesignOwner
             record.MetadataJson);
     }
 
+    public string GetModuleName(string moduleId) =>
+        _appModuleRepository.GetModule(moduleId).Name;
+
+    public IReadOnlyDictionary<string, string> GetModuleNames(
+        IReadOnlyCollection<string> moduleIds)
+    {
+        var requested = moduleIds.ToHashSet(StringComparer.Ordinal);
+        using var connection = OpenConnection();
+        return _appModuleRepository.QueryModules(connection)
+            .Where((module) => requested.Contains(module.Id))
+            .ToDictionary(
+                (module) => module.Id,
+                (module) => module.Name,
+                StringComparer.Ordinal);
+    }
+
     public void UpdateModuleDesignPreviewJson(
         string moduleId,
         string designPreviewJson) =>

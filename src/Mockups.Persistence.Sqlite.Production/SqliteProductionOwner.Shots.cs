@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -63,5 +64,34 @@ internal sealed partial class SqliteProductionOwner
             "episode");
         var shotSlug = SlugOrName(shot.Slug, shot.Name, "shot");
         return $"{projectSlug}_{episodeSlug}_{shotSlug}_v{Math.Max(0, shot.Version):00}";
+    }
+
+    internal bool UpdateShotField(
+        SqliteConnection connection,
+        string shotId,
+        string fieldId,
+        string value)
+    {
+        if (fieldId == "shot.fps" && value == "inherited")
+        {
+            _shotRepository.ClearFpsOverride(connection, shotId);
+            return false;
+        }
+
+        var changesOwner = fieldId == "shot.ownerActorId";
+        if (changesOwner)
+        {
+            _moduleInstanceThemeContextService.RequireShotOwnerChange(
+                connection,
+                shotId,
+                value);
+        }
+
+        _shotRepository.UpdateField(
+            connection,
+            shotId,
+            fieldId,
+            value);
+        return changesOwner;
     }
 }
