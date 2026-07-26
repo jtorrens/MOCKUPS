@@ -28,7 +28,7 @@ Every semantic rule has one owner:
 - final painting: generic renderer;
 - shell composition: `MainWindow`.
 
-Before adding a helper, inspect `spikes/desktop-editor-shell/Common` and the
+Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the owner when behavior is
 generic. A one-off exception is not an implementation shortcut.
 

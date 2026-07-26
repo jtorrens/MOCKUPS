@@ -704,7 +704,7 @@ function prepareIntegrationFixture(
   );
   const fieldDefinitionPath = path.join(
     repositoryPath,
-    "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+    "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
   );
   const registryPath = path.join(
     repositoryPath,

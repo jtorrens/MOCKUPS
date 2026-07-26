@@ -83,7 +83,7 @@ internal static class PreviewDebugLog
         while (directory is not null)
         {
             if (File.Exists(Path.Combine(directory.FullName, "package.json"))
-                && Directory.Exists(Path.Combine(directory.FullName, "spikes", "desktop-editor-shell")))
+                && Directory.Exists(Path.Combine(directory.FullName, "src", "Mockups.Desktop")))
             {
                 return directory.FullName;
             }

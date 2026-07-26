@@ -13,7 +13,7 @@ assets/*/media/
 *.db-shm
 !data/desktop-editor-spike.sqlite
 !data/desktop-editor-spike.schema-v1.sqlite
-spikes/desktop-editor-shell/data/window-state.json
+src/Mockups.Desktop/data/window-state.json
 artifacts/
 data/window-state.json
 logs/

@@ -292,8 +292,8 @@ function integrationFixture() {
   for (const directory of [
     "data",
     "src/desktop-preview",
-    "spikes/desktop-editor-shell/EditorShell",
-    "spikes/desktop-editor-shell/Data",
+    "src/Mockups.Desktop/EditorShell",
+    "src/Mockups.Desktop/Data",
     "tests/animation",
     "scaffolding",
   ]) {
@@ -303,15 +303,15 @@ function integrationFixture() {
   copyFileSync(parityDatabasePath(repositoryRoot), database);
   for (const relativePath of [
     "src/desktop-preview/desktopPreviewManifest.json",
-    "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+    "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
   ]) {
     copyFileSync(path.join(repositoryRoot, relativePath), path.join(root, relativePath));
   }
   for (const relativePath of [
     "src/desktop-preview/generatedModuleScaffoldRegistry.ts",
-    "spikes/desktop-editor-shell/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs",
-    "spikes/desktop-editor-shell/Data/GeneratedModuleScaffoldConfigRegistry.cs",
-    "spikes/desktop-editor-shell/EditorShell/GeneratedModuleScaffoldEmbeddedSlots.cs",
+    "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs",
+    "src/Mockups.Desktop/Data/GeneratedModuleScaffoldConfigRegistry.cs",
+    "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldEmbeddedSlots.cs",
   ]) {
     writeFileSync(path.join(root, relativePath), readFileSync(path.join(repositoryRoot, relativePath)));
   }

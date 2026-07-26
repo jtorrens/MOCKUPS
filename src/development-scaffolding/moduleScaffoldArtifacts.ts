@@ -14,11 +14,11 @@ export const integratedModuleSpecRoot = "scaffolding/modules";
 export const generatedModuleRegistryPath =
   "src/desktop-preview/generatedModuleScaffoldRegistry.ts";
 export const generatedModuleFieldCatalogPath =
-  "spikes/desktop-editor-shell/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs";
+  "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs";
 export const generatedModuleConfigRegistryPath =
-  "spikes/desktop-editor-shell/Data/GeneratedModuleScaffoldConfigRegistry.cs";
+  "src/Mockups.Desktop/Data/GeneratedModuleScaffoldConfigRegistry.cs";
 export const generatedModuleEmbeddedSlotsPath =
-  "spikes/desktop-editor-shell/EditorShell/GeneratedModuleScaffoldEmbeddedSlots.cs";
+  "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldEmbeddedSlots.cs";
 
 export function loadIntegratedModuleScaffoldSpecs(
   repositoryRoot: string,

@@ -397,7 +397,7 @@ export function loadModuleScaffoldInventory(
   const modules = requiredObject(manifest.modules, "Desktop Preview manifest modules");
   const components = requiredObject(manifest.components, "Desktop Preview manifest components");
   const valueKinds = parseValueKinds(readFileSync(
-    repositoryPath(repositoryRoot, "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs"),
+    repositoryPath(repositoryRoot, "src/Mockups.Desktop/EditorShell/FieldDefinition.cs"),
     "utf8",
   ));
   const database = new Database(databasePath, { fileMustExist: true, readonly: true });
@@ -549,7 +549,7 @@ export function createModuleScaffoldPlan(
         violations.push(`Focused test '${owner.path}' must be under tests/animation.`);
       }
     } else if (owner.role === "desktopConfigContract") {
-      if (!owner.path.startsWith("spikes/desktop-editor-shell/Data/")
+      if (!owner.path.startsWith("src/Mockups.Desktop/Data/")
           || !owner.path.endsWith("ModuleConfigContract.cs")) {
         violations.push(`Desktop config owner '${owner.path}' has an invalid route.`);
       }
@@ -613,7 +613,7 @@ export function createModuleScaffoldPlan(
       },
       {
         owner: "dictionary",
-        path: "spikes/desktop-editor-shell/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs",
+        path: "src/Mockups.Desktop/EditorShell/GeneratedModuleScaffoldFieldCatalog.cs",
         description: `Register ${spec.dictionaryFields.length} Module dictionary fields.`,
       },
       {
@@ -793,7 +793,7 @@ export function moduleOwnerTargets(spec: ModuleScaffoldSpec) {
     {
       role: "desktopConfigContract" as const,
       label: "desktop config contract",
-      path: `spikes/desktop-editor-shell/Data/${typeName}ModuleConfigContract.cs`,
+      path: `src/Mockups.Desktop/Data/${typeName}ModuleConfigContract.cs`,
       requiredTerm: `${typeName}ModuleConfigContract`,
     },
     {

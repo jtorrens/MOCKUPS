@@ -40,8 +40,8 @@ test("display wake policy stays outside the Avalonia application", () => {
   const program = readFileSync(
     path.join(
       repositoryRoot,
-      "spikes",
-      "desktop-editor-shell",
+      "src",
+      "Mockups.Desktop",
       "Program.cs",
     ),
     "utf8",

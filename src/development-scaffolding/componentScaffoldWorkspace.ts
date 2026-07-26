@@ -352,8 +352,8 @@ export function verifyComponentScaffoldImplementation(
   checked.push(...registryPaths);
 
   const fieldSources = [
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
-    "spikes/desktop-editor-shell/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
   ]
     .map((candidate) => scaffoldTarget(repositoryRoot, candidate))
     .filter(existsSync)
@@ -378,7 +378,7 @@ export function verifyComponentScaffoldImplementation(
     }
   }
   checked.push(
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
     generatedDesktopFieldCatalogPath,
   );
 
@@ -478,7 +478,7 @@ function ownerTargets(spec: ComponentScaffoldSpec) {
     },
     {
       label: "desktop config contract",
-      path: `spikes/desktop-editor-shell/Data/${typeName}ComponentConfigContract.cs`,
+      path: `src/Mockups.Desktop/Data/${typeName}ComponentConfigContract.cs`,
       requiredTerm: `${typeName}ComponentConfigContract`,
     },
     {

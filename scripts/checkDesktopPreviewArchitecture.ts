@@ -178,7 +178,7 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
   });
 }
 
-for (const directory of ["src/desktop-preview", "spikes/desktop-editor-shell/Common", "spikes/desktop-editor-shell/Data", "spikes/desktop-editor-shell/EditorShell"]) {
+for (const directory of ["src/desktop-preview", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
   for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
     const source = readText(relative(filePath));
     for (const retired of retiredTimeFields) {
@@ -186,12 +186,15 @@ for (const directory of ["src/desktop-preview", "spikes/desktop-editor-shell/Com
     }
   }
 }
-for (const retired of retiredTimeFields) {
-  assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/window-state.json",
-    retired,
-    `session state must not retain retired time field ${retired}`,
-  );
+const desktopWindowStatePath = "src/Mockups.Desktop/data/window-state.json";
+if (existsSync(path.join(root, desktopWindowStatePath))) {
+  for (const retired of retiredTimeFields) {
+    assertDoesNotContain(
+      desktopWindowStatePath,
+      retired,
+      `session state must not retain retired time field ${retired}`,
+    );
+  }
 }
 
 function importTargets(source: string) {
@@ -397,7 +400,7 @@ for (const requiredTerm of [
   "MOCKUPS_VALIDATION_DATABASE",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    "tests/Mockups.Desktop.Tests/Program.cs",
     requiredTerm,
     "the desktop test owner must keep fail-closed focused selection, isolated groups and parity-path injection",
   );
@@ -635,10 +638,10 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
 }
 
 const currentRepositoryFiles = walkFilesByExtension(
-  path.join(root, "spikes", "desktop-editor-shell", "Data"),
+  path.join(root, "src", "Mockups.Desktop", "Data"),
   [".cs"],
 );
-const retiredComponentDefaultsPath = "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassDefaults.cs";
+const retiredComponentDefaultsPath = "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassDefaults.cs";
 if (existsSync(path.join(root, retiredComponentDefaultsPath))) {
   addViolation(
     retiredComponentDefaultsPath,
@@ -672,7 +675,7 @@ for (const retiredModuleFactoryTerm of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "SpikeDatabase",
   "the Preview payload factory must consume only its typed data source",
 );
@@ -682,59 +685,59 @@ for (const forbiddenProductionPayloadRepair of [
   'message["actor"] = string.IsNullOrWhiteSpace(actorId)',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
     forbiddenProductionPayloadRepair,
     `Production payload preparation must not restore repaired owner/animation data (${forbiddenProductionPayloadRepair})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "ModuleRuntimeDocumentContracts.PrepareProduction",
   "Production payload preparation must route Module-owned document semantics before generic reference resolution",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Preview payload data source must own the factory route's database dependency",
 );
 for (const forbiddenPreviewDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
     forbiddenPreviewDataSql,
     `the Preview payload data source must compose current services rather than owning SQL (${forbiddenPreviewDataSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_previewPayloadData = new DesignPreviewPayloadDataSource(database)",
   "the Preview controller must reuse one typed payload data source",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimeline.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceTimeline.cs",
   "SpikeDatabase",
   "the common Module Instance timeline must consume only its typed data source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceTimelineDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the timeline data source must own the timeline route's database dependency",
 );
 for (const forbiddenTimelineDataSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ModuleInstanceTimelineDataSource.cs",
     forbiddenTimelineDataSql,
     `the timeline data source must compose current services rather than owning SQL (${forbiddenTimelineDataSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "_timelineDataSource = new ModuleInstanceTimelineDataSource(database)",
   "the Preview payload data source must reuse the typed timeline boundary",
 );
 for (const actorPreviewConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/ActorPreviewInputFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/ActorAvatarPreviewFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewRecordInputResolver.cs",
+  "src/Mockups.Desktop/EditorShell/ActorPreviewInputFactory.cs",
+  "src/Mockups.Desktop/EditorShell/ActorAvatarPreviewFactory.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewRecordInputResolver.cs",
 ]) {
   assertDoesNotContain(
     actorPreviewConsumer,
@@ -743,52 +746,52 @@ for (const actorPreviewConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ActorPreviewDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ActorPreviewDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Actor Preview data source must own the Actor Preview database dependency",
 );
 for (const forbiddenActorPreviewSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ActorPreviewDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ActorPreviewDataSource.cs",
     forbiddenActorPreviewSql,
     `the Actor Preview data source must compose current services rather than owning SQL (${forbiddenActorPreviewSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "_actorDataSource = new ActorPreviewDataSource(database)",
   "the Preview payload boundary must compose the typed Actor Preview source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorInlinePreviewControllerFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInlinePreviewControllerFactory.cs",
   "new ActorPreviewDataSource(database)",
   "the inline Actor avatar route must compose the typed Actor Preview source",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextService.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionShotContextService.cs",
   "SpikeDatabase",
   "Production Shot context policy must consume only its typed data source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionShotContextDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Production Shot context data source must own that route's database dependency",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionShotContextDataSource.cs",
   "_actorDataSource = new ActorPreviewDataSource(database)",
   "Production Shot context must reuse the typed Actor context boundary",
 );
 for (const forbiddenProductionContextSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ProductionShotContextDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ProductionShotContextDataSource.cs",
     forbiddenProductionContextSql,
     `the Production Shot context data source must compose current services rather than owning SQL (${forbiddenProductionContextSql})`,
   );
 }
 for (const productionContextConsumer of [
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(
     productionContextConsumer,
@@ -803,19 +806,19 @@ for (const forbiddenProductionPayloadFallback of [
   "catch (InvalidOperationException)",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
     forbiddenProductionPayloadFallback,
     `Preview payload Production context must not restore a selector or empty-value fallback (${forbiddenProductionPayloadFallback})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "RequiredProductionActorContext(node)",
   "Preview payload Production context must require the exact Shot owner Actor route",
 );
 for (const runtimeInputOptionFactory of [
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputDynamicOptions.cs",
 ]) {
   assertDoesNotContain(
     runtimeInputOptionFactory,
@@ -824,25 +827,25 @@ for (const runtimeInputOptionFactory of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputOptionsDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input options data source must own the option route's database dependency",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputOptionsDataSource.cs",
   "_actorDataSource = new ActorPreviewDataSource(database)",
   "Runtime Input Actor options must reuse the typed Actor boundary",
 );
 for (const forbiddenRuntimeInputOptionSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOptionsDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputOptionsDataSource.cs",
     forbiddenRuntimeInputOptionSql,
     `the Runtime Input options data source must compose current services rather than owning SQL (${forbiddenRuntimeInputOptionSql})`,
   );
 }
 for (const runtimeInputOptionConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
 ]) {
   assertContains(
     runtimeInputOptionConsumer,
@@ -858,7 +861,7 @@ for (const strictDynamicOptionOwner of [
   "optionsDataSource.RuntimeComponentVariantName(rawLabel)",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputDynamicOptions.cs",
     strictDynamicOptionOwner,
     `dynamic Runtime options must keep strict owner rule '${strictDynamicOptionOwner}'`,
   );
@@ -871,29 +874,29 @@ for (const retiredDynamicOptionFallback of [
   ".Where((option) => !string.IsNullOrWhiteSpace(option.Value))",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputDynamicOptions.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputDynamicOptions.cs",
     retiredDynamicOptionFallback,
     `dynamic Runtime options must not filter or reconstruct current values (${retiredDynamicOptionFallback})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "RuntimeInputDynamicOptions.Resolve(_inputOptionsData, input, item)",
   "Runtime option action normalization must consume the shared strict option projection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/DevicePreviewMetrics.cs",
+  "src/Mockups.Desktop/Common/DevicePreviewMetrics.cs",
   "internal sealed record DevicePreviewMetrics(",
   "resolved Device Preview metrics must be a common top-level DTO",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Records.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Records.cs",
   "record DevicePreviewMetrics",
   "resolved Device Preview metrics must not be nested in the database facade",
 );
 for (const genericWebPreviewFile of [
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
 ]) {
   assertDoesNotContain(
     genericWebPreviewFile,
@@ -902,19 +905,19 @@ for (const genericWebPreviewFile of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/PreviewVisualContextDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/PreviewVisualContextDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Preview visual context data source must own that route's database dependency",
 );
 for (const forbiddenPreviewVisualContextSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/PreviewVisualContextDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/PreviewVisualContextDataSource.cs",
     forbiddenPreviewVisualContextSql,
     `the Preview visual context data source must compose current services rather than owning SQL (${forbiddenPreviewVisualContextSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_visualContextData = new PreviewVisualContextDataSource(database)",
   "the Preview controller must reuse one typed visual context data source",
 );
@@ -925,105 +928,105 @@ for (const forbiddenPreviewControllerRead of [
   "_database.GetDevicePreviewMetrics",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
     forbiddenPreviewControllerRead,
     `the Preview controller must use its typed visual context boundary (${forbiddenPreviewControllerRead})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewSessionDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionPreviewSessionDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Production Preview session data source must own that route's database dependency",
 );
 for (const forbiddenProductionPreviewSessionSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ProductionPreviewSessionDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ProductionPreviewSessionDataSource.cs",
     forbiddenProductionPreviewSessionSql,
     `the Production Preview session data source must compose current services rather than owning SQL (${forbiddenProductionPreviewSessionSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_productionPreviewData = new ProductionPreviewSessionDataSource(database)",
   "the Preview controller must reuse one typed Production session data source",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private readonly SpikeDatabase _database",
   "the Preview controller must not retain a general database handle",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_database.",
   "the Preview controller must not bypass its typed data sources",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "GetShotModuleInstanceSlots",
   "the Preview controller must reuse the ordered stable ids from the timeline data source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_timelineDataSource.ShotSlotIds(shotId)",
   "the Preview controller must reuse the typed timeline slot boundary",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_previewController.BeginSelectionTransition();",
   "the shell must delegate immediate Preview selection feedback to the Preview controller",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_previewController.ScheduleSelectionRefresh();",
   "the shell must delegate the deferred selection refresh to the Preview controller",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "DispatcherPriority.Background",
   "the Preview controller must leave a shell render opportunity before resolving a selected Preview",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   'ShowPreviewLoading("Preparing playback…")',
   "Production Play must present immediate loading feedback before resolving its frame sequence",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   'try\n        {\n            ShowPreviewLoading("Preparing playback…");\n            await YieldPreviewPreparationAsync(cancellation.Token);',
   "the first Production preparation yield must remain inside cancellation cleanup",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private sealed record PreparedShotPlayback(",
   "prepared Production playback must remain explicit session-only controller state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "SHA256.HashData(Encoding.UTF8.GetBytes(signatureJson))",
   "prepared Production playback reuse must use an exact cryptographic request fingerprint",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "await YieldPreviewPreparationAsync(cancellationToken);",
   "Production playback frame resolution must yield to the native Preview host between frames",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_previewLoadingScrim.Show(message, CancelPreviewLoading);",
   "Production playback feedback must use the native Preview-host loading surface",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private readonly PreviewPreparationCancellation _shotPlaybackPreparation = new();",
   "stale Production playback preparation must use the shared latest-operation cancellation owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "var operation = _designPlaybackPreparation.Begin();",
   "isolated Design playback preparation must have an explicit cancellable operation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "PreparePlaybackFramesAsync(\n                requestedAction,\n                operation.Token,\n                PlaybackFrameCacheOwner.Design)",
   "isolated Design HTML and raster preparation must receive the active cancellation token",
 );
@@ -1034,13 +1037,13 @@ for (const requiredDesignReplayOwner of [
   '"preview.playback.design-cache-hit"',
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
     requiredDesignReplayOwner,
     `isolated Design replay must retain and reuse only an exact prepared request (${requiredDesignReplayOwner})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "ResetCompletedActionForReplay(action);",
   "a completed Runtime action must reconstruct its captured origin before replay",
 );
@@ -1049,23 +1052,23 @@ for (const requiredPlaybackBinding of [
   "control.DetachedFromVisualTree += (_, _) => Unsubscribe();",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/PreviewPlaybackStateBinding.cs",
+    "src/Mockups.Desktop/Common/PreviewPlaybackStateBinding.cs",
     requiredPlaybackBinding,
     `common playback controls must resume state observation after visual-tree reattachment (${requiredPlaybackBinding})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  "tests/Mockups.Desktop.Tests/Program.cs",
   "Runtime action controls reactivate after playback and visual-tree reattachment",
   "desktop characterization must cover generic action-control reactivation",
 );
 assertContains(
-  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  "tests/Mockups.Desktop.Tests/Program.cs",
   "List Presence replays the same initial-to-final action and restores its origin",
   "List Presence characterization must cover repeat and Restore semantics",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private void CancelPlaybackPreparation()",
   "selection and data refresh must cancel stale Design or Production playback preparation",
 );
@@ -1077,23 +1080,23 @@ for (const requiredPreviewEscapeRoute of [
   "_designInputsPanel.StopActivePlayback();",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
     requiredPreviewEscapeRoute,
     `Esc must stop current Preview preparation or playback regardless of focused editor control (${requiredPreviewEscapeRoute})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_previewBusyHost.IsVisible = true;\n        _previewLoadingScrim.Show(message, CancelPreviewLoading);",
   "the native loading scrim must become visible before it requests keyboard focus",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "public bool StopActivePlayback()",
   "isolated Design playback must expose one controller-owned stop operation",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "PreparePlaybackFramesAsync(requestedAction, CancellationToken.None)",
   "visible isolated Design preparation must not advertise cancellation while using a non-cancellable token",
 );
@@ -1105,17 +1108,17 @@ for (const requiredPreviewPreparationState of [
   "preparedSignature.Equals(requestSignature, StringComparison.Ordinal)",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/PreviewPreparationSessionState.cs",
+    "src/Mockups.Desktop/EditorShell/PreviewPreparationSessionState.cs",
     requiredPreviewPreparationState,
     `Preview preparation session state must retain exact latest-operation semantics (${requiredPreviewPreparationState})`,
   );
 }
 for (const redundantNumericTextConfigurationFile of [
-  "spikes/desktop-editor-shell/EditorShell/DictionaryTextBoxFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryAlignmentPlacementControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorShellSettingsDialog.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryTextBoxFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryAlphaControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryNumberSliderControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryAlignmentPlacementControl.cs",
+  "src/Mockups.Desktop/EditorShell/EditorShellSettingsDialog.cs",
 ]) {
   assertDoesNotContain(
     redundantNumericTextConfigurationFile,
@@ -1124,62 +1127,62 @@ for (const redundantNumericTextConfigurationFile of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorNumericUpDownBehavior.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNumericUpDownBehavior.cs",
   "EditorTextBoxBehavior.Configure(textBox);",
   "NumericUpDown inner text surfaces must not repeat configuration already owned by the numeric style",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "public void BeginContextUpdate(string message)",
   "the resident Preview pane must own immediate loading presentation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewInputDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewInputDataSource.cs",
   "private readonly SpikeDatabase _database",
   "the Component Preview input data source must own that route's database dependency",
 );
 for (const forbiddenComponentPreviewInputSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewInputDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentPreviewInputDataSource.cs",
     forbiddenComponentPreviewInputSql,
     `the Component Preview input data source must compose current services rather than owning SQL (${forbiddenComponentPreviewInputSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "_previewInputData = new ComponentPreviewInputDataSource(database)",
   "the isolated Preview input session must reuse one typed input data source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "_inputOptionsData = new RuntimeInputOptionsDataSource(database)",
   "the isolated Preview input session must reuse the Runtime Input options boundary",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "private readonly SpikeDatabase _database",
   "the isolated Preview input session must not retain a general database handle",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "_database.",
   "the isolated Preview input session must not bypass its typed data sources",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "Func<string, JsonObject> componentVariantRuntimeContract",
   "the action interpreter must receive exact embedded contracts without persistence coupling",
 );
 for (const forbiddenActionPersistenceDependency of ["SpikeDatabase", "Mockups.DesktopEditorShell.Data"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
     forbiddenActionPersistenceDependency,
     `the action interpreter must remain persistence-independent (${forbiddenActionPersistenceDependency})`,
   );
 }
 for (const componentPreviewActionConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
 ]) {
   assertContains(
     componentPreviewActionConsumer,
@@ -1188,30 +1191,30 @@ for (const componentPreviewActionConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the animation document store must own the editor's database dependency",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
   "private readonly ModuleInstanceTimelineDataSource _timelineDataSource",
   "the animation document store must reuse the common timeline data source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
   "_database.UpdateModuleInstanceAnimationJson(moduleInstanceId, animationJson)",
   "the animation document store must delegate one explicit complete document write",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/ModuleInstanceAnimationDocumentContract.cs",
+  "src/Mockups.Desktop/Common/ModuleInstanceAnimationDocumentContract.cs",
   "keyframes must be stored in ascending frame order",
   "the common animation document owner must require persisted owner-local keyframe order",
 );
 for (const animationDocumentConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocument.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocument.cs",
 ]) {
   assertContains(
     animationDocumentConsumer,
@@ -1220,52 +1223,52 @@ for (const animationDocumentConsumer of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "ValidateAnimationJson",
   "the data facade must not retain a parallel animation document validator",
 );
 for (const forbiddenAnimationDocumentStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocumentStore.cs",
     forbiddenAnimationDocumentStoreSql,
     `the animation document store must delegate through current services rather than owning SQL (${forbiddenAnimationDocumentStoreSql})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "_animationDocuments = new ModuleInstanceAnimationDocumentStore(database, _timelineDataSource)",
   "the animation editor must reuse one typed document store and timeline source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "_animationDocuments.SaveAnimationJson(node.Id, document.ToJson())",
   "the animation editor must hand the store one complete prepared animation document",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "private readonly SpikeDatabase _database",
   "the animation editor must not retain a general database handle",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "_database.",
   "the animation editor must not bypass its typed document and timeline boundaries",
 );
 for (const forbiddenTimelineMutation of ["SaveAnimationJson", "UpdateModuleInstanceAnimationJson"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimelineDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/ModuleInstanceTimelineDataSource.cs",
     forbiddenTimelineMutation,
     `the common timeline source must remain read-only (${forbiddenTimelineMutation})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputOwnerDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input owner store must own that route's database dependency",
 );
 for (const forbiddenRuntimeInputOwnerStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputOwnerDocumentStore.cs",
     forbiddenRuntimeInputOwnerStoreSql,
     `the Runtime Input owner store must delegate through current services rather than owning SQL (${forbiddenRuntimeInputOwnerStoreSql})`,
   );
@@ -1278,28 +1281,28 @@ for (const forbiddenRuntimeInputOwnerSemantic of [
   "Avalonia",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputOwnerDocumentStore.cs",
     forbiddenRuntimeInputOwnerSemantic,
     `the Runtime Input owner store must not absorb editor semantics (${forbiddenRuntimeInputOwnerSemantic})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputOwnerDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputOwnerDocumentStore.cs",
   "A Module Instance has no isolated Design Preview document.",
   "a Screen must reject isolated Design Preview persistence explicitly",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "_ownerDocuments = new RuntimeInputOwnerDocumentStore(database)",
   "the Runtime Inputs editor must reuse one typed owner document store",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "var source = _ownerDocuments.Load(node)",
   "Runtime Input owner resolution must delegate to the typed store",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "_previewInputData.ComponentVariantConfig(componentVariantReference)",
   "the Runtime Inputs editor must reuse the Component Preview config boundary",
 );
@@ -1316,18 +1319,18 @@ for (const forbiddenRuntimeInputOwnerRead of [
   "_database.UpdateComponentClassDesignPreviewJson",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
     forbiddenRuntimeInputOwnerRead,
     `the Runtime Inputs editor must use its typed owner/config boundaries (${forbiddenRuntimeInputOwnerRead})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "var frameUpdateGate = new TimelineFrameUpdateGate()",
   "the animation editor must gate its own synchronous Preview frame feedback",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "if (frameUpdateGate.IsActive) return;",
   "the animation surface must not rebuild during its own captured frame gesture",
 );
@@ -1340,28 +1343,28 @@ for (const forbiddenTimelineFrameGateDependency of [
   "RuntimeAnimationFrameOrigin",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/TimelineFrameUpdateGate.cs",
+    "src/Mockups.Desktop/Common/TimelineFrameUpdateGate.cs",
     forbiddenTimelineFrameGateDependency,
     `the timeline frame update gate must remain a generic synchronous boundary (${forbiddenTimelineFrameGateDependency})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
   "_contextData = new DictionaryFieldContextDataSource(database)",
   "the shared dictionary service must compose one typed persisted-context source",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
   "private readonly SpikeDatabase _database",
   "the shared dictionary service must not retain the general database facade",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
   "_database.",
   "the shared dictionary service must use its typed context source",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
   "_contextData.IconTokenAssetPath(IconThemeId(), singleToken)",
   "dictionary icon presentation must consume a resolved token asset path",
 );
@@ -1381,7 +1384,7 @@ for (const forbiddenDictionaryContextDependency of [
   "Renderer",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldContextDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryFieldContextDataSource.cs",
     forbiddenDictionaryContextDependency,
     `the dictionary context source must remain a read-only data boundary (${forbiddenDictionaryContextDependency})`,
   );
@@ -1394,33 +1397,33 @@ for (const forbiddenEmbeddedContextDependency of [
   "CommitFieldValue(",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorEmbeddedContext.cs",
+    "src/Mockups.Desktop/EditorShell/EditorEmbeddedContext.cs",
     forbiddenEmbeddedContextDependency,
     `embedded editor context must remain structural and persistence-independent (${forbiddenEmbeddedContextDependency})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "_embeddedDocuments = new EmbeddedComponentDocumentStore(database)",
   "embedded breadcrumbs must use the typed Component document store",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "private readonly SpikeDatabase _database",
   "the header controller must not retain the general database facade",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "_database.",
   "the header controller must use typed data boundaries",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldValueService.cs",
   "_embeddedDocuments.CreateFieldValue(context, embeddedFieldId)",
   "embedded field reads must delegate to the typed document store",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldValueService.cs",
   "_embeddedDocuments.CommitFieldValue(context, embeddedFieldId, value)",
   "embedded field writes must delegate to the typed document store",
 );
@@ -1439,14 +1442,14 @@ for (const forbiddenEmbeddedDocumentStoreDependency of [
   "JsonNode.Parse",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/EmbeddedComponentDocumentStore.cs",
     forbiddenEmbeddedDocumentStoreDependency,
     `the embedded Component document store must remain a narrow domain boundary (${forbiddenEmbeddedDocumentStoreDependency})`,
   );
 }
 for (const editorPresentationContextConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/EditorPathBrowser.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorFieldPostCommitEffects.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPathBrowser.cs",
+  "src/Mockups.Desktop/EditorShell/EditorFieldPostCommitEffects.cs",
 ]) {
   assertContains(
     editorPresentationContextConsumer,
@@ -1480,15 +1483,15 @@ for (const forbiddenEditorPresentationContextDependency of [
   "Resolver",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorPresentationContextDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPresentationContextDataSource.cs",
     forbiddenEditorPresentationContextDependency,
     `the editor presentation context source must remain a narrow read boundary (${forbiddenEditorPresentationContextDependency})`,
   );
 }
 for (const retiredSystemBarItemEditorPath of [
-  "spikes/desktop-editor-shell/EditorShell/StatusBarItemsCollectionEditor.cs",
-  "spikes/desktop-editor-shell/EditorShell/NavigationBarItemsCollectionEditor.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.StatusNavigationComponents.cs",
+  "src/Mockups.Desktop/EditorShell/StatusBarItemsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/NavigationBarItemsCollectionEditor.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.StatusNavigationComponents.cs",
 ]) {
   if (existsSync(path.join(root, retiredSystemBarItemEditorPath))) {
     addViolation(
@@ -1498,43 +1501,43 @@ for (const retiredSystemBarItemEditorPath of [
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   '["component.statusBar.items"] = new',
   "Status Bar Items must be a catalogued dictionary field",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   '["component.navigationBar.items"] = new',
   "Navigation Bar Items must be a catalogued dictionary field",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   /StatusBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
   "Status Bar Items must remain a fixed structured collection",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   /NavigationBarItemsCollection[\s\S]*?CanEditStructure:\s*false/,
   "Navigation Bar Items must remain a fixed structured collection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
   "canEditStructure: _definition.IsEditable && collection.CanEditStructure",
   "fixed collection structure and Variant locks must be declared through generic collection metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
   "IsEditable: _definition.IsEditable",
   "structured item dictionary fields must inherit the owner Variant lock",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
   "return new JsonArray();",
   "structured collection parsing must reject invalid current values instead of returning an empty array",
 );
 for (const [componentPath, contractName] of [
-  ["spikes/desktop-editor-shell/Data/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
-  ["spikes/desktop-editor-shell/Data/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
+  ["src/Mockups.Desktop/Data/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
+  ["src/Mockups.Desktop/Data/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
 ] as const) {
   assertContains(
     componentPath,
@@ -1594,7 +1597,7 @@ for (const [systemBarRenderablePath, forbiddenFallbacks] of [
     }
   }
 }
-const retiredSimplifiedEditorPath = "spikes/desktop-editor-shell/EditorShell/EditorSimplifiedProjection.cs";
+const retiredSimplifiedEditorPath = "src/Mockups.Desktop/EditorShell/EditorSimplifiedProjection.cs";
 if (existsSync(path.join(root, retiredSimplifiedEditorPath))) {
   addViolation(
     retiredSimplifiedEditorPath,
@@ -1602,14 +1605,14 @@ if (existsSync(path.join(root, retiredSimplifiedEditorPath))) {
   );
 }
 const activeEditorShellSources = walkFilesByExtension(
-  path.join(root, "spikes/desktop-editor-shell/EditorShell"),
+  path.join(root, "src/Mockups.Desktop/EditorShell"),
   [".cs"],
 );
 const activeComponentVariantSources = [
   ...walkFilesByExtension(path.join(root, "src/desktop-preview"), [".ts", ".tsx"]),
-  ...walkFilesByExtension(path.join(root, "spikes/desktop-editor-shell/Data"), [".cs"]),
+  ...walkFilesByExtension(path.join(root, "src/Mockups.Desktop/Data"), [".cs"]),
   ...activeEditorShellSources,
-  path.join(root, "spikes/desktop-editor-shell/MainWindow.axaml.cs"),
+  path.join(root, "src/Mockups.Desktop/MainWindow.axaml.cs"),
 ];
 for (const retiredComponentVariantTerm of [
   "ComponentPreset",
@@ -1675,15 +1678,15 @@ for (const moduleConfigContract of [
   "LockScreenModuleConfigContract",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/CurrentModuleConfigContract.cs",
+    "src/Mockups.Desktop/Data/CurrentModuleConfigContract.cs",
     `${moduleConfigContract}.Validate(config, context)`,
     `current Module config routing must delegate to ${moduleConfigContract}`,
   );
 }
 for (const moduleConfigConsumer of [
-  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
 ]) {
   assertContains(
     moduleConfigConsumer,
@@ -1699,25 +1702,25 @@ for (const retiredModuleConfigFallback of [
   "JsonBoolString(",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
     retiredModuleConfigFallback,
     `Module config editing must not retain a silent document fallback (${retiredModuleConfigFallback})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
   "variant.Config,\n                $\"Module Variant",
   "the Module repository must validate every complete Variant config through its owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/ModuleAppearanceModeContract.cs",
+  "src/Mockups.Desktop/Common/ModuleAppearanceModeContract.cs",
   "public static string Resolve(JsonObject config, string inheritedMode, string owner)",
   "Module appearance mode validation and inheritance must have one common owner",
 );
 for (const appearanceModeConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(
     appearanceModeConsumer,
@@ -1726,48 +1729,48 @@ for (const appearanceModeConsumer of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
   'value is "light" or "dark" ? value : "inherit"',
   "Module appearance writes must reject unknown values instead of coercing them to inherit",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   'config["appearanceMode"]?.GetValue<string>() ?? "inherit"',
   "the Preview controller must not reconstruct the Module appearance mode fallback",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "string ThemeMode,\n    string ComponentBaseConfigsJson",
   "every prepared Design Preview payload must require an explicit resolved Theme mode",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "themeMode = payload.ThemeMode",
   "the web renderer request must transport the effective payload Theme mode unchanged",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "string themeMode,",
   "the web renderer must not accept a second session Theme mode beside the prepared payload",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   'payload.ThemeMode is "dark"',
   "the web renderer must not recompute effective Theme mode",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/TypographyStyleValue.cs",
+  "src/Mockups.Desktop/Common/TypographyStyleValue.cs",
   'JsonPath.ParseRequiredObject(value, "Typography Style value")',
   "Typography Style must parse every non-sentinel value as a required object",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/TypographyStyleValue.cs",
+  "src/Mockups.Desktop/Common/TypographyStyleValue.cs",
   "as JsonObject ?? []",
   "Typography Style must not reinterpret a wrong JSON root as inherited",
 );
 for (const typographyOwnerConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
 ]) {
   assertContains(
     typographyOwnerConsumer,
@@ -1776,18 +1779,18 @@ for (const typographyOwnerConsumer of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "ValueKind.TypographyStyle => JsonNode.Parse(value)",
   "Typography Style writes must not bypass the strict value owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/DesktopChildProcess.cs",
+  "src/Mockups.Desktop/Common/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",
   "external Node processes must share one platform executable resolver",
 );
 for (const nodeProcessConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
-  "spikes/desktop-editor-shell/EditorShell/ChromiumPreviewRasterizer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/ChromiumPreviewRasterizer.cs",
 ]) {
   assertContains(
     nodeProcessConsumer,
@@ -1801,19 +1804,19 @@ for (const nodeProcessConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/VariantReferenceId.cs",
+  "src/Mockups.Desktop/Common/VariantReferenceId.cs",
   'public const string Separator = "::variant::";',
   "Component and Module Variants must share one full-reference grammar",
 );
 for (const retiredVariantReferenceHelper of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "TryParseComponentVariantNodeId"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "ComponentVariantNodeId("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "TryParseModuleVariantNodeId"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantControl.cs", "VariantSeparator"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs", 'IndexOf("::variant::"'],
-  ["spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
-  ["spikes/desktop-editor-shell/EditorShell/EditorEmbeddedUsageNavigator.cs", 'EndsWith("::variant::default"'],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "TryParseComponentVariantNodeId"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "ComponentVariantNodeId("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "TryParseModuleVariantNodeId"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
+  ["src/Mockups.Desktop/EditorShell/DictionaryComponentVariantControl.cs", "VariantSeparator"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs", 'IndexOf("::variant::"'],
+  ["src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
+  ["src/Mockups.Desktop/EditorShell/EditorEmbeddedUsageNavigator.cs", 'EndsWith("::variant::default"'],
 ] as const) {
   assertDoesNotContain(
     retiredVariantReferenceHelper[0],
@@ -1822,17 +1825,17 @@ for (const retiredVariantReferenceHelper of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "internal static FieldOption? PreferredResourceOption(",
   "Preview resource refresh and recovery must share one session selection rule",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "selectedDevice ??= deviceOptions.FirstOrDefault();",
   "Preview must not restore the duplicated Device selection path",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "selectedTheme ??= themeOptions.FirstOrDefault();",
   "Preview must not restore the duplicated Theme selection path",
 );
@@ -1843,37 +1846,37 @@ for (const retiredParallelPayloadBuilder of [
   "FromModuleVariant(",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
     retiredParallelPayloadBuilder,
     `Design Preview payload preparation must not restore parallel builder ${retiredParallelPayloadBuilder}`,
   );
 }
 for (const sharedPayloadBuilder of ["FromComponentSource(", "FromModuleSource("]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
     sharedPayloadBuilder,
     `Design Preview payload preparation must keep shared builder ${sharedPayloadBuilder}`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private int ModuleInstanceStartFrame(",
   "Preview navigation must use the common timeline Screen origin",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId)",
   "payload local-frame preparation must use the common timeline Screen origin",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "startFrame += slot.DurationFrames;",
   "payload data source must not reconstruct Screen origin from slot duration",
 );
 for (const retiredVariantEnvelopeHelper of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "private static JsonObject? FindVariant("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "private static string UniqueVariantId("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "private static string UniqueModuleVariantId("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "private static JsonObject? FindVariant("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "private static string UniqueVariantId("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "private static string UniqueModuleVariantId("],
 ] as const) {
   assertDoesNotContain(
     retiredVariantEnvelopeHelper[0],
@@ -1883,19 +1886,19 @@ for (const retiredVariantEnvelopeHelper of [
 }
 for (const sharedVariantEnvelopeOperation of ["FindSource(", "UniqueId(", "CreateSource("]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+    "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
     sharedVariantEnvelopeOperation,
     `Variant envelope contract must own ${sharedVariantEnvelopeOperation}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
   'public const string DefaultId = "default";',
   "Component and Module Variants must share one stable Default Variant id",
 );
 for (const retiredDefaultVariantConstant of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs", "DefaultComponentVariantId"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "DefaultModuleVariantId"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "DefaultComponentVariantId"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "DefaultModuleVariantId"],
 ] as const) {
   assertDoesNotContain(
     retiredDefaultVariantConstant[0],
@@ -1904,18 +1907,18 @@ for (const retiredDefaultVariantConstant of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+  "src/Mockups.Desktop/EditorShell/PreviewReferenceOverlay.cs",
   "ProjectPathService.ResolveLocalPath(state.SourcePath, state.ProjectMediaRoot)",
   "Preview reference media paths must use the common Project path resolver",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+  "src/Mockups.Desktop/EditorShell/PreviewReferenceOverlay.cs",
   "private static string ResolvePath(",
   "Preview reference overlay must not restore a parallel Project media path resolver",
 );
 for (const actorPreviewFactory of [
-  "spikes/desktop-editor-shell/EditorShell/ActorPreviewInputFactory.cs",
-  "spikes/desktop-editor-shell/EditorShell/ActorAvatarPreviewFactory.cs",
+  "src/Mockups.Desktop/EditorShell/ActorPreviewInputFactory.cs",
+  "src/Mockups.Desktop/EditorShell/ActorAvatarPreviewFactory.cs",
 ]) {
   assertContains(
     actorPreviewFactory,
@@ -1929,8 +1932,8 @@ for (const actorPreviewFactory of [
   );
 }
 for (const variantCreationOwner of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertDoesNotContain(
     variantCreationOwner,
@@ -1939,9 +1942,9 @@ for (const variantCreationOwner of [
   );
 }
 for (const retiredInactiveSource of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.PreviewActions.cs",
-  "spikes/desktop-editor-shell/scripts/icon-themes/sync-icon-theme-token.cjs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassLayouts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.PreviewActions.cs",
+  "src/Mockups.Desktop/scripts/icon-themes/sync-icon-theme-token.cjs",
 ]) {
   if (existsSync(path.join(root, retiredInactiveSource))) {
     addViolation(
@@ -1951,17 +1954,17 @@ for (const retiredInactiveSource of [
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/ConversationMessageActorContract.cs",
+  "src/Mockups.Desktop/Common/ConversationMessageActorContract.cs",
   'public const string ConversationRecordClassId = "module.core.chat"',
   "the Module runtime-document registry must route Conversation by its exact stable record class",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "ValidateCurrentModuleRuntimeDocuments(connection)",
   "startup validation must enforce current Module runtime-document contracts read-only",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
   "ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content)",
   "Module Instance content writes must enforce their owning runtime-document contract",
 );
@@ -1985,17 +1988,17 @@ assertFilesDoNotContain(
   "ordinary editor code must not persist layout metadata while opening or rebuilding an editor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs",
+  "src/Mockups.Desktop/Data/EditorLayoutRepository.cs",
   "document.Count != 1 || document[\"cards\"] is not JsonArray",
   "current editor layout reads must require the exact cards-only root",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "json_each.key <> 'cards'",
   "startup validation must reject additional editor layout root properties",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "'simplified'",
   "startup validation must reject the retired Simplified Editor metadata",
 );
@@ -2045,18 +2048,18 @@ assertContains(
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Input instance store must own that route's database dependency",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",
   "private readonly ModuleInstanceAnimationDocumentStore _animationDocuments",
   "the Runtime Input instance store must compose the animation document boundary",
 );
 for (const forbiddenRuntimeInputInstanceStoreSql of ["SELECT ", "INSERT ", "UPDATE ", "DELETE FROM", "SqliteConnection"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",
     forbiddenRuntimeInputInstanceStoreSql,
     `the Runtime Input instance store must delegate through current services rather than owning SQL (${forbiddenRuntimeInputInstanceStoreSql})`,
   );
@@ -2071,23 +2074,23 @@ for (const forbiddenRuntimeInputInstanceSemantic of [
   "RuntimeAnimationFrameOrigin",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputInstanceDocumentStore.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputInstanceDocumentStore.cs",
     forbiddenRuntimeInputInstanceSemantic,
     `the Runtime Input instance store must not absorb editor or temporal semantics (${forbiddenRuntimeInputInstanceSemantic})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "_instanceDocuments = new RuntimeInputInstanceDocumentStore(database)",
   "the Runtime Inputs editor must reuse one typed instance document store",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "private readonly SpikeDatabase _database",
   "the Runtime Inputs editor must not retain a general database handle",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "_database.",
   "the Runtime Inputs editor must not bypass its typed owner and instance stores",
 );
@@ -2103,7 +2106,7 @@ for (const requiredRuntimeInputInstanceOperation of [
   "_instanceDocuments.SaveAnimationJson",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
     requiredRuntimeInputInstanceOperation,
     `the Runtime Inputs editor must delegate persisted instance operations (${requiredRuntimeInputInstanceOperation})`,
   );
@@ -2128,7 +2131,7 @@ assertFilesDoNotContain(
   "variant.ConfigJson == \"{}\"",
   "a selected Component Variant config must not fall back to class config",
 );
-const jsonRootInventorySource = readText("spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs");
+const jsonRootInventorySource = readText("src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs");
 const executableJsonRoots = new Map(
   [...jsonRootInventorySource.matchAll(/\("([a-z_]+)", "([a-z_]+)", "(object|array)"\)/g)]
     .map((match) => [`${match[1]}.${match[2]}`, match[3]]),
@@ -2154,7 +2157,7 @@ for (const [entry, rootKind] of executableJsonRoots) {
 for (const [entry, rootKind] of documentedJsonRoots) {
   if (executableJsonRoots.get(entry) !== rootKind) {
     addViolation(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+      "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
       `${entry} must have the documented ${rootKind} startup root`,
     );
   }
@@ -2198,36 +2201,36 @@ function assertDesktopJsonRootsAreCanonical() {
 }
 assertDesktopJsonRootsAreCanonical();
 assertContains(
-  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
   "RequiredBoolean",
   "the shared Variant envelope must require explicit boolean flags",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/VariantEnvelopeContract.cs",
+  "src/Mockups.Desktop/Common/VariantEnvelopeContract.cs",
   "must contain the stable Default Variant id '{DefaultId}'",
   "the shared Variant envelope must require the stable Default id",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewRuntimeResolver.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionPreviewRuntimeResolver.cs",
   "catch",
   "Production payload parsing must reject invalid current JSON instead of returning an empty object",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "return new JsonObject();",
   "Design Preview Test Values must not hide invalid current JSON behind an empty object",
 );
 
 function assertSharedEditorSurfacesHaveNoConcreteEditors() {
   const sharedSurfaces = [
-    "spikes/desktop-editor-shell/MainWindow.axaml.cs",
-    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorBreadcrumbBar.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorGroupBlock.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+    "src/Mockups.Desktop/MainWindow.axaml.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryFieldControl.cs",
+    "src/Mockups.Desktop/EditorShell/EditorBreadcrumbBar.cs",
+    "src/Mockups.Desktop/EditorShell/EditorCardHostController.cs",
+    "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
+    "src/Mockups.Desktop/EditorShell/EditorGroupBlock.cs",
+    "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
+    "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   ];
   const concreteEditorTypes = [
     "IconThemeTokensCollectionEditor",
@@ -2528,7 +2531,7 @@ function assertDesktopRuntimeInputValueKindsAreCanonical() {
   const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
 
-  const valueKindSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
+  const valueKindSource = readText("src/Mockups.Desktop/EditorShell/FieldDefinition.cs");
   const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(valueKindSource);
   const valueKinds = new Set(
     (valueKindBlock?.[1] ?? "")
@@ -3071,8 +3074,8 @@ function assertComponentEditorLayoutsUseKnownFields() {
   const databasePath = currentParityDatabasePath;
   if (!existsSync(databasePath)) return;
   const catalog = [
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
-    "spikes/desktop-editor-shell/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs",
   ].map(readText).join("\n");
   const knownFields = new Set(
     [
@@ -3297,7 +3300,7 @@ for (const removedLegacyPath of [
   "src/desktop-preview/systemBarComponentContract.ts",
   "src/desktop-preview/systemBarPreviewResolver.ts",
   "src/desktop-preview/systemBarRenderables.ts",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassNormalization.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassNormalization.cs",
   "index.html",
   "remotion.config.ts",
   "vite.config.ts",
@@ -3540,7 +3543,7 @@ assertContains(
 for (const currentManifestOwner of [
   "src/desktop-preview/desktopPreviewManifest.json",
   "src/desktop-preview/desktopPreviewComponents.ts",
-  "spikes/desktop-editor-shell/Common/DesktopPreviewManifest.cs",
+  "src/Mockups.Desktop/Common/DesktopPreviewManifest.cs",
 ]) {
   assertDoesNotContain(
     currentManifestOwner,
@@ -3741,12 +3744,12 @@ for (const recursivePayloadPath of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "var runtimePreviewJson = runtimePreview.ToJsonString();",
   "desktop payloads must materialize one explicit effective temporal owner envelope",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "RuntimeContractJson = preview.ToJsonString()",
   "isolated Design Test Values must update the effective temporal owner envelope without persistence",
 );
@@ -3975,12 +3978,12 @@ if (payloadSource.includes("device:")) {
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "device =",
   "web design preview renderer must serialize previewFrame, not a device object",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "previewFrame = new",
   "web design preview renderer must provide previewFrame geometry to the web renderer",
 );
@@ -4023,9 +4026,9 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
-const desktopPersistenceDataPaths = readdirSync(path.join(root, "spikes/desktop-editor-shell/Data"))
+const desktopPersistenceDataPaths = readdirSync(path.join(root, "src/Mockups.Desktop/Data"))
   .filter((entry) => entry.endsWith(".cs"))
-  .map((entry) => `spikes/desktop-editor-shell/Data/${entry}`);
+  .map((entry) => `src/Mockups.Desktop/Data/${entry}`);
 for (const relativePath of desktopPersistenceDataPaths) {
   const source = readText(relativePath);
   if (/\b(?:Ensure|Normalize|Retire|Migrate)\w*\s*\(\s*SqliteConnection\b/.test(source)) {
@@ -4042,7 +4045,7 @@ for (const relativePath of desktopPersistenceDataPaths) {
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SqliteProjectContext.cs",
+  "src/Mockups.Desktop/Data/SqliteProjectContext.cs",
   "Mode = SqliteOpenMode.ReadOnly",
   "the shared SQLite context must open existing databases read-only until strict current validation succeeds",
 );
@@ -4061,12 +4064,12 @@ for (const [contractType, implementationType] of [
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/PersistenceContracts.cs",
+    "src/Mockups.Desktop/Data/PersistenceContracts.cs",
     `interface ${contractType}`,
     `persistence contract ${contractType} must remain explicit`,
   );
   assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.cs",
     implementationType === "ProjectEpisodeRepository"
       ? "new ProjectEpisodeRepository(_context, _shotRepository)"
       : `new ${implementationType}(_context)`,
@@ -4074,15 +4077,15 @@ for (const [contractType, implementationType] of [
   );
 }
 for (const facadePath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.EditorLayouts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectsEpisodes.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Palette.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemeSearch.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.EditorLayouts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectsEpisodes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Palette.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemeSearch.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -4093,16 +4096,16 @@ for (const facadePath of [
   }
 }
 for (const [repositoryPath, ownedTable] of [
-  ["spikes/desktop-editor-shell/Data/EditorLayoutRepository.cs", "editor_layouts"],
-  ["spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs", "episodes"],
-  ["spikes/desktop-editor-shell/Data/ShotRepository.cs", "shots"],
-  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "palette_colors"],
-  ["spikes/desktop-editor-shell/Data/DeviceRepository.cs", "devices"],
-  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "actors"],
-  ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "themes"],
-  ["spikes/desktop-editor-shell/Data/ProductionFontRepository.cs", "production_fonts"],
-  ["spikes/desktop-editor-shell/Data/IconThemeRepository.cs", "icon_themes"],
-  ["spikes/desktop-editor-shell/Data/AppModuleRepository.cs", "apps"],
+  ["src/Mockups.Desktop/Data/EditorLayoutRepository.cs", "editor_layouts"],
+  ["src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs", "episodes"],
+  ["src/Mockups.Desktop/Data/ShotRepository.cs", "shots"],
+  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "palette_colors"],
+  ["src/Mockups.Desktop/Data/DeviceRepository.cs", "devices"],
+  ["src/Mockups.Desktop/Data/ActorRepository.cs", "actors"],
+  ["src/Mockups.Desktop/Data/ThemeRepository.cs", "themes"],
+  ["src/Mockups.Desktop/Data/ProductionFontRepository.cs", "production_fonts"],
+  ["src/Mockups.Desktop/Data/IconThemeRepository.cs", "icon_themes"],
+  ["src/Mockups.Desktop/Data/AppModuleRepository.cs", "apps"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -4111,14 +4114,14 @@ for (const [repositoryPath, ownedTable] of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "SqliteProjectContext",
   "MainWindow must not receive persistence infrastructure or repositories",
 );
 for (const ownedResourceTable of ["palette_colors", "devices", "actors", "production_fonts", "icon_themes"]) {
   for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
     assertDoesNotContain(
-      "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+      "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
       `${sqlOperation} ${ownedResourceTable}`,
       `tree orchestration must delegate ${ownedResourceTable} lifecycle writes to its repository`,
     );
@@ -4126,23 +4129,23 @@ for (const ownedResourceTable of ["palette_colors", "devices", "actors", "produc
 }
 for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
     `${sqlOperation} themes`,
     "tree orchestration must delegate Theme lifecycle writes to ThemeRepository",
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs",
   "?? themes.FirstOrDefault((row) => row.ProjectId == projectId)",
   "Theme token inspection must require the exact selected Theme instead of falling back to the first Project Theme",
 );
 for (const resourceRepositoryPath of [
-  "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
-  "spikes/desktop-editor-shell/Data/DeviceRepository.cs",
-  "spikes/desktop-editor-shell/Data/ActorRepository.cs",
-  "spikes/desktop-editor-shell/Data/ThemeRepository.cs",
-  "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
-  "spikes/desktop-editor-shell/Data/IconThemeRepository.cs",
+  "src/Mockups.Desktop/Data/PaletteRepository.cs",
+  "src/Mockups.Desktop/Data/DeviceRepository.cs",
+  "src/Mockups.Desktop/Data/ActorRepository.cs",
+  "src/Mockups.Desktop/Data/ThemeRepository.cs",
+  "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
+  "src/Mockups.Desktop/Data/IconThemeRepository.cs",
 ]) {
   assertDoesNotContain(
     resourceRepositoryPath,
@@ -4168,15 +4171,15 @@ for (const forbiddenProductionFontRepositoryConcern of [
   "ProjectTreeNode",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
+    "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
     forbiddenProductionFontRepositoryConcern,
     `ProductionFontRepository must not own filesystem, Preview or tree concern ${forbiddenProductionFontRepositoryConcern}`,
   );
 }
 for (const productionFontDocumentConsumer of [
-  "spikes/desktop-editor-shell/Data/ProductionFontRepository.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
 ]) {
   assertContains(
     productionFontDocumentConsumer,
@@ -4191,7 +4194,7 @@ for (const forbiddenProductionFontDocumentFallback of [
   "== \"italic\" ? \"italic\" : \"normal\"",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ProductionFonts.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
     forbiddenProductionFontDocumentFallback,
     `Production Font readers must not filter or infer current file member '${forbiddenProductionFontDocumentFallback}'`,
   );
@@ -4205,7 +4208,7 @@ for (const requiredProductionFontDocumentTerm of [
   "normalized safe relative path",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/ProductionFontFilesContract.cs",
+    "src/Mockups.Desktop/Common/ProductionFontFilesContract.cs",
     requiredProductionFontDocumentTerm,
     `Production Font file documents must require ${requiredProductionFontDocumentTerm}`,
   );
@@ -4220,35 +4223,35 @@ for (const forbiddenIconThemeRepositoryConcern of [
   "IconThemeToken",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/IconThemeRepository.cs",
+    "src/Mockups.Desktop/Data/IconThemeRepository.cs",
     forbiddenIconThemeRepositoryConcern,
     `IconThemeRepository must not own asset, Preview or tree concern ${forbiddenIconThemeRepositoryConcern}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
   "has no explicit SVG file reference",
   "Icon Theme token reads must fail when the current mapping has no explicit file",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
   "tokenObject[\"file\"] = file",
   "Icon Theme token reads must not repair a missing file reference",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
   "modules",
   "AppModuleRepository must own both App and Module definition tables",
 );
 for (const [definitionFacadePath, forbiddenDefinitionPersistence] of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "UPDATE apps"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "UPDATE modules"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "FROM apps"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "FROM modules"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs", "UPDATE modules"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs", "UPDATE modules"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "UPDATE apps"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "UPDATE modules"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "UPDATE apps"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "UPDATE modules"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "FROM apps"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "FROM modules"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "UPDATE modules"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs", "UPDATE modules"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "UPDATE apps"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "UPDATE modules"],
 ] as const) {
   assertDoesNotContain(
     definitionFacadePath,
@@ -4264,35 +4267,35 @@ for (const forbiddenAppModuleRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+    "src/Mockups.Desktop/Data/AppModuleRepository.cs",
     forbiddenAppModuleRepositoryConcern,
     `AppModuleRepository must not own UI, Runtime or render concern ${forbiddenAppModuleRepositoryConcern}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/AppModuleRepository.cs",
+  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
   "has no explicit default Variant",
   "Module definition persistence must reject metadata without the protected current default Variant id",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "new ComponentClassRepository(_context)",
   "SpikeDatabase must construct the focused Component Class repository",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "_componentClassRepository.UpdateConfigAndMetadata(",
   "Component Class coordinated document writes must delegate to the repository",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
   "_componentClassRepository.UpdateMetadata(",
   "Component Variant document writes must delegate prepared metadata to the repository",
 );
 for (const componentClassFacadePath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
 ] as const) {
   for (const forbiddenComponentClassSql of [
     "FROM component_classes",
@@ -4308,7 +4311,7 @@ for (const componentClassFacadePath of [
   }
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
   'ProjectTreeNodeKind.ComponentClass => "component_classes"',
   "tree node writes must delegate Component Classes to their repository",
 );
@@ -4321,36 +4324,36 @@ for (const forbiddenComponentClassRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+    "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
     forbiddenComponentClassRepositoryConcern,
     `ComponentClassRepository must not own UI, field, composition, Runtime or render concern ${forbiddenComponentClassRepositoryConcern}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+  "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
   "has no explicit default Variant",
   "Component Class persistence must reject metadata without an explicit current default Variant id",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "new ModuleInstanceRepository(_context)",
   "SpikeDatabase must construct the focused Module Instance repository",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "_moduleInstanceRepository.UpdateDuration(",
   "timeline coordination must delegate prepared Module Instance durations",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
   "_moduleInstanceRepository.UpdateVariantDocuments(",
   "Module Variant changes must delegate prepared Module Instance documents",
 );
 for (const moduleInstanceFacadePath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
 ] as const) {
   for (const forbiddenModuleInstanceSql of [
     "FROM module_instances",
@@ -4375,27 +4378,27 @@ for (const forbiddenModuleInstanceRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/ModuleInstanceRepository.cs",
+    "src/Mockups.Desktop/Data/ModuleInstanceRepository.cs",
     forbiddenModuleInstanceRepositoryConcern,
     `ModuleInstanceRepository must not own UI, Runtime, timing or render concern ${forbiddenModuleInstanceRepositoryConcern}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs",
+  "src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs",
   "_shotRepository.DuplicateForEpisode(",
   "Episode duplication must delegate complete child Shot rows to ShotRepository",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "_shotRepository.UpdateDuration(",
   "Shot duration coordination must delegate its prepared positive duration",
 );
 for (const shotFacadePath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
-  "spikes/desktop-editor-shell/Data/ProjectEpisodeRepository.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs",
 ] as const) {
   for (const forbiddenShotSql of [
     "FROM shots",
@@ -4421,39 +4424,39 @@ for (const forbiddenShotRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/ShotRepository.cs",
+    "src/Mockups.Desktop/Data/ShotRepository.cs",
     forbiddenShotRepositoryConcern,
     "ShotRepository must not own UI, Production context, timing or render concern "
       + forbiddenShotRepositoryConcern,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
   "has no resolvable Theme context",
   "Module Instance Theme context must fail explicitly when no Theme resolves",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
   "?? \"{}\"",
   "Module Instance Theme context must not return a plausible empty document",
 );
 for (const inferredThemeContext of ["COALESCE(", "ORDER BY t.name", "JOIN apps a"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+    "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
     inferredThemeContext,
     `Module Instance Theme context must not restore inferred fallback ${inferredThemeContext}`,
   );
 }
 for (const [relativePath, requiredGuard] of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs", "RequireShotContext(connection, shot.Id)"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "RequireShotOwnerChange(connection, shotId, value)"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "RequireActorThemeChange(connection, actorId, value)"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs", "module instance without explicit Shot owner Theme context"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs", "RequireShotContext(connection, shot.Id)"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "RequireShotOwnerChange(connection, shotId, value)"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "RequireActorThemeChange(connection, actorId, value)"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs", "module instance without explicit Shot owner Theme context"],
 ] as const) {
   assertContains(
     relativePath,
@@ -4462,11 +4465,11 @@ for (const [relativePath, requiredGuard] of [
   );
 }
 for (const [relativePath, requiredProjectReferenceGuard] of [
-  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
-  ["spikes/desktop-editor-shell/Data/ShotRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
-  ["spikes/desktop-editor-shell/Data/ThemeRepository.cs", "ProjectReferenceIntegrity.RequireComponentVariantReference("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs", "ProjectReferenceIntegrity.ValidateCurrentDatabase(connection)"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "ProjectOwnedReferencesRejectCrossProjectValues"],
+  ["src/Mockups.Desktop/Data/ActorRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["src/Mockups.Desktop/Data/ShotRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["src/Mockups.Desktop/Data/ThemeRepository.cs", "ProjectReferenceIntegrity.RequireComponentVariantReference("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs", "ProjectReferenceIntegrity.ValidateCurrentDatabase(connection)"],
+  ["tests/Mockups.Desktop.Tests/Program.cs", "ProjectOwnedReferencesRejectCrossProjectValues"],
 ] as const) {
   assertContains(
     relativePath,
@@ -4481,7 +4484,7 @@ for (const requiredProjectReferenceKind of [
   "ProjectReferenceKind.Theme",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/ProjectReferenceIntegrity.cs",
+    "src/Mockups.Desktop/Data/ProjectReferenceIntegrity.cs",
     requiredProjectReferenceKind,
     `same-Project integrity must cover ${requiredProjectReferenceKind}`,
   );
@@ -4491,33 +4494,33 @@ for (const requiredThemeComponentType of [
   "NavigationBarComponentConfigContract.ComponentType",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/ProjectReferenceIntegrity.cs",
+    "src/Mockups.Desktop/Data/ProjectReferenceIntegrity.cs",
     requiredThemeComponentType,
     `Theme Component Variant integrity must require ${requiredThemeComponentType}`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "ORDER BY t.name, t.id",
   "duration synchronization must not infer a Theme from project ordering",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
   "JOIN actors actor ON actor.id = s.owner_actor_id",
   "Module Instance Theme context must resolve through the exact Shot owner Actor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
   "owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT",
   "Shot owner Actor must remain a required restricted foreign key without an empty default",
 );
 for (const [relativePath, explicitShotCreationTerm] of [
-  ["spikes/desktop-editor-shell/EditorShell/EditorAddChildWorkflow.cs", "new ShotCreationDialog(_owner, _database).Show(parent)"],
-  ["spikes/desktop-editor-shell/EditorShell/ShotCreationDialog.cs", "SelectedItem = null"],
-  ["spikes/desktop-editor-shell/EditorShell/ShotCreationDialog.cs", "GetRequiredActorOptions(project.Id)"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "must be created through AddShot"],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs", "RequireEpisodeActor(connection, episode.Id, actorId)"],
-  ["spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs", "GetRequiredActorOptions(settings.ProjectId)"],
+  ["src/Mockups.Desktop/EditorShell/EditorAddChildWorkflow.cs", "new ShotCreationDialog(_owner, _database).Show(parent)"],
+  ["src/Mockups.Desktop/EditorShell/ShotCreationDialog.cs", "SelectedItem = null"],
+  ["src/Mockups.Desktop/EditorShell/ShotCreationDialog.cs", "GetRequiredActorOptions(project.Id)"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "must be created through AddShot"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "RequireEpisodeActor(connection, episode.Id, actorId)"],
+  ["src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs", "GetRequiredActorOptions(settings.ProjectId)"],
 ] as const) {
   assertContains(
     relativePath,
@@ -4540,9 +4543,9 @@ for (const retiredUsageInference of [
   "ReferenceSearchValue",
 ]) {
   for (const usagePath of [
-    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsage.cs",
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsage.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsageDetails.cs",
   ]) {
     assertDoesNotContain(
       usagePath,
@@ -4559,25 +4562,25 @@ for (const explicitUsageContract of [
   "ReferenceUsageScope.Production",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
     explicitUsageContract,
     `Usage must retain explicit typed contract ${explicitUsageContract}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
   "_referenceUsageService.BuildIndex(connection)",
   "tree Used state must consume the shared explicit Usage edge set",
 );
 for (const typedUsageDetail of ["ReferenceUsageScope Scope", "usage.Scope,"]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsageDetails.cs",
     typedUsageDetail,
     `Usage details must retain typed edge scope ${typedUsageDetail}`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
   "MainWindow",
   "the Usage service must not import or construct the desktop shell",
 );
@@ -4588,33 +4591,33 @@ for (const contextualUsageNavigation of [
   "usage.EmbeddedUsage",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorReferenceUsageNavigator.cs",
+    "src/Mockups.Desktop/EditorShell/EditorReferenceUsageNavigator.cs",
     contextualUsageNavigation,
     `Usage navigation must retain typed context ${contextualUsageNavigation}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "SelectReferenceNodeInWorkspace",
   "the shell must provide generic workspace-aware Usage selection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_navigationRenderer.BringNodeIntoView",
   "Usage navigation must reveal its selected tree node",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNodeCommandController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs",
   "new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages)",
   "blocked deletion must preserve typed Usage links",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ReferenceUsageCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ReferenceUsageCollectionEditor.cs",
   "EditorReferenceUsageLink.Create",
   "the Usage card must use the shared contextual link surface",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorNodeCommandController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNodeCommandController.cs",
   "GetReferenceUsages(node)",
   "blocked deletion must not flatten typed Usage edges into prose",
 );
@@ -4625,7 +4628,7 @@ for (const productionDataTreeContract of [
   "systemDataRoot.AddChild(themesRoot);",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
     productionDataTreeContract,
     `Production Data tree must retain ${productionDataTreeContract}`,
   );
@@ -4636,18 +4639,18 @@ for (const productionWorkspaceKind of [
   "or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorNavigationMetadata.cs",
+    "src/Mockups.Desktop/EditorShell/EditorNavigationMetadata.cs",
     productionWorkspaceKind,
     `Production workspace metadata must retain ${productionWorkspaceKind}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
   'ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Production',
   "Actor-owned Usage must navigate to the Production workspace",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs",
   "node.CanAddChild && node.Parent?.Kind == ProjectTreeNodeKind.ProductionDataRoot",
   "grouped Production Data sections must retain their explicit Add actions",
 );
@@ -4663,22 +4666,22 @@ for (const resourceNavigationContract of [
   );
 }
 for (const renderQueueContract of [
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueContracts.cs", "mockups_render_job_snapshot"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueContracts.cs", "public const string Both"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderOutputPlanner.cs", "_v{version.ToString().PadLeft(versionPadding, '0')}"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "CreateProductionRender("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PlanShotAsync("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "StoreShotManagerPlan("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "PreviewAssetRegistry.TryResolve"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs", "store.WriteDocument(html)"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "EnqueuePreparingBatch("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "RecoverInterruptedJobs()"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueManager.cs", "Environment.SpecialFolder.LocalApplicationData"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "RenderSnapshotStore.ReadFrames("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "renderedDocuments.TryGetValue("],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueDialog.cs", "Choose one of the predefined Shot Manager output routes."],
-  ["spikes/desktop-editor-shell/EditorShell/RenderQueueController.cs", "EditorIcons.Render"],
-  ["spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs", "\"-an\""],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueContracts.cs", "mockups_render_job_snapshot"],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueContracts.cs", "public const string Both"],
+  ["src/Mockups.Desktop/EditorShell/RenderOutputPlanner.cs", "_v{version.ToString().PadLeft(versionPadding, '0')}"],
+  ["src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs", "CreateProductionRender("],
+  ["src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs", "PlanShotAsync("],
+  ["src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs", "StoreShotManagerPlan("],
+  ["src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs", "PreviewAssetRegistry.TryResolve"],
+  ["src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs", "store.WriteDocument(html)"],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueManager.cs", "EnqueuePreparingBatch("],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueManager.cs", "RecoverInterruptedJobs()"],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueManager.cs", "Environment.SpecialFolder.LocalApplicationData"],
+  ["src/Mockups.Desktop/EditorShell/RenderJobExecutor.cs", "RenderSnapshotStore.ReadFrames("],
+  ["src/Mockups.Desktop/EditorShell/RenderJobExecutor.cs", "renderedDocuments.TryGetValue("],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueDialog.cs", "Choose one of the predefined Shot Manager output routes."],
+  ["src/Mockups.Desktop/EditorShell/RenderQueueController.cs", "EditorIcons.Render"],
+  ["src/Mockups.Desktop/EditorShell/RenderJobExecutor.cs", "\"-an\""],
 ] as const) {
   assertContains(
     renderQueueContract[0],
@@ -4687,17 +4690,17 @@ for (const renderQueueContract of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RenderJobExecutor.cs",
+  "src/Mockups.Desktop/EditorShell/RenderJobExecutor.cs",
   "SpikeDatabase",
   "the Render Queue worker must execute its immutable snapshot without reopening Project data",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RenderJobSnapshotFactory.cs",
+  "src/Mockups.Desktop/EditorShell/RenderJobSnapshotFactory.cs",
   "List<RenderFrozenFrame>",
   "Render Queue snapshot preparation must stream frame documents instead of accumulating them in memory",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "RenderQueueController",
   "MainWindow must delegate Render Queue ownership through the Production navigation action owner",
 );
@@ -4714,7 +4717,7 @@ for (const renderQueueDocumentationContract of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/CurrentDatabaseMaintenance.cs",
+  "src/Mockups.Desktop/Data/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",
   "current database provisioning must preserve an already-validated source byte-for-byte",
 );
@@ -4909,7 +4912,7 @@ for (const moduleClass of Object.keys(desktopPreviewModules)) {
 }
 
 {
-  const coverageTestPath = "spikes/desktop-editor-shell-animation-tests/Program.cs";
+  const coverageTestPath = "tests/Mockups.Desktop.Tests/Program.cs";
   const coverageTestSource = readText(coverageTestPath);
   const componentHarness = [
     "ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime",
@@ -4978,7 +4981,7 @@ for (const moduleClass of Object.keys(desktopPreviewModules)) {
   }
 }
 
-assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
+assertNoTerms("src/Mockups.Desktop/MainWindow.axaml.cs", [
   "Current class values",
   "ProjectTreeNodeKind.",
   "ValueKind.",
@@ -4993,32 +4996,32 @@ assertNoTerms("spikes/desktop-editor-shell/MainWindow.axaml.cs", [
   "actor.avatar",
 ]);
 {
-  const mainWindowSource = readText("spikes/desktop-editor-shell/MainWindow.axaml.cs");
+  const mainWindowSource = readText("src/Mockups.Desktop/MainWindow.axaml.cs");
   const directDatabaseCalls = [...mainWindowSource.matchAll(/_database\.([A-Za-z0-9_]+)/g)]
     .map((match) => match[1])
     .filter((call): call is string => typeof call === "string");
   const forbiddenDirectDatabaseCalls = directDatabaseCalls.filter((call) => call !== "LoadProjectTree");
   if (forbiddenDirectDatabaseCalls.length > 0) {
     addViolation(
-      "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+      "src/Mockups.Desktop/MainWindow.axaml.cs",
       `MainWindow must remain shell-only; direct database calls are limited to LoadProjectTree, found ${[...new Set(forbiddenDirectDatabaseCalls)].join(", ")}`,
     );
   }
 }
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.ComponentClassesRoot",
   "component class root must not expose Add; parent component classes are internal",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.StatusBarsRoot",
   "legacy status bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockContainsKind(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "AppsRoot",
   false,
@@ -5027,7 +5030,7 @@ assertPropertyBlockContainsKind(
 for (const propertyName of ["CanDuplicate", "CanDelete"]) {
   for (const kind of ["App", "Module"]) {
     assertPropertyBlockContainsKind(
-      "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+      "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
       propertyName,
       kind,
       false,
@@ -5037,7 +5040,7 @@ for (const propertyName of ["CanDuplicate", "CanDelete"]) {
 }
 for (const kind of ["App", "Module", "ModuleVariant"]) {
   assertPropertyBlockContainsKind(
-    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
     "CanRenameDirectly",
     kind,
     true,
@@ -5045,74 +5048,74 @@ for (const kind of ["App", "Module", "ModuleVariant"]) {
   );
 }
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanAddChild",
   "ProjectTreeNodeKind.NavigationBarsRoot",
   "legacy navigation bar root must not expose Add; system bars are Component Variants",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Duplicate; use Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.StatusBar",
   "legacy status bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDuplicate",
   "ProjectTreeNodeKind.NavigationBar",
   "legacy navigation bars must not expose Duplicate; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.ComponentClass",
   "parent component classes must not expose Delete; they are internal",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.StatusBar",
   "legacy status bars must not expose Delete; use Component Variants instead",
 );
 assertPropertyBlockDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanDelete",
   "ProjectTreeNodeKind.NavigationBar",
   "legacy navigation bars must not expose Delete; use Component Variants instead",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "var statusBars = QueryStatusBarRows(connection);",
   "project tree must not load legacy status bars as navigation nodes",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "var navigationBars = QueryNavigationBarRows(connection);",
   "project tree must not load legacy navigation bars as navigation nodes",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "foreach (var statusBar in statusBars.OrderBy",
   "project tree must not add legacy status bar nodes",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "foreach (var navigationBar in navigationBars.OrderBy",
   "project tree must not add legacy navigation bar nodes",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)",
   "legacy status bar add workflow must not remain; use Component Variants instead",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)",
   "legacy navigation bar add workflow must not remain; use Component Variants instead",
 );
@@ -5123,7 +5126,7 @@ for (const forbiddenLegacyTreeTerm of [
   "ProjectTreeNodeKind.NavigationBar",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
     forbiddenLegacyTreeTerm,
     `legacy system bar tree term ${forbiddenLegacyTreeTerm} must not return; use Component Variants`,
   );
@@ -5148,14 +5151,14 @@ for (const forbiddenComponentInputControl of [
   "new NumericUpDown",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     forbiddenComponentInputControl,
     `component inputs must use dictionary controls, not local ${forbiddenComponentInputControl}`,
   );
 }
 for (const recordReferenceSpecializationPath of [
-  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   for (const forbiddenRecordReferenceSpecialization of [
     "ActorReference",
@@ -5170,42 +5173,42 @@ for (const recordReferenceSpecializationPath of [
   }
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.StatusBar => fieldId.StartsWith(\"statusBar.\"",
   "legacy status bars must not be exposed through record-class field editing",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   "ProjectTreeNodeKind.NavigationBar => fieldId.StartsWith(\"navigationBar.\"",
   "legacy navigation bars must not be exposed through record-class field editing",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   "UpdateStatusBarField",
   "legacy status bar field writes must not remain in generic record editing",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   "UpdateNavigationBarField",
   "legacy navigation bar field writes must not remain in generic record editing",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "SeedStatusBarsIfEmpty",
   "desktop database initialization must not seed legacy status_bars rows; use status_bar Component Variants",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
   "SeedNavigationBarsIfEmpty",
   "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar Component Variants",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
   "CREATE TABLE IF NOT EXISTS status_bars",
   "desktop schema must not recreate legacy status_bars; use status_bar component variants",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
   "CREATE TABLE IF NOT EXISTS navigation_bars",
   "desktop schema must not recreate legacy navigation_bars; use navigation_bar component variants",
 );
@@ -5219,7 +5222,7 @@ for (const forbiddenSchemaMigrationTerm of [
   "MigrateScreenInstancesToModuleInstances",
 ]) {
   assertFilesDoNotContain(
-    walkFilesByExtension(path.join(root, "spikes/desktop-editor-shell/Data"), [".cs"]),
+    walkFilesByExtension(path.join(root, "src/Mockups.Desktop/Data"), [".cs"]),
     forbiddenSchemaMigrationTerm,
     `schema v1 startup must not keep historical schema migration helper ${forbiddenSchemaMigrationTerm}`,
   );
@@ -5244,7 +5247,7 @@ for (const legacyTextBoxComponentInput of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/DeviceMetricRules.cs",
+  "src/Mockups.Desktop/Common/DeviceMetricRules.cs",
   "JsonPath.NumberAt(metrics,",
   "device preview metric reads must be strict; defaults belong in seed/import normalization, not preview rendering",
 );
@@ -5412,7 +5415,7 @@ for (const legacyComponentRecordClassId of [
   "component.button_icon",
   "component.text_input_bar",
 ]) {
-  const filePath = "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs";
+  const filePath = "src/Mockups.Desktop/EditorShell/EmbeddedComponentSlotCatalog.cs";
   assertDoesNotContain(
     filePath,
     legacyComponentRecordClassId,
@@ -5420,17 +5423,17 @@ for (const legacyComponentRecordClassId of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
   "ComponentVariant",
   "embedded Component Variant selection must have a dedicated dictionary value kind",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
   "ValueKind.ComponentVariant",
   "Component Variant fields must use their dedicated dictionary control",
 );
 {
-  const fieldDefinitionSource = readText("spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs");
+  const fieldDefinitionSource = readText("src/Mockups.Desktop/EditorShell/FieldDefinition.cs");
   const valueKindBlock = /internal enum ValueKind\s*\{([\s\S]*?)\}/.exec(fieldDefinitionSource);
   const valueKinds = new Set(
     (valueKindBlock?.[1] ?? "")
@@ -5438,7 +5441,7 @@ assertContains(
       .map((value) => value.trim())
       .filter(Boolean),
   );
-  const registrySource = readText("spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs");
+  const registrySource = readText("src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs");
   const registeredKinds = new Set(
     [...registrySource.matchAll(/\[ValueKind\.([A-Za-z0-9_]+)\]\s*=/g)]
       .map((match) => match[1] ?? "")
@@ -5447,7 +5450,7 @@ assertContains(
   for (const valueKind of valueKinds) {
     if (!registeredKinds.has(valueKind)) {
       addViolation(
-        "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+        "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
         `dictionary registry is missing explicit ValueKind.${valueKind}`,
       );
     }
@@ -5455,50 +5458,50 @@ assertContains(
   for (const registeredKind of registeredKinds) {
     if (!valueKinds.has(registeredKind)) {
       addViolation(
-        "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+        "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
         `dictionary registry contains unknown ValueKind.${registeredKind}`,
       );
     }
   }
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
   ": new DictionaryTextControl(definition, value)",
   "dictionary registry must fail for an unregistered ValueKind instead of falling back to text",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
   "uses unregistered dictionary value kind",
   "dictionary registry must report an unregistered ValueKind visibly",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static ValueKind RequireCompatible(string kind, string valueKind, string owner)",
   "runtime input kind and valueKind must share one exact semantic owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static JsonNode CreateDefaultValue(JsonObject definition, string owner)",
   "runtime input defaults must be parsed by the same exact ValueKind owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static JsonNode ParseValue(ValueKind valueKind, string value, string owner)",
   "runtime editor values must serialize through the exact ValueKind owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static void ValidateRuntimeValue(JsonObject definition, JsonNode? value, string owner)",
   "persisted Runtime values must validate through the exact definition owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)",
   "current dictionary nodes must validate through the exact ValueKind owner",
 );
 for (const runtimeInputKindConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
     runtimeInputKindConsumer,
@@ -5507,9 +5510,9 @@ for (const runtimeInputKindConsumer of [
   );
 }
 for (const runtimeDefaultConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertContains(
     runtimeDefaultConsumer,
@@ -5528,7 +5531,7 @@ for (const requiredRuntimeDefinitionReaderTerm of [
   "Unknown Runtime Input uiOrigin",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     requiredRuntimeDefinitionReaderTerm,
     `Runtime definition presentation must keep strict rule '${requiredRuntimeDefinitionReaderTerm}'`,
   );
@@ -5543,14 +5546,14 @@ for (const retiredRuntimeDefinitionReaderFallback of [
   "return origin.Trim().ToLowerInvariant() switch",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     retiredRuntimeDefinitionReaderFallback,
     `Runtime definition presentation must not filter or infer '${retiredRuntimeDefinitionReaderFallback}'`,
   );
 }
 for (const runtimeCollectionConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
 ]) {
   assertContains(
     runtimeCollectionConsumer,
@@ -5559,10 +5562,10 @@ for (const runtimeCollectionConsumer of [
   );
 }
 for (const runtimeValueConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
 ]) {
   assertContains(
     runtimeValueConsumer,
@@ -5571,27 +5574,27 @@ for (const runtimeValueConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
   "ValidateCurrentRuntimeValues(",
   "startup and Runtime writes must validate current scalar and collection-field values",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "ComponentInputKind.Number when double.TryParse",
   "Design Test Values must not retain a second permissive Runtime value serializer",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "bool.TryParse(value, out var boolean) && boolean",
   "keyframe authoring must not coerce an invalid boolean to false",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
   "RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)",
   "every persisted collection mutation must require the exact declared collection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
   "ValidateCurrentRuntimeCollections(",
   "startup and Runtime writes must validate declared collection documents",
 );
@@ -5600,19 +5603,19 @@ for (const runtimeCollectionWriteFallback of [
   "currentIndex < 0 ? items.Count",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleInstances.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
     runtimeCollectionWriteFallback,
     `Runtime collection writes must not repair or redirect invalid intent (${runtimeCollectionWriteFallback})`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "RuntimeDefaultValue(",
   "runtime reconciliation must not retain a second permissive default parser",
 );
 for (const strictRuntimePersistenceDefinitionConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertContains(
     strictRuntimePersistenceDefinitionConsumer,
@@ -5632,24 +5635,24 @@ for (const retiredRuntimeReconciliationRepair of [
   'content[jsonKey] is null',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
     retiredRuntimeReconciliationRepair,
     `Runtime reconciliation must not filter or repair current data (${retiredRuntimeReconciliationRepair})`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/BehaviorTimingValue.cs",
+  "src/Mockups.Desktop/Common/BehaviorTimingValue.cs",
   "catch",
   "Behavior Timing must not catch invalid current values and return a plausible default",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/BehaviorTimingValue.cs",
+  "src/Mockups.Desktop/Common/BehaviorTimingValue.cs",
   "JsonPath.ParseRequiredObject(json, context)",
   "Behavior Timing must require its current object document",
 );
 for (const behaviorTimingMetadataConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
     behaviorTimingMetadataConsumer,
@@ -5658,7 +5661,7 @@ for (const behaviorTimingMetadataConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "ValidateBehaviorTimingDefinitions(",
   "Runtime Input definitions must validate Behavior Timing metadata and source ownership",
 );
@@ -5704,10 +5707,10 @@ assertDoesNotContain(
   "web Behavior Timing must not coerce invalid cadence, sibling or Theme path data",
 );
 for (const themeNumericDurationConsumer of [
-  "spikes/desktop-editor-shell/Common/BehaviorTimingResolver.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/Common/BehaviorTimingResolver.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(
     themeNumericDurationConsumer,
@@ -5723,14 +5726,14 @@ for (const requiredThemeNumericOwnerTerm of [
   "must be positive",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/ThemeNumericTokenValue.cs",
+    "src/Mockups.Desktop/Common/ThemeNumericTokenValue.cs",
     requiredThemeNumericOwnerTerm,
     `numeric Theme values must keep strict owner rule '${requiredThemeNumericOwnerTerm}'`,
   );
 }
 for (const retiredThemeDurationFallback of [
-  ["spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs", "ThemeTokenNumber("],
-  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "ThemeTokenNumber("],
+  ["src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs", "ThemeTokenNumber("],
+  ["src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", "ThemeTokenNumber("],
 ] as const) {
   assertDoesNotContain(
     retiredThemeDurationFallback[0],
@@ -5739,23 +5742,23 @@ for (const retiredThemeDurationFallback of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "durationThemeToken '{durationThemeToken}' is not declared",
   "Design Preview actions must reject undeclared primary Theme duration tokens",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "durationAdditionalThemeToken '{token}' is not declared",
   "Design Preview actions must reject undeclared additional Theme duration tokens",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/ThemeNumericTokenCatalog.cs",
+  "src/Mockups.Desktop/Common/ThemeNumericTokenCatalog.cs",
   'Token("theme.motion.reflowDurationMs",',
   "generic State/Reflow action timing must use the declared numeric Theme-token catalog",
 );
 for (const motionDurationConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
 ]) {
   assertContains(
     motionDurationConsumer,
@@ -5769,7 +5772,7 @@ for (const requiredMotionDurationOwnerTerm of [
   "must resolve to a positive finite Motion duration",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/MotionTimingDuration.cs",
+    "src/Mockups.Desktop/EditorShell/MotionTimingDuration.cs",
     requiredMotionDurationOwnerTerm,
     `Motion duration resolution must keep owner rule '${requiredMotionDurationOwnerTerm}'`,
   );
@@ -5780,14 +5783,14 @@ for (const retiredMotionPathDurationFallback of [
   "if (durationMs <= 0)",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
     retiredMotionPathDurationFallback,
     `action Motion-path duration must not return a plausible missing value (${retiredMotionPathDurationFallback})`,
   );
 }
 for (const actionRuntimeValueConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(
     actionRuntimeValueConsumer,
@@ -5803,15 +5806,15 @@ for (const requiredActionRuntimeOwnerTerm of [
   "must be a JSON boolean",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActionRuntimeValue.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentPreviewActionRuntimeValue.cs",
     requiredActionRuntimeOwnerTerm,
     `action runtime values must keep owner rule '${requiredActionRuntimeOwnerTerm}'`,
   );
 }
 for (const retiredActionRuntimeFallback of [
-  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "ActionDurationInputValue(action, 1)"],
-  ["spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", "JsonNodeNumber("],
-  ["spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs", "JsonNodeNumber("],
+  ["src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", "ActionDurationInputValue(action, 1)"],
+  ["src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", "JsonNodeNumber("],
+  ["src/Mockups.Desktop/EditorShell/EditorPreviewController.cs", "JsonNodeNumber("],
 ] as const) {
   assertDoesNotContain(
     retiredActionRuntimeFallback[0],
@@ -5820,7 +5823,7 @@ for (const retiredActionRuntimeFallback of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "must be positive.",
   "desktop runtime owner timeline must reject non-positive active finite action durations",
 );
@@ -5840,27 +5843,27 @@ assertDoesNotContain(
   "web runtime owner timeline must not treat durationInputId as a JSON storage key",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "FieldValue(item, fields, durationInputId)",
   "desktop runtime owner timeline must resolve durationInputId through its stable field definition",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "item[durationInputId]",
   "desktop runtime owner timeline must not treat durationInputId as a JSON storage key",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "action with { DurationJsonKey = DurationJsonKey(preview, action) }",
   "Design Preview actions must prepare the storage key from their exact duration field id",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActionRuntimeValue.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActionRuntimeValue.cs",
   "ComponentPreviewActions.DurationJsonKey(preview, action)",
   "Design Preview duration values must read through the prepared field storage key",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
   'key is "durationInputId" or "durationBehaviorTimingInputId"',
   "forwarded durationInputId must remain a stable forwarded field id",
 );
@@ -5975,23 +5978,23 @@ for (const forbiddenDesktopBehaviorTimingFallback of [
   "catch\n            {\n                return null;",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryBehaviorTimingControl.cs",
     forbiddenDesktopBehaviorTimingFallback,
     `desktop Behavior Timing must not coerce an invalid frame (${forbiddenDesktopBehaviorTimingFallback})`,
   );
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+    "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
     forbiddenDesktopBehaviorTimingFallback,
     `desktop Behavior Timing must surface invalid current resolution (${forbiddenDesktopBehaviorTimingFallback})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryBehaviorTimingControl.cs",
   "Behavior Timing field '{definition.Id}' requires its frame resolver.",
   "Behavior Timing controls must require their owner-provided calculated-duration resolver",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+  "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
   "is missing its natural timing definition.",
   "Behavior Timing editor services must reject missing owner metadata",
 );
@@ -6002,38 +6005,38 @@ for (const retiredBehaviorTimingPresentationFallback of [
   "Math.Max(0, frames)",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryBehaviorTimingControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryBehaviorTimingControl.cs",
     retiredBehaviorTimingPresentationFallback,
     `Behavior Timing presentation must not infer frame zero (${retiredBehaviorTimingPresentationFallback})`,
   );
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorDictionaryFieldServices.cs",
+    "src/Mockups.Desktop/EditorShell/EditorDictionaryFieldServices.cs",
     retiredBehaviorTimingPresentationFallback,
     `Behavior Timing editor services must not hide missing metadata (${retiredBehaviorTimingPresentationFallback})`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "CurrentRuntimeInputKinds",
   "startup validation must not retain a parallel Runtime Input kind vocabulary",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "ParseValueKind(",
   "Runtime Input presentation must not retain a parallel valueKind parser",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "_ => ComponentInputKind.Text",
   "runtime input kind parsing must not silently fall back to text",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "obj.TryGetPropertyValue(RuntimeInputForwardingContract.StorageKey, out var forwardedNode)",
   "startup must validate every present forwarding envelope instead of ignoring a wrong root",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
   "private static JsonObject? ForwardedDefinitions(JsonObject owner)",
   "desktop payload preparation must own the strict forwarding envelope",
 );
@@ -6043,7 +6046,7 @@ for (const forwardingFallback of [
   "definition.DeepClone() as JsonObject ?? new JsonObject()",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputForwardingContract.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
     forwardingFallback,
     `desktop forwarding must not manufacture a plausible document (${forwardingFallback})`,
   );
@@ -6061,13 +6064,13 @@ for (const requiredForwardPresentation of [
   'isForwarded ? ActiveAccessibleName : InactiveAccessibleName',
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/EditorForwardVisuals.cs",
+    "src/Mockups.Desktop/Common/EditorForwardVisuals.cs",
     requiredForwardPresentation,
     `Forward actions must retain the shared compact right-pointing presentation (${requiredForwardPresentation})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
   "EditorForwardVisuals.CreateActionButton(forwarded is not null)",
   "every embedded Runtime Input Forward action must use the shared presentation",
 );
@@ -6077,15 +6080,15 @@ for (const retiredLocalForwardPresentation of [
   'ToolTip.SetTip(toggle, forwarded is null ? "Expose to parent runtime" : "Keep as Variant value")',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
     retiredLocalForwardPresentation,
     `embedded Runtime Input fields must not retain a local Forward presentation (${retiredLocalForwardPresentation})`,
   );
 }
 for (const compoundDictionaryControl of [
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/IconSlotsControl.cs",
 ]) {
   assertContains(
     compoundDictionaryControl,
@@ -6094,21 +6097,21 @@ for (const compoundDictionaryControl of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "RuntimeCollectionDocumentContract.Validate(items, owner)",
   "structured dictionary arrays must preserve stable item ids through the shared owner",
 );
 for (const retiredCompoundFallback of [
   [
-    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
     'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "{}" : value)',
   ],
   [
-    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
     "JsonNode.Parse(value) as JsonObject ?? new JsonObject()",
   ],
   [
-    "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+    "src/Mockups.Desktop/EditorShell/IconSlotsControl.cs",
     'JsonNode.Parse(string.IsNullOrWhiteSpace(value) ? "[]" : value)',
   ],
 ] as const) {
@@ -6119,53 +6122,53 @@ for (const retiredCompoundFallback of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "private static JsonObject? TestValues(JsonObject preview)",
   "Design Test Values must own their optional strict transient envelope",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "RuntimeCollectionDocumentContract.Validate(",
   "Design Test Value collections must reuse the stable collection document owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "ComponentPreviewInputSession.ReadRuntimeCollections(",
   "Design Test Values must consume the one complete Runtime collection definition reader",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   "includeHidden: true",
   "collection source application must validate definitions hidden by current presentation conditions",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
   'OptionalArray(preview, "collections", "Design Preview Runtime collections")',
   "Design Test Values must not retain a raw collection metadata reader",
 );
 const strictRuntimeCollectionConsumerSource = readText(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 );
 assertSourceMatches(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   strictRuntimeCollectionConsumerSource,
   /ResolveCollectionRecordReferences[\s\S]*DesignPreviewTestValues\.CurrentCollectionItems\(preview, collection\)/,
   "nested record resolution must consume strict effective collection items",
 );
 assertSourceMatches(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   strictRuntimeCollectionConsumerSource,
   /NormalizeCollectionOptionActionTargets[\s\S]*DesignPreviewTestValues\.CurrentCollectionItems\(preview, collection\)/,
   "action target normalization must consume strict effective collection items",
 );
 for (const embeddedCollectionDocumentConsumer of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
 ]) {
   assertContains(
     embeddedCollectionDocumentConsumer,
@@ -6174,10 +6177,10 @@ for (const embeddedCollectionDocumentConsumer of [
   );
 }
 for (const projectedItemRuntimeContractConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
 ]) {
   assertContains(
     projectedItemRuntimeContractConsumer,
@@ -6186,43 +6189,43 @@ for (const projectedItemRuntimeContractConsumer of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
   "item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue",
   "embedded action discovery must not skip a malformed declared item Runtime contract",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "item[collection.ItemRuntimeContractJsonKey] is JsonObject runtimeContract",
   "animation target discovery must not skip a malformed declared item Runtime contract",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "src/Mockups.Desktop/Common/RuntimeComponentCollectionItemDocumentContract.cs",
   "VariantReferenceId.TryParse(reference",
   "non-empty embedded collection references must use the full stable Variant grammar",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeComponentCollectionItemDocumentContract.cs",
+  "src/Mockups.Desktop/Common/RuntimeComponentCollectionItemDocumentContract.cs",
   "if (reference.Length == 0) return reference;",
   "the explicit empty Component State sentinel must remain distinct from malformed references",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   '$"item-{index}"',
   "runtime collection item identity must never be inferred from position",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
   "_items.OfType<JsonObject>()",
   "structured collection authoring must not filter malformed current items",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "overrides = new JsonObject();",
   "opening embedded Runtime Overrides must not repair a missing current object",
 );
 for (const currentRuntimeValueConsumer of [
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
     currentRuntimeValueConsumer,
@@ -6231,24 +6234,24 @@ for (const currentRuntimeValueConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static string CurrentStorageText(",
   "the Runtime ValueKind owner must provide the one current-value storage representation",
 );
 for (const actionSessionValueOwner of ["BooleanOrDefault(", "TimeOrDefault("]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     `ComponentPreviewActionRuntimeValue.${actionSessionValueOwner}`,
     `Design action session initialization must distinguish absent state from invalid current state (${actionSessionValueOwner})`,
   );
 }
 for (const retiredCurrentRuntimeFallback of [
   [
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
     "_ => input.DefaultValue,",
   ],
   [
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     "_ => input.DefaultValue,",
   ],
 ] as const) {
@@ -6265,13 +6268,13 @@ for (const transientTestValueFallback of [
   "item.DeepClone() as JsonObject ?? new JsonObject()",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewTestValues.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
     transientTestValueFallback,
     `Design Test Values must not repair or position-bind invalid transient data (${transientTestValueFallback})`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "testValues[collectionJsonKey] as JsonArray ?? new JsonArray()",
   "the Preview input session must reject a present wrong-root transient collection",
 );
@@ -6280,7 +6283,7 @@ for (const componentValueOwnerCall of [
   "RuntimeInputValueKindContract.ParseValue(",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
     componentValueOwnerCall,
     `Component fields must consume their exact dictionary ValueKind owner (${componentValueOwnerCall})`,
   );
@@ -6293,7 +6296,7 @@ for (const retiredComponentFieldFallback of [
   "node is JsonObject\n                ? node.ToJsonString()\n                : descriptor.DefaultValue",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
     retiredComponentFieldFallback,
     `Component field reads/writes must not reconstruct invalid current data (${retiredComponentFieldFallback})`,
   );
@@ -6303,13 +6306,13 @@ for (const strictEmbeddedDocumentMessage of [
   "overrides must be an object.",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
     strictEmbeddedDocumentMessage,
     `embedded Component documents must reject present wrong roots (${strictEmbeddedDocumentMessage})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/JsonPath.cs",
+  "src/Mockups.Desktop/Common/JsonPath.cs",
   'return ParseRequiredNumberNode(value, "Numeric value");',
   "record numeric writes must use the common required finite-number parser",
 );
@@ -6318,14 +6321,14 @@ for (const retiredNumericWriteFallback of [
   "? integerValue : 0",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/JsonPath.cs",
+    "src/Mockups.Desktop/Common/JsonPath.cs",
     retiredNumericWriteFallback,
     `numeric document writes must not coerce invalid text to zero (${retiredNumericWriteFallback})`,
   );
 }
 for (const strictBooleanRepository of [
-  "spikes/desktop-editor-shell/Data/PaletteRepository.cs",
-  "spikes/desktop-editor-shell/Data/ActorRepository.cs",
+  "src/Mockups.Desktop/Data/PaletteRepository.cs",
+  "src/Mockups.Desktop/Data/ActorRepository.cs",
 ]) {
   assertContains(
     strictBooleanRepository,
@@ -6334,10 +6337,10 @@ for (const strictBooleanRepository of [
   );
 }
 for (const retiredBooleanWriteFallback of [
-  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "BooleanText.Parse(value) ? 1 : 0"],
-  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value))'],
-  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value))'],
-  ["spikes/desktop-editor-shell/Data/ActorRepository.cs", 'JsonValue.Create(BooleanText.Parse(value))'],
+  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "BooleanText.Parse(value) ? 1 : 0"],
+  ["src/Mockups.Desktop/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value))'],
+  ["src/Mockups.Desktop/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value))'],
+  ["src/Mockups.Desktop/Data/ActorRepository.cs", 'JsonValue.Create(BooleanText.Parse(value))'],
 ] as const) {
   assertDoesNotContain(
     retiredBooleanWriteFallback[0],
@@ -6353,17 +6356,17 @@ for (const requiredResourceScalarHelper of [
   "public static string RequiredStringPair(",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/Common/JsonPath.cs",
+    "src/Mockups.Desktop/Common/JsonPath.cs",
     requiredResourceScalarHelper,
     `current resource fields must use exact JSON scalar helpers (${requiredResourceScalarHelper})`,
   );
 }
 for (const strictResourceReader of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs", "JsonPath.RequiredNumberString("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonPath.RequiredBooleanString("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", "JsonPath.RequiredNumberString("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredStringAt("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonPath.RequiredBooleanString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredStringAt("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredNumberString("],
 ] as const) {
   assertContains(
     strictResourceReader[0],
@@ -6372,21 +6375,21 @@ for (const strictResourceReader of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs",
   "OptionalDynamicIslandPair(",
   "Device Dynamic Island absence must remain an explicit optional contract",
 );
 for (const retiredResourceReadFallback of [
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Infrastructure.cs", "MetricPair("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Devices.cs", "JsonNumberString("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonBool("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Actors.cs", "JsonNumberString("],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.ProjectContent.cs", 'JsonNumberString(metadata, ["icon", "scale"], "1")'],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "{}"'],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "light"'],
-  ["spikes/desktop-editor-shell/Data/SpikeDatabase.Themes.cs", ': "normal"'],
-  ["spikes/desktop-editor-shell/Common/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
-  ["spikes/desktop-editor-shell/Data/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Infrastructure.cs", "MetricPair("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs", "JsonNumberString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonBool("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonNumberString("],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", 'JsonNumberString(metadata, ["icon", "scale"], "1")'],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "{}"'],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "light"'],
+  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "normal"'],
+  ["src/Mockups.Desktop/Common/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
+  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
 ] as const) {
   assertDoesNotContain(
     retiredResourceReadFallback[0],
@@ -6401,13 +6404,13 @@ for (const strictPairValueKindCase of [
   "ParseBoundedDecimal(valueKind, value, owner)",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
     strictPairValueKindCase,
     `dictionary pair/range values must use their exact ValueKind owner (${strictPairValueKindCase})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/PaletteAlphaPair.cs",
+  "src/Mockups.Desktop/Common/PaletteAlphaPair.cs",
   "public static PaletteAlphaPair ParseRequired(string value, string context)",
   "Palette color-alpha pairs must own their complete required envelope",
 );
@@ -6417,15 +6420,15 @@ for (const retiredPaletteAlphaFallback of [
   "SplitPair(string value, string firstFallback, string secondFallback)",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/PaletteAlphaPair.cs",
+    "src/Mockups.Desktop/Common/PaletteAlphaPair.cs",
     retiredPaletteAlphaFallback,
     `Palette color-alpha current values must not reconstruct missing members (${retiredPaletteAlphaFallback})`,
   );
 }
 for (const strictPairControl of [
-  "spikes/desktop-editor-shell/EditorShell/DictionaryIntegerPairControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryThemeTokenPairControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryIntegerPairControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryThemeTokenPairControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryPalettePairControl.cs",
 ]) {
   assertContains(
     strictPairControl,
@@ -6439,7 +6442,7 @@ for (const strictPairControl of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldPairText.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryFieldPairText.cs",
   "PairFieldLabelsContract.Require(",
   "pair controls must require explicit presentation labels",
 );
@@ -6452,28 +6455,28 @@ for (const retiredPairLabelInference of [
   'StartsWith("theme."',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryFieldPairText.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryFieldPairText.cs",
     retiredPairLabelInference,
     `pair labels must not be inferred from a field id (${retiredPairLabelInference})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
   "public static PairFieldLabels? ReadPairLabels(",
   "Runtime Input pair labels must be validated by the shared current-definition owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+  "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
   "NumberDefinition? Number = null,\n    PairFieldLabels? PairLabels = null,\n    string ComponentType = \"\",",
   "Component Input binding projections must retain explicit pair labels",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
   "new NumberDefinition(input.Minimum, input.Maximum, input.Increment),\n                input.PairLabels,\n                input.ComponentType,",
   "Component Variant Runtime Input bindings must retain explicit pair labels",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
   "PairLabels: input.PairLabels,",
   "embedded Component Input dictionary fields must retain explicit pair labels",
 );
@@ -6484,16 +6487,16 @@ for (const retiredRuntimePairLabelFallback of [
   'JsonString(field, "pairSecondLabel", "H")',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     retiredRuntimePairLabelFallback,
     `Runtime Input pair labels must remain explicit (${retiredRuntimePairLabelFallback})`,
   );
 }
 for (const strictPrimitiveControl of [
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryBooleanControl.cs", "BooleanText.ParseRequired("],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs", "PaletteAlphaPair.ParseAlphaRequired("],
-  ["spikes/desktop-editor-shell/EditorShell/HueDegreesControl.cs", "NormalizeHueRequired("],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryIconTokenListControl.cs", "RuntimeInputValueKindContract.ParseValue("],
+  ["src/Mockups.Desktop/EditorShell/DictionaryBooleanControl.cs", "BooleanText.ParseRequired("],
+  ["src/Mockups.Desktop/EditorShell/DictionaryAlphaControl.cs", "PaletteAlphaPair.ParseAlphaRequired("],
+  ["src/Mockups.Desktop/EditorShell/HueDegreesControl.cs", "NormalizeHueRequired("],
+  ["src/Mockups.Desktop/EditorShell/DictionaryIconTokenListControl.cs", "RuntimeInputValueKindContract.ParseValue("],
 ] as const) {
   assertContains(
     strictPrimitiveControl[0],
@@ -6502,10 +6505,10 @@ for (const strictPrimitiveControl of [
   );
 }
 for (const retiredPrimitiveControlFallback of [
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryBooleanControl.cs", "BooleanText.Parse(value)"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryAlphaControl.cs", "TryParseAlpha(value, out var parsed) ? parsed : 1"],
-  ["spikes/desktop-editor-shell/EditorShell/HueDegreesControl.cs", "NumericText.ClampedDouble(value, 0, 0, 360)"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryIconTokenListControl.cs", 'string.IsNullOrWhiteSpace(value) ? "[]" : value'],
+  ["src/Mockups.Desktop/EditorShell/DictionaryBooleanControl.cs", "BooleanText.Parse(value)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryAlphaControl.cs", "TryParseAlpha(value, out var parsed) ? parsed : 1"],
+  ["src/Mockups.Desktop/EditorShell/HueDegreesControl.cs", "NumericText.ClampedDouble(value, 0, 0, 360)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryIconTokenListControl.cs", 'string.IsNullOrWhiteSpace(value) ? "[]" : value'],
 ] as const) {
   assertDoesNotContain(
     retiredPrimitiveControlFallback[0],
@@ -6514,9 +6517,9 @@ for (const retiredPrimitiveControlFallback of [
   );
 }
 for (const strictNumericControl of [
-  "spikes/desktop-editor-shell/EditorShell/DictionaryIntegerControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryDecimalControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryIntegerControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryDecimalControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryNumberSliderControl.cs",
 ]) {
   assertContains(
     strictNumericControl,
@@ -6525,10 +6528,10 @@ for (const strictNumericControl of [
   );
 }
 for (const retiredNumericControlFallback of [
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryIntegerControl.cs", "NumericText.Integer(value, fallback)"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryDecimalControl.cs", "NumericText.Decimal(value, fallback)"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Integer(value, 0)"],
-  ["spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Decimal(value, 0)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryIntegerControl.cs", "NumericText.Integer(value, fallback)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryDecimalControl.cs", "NumericText.Decimal(value, fallback)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Integer(value, 0)"],
+  ["src/Mockups.Desktop/EditorShell/DictionaryNumberSliderControl.cs", "NumericText.Decimal(value, 0)"],
 ] as const) {
   assertDoesNotContain(
     retiredNumericControlFallback[0],
@@ -6537,22 +6540,22 @@ for (const retiredNumericControlFallback of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryNumberSliderControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryNumberSliderControl.cs",
   "DictionaryNumericValueContract.TryParseDraft(",
   "the numeric slider must keep invalid interactive drafts separate from current state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
   '"device.metrics.cornerRadius",\n            "Corner radius",\n            ValueKind.Decimal',
   "Device corner radius must preserve its declared fractional design-unit values",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryFieldControl.cs",
   "DictionaryControlRegistry.Create",
   "dictionary field rows must host controls through the dictionary control registry",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
   "ComponentPreviewActions.ValidateContract(",
   "current Design Preview actions must be validated read-only at startup",
 );
@@ -6567,7 +6570,7 @@ for (const strictPreviewActionOwner of [
   'if (!ownerDocument.ContainsKey(key))',
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
     strictPreviewActionOwner,
     `Design Preview actions must keep their explicit declarative owner (${strictPreviewActionOwner})`,
   );
@@ -6585,45 +6588,45 @@ for (const retiredPreviewActionFallback of [
   'action["durationBaseFrames"] is not null',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
     retiredPreviewActionFallback,
     `Design Preview actions must not reconstruct malformed current metadata (${retiredPreviewActionFallback})`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "source.DeepClone() as JsonObject ?? new JsonObject()",
   "Runtime collection clones must preserve their guaranteed object root",
 );
-assertNoTerms("spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs", [
+assertNoTerms("src/Mockups.Desktop/EditorShell/DictionaryFieldControl.cs", [
   "DictionaryPathBrowseButton",
   "ValueKind.DirectoryPath",
   "ValueKind.ImageFilePath",
 ]);
 assertContains(
-  "spikes/desktop-editor-shell/Mockups.DesktopEditorShell.csproj",
+  "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
   "desktopPreviewManifest.json",
   "desktop app must embed the canonical preview manifest",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
   "DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)",
   "component navigation category must come from the canonical preview manifest",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
   "ComponentClassNavigationGroupFor",
   "component navigation must not infer category from a hard-coded component type switch",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
   "DesktopPreviewManifest.Modules",
   "module class options must come from the canonical preview manifest",
 );
 for (const retiredGenericModulePath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
 ]) {
   assertDoesNotContain(
     retiredGenericModulePath,
@@ -6632,9 +6635,9 @@ for (const retiredGenericModulePath of [
   );
 }
 for (const retiredGenericAppPath of [
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
 ]) {
   assertDoesNotContain(
     retiredGenericAppPath,
@@ -6643,11 +6646,11 @@ for (const retiredGenericAppPath of [
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
   "if (parent.Kind == ProjectTreeNodeKind.AppsRoot)",
   "repository must not create Apps through generic Add Child",
 );
-assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs", [
+assertNoTerms("src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", [
   "\"audio\"",
   "\"avatar\"",
   "\"buttonIcon\"",
@@ -6659,12 +6662,12 @@ assertNoTerms("spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
   "\"media\"",
 ]);
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "index < slots.Count - 1 && overrides is not null",
   "embedded inherited values must apply ancestor overrides only, so reset restores the selected child Variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
   "return GetComponentVariantReferenceOptionsByType(projectId, componentType);",
   "embedded Component Variant selectors must store full Component Variant references, not short Variant ids",
 );
@@ -6679,27 +6682,27 @@ assertContains(
   "audio badge preview must resolve the selected Badge Variant",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
   "ResolveIconTokenAssetPath",
   "icon tokens must never resolve through the first Icon Set in a project",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/IconTokenPickerDialog.cs",
+  "src/Mockups.Desktop/EditorShell/IconTokenPickerDialog.cs",
   "GetIconThemeOptions",
   "the generic icon-token picker must use the active Theme Icon Set instead of selecting a concrete set",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/SvgIconPreview.cs",
+  "src/Mockups.Desktop/EditorShell/SvgIconPreview.cs",
   "NativeWebView",
   "editor icon thumbnails must use lightweight vector controls instead of one web view per icon",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   "component.label.textGap\"",
   "Label text separation must use the canonical spacing-token field",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "ValidateComponentVariantReferencesForPreview",
   "the Preview data boundary must validate full embedded Variant references before payload construction",
 );
@@ -6714,45 +6717,45 @@ for (const embeddedVariantField of [
     );
   }
   assertMatches(
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
     new RegExp(`\\["${embeddedVariantField.replaceAll(".", "\\.")}"\\][\\s\\S]*?ValueKind\\.OptionToken`),
     `embedded Variant field "${embeddedVariantField}" must keep the slot Variant route, not generic recordReference`,
   );
 }
 
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs",
   "private readonly Dictionary<string, string> _lastComponentVariantNodeIds",
   "Component Variant navigation must remember the last selected Variant per component class",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "ResolveSelectionNode",
   "component class navigation must resolve to a concrete Variant selection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_editorContent.Build(editorNode, node)",
   "component editor layout node and data node must stay separated so Variants edit Variant config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "variantSourceNode.Kind != ProjectTreeNodeKind.ComponentVariant",
   "Save Variant must only be offered for a concrete selected Component Variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNodeSelectionState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs",
   "VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId)",
   "first component class selection must prefer the protected Default Variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
   "Component variants can only be saved from an active selected variant.",
   "component variant saving must reject ambiguous parent component class configs",
 );
 for (const kind of ["ComponentClass", "ComponentVariant"]) {
   assertPropertyBlockContainsKind(
-    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
     "CanRenameDirectly",
     kind,
     true,
@@ -6760,52 +6763,52 @@ for (const kind of ["ComponentClass", "ComponentVariant"]) {
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "CanRenameDirectly => Kind == ProjectTreeNodeKind.ComponentClass\n        || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected)",
   "Component Variant rename must not be coupled to delete protection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs",
   "EditorIcons.Create(EditorIcons.Edit, 14)",
   "Component Variant rename must use the standard editor rename icon",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+  "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
   "Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected",
   "protected Component Variants must not be deletable",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), themeMode, theme)",
   "design preview must route selected Component Variant nodes",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
   "_database.GetComponentVariantSettings(node)",
   "the Preview data boundary must load selected Component Variant config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentClassFieldValueService.cs",
   "ProjectTreeNodeKind.ComponentClass or ProjectTreeNodeKind.ComponentVariant",
   "component field service must support Component Variants as editable data contexts",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "CreateComponentVariantFieldValue",
   "Component Variant fields must read from Variant config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "UpdateComponentVariantField",
   "Component Variant fields must write to Variant config",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
   "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 3)",
   "theme status bar references must target concrete Component Variants",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
   "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 4)",
   "theme navigation bar references must target concrete Component Variants",
 );
@@ -6821,18 +6824,18 @@ assertAnyContains(
 );
 for (const themeVariantField of ["theme.statusBarId", "theme.navigationBarId"]) {
   assertMatches(
-    "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
     new RegExp(`\\[\"${themeVariantField.replaceAll(".", "\\.")}\"\\][\\s\\S]*?ValueKind\\.ComponentVariant`),
     `${themeVariantField} must use the typed Component Variant dictionary control`,
   );
 }
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/MotionVariantValue.cs",
+  "src/Mockups.Desktop/EditorShell/MotionVariantValue.cs",
   "legacyKey",
   "motion parser must not accept legacy transition keys",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
   "motion.Remove(\"opacity\")",
   "component config normalization must not migrate legacy motion opacity",
 );
@@ -6842,7 +6845,7 @@ for (const legacyMediaIconBarSlot of [
   "\"bottomIconBarSlot\"",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
     legacyMediaIconBarSlot,
     `media icon bars must use explicit inline/fullscreen slots, not legacy ${legacyMediaIconBarSlot}`,
   );
@@ -6854,47 +6857,47 @@ assertContains(
   "desktop preview nodes must expose stable ids for generic incremental WebView updates",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "window.mockupsRegisterPreviewAsset",
   "animation frames must register repeated data assets once instead of transporting them in every body patch",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "_pendingUpdate = nextUpdate;",
   "animation playback must keep the latest pending frame instead of accumulating obsolete frames",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "MaxQueuedAnimationFrames",
   "animation playback must not restore a bounded backlog of obsolete frames",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "Stopwatch.GetElapsedTime(_playbackStartedTimestamp).TotalSeconds",
   "preview playback time must derive from a monotonic elapsed clock instead of counting processed UI ticks",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "PrewarmPersistentRenderer",
   "preview prewarming must not serialize interactive frames through the same renderer process",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "public static IDisposable ReserveFrameCacheCapacity",
   "expanded playback frame caches must be represented by a releasable reservation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "ReleaseFrameCacheReservation();",
   "playback must release its expanded frame-cache reservation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   ".CreateProductionScreenPayloadSurface(node)",
   "Production Screen Payload must use the shared declarative runtime-input editor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "payload.Kind is \"componentClass\" or \"module\" or \"moduleInstance\"",
   "module-instance actions must use the generic preview input session",
 );
@@ -6904,8 +6907,8 @@ for (const retiredInstanceEditorTerm of [
   "ConversationMessagesCollectionEditor",
 ]) {
   for (const file of [
-    "spikes/desktop-editor-shell/EditorShell/RecordClassFieldCatalog.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+    "src/Mockups.Desktop/EditorShell/RecordClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   ]) {
     assertDoesNotContain(
       file,
@@ -6932,132 +6935,132 @@ assertSourceContains(
   "a module runtime contract must declare which action defines its finite instance duration",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "DeclaredBaseDuration(contract)",
   "module-instance duration must be evaluated generically from the declared runtime action",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'if (action["extendsModuleDuration"]?.GetValue<bool>() != true) continue;',
   "finite collection-item actions must be able to extend module duration through their declarative contract",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "group.Sum((instance) => instance.DurationFrames)",
   "cut-only Shot duration must remain the sum of its ordered module-instance durations",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "ProjectTreeNodeKind.Shot => FromShot",
   "Shot preview must resolve its active ordered module-instance slot",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "boundedFrame - startFrame",
   "Shot preview must translate the requested Shot frame to the active module's local frame",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   '["moduleInstanceId"] = moduleInstanceId',
   "production preview payloads must identify their active module instance",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "RenderProductionContextHistoryItems",
   "production preview history must use its own Shot and module-instance stack",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "public void SetWorkspace(EditorWorkspace workspace)",
   "preview ownership must follow the explicit Design or Production workspace",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_previewController.SetWorkspaceWithoutRefresh(workspace);",
   "workspace transactions must establish their final selection before refreshing Preview",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorContentController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContentController.cs",
   "_cardHost.Replace(cards);",
   "editor content must build a candidate before replacing the visible card host",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNavigationRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs",
   "var candidate = new StackPanel();",
   "navigation content must build a candidate before replacing the visible host",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "{ Kind: ProjectTreeNodeKind.ModuleInstance } instance => _productionPreviewData.ModuleInstanceShotId(instance.Id)",
   "a selected module instance must retain its owning Shot playhead context",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   'new FieldOption("screen", "Screen")',
   "production navigation must not duplicate tree context with a Shot or Screen scope control",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "NavigationFrameRange()",
   "production slider and playback must share the tree-owned navigation range",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "return ScreenFrameRange(screen.Id);",
   "a selected Screen must present and play its own local range",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   '["screenFrame"] = Math.Max(0, screenFrame ?? 0)',
   "production Screen payload identity must expose its exact root Screen frame",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   '["moduleInstanceId"]?.GetValue<string>()',
   "runtime Test Values scope must distinguish production Screens by instance id",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   /TimelineButtonGroup\([\s\S]*?_shotAbsoluteStartButton,[\s\S]*?_shotPreviousSlotButton,[\s\S]*?_shotPreviousKeyframeButton,[\s\S]*?_shotPreviousFrameButton,[\s\S]*?_shotPlayButton,[\s\S]*?_shotNextFrameButton,[\s\S]*?_shotNextKeyframeButton,[\s\S]*?_shotNextSlotButton,[\s\S]*?_shotAbsoluteEndButton\)/,
   "production transport must remain symmetric around frame stepping and playback",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   /_shotPreviousKeyframeButton,[\s\S]*?_shotPreviousFrameButton,[\s\S]*?_shotPlayButton,[\s\S]*?_shotNextFrameButton,[\s\S]*?_shotNextKeyframeButton/,
   "production transport must keep frame stepping next to playback and keyframe stepping outside it",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_shotNavigationScope",
   "Production preview context must come from the selected tree node rather than a duplicate scope control",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "navigationRow = new Border",
   "production transport must retain its grouped separator layout",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_shotTimelineControls.DesiredSize.Width",
   "production transport controls must reflow as one measured unit",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "availableWidth < 880",
   "production transport must not use a fixed wrapping breakpoint",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "SynchronizeExplicitScreenSelection",
   "Production scrubbing must move the shared playhead without changing tree selection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorIcons.cs",
+  "src/Mockups.Desktop/EditorShell/EditorIcons.cs",
   'TimelineShotStart => "M3 3H6V5H5V19H6V21H3Z',
   "timeline boundary bars must be filled geometry rather than invisible open paths",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "dataSource.ModuleInstanceScreenFrame(node.Id, timelineFrame)",
   "module-instance production preview must translate the global Shot frame to a root Screen frame",
 );
@@ -7121,9 +7124,9 @@ for (const retiredDesktopContextFrame of [
   "ModuleInstanceLocalFrame(",
 ]) {
   for (const desktopFrameOwner of [
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
-    "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadDataSource.cs",
-    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadDataSource.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   ]) {
     assertDoesNotContain(
       desktopFrameOwner,
@@ -7133,47 +7136,47 @@ for (const retiredDesktopContextFrame of [
   }
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorTimelineTransport.cs",
+  "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",
   "CreateKeyframeStepIcon(bool next)",
   "Shot keyframe controls must use shared timeline transport chrome",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorTimelineTransport.cs",
+  "src/Mockups.Desktop/EditorShell/EditorTimelineTransport.cs",
   "CreateKeyframeGlyph(",
   "Preview and editor keyframe buttons must share one SVG glyph factory",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "var isOnKeyframe = keyframes.Contains(_shotPreviewFrame)",
   "Preview playback must expose when the playhead is parked on a keyframe",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   /_shotPlayButton\.BorderBrush\s*=\s*isOnKeyframe[\s\S]*?EditorAnimationVisuals\.ActiveTrackBrush/,
   "Preview playback must use the animation amber border at an exact keyframe",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "ModuleInstanceTimeline.ShotKeyframeFrames(_timelineDataSource, shotId)",
   "Shot navigation must aggregate keyframes from every Screen before selecting the current Screen range",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "var showScreenStep = contextNode?.Kind == ProjectTreeNodeKind.Shot",
   "previous and next Screen controls must appear only in Shot context",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "? ScreenFrameRange(contextNode.Id)",
   "Screen context keyframe navigation must stay inside the selected Screen",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "private ProjectTreeNode? ProductionPayloadNode() => ProductionContextNode();",
   "the selected Production tree node must be the sole preview payload context",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_designContextLockButton.IsVisible = _workspace != EditorWorkspace.Production",
   "Production preview must not expose a context lock that can diverge from tree selection",
 );
@@ -7183,7 +7186,7 @@ assertMatches(
   "Bubble must explicitly bind its embedded Audio badge visibility at the child boundary",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'Timeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false',
   "field metadata must decide whether a field advances serial owner duration",
 );
@@ -7205,12 +7208,12 @@ assertContains(
   "Conversation resolver must suppress built-in write-on when text owns animation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "Stopwatch.GetElapsedTime(_shotPlaybackStartedTimestamp).TotalSeconds",
   "Shot playback must derive frames from a monotonic elapsed clock",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_pendingPlaybackFramesOverride = frames;",
   "Shot playback must prepare its frames through the shared HTML/raster playback route",
 );
@@ -7220,13 +7223,13 @@ for (const hiddenProductionPreviewField of [
   "modeField.IsVisible = !production",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+    "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
     hiddenProductionPreviewField,
     `production preview setup must hide its Design-owned field (${hiddenProductionPreviewField})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "ProductionPreviewContextStrip.Render",
   "production preview setup must expose inherited context through the shared read-only strip",
 );
@@ -7279,67 +7282,67 @@ assertSourceMatches(
   "new Conversation messages must contribute a finite default write-on duration",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey",
   "runtime collection controls must rebuild after a dependency field changes",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/InstantEditorCard.cs",
+  "src/Mockups.Desktop/EditorShell/InstantEditorCard.cs",
   "public EditorSubcardLayout SubcardLayout { get; }",
   "subcard organization must be an explicit generic card property",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "EditorSubcardLayout.VerticalCards",
   "runtime collection cards must declare their subcard organization explicitly",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorGroupBlock.cs",
+  "src/Mockups.Desktop/EditorShell/EditorGroupBlock.cs",
   "subcardLayout == EditorSubcardLayout.FlatStack",
   "flat-stack cards must inherit their parent surface through the shared card factory",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateSeparatedInputContent(owner, preview, ownInputs)",
   "the General runtime category must use shared separated-section content",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   /"general",\s*"General",\s*"Runtime inputs"/,
   "direct runtime fields must join the shared top-level category navigator",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateTestValueCollectionContent(owner, preview, collection, actions, items)",
   "runtime collections must join the same top-level category navigator",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
   "_entries[section.Id] = entry;",
   "vertical-card rows must own full-width separators up to the navigation divider",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayout.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayout.cs",
   '[JsonPropertyName("groupLayout")]',
   "editor cards must declare reusable child-group organization through layout metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayout.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayout.cs",
   '[JsonPropertyName("presentation")]',
   "individual editor groups must be able to declare a reusable presentation block",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   "EffectiveGroupLayout(group, groupLayout)",
   "mixed editor-card organization must remain metadata-driven and generic",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   '"verticalCards" => EditorSubcardLayout.VerticalCards',
   "layout cards must route vertical-card organization through the shared subcard host",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   '"separatedSections" => EditorSubcardLayout.SeparatedSections',
   "layout cards must route separated sections through the shared subcard host",
 );
@@ -7374,7 +7377,7 @@ assertSourceMatches(
   "Keyboard categories must use the same declarative vertical-card organization as Atoms",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   'EditorSubcardLayout.VerticalCards',
   "runtime input groups must use the shared vertical-card organization",
 );
@@ -7385,135 +7388,135 @@ assertSourceDoesNotContain(
   "current component input contracts must store concrete Component Variant references",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorTreeExpansionState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorTreeExpansionState.cs",
   "CollapseWorkspaceSectionPeers(node)",
   "workspace navigation cards must remain mutually exclusive",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorSessionUiState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorSessionUiState.cs",
   "public void SetExpanded(string key, bool value)",
   "nested card expansion must remain available within the current editor session",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
   "cards[0].IsExpanded = true",
   "nested cards must not reopen automatically in a new application session",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs",
+  "src/Mockups.Desktop/EditorShell/EditorShellStateService.cs",
   "ExpandedCards",
   "card expansion must never be written to persisted window state",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorSessionHistoryState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorSessionHistoryState.cs",
   "EditorViewState",
   "Preview and Variant history must never persist editor view state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorCardHostController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCardHostController.cs",
   "card.IsExpanded = false;",
   "a new editor session must begin with every editor card closed",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorSessionViewStateStore.cs",
+  "src/Mockups.Desktop/EditorShell/EditorSessionViewStateStore.cs",
   "_statesByRecordClassId[RequiredRecordClassId(recordClassId)] = state;",
   "card expansion and scroll must remain available by exact layout class within the current session",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorViewStateController.cs",
   "EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId",
   "Variant editor state must resolve through the parent layout record class",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorViewStateController.cs",
   "node.Id",
   "editor view state must not be keyed by the selected node id",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorViewStateController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorViewStateController.cs",
   "card.SessionStateId",
   "top-level editor card state must restore through explicit stable ids",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorViewState.cs",
+  "src/Mockups.Desktop/EditorShell/EditorViewState.cs",
   "bool[]",
   "top-level editor card expansion must not be stored by array position",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorContentController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContentController.cs",
   "presentationKey",
   "the retired Simplified/Complete presentation mode must not create session state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
   "EditorContextVariantSelector",
   "the shared editor context strip must own the explicit Variant selector presentation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
   'Status("Used"',
   "the shared editor context strip must expose the active Used state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
   'Status("Protected"',
   "the shared editor context strip must expose the active Protected state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
   'Status("Locked"',
   "the shared editor context strip must expose the active Locked state",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorContextStrip.cs",
+  "src/Mockups.Desktop/EditorShell/EditorContextStrip.cs",
   "EditorContextSaveState",
   "the immediate-commit editor must not present a permanent document Saved state",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "new FieldOption(variant.Id, variant.Name)",
   "the header Variant selector must navigate by exact stable Variant node ids",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "new EditorBreadcrumbItem(parent.Name)",
   "the root Variant breadcrumb must retain its exact Component or Module parent identity",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "new EditorBreadcrumbItem(selected.Name)",
   "the root Variant breadcrumb must expose the exact active Variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   'Text = "New Variant…"',
   "Variant cloning must be presented as creating a new Variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   'x:Name="PreviewAuthoringDataHost"',
   "Design Test Values and Production Screen Payload must share one delegated Preview authoring host",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   /x:Name="PreviewUtilityTabs"[\s\S]*?x:Name="PreviewAuthoringDataTab"[\s\S]*?x:Name="PreviewSetupTab"[\s\S]*?Header="Preview Setup"[\s\S]*?x:Name="PreviewControlsTab"[\s\S]*?Header="Preview Controls"/,
   "the upper Preview utility surface must keep the agreed horizontal authoring-data, Setup and Controls tab order",
 );
 for (const [relativePath, responsivePreviewTerm] of [
-  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="300" MinWidth="240" />'],
-  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="2*" MinWidth="280" />'],
-  ["spikes/desktop-editor-shell/MainWindow.axaml", '<ColumnDefinition Width="*" MinWidth="420" />'],
-  ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewPanelBorder"'],
-  ["spikes/desktop-editor-shell/MainWindow.axaml", 'MinWidth="400"'],
-  ["spikes/desktop-editor-shell/MainWindow.axaml", 'x:Name="PreviewSetupGrid"'],
-  ["spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs", "PreviewPanelLayoutPolicy.SetupMode(availableWidth)"],
-  ["spikes/desktop-editor-shell/EditorShell/EditorShellStateService.cs", "PreviewPanelLayoutPolicy.ClampRestoredColumns("],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellLayoutIsResponsive"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "PreviewShellVisualTreeIsResponsive"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication))"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", "AppBuilder.Configure<App>()"],
-  ["spikes/desktop-editor-shell-animation-tests/Program.cs", ".UseHeadless(new AvaloniaHeadlessPlatformOptions"],
-  ["spikes/desktop-editor-shell-animation-tests/Mockups.DesktopEditorShell.AnimationTests.csproj", 'PackageReference Include="Avalonia.Headless"'],
+  ["src/Mockups.Desktop/MainWindow.axaml", '<ColumnDefinition Width="300" MinWidth="240" />'],
+  ["src/Mockups.Desktop/MainWindow.axaml", '<ColumnDefinition Width="2*" MinWidth="280" />'],
+  ["src/Mockups.Desktop/MainWindow.axaml", '<ColumnDefinition Width="*" MinWidth="420" />'],
+  ["src/Mockups.Desktop/MainWindow.axaml", 'x:Name="PreviewPanelBorder"'],
+  ["src/Mockups.Desktop/MainWindow.axaml", 'MinWidth="400"'],
+  ["src/Mockups.Desktop/MainWindow.axaml", 'x:Name="PreviewSetupGrid"'],
+  ["src/Mockups.Desktop/EditorShell/EditorPreviewController.cs", "PreviewPanelLayoutPolicy.SetupMode(availableWidth)"],
+  ["src/Mockups.Desktop/EditorShell/EditorShellStateService.cs", "PreviewPanelLayoutPolicy.ClampRestoredColumns("],
+  ["tests/Mockups.Desktop.Tests/Program.cs", "PreviewShellLayoutIsResponsive"],
+  ["tests/Mockups.Desktop.Tests/Program.cs", "PreviewShellVisualTreeIsResponsive"],
+  ["tests/Mockups.Desktop.Tests/Program.cs", "HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication))"],
+  ["tests/Mockups.Desktop.Tests/Program.cs", "AppBuilder.Configure<App>()"],
+  ["tests/Mockups.Desktop.Tests/Program.cs", ".UseHeadless(new AvaloniaHeadlessPlatformOptions"],
+  ["tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj", 'PackageReference Include="Avalonia.Headless"'],
   ["docs/architecture/ux_ui.md", "1040 px minimum"],
 ] as const) {
   assertContains(
@@ -7523,137 +7526,137 @@ for (const [relativePath, responsivePreviewTerm] of [
   );
 }
 assertMatches(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   /x:Name="PreviewPanelGrid"[\s\S]*?x:Name="PreviewUtilitySplitter"[\s\S]*?ResizeDirection="Rows"[\s\S]*?ResizeBehavior="PreviousAndNext"/,
   "the Preview utility surface must use one standard horizontal adjacent-row splitter",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   /x:Name="PreviewPanelGrid"[\s\S]*?<Border Grid\.Row="0"[\s\S]*?MinHeight="132"[\s\S]*?<GridSplitter x:Name="PreviewUtilitySplitter"[\s\S]*?<Grid Grid\.Row="2"[\s\S]*?MinHeight="180"/,
   "the Preview utility splitter must preserve usable minimum heights for both adjacent surfaces",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "_collectionCards.CreatePreviewAuthoringSurface(node, _workspace)",
   "the shell must delegate Design Test Values and Production Screen Payload construction to the shared collection-card factory",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "CreateTestValuesTab",
   "the shell must not construct Runtime or Test Value controls",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   '"Runtime Contract"',
   "the hidden Runtime Contract implementation must remain available",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateApiTab(",
   "the hidden Runtime API implementation must remain available",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   "CreateRuntimeInputsCard(node)",
   "Design and Production must not present the dormant Runtime API card",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   '"Temporary Preview data',
   "Design Test Values must be visibly identified as temporary Preview data",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   ":preview:utility-tab",
   "Preview utility tab selection must remain session-only by exact layout class",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
   "PreviewAuthoringDataTab.Header = authoringSurface?.Header",
   "the shared Preview authoring tab must present the exact delegated Design or Production label",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   'Text = "Saved with this Screen instance."',
   "Production Screen Payload must identify its persisted Screen-instance ownership",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   "CreatePreviewAuthoringSurface(",
   "the shared collection-card factory must own both Preview authoring surfaces",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateDesignTestValuesSurface(ProjectTreeNode node)",
   "Design Test Values must expose tab content without creating alternate card chrome",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateProductionScreenPayloadSurface(ProjectTreeNode node)",
   "Production Screen Payload must expose its existing editor without alternate card chrome",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   /workspace == EditorWorkspace\.Production[\s\S]*?node\.Kind != ProjectTreeNodeKind\.ModuleInstance[\s\S]*?CreateProductionScreenPayloadSurface\(node\)/,
   "only an exact Production Module Instance may expose the persisted Screen Payload utility surface",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   "ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleInstance",
   "Production Module Instances must not retain a duplicate central Runtime Inputs card",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   /CreateProductionScreenPayloadSurface\(ProjectTreeNode node\)[\s\S]*?return new Border[\s\S]*?Child = CreateTestValuesTab\(/,
   "Production Screen Payload must present its persisted values directly without a nested tab bar",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "new TabControl",
   "the hidden Runtime API must not leave a nested Design or Production tab bar",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   'Text="PREVIEW"',
   "the right-hand authoring surface must use the generic Preview title",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   'Text="Current frame"',
   "the resolved Preview surface must identify the current frame rather than Design",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   '"Screen local timeline"',
   "Production Preview must identify the Screen-local authoring scale",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   '"Shot timeline"',
   "Production Preview must identify the Shot authoring scale",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   '"No Shot selected"',
   "Episode Preview context must not fabricate inherited Shot values",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "ProductionScreenPlaybackState.ActiveScreenId",
   "Production Preview must consume the shared active Screen frame-range rule",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ShotModuleInstancesCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ShotModuleInstancesCollectionEditor.cs",
   "ProductionScreenPlaybackState.ActiveScreenId",
   "the Shot Modules card must consume the shared active Screen frame-range rule",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHierarchicalNavigationRow.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHierarchicalNavigationRow.cs",
   "IsPreviewActive",
   "Production navigation must expose active Preview state independently from selection",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionScreenPresentationDataSource.cs",
   "GetModuleInstanceVariantName",
   "the Production Screen summary must use the exact current Module Variant",
 );
@@ -7663,7 +7666,7 @@ for (const screenCollectionAction of [
   "CreateDeleteButton",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ShotModuleInstancesCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/ShotModuleInstancesCollectionEditor.cs",
     screenCollectionAction,
     `the Shot Modules collection must retain ${screenCollectionAction}`,
   );
@@ -7674,12 +7677,12 @@ for (const deadProductionAction of [
   "ProductionDeleteButton",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/MainWindow.axaml",
+    "src/Mockups.Desktop/MainWindow.axaml",
     deadProductionAction,
     `the Production picker must not present disabled ${deadProductionAction} placeholders`,
   );
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/MainWindow.axaml.cs",
+    "src/Mockups.Desktop/MainWindow.axaml.cs",
     deadProductionAction,
     `the Production shell must not wire retired ${deadProductionAction} placeholders`,
   );
@@ -7712,7 +7715,7 @@ for (const renameableKind of [
   "ProductionFont",
 ]) {
   assertPropertyBlockContainsKind(
-    "spikes/desktop-editor-shell/EditorShell/ProjectTreeNode.cs",
+    "src/Mockups.Desktop/EditorShell/ProjectTreeNode.cs",
     "CanRenameDirectly",
     renameableKind,
     true,
@@ -7720,127 +7723,127 @@ for (const renameableKind of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/CoreFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/CoreFieldValueService.cs",
   "IsEditable: node.CanRenameDirectly",
   "core.name editability must match the shared Rename capability",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/CoreFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/CoreFieldValueService.cs",
   "_database.RenameDirectNode(node, value)",
   "editor core.name must use the same direct Rename operation as navigation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   'node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token"',
   "Palette Token must remain the explicit editable identity field",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RecordClassFieldValueService.cs",
+  "src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs",
   "_database.RenameDirectNode(node, value)",
   "Palette Token must use the same direct Rename operation as navigation",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/EditorFieldPostCommitEffects.cs",
+  "src/Mockups.Desktop/EditorShell/EditorFieldPostCommitEffects.cs",
   /fieldId == "core\.name"[\s\S]*?_setEditorTitle\(node\.Name\);[\s\S]*?_rebuildNavigation\(\);[\s\S]*?_refreshPreviewOptions\(\);/,
   "editor Rename must refresh title, navigation and Preview options",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionScreenPresentationDataSource.cs",
   "Sqlite",
   "the Production Screen presentation boundary must not execute SQL",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ProductionScreenPresentationDataSource.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionScreenPresentationDataSource.cs",
   "Avalonia",
   "the Production Screen presentation boundary must not construct UI",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   /"PreviewTestValuesFixedActions"[\s\S]*?"PreviewTestValuesEditorScroll"[\s\S]*?"PreviewTestValuesSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
   "Design Test Values must keep root actions fixed above one independently scrolling value editor",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   /Name = "PreviewScreenPayloadFixedHeader"[\s\S]*?"PreviewScreenPayloadEditorScroll"[\s\S]*?"PreviewScreenPayloadSplitLayout"[\s\S]*?RowDefinitions = new RowDefinitions\("Auto,\*"\)/,
   "Production Screen Payload must keep its persisted-owner header fixed above one independently scrolling value editor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/MainWindow.axaml",
+  "src/Mockups.Desktop/MainWindow.axaml",
   'VerticalContentAlignment="Stretch"',
   "the Preview utility tab host must stretch the fixed-actions and scrolling-values layout",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "new GlassCard",
   "Preview Setup and Preview Controls must not retain nested card chrome inside their shared tabs",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   '"Interpolation",\n                    ValueKind.OptionToken',
   "keyframe interpolation must use the dictionary field route",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "EditorIcons.TimelineFirstFrame",
   "animation transport must reuse the standard timeline navigation icons",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "filled: hasCurrentKeyframe",
   "animation transport must expose exact-keyframe state at the active frame",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "playbackButton.Click += (_, _) => _togglePlayback()",
   "animation play-pause must delegate to the authoritative Preview playback owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   'var selectionKey = $"{node.Id}:animation-properties:{scopeKey}"',
   "animation property selection must remain isolated per declared animation scope in session state",
 );
 assertMatches(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   /Children\s*=\s*\{[\s\S]*?CreateSeparator[\s\S]*?currentKeyframeButton,[\s\S]*?firstFrameButton,[\s\S]*?previousFrameButton,[\s\S]*?playbackButton,[\s\S]*?nextFrameButton,[\s\S]*?lastFrameButton/,
   "animation transport must keep diamond-first standard navigation order",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "DispatcherTimer",
   "animation editor must not create an independent playback clock",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "var resolvedTargets = document.Tracks",
   "animation property lists must originate from active persisted tracks only",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   ": EditorAnimationVisuals.OtherKeyframeBrush",
   "active animated properties that are not selected must remain visible in gray",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "_shotFrame() - screenStartFrame",
   "Screen animation panels must present the authoritative Shot playhead as Screen-local time",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(",
   "owner-relative keyframes must translate through the common timeline onto the containing Screen",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id)",
   "animation authoring panels must use their containing Screen scale",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceTimeline.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceTimeline.cs",
   "RuntimeDurationPolicy.Explicit",
   "explicit Screen duration must be resolved by the shared module-instance timeline",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
   "RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit",
   "timeline synchronization must preserve explicitly authored Screen durations",
 );
@@ -7851,42 +7854,42 @@ assertSourceContains(
   "Lock Screen must declare its explicit duration policy in its own module contract",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
   "lockScreen",
   "the generic duration contract must not know concrete modules",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "screenStartFrame + RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame",
   "Screen-local keyframe markers must not persist or display absolute Shot offsets",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "_reloadAndSelect",
   "keyframe edits must refresh their local animation surface without rebuilding the editor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "firstMatchingValue",
   "entity-owned keyframes must support a generic stable first-appearance origin",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue)",
   "animated Runtime Values must follow the authoritative Preview playhead",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "control.IsEnabled = false",
   "an animated Runtime Value must be read-only outside its Animation editor",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryFieldControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryFieldControl.cs",
   "public void SetPresentedValue(string value)",
   "dictionary controls must support a resolved display value without committing it as runtime payload",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationValueResolver.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationValueResolver.cs",
   "destination.Interpolation is \"linear\" or \"easeInOut\"",
   "Runtime Values must resolve numeric keyframes with the generic interpolation contract",
 );
@@ -7903,37 +7906,37 @@ assertSourceMatches(
   "forwarded Lock Screen slots must preserve the parallel Component Stack timeline",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "ModuleInstanceAnimationValueResolver.ResolveDisplayValue(",
   "Animation keyframe controls and Runtime Values must share one resolved-value presentation path",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "timelineDuration += 10",
   "the provisional authoring horizon must grow in session-only ten-frame steps",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ModuleInstanceAnimationEditor.cs",
+  "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "toggle.IsChecked == true ? naturalDuration : null",
   "Retime off must remove the persisted target-duration override",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "FieldReferenceDurationFrames",
   "reference-duration lanes must resolve through the common owner timeline",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   '_animationEditor.CreateTargetContent(owner.Node, "")',
   "Screen-owned animation must live inside the General runtime category",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "_animationEditor.CreateTargetContent(owner.Node, itemId)",
   "collection-item animation must live inside its owning runtime item",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorCollectionCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorCollectionCardFactory.cs",
   "animationEditor.Create(node)",
   "animation must not return as a detached module-level editor card",
 );
@@ -7948,52 +7951,52 @@ assertContains(
   "the generic preview owner timeline must support late fields that do not advance collection sequencing",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract")',
   "the desktop owner timeline must preserve optional absence but reject a present invalid collections envelope",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.ObjectItems(values, $"Runtime owner collection \'{key}\'")',
   "the desktop owner timeline must reject malformed collection items instead of filtering them",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalStringArray(Timeline(collection), key, "Runtime collection animation timeline")',
   "the desktop owner timeline must preserve exact pre/post duration field-id lists",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "if (!collectionKeys.Add(key))",
   "the desktop owner timeline must reject duplicate effective collection keys",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "if (!_items.TryAdd(targetId, new ItemTiming(",
   "the desktop owner timeline must reject duplicate stable target ids instead of overwriting owners",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'return JsonPath.RequiredString(collection, key, "Runtime owner collection");',
   "the desktop owner timeline must validate the first explicitly declared collection key",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'ValidateUniqueFieldIds(fields, "Runtime owner item fields")',
   "the desktop owner timeline must reject ambiguous direct/projected field ids",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateTemporalActions(",
   "the desktop owner timeline must validate every present temporal action flag and reference",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   '"durationEnabledInputId",',
   "finite desktop actions must declare the exact owner boolean used for base activation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "references missing play field",
   "finite desktop actions must not disappear when their play field is missing",
 );
@@ -8009,7 +8012,7 @@ for (const permissiveRuntimeTimelineEnvelope of [
   'enabled.TryGetValue<bool>(out var enabledValue)',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
     permissiveRuntimeTimelineEnvelope,
     `the desktop owner timeline must not filter malformed contract envelopes (${permissiveRuntimeTimelineEnvelope})`,
   );
@@ -8106,32 +8109,32 @@ for (const permissiveWebRuntimeTimelineEnvelope of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateAnimationEnvelope(animation);",
   "the desktop timeline must validate every present transient animation calculation envelope",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'JsonPath.OptionalObjectArray(_animation, "tracks", "Runtime owner animation")',
   "the desktop timeline must read present tracks as an exact object array",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'ValidateOptionalPositiveFrameCount(retime, "targetDurationFrames", "Runtime animation retime")',
   "the desktop timeline must reject invalid present root retime durations",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "var trackTargets = new HashSet<(string FieldId, string TargetId)>();",
   "the desktop transient timeline must keep each field/target track address unique",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "if (!frames.Add(frame))",
   "the desktop transient timeline must reject duplicate frames within a track",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "if (frame < previousFrame)",
   "the desktop transient timeline must reject out-of-order frames instead of sorting them into plausibility",
 );
@@ -8141,7 +8144,7 @@ for (const permissiveDesktopAnimationEnvelope of [
   '(_runtime[sourceCollectionKey] as JsonArray)?.OfType<JsonObject>()',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
     permissiveDesktopAnimationEnvelope,
     `the desktop timeline must not filter malformed animation entries (${permissiveDesktopAnimationEnvelope})`,
   );
@@ -9070,7 +9073,7 @@ assertContains(
   "Bubble Audio must hide its Avatar whenever message identity is not visual",
 );
 assertContains(
-  "spikes/desktop-editor-shell-animation-tests/Program.cs",
+  "tests/Mockups.Desktop.Tests/Program.cs",
   'resolvedPreview["conversationFrame"] = 100000;',
   "Conversation Actor ownership coverage must render through the blank-system-Actor frame",
 );
@@ -9307,17 +9310,17 @@ for (const permissiveComplexStyleConsumer of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "ValidateCollectionTimeline(collection);",
   "the desktop owner timeline must validate closed collection timing metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   "foreach (var field in fields) ValidateFieldTimeline(field);",
   "the desktop owner timeline must validate direct and projected field timing metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   'owner[jsonKey],\n            $"Runtime animation duration field \'{fieldId}\' value")',
   "the desktop owner timeline must require exact referenced duration values",
 );
@@ -9330,7 +9333,7 @@ for (const permissiveDesktopTimingMetadata of [
   'Math.Max(2, (int)Number(completionDefinition?["minimumEnabledKeyframes"], 2))',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+    "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
     permissiveDesktopTimingMetadata,
     `the desktop timeline must not default invalid temporal metadata (${permissiveDesktopTimingMetadata})`,
   );
@@ -9356,7 +9359,7 @@ assertContains(
   "the web owner timeline must preserve the explicit forwarded field timeline null sentinel",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeAnimationFrameOrigin.cs",
+  "src/Mockups.Desktop/Common/RuntimeAnimationFrameOrigin.cs",
   '!field.TryGetPropertyValue("animationTimeline", out var node) || node is null',
   "the desktop owner timeline must preserve the explicit forwarded field timeline null sentinel",
 );
@@ -9379,12 +9382,12 @@ for (const permissiveWebTimingMetadata of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
   'JsonPath.OptionalObject(\n            contract,\n            "animationTimeline",\n            "Runtime duration contract")',
   "Screen duration policy must default to calculated only by structural absence",
 );
 assertContains(
-  "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+  "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
   'JsonPath.RequiredInteger(\n            timeline,\n            "defaultDurationFrames"',
   "explicit Screen duration must require an exact integer default",
 );
@@ -9393,13 +9396,13 @@ for (const permissiveDurationPolicyRead of [
   '(contract["animationTimeline"] as JsonObject)?["defaultDurationFrames"]?.GetValue<int>() ?? 0',
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/Common/RuntimeDurationContract.cs",
+    "src/Mockups.Desktop/Common/RuntimeDurationContract.cs",
     permissiveDurationPolicyRead,
     `Screen duration policy must not coerce a present invalid timeline (${permissiveDurationPolicyRead})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "CreateAnimationActivationGlyph(",
   "Runtime fields must derive the sequencing/non-sequencing activation glyph from animation metadata",
 );
@@ -9447,17 +9450,17 @@ for (const semanticIcon of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryPalettePairControl.cs",
   'ColumnDefinitions = new ColumnDefinitions("*,*");',
   "compact palette pairs must preserve two equal columns at narrow widths",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryPalettePairControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryPalettePairControl.cs",
   "firstParent.Children.Remove(_firstControl);",
   "compact palette pairs must detach existing controls before reusing them in shared-header composition",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   "var controlLabels = control.UseSharedPairHeader();",
   "shared palette-pair presentation must be applied to every control in the group",
 );
@@ -9468,37 +9471,37 @@ assertSourceMatches(
   "Theme Typography must remain split into semantic vertical cards",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/Common/ThemeNumericTokenCatalog.cs",
+  "src/Mockups.Desktop/Common/ThemeNumericTokenCatalog.cs",
   'Token("theme.typography.size",',
   "the retired singular typography size token must not remain in the numeric token catalog",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "ClearTransientContractValues(scopeKey);",
   "runtime contract changes must invalidate stale scalar and action session values generically",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "payload.OwnerId",
   "Design Test Value scopes must prefer the exact Preview owner identity over display names",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
   "ShouldUse(",
   "subcard organization must not be inferred from count or hierarchy depth",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorLayoutCardFactory.cs",
+  "src/Mockups.Desktop/EditorShell/EditorLayoutCardFactory.cs",
   '"flatStack" => EditorSubcardLayout.FlatStack',
   "the documented flat-stack organization must remain available through generic layout metadata",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
   "_content.Content = null;",
   "internal navigation must detach reusable editor content before selecting another card",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/EditorInternalNavigation.cs",
+  "src/Mockups.Desktop/EditorShell/EditorInternalNavigation.cs",
   '"Messages"',
   "shared internal navigation must not know a concrete runtime collection",
 );
@@ -9535,19 +9538,19 @@ assertSourceContains(
 );
 for (const placeholderPlural of ["input(s)", "collection(s)", "instance(s)"]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
     placeholderPlural,
     `runtime-input UI must use grammatical counts instead of ${placeholderPlural}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+  "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
   "Payload key:",
   "runtime API diagnostics must label persisted payload keys explicitly",
 );
 for (const dictionaryControl of [
-  "spikes/desktop-editor-shell/EditorShell/DictionaryEmbeddedComponentControl.cs",
-  "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryEmbeddedComponentControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryComponentVariantControl.cs",
 ]) {
   assertDoesNotContain(
     dictionaryControl,
@@ -9556,52 +9559,52 @@ for (const dictionaryControl of [
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "$\"Slot: {slot.Label}\"",
   "embedded breadcrumbs must identify the owning slot without duplicating component identity",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "new(\"Component\", component)",
   "embedded context metadata must identify the concrete component",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorHeaderController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorHeaderController.cs",
   "new EditorContextIdentity(\"Variant\", activeVariantName)",
   "embedded context metadata must identify the concrete variant",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "mockupsPreviewImagePreloadResult",
   "WebView image preload must return a serializable request id and expose a synchronous result poll",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "asset-missing",
   "WebView patches must reject unresolved interned asset references before DOM mutation",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "mockupsMissingPreviewAssets",
   "the host must reconcile asset keys with the active WebView document before every patch",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "[\\\\s\\\"'<>)]",
   "data-URI compaction must not terminate generated SVG assets at literal parentheses",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebDesignPreviewRenderer.cs",
+  "src/Mockups.Desktop/EditorShell/WebDesignPreviewRenderer.cs",
   "PreviewAssetRegistry.Compact(originalHtml)",
   "rendered frames must intern large assets before entering the shared frame cache",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "PreviewAssetRegistry.Keys(bodyContent)",
   "WebView patches must consume already compacted frame bodies",
 );
 assertDoesNotContain(
-  "spikes/desktop-editor-shell/EditorShell/WebPreviewPanes.cs",
+  "src/Mockups.Desktop/EditorShell/WebPreviewPanes.cs",
   "imageSourcesChanged",
   "resident registered assets must not force a decode-gated layer replacement on every animated image source change",
 );
@@ -9637,13 +9640,13 @@ for (const requiredAssetIdentityTerm of ["stats.size", "stats.mtimeMs", "stats.c
 }
 for (const requiredReferenceIdentityTerm of ["info.Length", "info.LastWriteTimeUtc.Ticks", "info.CreationTimeUtc.Ticks"]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/PreviewReferenceOverlay.cs",
+    "src/Mockups.Desktop/EditorShell/PreviewReferenceOverlay.cs",
     requiredReferenceIdentityTerm,
     `reference overlay cache identity must include ${requiredReferenceIdentityTerm}`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
   "ValueKind.TypographySystemStyle",
   "system-component typography must use its registered dictionary control route",
 );
@@ -9672,37 +9675,37 @@ assertContains(
   "Audio calculated text must delegate its final visual presentation to Label",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "RuntimeTimeline.DurationFrames(",
   "durationOwnerTimeline actions must delegate to the common owner timeline instead of a private clock",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DesignPreviewPayloadFactory.cs",
+  "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "MotionTimingDuration.RequirePositiveMilliseconds(",
   "motion action duration must resolve both declared delay and transition duration through its shared owner",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryMotionTimingControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryMotionTimingControl.cs",
   "Unit: \"ms\"",
   "Motion Timing duration and delay subfields must declare millisecond units",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/DictionaryMotionTimingControl.cs",
+  "src/Mockups.Desktop/EditorShell/DictionaryMotionTimingControl.cs",
   "definition.DisplayLabel",
   "compound Motion Timing labels must use shared FieldDefinition unit formatting",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_workspace == EditorWorkspace.Design",
   "preview input processing must explicitly separate Design from Production",
 );
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorPreviewController.cs",
+  "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
   "_productionRuntimeResolver.Resolve",
   "Production preview must use the reference-only runtime resolver",
 );
 assertNoTerms(
-  "spikes/desktop-editor-shell/EditorShell/ProductionPreviewRuntimeResolver.cs",
+  "src/Mockups.Desktop/EditorShell/ProductionPreviewRuntimeResolver.cs",
   ["ApplyTransientTestValues", "ComponentPreviewActions", "PlaybackTimeValue"],
 );
 for (const requiredKeyboardPopupBoundary of [
@@ -9751,13 +9754,13 @@ for (const requiredStandardTextInputBehavior of [
   "SelectAllOnDoubleClick",
 ]) {
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/EditorTextBoxBehavior.cs",
+    "src/Mockups.Desktop/EditorShell/EditorTextBoxBehavior.cs",
     requiredStandardTextInputBehavior,
     `configured editor text inputs must retain shared native-style pointer selection (${requiredStandardTextInputBehavior})`,
   );
 }
 assertContains(
-  "spikes/desktop-editor-shell/EditorShell/EditorNumericTextStyle.cs",
+  "src/Mockups.Desktop/EditorShell/EditorNumericTextStyle.cs",
   "EditorTextBoxBehavior.EnableSelectAllOnDoubleClick(textBox);",
   "numeric text surfaces must opt into complete-value double-click selection through the shared behavior",
 );
@@ -9766,7 +9769,7 @@ for (const retiredNumericPointerInterception of [
   "args.ClickCount > 1",
 ]) {
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/EditorNumericUpDownBehavior.cs",
+    "src/Mockups.Desktop/EditorShell/EditorNumericUpDownBehavior.cs",
     retiredNumericPointerInterception,
     `NumericUpDown must not intercept standard inner TextBox clicks (${retiredNumericPointerInterception})`,
   );
@@ -10165,7 +10168,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     '"component.iconRow.items"',
   ]) {
     assertContains(
-      "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+      "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
       requiredVariantField,
       `Text Box and Icon Row Variant ownership requires ${requiredVariantField}`,
     );
@@ -10176,7 +10179,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "_buttonBoundary.DefaultVariantReference",
   ]) {
     assertContains(
-      "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+      "src/Mockups.Desktop/EditorShell/IconSlotsControl.cs",
       requiredIconSlotsEditorBoundary,
       `Icon Slots authoring must reuse the fixed embedded Variant and local Overrides surface (${requiredIconSlotsEditorBoundary})`,
     );
@@ -10187,25 +10190,25 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "Choose the Button Component",
   ]) {
     assertDoesNotContain(
-      "spikes/desktop-editor-shell/EditorShell/IconSlotsControl.cs",
+      "src/Mockups.Desktop/EditorShell/IconSlotsControl.cs",
       forbiddenIconSlotsEditorBoundary,
       `fixed Icon Slots Button boundaries must not expose a provisional Component selector (${forbiddenIconSlotsEditorBoundary})`,
     );
   }
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
     "button::variant::default",
     "static dictionary defaults must not contain a short or project-inferred Button Variant reference",
   );
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
     "options.FirstOrDefault((option) => !string.IsNullOrWhiteSpace(option.Value))",
     "embedded Component bindings must wait for explicit Component selection instead of taking the first Variant option",
   );
   for (const fixedBoundaryConsumer of [
-    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   ]) {
     assertContains(
       fixedBoundaryConsumer,
@@ -10214,9 +10217,9 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     );
   }
   for (const componentSelectorConsumer of [
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
-    "spikes/desktop-editor-shell/EditorShell/DictionaryStructuredCollectionControl.cs",
-    "spikes/desktop-editor-shell/EditorShell/DictionaryComponentInputBindingsControl.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputFieldDefinitionFactory.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
   ]) {
     assertContains(
       componentSelectorConsumer,
@@ -10229,7 +10232,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "openRuntimeComponentOverrides: _openEmbeddedContext",
   ]) {
     assertContains(
-      "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
       requiredRuntimeIconSlotsService,
       `Runtime/Test Values Icon Slots must retain Variant navigation and local Overrides (${requiredRuntimeIconSlotsService})`,
     );
@@ -10242,7 +10245,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "_variantControl.SetOverrideHighlighted(",
   ]) {
     assertContains(
-      "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantSlotControl.cs",
+      "src/Mockups.Desktop/EditorShell/DictionaryComponentVariantSlotControl.cs",
       requiredVariantSlotBoundary,
       `Component Variant Slot authoring must preserve its exact reference and Overrides boundary (${requiredVariantSlotBoundary})`,
     );
@@ -10252,18 +10255,18 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "new Button",
   ]) {
     assertDoesNotContain(
-      "spikes/desktop-editor-shell/EditorShell/DictionaryComponentVariantSlotControl.cs",
+      "src/Mockups.Desktop/EditorShell/DictionaryComponentVariantSlotControl.cs",
       forbiddenVariantSlotAction,
       `Component Variant Slot authoring must reuse the shared compact Overrides action (${forbiddenVariantSlotAction})`,
     );
   }
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/DictionaryControlRegistry.cs",
+    "src/Mockups.Desktop/EditorShell/DictionaryControlRegistry.cs",
     "[ValueKind.ComponentVariantSlot]",
     "Component Variant Slot must be registered through the shared dictionary",
   );
   assertContains(
-    "spikes/desktop-editor-shell/Data/ReferenceUsageService.cs",
+    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
     "input.ValueKind == ValueKind.ComponentVariantSlot",
     "Usage must retain generic exact references and Overrides for Component Variant Slot values",
   );
@@ -10489,14 +10492,14 @@ function assertListItemRuntimePresentationIsGeneric() {
   ]) {
     assertContains(
       requiredBoundary.includes("Presentation is")
-        ? "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs"
-        : "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+        ? "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs"
+        : "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
       requiredBoundary,
       `Runtime collection item sections must remain metadata-driven (${requiredBoundary})`,
     );
   }
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
     'ComponentType == "listItem"',
     "the generic Runtime editor must not branch on List Item",
   );
@@ -10511,7 +10514,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "component.list.listItem",
   ]) {
     assertContains(
-      "spikes/desktop-editor-shell/EditorShell/EmbeddedComponentSlotCatalog.cs",
+      "src/Mockups.Desktop/EditorShell/EmbeddedComponentSlotCatalog.cs",
       `"${fixedSlotField}"`,
       `List fixed slot '${fixedSlotField}' must retain one typed reference owner`,
     );
@@ -10522,32 +10525,32 @@ function assertListItemRuntimePresentationIsGeneric() {
     "List Item must require the exact Variant-owned Content Set count",
   );
   assertDoesNotContain(
-    "spikes/desktop-editor-shell/EditorShell/RuntimeInputsCollectionEditor.cs",
+    "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
     "items.Take(collection.FixedItemCount)",
     "fixed Runtime collections must fail instead of hiding surplus items",
   );
   assertContains(
-    "spikes/desktop-editor-shell/Data/ComponentClassRepository.cs",
+    "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
     "DesignPreviewTestValues.ValidateFixedCollectionCounts",
     "Component persistence must validate fixed Runtime collection counts on reads and writes",
   );
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     "SetExternalCollectionItemValues",
     "transient Runtime collection commits must target stable item identity",
   );
   assertContains(
-    "spikes/desktop-editor-shell/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
     "candidateId == itemId",
     "transient Runtime collection commits must resolve their item by stable id",
   );
   assertContains(
-    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    "tests/Mockups.Desktop.Tests/Program.cs",
     "List Runtime updates follow stable item identity after reorder",
     "List reorder characterization must cover a delayed nested Runtime commit",
   );
   assertContains(
-    "spikes/desktop-editor-shell-animation-tests/Program.cs",
+    "tests/Mockups.Desktop.Tests/Program.cs",
     'ActionButtons(listSurface, "Play Presence")',
     "promoted List item sections must expose their declared Presence action",
   );

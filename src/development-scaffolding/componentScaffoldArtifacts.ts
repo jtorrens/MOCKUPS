@@ -19,9 +19,9 @@ export const integratedComponentSpecRoot = "scaffolding/components";
 export const generatedComponentRegistryPath =
   "src/desktop-preview/generatedComponentScaffoldRegistry.ts";
 export const generatedDesktopFieldCatalogPath =
-  "spikes/desktop-editor-shell/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs";
+  "src/Mockups.Desktop/EditorShell/GeneratedComponentScaffoldFieldCatalog.cs";
 export const generatedDesktopConfigRegistryPath =
-  "spikes/desktop-editor-shell/Data/GeneratedComponentScaffoldConfigRegistry.cs";
+  "src/Mockups.Desktop/Data/GeneratedComponentScaffoldConfigRegistry.cs";
 
 export interface GeneratedComponentScaffoldArtifacts {
   schemaVersion: 1;

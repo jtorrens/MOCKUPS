@@ -35,7 +35,7 @@ export function adoptExistingComponentScaffold(
   databasePath = parityDatabasePath(repositoryRoot),
   dictionaryCatalogPath = path.join(
     repositoryRoot,
-    "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+    "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
   ),
 ): AdoptedComponentScaffold {
   const specPath = `${integratedComponentSpecRoot}/${componentType}.json`;

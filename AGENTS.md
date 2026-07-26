@@ -39,7 +39,7 @@ canonical active document.
 
 ## Hard rule: `MainWindow` is shell-only
 
-`spikes/desktop-editor-shell/MainWindow.axaml.cs` owns only:
+`src/Mockups.Desktop/MainWindow.axaml.cs` owns only:
 
 - window initialization;
 - three-panel composition;
@@ -56,7 +56,7 @@ than one editor into a common shell service.
 
 ## Hard rule: one semantic owner
 
-Before adding a helper, inspect `spikes/desktop-editor-shell/Common` and the
+Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the current owner.
 
 Ownership is:

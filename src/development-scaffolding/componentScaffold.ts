@@ -485,7 +485,7 @@ export function loadComponentScaffoldInventory(
 
   const valueKindPath = resolveRepositoryPath(
     repositoryRoot,
-    "spikes/desktop-editor-shell/EditorShell/FieldDefinition.cs",
+    "src/Mockups.Desktop/EditorShell/FieldDefinition.cs",
   );
   const valueKinds = parseValueKinds(readFileSync(valueKindPath, "utf8"));
 
@@ -618,7 +618,7 @@ export function createComponentScaffoldPlan(
     ownerFile("renderable", spec.manifest.renderable, spec.owners.renderableExport),
     {
       role: "desktopConfigContract" as const,
-      path: `spikes/desktop-editor-shell/Data/${pascalCase(componentType)}ComponentConfigContract.cs`,
+      path: `src/Mockups.Desktop/Data/${pascalCase(componentType)}ComponentConfigContract.cs`,
       requiredExport: `${pascalCase(componentType)}ComponentConfigContract`,
     },
     {
@@ -646,7 +646,7 @@ export function createComponentScaffoldPlan(
         );
       }
     } else if (owner.role === "desktopConfigContract") {
-      if (!normalized.startsWith("spikes/desktop-editor-shell/Data/")
+      if (!normalized.startsWith("src/Mockups.Desktop/Data/")
           || !normalized.endsWith("ComponentConfigContract.cs")) {
         violations.push(
           `desktop config owner '${owner.path}' must be a ComponentConfigContract.cs file under the desktop Data owner.`,
@@ -748,7 +748,7 @@ export function createComponentScaffoldPlan(
       },
       {
         owner: "dictionary",
-        path: "spikes/desktop-editor-shell/EditorShell/ComponentClassFieldCatalog.cs",
+        path: "src/Mockups.Desktop/EditorShell/ComponentClassFieldCatalog.cs",
         description: `Register ${spec.dictionaryFields.length} explicit dictionary field descriptors.`,
       },
       {
