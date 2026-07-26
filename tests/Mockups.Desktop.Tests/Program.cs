@@ -3244,6 +3244,14 @@ static IRenderSnapshotDataSource RenderSnapshots(
         database.Resources,
         database.Production);
 
+static IComponentClassFieldStore ComponentFields(
+    SqliteProjectEngine database) =>
+    new SqliteComponentClassFieldPort(database.ComponentDocuments);
+
+static IComponentDocumentStore ComponentDocuments(
+    SqliteProjectEngine database) =>
+    new SqliteComponentDocumentPort(database.ComponentDocuments);
+
 static void PreviewResourceSelectionHasOneSessionRule()
 {
     var options = new[]
@@ -5383,7 +5391,8 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
         var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
-        True(!new ComponentClassFieldValueService(database)
+        True(!new ComponentClassFieldValueService(
+                ComponentFields(database))
             .CreateFieldValue(statusDefault, statusField.Id)
             .Definition.IsEditable);
         var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::lock_screen");
@@ -6207,7 +6216,8 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var store = new EmbeddedComponentDocumentStore(database);
+        var store = new EmbeddedComponentDocumentStore(
+            ComponentDocuments(database));
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var audioClass = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
@@ -11029,7 +11039,8 @@ static void ComponentStackSeedOpensAndRenders()
         var selectedComponent = database.GetComponentVariantSelectionSettings(childVariant);
         var overrides = new JsonObject();
         var runtimeOverrideChanges = 0;
-        var embeddedDocuments = new EmbeddedComponentDocumentStore(database);
+        var embeddedDocuments = new EmbeddedComponentDocumentStore(
+            ComponentDocuments(database));
         var runtimeContext = new EditorEmbeddedContext(
             defaultVariant,
             [],

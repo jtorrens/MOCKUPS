@@ -288,26 +288,24 @@ internal sealed class SqliteRecordClassFieldPort(
 }
 
 internal sealed class SqliteComponentClassFieldPort(
-    Mockups.DesktopEditorShell.Data.IComponentClassFieldStore target)
+    SqliteComponentDocumentStore target)
     : Mockups.DesktopEditorShell.Data.IComponentClassFieldStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.IComponentClassFieldStore _target = target;
-
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateComponentClassFieldValue(
         string componentClassId,
         string fieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentClassFieldStore)_target).CreateComponentClassFieldValue(componentClassId, fieldId);
+        => target.CreateComponentClassFieldValue(componentClassId, fieldId);
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateComponentVariantFieldValue(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode variantNode,
         string fieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentClassFieldStore)_target).CreateComponentVariantFieldValue(variantNode, fieldId);
+        => target.CreateComponentVariantFieldValue(variantNode, fieldId);
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateEmbeddedComponentFieldValue(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).CreateEmbeddedComponentFieldValue(ownerNode, slots, embeddedFieldId);
+        => target.CreateEmbeddedComponentFieldValue(ownerNode, slots, embeddedFieldId);
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateRuntimeComponentOverrideFieldValue(
         string projectId,
@@ -315,62 +313,62 @@ internal sealed class SqliteComponentClassFieldPort(
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string fieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).CreateRuntimeComponentOverrideFieldValue(projectId, baseConfigJson, overrides, slots, fieldId);
+        => target.CreateRuntimeComponentOverrideFieldValue(projectId, baseConfigJson, overrides, slots, fieldId);
 
     public Mockups.DesktopEditorShell.Data.ComponentClassSettings GetComponentClassSettings(
         string componentClassId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentClassSettings(componentClassId);
+        => target.GetComponentClassSettings(componentClassId);
 
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ComponentVariantReferenceUsage> GetComponentVariantReferenceUsageDetails(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentVariantReferenceUsageDetails(node);
+        => target.GetComponentVariantReferenceUsageDetails(node);
 
     public Mockups.DesktopEditorShell.Data.ComponentClassSettings GetComponentVariantSettings(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode variantNode)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentVariantSettings(variantNode);
+        => target.GetComponentVariantSettings(variantNode);
 
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
         string componentType,
         string excludedComponentClassId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetEmbeddedComponentUsages(projectId, componentType, excludedComponentClassId);
+        => target.GetEmbeddedComponentUsages(projectId, componentType, excludedComponentClassId);
 
     public string GetEmbeddedComponentVariantName(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetEmbeddedComponentVariantName(ownerNode, slots);
+        => target.GetEmbeddedComponentVariantName(ownerNode, slots);
 
     public string GetRuntimeComponentVariantName(
         string variantReference,
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetRuntimeComponentVariantName(variantReference, overrides, slots);
+        => target.GetRuntimeComponentVariantName(variantReference, overrides, slots);
 
     public void UpdateComponentClassField(
         string componentClassId,
         string fieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentClassFieldStore)_target).UpdateComponentClassField(componentClassId, fieldId, value);
+        => target.UpdateComponentClassField(componentClassId, fieldId, value);
 
     public void UpdateComponentVariantField(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode variantNode,
         string fieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentClassFieldStore)_target).UpdateComponentVariantField(variantNode, fieldId, value);
+        => target.UpdateComponentVariantField(variantNode, fieldId, value);
 
     public void UpdateEmbeddedComponentField(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).UpdateEmbeddedComponentField(ownerNode, slots, embeddedFieldId, value);
+        => target.UpdateEmbeddedComponentField(ownerNode, slots, embeddedFieldId, value);
 
     public void UpdateRuntimeComponentOverride(
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string fieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).UpdateRuntimeComponentOverride(overrides, slots, fieldId, value);
+        => target.UpdateRuntimeComponentOverride(overrides, slots, fieldId, value);
 
 }
 
@@ -412,16 +410,14 @@ internal sealed class SqliteEditorPresentationPort(
 }
 
 internal sealed class SqliteComponentDocumentPort(
-    Mockups.DesktopEditorShell.Data.IComponentDocumentStore target)
+    SqliteComponentDocumentStore target)
     : Mockups.DesktopEditorShell.Data.IComponentDocumentStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.IComponentDocumentStore _target = target;
-
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateEmbeddedComponentFieldValue(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).CreateEmbeddedComponentFieldValue(ownerNode, slots, embeddedFieldId);
+        => target.CreateEmbeddedComponentFieldValue(ownerNode, slots, embeddedFieldId);
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateRuntimeComponentOverrideFieldValue(
         string projectId,
@@ -429,50 +425,50 @@ internal sealed class SqliteComponentDocumentPort(
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string fieldId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).CreateRuntimeComponentOverrideFieldValue(projectId, baseConfigJson, overrides, slots, fieldId);
+        => target.CreateRuntimeComponentOverrideFieldValue(projectId, baseConfigJson, overrides, slots, fieldId);
 
     public Mockups.DesktopEditorShell.Data.ComponentClassSettings GetComponentClassSettings(
         string componentClassId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentClassSettings(componentClassId);
+        => target.GetComponentClassSettings(componentClassId);
 
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ComponentVariantReferenceUsage> GetComponentVariantReferenceUsageDetails(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentVariantReferenceUsageDetails(node);
+        => target.GetComponentVariantReferenceUsageDetails(node);
 
     public Mockups.DesktopEditorShell.Data.ComponentClassSettings GetComponentVariantSettings(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode variantNode)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetComponentVariantSettings(variantNode);
+        => target.GetComponentVariantSettings(variantNode);
 
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
         string componentType,
         string excludedComponentClassId)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetEmbeddedComponentUsages(projectId, componentType, excludedComponentClassId);
+        => target.GetEmbeddedComponentUsages(projectId, componentType, excludedComponentClassId);
 
     public string GetEmbeddedComponentVariantName(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetEmbeddedComponentVariantName(ownerNode, slots);
+        => target.GetEmbeddedComponentVariantName(ownerNode, slots);
 
     public string GetRuntimeComponentVariantName(
         string variantReference,
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).GetRuntimeComponentVariantName(variantReference, overrides, slots);
+        => target.GetRuntimeComponentVariantName(variantReference, overrides, slots);
 
     public void UpdateEmbeddedComponentField(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).UpdateEmbeddedComponentField(ownerNode, slots, embeddedFieldId, value);
+        => target.UpdateEmbeddedComponentField(ownerNode, slots, embeddedFieldId, value);
 
     public void UpdateRuntimeComponentOverride(
         System.Text.Json.Nodes.JsonObject overrides,
         System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.EmbeddedComponentSlotDefinition> slots,
         string fieldId,
         string value)
-        => ((Mockups.DesktopEditorShell.Data.IComponentDocumentStore)_target).UpdateRuntimeComponentOverride(overrides, slots, fieldId, value);
+        => target.UpdateRuntimeComponentOverride(overrides, slots, fieldId, value);
 
 }
 

@@ -14,7 +14,8 @@ public sealed class SqliteProjectSession
         CoreFields = new SqliteCoreFieldPort(engine);
         RecordFields = new SqliteRecordClassFieldPort(engine);
         ComponentFields =
-            new SqliteComponentClassFieldPort(engine);
+            new SqliteComponentClassFieldPort(
+                engine.ComponentDocuments);
         VariantHistory =
             new SqliteVariantHistoryPort(engine.Design);
         Preview = engine.PreviewInputs;
@@ -45,7 +46,8 @@ public sealed class SqliteProjectSession
             new SqliteIconThemeAssetPort(engine.Resources);
         ThemeTokens = new SqliteThemeTokenPort(engine.Resources);
         Components =
-            new SqliteComponentDocumentPort(engine);
+            new SqliteComponentDocumentPort(
+                engine.ComponentDocuments);
         RuntimeInputOwners =
             new SqliteRuntimeInputOwnerPort(engine.Design);
         RuntimeInputInstances =
