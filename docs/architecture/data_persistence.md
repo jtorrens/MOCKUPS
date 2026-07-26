@@ -117,6 +117,11 @@ port and its declared inherited capabilities. Neither Desktop controllers,
 `EditorWorkspaceCoordinator` nor its state contract can compile a SQLite
 reference.
 
+Runtime payload ownership and shape are validated through the
+storage-independent `RuntimeInputDocumentContract` in Application. Persistence
+may reconcile or persist a Screen payload, but it does not own source
+classification, collection-key semantics or stable-id projection rules.
+
 `ActorPreview` is composed directly from `SqliteResourceOwner`. Its Production
 theme-context validation arrives through an internal contract declared outside
 the Production implementation, so Resources cannot call Production code.

@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -22,11 +23,11 @@ internal sealed partial class SqliteProjectEngine
         var contract = _productionOwner.ResolveModuleInstanceContract(
             module.Id,
             instance.MetadataJson);
-        ValidateCurrentRuntimeCollections(
+        RuntimeInputDocumentContract.ValidateCurrentCollections(
             contract,
             content,
             $"Module Instance '{moduleInstanceId}' content_json");
-        ValidateCurrentRuntimeValues(
+        RuntimeInputDocumentContract.ValidateCurrentValues(
             contract,
             content,
             $"Module Instance '{moduleInstanceId}' content_json");
@@ -64,11 +65,11 @@ internal sealed partial class SqliteProjectEngine
                 var contract = _productionOwner.ResolveModuleInstanceContract(
                     module.Id,
                     instance.MetadataJson);
-                ValidateCurrentRuntimeCollections(
+                RuntimeInputDocumentContract.ValidateCurrentCollections(
                     contract,
                     content,
                     $"Module Instance '{instance.Id}' content_json");
-                ValidateCurrentRuntimeValues(
+                RuntimeInputDocumentContract.ValidateCurrentValues(
                     contract,
                     content,
                     $"Module Instance '{instance.Id}' content_json");

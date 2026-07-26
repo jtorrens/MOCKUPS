@@ -79,12 +79,12 @@ internal sealed partial class SqliteProjectEngine
     private static JsonObject RuntimeContentForContract(JsonObject current, JsonObject contract)
     {
         var next = new JsonObject { ["schemaVersion"] = current["schemaVersion"]?.DeepClone() ?? JsonValue.Create(2) };
-        foreach (var input in RuntimeDefinitionObjects(
+        foreach (var input in RuntimeInputDocumentContract.DefinitionObjects(
                      contract,
                      "inputs",
                      "Effective Module Runtime contract"))
         {
-            if (!RuntimeInputDefinition(input)) continue;
+            if (!RuntimeInputDocumentContract.IsRuntimeDefinition(input)) continue;
             var inputId = JsonPath.RequiredString(input, "id", "Runtime Input definition");
             var jsonKey = JsonPath.RequiredString(input, "jsonKey", $"Runtime Input '{inputId}'");
             if (current.TryGetPropertyValue(jsonKey, out var currentValue))
@@ -102,20 +102,20 @@ internal sealed partial class SqliteProjectEngine
                     $"Runtime Input '{inputId}'");
             }
         }
-        foreach (var collection in RuntimeDefinitionObjects(
+        foreach (var collection in RuntimeInputDocumentContract.DefinitionObjects(
                      contract,
                      "collections",
                      "Effective Module Runtime contract"))
         {
-            var storageKey = RuntimeCollectionStorageKey(collection);
+            var storageKey = RuntimeInputDocumentContract.CollectionStorageKey(collection);
             next[storageKey] = collection.ContainsKey("storageCollectionJsonKey")
-                ? ReconcileProjectedRuntimeCollection(
-                    OptionalRuntimeCollection(current, storageKey, "Current Module Instance content"),
-                    OptionalRuntimeCollection(
+                ? RuntimeInputDocumentContract.ReconcileProjectedCollection(
+                    RuntimeInputDocumentContract.OptionalCollection(current, storageKey, "Current Module Instance content"),
+                    RuntimeInputDocumentContract.OptionalCollection(
                         contract,
                         JsonPath.RequiredString(collection, "jsonKey", "Runtime collection definition"),
                         "Effective Module Runtime contract"))
-                : (OptionalRuntimeCollection(current, storageKey, "Current Module Instance content")
+                : (RuntimeInputDocumentContract.OptionalCollection(current, storageKey, "Current Module Instance content")
                     ?? new JsonArray()).DeepClone();
         }
         return next;
@@ -123,11 +123,11 @@ internal sealed partial class SqliteProjectEngine
 
     private static JsonObject RemoveOrphanedAnimationTracks(JsonObject animation, JsonObject contract, JsonObject content)
     {
-        var topLevelFields = RuntimeDefinitionObjects(
+        var topLevelFields = RuntimeInputDocumentContract.DefinitionObjects(
                 contract,
                 "inputs",
                 "Effective Module Runtime contract")
-            .Where(RuntimeInputDefinition)
+            .Where(RuntimeInputDocumentContract.IsRuntimeDefinition)
             .Select((input) => JsonPath.RequiredString(input, "id", "Runtime Input definition"))
             .ToHashSet(StringComparer.Ordinal);
         var targetIds = new HashSet<string>(StringComparer.Ordinal);

@@ -137,6 +137,11 @@ and Preview changes. Its public tree-loading surface is asynchronous: it runs
 the synchronous data-source read on a controlled worker, cancels the prior
 intent and commits only when the operation revision remains current. The
 synchronous convenience methods are internal and cannot be called by Desktop.
+`RuntimeInputDocumentContract` owns the UI- and storage-independent Runtime
+document rules: explicit source ownership, collection storage-key selection,
+stable-id reconciliation for projected collections and strict validation of
+current scalar and collection payloads. SQLite composition consumes this
+contract; it does not reimplement those semantics.
 Application may reference Domain and has no package
 capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.

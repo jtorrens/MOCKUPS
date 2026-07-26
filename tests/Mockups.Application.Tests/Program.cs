@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
@@ -20,6 +21,9 @@ var tests = new (string Name, Action Run)[]
     ("a selection transition invalidates an in-flight tree result", SelectionInvalidatesInFlightLoad),
     ("a failed tree read leaves the prior session state current", FailedTreeReadLeavesStateCurrent),
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
+    ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
+    ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
+    ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
 };
 
 var failures = new List<string>();
@@ -41,6 +45,113 @@ foreach (var (name, run) in tests)
 Console.WriteLine(
     $"Application workspace tests: {tests.Length - failures.Count}/{tests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
+
+static void RuntimeDefinitionsPreserveOwner()
+{
+    True(RuntimeInputDocumentContract.IsRuntimeDefinition(
+        new JsonObject()));
+    True(RuntimeInputDocumentContract.IsRuntimeDefinition(
+        new JsonObject { ["source"] = "runtime" }));
+    True(!RuntimeInputDocumentContract.IsRuntimeDefinition(
+        new JsonObject { ["source"] = "variant" }));
+    True(!RuntimeInputDocumentContract.IsRuntimeDefinition(
+        new JsonObject { ["source"] = "calculated" }));
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.IsRuntimeDefinition(
+            new JsonObject { ["source"] = "unknown" }));
+}
+
+static void ProjectedRuntimeCollectionsReconcileById()
+{
+    var defaults = new JsonArray
+    {
+        new JsonObject
+        {
+            ["id"] = "first",
+            ["label"] = "First",
+            ["value"] = "default",
+        },
+        new JsonObject
+        {
+            ["id"] = "second",
+            ["label"] = "Second",
+            ["value"] = "second-default",
+        },
+    };
+    var current = new JsonArray
+    {
+        new JsonObject
+        {
+            ["id"] = "second",
+            ["label"] = "Changed",
+            ["value"] = "authored",
+        },
+        new JsonObject
+        {
+            ["id"] = "retired",
+            ["label"] = "Retired",
+            ["value"] = "discarded",
+        },
+    };
+
+    var result =
+        RuntimeInputDocumentContract.ReconcileProjectedCollection(
+            current,
+            defaults);
+
+    Equal(2, result.Count);
+    Equal("first", result[0]?["id"]?.GetValue<string>());
+    Equal("default", result[0]?["value"]?.GetValue<string>());
+    Equal("second", result[1]?["id"]?.GetValue<string>());
+    Equal("authored", result[1]?["value"]?.GetValue<string>());
+    Equal("Changed", result[1]?["label"]?.GetValue<string>());
+}
+
+static void RuntimeDocumentsRejectInvalidOwnership()
+{
+    var contract = new JsonObject
+    {
+        ["inputs"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "runtimeText",
+                ["jsonKey"] = "runtimeText",
+                ["source"] = "runtime",
+                ["kind"] = "text",
+                ["valueKind"] = "StringSingleLine",
+                ["defaultValue"] = "",
+            },
+            new JsonObject
+            {
+                ["id"] = "variantText",
+                ["jsonKey"] = "variantText",
+                ["source"] = "variant",
+                ["kind"] = "text",
+                ["valueKind"] = "StringSingleLine",
+                ["defaultValue"] = "",
+            },
+        },
+    };
+    RuntimeInputDocumentContract.ValidateCurrentValues(
+        contract,
+        new JsonObject { ["runtimeText"] = "valid" },
+        "Test owner");
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ValidateCurrentValues(
+            contract,
+            new JsonObject(),
+            "Test owner"));
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ValidateCurrentValues(
+            contract,
+            new JsonObject
+            {
+                ["runtimeText"] = "valid",
+                ["variantText"] = "forbidden",
+            },
+            "Test owner"));
+}
 
 static void InitialTreeLoadSelectsDesignContext()
 {
