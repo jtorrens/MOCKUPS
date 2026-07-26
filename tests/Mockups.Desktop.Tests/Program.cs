@@ -105,6 +105,7 @@ var tests = new (string Name, Action Run)[]
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
+    ("SQLite write coordination is isolated per database context", SqliteWriteCoordinationIsPerContext),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
     ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
@@ -624,6 +625,104 @@ static void StartupPreparesReadOnlySessionAndHonorsCancellation()
             .GetAwaiter()
             .GetResult();
         True(canceled is StartupResult.Canceled);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void SqliteWriteCoordinationIsPerContext()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-sqlite-write-context-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var firstPath = Path.Combine(root, "first.sqlite");
+    var secondPath = Path.Combine(root, "second.sqlite");
+    try
+    {
+        var first = new SqliteProjectContext(firstPath);
+        var second = new SqliteProjectContext(secondPath);
+        True(!ReferenceEquals(first.WriteGate, second.WriteGate));
+
+        using (var connection = first.OpenConnection())
+        {
+            first.ExecuteScript(
+                connection,
+                "CREATE TABLE writes (id INTEGER PRIMARY KEY, value TEXT NOT NULL);");
+        }
+        using (var connection = second.OpenConnection())
+        {
+            second.ExecuteScript(
+                connection,
+                "CREATE TABLE writes (id INTEGER PRIMARY KEY, value TEXT NOT NULL);");
+        }
+
+        using var firstGateHeld = new ManualResetEventSlim();
+        using var releaseFirstGate = new ManualResetEventSlim();
+        var blockedFirstWrite = Task.Run(() =>
+        {
+            lock (first.WriteGate)
+            {
+                firstGateHeld.Set();
+                if (!releaseFirstGate.Wait(TimeSpan.FromSeconds(10)))
+                {
+                    throw new TimeoutException(
+                        "Timed out while holding the first database write gate.");
+                }
+                using var connection = first.OpenConnection();
+                first.Execute(
+                    connection,
+                    "INSERT INTO writes(value) VALUES ($value)",
+                    ("$value", "first"));
+            }
+        });
+
+        True(firstGateHeld.Wait(TimeSpan.FromSeconds(3)));
+        try
+        {
+            var independentSecondWrite = Task.Run(() =>
+            {
+                using var connection = second.OpenConnection();
+                second.Execute(
+                    connection,
+                    "INSERT INTO writes(value) VALUES ($value)",
+                    ("$value", "second"));
+            });
+            True(independentSecondWrite.Wait(TimeSpan.FromSeconds(3)));
+            independentSecondWrite.GetAwaiter().GetResult();
+        }
+        finally
+        {
+            releaseFirstGate.Set();
+        }
+        blockedFirstWrite.GetAwaiter().GetResult();
+
+        var concurrentWrites = Enumerable.Range(0, 12)
+            .Select((index) => Task.Run(() =>
+            {
+                using var connection = first.OpenConnection();
+                first.Execute(
+                    connection,
+                    "INSERT INTO writes(value) VALUES ($value)",
+                    ("$value", $"concurrent-{index}"));
+            }))
+            .ToArray();
+        Task.WaitAll(concurrentWrites);
+
+        using var firstRead = first.OpenConnection();
+        using var secondRead = second.OpenConnection();
+        Equal(
+            13L,
+            SqliteCommandExecutor.ScalarLong(
+                firstRead,
+                "SELECT COUNT(*) FROM writes"));
+        Equal(
+            1L,
+            SqliteCommandExecutor.ScalarLong(
+                secondRead,
+                "SELECT COUNT(*) FROM writes"));
     }
     finally
     {
@@ -1189,7 +1288,7 @@ static void ResourceScalarReadsRejectWrongShapes()
         void ReplaceJson(string table, string column, string id, string json)
         {
             using var connection = context.OpenConnection();
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 $"UPDATE {table} SET {column} = $json WHERE id = $id",
                 ("$json", json),
@@ -2180,10 +2279,11 @@ static void PreviewActionContractsAreStrict()
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
-        using (var context = new SqliteProjectContext(temporary).OpenConnection())
+        var writeContext = new SqliteProjectContext(temporary);
+        using (var connection = writeContext.OpenConnection())
         {
-            SqliteCommandExecutor.Execute(
-                context,
+            writeContext.Execute(
+                connection,
                 "UPDATE component_classes SET design_preview_json = json_set(design_preview_json, '$.actions[0].durationMotionConfigPath', 'keyboard.missing') WHERE id = 'component_project_foqn_s2_keyboard'");
         }
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -7135,11 +7235,10 @@ static void ProductionRenderOverridesRespectScreenAppearance()
                 database.GetModuleInstanceSettings(node.Id).SortOrder)
             .First();
         var instance = database.GetModuleInstanceSettings(firstScreen.Id);
-        using (var connection =
-            new SqliteConnection($"Data Source={temporary}"))
+        var writeContext = new SqliteProjectContext(temporary);
+        using (var connection = writeContext.OpenConnection())
         {
-            connection.Open();
-            SqliteCommandExecutor.Execute(
+            writeContext.Execute(
                 connection,
                 """
                 UPDATE modules
@@ -9330,23 +9429,23 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         var projectId = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project).Id;
         using (var connection = context.OpenConnection())
         {
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
                 ("$id", designActorId),
                 ("$projectId", projectId),
                 ("$name", "Design-only Usage Actor"));
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
                 ("$id", productionActorId),
                 ("$projectId", projectId),
                 ("$name", "Production-only Usage Actor"));
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.testValues.actorId', $actorId) WHERE id = 'module_project_foqn_s2_lock_screen'",
                 ("$actorId", designActorId));
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 "UPDATE module_instances SET content_json = json_set(content_json, '$.actorId', $actorId) WHERE id = (SELECT id FROM module_instances WHERE module_id = 'module_project_foqn_s2_lock_screen' ORDER BY id LIMIT 1)",
                 ("$actorId", productionActorId));
@@ -9366,7 +9465,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         var blue = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.PaletteColor && node.Name == "blue");
         using (var connection = context.OpenConnection())
         {
-            SqliteCommandExecutor.Execute(
+            context.Execute(
                 connection,
                 "UPDATE projects SET notes = $notes, metadata_json = $metadataJson",
                 ("$notes", $"Unrelated prose blue plus substring prefix-{blue.Id}-suffix"),

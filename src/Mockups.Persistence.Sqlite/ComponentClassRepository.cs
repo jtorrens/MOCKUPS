@@ -100,7 +100,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             preview,
             config,
             $"Component class '{componentClassId}' design_preview_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE component_classes SET design_preview_json = $json WHERE id = $id",
             ("$json", designPreviewJson),
@@ -121,7 +121,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             config,
             $"Component class '{componentClassId}' config_json");
         ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
             ("$id", componentClassId),
@@ -134,7 +134,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         var current = Get(connection, componentClassId);
         var metadata = ValidateMetadata(metadataJson, componentClassId);
         ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", componentClassId),
@@ -143,7 +143,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
 
     public void Rename(SqliteConnection connection, string componentClassId, string name)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE component_classes SET name = $name WHERE id = $id",
             ("$id", componentClassId),
@@ -152,7 +152,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
 
     public void UpdateNode(SqliteConnection connection, string componentClassId, string name, string notes)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE component_classes SET name = $name, notes = $notes WHERE id = $id",
             ("$id", componentClassId),

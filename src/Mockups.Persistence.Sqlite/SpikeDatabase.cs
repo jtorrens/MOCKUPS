@@ -6,7 +6,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 public sealed partial class SpikeDatabase
 {
-    private static object WriteGate => SqliteProjectContext.WriteGate;
+    private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
     private readonly IEditorLayoutRepository _editorLayoutRepository;
     private readonly IShotRepository _shotRepository;

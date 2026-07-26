@@ -88,7 +88,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void Insert(SqliteConnection connection, ModuleInstanceRecord record)
     {
         Validate(record);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO module_instances (
@@ -121,7 +121,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         int sortOrder)
     {
         _ = Get(connection, sourceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO module_instances (
@@ -143,7 +143,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         ValidateObject(contentJson, moduleInstanceId, "content_json");
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET content_json = $contentJson WHERE id = $id",
             ("$contentJson", contentJson),
@@ -154,7 +154,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         ValidateObject(animationJson, moduleInstanceId, "animation_json");
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
             ("$animationJson", animationJson),
@@ -170,7 +170,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         ValidateObject(contentJson, moduleInstanceId, "content_json");
         ValidateObject(animationJson, moduleInstanceId, "animation_json");
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
             ("$contentJson", contentJson),
@@ -189,7 +189,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         ValidateObject(contentJson, moduleInstanceId, "content_json");
         ValidateObject(animationJson, moduleInstanceId, "animation_json");
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET metadata_json = $metadataJson, content_json = $contentJson, animation_json = $animationJson WHERE id = $id",
             ("$metadataJson", metadataJson),
@@ -205,7 +205,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             throw new InvalidOperationException($"Module instance '{moduleInstanceId}' duration must be positive.");
         }
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET duration_frames = $duration WHERE id = $id",
             ("$duration", durationFrames),
@@ -221,20 +221,23 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         _ = Get(connection, firstId);
         _ = Get(connection, secondId);
-        using var transaction = connection.BeginTransaction();
-        SqliteCommandExecutor.Execute(
-            connection,
-            transaction,
-            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-            ("$sortOrder", secondSortOrder),
-            ("$id", firstId));
-        SqliteCommandExecutor.Execute(
-            connection,
-            transaction,
-            "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
-            ("$sortOrder", firstSortOrder),
-            ("$id", secondId));
-        transaction.Commit();
+        lock (_context.WriteGate)
+        {
+            using var transaction = connection.BeginTransaction();
+            _context.Execute(
+                connection,
+                transaction,
+                "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+                ("$sortOrder", secondSortOrder),
+                ("$id", firstId));
+            _context.Execute(
+                connection,
+                transaction,
+                "UPDATE module_instances SET sort_order = $sortOrder WHERE id = $id",
+                ("$sortOrder", firstSortOrder),
+                ("$id", secondId));
+            transaction.Commit();
+        }
     }
 
     public long CountVariantReferences(SqliteConnection connection, string moduleId, string variantReference)
@@ -264,7 +267,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void Rename(SqliteConnection connection, string moduleInstanceId, string name)
     {
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE module_instances SET name = $name WHERE id = $id",
             ("$name", name),
@@ -274,7 +277,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void Delete(SqliteConnection connection, string moduleInstanceId)
     {
         _ = Get(connection, moduleInstanceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "DELETE FROM module_instances WHERE id = $id",
             ("$id", moduleInstanceId));

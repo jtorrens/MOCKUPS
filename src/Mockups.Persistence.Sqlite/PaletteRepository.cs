@@ -46,13 +46,13 @@ internal sealed class PaletteRepository : IPaletteRepository
         switch (fieldId)
         {
             case "palette.token":
-                SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET token = $value WHERE id = $id", ("$id", colorId), ("$value", value));
+                _context.Execute(connection, "UPDATE palette_colors SET token = $value WHERE id = $id", ("$id", colorId), ("$value", value));
                 return;
             case "palette.valueHex":
-                SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", HexColorText.Normalize(value)));
+                _context.Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", HexColorText.Normalize(value)));
                 return;
             case "palette.isNeutral":
-                SqliteCommandExecutor.Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", BooleanText.ParseRequired(value, fieldId) ? 1 : 0));
+                _context.Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", BooleanText.ParseRequired(value, fieldId) ? 1 : 0));
                 return;
             case "palette.source":
                 UpdateMetadata(connection, colorId, "source", value);
@@ -134,7 +134,7 @@ internal sealed class PaletteRepository : IPaletteRepository
         const string valueHex = "#808080";
         const string note = "Project palette primitive color.";
         var metadataJson = new JsonObject { ["note"] = note }.ToJsonString();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
@@ -158,7 +158,7 @@ internal sealed class PaletteRepository : IPaletteRepository
             Id = $"palette_{Guid.NewGuid():N}",
             Token = $"{source.Token}_copy",
         };
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
@@ -175,12 +175,12 @@ internal sealed class PaletteRepository : IPaletteRepository
 
     public void Delete(SqliteConnection connection, string colorId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM palette_colors WHERE id = $id", ("$id", colorId));
+        _context.Execute(connection, "DELETE FROM palette_colors WHERE id = $id", ("$id", colorId));
     }
 
     public void UpdateNode(SqliteConnection connection, string colorId, string token, string note)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE palette_colors SET token = $token WHERE id = $id",
             ("$id", colorId),
@@ -188,7 +188,7 @@ internal sealed class PaletteRepository : IPaletteRepository
         UpdateMetadata(connection, colorId, "note", note);
     }
 
-    private static void UpdateMetadata(SqliteConnection connection, string colorId, string key, object value)
+    private void UpdateMetadata(SqliteConnection connection, string colorId, string key, object value)
     {
         using var select = connection.CreateCommand();
         select.CommandText = "SELECT metadata_json FROM palette_colors WHERE id = $id";
@@ -197,7 +197,7 @@ internal sealed class PaletteRepository : IPaletteRepository
             ?? throw new InvalidOperationException($"Missing palette color '{colorId}'.");
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Palette color '{colorId}' metadata_json");
         metadata[key] = JsonSerializer.SerializeToNode(value);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE palette_colors SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", colorId),

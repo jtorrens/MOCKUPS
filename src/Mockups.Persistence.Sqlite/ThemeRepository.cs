@@ -57,7 +57,7 @@ internal sealed class ThemeRepository : IThemeRepository
         using var connection = _context.OpenConnection();
         var theme = Get(connection, themeId);
         ValidateDirectReference(connection, theme, fieldId, value);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE themes SET {column} = $value WHERE id = $id",
             ("$id", themeId),
@@ -68,7 +68,7 @@ internal sealed class ThemeRepository : IThemeRepository
     {
         JsonPath.ParseRequiredObject(tokensJson, $"Theme '{themeId}' tokens_json");
         using var connection = _context.OpenConnection();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE themes SET tokens_json = $tokensJson WHERE id = $id",
             ("$id", themeId),
@@ -105,7 +105,7 @@ internal sealed class ThemeRepository : IThemeRepository
             "android" => $"Android Theme {index}",
             _ => $"Theme {index}",
         };
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
@@ -149,7 +149,7 @@ internal sealed class ThemeRepository : IThemeRepository
             copy.StatusBarId,
             copy.NavigationBarId,
             $"Theme '{copy.Id}'");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
@@ -169,12 +169,12 @@ internal sealed class ThemeRepository : IThemeRepository
 
     public void Delete(SqliteConnection connection, string themeId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM themes WHERE id = $id", ("$id", themeId));
+        _context.Execute(connection, "DELETE FROM themes WHERE id = $id", ("$id", themeId));
     }
 
     public void Rename(SqliteConnection connection, string themeId, string name)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE themes SET name = $name WHERE id = $id",
             ("$id", themeId),

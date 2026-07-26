@@ -57,7 +57,7 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
             _ => throw new InvalidOperationException($"Unknown editable production font field '{fieldId}'."),
         };
         using var connection = _context.OpenConnection();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE production_fonts SET {column} = $value WHERE id = $id",
             ("$id", fontId),
@@ -83,7 +83,7 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         var id = string.IsNullOrWhiteSpace(existingId) ? $"font_{Guid.NewGuid():N}" : existingId;
         if (string.IsNullOrWhiteSpace(existingId))
         {
-            SqliteCommandExecutor.Execute(
+            _context.Execute(
                 connection,
                 """
                 INSERT INTO production_fonts (id, project_id, family_name, category, source_directory, files_json, metadata_json)
@@ -98,7 +98,7 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         }
         else
         {
-            SqliteCommandExecutor.Execute(
+            _context.Execute(
                 connection,
                 """
                 UPDATE production_fonts
@@ -118,12 +118,12 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
 
     public void Delete(SqliteConnection connection, string fontId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM production_fonts WHERE id = $id", ("$id", fontId));
+        _context.Execute(connection, "DELETE FROM production_fonts WHERE id = $id", ("$id", fontId));
     }
 
     public void Rename(SqliteConnection connection, string fontId, string name)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE production_fonts SET family_name = $name WHERE id = $id",
             ("$id", fontId),

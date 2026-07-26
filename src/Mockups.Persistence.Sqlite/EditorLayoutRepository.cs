@@ -37,7 +37,7 @@ internal sealed class EditorLayoutRepository : IEditorLayoutRepository
     public void Save(string recordClassId, EditorLayout layout)
     {
         using var connection = _context.OpenConnection();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE editor_layouts SET layout_json = $layoutJson WHERE record_class_id = $recordClassId",
             ("$recordClassId", recordClassId),

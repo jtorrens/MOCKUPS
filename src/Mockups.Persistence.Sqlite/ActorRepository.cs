@@ -29,7 +29,7 @@ internal sealed class ActorRepository : IActorRepository
         switch (fieldId)
         {
             case "actor.shortName":
-                SqliteCommandExecutor.Execute(connection, "UPDATE actors SET short_name = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                _context.Execute(connection, "UPDATE actors SET short_name = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
             case "actor.defaultDeviceId":
                 ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -38,7 +38,7 @@ internal sealed class ActorRepository : IActorRepository
                     ProjectReferenceKind.Device,
                     value,
                     $"Actor '{actorId}' default Device");
-                SqliteCommandExecutor.Execute(connection, "UPDATE actors SET default_device_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                _context.Execute(connection, "UPDATE actors SET default_device_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
             case "actor.defaultThemeId":
                 ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -47,7 +47,7 @@ internal sealed class ActorRepository : IActorRepository
                     ProjectReferenceKind.Theme,
                     value,
                     $"Actor '{actorId}' default Theme");
-                SqliteCommandExecutor.Execute(connection, "UPDATE actors SET default_theme_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
+                _context.Execute(connection, "UPDATE actors SET default_theme_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
         }
 
@@ -97,7 +97,7 @@ internal sealed class ActorRepository : IActorRepository
                 throw new InvalidOperationException($"Unknown actor field '{fieldId}'.");
         }
 
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE actors SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", actorId),
@@ -145,7 +145,7 @@ internal sealed class ActorRepository : IActorRepository
         var displayName = $"Actor {index}";
         var shortName = $"A{index}";
         var metadataJson = DefaultMetadataJson("blue", "gray_010");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
@@ -176,7 +176,7 @@ internal sealed class ActorRepository : IActorRepository
             source.DefaultThemeId,
             $"Actor '{sourceId}' default Theme");
         var copy = source with { Id = $"actor_{Guid.NewGuid():N}", DisplayName = copyName };
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
@@ -194,12 +194,12 @@ internal sealed class ActorRepository : IActorRepository
 
     public void Delete(SqliteConnection connection, string actorId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM actors WHERE id = $id", ("$id", actorId));
+        _context.Execute(connection, "DELETE FROM actors WHERE id = $id", ("$id", actorId));
     }
 
     public void Rename(SqliteConnection connection, string actorId, string name)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE actors SET display_name = $name WHERE id = $id",
             ("$id", actorId),

@@ -160,23 +160,23 @@ public sealed partial class SpikeDatabase
         return JsonPath.NumberNode(value);
     }
 
-    private static void ExecuteScript(SqliteConnection connection, string script)
+    private void ExecuteScript(SqliteConnection connection, string script)
     {
-        SqliteCommandExecutor.ExecuteScript(connection, script);
+        _context.ExecuteScript(connection, script);
     }
 
-    private static void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
+    private void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
     {
         Execute(connection, transaction: null, sql, parameters);
     }
 
-    private static void Execute(
+    private void Execute(
         SqliteConnection connection,
         SqliteTransaction? transaction,
         string sql,
         params (string Key, object? Value)[] parameters)
     {
-        SqliteCommandExecutor.Execute(connection, transaction, sql, parameters);
+        _context.Execute(connection, transaction, sql, parameters);
     }
 
     private static long ScalarLong(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)

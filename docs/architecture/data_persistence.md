@@ -72,6 +72,12 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 connection construction, table mapping or write synchronization belongs in the
 focused repository that owns the table.
 
+Every `SqliteProjectContext` owns its own write gate. Focused repositories route
+writes through that exact context, and a compound write holds the same gate for
+the complete explicit transaction. No process-global SQLite write lock exists:
+two different database files do not serialize one another, while concurrent
+writes inside one context remain ordered.
+
 Repositories return current validated records. Interpretation, Variant
 selection, forwarding, animation, context resolution, Preview preparation and
 UI behavior stay outside persistence.

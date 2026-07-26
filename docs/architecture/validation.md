@@ -33,6 +33,9 @@ It includes:
 - typed startup classification for missing or invalid Preview bundles, missing,
   empty or invalid databases, read-only successful preparation and
   cancellation before session publication;
+- per-context SQLite write coordination, covering an independent write while a
+  second database gate is held and serialized concurrent writes inside one
+  database context;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, cancellation and

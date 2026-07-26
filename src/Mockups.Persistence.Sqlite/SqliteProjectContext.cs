@@ -27,7 +27,7 @@ internal sealed class SqliteProjectContext
         }.ToString();
     }
 
-    public static object WriteGate { get; } = new();
+    public object WriteGate { get; } = new();
 
     public string DatabasePath { get; }
 
@@ -39,6 +39,28 @@ internal sealed class SqliteProjectContext
     public SqliteConnection OpenValidationConnection()
     {
         return Open(_validationConnectionString);
+    }
+
+    public void ExecuteScript(SqliteConnection connection, string script)
+    {
+        SqliteCommandExecutor.ExecuteScript(WriteGate, connection, script);
+    }
+
+    public void Execute(
+        SqliteConnection connection,
+        string sql,
+        params (string Key, object? Value)[] parameters)
+    {
+        Execute(connection, transaction: null, sql, parameters);
+    }
+
+    public void Execute(
+        SqliteConnection connection,
+        SqliteTransaction? transaction,
+        string sql,
+        params (string Key, object? Value)[] parameters)
+    {
+        SqliteCommandExecutor.Execute(WriteGate, connection, transaction, sql, parameters);
     }
 
     private static SqliteConnection Open(string connectionString)

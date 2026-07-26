@@ -18,25 +18,27 @@ internal static class SqliteCommandExecutor
         return reader.IsDBNull(index) ? "" : reader.GetString(index);
     }
 
-    public static void ExecuteScript(SqliteConnection connection, string script)
+    public static void ExecuteScript(object writeGate, SqliteConnection connection, string script)
     {
         using var command = connection.CreateCommand();
         command.CommandText = script;
-        lock (SqliteProjectContext.WriteGate)
+        lock (writeGate)
         {
             command.ExecuteNonQuery();
         }
     }
 
     public static void Execute(
+        object writeGate,
         SqliteConnection connection,
         string sql,
         params (string Key, object? Value)[] parameters)
     {
-        Execute(connection, transaction: null, sql, parameters);
+        Execute(writeGate, connection, transaction: null, sql, parameters);
     }
 
     public static void Execute(
+        object writeGate,
         SqliteConnection connection,
         SqliteTransaction? transaction,
         string sql,
@@ -50,7 +52,7 @@ internal static class SqliteCommandExecutor
             command.Parameters.AddWithValue(key, value ?? DBNull.Value);
         }
 
-        lock (SqliteProjectContext.WriteGate)
+        lock (writeGate)
         {
             command.ExecuteNonQuery();
         }

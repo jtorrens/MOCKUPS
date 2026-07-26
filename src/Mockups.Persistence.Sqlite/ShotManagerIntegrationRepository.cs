@@ -152,10 +152,10 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
             }
         }
 
-        lock (SqliteProjectContext.WriteGate)
+        lock (_context.WriteGate)
         {
             using var transaction = connection.BeginTransaction();
-            SqliteCommandExecutor.Execute(
+            _context.Execute(
                 connection,
                 transaction,
                 """
@@ -180,7 +180,7 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
                 ("$seasonCode", plan.Association.SeasonCode),
                 ("$seasonName", plan.Association.SeasonName),
                 ("$updatedAt", plan.Association.UpdatedAt));
-            SqliteCommandExecutor.Execute(
+            _context.Execute(
                 connection,
                 transaction,
                 "DELETE FROM shot_manager_episode_bindings WHERE project_id = $projectId",
@@ -208,7 +208,7 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
             }
             foreach (var upsert in plan.Upserts)
             {
-                SqliteCommandExecutor.Execute(
+                _context.Execute(
                     connection,
                     transaction,
                     """
@@ -227,7 +227,7 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
                     ("$slug", upsert.Episode.Slug),
                     ("$notes", upsert.Episode.Notes),
                     ("$sortOrder", upsert.Episode.SortOrder));
-                SqliteCommandExecutor.Execute(
+                _context.Execute(
                     connection,
                     transaction,
                     """
@@ -252,7 +252,7 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
     public void Disconnect(string projectId)
     {
         using var connection = _context.OpenConnection();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "DELETE FROM shot_manager_project_associations WHERE project_id = $projectId",
             ("$projectId", projectId));
@@ -293,7 +293,7 @@ internal sealed class ShotManagerIntegrationRepository : IShotManagerIntegration
         ShotManagerShotStructureRecord record)
     {
         ValidateShotStructure(record);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             transaction,
             """

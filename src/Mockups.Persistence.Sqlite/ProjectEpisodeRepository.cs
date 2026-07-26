@@ -51,7 +51,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             _ => throw new InvalidOperationException($"Unknown project field '{fieldId}'."),
         };
 
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE projects SET {column} = $value WHERE id = $id",
             ("$id", projectId),
@@ -85,7 +85,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             _ => throw new InvalidOperationException($"Unknown episode field '{fieldId}'."),
         };
 
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE episodes SET {column} = $value WHERE id = $id",
             ("$id", episodeId),
@@ -136,7 +136,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         var name = $"Episode {sortOrder + 1}";
         var slug = $"episode-{sortOrder + 1}";
         const string notes = "New episode created in the desktop shell spike.";
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO episodes (id, project_id, name, notes, sort_order)
@@ -147,7 +147,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             ("$name", name),
             ("$notes", notes),
             ("$sortOrder", sortOrder));
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE episodes SET slug = $slug WHERE id = $id",
             ("$id", id),
@@ -163,7 +163,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         var id = $"episode_{Guid.NewGuid():N}";
         var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "episodes", "project_id", source.ProjectId);
         var slug = $"{source.Slug}-copy";
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO episodes (id, project_id, name, slug, notes, sort_order)
@@ -182,12 +182,12 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
 
     public void DeleteEpisode(SqliteConnection connection, string episodeId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM episodes WHERE id = $id", ("$id", episodeId));
+        _context.Execute(connection, "DELETE FROM episodes WHERE id = $id", ("$id", episodeId));
     }
 
     public void UpdateProjectNode(SqliteConnection connection, string projectId, string name, string notes)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE projects SET name = $name, notes = $notes WHERE id = $id",
             ("$id", projectId),
@@ -197,7 +197,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
 
     public void UpdateEpisodeNode(SqliteConnection connection, string episodeId, string name, string notes)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE episodes SET name = $name, notes = $notes WHERE id = $id",
             ("$id", episodeId),

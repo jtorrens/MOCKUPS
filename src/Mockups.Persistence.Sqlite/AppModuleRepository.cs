@@ -116,7 +116,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
         {
             JsonPath.ParseRequiredObject(value, $"App '{appId}' {column}");
         }
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE apps SET {column} = $value WHERE id = $id",
             ("$id", appId),
@@ -126,7 +126,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     public void UpdateAppConfig(SqliteConnection connection, string appId, string configJson)
     {
         JsonPath.ParseRequiredObject(configJson, $"App '{appId}' config_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE apps SET config_json = $configJson WHERE id = $id",
             ("$id", appId),
@@ -136,7 +136,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     public void UpdateAppMetadata(SqliteConnection connection, string appId, string metadataJson)
     {
         JsonPath.ParseRequiredObject(metadataJson, $"App '{appId}' metadata_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE apps SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", appId),
@@ -145,7 +145,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
 
     public void UpdateModuleSortOrder(SqliteConnection connection, string moduleId, int sortOrder)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE modules SET sort_order = $value WHERE id = $id",
             ("$id", moduleId),
@@ -159,7 +159,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
             module.RecordClassId,
             JsonPath.ParseRequiredObject(configJson, $"Module '{moduleId}' config_json"),
             $"Module '{moduleId}' config_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE modules SET config_json = $configJson WHERE id = $id",
             ("$id", moduleId),
@@ -170,7 +170,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     {
         JsonPath.ParseRequiredObject(designPreviewJson, $"Module '{moduleId}' design_preview_json");
         using var connection = _context.OpenConnection();
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE modules SET design_preview_json = $json WHERE id = $id",
             ("$id", moduleId),
@@ -181,7 +181,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     {
         var module = GetModule(connection, moduleId);
         ValidateModuleMetadata(metadataJson, moduleId, module.RecordClassId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE modules SET metadata_json = $metadataJson WHERE id = $id",
             ("$id", moduleId),
@@ -190,17 +190,17 @@ internal sealed class AppModuleRepository : IAppModuleRepository
 
     public void RenameApp(SqliteConnection connection, string appId, string name)
     {
-        SqliteCommandExecutor.Execute(connection, "UPDATE apps SET name = $name WHERE id = $id", ("$id", appId), ("$name", name));
+        _context.Execute(connection, "UPDATE apps SET name = $name WHERE id = $id", ("$id", appId), ("$name", name));
     }
 
     public void RenameModule(SqliteConnection connection, string moduleId, string name)
     {
-        SqliteCommandExecutor.Execute(connection, "UPDATE modules SET name = $name WHERE id = $id", ("$id", moduleId), ("$name", name));
+        _context.Execute(connection, "UPDATE modules SET name = $name WHERE id = $id", ("$id", moduleId), ("$name", name));
     }
 
     public void UpdateAppNode(SqliteConnection connection, string appId, string name, string notes)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE apps SET name = $name, notes = $notes WHERE id = $id",
             ("$id", appId),
@@ -210,7 +210,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
 
     public void UpdateModuleNode(SqliteConnection connection, string moduleId, string name, string notes)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE modules SET name = $name, notes = $notes WHERE id = $id",
             ("$id", moduleId),

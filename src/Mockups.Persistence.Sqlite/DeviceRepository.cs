@@ -27,13 +27,13 @@ internal sealed class DeviceRepository : IDeviceRepository
         switch (fieldId)
         {
             case "device.manufacturer":
-                SqliteCommandExecutor.Execute(connection, "UPDATE devices SET manufacturer = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                _context.Execute(connection, "UPDATE devices SET manufacturer = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
                 return;
             case "device.model":
-                SqliteCommandExecutor.Execute(connection, "UPDATE devices SET model = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                _context.Execute(connection, "UPDATE devices SET model = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
                 return;
             case "device.osFamily":
-                SqliteCommandExecutor.Execute(connection, "UPDATE devices SET os_family = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
+                _context.Execute(connection, "UPDATE devices SET os_family = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
                 return;
         }
 
@@ -101,7 +101,7 @@ internal sealed class DeviceRepository : IDeviceRepository
                 throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
         }
 
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE devices SET metrics_json = $metricsJson WHERE id = $id",
             ("$id", deviceId),
@@ -148,7 +148,7 @@ internal sealed class DeviceRepository : IDeviceRepository
         var id = $"device_{Guid.NewGuid():N}";
         var name = $"Device {index}";
         var metricsJson = DeviceMetricRules.CreateMetricsJson(1170, 2532, 3, includeDynamicIsland: false);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
@@ -172,7 +172,7 @@ internal sealed class DeviceRepository : IDeviceRepository
     {
         JsonPath.ParseRequiredObject(metricsJson, "Imported Device metrics_json");
         var id = $"device_{Guid.NewGuid():N}";
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
@@ -193,7 +193,7 @@ internal sealed class DeviceRepository : IDeviceRepository
         var source = QueryAll(connection).SingleOrDefault((device) => device.Id == sourceId)
             ?? throw new InvalidOperationException($"Missing device '{sourceId}'.");
         var copy = source with { Id = $"device_{Guid.NewGuid():N}", Name = copyName };
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
@@ -211,12 +211,12 @@ internal sealed class DeviceRepository : IDeviceRepository
 
     public void Delete(SqliteConnection connection, string deviceId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM devices WHERE id = $id", ("$id", deviceId));
+        _context.Execute(connection, "DELETE FROM devices WHERE id = $id", ("$id", deviceId));
     }
 
     public void Rename(SqliteConnection connection, string deviceId, string name)
     {
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE devices SET name = $name WHERE id = $id",
             ("$id", deviceId),

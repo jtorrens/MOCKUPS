@@ -257,7 +257,7 @@ internal sealed class ShotRepository : IShotRepository
     public void ClearFpsOverride(SqliteConnection connection, string shotId)
     {
         _ = Get(connection, shotId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE shots SET fps_override = NULL WHERE id = $id",
             ("$id", shotId));
@@ -305,7 +305,7 @@ internal sealed class ShotRepository : IShotRepository
                 $"Shot '{shotId}' owner Actor",
                 required: true);
         }
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             $"UPDATE shots SET {column} = $value WHERE id = $id",
             ("$id", shotId),
@@ -319,7 +319,7 @@ internal sealed class ShotRepository : IShotRepository
             throw new InvalidOperationException($"Shot '{shotId}' duration must be positive.");
         }
         _ = Get(connection, shotId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE shots SET duration_frames = $duration WHERE id = $id",
             ("$id", shotId),
@@ -329,7 +329,7 @@ internal sealed class ShotRepository : IShotRepository
     public void UpdateNode(SqliteConnection connection, string shotId, string name, string notes)
     {
         _ = Get(connection, shotId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE shots SET name = $name, notes = $notes WHERE id = $id",
             ("$id", shotId),
@@ -340,13 +340,13 @@ internal sealed class ShotRepository : IShotRepository
     public void Delete(SqliteConnection connection, string shotId)
     {
         _ = Get(connection, shotId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "DELETE FROM shots WHERE id = $id",
             ("$id", shotId));
     }
 
-    private static void Insert(SqliteConnection connection, ShotRecord record)
+    private void Insert(SqliteConnection connection, ShotRecord record)
     {
         Validate(record);
         var projectId = RequiredProjectId(connection, record.EpisodeId);
@@ -365,13 +365,13 @@ internal sealed class ShotRepository : IShotRepository
         InsertRow(connection, transaction: null, record);
     }
 
-    private static void InsertRow(
+    private void InsertRow(
         SqliteConnection connection,
         SqliteTransaction? transaction,
         ShotRecord record)
     {
         Validate(record);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             transaction,
             """

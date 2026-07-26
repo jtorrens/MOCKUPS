@@ -58,7 +58,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         string metadataJson)
     {
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{id}' metadata_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
@@ -86,7 +86,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
     {
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{id}' metadata_json");
         var source = Get(connection, sourceId);
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             """
             INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
@@ -104,7 +104,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
     public void UpdateMapping(SqliteConnection connection, string iconThemeId, string mappingJson)
     {
         JsonPath.ParseRequiredObject(mappingJson, $"Icon Theme '{iconThemeId}' mapping_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
             ("$id", iconThemeId),
@@ -119,7 +119,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         string metadataJson)
     {
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{iconThemeId}' metadata_json");
-        SqliteCommandExecutor.Execute(
+        _context.Execute(
             connection,
             "UPDATE icon_themes SET name = $name, asset_root = $assetRoot, metadata_json = $metadataJson WHERE id = $id",
             ("$id", iconThemeId),
@@ -130,7 +130,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
 
     public void Delete(SqliteConnection connection, string iconThemeId)
     {
-        SqliteCommandExecutor.Execute(connection, "DELETE FROM icon_themes WHERE id = $id", ("$id", iconThemeId));
+        _context.Execute(connection, "DELETE FROM icon_themes WHERE id = $id", ("$id", iconThemeId));
     }
 
     private static IconThemeRecord ReadRecord(SqliteDataReader reader)

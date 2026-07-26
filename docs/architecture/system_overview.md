@@ -137,7 +137,9 @@ Avalonia or `Microsoft.Data.Sqlite`.
 implementations, table mapping and the transitional `SpikeDatabase`
 compatibility facade. It may reference Application and Domain and is the only
 production project allowed to reference the SQLite packages. It cannot
-reference Avalonia or Desktop.
+reference Avalonia or Desktop. Each SQLite context owns its write
+coordination; opening an unrelated database never shares a process-global
+write lock.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
