@@ -193,6 +193,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 _structureKey,
                 StringComparison.Ordinal))
         {
+            DetachJobRows();
             _batches.Children.Clear();
             var activeIds = jobs
                 .Select((job) => job.Id)
@@ -235,6 +236,17 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         foreach (var job in jobs)
         {
             UpdateJobRow(job);
+        }
+    }
+
+    private void DetachJobRows()
+    {
+        foreach (var row in _jobRows.Values)
+        {
+            if (row.Root.GetVisualParent() is Panel parent)
+            {
+                parent.Children.Remove(row.Root);
+            }
         }
     }
 

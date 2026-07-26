@@ -7332,7 +7332,10 @@ static void RenderQueueProgressControlIsStable()
                 root,
                 "output",
                 "SHOT",
-                [RenderQueueAppearance.Light],
+                [
+                    RenderQueueAppearance.Light,
+                    RenderQueueAppearance.Dark,
+                ],
                 mode,
                 3);
             var summary = new RenderJobSummary(
@@ -7353,6 +7356,16 @@ static void RenderQueueProgressControlIsStable()
                     mode.Id,
                     outputPlan.OutputPaths[
                         RenderQueueAppearance.Light]));
+            var darkSummary = summary with
+            {
+                Appearance = RenderQueueAppearance.Dark,
+                Output = summary.Output with
+                {
+                    Appearance = RenderQueueAppearance.Dark,
+                    OutputPath = outputPlan.OutputPaths[
+                        RenderQueueAppearance.Dark],
+                },
+            };
             var monitor = new RenderQueueMonitorControl(
                 new Window(),
                 queue);
@@ -7365,19 +7378,27 @@ static void RenderQueueProgressControlIsStable()
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
-            var child = queue.EnqueuePreparingBatch(
-                [summary],
+            var children = queue.EnqueuePreparingBatch(
+                [summary, darkSummary],
                 async (_, _, cancellationToken) =>
                 {
                     await Task.Delay(
                         Timeout.InfiniteTimeSpan,
                         cancellationToken);
                     return [];
-                }).Single();
+                });
+            var child = children.Single((candidate) =>
+                candidate.Summary.Appearance
+                    == RenderQueueAppearance.Light);
+            var survivor = children.Single((candidate) =>
+                candidate.Summary.Appearance
+                    == RenderQueueAppearance.Dark);
             Dispatcher.UIThread.RunJobs();
             var first = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
-                .Single();
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{child.Id}");
             True(first.IsIndeterminate);
 
             var update = typeof(RenderQueueManager).GetMethod(
@@ -7397,7 +7418,9 @@ static void RenderQueueProgressControlIsStable()
             Dispatcher.UIThread.RunJobs();
             var second = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
-                .Single();
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{child.Id}");
             True(ReferenceEquals(first, second));
             True(second.IsIndeterminate);
             var status = monitor.GetVisualDescendants()
@@ -7437,10 +7460,106 @@ static void RenderQueueProgressControlIsStable()
             Dispatcher.UIThread.RunJobs();
             var rendering = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
-                .Single();
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{child.Id}");
             True(ReferenceEquals(first, rendering));
             True(!rendering.IsIndeterminate);
             Equal(4d, rendering.Value);
+
+            var survivingProgress = monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{survivor.Id}");
+            var finish = typeof(RenderQueueManager).GetMethod(
+                "Finish",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Missing Render Queue terminal-state boundary.");
+            finish.Invoke(
+                queue,
+                [
+                    child.Id,
+                    RenderQueueStatus.Completed,
+                    null,
+                ]);
+            Dispatcher.UIThread.RunJobs();
+            monitor.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) =>
+                    string.Equals(
+                        button.Content as string,
+                        "Remove",
+                        StringComparison.Ordinal))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Equal(1, queue.Jobs().Count);
+            True(queue.Jobs().Single().Id.Equals(
+                survivor.Id,
+                StringComparison.Ordinal));
+            True(!monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Any((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{child.Id}"));
+            var survivingProgressAfterRemoval = monitor
+                .GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{survivor.Id}");
+            True(ReferenceEquals(
+                survivingProgress,
+                survivingProgressAfterRemoval));
+
+            var later = queue.EnqueuePreparingBatch(
+                [summary],
+                async (_, _, cancellationToken) =>
+                {
+                    await Task.Delay(
+                        Timeout.InfiniteTimeSpan,
+                        cancellationToken);
+                    return [];
+                }).Single();
+            Dispatcher.UIThread.RunJobs();
+            var laterProgress = monitor.GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{later.Id}");
+            finish.Invoke(
+                queue,
+                [
+                    survivor.Id,
+                    RenderQueueStatus.Completed,
+                    null,
+                ]);
+            Dispatcher.UIThread.RunJobs();
+            monitor.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) =>
+                    string.Equals(
+                        button.Content as string,
+                        "Clear finished",
+                        StringComparison.Ordinal))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Equal(1, queue.Jobs().Count);
+            True(queue.Jobs().Single().Id.Equals(
+                later.Id,
+                StringComparison.Ordinal));
+            var laterProgressAfterClear = monitor
+                .GetVisualDescendants()
+                .OfType<ProgressBar>()
+                .Single((progress) =>
+                    progress.Name
+                        == $"RenderQueueProgress_{later.Id}");
+            True(ReferenceEquals(
+                laterProgress,
+                laterProgressAfterClear));
 
             window.Close();
         }, CancellationToken.None).GetAwaiter().GetResult();
