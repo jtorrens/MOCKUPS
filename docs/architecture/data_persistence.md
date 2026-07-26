@@ -36,6 +36,11 @@ Component Variant of their exact declared type.
 
 ## Repository ownership
 
+Synchronous persistence-facing ports live in the separate package-free
+`Mockups.Application.PersistencePorts` assembly. This keeps storage capability
+out of the base Application contract graph and makes every current consumer
+declare that capability directly.
+
 SQLite production code is split across independent persistence projects.
 `Mockups.Persistence.Sqlite.Core` owns connection construction, the per-context
 write gate, command execution, cross-Project reference integrity and the

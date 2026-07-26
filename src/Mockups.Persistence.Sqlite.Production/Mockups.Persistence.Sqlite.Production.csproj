@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
+    <ProjectReference Include="../Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj" />
     <ProjectReference Include="../Mockups.Domain/Mockups.Domain.csproj" />
     <ProjectReference Include="../Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj" />
     <ProjectReference Include="../Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj" />

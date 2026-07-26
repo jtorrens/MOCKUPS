@@ -44,10 +44,21 @@ const expectedProjects = new Map([
     },
   ],
   [
+    "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Domain/Mockups.Domain.csproj",
+      ],
+      packageReferences: [],
+    },
+  ],
+  [
     "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
       ],
       packageReferences: [
@@ -67,6 +78,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
         "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
       ],
@@ -91,6 +103,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
         "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
         "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
@@ -109,6 +122,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
       ],
       packageReferences: [
@@ -135,6 +149,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
         "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
         "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
@@ -150,6 +165,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
         "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
         "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
@@ -165,6 +181,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
         "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
         "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
@@ -178,6 +195,10 @@ const expectedProjects = new Map([
 ]);
 
 const expectedFriends = new Map([
+  [
+    "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
+    [],
+  ],
   [
     "src/Mockups.Application/Mockups.Application.csproj",
     [
@@ -247,6 +268,7 @@ const expectedFriends = new Map([
 ]);
 
 const expectedExternalResources = new Map([
+  ["src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj", []],
   [
     "src/Mockups.Application/Mockups.Application.csproj",
     ["src/desktop-preview/desktopPreviewManifest.json"],
@@ -525,6 +547,22 @@ test("Application can see Domain but has no UI or persistence package capabiliti
   assert.deepEqual(application.Items.PackageReference, []);
 });
 
+test("persistence-facing ports are a separate package-free capability", () => {
+  const ports = evaluate(
+    "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
+  );
+  assert.deepEqual(
+    ports.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
+      .sort(),
+    [
+      "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Domain/Mockups.Domain.csproj",
+    ],
+  );
+  assert.deepEqual(ports.Items.PackageReference, []);
+});
+
 test("workspace coordinator tests compile against Application alone", () => {
   const tests = evaluate(
     "tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj",
@@ -546,6 +584,7 @@ test("Persistence can see Application and Domain but has no UI package capabilit
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort(),
     [
+      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Domain/Mockups.Domain.csproj",
       "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
@@ -570,6 +609,7 @@ test("SQLite contracts, Core and owner projects expose only their declared persi
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort(),
     [
+      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Domain/Mockups.Domain.csproj",
     ],
@@ -598,6 +638,7 @@ test("SQLite contracts, Core and owner projects expose only their declared persi
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort(),
     [
+      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Domain/Mockups.Domain.csproj",
       "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
@@ -618,6 +659,7 @@ test("SQLite contracts, Core and owner projects expose only their declared persi
         .map((item) => repositoryPath(item.FullPath ?? item.Identity))
         .sort(),
       [
+        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
         "src/Mockups.Application/Mockups.Application.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
         "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
@@ -648,7 +690,7 @@ test("SQLite contracts, Core and owner projects expose only their declared persi
   assert.equal(designReferences.has("Mockups.Persistence.Sqlite.Resources"), false);
 });
 
-test("Desktop explicitly sees UI, Application and Domain but cannot compile against persistence", () => {
+test("Desktop explicitly sees UI, Application, temporary persistence ports and Domain but cannot compile against SQLite", () => {
   const desktop = evaluate(
     "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
   );
@@ -657,6 +699,7 @@ test("Desktop explicitly sees UI, Application and Domain but cannot compile agai
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort(),
     [
+      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Domain/Mockups.Domain.csproj",
     ],
@@ -686,6 +729,7 @@ test("the executable Host composes Desktop and Persistence without inheriting th
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort(),
     [
+      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
       "src/Mockups.Application/Mockups.Application.csproj",
       "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
       "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
@@ -702,6 +746,13 @@ test("the executable Host composes Desktop and Persistence without inheriting th
 test("an Application-only consumer cannot compile against Domain", () => {
   assertCannotCompile(
     "tests/architecture/fixtures/TransitiveDomainLeak/TransitiveDomainLeak.csproj",
+    /ForbiddenDependencyProbe\.cs.*(?:CS0246|CS0234)/su,
+  );
+});
+
+test("an Application-only consumer cannot compile against persistence-facing ports", () => {
+  assertCannotCompile(
+    "tests/architecture/fixtures/TransitivePersistencePortLeak/TransitivePersistencePortLeak.csproj",
     /ForbiddenDependencyProbe\.cs.*(?:CS0246|CS0234)/su,
   );
 });

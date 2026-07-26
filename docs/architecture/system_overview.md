@@ -148,6 +148,12 @@ synchronous repository work on a controlled worker and cancels queued work
 when the session closes. Visual controls apply successful results only after
 the worker completes; UI effects never execute inside that worker.
 
+`Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
+port contracts. It references Application models and Domain value objects but
+has no package capabilities. An Application-only consumer cannot compile those
+ports accidentally; a project must request that physical capability through an
+exact direct reference.
+
 `Mockups.Persistence.Sqlite.Core` owns the SQLite context, connection and
 transaction primitives, cross-Project reference guard and current schema.
 `Mockups.Persistence.Sqlite.Contracts` owns the internal focused repository

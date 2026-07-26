@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="SukiUI" />
     <ProjectReference Include="../../src/Mockups.Application/Mockups.Application.csproj" />
+    <ProjectReference Include="../../src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj" />
     <ProjectReference Include="../../src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj" />
     <ProjectReference Include="../../src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj" />
     <ProjectReference Include="../../src/Mockups.Domain/Mockups.Domain.csproj" />

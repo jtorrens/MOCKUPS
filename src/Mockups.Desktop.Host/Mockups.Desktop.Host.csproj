@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Mockups.Application/Mockups.Application.csproj" />
+    <ProjectReference Include="../Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj" />
     <ProjectReference Include="../Mockups.Desktop/Mockups.DesktopEditorShell.csproj" />
     <ProjectReference Include="../Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj" />
   </ItemGroup>

@@ -201,7 +201,8 @@ also allowlists friend assemblies and external resources, rejects direct
 assembly references, custom analyzers, external compiled source, custom SDKs
 and project-local MSBuild imports, and compiles negative fixture projects that
 must fail when a consumer tries to use a transitive Domain or SQLite
-capability. The Preview suite parses every
+capability. An Application-only fixture must also fail when it attempts to use
+the separately compiled synchronous persistence ports. The Preview suite parses every
 static, exported, import-assignment, `require` and dynamic TypeScript import
 recursively with TypeScript module resolution, rejects computed module loads,
 then derives permitted concrete owner edges from the current manifest.
