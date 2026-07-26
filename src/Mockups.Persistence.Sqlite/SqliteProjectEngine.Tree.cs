@@ -29,7 +29,8 @@ internal sealed partial class SqliteProjectEngine
         var themes = _resourceOwner.ThemeRepository.QueryAll(connection);
         var productionFonts = _resourceOwner.ProductionFontRepository.QueryAll(connection);
         var iconThemes = _resourceOwner.IconThemeRepository.QueryAll(connection);
-        var componentClasses = QueryComponentClassRows(connection);
+        var componentClasses =
+            _designOwner.QueryComponentClassRows(connection);
         var referenceUsageIndex = _referenceUsageService.BuildIndex(connection);
 
         var projectNodes = projects
@@ -319,7 +320,9 @@ internal sealed partial class SqliteProjectEngine
                 isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
             groupNode.AddChild(componentNode);
 
-            foreach (var variant in ComponentClassVariants(componentClass.MetadataJson))
+            foreach (var variant in
+                     SqliteDesignOwner.ComponentClassVariants(
+                         componentClass.MetadataJson))
             {
                 componentNode.AddChild(new ProjectTreeNode(
                     ProjectTreeNodeKind.ComponentVariant,

@@ -481,7 +481,8 @@ internal sealed partial class SqliteProjectEngine
     {
         var validReferences = new HashSet<string>(StringComparer.Ordinal);
         var documents = new List<(string Context, JsonNode Node)>();
-        foreach (var row in QueryComponentClassRows(connection))
+        foreach (var row in
+                 _designOwner.QueryComponentClassRows(connection))
         {
             var variants =
                 SqliteDesignOwner.RequiredComponentClassVariants(row);

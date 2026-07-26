@@ -480,6 +480,28 @@ internal interface IModuleVariantCatalog
         IReadOnlyCollection<string> moduleIds);
 }
 
+internal interface IComponentFieldDesignOptionSource
+{
+    IReadOnlyList<FieldOption> GetEmbeddedComponentOptions(
+        string projectId,
+        string recordClassId);
+
+    IReadOnlyList<FieldOption>
+        GetComponentVariantReferenceOptionsByType(
+            string projectId,
+            string componentType,
+            bool includeNone = false);
+}
+
+internal interface IComponentFieldResourceOptionSource
+{
+    IReadOnlyList<FieldOption> GetPaletteColorOptions(string projectId);
+
+    IReadOnlyList<FieldOption> GetProductionFontOptions(
+        string projectId,
+        string? category = null);
+}
+
 internal interface IComponentClassRepository
 {
     ComponentClassDefinitionRecord Get(string componentClassId);

@@ -72,7 +72,10 @@ those read models. Basic Component Class and Variant field values are also
 projected in Design from an explicit option list. Composition supplies that
 data list only because a dictionary field may combine Design-owned Component
 choices with Resource-owned palette or font choices; Design receives no
-Resource service. Inherited embedded and Runtime Override field projection,
+Resource service. `ComponentFieldOptionResolver` is the one composition-only
+owner of that aggregation and receives two narrow option-only contracts, not
+the concrete Design or Resources owners.
+Inherited embedded and Runtime Override field projection,
 including local inheritance removal and nested slot traversal, also executes
 inside Design. Composition routes the authored owner and supplies resolved
 option data only.

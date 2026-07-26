@@ -1,5 +1,3 @@
-using Microsoft.Data.Sqlite;
-using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -30,7 +28,9 @@ internal sealed partial class SqliteProjectEngine
     {
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
+        var options = _componentFieldOptions.Resolve(
+            settings.ProjectId,
+            descriptor);
         return _designOwner.CreateComponentFieldValue(
             settings,
             descriptor,
@@ -43,7 +43,9 @@ internal sealed partial class SqliteProjectEngine
     {
         var settings = GetComponentVariantSettings(variantNode);
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var options = ComponentClassFieldOptions(settings.ProjectId, descriptor);
+        var options = _componentFieldOptions.Resolve(
+            settings.ProjectId,
+            descriptor);
         return _designOwner.CreateComponentFieldValue(
             settings,
             descriptor,
@@ -57,7 +59,7 @@ internal sealed partial class SqliteProjectEngine
         string fieldId)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var options = ComponentClassFieldOptions(
+        var options = _componentFieldOptions.Resolve(
             projectId,
             descriptor);
         return _designOwner.CreateRuntimeComponentOverrideFieldValue(
@@ -75,7 +77,7 @@ internal sealed partial class SqliteProjectEngine
         string fieldId)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        var options = ComponentClassFieldOptions(
+        var options = _componentFieldOptions.Resolve(
             projectId,
             descriptor);
         return _designOwner.CreateRuntimeComponentOverrideFieldValue(
@@ -133,7 +135,7 @@ internal sealed partial class SqliteProjectEngine
     {
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var options = ComponentClassFieldOptions(
+        var options = _componentFieldOptions.Resolve(
             settings.ProjectId,
             descriptor);
         return _designOwner.CreateEmbeddedComponentFieldValue(
@@ -157,7 +159,7 @@ internal sealed partial class SqliteProjectEngine
 
         var settings = GetComponentClassSettings(componentClassId);
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var options = ComponentClassFieldOptions(
+        var options = _componentFieldOptions.Resolve(
             settings.ProjectId,
             descriptor);
         return _designOwner.CreateEmbeddedComponentFieldValue(
@@ -214,7 +216,7 @@ internal sealed partial class SqliteProjectEngine
             ?? moduleSettings!.ProjectId;
         var configJson = componentSettings?.ConfigJson
             ?? moduleSettings!.ConfigJson;
-        var options = ComponentClassFieldOptions(
+        var options = _componentFieldOptions.Resolve(
             projectId,
             descriptor);
         return _designOwner.CreateEmbeddedComponentFieldValue(
@@ -260,15 +262,5 @@ internal sealed partial class SqliteProjectEngine
             slots,
             embeddedFieldId,
             value);
-
-    private static IReadOnlyList<ComponentClassVariant> ComponentClassVariants(
-        string metadataJson,
-        string owner = "Component class metadata") =>
-        SqliteDesignOwner.ComponentClassVariants(
-            metadataJson,
-            owner);
-
-    private IReadOnlyList<ComponentClassDefinitionRecord> QueryComponentClassRows(SqliteConnection connection) =>
-        _designOwner.ComponentClassRepository.QueryAll(connection);
 
 }

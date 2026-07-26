@@ -165,7 +165,11 @@ embedded Variant traversal, complete Preview base-config projection and
 Variant Runtime Input projection also execute in Design. The temporary
 composition layer resolves the field-option list when one dictionary field
 combines Design-owned Component choices with Resource-owned palette or font
-choices, then passes that data into Design. Component Class, Variant,
+choices, then passes that data into Design. The composition-only
+`ComponentFieldOptionResolver` is the single owner of that cross-owner
+aggregation and receives only two option-specific contracts;
+`SqliteProjectEngine` contains no option-selection policy.
+Component Class, Variant,
 inherited embedded and Runtime Override field-value projection now executes
 in Design. Composition only routes the authored owner and supplies the
 resolved option data; it does not calculate inheritance or traverse embedded

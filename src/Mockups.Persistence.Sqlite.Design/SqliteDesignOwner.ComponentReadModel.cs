@@ -7,6 +7,10 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner
 {
+    internal IReadOnlyList<ComponentClassDefinitionRecord>
+        QueryComponentClassRows(SqliteConnection connection) =>
+        _componentClassRepository.QueryAll(connection);
+
     public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
         string componentType,
@@ -494,7 +498,7 @@ internal sealed partial class SqliteDesignOwner
                     StringComparison.Ordinal))
             .ConfigJson;
 
-    internal IReadOnlyList<FieldOption> EmbeddedComponentOptions(
+    public IReadOnlyList<FieldOption> GetEmbeddedComponentOptions(
         string projectId,
         string recordClassId)
     {

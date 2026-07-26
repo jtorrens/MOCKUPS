@@ -5,7 +5,9 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteDesignOwner : IModuleVariantCatalog
+internal sealed partial class SqliteDesignOwner :
+    IModuleVariantCatalog,
+    IComponentFieldDesignOptionSource
 {
     private object WriteGate => _context.WriteGate;
     private readonly SqliteProjectContext _context;
