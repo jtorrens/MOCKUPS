@@ -30,7 +30,7 @@ public interface ICoreFieldStore
     void UpdateNode(EditorShell.ProjectTreeNode node);
 }
 
-public interface IRecordClassFieldStore : IModuleInstanceTimelineStore
+public interface IRecordClassFieldStore
 {
     ProjectSettings GetProjectSettings(string projectId);
     void UpdateProjectField(string projectId, string fieldId, string value);

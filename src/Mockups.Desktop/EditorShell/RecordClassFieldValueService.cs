@@ -10,20 +10,23 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RecordClassFieldValueService
 {
     private readonly IRecordClassFieldStore _database;
+    private readonly IModuleInstanceTimelineStore _timeline;
     private readonly ProductionOutputRootStore _productionOutputRoots;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public RecordClassFieldValueService(
         IRecordClassFieldStore database,
+        IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         ProductionOutputRootStore? productionOutputRoots = null)
     {
         _database = database;
+        _timeline = timeline;
         _productionOutputRoots =
             productionOutputRoots ?? new ProductionOutputRootStore();
         _timelineDataSource =
             new ModuleInstanceTimelineDataSource(
-                database,
+                timeline,
                 moduleInstanceThemes);
     }
 
@@ -76,7 +79,8 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Module => ModuleFieldOptions(node.Id, field),
             ProjectTreeNodeKind.ModuleVariant => ModuleFieldOptions(node.Parent?.Id ?? "", field),
             ProjectTreeNodeKind.ModuleInstance => field.Id == "moduleInstance.variant"
-                ? _database.GetModuleVariantOptions(_database.GetModuleInstanceSettings(node.Id).ModuleId)
+                ? _database.GetModuleVariantOptions(
+                    _timeline.GetModuleInstanceSettings(node.Id).ModuleId)
                 : field.Options,
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
@@ -114,7 +118,8 @@ internal sealed class RecordClassFieldValueService
         var isEditable = field.IsEditable
             || (node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && field.Id == "moduleInstance.durationFrames"
-                && RuntimeDurationContract.Policy(_database.GetModuleInstanceEffectiveContractJson(node.Id))
+                && RuntimeDurationContract.Policy(
+                    _timeline.GetModuleInstanceEffectiveContractJson(node.Id))
                     == RuntimeDurationPolicy.Explicit);
         var result = new FieldValue(
             new FieldDefinition(
@@ -284,14 +289,18 @@ internal sealed class RecordClassFieldValueService
 
     private string ModuleInstanceFieldValue(string moduleInstanceId, string fieldId)
     {
-        var settings = _database.GetModuleInstanceSettings(moduleInstanceId);
+        var settings = _timeline.GetModuleInstanceSettings(
+            moduleInstanceId);
         return fieldId switch
         {
-            "moduleInstance.module" => _database.GetModuleInstanceModuleName(moduleInstanceId),
+            "moduleInstance.module" =>
+                _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.variant" => _database.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
             "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId).ToString(),
-            "moduleInstance.transition" => _database.GetModuleInstanceTransitionType(moduleInstanceId),
+            "moduleInstance.transition" =>
+                _timeline.GetModuleInstanceTransitionType(
+                    moduleInstanceId),
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }

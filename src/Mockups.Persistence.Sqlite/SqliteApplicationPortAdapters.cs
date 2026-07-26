@@ -100,33 +100,9 @@ internal sealed class SqliteRecordClassFieldPort(
         string fieldId)
         => ((Mockups.DesktopEditorShell.Data.IRecordClassFieldStore)_target).GetModuleConfigFieldValue(moduleId, fieldId);
 
-    public string GetModuleInstanceEffectiveContractJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceEffectiveContractJson(moduleInstanceId);
-
-    public string GetModuleInstanceModuleName(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceModuleName(moduleInstanceId);
-
-    public string GetModuleInstanceRuntimePreviewJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
-    public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceTransitionType(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceTransitionType(moduleInstanceId);
-
     public string GetModuleInstanceVariantReference(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IRecordClassFieldStore)_target).GetModuleInstanceVariantReference(moduleInstanceId);
-
-    public Mockups.DesktopEditorShell.Data.ModuleSettings GetModuleInstanceVariantSettings(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceVariantSettings(moduleInstanceId);
 
     public Mockups.DesktopEditorShell.Data.ModuleSettings GetModuleSettings(
         string moduleId)
@@ -174,10 +150,6 @@ internal sealed class SqliteRecordClassFieldPort(
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.FieldOption> GetRequiredActorOptions(
         string projectId)
         => ((Mockups.DesktopEditorShell.Data.IRecordClassFieldStore)_target).GetRequiredActorOptions(projectId);
-
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ModuleInstanceSlot> GetShotModuleInstanceSlots(
-        string shotId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetShotModuleInstanceSlots(shotId);
 
     public string GetShotOwnerDeviceName(
         string shotId)

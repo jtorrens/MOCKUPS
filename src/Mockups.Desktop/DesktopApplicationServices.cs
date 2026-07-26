@@ -53,6 +53,7 @@ internal sealed record DesktopApplicationServices(
             new CoreFieldValueService(data.CoreFields),
             new RecordClassFieldValueService(
                 data.RecordFields,
+                data.Timeline,
                 data.ModuleInstanceThemes,
                 productionOutputRoots),
             new ComponentClassFieldValueService(data.ComponentFields),

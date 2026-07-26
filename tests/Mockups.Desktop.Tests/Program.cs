@@ -1425,7 +1425,10 @@ static void ResourceScalarReadsRejectWrongShapes()
     {
         var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
-        var fields = new RecordClassFieldValueService(database, database.Resources);
+        var fields = new RecordClassFieldValueService(
+            database,
+            database.Production,
+            database.Resources);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var checkedKinds = new HashSet<ProjectTreeNodeKind>
         {
@@ -4142,7 +4145,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             var listPayload = Required(DesignPreviewPayloadFactory.Create(
                 new DesignPreviewPayloadDataSource(
                     database.PreviewInputs,
-                    database,
+                    database.Production,
                     database.Resources,
                     database.Resources,
                     database.ProjectPaths),
@@ -4354,7 +4357,10 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 $"Chat List selection resolved to unexpected Variant '{selected.Id}'.");
 
             var database = new SqliteProjectEngine(temporary);
-            var fieldValues = new RecordClassFieldValueService(database, database.Resources);
+            var fieldValues = new RecordClassFieldValueService(
+                database,
+                database.Production,
+                database.Resources);
             var projectId = treeRoots
                 .SelectMany(DescendantsAndSelf)
                 .Single((node) => node.Kind == ProjectTreeNodeKind.Project)
@@ -6131,13 +6137,13 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
         var dataSource = new DictionaryFieldContextDataSource(
             database.DictionaryContext,
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
         var payloadData = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
@@ -6351,12 +6357,12 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
         var database = new SqliteProjectEngine(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
-        var source = new ProductionScreenPresentationDataSource(database.PreviewInputs, database, database.Resources).Load(screen.Id);
+        var source = new ProductionScreenPresentationDataSource(database.PreviewInputs, database.Production, database.Resources).Load(screen.Id);
 
         Equal(database.GetModuleInstanceModuleName(screen.Id), source.Module);
         Equal(database.GetModuleInstanceVariantName(screen.Id), source.Variant);
         Equal(
-            ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database, database.Resources), screen.Id),
+            ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database.Production, database.Resources), screen.Id),
             source.DurationFrames);
         Equal(database.GetModuleInstanceTransitionType(screen.Id), source.Transition);
 
@@ -6442,7 +6448,9 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var store = new RuntimeInputOwnerDocumentStore(database.Design, database);
+        var store = new RuntimeInputOwnerDocumentStore(
+            database.Design,
+            database.Production);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
         var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);
@@ -6736,8 +6744,12 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ProductionPreviewSessionDataSource(database.PreviewInputs, database);
-        var timelineDataSource = new ModuleInstanceTimelineDataSource(database, database.Resources);
+        var dataSource = new ProductionPreviewSessionDataSource(
+            database.PreviewInputs,
+            database.Production);
+        var timelineDataSource = new ModuleInstanceTimelineDataSource(
+            database.Production,
+            database.Resources);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var screen = shot.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
@@ -6769,7 +6781,9 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var timelineDataSource = new ModuleInstanceTimelineDataSource(database, database.Resources);
+        var timelineDataSource = new ModuleInstanceTimelineDataSource(
+            database.Production,
+            database.Resources);
         var store = new ModuleInstanceAnimationDocumentStore(database.Production, database.Resources, timelineDataSource);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
@@ -7708,7 +7722,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         var payload = DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
                 database.PreviewInputs,
-                database,
+                database.Production,
                 database.Resources,
                 database.Resources,
                 database.ProjectPaths),
@@ -7752,7 +7766,9 @@ static void AnimatedConversationComposerRemainsVisible()
         var theme = nodes.First((node) =>
             node.Kind == ProjectTreeNodeKind.Theme);
         var start = ModuleInstanceTimeline.ScreenStartFrame(
-            new ModuleInstanceTimelineDataSource(database, database.Resources),
+            new ModuleInstanceTimelineDataSource(
+                database.Production,
+                database.Resources),
             conversation.Id);
         var payload = Required(CreatePreviewPayload(
             database,
@@ -8583,7 +8599,7 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
@@ -8649,7 +8665,7 @@ static void ProductionPayloadPreservesActorAndAnimation()
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
@@ -8734,7 +8750,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
@@ -8848,7 +8864,7 @@ static void ConversationMessageActorsFollowDirectionContract()
         var payload = Required(DesignPreviewPayloadFactory.Create(
             new DesignPreviewPayloadDataSource(
                 database.PreviewInputs,
-                database,
+                database.Production,
                 database.Resources,
                 database.Resources,
                 database.ProjectPaths),
@@ -11821,11 +11837,26 @@ static void LockScreenComposesRuntimeStack()
 
         var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
-        var values = new RecordClassFieldValueService(database, database.Resources);
+        var values = new RecordClassFieldValueService(
+            database,
+            database.Production,
+            database.Resources);
         True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);
-        Equal(240, ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database, database.Resources), lockScreenInstance.Id));
+        Equal(
+            240,
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                lockScreenInstance.Id));
         database.UpdateModuleInstanceField(lockScreenInstance.Id, "moduleInstance.durationFrames", "180");
-        Equal(180, ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database, database.Resources), lockScreenInstance.Id));
+        Equal(
+            180,
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                lockScreenInstance.Id));
 
         var conversationInstance = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId == "module.core.chat");
@@ -11894,7 +11925,11 @@ static void LockScreenComposesRuntimeStack()
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database, database.Resources), lockScreenInstance.Id) + 30));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                lockScreenInstance.Id) + 30));
         var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
@@ -11912,7 +11947,11 @@ static void LockScreenComposesRuntimeStack()
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(new ModuleInstanceTimelineDataSource(database, database.Resources), lockScreenInstance.Id) + 40));
+            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                lockScreenInstance.Id) + 40));
         var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
@@ -12322,7 +12361,7 @@ static DesignPreviewPayload? CreatePreviewPayload(
     DesignPreviewPayloadFactory.Create(
         new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
-            database,
+            database.Production,
             database.Resources,
             database.Resources,
             database.ProjectPaths),
