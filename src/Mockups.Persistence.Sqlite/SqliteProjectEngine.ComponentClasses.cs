@@ -63,7 +63,9 @@ internal sealed partial class SqliteProjectEngine
         var isHighlighted = descriptor.ValueKind is
                 ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
-            && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
+            && SqliteDesignOwner.EmbeddedComponentHasOverrides(
+                settings.ConfigJson,
+                slot);
 
         return new FieldValue(
             new FieldDefinition(
@@ -94,7 +96,9 @@ internal sealed partial class SqliteProjectEngine
         var isHighlighted = descriptor.ValueKind is
                 ValueKind.EmbeddedComponent or ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(fieldId, out var slot)
-            && EmbeddedComponentHasOverrides(settings.ConfigJson, slot);
+            && SqliteDesignOwner.EmbeddedComponentHasOverrides(
+                settings.ConfigJson,
+                slot);
 
         return new FieldValue(
             new FieldDefinition(
@@ -598,7 +602,8 @@ internal sealed partial class SqliteProjectEngine
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
         var overrides = EmbeddedOverrides(config, slots, createIfMissing: false);
-        return overrides is not null && HasEffectiveJsonValue(overrides);
+        return overrides is not null
+            && SqliteDesignOwner.HasEffectiveJsonValue(overrides);
     }
 
     private JsonObject EffectiveEmbeddedBaseConfig(
@@ -614,14 +619,16 @@ internal sealed partial class SqliteProjectEngine
             var slotNode = currentContainer is null
                 ? null
                 : JsonPath.Get(currentContainer, slots[index].SlotPath) as JsonObject;
-            var variantReference = RequiredComponentVariantReference(
+            var variantReference =
+                SqliteDesignOwner.RequiredComponentVariantReference(
                 slotNode,
                 $"Embedded component slot '{slots[index].FieldId}'");
-            var child = ParseJsonObject(GetComponentClassVariantConfigJson(
-                connection,
-                projectId,
-                slots[index].EmbeddedComponentType,
-                variantReference));
+            var child = ParseJsonObject(
+                _designOwner.GetComponentClassVariantConfigJson(
+                    connection,
+                    projectId,
+                    slots[index].EmbeddedComponentType,
+                    variantReference));
             var overrides = slotNode?["overrides"] as JsonObject;
             if (index < slots.Count - 1 && overrides is not null)
             {

@@ -65,7 +65,13 @@ Project, Component type, class id and Variant id.
 Local Override writes at embedded boundaries also execute inside Design,
 including boundaries authored by a Module or Module Variant. The owner updates
 only the exact local Override document and preserves the selected full Variant
-reference.
+reference. Component reference lookup, embedded Variant traversal, complete
+Preview base-config projection and Component Variant Runtime Input projection
+are read models of the same Design owner. Composition does not reconstruct
+those read models. Component editor-field projection remains temporarily in
+composition, including dictionary-option aggregation where one field needs
+both Design-owned Component choices and Resource-owned palette or font
+choices.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

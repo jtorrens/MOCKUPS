@@ -160,8 +160,13 @@ cross-domain Usage check before asking Design to delete a Component Variant.
 Component configuration-field writes, strict snapshot replacement and exact
 embedded-slot reference validation execute in Design as well. Embedded
 boundary writes for Component Classes, Component Variants, Modules and Module
-Variants now execute in that same Design owner. Embedded field projection and
-remaining Component reference queries are the next Design extraction.
+Variants now execute in that same Design owner. Component reference lookup,
+embedded Variant traversal, complete Preview base-config projection and
+Variant Runtime Input projection also execute in Design. The temporary
+composition layer still owns Component editor-field projection and aggregates
+field options when one dictionary field combines Design-owned Component
+choices with Resource-owned palette or font choices. Moving that field
+projection behind narrow owner contracts is the next Design extraction.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining

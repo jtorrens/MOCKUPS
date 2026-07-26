@@ -483,7 +483,8 @@ internal sealed partial class SqliteProjectEngine
         var documents = new List<(string Context, JsonNode Node)>();
         foreach (var row in QueryComponentClassRows(connection))
         {
-            var variants = RequiredComponentClassVariants(row);
+            var variants =
+                SqliteDesignOwner.RequiredComponentClassVariants(row);
             foreach (var variant in variants)
             {
                 validReferences.Add(VariantReferenceId.Format(row.Id, variant.Id));
@@ -492,7 +493,10 @@ internal sealed partial class SqliteProjectEngine
                     row.ComponentType,
                     variantConfig,
                     $"Component Variant '{row.Id}::{variant.Id}'");
-                ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, variantConfig);
+                _designOwner.ValidateEmbeddedSlotVariantReferences(
+                    connection,
+                    row.ProjectId,
+                    variantConfig);
                 documents.Add(($"component variant '{row.Id}::{variant.Id}'", variantConfig));
             }
 
@@ -501,7 +505,10 @@ internal sealed partial class SqliteProjectEngine
                 row.ComponentType,
                 classConfig,
                 $"Component Class '{row.Id}' config_json");
-            ValidateEmbeddedSlotVariantReferences(connection, row.ProjectId, classConfig);
+            _designOwner.ValidateEmbeddedSlotVariantReferences(
+                connection,
+                row.ProjectId,
+                classConfig);
             documents.Add(($"component class '{row.Id}' config_json", classConfig));
             var designPreview = ParseRequiredObject(
                 row.DesignPreviewJson,

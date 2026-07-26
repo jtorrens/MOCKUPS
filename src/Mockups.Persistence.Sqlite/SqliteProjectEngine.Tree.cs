@@ -626,8 +626,15 @@ internal sealed partial class SqliteProjectEngine
             .ThenBy((font) => font.Id)
             .Select((font) => font.Id)
             .FirstOrDefault() ?? "";
-        var statusBarId = DefaultComponentVariantReference(connection, project.Id, "status_bar");
-        var navigationBarId = DefaultComponentVariantReference(connection, project.Id, "navigation_bar");
+        var statusBarId = _designOwner.DefaultComponentVariantReference(
+            connection,
+            project.Id,
+            "status_bar");
+        var navigationBarId =
+            _designOwner.DefaultComponentVariantReference(
+                connection,
+                project.Id,
+                "navigation_bar");
         var created = _resourceOwner.ThemeRepository.Create(
             connection,
             project.Id,
