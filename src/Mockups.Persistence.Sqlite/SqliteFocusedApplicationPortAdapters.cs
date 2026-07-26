@@ -437,81 +437,83 @@ internal sealed class SqliteEditorNodeCommandPort(
 }
 
 internal sealed class SqlitePreviewInputPort(
-    IPreviewInputRepository target)
+    SqliteProductionOwner production,
+    SqliteDesignOwner design,
+    SqliteResourceOwner resources)
     : IPreviewInputRepository
 {
     public ShotSettings GetShotSettings(string shotId) =>
-        target.GetShotSettings(shotId);
+        production.GetShotSettings(shotId);
 
     public AppSettings GetAppSettings(string appId) =>
-        target.GetAppSettings(appId);
+        design.GetAppSettings(appId);
 
     public AppSettings GetModuleAppSettings(string moduleId) =>
-        target.GetModuleAppSettings(moduleId);
+        design.GetModuleAppSettings(moduleId);
 
     public ModuleSettings GetModuleSettings(string moduleId) =>
-        target.GetModuleSettings(moduleId);
+        design.GetModuleSettings(moduleId);
 
     public ModuleSettings GetModuleVariantSettings(
         ProjectTreeNode variantNode) =>
-        target.GetModuleVariantSettings(variantNode);
+        design.GetModuleVariantSettings(variantNode);
 
     public string GetModuleInstanceVariantName(
         string moduleInstanceId) =>
-        target.GetModuleInstanceVariantName(moduleInstanceId);
+        production.GetModuleInstanceVariantName(moduleInstanceId);
 
     public ComponentClassSettings GetComponentClassSettings(
         string componentClassId) =>
-        target.GetComponentClassSettings(componentClassId);
+        design.GetComponentClassSettings(componentClassId);
 
     public ComponentClassSettings GetComponentVariantSettings(
         ProjectTreeNode variantNode) =>
-        target.GetComponentVariantSettings(variantNode);
+        design.GetComponentVariantSettings(variantNode);
 
     public string GetComponentClassBaseConfigsJson(string projectId) =>
-        target.GetComponentClassBaseConfigsJson(projectId);
+        design.GetComponentClassBaseConfigsJson(projectId);
 
     public string ValidateComponentVariantReferencesForPreview(
         string projectId,
         string configJson) =>
-        target.ValidateComponentVariantReferencesForPreview(
+        design.ValidateComponentVariantReferencesForPreview(
             projectId,
             configJson);
 
     public DeviceSettings GetDeviceSettings(string deviceId) =>
-        target.GetDeviceSettings(deviceId);
+        resources.GetDeviceSettings(deviceId);
 
     public DevicePreviewMetrics GetDevicePreviewMetrics(string deviceId) =>
-        target.GetDevicePreviewMetrics(deviceId);
+        resources.GetDevicePreviewMetrics(deviceId);
 
     public IReadOnlyList<FieldOption> GetDeviceOptions(string projectId) =>
-        target.GetDeviceOptions(projectId);
+        resources.GetDeviceOptions(projectId);
 
     public ThemeSettings GetThemeSettings(string themeId) =>
-        target.GetThemeSettings(themeId);
+        resources.GetThemeSettings(themeId);
 
     public string GetThemeFieldValue(
         string themeId,
         string fieldId) =>
-        target.GetThemeFieldValue(themeId, fieldId);
+        resources.GetThemeFieldValue(themeId, fieldId);
 
     public IReadOnlyList<FieldOption> GetThemeOptions(string projectId) =>
-        target.GetThemeOptions(projectId);
+        resources.GetThemeOptions(projectId);
 
     public IReadOnlyDictionary<string, string> GetPaletteColorMap(
         string projectId) =>
-        target.GetPaletteColorMap(projectId);
+        resources.GetPaletteColorMap(projectId);
 
     public IReadOnlyDictionary<string, bool> GetPaletteNeutralMap(
         string projectId) =>
-        target.GetPaletteNeutralMap(projectId);
+        resources.GetPaletteNeutralMap(projectId);
 
     public IReadOnlyList<ProductionFontFace> GetProductionFontFaces(
         string projectId) =>
-        target.GetProductionFontFaces(projectId);
+        resources.GetProductionFontFaces(projectId);
 
     public IconThemeSettings GetIconThemeSettings(string iconThemeId) =>
-        target.GetIconThemeSettings(iconThemeId);
+        resources.GetIconThemeSettings(iconThemeId);
 }
 
 internal sealed class SqliteDictionaryFieldContextPort(

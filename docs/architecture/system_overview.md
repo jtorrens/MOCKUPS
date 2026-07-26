@@ -230,6 +230,8 @@ ports; no one of them can be cast to another. Remaining cross-domain
 application operations move to focused owners as their contracts are
 decomposed. Retired area-wide adapters are deleted rather than retained as
 unused forwarding code.
+Generic Preview is a focused read composition over Production, Design and
+Resources; the project engine does not implement its Application port.
 The Desktop integration tests compare every session adapter's declared public
 methods with its Application port, including inherited contracts. An adapter
 cannot retain public sibling methods after its port is narrowed.

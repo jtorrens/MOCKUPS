@@ -3237,7 +3237,7 @@ static string MethodSignature(MethodInfo method) =>
 static IRenderSnapshotDataSource RenderSnapshots(
     SqliteProjectEngine database) =>
     new SqliteRenderSnapshotPort(
-        database,
+        database.PreviewInputs,
         database.Resources,
         database.Design,
         database.Production,
@@ -4128,7 +4128,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
             var listPayload = Required(DesignPreviewPayloadFactory.Create(
                 new DesignPreviewPayloadDataSource(
-                    database,
+                    database.PreviewInputs,
                     database,
                     database.Resources,
                     database.Resources,
@@ -6116,13 +6116,13 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DictionaryFieldContextDataSource(
             database,
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,
             database.ProjectPaths);
         var payloadData = new DesignPreviewPayloadDataSource(
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,
@@ -6336,7 +6336,7 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
         var database = new SqliteProjectEngine(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
-        var source = new ProductionScreenPresentationDataSource(database, database, database.Resources).Load(screen.Id);
+        var source = new ProductionScreenPresentationDataSource(database.PreviewInputs, database, database.Resources).Load(screen.Id);
 
         Equal(database.GetModuleInstanceModuleName(screen.Id), source.Module);
         Equal(database.GetModuleInstanceVariantName(screen.Id), source.Variant);
@@ -6689,7 +6689,7 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new PreviewVisualContextDataSource(database, database.Resources);
+        var dataSource = new PreviewVisualContextDataSource(database.PreviewInputs, database.Resources);
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -6721,7 +6721,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ProductionPreviewSessionDataSource(database, database);
+        var dataSource = new ProductionPreviewSessionDataSource(database.PreviewInputs, database);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(database, database.Resources);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -7692,7 +7692,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
             ?? actor.DefaultThemeId;
         var payload = DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
-                database,
+                database.PreviewInputs,
                 database,
                 database.Resources,
                 database.Resources,
@@ -8521,7 +8521,7 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var dataSource = new ProductionShotContextDataSource(database, database.Resources);
+        var dataSource = new ProductionShotContextDataSource(database.PreviewInputs, database.Resources);
         var service = new ProductionShotContextService(dataSource);
         var shot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -8556,7 +8556,7 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
     {
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,
@@ -8622,7 +8622,7 @@ static void ProductionPayloadPreservesActorAndAnimation()
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,
@@ -8707,7 +8707,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
     {
         var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,
@@ -8821,7 +8821,7 @@ static void ConversationMessageActorsFollowDirectionContract()
 
         var payload = Required(DesignPreviewPayloadFactory.Create(
             new DesignPreviewPayloadDataSource(
-                database,
+                database.PreviewInputs,
                 database,
                 database.Resources,
                 database.Resources,
@@ -12286,7 +12286,7 @@ static DesignPreviewPayload? CreatePreviewPayload(
     int timelineFrame = 0) =>
     DesignPreviewPayloadFactory.Create(
         new DesignPreviewPayloadDataSource(
-            database,
+            database.PreviewInputs,
             database,
             database.Resources,
             database.Resources,

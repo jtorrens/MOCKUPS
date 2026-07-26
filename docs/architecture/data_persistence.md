@@ -139,6 +139,9 @@ dictionary context does not inherit generic Preview. Payload preparation
 declares every read capability it coordinates. Component Preview and Variant
 history route directly to Design; Actor, Icon Theme and Theme-token reads route
 directly to Resources.
+Generic Preview composes Production Shot/Screen identity, Design authored
+documents and Resources visual data explicitly; `SqliteProjectEngine` does not
+implement the Preview input port.
 
 Editor presentation context also routes directly to Resources. It exposes only
 Project, Theme and Production Font presentation reads and does not pass through

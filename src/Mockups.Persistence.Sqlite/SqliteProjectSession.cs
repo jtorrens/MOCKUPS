@@ -17,7 +17,7 @@ public sealed class SqliteProjectSession
             new SqliteComponentClassFieldPort(engine);
         VariantHistory =
             new SqliteVariantHistoryPort(engine.Design);
-        Preview = new SqlitePreviewInputPort(engine);
+        Preview = engine.PreviewInputs;
         ComponentPreview =
             new SqliteComponentPreviewInputPort(engine.Design);
         Timeline =
@@ -32,7 +32,7 @@ public sealed class SqliteProjectSession
             new SqliteEditorNodeCommandPort(engine);
         RenderSnapshots =
             new SqliteRenderSnapshotPort(
-                engine,
+                engine.PreviewInputs,
                 engine.Resources,
                 engine.Design,
                 engine.Production,
