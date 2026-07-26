@@ -31,6 +31,9 @@ metadata.
 - Editing a Production payload updates only the selected Screen.
 
 Preview controls do not create fields or reinterpret their ownership.
+`RuntimeInputDefinitionReader` in Application is the single parser for scalar
+and collection declarations. Persistence and Desktop consume its immutable
+definitions; visual sessions contain no parallel contract parser.
 
 ## Explicit forwarding
 

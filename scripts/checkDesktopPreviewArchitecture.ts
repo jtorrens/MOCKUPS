@@ -5106,7 +5106,7 @@ assertContains(
 );
 for (const runtimeInputKindConsumer of [
   "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
-  "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+  "src/Mockups.Application/RuntimeInputDefinitionReader.cs",
 ]) {
   assertContains(
     runtimeInputKindConsumer,
@@ -5136,7 +5136,7 @@ for (const requiredRuntimeDefinitionReaderTerm of [
   "Unknown Runtime Input uiOrigin",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Application/RuntimeInputDefinitionReader.cs",
     requiredRuntimeDefinitionReaderTerm,
     `Runtime definition presentation must keep strict rule '${requiredRuntimeDefinitionReaderTerm}'`,
   );
@@ -5151,7 +5151,7 @@ for (const retiredRuntimeDefinitionReaderFallback of [
   "return origin.Trim().ToLowerInvariant() switch",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
+    "src/Mockups.Application/RuntimeInputDefinitionReader.cs",
     retiredRuntimeDefinitionReaderFallback,
     `Runtime definition presentation must not filter or infer '${retiredRuntimeDefinitionReaderFallback}'`,
   );
@@ -10097,7 +10097,7 @@ function assertListItemRuntimePresentationIsGeneric() {
   ]) {
     assertContains(
       requiredBoundary.includes("Presentation is")
-        ? "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs"
+        ? "src/Mockups.Application/RuntimeInputDefinitionReader.cs"
         : "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
       requiredBoundary,
       `Runtime collection item sections must remain metadata-driven (${requiredBoundary})`,

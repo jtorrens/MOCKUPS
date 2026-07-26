@@ -651,8 +651,8 @@ static void RuntimeInputDefinitionReadersAreStrict()
     dynamic["optionsSourceValueJsonKey"] = "id";
     dynamic["optionsSourceLabelJsonKey"] = "name";
     dynamic["optionsSourceFirstItemBadge"] = "Default";
-    var dynamicDefinition = ComponentPreviewInputSession
-        .ReadRuntimeInputs(Preview(dynamic), new JsonObject())
+    var dynamicDefinition = RuntimeInputDefinitionReader
+        .ReadInputs(Preview(dynamic), new JsonObject())
         .Single();
     Equal("contentSets", dynamicDefinition.OptionsSourceCollectionJsonKey);
     Equal("id", dynamicDefinition.OptionsSourceValueJsonKey);
@@ -11430,16 +11430,16 @@ static void LockScreenComposesRuntimeStack()
         var passwordStateId = passwordState.State["id"]?.GetValue<string>() ?? "";
         var instancePreview = DesignPreviewTestValues.Parse(
             database.GetModuleInstanceRuntimePreviewJson(lockScreenInstance.Id));
-        var stateInputsCollection = ComponentPreviewInputSession
-            .ReadRuntimeCollections(instancePreview, instanceVariantConfig)
+        var stateInputsCollection = RuntimeInputDefinitionReader
+            .ReadCollections(instancePreview, instanceVariantConfig)
             .Single((collection) => collection.Id == "stackStateInputs");
         var projectedPasswordState = DesignPreviewTestValues
             .CollectionItems(instancePreview, stateInputsCollection)
             .Single((state) => state["id"]?.GetValue<string>() == passwordStateId);
         var projectedPasswordInputs = projectedPasswordState["inputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing projected Password runtime inputs.");
-        var passwordEntryTrigger = ComponentPreviewInputSession
-            .ReadRuntimeInputs(projectedPasswordInputs, new JsonObject())
+        var passwordEntryTrigger = RuntimeInputDefinitionReader
+            .ReadInputs(projectedPasswordInputs, new JsonObject())
             .Single((input) => input.Label == "Enter password" && input.ActionOnly);
         var instanceAnimation = new ModuleInstanceAnimationDocument(
             database.GetModuleInstanceSettings(lockScreenInstance.Id).AnimationJson);

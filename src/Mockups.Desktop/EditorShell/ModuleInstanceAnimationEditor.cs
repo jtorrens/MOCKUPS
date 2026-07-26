@@ -1013,8 +1013,8 @@ internal sealed class ModuleInstanceAnimationEditor
                         item,
                         collection.ItemRuntimeContractJsonKey,
                         $"Animation collection '{collection.Id}' item '{targetId}'");
-                    foreach (var input in ComponentPreviewInputSession
-                        .ReadRuntimeInputs(runtimeContract, new JsonObject())
+                    foreach (var input in RuntimeInputDefinitionReader
+                        .ReadInputs(runtimeContract, new JsonObject())
                         .Where((input) => input.Animation is not null))
                     {
                         result.Add(new AnimationTarget(
