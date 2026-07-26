@@ -21,7 +21,7 @@ export const generatedComponentRegistryPath =
 export const generatedDesktopFieldCatalogPath =
   "src/Mockups.Application/GeneratedComponentScaffoldFieldCatalog.cs";
 export const generatedDesktopConfigRegistryPath =
-  "src/Mockups.Desktop/Data/GeneratedComponentScaffoldConfigRegistry.cs";
+  "src/Mockups.Persistence.Sqlite/GeneratedComponentScaffoldConfigRegistry.cs";
 
 export interface GeneratedComponentScaffoldArtifacts {
   schemaVersion: 1;

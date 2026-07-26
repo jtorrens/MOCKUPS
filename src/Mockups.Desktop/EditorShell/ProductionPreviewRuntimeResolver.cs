@@ -25,7 +25,7 @@ internal sealed class ProductionPreviewRuntimeResolver
         var preview = ParseObject(payload.DesignPreviewJson);
         var config = ParseObject(payload.ConfigJson);
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
 
         _nestedRecordInputResolver.ResolveDeclaredValues(
             preview,
@@ -33,7 +33,7 @@ internal sealed class ProductionPreviewRuntimeResolver
             themeMode,
             payload.PaletteColors);
 
-        foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(preview, config))
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
         {
             if (preview[collection.JsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())

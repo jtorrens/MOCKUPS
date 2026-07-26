@@ -129,6 +129,12 @@ its exact allowed edge to the project-boundary test.
 may reference Domain and has no package capabilities. In particular, its
 project cannot compile a reference to Avalonia or `Microsoft.Data.Sqlite`.
 
+`Mockups.Persistence.Sqlite` owns the SQLite context, focused repository
+implementations, table mapping and the transitional `SpikeDatabase`
+compatibility facade. It may reference Application and Domain and is the only
+production project allowed to reference the SQLite packages. It cannot
+reference Avalonia or Desktop.
+
 ### SQLite and repositories
 
 Repositories own table SQL, row mapping and prepared writes. They do not own

@@ -122,8 +122,8 @@ internal sealed class ComponentPreviewInputSession
             ScopeKey(payload),
             config);
         _runtimePreview = preview;
-        var inputs = ReadRuntimeInputs(preview, config);
-        var collections = ReadRuntimeCollections(preview, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
         _actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
             _previewInputData.ComponentVariantRuntimeContract);
@@ -286,7 +286,7 @@ internal sealed class ComponentPreviewInputSession
         }
         if (!testValues.TryGetPropertyValue(collectionJsonKey, out var collectionNode))
         {
-            var definition = ReadRuntimeCollections(_runtimePreview, _config)
+            var definition = RuntimeInputDefinitionReader.ReadCollections(_runtimePreview, _config)
                 .FirstOrDefault((candidate) => candidate.JsonKey == collectionJsonKey);
             collectionNode = definition is null
                 ? new JsonArray()
@@ -386,8 +386,8 @@ internal sealed class ComponentPreviewInputSession
             config);
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         _runtimePreview = preview;
-        var inputs = ReadRuntimeInputs(preview, config);
-        var collections = ReadRuntimeCollections(preview, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
         _actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
             _previewInputData.ComponentVariantRuntimeContract);
@@ -459,7 +459,7 @@ internal sealed class ComponentPreviewInputSession
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        foreach (var collection in ReadRuntimeCollections(preview, config))
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
         {
             foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(preview, collection))
             {
@@ -481,7 +481,7 @@ internal sealed class ComponentPreviewInputSession
                 var componentConfig = _previewInputData.ComponentVariantConfig(variantReference);
                 ResolveRecordReferenceInputs(
                     componentInputs,
-                    ReadRuntimeInputs(componentInputs, componentConfig),
+                    RuntimeInputDefinitionReader.ReadInputs(componentInputs, componentConfig),
                     themeMode,
                     paletteColors);
             }
@@ -529,7 +529,7 @@ internal sealed class ComponentPreviewInputSession
             return effective;
         }
 
-        foreach (var input in ReadRuntimeInputs(effective, config))
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(effective, config))
         {
             var key = $"{scopeKey}:{input.JsonKey}";
             if (_values.TryGetValue(key, out var value))
@@ -547,7 +547,7 @@ internal sealed class ComponentPreviewInputSession
         JsonObject config)
     {
         StructuredRuntimeCollectionProjection.Apply(preview, config);
-        foreach (var collection in ReadRuntimeCollections(
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      preview,
                      config,
                      includeHidden: true))
@@ -652,7 +652,7 @@ internal sealed class ComponentPreviewInputSession
 
     private void NormalizeCollectionOptionActionTargets(JsonObject preview)
     {
-        var collections = ReadRuntimeCollections(preview, _config)
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, _config)
             .ToDictionary((collection) => collection.JsonKey, StringComparer.Ordinal);
         foreach (var action in _actions.Where((candidate) =>
                      candidate.IsCollectionItemAction

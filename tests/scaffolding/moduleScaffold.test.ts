@@ -294,7 +294,7 @@ function integrationFixture() {
     "src/desktop-preview",
     "src/Mockups.Application",
     "src/Mockups.Desktop/EditorShell",
-    "src/Mockups.Desktop/Data",
+    "src/Mockups.Persistence.Sqlite",
     "tests/animation",
     "scaffolding",
   ]) {
@@ -311,7 +311,7 @@ function integrationFixture() {
   for (const relativePath of [
     "src/desktop-preview/generatedModuleScaffoldRegistry.ts",
     "src/Mockups.Application/GeneratedModuleScaffoldFieldCatalog.cs",
-    "src/Mockups.Desktop/Data/GeneratedModuleScaffoldConfigRegistry.cs",
+    "src/Mockups.Persistence.Sqlite/GeneratedModuleScaffoldConfigRegistry.cs",
     "src/Mockups.Application/GeneratedModuleScaffoldEmbeddedSlots.cs",
   ]) {
     writeFileSync(path.join(root, relativePath), readFileSync(path.join(repositoryRoot, relativePath)));

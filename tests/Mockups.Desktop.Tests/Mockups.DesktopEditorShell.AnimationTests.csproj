@@ -10,5 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless" />
     <ProjectReference Include="../../src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj" />
+    <ProjectReference Include="../../src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj" />
   </ItemGroup>
 </Project>

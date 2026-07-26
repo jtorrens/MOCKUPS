@@ -618,7 +618,7 @@ export function createComponentScaffoldPlan(
     ownerFile("renderable", spec.manifest.renderable, spec.owners.renderableExport),
     {
       role: "desktopConfigContract" as const,
-      path: `src/Mockups.Desktop/Data/${pascalCase(componentType)}ComponentConfigContract.cs`,
+      path: `src/Mockups.Persistence.Sqlite/${pascalCase(componentType)}ComponentConfigContract.cs`,
       requiredExport: `${pascalCase(componentType)}ComponentConfigContract`,
     },
     {
@@ -646,7 +646,7 @@ export function createComponentScaffoldPlan(
         );
       }
     } else if (owner.role === "desktopConfigContract") {
-      if (!normalized.startsWith("src/Mockups.Desktop/Data/")
+      if (!normalized.startsWith("src/Mockups.Persistence.Sqlite/")
           || !normalized.endsWith("ComponentConfigContract.cs")) {
         violations.push(
           `desktop config owner '${owner.path}' must be a ComponentConfigContract.cs file under the desktop Data owner.`,

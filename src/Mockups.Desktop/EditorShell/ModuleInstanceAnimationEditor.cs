@@ -966,7 +966,7 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject themeTokens)
     {
         var result = new List<AnimationTarget>();
-        foreach (var input in ComponentPreviewInputSession.ReadRuntimeInputs(preview, config).Where((input) => input.Animation is not null))
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(preview, config).Where((input) => input.Animation is not null))
             result.Add(new AnimationTarget(
                 input.Id,
                 "",
@@ -979,7 +979,7 @@ internal sealed class ModuleInstanceAnimationEditor
                     preview, preview, animation, "", ownerFrame, themeTokens),
                 (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
                     preview, preview, animation, "", screenFrame, themeTokens)));
-        foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(preview, config))
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
         {
             var items = DesignPreviewTestValues.CollectionItems(preview, collection);
             for (var index = 0; index < items.Count; index++)

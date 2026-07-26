@@ -32,6 +32,7 @@ const expectedProjects = new Map([
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
         "src/Mockups.Domain/Mockups.Domain.csproj",
+        "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
       ],
       packageReferences: [
         "Avalonia",
@@ -41,8 +42,6 @@ const expectedProjects = new Map([
         "Avalonia.Fonts.Inter",
         "Avalonia.Themes.Fluent",
         "AvaloniaUI.DiagnosticsSupport",
-        "Microsoft.Data.Sqlite",
-        "SQLitePCLRaw.bundle_e_sqlite3",
         "SukiUI",
       ],
     },
@@ -52,6 +51,19 @@ const expectedProjects = new Map([
     {
       projectReferences: [],
       packageReferences: [],
+    },
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
+    {
+      projectReferences: [
+        "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Domain/Mockups.Domain.csproj",
+      ],
+      packageReferences: [
+        "Microsoft.Data.Sqlite",
+        "SQLitePCLRaw.bundle_e_sqlite3",
+      ],
     },
   ],
 ]);
@@ -130,4 +142,23 @@ test("Application can see Domain but has no UI or persistence package capabiliti
     ["src/Mockups.Domain/Mockups.Domain.csproj"],
   );
   assert.deepEqual(application.Items.PackageReference, []);
+});
+
+test("Persistence can see Application and Domain but has no UI package capabilities", () => {
+  const persistence = evaluate(
+    "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
+  );
+  assert.deepEqual(
+    persistence.Items.ProjectReference
+      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
+      .sort(),
+    [
+      "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Domain/Mockups.Domain.csproj",
+    ],
+  );
+  assert.deepEqual(
+    persistence.Items.PackageReference.map((item) => item.Identity).sort(),
+    ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
+  );
 });

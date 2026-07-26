@@ -23,13 +23,6 @@ internal sealed record DeviceCatalogDetails(
     int RenderHeight,
     string Source);
 
-internal sealed record DeviceImportDraft(
-    string Name,
-    string Manufacturer,
-    string Model,
-    string OsFamily,
-    string MetricsJson);
-
 internal sealed record DeviceImportDialogResult(bool CreateBlank, DeviceImportDraft? Draft);
 
 internal interface IDeviceCatalogProvider

@@ -1,0 +1,551 @@
+using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Nodes;
+
+namespace Mockups.DesktopEditorShell.Data;
+
+public sealed partial class SpikeDatabase
+{
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeColorPairPaths =
+        ThemeColorTokenCatalog.ColorTokens.ToDictionary(
+            (token) => token.Id,
+            (token) => (token.LightPath.ToArray(), token.DarkPath.ToArray()),
+            StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, (string[] Light, string[] Dark)> ThemeAlphaPairPaths =
+        ThemeColorTokenCatalog.ColorTokens
+            .Where((token) => token.HasAlpha)
+            .ToDictionary(
+                (token) => token.Id,
+                (token) => (token.LightAlphaPath!.ToArray(), token.DarkAlphaPath!.ToArray()),
+                StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, string[]> ThemeMotionTimingPaths =
+        new[] { "fade", "slide", "swipe", "scale" }
+            .ToDictionary(
+                (transition) => $"theme.motion.{transition}",
+                (transition) => new[] { "motion", "transitions", transition },
+                StringComparer.Ordinal);
+
+    private static readonly Dictionary<string, string[]> ThemeMotionEasingPaths =
+        new[] { "fade", "slide", "swipe", "scale" }
+            .ToDictionary(
+                (transition) => $"theme.motion.{transition}.easing",
+                (transition) => new[] { "motion", "transitions", transition, "easing" },
+                StringComparer.Ordinal);
+
+    public IReadOnlyList<FieldOption> GetThemeOptions(string projectId)
+    {
+        using var connection = OpenConnection();
+        return _themeRepository.QueryAll(connection)
+            .Where((theme) => theme.ProjectId == projectId)
+            .OrderBy((theme) => theme.Name)
+            .Select((theme) => new FieldOption(theme.Id, theme.Name))
+            .ToList();
+    }
+
+    public IReadOnlyList<ThemeTokenOption> GetThemeTokenOptions(string projectId, string themeId)
+    {
+        using var connection = OpenConnection();
+        var themes = _themeRepository.QueryAll(connection);
+        var theme = themes
+            .SingleOrDefault((row) => row.ProjectId == projectId && row.Id == themeId)
+            ?? throw new InvalidOperationException($"Missing Theme '{themeId}' in Project '{projectId}'.");
+        var tokens = ParseJsonObject(theme.TokensJson);
+        var palette = _paletteRepository.GetColorMap(projectId);
+
+        var options = new List<ThemeTokenOption>();
+        foreach (var pair in ThemeColorPairPaths.OrderBy((pair) => pair.Key, StringComparer.Ordinal))
+        {
+            var lightToken = JsonString(tokens, pair.Value.Light);
+            var darkToken = JsonString(tokens, pair.Value.Dark);
+            options.Add(new ThemeTokenOption(
+                pair.Key,
+                pair.Key.Replace("theme.", "", StringComparison.Ordinal),
+                "color",
+                $"{lightToken} / {darkToken}",
+                PaletteHex(palette, lightToken),
+                PaletteHex(palette, darkToken)));
+        }
+
+        foreach (var option in NumericThemeTokenOptions(tokens))
+        {
+            options.Add(option);
+        }
+
+        return options
+            .OrderBy(ThemeTokenSortGroup)
+            .ThenBy(ThemeTokenSortValue)
+            .ThenBy((option) => option.Kind, StringComparer.Ordinal)
+            .ThenBy((option) => option.Token, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    public ThemeSettings GetThemeSettings(string themeId)
+    {
+        var theme = _themeRepository.Get(themeId);
+        return new ThemeSettings(
+            theme.ProjectId,
+            theme.Name,
+            theme.Family,
+            theme.IconThemeId,
+            theme.StatusBarId,
+            theme.NavigationBarId,
+            theme.TokensJson,
+            theme.MetadataJson);
+    }
+
+    public string GetModuleInstanceThemeTokensJson(string moduleInstanceId)
+    {
+        return _moduleInstanceThemeContextService.GetTokensJson(moduleInstanceId);
+    }
+
+    public string GetThemeFieldValue(string themeId, string fieldId)
+    {
+        var settings = GetThemeSettings(themeId);
+        var tokens = ParseJsonObject(settings.TokensJson);
+        var context = $"Theme '{themeId}' tokens_json";
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            var colors = JsonPath.RequiredStringPair(
+                tokens,
+                colorPairPaths.Light,
+                colorPairPaths.Dark,
+                context);
+            if (!ThemeAlphaPairPaths.TryGetValue(fieldId, out var alphaPairPaths))
+            {
+                return colors;
+            }
+
+            var lightAlpha = JsonPath.RequiredNumberString(tokens, alphaPairPaths.Light, context);
+            var darkAlpha = JsonPath.RequiredNumberString(tokens, alphaPairPaths.Dark, context);
+            return $"{colors}||{lightAlpha}|{darkAlpha}";
+        }
+
+        if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
+        {
+            return JsonPath.RequiredNumberString(tokens, numericToken.Path.ToArray(), context);
+        }
+        if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
+        {
+            return GetJsonValue(tokens, timingPath) is JsonObject timing
+                ? timing.ToJsonString()
+                : throw new InvalidOperationException(
+                    $"{context} path '{string.Join(".", timingPath)}' must contain an object.");
+        }
+        if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
+        {
+            return JsonPath.RequiredStringAt(tokens, easingPath, context);
+        }
+        if (fieldId == "theme.motion.reflow")
+        {
+            _ = JsonPath.RequiredNumberString(tokens, ["motion", "reflowDurationMs"], context);
+            _ = JsonPath.RequiredStringAt(tokens, ["motion", "reflowEasing"], context);
+            return new JsonObject
+            {
+                ["durationMs"] = JsonPath.Get(tokens, ["motion", "reflowDurationMs"])!.DeepClone(),
+                ["easing"] = JsonPath.Get(tokens, ["motion", "reflowEasing"])!.DeepClone(),
+            }.ToJsonString();
+        }
+
+        return fieldId switch
+        {
+            "theme.family" => settings.Family,
+            "theme.iconThemeId" => settings.IconThemeId,
+            "theme.statusBarId" => settings.StatusBarId,
+            "theme.navigationBarId" => settings.NavigationBarId,
+            "theme.defaultMode" => JsonPath.RequiredStringAt(tokens, ["defaultMode"], context),
+            "theme.neutralTint.hueDeg" => JsonPath.RequiredNumberString(tokens, ["neutralTint", "hueDeg"], context),
+            "theme.neutralTint.saturation" => JsonPath.RequiredNumberString(tokens, ["neutralTint", "saturation"], context),
+            "theme.shadows.default.color" => JsonPath.RequiredStringAt(tokens, ["shadows", "default", "color", "color"], context),
+            "theme.typography.fontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "fontFamilyId"], context),
+            "theme.typography.systemFontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "systemFontFamilyId"], context),
+            "theme.typography.emojiFontFamilyId" => JsonPath.RequiredStringAt(tokens, ["typography", "emojiFontFamilyId"], context),
+            "theme.typography.style" => JsonPath.RequiredStringAt(tokens, ["typography", "style"], context),
+            _ => throw new InvalidOperationException($"Unknown theme field '{fieldId}'."),
+        };
+    }
+
+    public void UpdateThemeField(string themeId, string fieldId, string value)
+    {
+        switch (fieldId)
+        {
+            case "theme.family":
+            case "theme.iconThemeId":
+            case "theme.statusBarId":
+            case "theme.navigationBarId":
+                _themeRepository.UpdateDirectField(themeId, fieldId, value);
+                return;
+            default:
+                UpdateThemeToken(themeId, fieldId, value);
+                return;
+        }
+    }
+
+    private static string ThemeReferenceSummary(ThemeRecord theme)
+    {
+        return ThemeReferenceSummary(theme.IconThemeId, theme.StatusBarId, theme.NavigationBarId);
+    }
+
+    private static string ThemeReferenceSummary(string iconThemeId, string statusBarId, string navigationBarId)
+    {
+        var linkedCount = new[] { iconThemeId, statusBarId, navigationBarId }.Count((value) => !string.IsNullOrWhiteSpace(value));
+        return $"{linkedCount}/3 refs";
+    }
+
+    private static IEnumerable<ThemeTokenOption> NumericThemeTokenOptions(JsonObject tokens)
+    {
+        foreach (var token in ThemeNumericTokenCatalog.NumericTokens)
+        {
+            yield return new ThemeTokenOption(
+                token.Id,
+                token.Id.Replace("theme.", "", StringComparison.Ordinal),
+                "number",
+                JsonPath.RequiredNumberString(
+                    tokens,
+                    token.Path.ToArray(),
+                    $"Theme token '{token.Id}'"),
+                null,
+                null);
+        }
+    }
+
+    private static int ThemeTokenSortGroup(ThemeTokenOption option)
+    {
+        return option.Kind.Equals("number", StringComparison.Ordinal)
+            ? 1
+            : 0;
+    }
+
+    private static double ThemeTokenSortValue(ThemeTokenOption option)
+    {
+        if (!option.Kind.Equals("number", StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
+        var normalized = option.Value.Replace(",", ".", StringComparison.Ordinal);
+        return double.TryParse(normalized, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : double.MaxValue;
+    }
+
+    private static string? PaletteHex(IReadOnlyDictionary<string, string> palette, string token)
+    {
+        return palette.TryGetValue(token, out var hex) ? hex : null;
+    }
+
+    private void UpdateThemeToken(string themeId, string fieldId, string value)
+    {
+        var tokens = ParseJsonObject(_themeRepository.Get(themeId).TokensJson);
+
+        if (ThemeColorPairPaths.TryGetValue(fieldId, out var colorPairPaths))
+        {
+            if (ThemeAlphaPairPaths.TryGetValue(fieldId, out var alphaPairPaths))
+            {
+                var pair = PaletteAlphaPair.Split(value);
+                SetPair(tokens, $"{pair.First.ColorToken}|{pair.Second.ColorToken}", colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+                SetPair(tokens, $"{PaletteAlphaPair.FormatAlpha(pair.First.Alpha)}|{PaletteAlphaPair.FormatAlpha(pair.Second.Alpha)}", alphaPairPaths.Light, alphaPairPaths.Dark, asNumber: true);
+            }
+            else
+            {
+                SetPair(tokens, value, colorPairPaths.Light, colorPairPaths.Dark, asNumber: false);
+            }
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            return;
+        }
+
+        if (ThemeNumericTokenCatalog.TryGet(fieldId, out var numericToken))
+        {
+            JsonPath.Set(tokens, numericToken.Path, NumberNode(value));
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            return;
+        }
+        if (ThemeMotionTimingPaths.TryGetValue(fieldId, out var timingPath))
+        {
+            var timing = JsonNode.Parse(value) as JsonObject
+                ?? throw new InvalidOperationException($"Theme motion field '{fieldId}' must be a JSON object.");
+            SetJsonValue(tokens, timingPath, timing);
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            return;
+        }
+        if (ThemeMotionEasingPaths.TryGetValue(fieldId, out var easingPath))
+        {
+            SetJsonValue(tokens, easingPath, JsonValue.Create(value)!);
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            return;
+        }
+        if (fieldId == "theme.motion.reflow")
+        {
+            var reflow = JsonNode.Parse(value) as JsonObject
+                ?? throw new InvalidOperationException("Theme reflow timing must be a JSON object.");
+            var durationMs = reflow["durationMs"]?.GetValue<int>()
+                ?? throw new InvalidOperationException("Theme reflow timing requires durationMs.");
+            var easing = reflow["easing"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(easing))
+            {
+                throw new InvalidOperationException("Theme reflow timing requires easing.");
+            }
+            SetJsonValue(tokens, ["motion", "reflowDurationMs"], JsonValue.Create(durationMs)!);
+            SetJsonValue(tokens, ["motion", "reflowEasing"], JsonValue.Create(easing)!);
+            _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+            return;
+        }
+
+        switch (fieldId)
+        {
+            case "theme.defaultMode":
+                SetJsonValue(tokens, ["defaultMode"], JsonValue.Create(value)!);
+                break;
+            case "theme.neutralTint.hueDeg":
+                SetJsonValue(tokens, ["neutralTint", "hueDeg"], NumberNode(value));
+                break;
+            case "theme.neutralTint.saturation":
+                SetJsonValue(tokens, ["neutralTint", "saturation"], NumberNode(value));
+                break;
+            case "theme.shadows.default.color":
+                SetJsonValue(tokens, ["shadows", "default", "color", "color"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.fontFamilyId":
+                SetJsonValue(tokens, ["typography", "fontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.systemFontFamilyId":
+                SetJsonValue(tokens, ["typography", "systemFontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.emojiFontFamilyId":
+                SetJsonValue(tokens, ["typography", "emojiFontFamilyId"], JsonValue.Create(value)!);
+                break;
+            case "theme.typography.style":
+                SetJsonValue(tokens, ["typography", "style"], JsonValue.Create(value)!);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown theme field '{fieldId}'.");
+        }
+
+        _themeRepository.UpdateTokens(themeId, tokens.ToJsonString());
+    }
+
+    private static string DefaultThemeTokensJson(
+        string family,
+        string textFontFamilyId = "",
+        string emojiFontFamilyId = "")
+    {
+        var isAndroid = family.Equals("android", StringComparison.OrdinalIgnoreCase);
+        var tokens = new JsonObject
+        {
+            ["schemaVersion"] = 1,
+            ["defaultMode"] = "light",
+            ["neutralTint"] = new JsonObject
+            {
+                ["hueDeg"] = 0,
+                ["saturation"] = 0,
+            },
+            ["cursor"] = new JsonObject
+            {
+                ["width"] = 2,
+                ["blinkDurationMs"] = 800,
+            },
+            ["keyboard"] = new JsonObject
+            {
+                ["height"] = isAndroid ? 280 : 260,
+                ["keyGap"] = isAndroid ? 3 : 4,
+                ["rowGap"] = isAndroid ? 4 : 6,
+            },
+            ["typography"] = new JsonObject
+            {
+                ["fontFamilyId"] = textFontFamilyId,
+                ["systemFontFamilyId"] = textFontFamilyId,
+                ["emojiFontFamilyId"] = emojiFontFamilyId,
+                ["sizes"] = new JsonObject
+                {
+                    ["xs"] = 10,
+                    ["s"] = 12,
+                    ["m"] = isAndroid ? 15 : 16,
+                    ["l"] = isAndroid ? 18 : 19,
+                    ["xl"] = isAndroid ? 22 : 24,
+                },
+                ["weight"] = 400,
+                ["style"] = "normal",
+                ["lineHeights"] = new JsonObject
+                {
+                    ["tight"] = 1,
+                    ["compact"] = 1.1,
+                    ["normal"] = 1.2,
+                    ["relaxed"] = 1.35,
+                    ["loose"] = 1.5,
+                },
+            },
+            ["spacing"] = new JsonObject
+            {
+                ["none"] = 0,
+                ["xs"] = 2,
+                ["s"] = 4,
+                ["m"] = 8,
+                ["l"] = 12,
+                ["xl"] = 16,
+                ["xxl"] = 24,
+            },
+            ["iconSizes"] = new JsonObject
+            {
+                ["xs"] = 12,
+                ["s"] = 16,
+                ["m"] = 20,
+                ["l"] = 24,
+                ["xl"] = 32,
+            },
+            ["radii"] = new JsonObject
+            {
+                ["none"] = 0,
+                ["xs"] = 2,
+                ["s"] = 4,
+                ["m"] = 8,
+                ["l"] = 12,
+                ["xl"] = 16,
+                ["xxl"] = 24,
+                ["full"] = 999,
+            },
+            ["shadows"] = new JsonObject
+            {
+                ["default"] = new JsonObject
+                {
+                    ["color"] = new JsonObject
+                    {
+                        ["color"] = "gray_000",
+                        ["alpha"] = 0.18,
+                    },
+                    ["offsetX"] = 0,
+                    ["offsetY"] = 4,
+                    ["blur"] = 18,
+                },
+            },
+            ["motion"] = ThemeMotionTokens(),
+            ["modes"] = new JsonObject
+            {
+                ["light"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_100",
+                        ["surface"] = "gray_100",
+                        ["card"] = "gray_100",
+                        ["label"] = "gray_040",
+                        ["text"] = "gray_010",
+                        ["textPrimary"] = "gray_010",
+                        ["textSecondary"] = "gray_040",
+                        ["icon"] = "gray_010",
+                        ["button"] = isAndroid ? "purple" : "blue",
+                        ["field"] = "gray_100",
+                        ["checkbox"] = isAndroid ? "purple" : "blue",
+                        ["radio"] = isAndroid ? "purple" : "blue",
+                        ["switch"] = isAndroid ? "purple" : "blue",
+                        ["tab"] = isAndroid ? "purple" : "blue",
+                        ["menuItem"] = "gray_010",
+                        ["badge"] = "red",
+                        ["toast"] = "gray_020",
+                        ["divider"] = "gray_080",
+                        ["accent"] = isAndroid ? "purple" : "blue",
+                        ["icons.primary"] = "gray_010",
+                        ["icons.secondary"] = "gray_040",
+                        ["icons.alternate"] = "gray_060",
+                        ["icons.accent"] = isAndroid ? "purple" : "blue",
+                        ["borders.primary"] = "gray_070",
+                        ["borders.secondary"] = "gray_080",
+                        ["borders.alternate"] = "gray_060",
+                        ["theme.cursor.color"] = isAndroid ? "purple" : "blue",
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_090",
+                        ["keyBackground"] = "gray_100",
+                        ["specialKeyBackground"] = "gray_080",
+                        ["pressedKeyBackground"] = "gray_070",
+                        ["keyBorder"] = "gray_080",
+                        ["text"] = "gray_010",
+                    },
+                },
+                ["dark"] = new JsonObject
+                {
+                    ["colors"] = new JsonObject
+                    {
+                        ["background"] = "gray_010",
+                        ["surface"] = "gray_020",
+                        ["card"] = "gray_030",
+                        ["label"] = "gray_070",
+                        ["text"] = "gray_100",
+                        ["textPrimary"] = "gray_100",
+                        ["textSecondary"] = "gray_070",
+                        ["icon"] = "gray_100",
+                        ["button"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["field"] = "gray_030",
+                        ["checkbox"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["radio"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["switch"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["tab"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["menuItem"] = "gray_100",
+                        ["badge"] = "red",
+                        ["toast"] = "gray_030",
+                        ["divider"] = "gray_040",
+                        ["accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["icons.primary"] = "gray_100",
+                        ["icons.secondary"] = "gray_070",
+                        ["icons.alternate"] = "gray_050",
+                        ["icons.accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["borders.primary"] = "gray_040",
+                        ["borders.secondary"] = "gray_030",
+                        ["borders.alternate"] = "gray_050",
+                        ["theme.cursor.color"] = isAndroid ? "purple_tint" : "blue_bright",
+                    },
+                    ["keyboard"] = new JsonObject
+                    {
+                        ["background"] = "gray_020",
+                        ["keyBackground"] = "gray_030",
+                        ["specialKeyBackground"] = "gray_040",
+                        ["pressedKeyBackground"] = "gray_050",
+                        ["keyBorder"] = "gray_040",
+                        ["text"] = "gray_100",
+                    },
+                },
+            },
+        };
+        return tokens.ToJsonString();
+    }
+
+    private static JsonObject ThemeMotionTokens()
+    {
+        return new JsonObject
+        {
+            ["buttonPushedDurationMs"] = 120,
+            ["reflowDurationMs"] = 240,
+            ["reflowEasing"] = "ease-out",
+            ["naturalPace"] = new JsonObject
+            {
+                ["verySlow"] = 2,
+                ["slow"] = 1.5,
+                ["normal"] = 1,
+                ["fast"] = 0.8,
+                ["veryFast"] = 0.6,
+            },
+            ["transitions"] = new JsonObject
+            {
+                ["fade"] = MotionTiming(180, 0, "ease", 1),
+                ["slide"] = MotionTiming(260, 0, "ease-out", 1),
+                ["swipe"] = MotionTiming(220, 0, "ease-out", 1),
+                ["scale"] = MotionTiming(220, 0, "ease", 1),
+            },
+        };
+    }
+
+    private static JsonObject MotionTiming(int durationMs, int delayMs, string easing, double intensity)
+    {
+        return new JsonObject
+        {
+            ["durationMs"] = durationMs,
+            ["delayMs"] = delayMs,
+            ["easing"] = easing,
+            ["intensity"] = intensity,
+        };
+    }
+}

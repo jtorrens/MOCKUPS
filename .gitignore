@@ -7,6 +7,9 @@ bin/
 obj/
 assets/*/media/
 *.sqlite
+!src/Mockups.Persistence.Sqlite/
+!src/Mockups.Persistence.Sqlite/*.cs
+!src/Mockups.Persistence.Sqlite/*.csproj
 *.sqlite3
 *.db
 *.db-wal

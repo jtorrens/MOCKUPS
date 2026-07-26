@@ -178,7 +178,7 @@ function walkFilesByExtension(directory: string, extensions: readonly string[]):
   });
 }
 
-for (const directory of ["src/desktop-preview", "src/Mockups.Domain", "src/Mockups.Application", "src/Mockups.Desktop/Common", "src/Mockups.Desktop/Data", "src/Mockups.Desktop/EditorShell"]) {
+for (const directory of ["src/desktop-preview", "src/Mockups.Domain", "src/Mockups.Application", "src/Mockups.Desktop/Common", "src/Mockups.Persistence.Sqlite", "src/Mockups.Desktop/EditorShell"]) {
   for (const filePath of walkFilesByExtension(path.join(root, directory), [".ts", ".tsx", ".cs"])) {
     const source = readText(relative(filePath));
     for (const retired of retiredTimeFields) {
@@ -638,10 +638,10 @@ function workflowSteps(relativePath: string): WorkflowStep[] {
 }
 
 const currentRepositoryFiles = walkFilesByExtension(
-  path.join(root, "src", "Mockups.Desktop", "Data"),
+  path.join(root, "src", "Mockups.Persistence.Sqlite"),
   [".cs"],
 );
-const retiredComponentDefaultsPath = "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassDefaults.cs";
+const retiredComponentDefaultsPath = "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassDefaults.cs";
 if (existsSync(path.join(root, retiredComponentDefaultsPath))) {
   addViolation(
     retiredComponentDefaultsPath,
@@ -890,7 +890,7 @@ assertContains(
   "resolved Device Preview metrics must be a public Domain DTO",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Records.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Records.cs",
   "record DevicePreviewMetrics",
   "resolved Device Preview metrics must not be nested in the database facade",
 );
@@ -1169,13 +1169,13 @@ assertDoesNotContain(
   "the isolated Preview input session must not bypass its typed data sources",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "Func<string, JsonObject> componentVariantRuntimeContract",
   "the action interpreter must receive exact embedded contracts without persistence coupling",
 );
 for (const forbiddenActionPersistenceDependency of ["SpikeDatabase", "Mockups.DesktopEditorShell.Data"]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Application/ComponentPreviewActions.cs",
     forbiddenActionPersistenceDependency,
     `the action interpreter must remain persistence-independent (${forbiddenActionPersistenceDependency})`,
   );
@@ -1211,9 +1211,9 @@ assertContains(
   "the common animation document owner must require persisted owner-local keyframe order",
 );
 for (const animationDocumentConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
   "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationDocument.cs",
 ]) {
   assertContains(
@@ -1223,7 +1223,7 @@ for (const animationDocumentConsumer of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "ValidateAnimationJson",
   "the data facade must not retain a parallel animation document validator",
 );
@@ -1491,7 +1491,7 @@ for (const forbiddenEditorPresentationContextDependency of [
 for (const retiredSystemBarItemEditorPath of [
   "src/Mockups.Desktop/EditorShell/StatusBarItemsCollectionEditor.cs",
   "src/Mockups.Desktop/EditorShell/NavigationBarItemsCollectionEditor.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.StatusNavigationComponents.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.StatusNavigationComponents.cs",
 ]) {
   if (existsSync(path.join(root, retiredSystemBarItemEditorPath))) {
     addViolation(
@@ -1536,8 +1536,8 @@ assertDoesNotContain(
   "structured collection parsing must reject invalid current values instead of returning an empty array",
 );
 for (const [componentPath, contractName] of [
-  ["src/Mockups.Desktop/Data/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
-  ["src/Mockups.Desktop/Data/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
+  ["src/Mockups.Persistence.Sqlite/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
+  ["src/Mockups.Persistence.Sqlite/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
 ] as const) {
   assertContains(
     componentPath,
@@ -1610,7 +1610,7 @@ const activeEditorShellSources = walkFilesByExtension(
 );
 const activeComponentVariantSources = [
   ...walkFilesByExtension(path.join(root, "src/desktop-preview"), [".ts", ".tsx"]),
-  ...walkFilesByExtension(path.join(root, "src/Mockups.Desktop/Data"), [".cs"]),
+  ...walkFilesByExtension(path.join(root, "src/Mockups.Persistence.Sqlite"), [".cs"]),
   ...activeEditorShellSources,
   path.join(root, "src/Mockups.Desktop/MainWindow.axaml.cs"),
 ];
@@ -1678,15 +1678,15 @@ for (const moduleConfigContract of [
   "LockScreenModuleConfigContract",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/CurrentModuleConfigContract.cs",
+    "src/Mockups.Persistence.Sqlite/CurrentModuleConfigContract.cs",
     `${moduleConfigContract}.Validate(config, context)`,
     `current Module config routing must delegate to ${moduleConfigContract}`,
   );
 }
 for (const moduleConfigConsumer of [
-  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Persistence.Sqlite/AppModuleRepository.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs",
 ]) {
   assertContains(
     moduleConfigConsumer,
@@ -1702,13 +1702,13 @@ for (const retiredModuleConfigFallback of [
   "JsonBoolString(",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs",
     retiredModuleConfigFallback,
     `Module config editing must not retain a silent document fallback (${retiredModuleConfigFallback})`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
+  "src/Mockups.Persistence.Sqlite/AppModuleRepository.cs",
   "variant.Config,\n                $\"Module Variant",
   "the Module repository must validate every complete Variant config through its owner",
 );
@@ -1718,7 +1718,7 @@ assertContains(
   "Module appearance mode validation and inheritance must have one common owner",
 );
 for (const appearanceModeConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs",
   "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
@@ -1729,7 +1729,7 @@ for (const appearanceModeConsumer of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs",
   'value is "light" or "dark" ? value : "inherit"',
   "Module appearance writes must reject unknown values instead of coercing them to inherit",
 );
@@ -1769,8 +1769,8 @@ assertDoesNotContain(
   "Typography Style must not reinterpret a wrong JSON root as inherited",
 );
 for (const typographyOwnerConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
 ]) {
   assertContains(
     typographyOwnerConsumer,
@@ -1779,12 +1779,12 @@ for (const typographyOwnerConsumer of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "ValueKind.TypographyStyle => JsonNode.Parse(value)",
   "Typography Style writes must not bypass the strict value owner",
 );
 assertContains(
-  "src/Mockups.Desktop/Common/DesktopChildProcess.cs",
+  "src/Mockups.Application/DesktopChildProcess.cs",
   "public static string ResolveNodeExecutable()",
   "external Node processes must share one platform executable resolver",
 );
@@ -1809,10 +1809,10 @@ assertContains(
   "Component and Module Variants must share one full-reference grammar",
 );
 for (const retiredVariantReferenceHelper of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "TryParseComponentVariantNodeId"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "ComponentVariantNodeId("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "TryParseModuleVariantNodeId"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs", "TryParseComponentVariantNodeId"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs", "ComponentVariantNodeId("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "TryParseModuleVariantNodeId"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
   ["src/Mockups.Desktop/EditorShell/DictionaryComponentVariantControl.cs", "VariantSeparator"],
   ["src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs", 'IndexOf("::variant::"'],
   ["src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
@@ -1874,9 +1874,9 @@ assertDoesNotContain(
   "payload data source must not reconstruct Screen origin from slot duration",
 );
 for (const retiredVariantEnvelopeHelper of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "private static JsonObject? FindVariant("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "private static string UniqueVariantId("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "private static string UniqueModuleVariantId("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs", "private static JsonObject? FindVariant("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs", "private static string UniqueVariantId("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "private static string UniqueModuleVariantId("],
 ] as const) {
   assertDoesNotContain(
     retiredVariantEnvelopeHelper[0],
@@ -1897,8 +1897,8 @@ assertContains(
   "Component and Module Variants must share one stable Default Variant id",
 );
 for (const retiredDefaultVariantConstant of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs", "DefaultComponentVariantId"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "DefaultModuleVariantId"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs", "DefaultComponentVariantId"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "DefaultModuleVariantId"],
 ] as const) {
   assertDoesNotContain(
     retiredDefaultVariantConstant[0],
@@ -1932,8 +1932,8 @@ for (const actorPreviewFactory of [
   );
 }
 for (const variantCreationOwner of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertDoesNotContain(
     variantCreationOwner,
@@ -1942,8 +1942,8 @@ for (const variantCreationOwner of [
   );
 }
 for (const retiredInactiveSource of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassLayouts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.PreviewActions.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassLayouts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.PreviewActions.cs",
   "src/Mockups.Desktop/scripts/icon-themes/sync-icon-theme-token.cjs",
 ]) {
   if (existsSync(path.join(root, retiredInactiveSource))) {
@@ -1959,12 +1959,12 @@ assertContains(
   "the Module runtime-document registry must route Conversation by its exact stable record class",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "ValidateCurrentModuleRuntimeDocuments(connection)",
   "startup validation must enforce current Module runtime-document contracts read-only",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
   "ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content)",
   "Module Instance content writes must enforce their owning runtime-document contract",
 );
@@ -1988,17 +1988,17 @@ assertFilesDoNotContain(
   "ordinary editor code must not persist layout metadata while opening or rebuilding an editor",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/EditorLayoutRepository.cs",
+  "src/Mockups.Persistence.Sqlite/EditorLayoutRepository.cs",
   "document.Count != 1 || document[\"cards\"] is not JsonArray",
   "current editor layout reads must require the exact cards-only root",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "json_each.key <> 'cards'",
   "startup validation must reject additional editor layout root properties",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "'simplified'",
   "startup validation must reject the retired Simplified Editor metadata",
 );
@@ -2131,7 +2131,7 @@ assertFilesDoNotContain(
   "variant.ConfigJson == \"{}\"",
   "a selected Component Variant config must not fall back to class config",
 );
-const jsonRootInventorySource = readText("src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs");
+const jsonRootInventorySource = readText("src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs");
 const executableJsonRoots = new Map(
   [...jsonRootInventorySource.matchAll(/\("([a-z_]+)", "([a-z_]+)", "(object|array)"\)/g)]
     .map((match) => [`${match[1]}.${match[2]}`, match[3]]),
@@ -2157,7 +2157,7 @@ for (const [entry, rootKind] of executableJsonRoots) {
 for (const [entry, rootKind] of documentedJsonRoots) {
   if (executableJsonRoots.get(entry) !== rootKind) {
     addViolation(
-      "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+      "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
       `${entry} must have the documented ${rootKind} startup root`,
     );
   }
@@ -2216,7 +2216,7 @@ assertDoesNotContain(
   "Production payload parsing must reject invalid current JSON instead of returning an empty object",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "return new JsonObject();",
   "Design Preview Test Values must not hide invalid current JSON behind an empty object",
 );
@@ -3300,7 +3300,7 @@ for (const removedLegacyPath of [
   "src/desktop-preview/systemBarComponentContract.ts",
   "src/desktop-preview/systemBarPreviewResolver.ts",
   "src/desktop-preview/systemBarRenderables.ts",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassNormalization.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassNormalization.cs",
   "index.html",
   "remotion.config.ts",
   "vite.config.ts",
@@ -4026,9 +4026,9 @@ if (payloadSource.includes('"statusBar"') || payloadSource.includes('"navigation
   );
 }
 
-const desktopPersistenceDataPaths = readdirSync(path.join(root, "src/Mockups.Desktop/Data"))
+const desktopPersistenceDataPaths = readdirSync(path.join(root, "src/Mockups.Persistence.Sqlite"))
   .filter((entry) => entry.endsWith(".cs"))
-  .map((entry) => `src/Mockups.Desktop/Data/${entry}`);
+  .map((entry) => `src/Mockups.Persistence.Sqlite/${entry}`);
 for (const relativePath of desktopPersistenceDataPaths) {
   const source = readText(relativePath);
   if (/\b(?:Ensure|Normalize|Retire|Migrate)\w*\s*\(\s*SqliteConnection\b/.test(source)) {
@@ -4045,7 +4045,7 @@ for (const relativePath of desktopPersistenceDataPaths) {
   }
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SqliteProjectContext.cs",
+  "src/Mockups.Persistence.Sqlite/SqliteProjectContext.cs",
   "Mode = SqliteOpenMode.ReadOnly",
   "the shared SQLite context must open existing databases read-only until strict current validation succeeds",
 );
@@ -4064,12 +4064,12 @@ for (const [contractType, implementationType] of [
   ["IReferenceUsageService", "ReferenceUsageService"],
 ] as const) {
   assertContains(
-    "src/Mockups.Desktop/Data/PersistenceContracts.cs",
+    "src/Mockups.Persistence.Sqlite/PersistenceContracts.cs",
     `interface ${contractType}`,
     `persistence contract ${contractType} must remain explicit`,
   );
   assertContains(
-    "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
     implementationType === "ProjectEpisodeRepository"
       ? "new ProjectEpisodeRepository(_context, _shotRepository)"
       : `new ${implementationType}(_context)`,
@@ -4077,15 +4077,15 @@ for (const [contractType, implementationType] of [
   );
 }
 for (const facadePath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.EditorLayouts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectsEpisodes.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Palette.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemeSearch.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.EditorLayouts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectsEpisodes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Palette.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Devices.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Actors.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProductionFonts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemeSearch.cs",
 ]) {
   for (const forbiddenPersistenceDetail of [".CreateCommand()", "SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM "]) {
     assertDoesNotContain(
@@ -4096,16 +4096,16 @@ for (const facadePath of [
   }
 }
 for (const [repositoryPath, ownedTable] of [
-  ["src/Mockups.Desktop/Data/EditorLayoutRepository.cs", "editor_layouts"],
-  ["src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs", "episodes"],
-  ["src/Mockups.Desktop/Data/ShotRepository.cs", "shots"],
-  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "palette_colors"],
-  ["src/Mockups.Desktop/Data/DeviceRepository.cs", "devices"],
-  ["src/Mockups.Desktop/Data/ActorRepository.cs", "actors"],
-  ["src/Mockups.Desktop/Data/ThemeRepository.cs", "themes"],
-  ["src/Mockups.Desktop/Data/ProductionFontRepository.cs", "production_fonts"],
-  ["src/Mockups.Desktop/Data/IconThemeRepository.cs", "icon_themes"],
-  ["src/Mockups.Desktop/Data/AppModuleRepository.cs", "apps"],
+  ["src/Mockups.Persistence.Sqlite/EditorLayoutRepository.cs", "editor_layouts"],
+  ["src/Mockups.Persistence.Sqlite/ProjectEpisodeRepository.cs", "episodes"],
+  ["src/Mockups.Persistence.Sqlite/ShotRepository.cs", "shots"],
+  ["src/Mockups.Persistence.Sqlite/PaletteRepository.cs", "palette_colors"],
+  ["src/Mockups.Persistence.Sqlite/DeviceRepository.cs", "devices"],
+  ["src/Mockups.Persistence.Sqlite/ActorRepository.cs", "actors"],
+  ["src/Mockups.Persistence.Sqlite/ThemeRepository.cs", "themes"],
+  ["src/Mockups.Persistence.Sqlite/ProductionFontRepository.cs", "production_fonts"],
+  ["src/Mockups.Persistence.Sqlite/IconThemeRepository.cs", "icon_themes"],
+  ["src/Mockups.Persistence.Sqlite/AppModuleRepository.cs", "apps"],
 ] as const) {
   assertContains(
     repositoryPath,
@@ -4121,7 +4121,7 @@ assertDoesNotContain(
 for (const ownedResourceTable of ["palette_colors", "devices", "actors", "production_fonts", "icon_themes"]) {
   for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
     assertDoesNotContain(
-      "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+      "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
       `${sqlOperation} ${ownedResourceTable}`,
       `tree orchestration must delegate ${ownedResourceTable} lifecycle writes to its repository`,
     );
@@ -4129,23 +4129,23 @@ for (const ownedResourceTable of ["palette_colors", "devices", "actors", "produc
 }
 for (const sqlOperation of ["INSERT INTO", "UPDATE", "DELETE FROM"]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
     `${sqlOperation} themes`,
     "tree orchestration must delegate Theme lifecycle writes to ThemeRepository",
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs",
   "?? themes.FirstOrDefault((row) => row.ProjectId == projectId)",
   "Theme token inspection must require the exact selected Theme instead of falling back to the first Project Theme",
 );
 for (const resourceRepositoryPath of [
-  "src/Mockups.Desktop/Data/PaletteRepository.cs",
-  "src/Mockups.Desktop/Data/DeviceRepository.cs",
-  "src/Mockups.Desktop/Data/ActorRepository.cs",
-  "src/Mockups.Desktop/Data/ThemeRepository.cs",
-  "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
-  "src/Mockups.Desktop/Data/IconThemeRepository.cs",
+  "src/Mockups.Persistence.Sqlite/PaletteRepository.cs",
+  "src/Mockups.Persistence.Sqlite/DeviceRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ActorRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ThemeRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ProductionFontRepository.cs",
+  "src/Mockups.Persistence.Sqlite/IconThemeRepository.cs",
 ]) {
   assertDoesNotContain(
     resourceRepositoryPath,
@@ -4171,15 +4171,15 @@ for (const forbiddenProductionFontRepositoryConcern of [
   "ProjectTreeNode",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
+    "src/Mockups.Persistence.Sqlite/ProductionFontRepository.cs",
     forbiddenProductionFontRepositoryConcern,
     `ProductionFontRepository must not own filesystem, Preview or tree concern ${forbiddenProductionFontRepositoryConcern}`,
   );
 }
 for (const productionFontDocumentConsumer of [
-  "src/Mockups.Desktop/Data/ProductionFontRepository.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/ProductionFontRepository.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProductionFonts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
 ]) {
   assertContains(
     productionFontDocumentConsumer,
@@ -4194,7 +4194,7 @@ for (const forbiddenProductionFontDocumentFallback of [
   "== \"italic\" ? \"italic\" : \"normal\"",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ProductionFonts.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProductionFonts.cs",
     forbiddenProductionFontDocumentFallback,
     `Production Font readers must not filter or infer current file member '${forbiddenProductionFontDocumentFallback}'`,
   );
@@ -4223,35 +4223,35 @@ for (const forbiddenIconThemeRepositoryConcern of [
   "IconThemeToken",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/IconThemeRepository.cs",
+    "src/Mockups.Persistence.Sqlite/IconThemeRepository.cs",
     forbiddenIconThemeRepositoryConcern,
     `IconThemeRepository must not own asset, Preview or tree concern ${forbiddenIconThemeRepositoryConcern}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemes.cs",
   "has no explicit SVG file reference",
   "Icon Theme token reads must fail when the current mapping has no explicit file",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemes.cs",
   "tokenObject[\"file\"] = file",
   "Icon Theme token reads must not repair a missing file reference",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
+  "src/Mockups.Persistence.Sqlite/AppModuleRepository.cs",
   "modules",
   "AppModuleRepository must own both App and Module definition tables",
 );
 for (const [definitionFacadePath, forbiddenDefinitionPersistence] of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "UPDATE apps"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "UPDATE modules"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "FROM apps"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "FROM modules"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs", "UPDATE modules"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs", "UPDATE modules"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "UPDATE apps"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "UPDATE modules"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "UPDATE apps"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "UPDATE modules"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "FROM apps"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "FROM modules"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "UPDATE modules"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs", "UPDATE modules"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs", "UPDATE apps"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs", "UPDATE modules"],
 ] as const) {
   assertDoesNotContain(
     definitionFacadePath,
@@ -4267,35 +4267,35 @@ for (const forbiddenAppModuleRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/AppModuleRepository.cs",
+    "src/Mockups.Persistence.Sqlite/AppModuleRepository.cs",
     forbiddenAppModuleRepositoryConcern,
     `AppModuleRepository must not own UI, Runtime or render concern ${forbiddenAppModuleRepositoryConcern}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/AppModuleRepository.cs",
+  "src/Mockups.Persistence.Sqlite/AppModuleRepository.cs",
   "has no explicit default Variant",
   "Module definition persistence must reject metadata without the protected current default Variant id",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "new ComponentClassRepository(_context)",
   "SpikeDatabase must construct the focused Component Class repository",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "_componentClassRepository.UpdateConfigAndMetadata(",
   "Component Class coordinated document writes must delegate to the repository",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs",
   "_componentClassRepository.UpdateMetadata(",
   "Component Variant document writes must delegate prepared metadata to the repository",
 );
 for (const componentClassFacadePath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassReferences.cs",
 ] as const) {
   for (const forbiddenComponentClassSql of [
     "FROM component_classes",
@@ -4311,7 +4311,7 @@ for (const componentClassFacadePath of [
   }
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   'ProjectTreeNodeKind.ComponentClass => "component_classes"',
   "tree node writes must delegate Component Classes to their repository",
 );
@@ -4324,36 +4324,36 @@ for (const forbiddenComponentClassRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
+    "src/Mockups.Persistence.Sqlite/ComponentClassRepository.cs",
     forbiddenComponentClassRepositoryConcern,
     `ComponentClassRepository must not own UI, field, composition, Runtime or render concern ${forbiddenComponentClassRepositoryConcern}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ComponentClassRepository.cs",
   "has no explicit default Variant",
   "Component Class persistence must reject metadata without an explicit current default Variant id",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "new ModuleInstanceRepository(_context)",
   "SpikeDatabase must construct the focused Module Instance repository",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "_moduleInstanceRepository.UpdateDuration(",
   "timeline coordination must delegate prepared Module Instance durations",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
   "_moduleInstanceRepository.UpdateVariantDocuments(",
   "Module Variant changes must delegate prepared Module Instance documents",
 );
 for (const moduleInstanceFacadePath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
 ] as const) {
   for (const forbiddenModuleInstanceSql of [
     "FROM module_instances",
@@ -4378,27 +4378,27 @@ for (const forbiddenModuleInstanceRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/ModuleInstanceRepository.cs",
+    "src/Mockups.Persistence.Sqlite/ModuleInstanceRepository.cs",
     forbiddenModuleInstanceRepositoryConcern,
     `ModuleInstanceRepository must not own UI, Runtime, timing or render concern ${forbiddenModuleInstanceRepositoryConcern}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ProjectEpisodeRepository.cs",
   "_shotRepository.DuplicateForEpisode(",
   "Episode duplication must delegate complete child Shot rows to ShotRepository",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "_shotRepository.UpdateDuration(",
   "Shot duration coordination must delegate its prepared positive duration",
 );
 for (const shotFacadePath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
-  "src/Mockups.Desktop/Data/ProjectEpisodeRepository.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/ProjectEpisodeRepository.cs",
 ] as const) {
   for (const forbiddenShotSql of [
     "FROM shots",
@@ -4424,39 +4424,39 @@ for (const forbiddenShotRepositoryConcern of [
   "Renderable",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/ShotRepository.cs",
+    "src/Mockups.Persistence.Sqlite/ShotRepository.cs",
     forbiddenShotRepositoryConcern,
     "ShotRepository must not own UI, Production context, timing or render concern "
       + forbiddenShotRepositoryConcern,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemes.cs",
   "metadata has no explicit iconSet contract",
   "Icon Theme runtime generation must require explicit current iconSet metadata",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Persistence.Sqlite/ModuleInstanceThemeContextService.cs",
   "has no resolvable Theme context",
   "Module Instance Theme context must fail explicitly when no Theme resolves",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Persistence.Sqlite/ModuleInstanceThemeContextService.cs",
   "?? \"{}\"",
   "Module Instance Theme context must not return a plausible empty document",
 );
 for (const inferredThemeContext of ["COALESCE(", "ORDER BY t.name", "JOIN apps a"]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
+    "src/Mockups.Persistence.Sqlite/ModuleInstanceThemeContextService.cs",
     inferredThemeContext,
     `Module Instance Theme context must not restore inferred fallback ${inferredThemeContext}`,
   );
 }
 for (const [relativePath, requiredGuard] of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs", "RequireShotContext(connection, shot.Id)"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "RequireShotOwnerChange(connection, shotId, value)"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "RequireActorThemeChange(connection, actorId, value)"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs", "module instance without explicit Shot owner Theme context"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs", "RequireShotContext(connection, shot.Id)"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "RequireShotOwnerChange(connection, shotId, value)"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Actors.cs", "RequireActorThemeChange(connection, actorId, value)"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs", "module instance without explicit Shot owner Theme context"],
 ] as const) {
   assertContains(
     relativePath,
@@ -4465,10 +4465,10 @@ for (const [relativePath, requiredGuard] of [
   );
 }
 for (const [relativePath, requiredProjectReferenceGuard] of [
-  ["src/Mockups.Desktop/Data/ActorRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
-  ["src/Mockups.Desktop/Data/ShotRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
-  ["src/Mockups.Desktop/Data/ThemeRepository.cs", "ProjectReferenceIntegrity.RequireComponentVariantReference("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs", "ProjectReferenceIntegrity.ValidateCurrentDatabase(connection)"],
+  ["src/Mockups.Persistence.Sqlite/ActorRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["src/Mockups.Persistence.Sqlite/ShotRepository.cs", "ProjectReferenceIntegrity.RequireSameProjectReference("],
+  ["src/Mockups.Persistence.Sqlite/ThemeRepository.cs", "ProjectReferenceIntegrity.RequireComponentVariantReference("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs", "ProjectReferenceIntegrity.ValidateCurrentDatabase(connection)"],
   ["tests/Mockups.Desktop.Tests/Program.cs", "ProjectOwnedReferencesRejectCrossProjectValues"],
 ] as const) {
   assertContains(
@@ -4484,7 +4484,7 @@ for (const requiredProjectReferenceKind of [
   "ProjectReferenceKind.Theme",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/ProjectReferenceIntegrity.cs",
+    "src/Mockups.Persistence.Sqlite/ProjectReferenceIntegrity.cs",
     requiredProjectReferenceKind,
     `same-Project integrity must cover ${requiredProjectReferenceKind}`,
   );
@@ -4494,23 +4494,23 @@ for (const requiredThemeComponentType of [
   "NavigationBarComponentConfigContract.ComponentType",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/ProjectReferenceIntegrity.cs",
+    "src/Mockups.Persistence.Sqlite/ProjectReferenceIntegrity.cs",
     requiredThemeComponentType,
     `Theme Component Variant integrity must require ${requiredThemeComponentType}`,
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "ORDER BY t.name, t.id",
   "duration synchronization must not infer a Theme from project ordering",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/ModuleInstanceThemeContextService.cs",
+  "src/Mockups.Persistence.Sqlite/ModuleInstanceThemeContextService.cs",
   "JOIN actors actor ON actor.id = s.owner_actor_id",
   "Module Instance Theme context must resolve through the exact Shot owner Actor",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Schema.cs",
   "owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT",
   "Shot owner Actor must remain a required restricted foreign key without an empty default",
 );
@@ -4518,8 +4518,8 @@ for (const [relativePath, explicitShotCreationTerm] of [
   ["src/Mockups.Desktop/EditorShell/EditorAddChildWorkflow.cs", "new ShotCreationDialog(_owner, _database).Show(parent)"],
   ["src/Mockups.Desktop/EditorShell/ShotCreationDialog.cs", "SelectedItem = null"],
   ["src/Mockups.Desktop/EditorShell/ShotCreationDialog.cs", "GetRequiredActorOptions(project.Id)"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "must be created through AddShot"],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs", "RequireEpisodeActor(connection, episode.Id, actorId)"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs", "must be created through AddShot"],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs", "RequireEpisodeActor(connection, episode.Id, actorId)"],
   ["src/Mockups.Desktop/EditorShell/RecordClassFieldValueService.cs", "GetRequiredActorOptions(settings.ProjectId)"],
 ] as const) {
   assertContains(
@@ -4543,9 +4543,9 @@ for (const retiredUsageInference of [
   "ReferenceSearchValue",
 ]) {
   for (const usagePath of [
-    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
-    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsage.cs",
-    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+    "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ReferenceUsage.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ReferenceUsageDetails.cs",
   ]) {
     assertDoesNotContain(
       usagePath,
@@ -4562,25 +4562,25 @@ for (const explicitUsageContract of [
   "ReferenceUsageScope.Production",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+    "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
     explicitUsageContract,
     `Usage must retain explicit typed contract ${explicitUsageContract}`,
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "_referenceUsageService.BuildIndex(connection)",
   "tree Used state must consume the shared explicit Usage edge set",
 );
 for (const typedUsageDetail of ["ReferenceUsageScope Scope", "usage.Scope,"]) {
   assertContains(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ReferenceUsageDetails.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ReferenceUsageDetails.cs",
     typedUsageDetail,
     `Usage details must retain typed edge scope ${typedUsageDetail}`,
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
   "MainWindow",
   "the Usage service must not import or construct the desktop shell",
 );
@@ -4628,7 +4628,7 @@ for (const productionDataTreeContract of [
   "systemDataRoot.AddChild(themesRoot);",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
     productionDataTreeContract,
     `Production Data tree must retain ${productionDataTreeContract}`,
   );
@@ -4645,7 +4645,7 @@ for (const productionWorkspaceKind of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
   'ProjectTreeNodeKind.Actor, "Actor", reader.GetString(1), ReferenceUsageScope.Production',
   "Actor-owned Usage must navigate to the Production workspace",
 );
@@ -4717,7 +4717,7 @@ for (const renderQueueDocumentationContract of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/CurrentDatabaseMaintenance.cs",
+  "src/Mockups.Persistence.Sqlite/CurrentDatabaseMaintenance.cs",
   "File.Copy(sourcePath, outputPath, overwrite: false)",
   "current database provisioning must preserve an already-validated source byte-for-byte",
 );
@@ -5090,32 +5090,32 @@ assertPropertyBlockDoesNotContain(
   "legacy navigation bars must not expose Delete; use Component Variants instead",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "var statusBars = QueryStatusBarRows(connection);",
   "project tree must not load legacy status bars as navigation nodes",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "var navigationBars = QueryNavigationBarRows(connection);",
   "project tree must not load legacy navigation bars as navigation nodes",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "foreach (var statusBar in statusBars.OrderBy",
   "project tree must not add legacy status bar nodes",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "foreach (var navigationBar in navigationBars.OrderBy",
   "project tree must not add legacy navigation bar nodes",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.StatusBarsRoot)",
   "legacy status bar add workflow must not remain; use Component Variants instead",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "if (parent.Kind == ProjectTreeNodeKind.NavigationBarsRoot)",
   "legacy navigation bar add workflow must not remain; use Component Variants instead",
 );
@@ -5193,22 +5193,22 @@ assertDoesNotContain(
   "legacy navigation bar field writes must not remain in generic record editing",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "SeedStatusBarsIfEmpty",
   "desktop database initialization must not seed legacy status_bars rows; use status_bar Component Variants",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.cs",
   "SeedNavigationBarsIfEmpty",
   "desktop database initialization must not seed legacy navigation_bars rows; use navigation_bar Component Variants",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Schema.cs",
   "CREATE TABLE IF NOT EXISTS status_bars",
   "desktop schema must not recreate legacy status_bars; use status_bar component variants",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Schema.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Schema.cs",
   "CREATE TABLE IF NOT EXISTS navigation_bars",
   "desktop schema must not recreate legacy navigation_bars; use navigation_bar component variants",
 );
@@ -5222,7 +5222,7 @@ for (const forbiddenSchemaMigrationTerm of [
   "MigrateScreenInstancesToModuleInstances",
 ]) {
   assertFilesDoNotContain(
-    walkFilesByExtension(path.join(root, "src/Mockups.Desktop/Data"), [".cs"]),
+    walkFilesByExtension(path.join(root, "src/Mockups.Persistence.Sqlite"), [".cs"]),
     forbiddenSchemaMigrationTerm,
     `schema v1 startup must not keep historical schema migration helper ${forbiddenSchemaMigrationTerm}`,
   );
@@ -5475,32 +5475,32 @@ assertContains(
   "dictionary registry must report an unregistered ValueKind visibly",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static ValueKind RequireCompatible(string kind, string valueKind, string owner)",
   "runtime input kind and valueKind must share one exact semantic owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static JsonNode CreateDefaultValue(JsonObject definition, string owner)",
   "runtime input defaults must be parsed by the same exact ValueKind owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static JsonNode ParseValue(ValueKind valueKind, string value, string owner)",
   "runtime editor values must serialize through the exact ValueKind owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static void ValidateRuntimeValue(JsonObject definition, JsonNode? value, string owner)",
   "persisted Runtime values must validate through the exact definition owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)",
   "current dictionary nodes must validate through the exact ValueKind owner",
 );
 for (const runtimeInputKindConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
@@ -5510,9 +5510,9 @@ for (const runtimeInputKindConsumer of [
   );
 }
 for (const runtimeDefaultConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertContains(
     runtimeDefaultConsumer,
@@ -5552,8 +5552,8 @@ for (const retiredRuntimeDefinitionReaderFallback of [
   );
 }
 for (const runtimeCollectionConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
 ]) {
   assertContains(
     runtimeCollectionConsumer,
@@ -5562,8 +5562,8 @@ for (const runtimeCollectionConsumer of [
   );
 }
 for (const runtimeValueConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "src/Mockups.Desktop/EditorShell/DictionaryComponentInputBindingsControl.cs",
   "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
 ]) {
@@ -5574,12 +5574,12 @@ for (const runtimeValueConsumer of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleRuntimeDocuments.cs",
   "ValidateCurrentRuntimeValues(",
   "startup and Runtime writes must validate current scalar and collection-field values",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "ComponentInputKind.Number when double.TryParse",
   "Design Test Values must not retain a second permissive Runtime value serializer",
 );
@@ -5589,12 +5589,12 @@ assertDoesNotContain(
   "keyframe authoring must not coerce an invalid boolean to false",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
   "RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)",
   "every persisted collection mutation must require the exact declared collection",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleRuntimeDocuments.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleRuntimeDocuments.cs",
   "ValidateCurrentRuntimeCollections(",
   "startup and Runtime writes must validate declared collection documents",
 );
@@ -5603,19 +5603,19 @@ for (const runtimeCollectionWriteFallback of [
   "currentIndex < 0 ? items.Count",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ModuleInstances.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleInstances.cs",
     runtimeCollectionWriteFallback,
     `Runtime collection writes must not repair or redirect invalid intent (${runtimeCollectionWriteFallback})`,
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "RuntimeDefaultValue(",
   "runtime reconciliation must not retain a second permissive default parser",
 );
 for (const strictRuntimePersistenceDefinitionConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/SpikeDatabase.ModuleVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs",
 ]) {
   assertContains(
     strictRuntimePersistenceDefinitionConsumer,
@@ -5635,7 +5635,7 @@ for (const retiredRuntimeReconciliationRepair of [
   'content[jsonKey] is null',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
     retiredRuntimeReconciliationRepair,
     `Runtime reconciliation must not filter or repair current data (${retiredRuntimeReconciliationRepair})`,
   );
@@ -5651,7 +5651,7 @@ assertContains(
   "Behavior Timing must require its current object document",
 );
 for (const behaviorTimingMetadataConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
@@ -5661,7 +5661,7 @@ for (const behaviorTimingMetadataConsumer of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "ValidateBehaviorTimingDefinitions(",
   "Runtime Input definitions must validate Behavior Timing metadata and source ownership",
 );
@@ -5708,7 +5708,7 @@ assertDoesNotContain(
 );
 for (const themeNumericDurationConsumer of [
   "src/Mockups.Domain/BehaviorTimingResolver.cs",
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
@@ -5732,7 +5732,7 @@ for (const requiredThemeNumericOwnerTerm of [
   );
 }
 for (const retiredThemeDurationFallback of [
-  ["src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs", "ThemeTokenNumber("],
+  ["src/Mockups.Application/ComponentPreviewActions.cs", "ThemeTokenNumber("],
   ["src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", "ThemeTokenNumber("],
 ] as const) {
   assertDoesNotContain(
@@ -5742,12 +5742,12 @@ for (const retiredThemeDurationFallback of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "durationThemeToken '{durationThemeToken}' is not declared",
   "Design Preview actions must reject undeclared primary Theme duration tokens",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "durationAdditionalThemeToken '{token}' is not declared",
   "Design Preview actions must reject undeclared additional Theme duration tokens",
 );
@@ -5757,7 +5757,7 @@ assertContains(
   "generic State/Reflow action timing must use the declared numeric Theme-token catalog",
 );
 for (const motionDurationConsumer of [
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "src/Mockups.Desktop/EditorShell/DesignPreviewPayloadFactory.cs",
 ]) {
   assertContains(
@@ -5772,7 +5772,7 @@ for (const requiredMotionDurationOwnerTerm of [
   "must resolve to a positive finite Motion duration",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/EditorShell/MotionTimingDuration.cs",
+    "src/Mockups.Domain/MotionTimingDuration.cs",
     requiredMotionDurationOwnerTerm,
     `Motion duration resolution must keep owner rule '${requiredMotionDurationOwnerTerm}'`,
   );
@@ -5853,7 +5853,7 @@ assertDoesNotContain(
   "desktop runtime owner timeline must not treat durationInputId as a JSON storage key",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "action with { DurationJsonKey = DurationJsonKey(preview, action) }",
   "Design Preview actions must prepare the storage key from their exact duration field id",
 );
@@ -5863,7 +5863,7 @@ assertContains(
   "Design Preview duration values must read through the prepared field storage key",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
+  "src/Mockups.Application/RuntimeInputForwardingContract.cs",
   'key is "durationInputId" or "durationBehaviorTimingInputId"',
   "forwarded durationInputId must remain a stable forwarded field id",
 );
@@ -6016,7 +6016,7 @@ for (const retiredBehaviorTimingPresentationFallback of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "CurrentRuntimeInputKinds",
   "startup validation must not retain a parallel Runtime Input kind vocabulary",
 );
@@ -6031,12 +6031,12 @@ assertDoesNotContain(
   "runtime input kind parsing must not silently fall back to text",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "obj.TryGetPropertyValue(RuntimeInputForwardingContract.StorageKey, out var forwardedNode)",
   "startup must validate every present forwarding envelope instead of ignoring a wrong root",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
+  "src/Mockups.Application/RuntimeInputForwardingContract.cs",
   "private static JsonObject? ForwardedDefinitions(JsonObject owner)",
   "desktop payload preparation must own the strict forwarding envelope",
 );
@@ -6046,7 +6046,7 @@ for (const forwardingFallback of [
   "definition.DeepClone() as JsonObject ?? new JsonObject()",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/RuntimeInputForwardingContract.cs",
+    "src/Mockups.Application/RuntimeInputForwardingContract.cs",
     forwardingFallback,
     `desktop forwarding must not manufacture a plausible document (${forwardingFallback})`,
   );
@@ -6097,7 +6097,7 @@ for (const compoundDictionaryControl of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "RuntimeCollectionDocumentContract.Validate(items, owner)",
   "structured dictionary arrays must preserve stable item ids through the shared owner",
 );
@@ -6122,27 +6122,27 @@ for (const retiredCompoundFallback of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "private static JsonObject? TestValues(JsonObject preview)",
   "Design Test Values must own their optional strict transient envelope",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "RuntimeCollectionDocumentContract.Validate(",
   "Design Test Value collections must reuse the stable collection document owner",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
-  "ComponentPreviewInputSession.ReadRuntimeCollections(",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
+  "RuntimeInputDefinitionReader.ReadCollections(",
   "Design Test Values must consume the one complete Runtime collection definition reader",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "includeHidden: true",
   "collection source application must validate definitions hidden by current presentation conditions",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   'OptionalArray(preview, "collections", "Design Preview Runtime collections")',
   "Design Test Values must not retain a raw collection metadata reader",
 );
@@ -6162,11 +6162,11 @@ assertSourceMatches(
   "action target normalization must consume strict effective collection items",
 );
 for (const embeddedCollectionDocumentConsumer of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
   "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
 ]) {
@@ -6177,8 +6177,8 @@ for (const embeddedCollectionDocumentConsumer of [
   );
 }
 for (const projectedItemRuntimeContractConsumer of [
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "src/Mockups.Desktop/EditorShell/ModuleInstanceAnimationEditor.cs",
   "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
 ]) {
@@ -6189,7 +6189,7 @@ for (const projectedItemRuntimeContractConsumer of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+  "src/Mockups.Application/ComponentPreviewActions.cs",
   "item[itemRuntimeContractJsonKey] is not JsonObject itemContract) continue",
   "embedded action discovery must not skip a malformed declared item Runtime contract",
 );
@@ -6224,7 +6224,7 @@ assertDoesNotContain(
   "opening embedded Runtime Overrides must not repair a missing current object",
 );
 for (const currentRuntimeValueConsumer of [
-  "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+  "src/Mockups.Application/DesignPreviewTestValues.cs",
   "src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs",
 ]) {
   assertContains(
@@ -6234,7 +6234,7 @@ for (const currentRuntimeValueConsumer of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static string CurrentStorageText(",
   "the Runtime ValueKind owner must provide the one current-value storage representation",
 );
@@ -6247,7 +6247,7 @@ for (const actionSessionValueOwner of ["BooleanOrDefault(", "TimeOrDefault("]) {
 }
 for (const retiredCurrentRuntimeFallback of [
   [
-    "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+    "src/Mockups.Application/DesignPreviewTestValues.cs",
     "_ => input.DefaultValue,",
   ],
   [
@@ -6268,7 +6268,7 @@ for (const transientTestValueFallback of [
   "item.DeepClone() as JsonObject ?? new JsonObject()",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/DesignPreviewTestValues.cs",
+    "src/Mockups.Application/DesignPreviewTestValues.cs",
     transientTestValueFallback,
     `Design Test Values must not repair or position-bind invalid transient data (${transientTestValueFallback})`,
   );
@@ -6283,7 +6283,7 @@ for (const componentValueOwnerCall of [
   "RuntimeInputValueKindContract.ParseValue(",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
     componentValueOwnerCall,
     `Component fields must consume their exact dictionary ValueKind owner (${componentValueOwnerCall})`,
   );
@@ -6296,7 +6296,7 @@ for (const retiredComponentFieldFallback of [
   "node is JsonObject\n                ? node.ToJsonString()\n                : descriptor.DefaultValue",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
     retiredComponentFieldFallback,
     `Component field reads/writes must not reconstruct invalid current data (${retiredComponentFieldFallback})`,
   );
@@ -6306,7 +6306,7 @@ for (const strictEmbeddedDocumentMessage of [
   "overrides must be an object.",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
     strictEmbeddedDocumentMessage,
     `embedded Component documents must reject present wrong roots (${strictEmbeddedDocumentMessage})`,
   );
@@ -6327,8 +6327,8 @@ for (const retiredNumericWriteFallback of [
   );
 }
 for (const strictBooleanRepository of [
-  "src/Mockups.Desktop/Data/PaletteRepository.cs",
-  "src/Mockups.Desktop/Data/ActorRepository.cs",
+  "src/Mockups.Persistence.Sqlite/PaletteRepository.cs",
+  "src/Mockups.Persistence.Sqlite/ActorRepository.cs",
 ]) {
   assertContains(
     strictBooleanRepository,
@@ -6337,10 +6337,10 @@ for (const strictBooleanRepository of [
   );
 }
 for (const retiredBooleanWriteFallback of [
-  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "BooleanText.Parse(value) ? 1 : 0"],
-  ["src/Mockups.Desktop/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value))'],
-  ["src/Mockups.Desktop/Data/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value))'],
-  ["src/Mockups.Desktop/Data/ActorRepository.cs", 'JsonValue.Create(BooleanText.Parse(value))'],
+  ["src/Mockups.Persistence.Sqlite/PaletteRepository.cs", "BooleanText.Parse(value) ? 1 : 0"],
+  ["src/Mockups.Persistence.Sqlite/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "protected", BooleanText.Parse(value))'],
+  ["src/Mockups.Persistence.Sqlite/PaletteRepository.cs", 'UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.Parse(value))'],
+  ["src/Mockups.Persistence.Sqlite/ActorRepository.cs", 'JsonValue.Create(BooleanText.Parse(value))'],
 ] as const) {
   assertDoesNotContain(
     retiredBooleanWriteFallback[0],
@@ -6362,11 +6362,11 @@ for (const requiredResourceScalarHelper of [
   );
 }
 for (const strictResourceReader of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs", "JsonPath.RequiredNumberString("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonPath.RequiredBooleanString("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", "JsonPath.RequiredNumberString("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredStringAt("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Devices.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Actors.cs", "JsonPath.RequiredBooleanString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", "JsonPath.RequiredNumberString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs", "JsonPath.RequiredStringAt("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs", "JsonPath.RequiredNumberString("],
 ] as const) {
   assertContains(
     strictResourceReader[0],
@@ -6375,21 +6375,21 @@ for (const strictResourceReader of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Devices.cs",
   "OptionalDynamicIslandPair(",
   "Device Dynamic Island absence must remain an explicit optional contract",
 );
 for (const retiredResourceReadFallback of [
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Infrastructure.cs", "MetricPair("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Devices.cs", "JsonNumberString("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonBool("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Actors.cs", "JsonNumberString("],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.ProjectContent.cs", 'JsonNumberString(metadata, ["icon", "scale"], "1")'],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "{}"'],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "light"'],
-  ["src/Mockups.Desktop/Data/SpikeDatabase.Themes.cs", ': "normal"'],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Infrastructure.cs", "MetricPair("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Devices.cs", "JsonNumberString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Actors.cs", "JsonBool("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Actors.cs", "JsonNumberString("],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ProjectContent.cs", 'JsonNumberString(metadata, ["icon", "scale"], "1")'],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs", ': "{}"'],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs", ': "light"'],
+  ["src/Mockups.Persistence.Sqlite/SpikeDatabase.Themes.cs", ': "normal"'],
   ["src/Mockups.Domain/DeviceMetricRules.cs", "value.TryGetValue<string>(out var text)"],
-  ["src/Mockups.Desktop/Data/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
+  ["src/Mockups.Persistence.Sqlite/PaletteRepository.cs", "if (value.TryGetValue<string>(out var text))"],
 ] as const) {
   assertDoesNotContain(
     retiredResourceReadFallback[0],
@@ -6404,7 +6404,7 @@ for (const strictPairValueKindCase of [
   "ParseBoundedDecimal(valueKind, value, owner)",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+    "src/Mockups.Application/RuntimeInputValueKindContract.cs",
     strictPairValueKindCase,
     `dictionary pair/range values must use their exact ValueKind owner (${strictPairValueKindCase})`,
   );
@@ -6461,7 +6461,7 @@ for (const retiredPairLabelInference of [
   );
 }
 assertContains(
-  "src/Mockups.Desktop/EditorShell/RuntimeInputValueKindContract.cs",
+  "src/Mockups.Application/RuntimeInputValueKindContract.cs",
   "public static PairFieldLabels? ReadPairLabels(",
   "Runtime Input pair labels must be validated by the shared current-definition owner",
 );
@@ -6471,7 +6471,7 @@ assertContains(
   "Component Input binding projections must retain explicit pair labels",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassReferences.cs",
   "new NumberDefinition(input.Minimum, input.Maximum, input.Increment),\n                input.PairLabels,\n                input.ComponentType,",
   "Component Variant Runtime Input bindings must retain explicit pair labels",
 );
@@ -6555,7 +6555,7 @@ assertContains(
   "dictionary field rows must host controls through the dictionary control registry",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Validation.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Validation.cs",
   "ComponentPreviewActions.ValidateContract(",
   "current Design Preview actions must be validated read-only at startup",
 );
@@ -6570,7 +6570,7 @@ for (const strictPreviewActionOwner of [
   'if (!ownerDocument.ContainsKey(key))',
 ]) {
   assertContains(
-    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Application/ComponentPreviewActions.cs",
     strictPreviewActionOwner,
     `Design Preview actions must keep their explicit declarative owner (${strictPreviewActionOwner})`,
   );
@@ -6588,7 +6588,7 @@ for (const retiredPreviewActionFallback of [
   'action["durationBaseFrames"] is not null',
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/ComponentPreviewActions.cs",
+    "src/Mockups.Application/ComponentPreviewActions.cs",
     retiredPreviewActionFallback,
     `Design Preview actions must not reconstruct malformed current metadata (${retiredPreviewActionFallback})`,
   );
@@ -6609,12 +6609,12 @@ assertContains(
   "Application must embed the canonical Preview manifest consumed by its contracts",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)",
   "component navigation category must come from the canonical preview manifest",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "ComponentClassNavigationGroupFor",
   "component navigation must not infer category from a hard-coded component type switch",
 );
@@ -6624,7 +6624,7 @@ assertContains(
   "module class options must come from the canonical preview manifest",
 );
 for (const retiredGenericModulePath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "src/Mockups.Application/ProjectTreeNode.cs",
   "src/Mockups.Application/RecordClassFieldCatalog.cs",
 ]) {
@@ -6635,7 +6635,7 @@ for (const retiredGenericModulePath of [
   );
 }
 for (const retiredGenericAppPath of [
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "src/Mockups.Application/ProjectTreeNode.cs",
   "src/Mockups.Application/RecordClassFieldCatalog.cs",
 ]) {
@@ -6646,7 +6646,7 @@ for (const retiredGenericAppPath of [
   );
 }
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.Tree.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.Tree.cs",
   "if (parent.Kind == ProjectTreeNodeKind.AppsRoot)",
   "repository must not create Apps through generic Add Child",
 );
@@ -6662,12 +6662,12 @@ assertNoTerms("src/Mockups.Desktop/EditorShell/ComponentInputsPanel.cs", [
   "\"media\"",
 ]);
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "index < slots.Count - 1 && overrides is not null",
   "embedded inherited values must apply ancestor overrides only, so reset restores the selected child Variant",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassReferences.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassReferences.cs",
   "return GetComponentVariantReferenceOptionsByType(projectId, componentType);",
   "embedded Component Variant selectors must store full Component Variant references, not short Variant ids",
 );
@@ -6682,7 +6682,7 @@ assertContains(
   "audio badge preview must resolve the selected Badge Variant",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.IconThemes.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.IconThemes.cs",
   "ResolveIconTokenAssetPath",
   "icon tokens must never resolve through the first Icon Set in a project",
 );
@@ -6749,7 +6749,7 @@ assertContains(
   "first component class selection must prefer the protected Default Variant",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClassVariants.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClassVariants.cs",
   "Component variants can only be saved from an active selected variant.",
   "component variant saving must reject ambiguous parent component class configs",
 );
@@ -6793,22 +6793,22 @@ assertContains(
   "component field service must support Component Variants as editable data contexts",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "CreateComponentVariantFieldValue",
   "Component Variant fields must read from Variant config",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "UpdateComponentVariantField",
   "Component Variant fields must write to Variant config",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
   "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 3)",
   "theme status bar references must target concrete Component Variants",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+  "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
   "ProjectTreeNodeKind.ComponentVariant, ReadString(reader, 4)",
   "theme navigation bar references must target concrete Component Variants",
 );
@@ -6835,7 +6835,7 @@ assertDoesNotContain(
   "motion parser must not accept legacy transition keys",
 );
 assertDoesNotContain(
-  "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
   "motion.Remove(\"opacity\")",
   "component config normalization must not migrate legacy motion opacity",
 );
@@ -6845,7 +6845,7 @@ for (const legacyMediaIconBarSlot of [
   "\"bottomIconBarSlot\"",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/Data/SpikeDatabase.ComponentClasses.cs",
+    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ComponentClasses.cs",
     legacyMediaIconBarSlot,
     `media icon bars must use explicit inline/fullscreen slots, not legacy ${legacyMediaIconBarSlot}`,
   );
@@ -6945,7 +6945,7 @@ assertContains(
   "finite collection-item actions must be able to extend module duration through their declarative contract",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "group.Sum((instance) => instance.DurationFrames)",
   "cut-only Shot duration must remain the sum of its ordered module-instance durations",
 );
@@ -7843,7 +7843,7 @@ assertContains(
   "explicit Screen duration must be resolved by the shared module-instance timeline",
 );
 assertContains(
-  "src/Mockups.Desktop/Data/SpikeDatabase.RuntimeInputContracts.cs",
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.RuntimeInputContracts.cs",
   "RuntimeDurationContract.Policy(contract) == RuntimeDurationPolicy.Explicit",
   "timeline synchronization must preserve explicitly authored Screen durations",
 );
@@ -10266,7 +10266,7 @@ function assertStructuredTextBoxIconRowsAreCanonical() {
     "Component Variant Slot must be registered through the shared dictionary",
   );
   assertContains(
-    "src/Mockups.Desktop/Data/ReferenceUsageService.cs",
+    "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
     "input.ValueKind == ValueKind.ComponentVariantSlot",
     "Usage must retain generic exact references and Overrides for Component Variant Slot values",
   );
@@ -10530,7 +10530,7 @@ function assertListItemRuntimePresentationIsGeneric() {
     "fixed Runtime collections must fail instead of hiding surplus items",
   );
   assertContains(
-    "src/Mockups.Desktop/Data/ComponentClassRepository.cs",
+    "src/Mockups.Persistence.Sqlite/ComponentClassRepository.cs",
     "DesignPreviewTestValues.ValidateFixedCollectionCounts",
     "Component persistence must validate fixed Runtime collection counts on reads and writes",
   );

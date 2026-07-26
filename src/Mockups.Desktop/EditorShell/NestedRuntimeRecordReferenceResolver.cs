@@ -98,7 +98,7 @@ internal sealed class NestedRuntimeRecordReferenceResolver
 
         ResolveDeclaredValues(
             values,
-            ComponentPreviewInputSession.ReadRuntimeInputs(values, new JsonObject()),
+            RuntimeInputDefinitionReader.ReadInputs(values, new JsonObject()),
             themeMode,
             paletteColors);
     }

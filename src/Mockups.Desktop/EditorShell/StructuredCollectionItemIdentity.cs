@@ -79,7 +79,7 @@ internal static class StructuredCollectionItemIdentity
         JsonObject runtimeContract,
         Dictionary<string, string> mappings)
     {
-        foreach (var input in ComponentPreviewInputSession.ReadRuntimeInputs(
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(
                      runtimeContract,
                      new JsonObject()))
         {
@@ -88,7 +88,7 @@ internal static class StructuredCollectionItemIdentity
                 RebaseCollectionItems(runtimeContract, structuredCollection, mappings);
             }
         }
-        foreach (var collection in ComponentPreviewInputSession.ReadRuntimeCollections(
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimeContract,
                      new JsonObject(),
                      includeHidden: true))

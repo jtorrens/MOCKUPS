@@ -549,7 +549,7 @@ export function createModuleScaffoldPlan(
         violations.push(`Focused test '${owner.path}' must be under tests/animation.`);
       }
     } else if (owner.role === "desktopConfigContract") {
-      if (!owner.path.startsWith("src/Mockups.Desktop/Data/")
+      if (!owner.path.startsWith("src/Mockups.Persistence.Sqlite/")
           || !owner.path.endsWith("ModuleConfigContract.cs")) {
         violations.push(`Desktop config owner '${owner.path}' has an invalid route.`);
       }
@@ -793,7 +793,7 @@ export function moduleOwnerTargets(spec: ModuleScaffoldSpec) {
     {
       role: "desktopConfigContract" as const,
       label: "desktop config contract",
-      path: `src/Mockups.Desktop/Data/${typeName}ModuleConfigContract.cs`,
+      path: `src/Mockups.Persistence.Sqlite/${typeName}ModuleConfigContract.cs`,
       requiredTerm: `${typeName}ModuleConfigContract`,
     },
     {

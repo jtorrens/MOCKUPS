@@ -178,8 +178,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var preview = RuntimeInputForwardingContract.EffectivePreview(
             _applyTransientTestValues(owner.Node, persistedPreview),
             config);
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
-        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
         var actions = ComponentPreviewActions.ReadWithEmbedded(
             preview,
             _previewInputData.ComponentVariantRuntimeContract);
@@ -287,8 +287,8 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var current = _applyTransientTestValues(owner.Node, DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
                 var baseline = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-                var currentInputs = ComponentPreviewInputSession.ReadRuntimeInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
-                var currentCollections = ComponentPreviewInputSession.ReadRuntimeCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
+                var currentInputs = RuntimeInputDefinitionReader.ReadInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
+                var currentCollections = RuntimeInputDefinitionReader.ReadCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
                 var currentDifferences = DesignPreviewTestValues.Differences(current, baseline, currentInputs, currentCollections);
                 saveDefaults.IsEnabled = currentDifferences.Count > 0;
                 ToolTip.SetTip(saveDefaults, currentDifferences.Count == 0
@@ -857,10 +857,10 @@ internal sealed class RuntimeInputsCollectionEditor
             item,
             runtimeContractJsonKey,
             $"Runtime collection '{collection.Id}' item '{itemId}'");
-        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(
+        var runtimeInputs = RuntimeInputDefinitionReader.ReadInputs(
             runtimeContract,
             new JsonObject());
-        var runtimeCollections = ComponentPreviewInputSession.ReadRuntimeCollections(
+        var runtimeCollections = RuntimeInputDefinitionReader.ReadCollections(
             runtimeContract,
             new JsonObject());
         var hiddenInputIds = (collection.ItemRuntimeHiddenInputIds ?? [])
@@ -1133,7 +1133,7 @@ internal sealed class RuntimeInputsCollectionEditor
             item,
             RuntimeContractJsonKey(collection),
             $"Runtime collection '{collection.Id}' embedded item");
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(
                 runtimeContract,
                 new JsonObject())
             .Where((input) => IsVisibleRuntimeValue(owner, input))
@@ -1558,7 +1558,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var componentConfig = string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
                 ? _previewInputData.ComponentVariantConfig(componentVariantReference)
                 : new JsonObject();
-            nestedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(itemRuntimeContract, componentConfig).ToList();
+            nestedInputs = RuntimeInputDefinitionReader.ReadInputs(itemRuntimeContract, componentConfig).ToList();
             var nestedActions = actions.Where((action) =>
                     action.IsCollectionItemAction
                     && action.CollectionJsonKey == collection.JsonKey

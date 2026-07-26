@@ -608,7 +608,7 @@ static void RuntimeInputDefinitionReadersAreStrict()
         ["inputs"] = new JsonArray(input),
     };
 
-    var valid = ComponentPreviewInputSession.ReadRuntimeInputs(Preview(Input()), new JsonObject()).Single();
+    var valid = RuntimeInputDefinitionReader.ReadInputs(Preview(Input()), new JsonObject()).Single();
     Equal(ComponentInputSource.Runtime, valid.Source);
     Equal(ComponentInputUiOrigin.Self, valid.UiOrigin);
     var dynamic = Input();
@@ -623,37 +623,37 @@ static void RuntimeInputDefinitionReadersAreStrict()
     Equal("id", dynamicDefinition.OptionsSourceValueJsonKey);
     Equal("name", dynamicDefinition.OptionsSourceLabelJsonKey);
     Equal("Default", dynamicDefinition.OptionsSourceFirstItemBadge);
-    Equal(0, ComponentPreviewInputSession.ReadRuntimeInputs(new JsonObject(), new JsonObject()).Count);
+    Equal(0, RuntimeInputDefinitionReader.ReadInputs(new JsonObject(), new JsonObject()).Count);
 
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         new JsonObject { ["inputs"] = new JsonObject() },
         new JsonObject()));
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(JsonValue.Create("invalid")),
         new JsonObject()));
     var missingId = Input();
     missingId.Remove("id");
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(missingId),
         new JsonObject()));
     var unknownSource = Input();
     unknownSource["source"] = "automatic";
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(unknownSource),
         new JsonObject()));
     var unknownOrigin = Input();
     unknownOrigin["uiOrigin"] = "automatic";
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(unknownOrigin),
         new JsonObject()));
     var wrongOptionsRoot = Input();
     wrongOptionsRoot["options"] = new JsonObject();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(wrongOptionsRoot),
         new JsonObject()));
     var filteredOption = Input();
     filteredOption["options"] = new JsonArray(JsonValue.Create("invalid"));
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(filteredOption),
         new JsonObject()));
     var duplicateOptions = Input();
@@ -662,33 +662,33 @@ static void RuntimeInputDefinitionReadersAreStrict()
         new JsonObject { ["value"] = "same", ["label"] = "One" },
         new JsonObject { ["value"] = "same", ["label"] = "Two" },
     };
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(duplicateOptions),
         new JsonObject()));
     var invalidList = Input();
     invalidList["allowEmptyWhenItemValues"] = new JsonArray("valid", 4);
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(invalidList),
         new JsonObject()));
     var incompleteVisibility = Input();
     incompleteVisibility["visibleWhenPath"] = "mode";
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(incompleteVisibility),
         new JsonObject()));
     var invalidAnimation = Input();
     invalidAnimation["animatable"] = "true";
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(invalidAnimation),
         new JsonObject()));
     var invalidTimeline = Input();
     invalidTimeline["animatable"] = true;
     invalidTimeline["animationTimeline"] = new JsonArray();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(invalidTimeline),
         new JsonObject()));
     var invalidTransition = Input();
     invalidTransition["transition"] = new JsonArray();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeInputs(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadInputs(
         Preview(invalidTransition),
         new JsonObject()));
 
@@ -708,33 +708,33 @@ static void RuntimeInputDefinitionReadersAreStrict()
 
     Equal(
         "items",
-        ComponentPreviewInputSession.ReadRuntimeCollections(
+        RuntimeInputDefinitionReader.ReadCollections(
             CollectionPreview(Collection()),
             new JsonObject()).Single().Id);
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         new JsonObject { ["collections"] = new JsonObject() },
         new JsonObject()));
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(JsonValue.Create("invalid")),
         new JsonObject()));
     var missingItemLabel = Collection();
     missingItemLabel.Remove("itemLabel");
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(missingItemLabel),
         new JsonObject()));
     var wrongFieldsRoot = Collection();
     wrongFieldsRoot["fields"] = new JsonObject();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(wrongFieldsRoot),
         new JsonObject()));
     var filteredField = Collection();
     filteredField["fields"] = new JsonArray(JsonValue.Create("invalid"));
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(filteredField),
         new JsonObject()));
     var wrongComponentItems = Collection();
     wrongComponentItems["componentItems"] = new JsonArray();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(wrongComponentItems),
         new JsonObject()));
     var incompleteComponentItems = Collection();
@@ -742,12 +742,12 @@ static void RuntimeInputDefinitionReadersAreStrict()
     {
         ["variantReferenceJsonKey"] = "variantReference",
     };
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(incompleteComponentItems),
         new JsonObject()));
     var nullComponentItems = Collection();
     nullComponentItems["componentItems"] = null;
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(nullComponentItems),
         new JsonObject()));
     static JsonObject ComponentField() => new()
@@ -771,12 +771,12 @@ static void RuntimeInputDefinitionReadersAreStrict()
     validComponentCollection["componentItems"] = ComponentItems();
     Equal(
         "variantReference",
-        ComponentPreviewInputSession.ReadRuntimeCollections(
+        RuntimeInputDefinitionReader.ReadCollections(
             CollectionPreview(validComponentCollection),
             new JsonObject()).Single().ComponentItems?.VariantReferenceJsonKey ?? "");
     var missingComponentField = Collection();
     missingComponentField["componentItems"] = ComponentItems();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(missingComponentField),
         new JsonObject()));
     var wrongComponentField = ComponentField();
@@ -785,7 +785,7 @@ static void RuntimeInputDefinitionReadersAreStrict()
     var wrongComponentFieldCollection = Collection();
     wrongComponentFieldCollection["fields"] = new JsonArray(wrongComponentField);
     wrongComponentFieldCollection["componentItems"] = ComponentItems();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(wrongComponentFieldCollection),
         new JsonObject()));
     var overlappingComponentKeys = ComponentItems();
@@ -793,12 +793,12 @@ static void RuntimeInputDefinitionReadersAreStrict()
     var overlappingComponentCollection = Collection();
     overlappingComponentCollection["fields"] = new JsonArray(ComponentField());
     overlappingComponentCollection["componentItems"] = overlappingComponentKeys;
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(overlappingComponentCollection),
         new JsonObject()));
     var wrongPresentation = Collection();
     wrongPresentation["itemPresentation"] = new JsonArray();
-    Throws<InvalidOperationException>(() => ComponentPreviewInputSession.ReadRuntimeCollections(
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(wrongPresentation),
         new JsonObject()));
 }
@@ -2536,7 +2536,7 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         avatarRuntime,
         "runtimeInputs",
         "Incoming Call Avatar Runtime");
-    var avatarDefinitions = ComponentPreviewInputSession.ReadRuntimeInputs(
+    var avatarDefinitions = RuntimeInputDefinitionReader.ReadInputs(
         avatarInputs,
         new JsonObject());
     SequenceEqual(
@@ -3347,7 +3347,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             }
             var listSettings = database.GetComponentClassSettings(
                 "component_project_foqn_s2_list");
-            var listCollectionDefinition = ComponentPreviewInputSession.ReadRuntimeCollections(
+            var listCollectionDefinition = RuntimeInputDefinitionReader.ReadCollections(
                     listPreview,
                     JsonPath.ParseRequiredObject(listSettings.ConfigJson, "List config"))
                 .Single((collection) => collection.Id == "items");
@@ -8419,7 +8419,7 @@ static void ConversationMessageActorsFollowDirectionContract()
 
         var moduleVariant = database.GetModuleInstanceVariantSettings(screen.Id);
         var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
-        var messageCollection = ComponentPreviewInputSession.ReadRuntimeCollections(
+        var messageCollection = RuntimeInputDefinitionReader.ReadCollections(
             runtimePreview,
             JsonPath.ParseRequiredObject(moduleVariant.ConfigJson, "Conversation Variant config"))
             .Single((collection) => collection.Id == "messages");
@@ -8758,7 +8758,7 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
         var effective = RuntimeInputForwardingContract.EffectivePreview(preview, config);
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(effective, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         var forwarded = inputs.Single((input) =>
             input.Id == "forwarded.component.textInput.textBox.inputs.sampleText");
         Equal("Text", forwarded.Label);
@@ -8882,9 +8882,9 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var effective = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
-        var forwardedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(effective, config);
+        var forwardedInputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         Equal(0, forwardedInputs.Count((input) => input.Label is "Hora" or "Subtext" or "Password" or "Attempt"));
-        var collections = ComponentPreviewInputSession.ReadRuntimeCollections(effective, config);
+        var collections = RuntimeInputDefinitionReader.ReadCollections(effective, config);
         var slots = collections.Single((collection) => collection.Id == "stackStates");
         var stateInputs = collections.Single((collection) => collection.Id == "stackStateInputs");
         var stateSelection = slots.Fields.Single((input) => input.Id == "runtimeStateId");
@@ -8905,7 +8905,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             item["variantReference"]?.GetValue<string>()?.Contains("_password::variant::", StringComparison.Ordinal) == true);
         var passwordContract = passwordState["inputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing projected Password State runtime contract.");
-        var passwordInputs = ComponentPreviewInputSession.ReadRuntimeInputs(passwordContract, new JsonObject());
+        var passwordInputs = RuntimeInputDefinitionReader.ReadInputs(passwordContract, new JsonObject());
         var passwordTrigger = passwordInputs.Single((input) => input.Label == "Enter password" && input.ActionOnly);
         var passwordFrame = passwordInputs.Single((input) => input.Label == "Entry frame" && input.ActionOnly);
         var passwordTiming = passwordInputs.Single((input) => input.Label == "Entry timing");
@@ -10543,7 +10543,7 @@ static void ComponentStackSeedOpensAndRenders()
         Equal(0, stackConfig.Count);
         var designPreview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject ?? throw new InvalidOperationException("Missing Component Stack Runtime Inputs.");
         True(designPreview["items"] is JsonArray);
-        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(designPreview, config);
+        var runtimeInputs = RuntimeInputDefinitionReader.ReadInputs(designPreview, config);
         SequenceEqual(["sizingMode", "startGapToken", "endGapToken"], runtimeInputs.Select((input) => input.Id).ToList());
         Equal("fill", runtimeInputs[0].DefaultValue);
         Equal("theme.spacing.none", runtimeInputs[1].DefaultValue);
@@ -10552,7 +10552,7 @@ static void ComponentStackSeedOpensAndRenders()
         var slotCollection = collections.OfType<JsonObject>().Single();
         Equal("items", slotCollection["jsonKey"]?.GetValue<string>() ?? "");
         Equal(false, slotCollection["animationTimeline"]?["sequenceItems"]?.GetValue<bool>() ?? true);
-        var runtimeCollection = ComponentPreviewInputSession.ReadRuntimeCollections(designPreview, config).Single();
+        var runtimeCollection = RuntimeInputDefinitionReader.ReadCollections(designPreview, config).Single();
         var alternatives = runtimeCollection.Fields.Single((field) => field.Id == "alternatives").StructuredCollection
             ?? throw new InvalidOperationException("Missing Component Stack state collection contract.");
         True(runtimeCollection.Fields.All((field) => field.Id != "alignment"));
@@ -10789,7 +10789,7 @@ static void CollectionStackSeedOpensAndRenders()
         Equal(0, (config["collectionStack"] as JsonObject)?.Count ?? -1);
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Collection Stack preview.");
-        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var runtimeInputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         SequenceEqual(
             ["distributionMode", "sizingMode", "startGapToken", "endGapToken", "stackDirection", "stackOffsetToken", "itemSizingMode", "scaleRatio", "opacityRatio"],
             runtimeInputs.Select((input) => input.Id).ToList());
@@ -10800,7 +10800,7 @@ static void CollectionStackSeedOpensAndRenders()
         Equal("stacked", runtimeInputs.Single((input) => input.Id == "opacityRatio").EnabledWhenValue);
         Equal("stacked", preview["distributionMode"]?.GetValue<string>() ?? "");
         Equal("content", preview["sizingMode"]?.GetValue<string>() ?? "");
-        var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Single();
+        var collection = RuntimeInputDefinitionReader.ReadCollections(preview, config).Single();
         Equal("items", collection.JsonKey);
         Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "variantReference").ComponentType);
 
@@ -11105,7 +11105,7 @@ static void KeypadSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Keypad preview.");
         SequenceEqual(
             ["availableWidth", "activeKey", "pushedKey", "enabled"],
-            ComponentPreviewInputSession.ReadRuntimeInputs(preview, config).Select((input) => input.Id).ToList());
+            RuntimeInputDefinitionReader.ReadInputs(preview, config).Select((input) => input.Id).ToList());
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));
@@ -11154,7 +11154,7 @@ static void PasswordSeedOpensAndRenders()
             ?? throw new InvalidOperationException("Missing Password config.");
         var preview = JsonNode.Parse(settings.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Password preview.");
-        var runtimeInputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var runtimeInputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         SequenceEqual(
             ["initialText", "correctText", "incorrectText", "expectedPassword", "attemptPassword", "enabled", "entryTiming", "entryTrigger", "entryFrame"],
             runtimeInputs.Select((input) => input.Id).ToList());
@@ -11325,13 +11325,13 @@ static void LockScreenComposesRuntimeStack()
             ?? throw new InvalidOperationException("Missing Lock Screen Runtime Inputs.");
         Equal("explicit", preview["animationTimeline"]?["durationPolicy"]?.GetValue<string>() ?? "");
         Equal(240, preview["animationTimeline"]?["defaultDurationFrames"]?.GetValue<int>() ?? 0);
-        var inputs = ComponentPreviewInputSession.ReadRuntimeInputs(preview, config);
+        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         SequenceEqual(
             ["actor", "showStatusBar", "showNavigationBar"],
             inputs.Take(3).Select((input) => input.Id).ToList());
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showStatusBar")));
         Equal("true", DesignPreviewTestValues.Value(preview, inputs.Single((input) => input.Id == "showNavigationBar")));
-        Equal(0, ComponentPreviewInputSession.ReadRuntimeCollections(preview, config).Count);
+        Equal(0, RuntimeInputDefinitionReader.ReadCollections(preview, config).Count);
         var stackInputs = lockScreen["stackInputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen Stack bindings.");
         Equal("fill", stackInputs["sizingMode"]?.GetValue<string>() ?? "");
@@ -11531,7 +11531,7 @@ static void LockScreenComposesRuntimeStack()
         populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
         var populatedPreview = JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject();
         var populatedConfig = JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject();
-        var populatedCollections = ComponentPreviewInputSession.ReadRuntimeCollections(populatedPreview, populatedConfig);
+        var populatedCollections = RuntimeInputDefinitionReader.ReadCollections(populatedPreview, populatedConfig);
         var populatedStateInputs = populatedCollections.Single((collection) => collection.Id == "stackStateInputs");
         var populatedStateItems = DesignPreviewTestValues.CollectionItems(populatedPreview, populatedStateInputs)
             .Select((item) => item.DeepClone() as JsonObject ?? new JsonObject())
@@ -11539,7 +11539,7 @@ static void LockScreenComposesRuntimeStack()
         var populatedState = populatedStateItems.Single((item) => item["id"]?.GetValue<string>() == "lock_screen_label_default");
         var populatedStateContract = populatedState["inputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing populated State runtime contract.");
-        var populatedInputs = ComponentPreviewInputSession.ReadRuntimeInputs(populatedStateContract, new JsonObject());
+        var populatedInputs = RuntimeInputDefinitionReader.ReadInputs(populatedStateContract, new JsonObject());
         var forwardedSubtitle = populatedInputs.Single((input) => input.Label == "Lock subtitle");
         populatedStateContract[forwardedSubtitle.JsonKey] = "Forwarded subtitle";
         populatedSession.SetExternalCollectionItems(
@@ -11579,7 +11579,7 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
           {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","valueKind":"OptionToken","defaultValue":"none"}
         ],"itemPresentation":{"titleFieldId":"name","firstItemBadge":"Initial","subtitleFieldIds":["direction","text"],"subtitleMaxCharacters":24,"iconFieldId":"mediaType","fallbackIcon":"message","iconValueMap":{"image":"image"}}}]}
         """);
-    var collection = ComponentPreviewInputSession.ReadRuntimeCollections(preview, new JsonObject()).Single();
+    var collection = RuntimeInputDefinitionReader.ReadCollections(preview, new JsonObject()).Single();
     var presentation = RuntimeCollectionItemPresentation.Resolve(
         collection,
         Object("""{"name":"Welcome","direction":"incoming","text":"A message with enough words to be abbreviated","mediaType":"image"}"""),
