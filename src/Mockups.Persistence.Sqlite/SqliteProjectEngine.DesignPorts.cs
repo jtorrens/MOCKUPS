@@ -20,4 +20,22 @@ internal sealed partial class SqliteProjectEngine
         string appId,
         string fieldId) =>
         _designOwner.GetAppMetadataFieldValue(appId, fieldId);
+
+    public ModuleSettings GetModuleSettings(string moduleId) =>
+        _designOwner.GetModuleSettings(moduleId);
+
+    public void UpdateModuleDesignPreviewJson(
+        string moduleId,
+        string designPreviewJson) =>
+        _designOwner.UpdateModuleDesignPreviewJson(
+            moduleId,
+            designPreviewJson);
+
+    public AppSettings GetModuleAppSettings(string moduleId) =>
+        _designOwner.GetModuleAppSettings(moduleId);
+
+    public string GetModuleConfigFieldValue(
+        string moduleId,
+        string fieldId) =>
+        _designOwner.GetModuleConfigFieldValue(moduleId, fieldId);
 }

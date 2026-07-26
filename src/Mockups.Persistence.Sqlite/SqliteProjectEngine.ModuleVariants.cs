@@ -360,7 +360,7 @@ internal sealed partial class SqliteProjectEngine
     }
 
     public string GetModuleVariantConfigFieldValue(ProjectTreeNode node, string fieldId) =>
-        ModuleConfigFieldValue(
+        SqliteDesignOwner.ModuleConfigFieldValue(
             GetModuleVariantSettings(node).RecordClassId,
             GetModuleVariantSettings(node).ConfigJson,
             fieldId);

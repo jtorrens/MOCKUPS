@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -48,4 +49,10 @@ internal sealed partial class SqliteProductionOwner :
     private object WriteGate => _context.WriteGate;
 
     private SqliteConnection OpenConnection() => _context.OpenConnection();
+
+    private static string SlugOrName(
+        string slug,
+        string name,
+        string fallback) =>
+        SlugText.LowerSnakeOrName(slug, name, fallback);
 }

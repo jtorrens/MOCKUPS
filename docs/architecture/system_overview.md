@@ -149,11 +149,14 @@ contracts shared by composition and their exact implementation owner.
 editor-layout repositories. `SqliteDesignOwner` is their only production
 constructor; the aggregate can use only the owner's focused contract
 properties. App configuration and metadata reads and edits already execute
-inside this owner; Module and Component behavior remain the next Design cut.
+inside this owner. Module definition reads and strict configuration projection
+also execute there; Module writes and Component behavior remain the next
+Design cut.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining
-Screen and timeline operations are the next extraction boundary.
+Shot settings and render identity reads also execute there. Shot edits, Screen
+and timeline operations are the next Production extraction boundary.
 `Mockups.Persistence.Sqlite.Resources` owns Actor, Device, Palette, Theme,
 Production Font and Icon Theme repositories and their resource-specific field,
 asset and token behavior. Resource behavior that needs Production context
