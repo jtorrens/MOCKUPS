@@ -485,7 +485,12 @@ public partial class MainWindow : SukiWindow
             transaction?.Checkpoint("after-navigation-swap");
         }
         ApplyUiTextScale();
-        _previewController.ScheduleSelectionRefresh();
+        var revision = transition.Current.Revision;
+        var selectedNodeId = node.Id;
+        _previewController.ScheduleSelectionRefresh(() =>
+            _workspaceCoordinator.IsCurrent(
+                revision,
+                selectedNodeId));
     }
 
     private void RefreshPreviewAuthoringSurface(ProjectTreeNode node)

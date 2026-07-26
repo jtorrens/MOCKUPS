@@ -144,6 +144,18 @@ test("Application can see Domain but has no UI or persistence package capabiliti
   assert.deepEqual(application.Items.PackageReference, []);
 });
 
+test("workspace coordinator tests compile against Application alone", () => {
+  const tests = evaluate(
+    "tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj",
+  );
+  assert.deepEqual(
+    tests.Items.ProjectReference.map((item) =>
+      repositoryPath(item.FullPath ?? item.Identity)),
+    ["src/Mockups.Application/Mockups.Application.csproj"],
+  );
+  assert.deepEqual(tests.Items.PackageReference, []);
+});
+
 test("Persistence can see Application and Domain but has no UI package capabilities", () => {
   const persistence = evaluate(
     "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",

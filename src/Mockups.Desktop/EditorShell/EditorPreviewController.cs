@@ -1177,13 +1177,17 @@ internal sealed class EditorPreviewController
             ("id", selected.Id));
     }
 
-    public void ScheduleSelectionRefresh()
+    public void ScheduleSelectionRefresh(Func<bool>? isCurrent = null)
     {
         var generation = Interlocked.Increment(ref _selectionRefreshGeneration);
         Dispatcher.UIThread.Post(
             () =>
             {
                 if (generation != Volatile.Read(ref _selectionRefreshGeneration))
+                {
+                    return;
+                }
+                if (isCurrent is not null && !isCurrent())
                 {
                     return;
                 }

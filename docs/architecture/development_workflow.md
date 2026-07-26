@@ -26,7 +26,8 @@ Every semantic rule has one owner:
 - Component/Module composition: its resolver and renderable;
 - cross-domain context: typed data source or service;
 - final painting: generic renderer;
-- shell composition: `MainWindow`.
+- workspace session state and transitions: `EditorWorkspaceCoordinator`;
+- shell visual composition: `MainWindow`.
 
 Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the owner when behavior is

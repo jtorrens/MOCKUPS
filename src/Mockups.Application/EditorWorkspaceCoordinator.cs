@@ -99,13 +99,25 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
     {
         var operation = BeginTreeLoad(State.Workspace, intent);
-        var roots = _navigation.LoadProjectTree();
-        if (!TryCommitTreeLoad(operation, roots, source, out var transition))
+        try
         {
-            throw new InvalidOperationException(
-                "The synchronous tree load became obsolete before it could commit.");
+            var roots = _navigation.LoadProjectTree();
+            if (!TryCommitTreeLoad(
+                    operation,
+                    roots,
+                    source,
+                    out var transition))
+            {
+                throw new InvalidOperationException(
+                    "The synchronous tree load became obsolete before it could commit.");
+            }
+            return transition;
         }
-        return transition;
+        catch
+        {
+            AbandonTreeLoad(operation);
+            throw;
+        }
     }
 
     public EditorSessionTransition SwitchWorkspace(
@@ -120,13 +132,25 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         var operation = BeginTreeLoad(
             workspace,
             EditorTreeLoadIntent.Workspace);
-        var roots = _navigation.LoadProjectTree();
-        if (!TryCommitTreeLoad(operation, roots, source, out var transition))
+        try
         {
-            throw new InvalidOperationException(
-                "The synchronous workspace load became obsolete before it could commit.");
+            var roots = _navigation.LoadProjectTree();
+            if (!TryCommitTreeLoad(
+                    operation,
+                    roots,
+                    source,
+                    out var transition))
+            {
+                throw new InvalidOperationException(
+                    "The synchronous workspace load became obsolete before it could commit.");
+            }
+            return transition;
         }
-        return transition;
+        catch
+        {
+            AbandonTreeLoad(operation);
+            throw;
+        }
     }
 
     public EditorTreeLoadOperation BeginTreeLoad(
@@ -602,6 +626,17 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         _activeTreeLoad.Cancellation.Cancel();
         _activeTreeLoad.Cancellation.Dispose();
         _activeTreeLoad = null;
+    }
+
+    private void AbandonTreeLoad(EditorTreeLoadOperation operation)
+    {
+        lock (_stateGate)
+        {
+            if (ReferenceEquals(_activeTreeLoad, operation))
+            {
+                InvalidateActiveTreeLoad();
+            }
+        }
     }
 
     private void ThrowIfDisposed()

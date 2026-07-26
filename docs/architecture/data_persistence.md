@@ -42,6 +42,10 @@ SQLite production code lives in the independent
 only to Application and Domain; UI packages are unavailable to that assembly.
 The current Desktop host still composes the transitional compatibility facade,
 but SQL packages and source files are no longer part of the Desktop assembly.
+Workspace coordination consumes the facade only through
+`IEditorNavigationDataSource`. The SQLite assembly implements that narrow
+read boundary; neither `EditorWorkspaceCoordinator` nor its state contract can
+compile a SQLite reference.
 
 Focused repositories own table SQL, row mapping and prepared complete writes:
 

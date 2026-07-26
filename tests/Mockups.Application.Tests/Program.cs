@@ -10,6 +10,7 @@ var tests = new (string Name, Action Run)[]
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
     ("a selection transition invalidates an in-flight tree result", SelectionInvalidatesInFlightLoad),
+    ("a failed tree read leaves the prior session state current", FailedTreeReadLeavesStateCurrent),
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
 };
 
@@ -202,6 +203,22 @@ static void SelectionInvalidatesInFlightLoad()
         coordinator.State.SelectedNode?.Id);
 }
 
+static void FailedTreeReadLeavesStateCurrent()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    var previous = coordinator.State;
+    source.Failure = new InvalidOperationException("read failed");
+
+    Throws<InvalidOperationException>(() => coordinator.ReloadTree());
+
+    Equal(previous, coordinator.State);
+    source.Failure = null;
+    coordinator.ReloadTree();
+    True(coordinator.State.Revision > previous.Revision);
+}
+
 static void SessionRevisionGuardsOwner()
 {
     var source = new MutableNavigationDataSource(CreateTree());
@@ -314,10 +331,27 @@ static void Equal<T>(T expected, T actual)
     }
 }
 
+static void Throws<TException>(Action action)
+    where TException : Exception
+{
+    try
+    {
+        action();
+    }
+    catch (TException)
+    {
+        return;
+    }
+    throw new InvalidOperationException(
+        $"Expected {typeof(TException).Name}.");
+}
+
 internal sealed class MutableNavigationDataSource(
     IReadOnlyList<ProjectTreeNode> tree) : IEditorNavigationDataSource
 {
     public IReadOnlyList<ProjectTreeNode> Tree { get; set; } = tree;
+    public Exception? Failure { get; set; }
 
-    public IReadOnlyList<ProjectTreeNode> LoadProjectTree() => Tree;
+    public IReadOnlyList<ProjectTreeNode> LoadProjectTree() =>
+        Failure is null ? Tree : throw Failure;
 }

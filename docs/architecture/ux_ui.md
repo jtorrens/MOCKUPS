@@ -23,8 +23,11 @@ The desktop shell has:
 2. contextual editor;
 3. Preview and Preview authoring.
 
-`MainWindow` owns only this composition and generic orchestration. Each editor
-owns its domain fields and collections.
+`EditorWorkspaceCoordinator` owns the immutable session snapshot and decides
+tree refresh, workspace, Production, root selection, embedded context and
+revision transitions. `MainWindow` owns only visual composition, event wiring
+and application of those transitions to navigation, editor and Preview hosts.
+Each editor owns its domain fields and collections.
 
 Responsive behavior protects the current task:
 

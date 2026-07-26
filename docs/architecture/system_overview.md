@@ -125,9 +125,13 @@ consume Domain, but Domain cannot see Avalonia, SQLite, Preview runtime or the
 desktop assembly. Each later extraction must preserve that direction and add
 its exact allowed edge to the project-boundary test.
 
-`Mockups.Application` owns UI-independent application contracts and DTOs. It
-may reference Domain and has no package capabilities. In particular, its
-project cannot compile a reference to Avalonia or `Microsoft.Data.Sqlite`.
+`Mockups.Application` owns UI-independent application contracts, DTOs and the
+window-session transition owner. `EditorWorkspaceCoordinator` consumes only
+`IEditorNavigationDataSource` and publishes immutable `EditorSessionState`
+snapshots and explicit effects for workspace, Production, navigation, editor
+and Preview changes. Application may reference Domain and has no package
+capabilities. In particular, its project cannot compile a reference to
+Avalonia or `Microsoft.Data.Sqlite`.
 
 `Mockups.Persistence.Sqlite` owns the SQLite context, focused repository
 implementations, table mapping and the transitional `SpikeDatabase`
@@ -137,8 +141,9 @@ reference Avalonia or Desktop.
 
 `DesktopCompositionRoot` is the only Desktop owner that opens the current
 SQLite compatibility facade and constructs the non-visual application
-services required by a window session. `MainWindow` receives that composed
-session and does not construct the database context directly.
+services required by a window session, including the workspace coordinator.
+`MainWindow` receives that composed session and does not construct the
+database context directly.
 
 ### SQLite and repositories
 
@@ -154,9 +159,16 @@ crosses domains.
 
 ### Editor shell
 
-`MainWindow` owns window initialization, the three-panel shell, selected tree
-state, workspace switching, generic editor-card composition, Preview host
-wiring, generic modal hosting and session visual state.
+`EditorWorkspaceCoordinator` is the single owner of the loaded tree, current
+workspace, active Production, selected node, embedded editor context, remembered
+workspace and Variant selections, Preview transition revision and obsolete
+tree-load cancellation. Its state and transition tests compile without
+Avalonia or SQLite.
+
+`MainWindow` owns window initialization, the three-panel shell, generic
+editor-card composition, Preview host wiring, generic modal hosting and
+application of coordinator transitions to visual controls. It does not retain
+parallel mutable copies of workspace session state.
 
 Editor-specific fields, collections, persistence rules, asset logic and domain
 dialogs live in their owning editor or shared editor service.

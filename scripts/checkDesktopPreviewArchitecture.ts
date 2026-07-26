@@ -582,8 +582,13 @@ assertContains(
 );
 assertContains(
   "src/Mockups.Desktop/MainWindow.axaml.cs",
-  "_previewController.ScheduleSelectionRefresh();",
-  "the shell must delegate the deferred selection refresh to the Preview controller",
+  "_previewController.ScheduleSelectionRefresh(() =>",
+  "the shell must delegate the deferred selection refresh with its session revision guard",
+);
+assertContains(
+  "src/Mockups.Desktop/MainWindow.axaml.cs",
+  "_workspaceCoordinator.IsCurrent(",
+  "the shell must reject deferred Preview work after a newer session transition",
 );
 assertContains(
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
@@ -1002,7 +1007,7 @@ for (const forbiddenEmbeddedContextDependency of [
   "CommitFieldValue(",
 ]) {
   assertDoesNotContain(
-    "src/Mockups.Desktop/EditorShell/EditorEmbeddedContext.cs",
+    "src/Mockups.Application/EditorEmbeddedContext.cs",
     forbiddenEmbeddedContextDependency,
     `embedded editor context must remain structural and persistence-independent (${forbiddenEmbeddedContextDependency})`,
   );
@@ -1420,7 +1425,7 @@ for (const retiredVariantReferenceHelper of [
   ["src/Mockups.Persistence.Sqlite/SpikeDatabase.ModuleVariants.cs", "ModuleVariantNodeId("],
   ["src/Mockups.Desktop/EditorShell/DictionaryComponentVariantControl.cs", "VariantSeparator"],
   ["src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs", 'IndexOf("::variant::"'],
-  ["src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
+  ["src/Mockups.Application/EditorNodeSelectionState.cs", 'EndsWith("::variant::default"'],
   ["src/Mockups.Desktop/EditorShell/EditorEmbeddedUsageNavigator.cs", 'EndsWith("::variant::default"'],
 ] as const) {
   assertDoesNotContain(
@@ -4240,11 +4245,13 @@ for (const productionDataTreeContract of [
 }
 for (const productionWorkspaceKind of [
   "ProjectTreeNodeKind.ProductionDataRoot",
-  "or ProjectTreeNodeKind.DevicesRoot or ProjectTreeNodeKind.Device",
-  "or ProjectTreeNodeKind.ProductionFontsRoot or ProjectTreeNodeKind.ProductionFont",
+  "ProjectTreeNodeKind.DevicesRoot",
+  "ProjectTreeNodeKind.Device",
+  "ProjectTreeNodeKind.ProductionFontsRoot",
+  "ProjectTreeNodeKind.ProductionFont",
 ]) {
   assertContains(
-    "src/Mockups.Desktop/EditorShell/EditorNavigationMetadata.cs",
+    "src/Mockups.Application/EditorWorkspace.cs",
     productionWorkspaceKind,
     `Production workspace metadata must retain ${productionWorkspaceKind}`,
   );
@@ -6329,7 +6336,7 @@ for (const embeddedVariantField of [
 }
 
 assertContains(
-  "src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs",
+  "src/Mockups.Application/EditorNodeSelectionState.cs",
   "private readonly Dictionary<string, string> _lastComponentVariantNodeIds",
   "Component Variant navigation must remember the last selected Variant per component class",
 );
@@ -6349,8 +6356,8 @@ assertContains(
   "Save Variant must only be offered for a concrete selected Component Variant",
 );
 assertContains(
-  "src/Mockups.Desktop/EditorShell/EditorNodeSelectionState.cs",
-  "VariantReferenceId.HasVariantId(child.Id, VariantEnvelopeContract.DefaultId)",
+  "src/Mockups.Application/EditorNodeSelectionState.cs",
+  "VariantReferenceId.HasVariantId(",
   "first component class selection must prefer the protected Default Variant",
 );
 assertContains(
@@ -7142,7 +7149,7 @@ assertMatches(
 );
 assertContains(
   "src/Mockups.Desktop/MainWindow.axaml.cs",
-  "_collectionCards.CreatePreviewAuthoringSurface(node, _workspace)",
+  "_collectionCards.CreatePreviewAuthoringSurface(",
   "the shell must delegate Design Test Values and Production Screen Payload construction to the shared collection-card factory",
 );
 assertDoesNotContain(
