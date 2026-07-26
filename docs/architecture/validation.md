@@ -129,6 +129,10 @@ npm run test:focus:desktop -- --exact "<desktop test name>"
 npm run test:focus:desktop -- --filter "<stable name fragment>"
 npm run test:guard
 npm run check:architecture
+npm run validate:contracts
+npm run validate:generated
+npm run validate:pipeline
+npm run validate:architecture
 npm run desktop-preview:build
 npm run desktop:build
 npm run desktop:db:validate
@@ -149,10 +153,21 @@ change invalidates it.
 
 ## Architecture enforcement
 
-`scripts/checkDesktopPreviewArchitecture.ts` verifies current boundaries,
-including:
+Architecture validation has focused entrypoints:
 
-- canonical documentation and archive isolation;
+- `validate:contracts` owns canonical normative documentation and archive
+  isolation;
+- `validate:generated` owns Component and Module scaffolding contracts and
+  generated-artifact parity;
+- `validate:pipeline` owns npm and CI orchestration;
+- `validate:architecture` owns the evaluated .NET dependency graph and the
+  remaining Preview, desktop and persistence boundary rules.
+
+`check:architecture` aggregates those owners once. The remaining rules in
+`scripts/checkDesktopPreviewArchitecture.ts` are transitional and must move to
+structural analysis or focused tests as their compiled owners become
+available. They include:
+
 - exact manifest routing and declared dependencies;
 - exhaustive Preview capability and persisted-action agreement;
 - strict Preview payload documents;

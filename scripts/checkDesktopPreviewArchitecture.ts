@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import {
@@ -19,22 +19,29 @@ import {
   approximateTextWidth,
   approximateWrappedTextLines,
 } from "../src/desktop-preview/previewTextHelpers.js";
-import {
-  expectedIntegratedComponentScaffoldArtifacts,
-  loadIntegratedComponentScaffoldSpecs,
-} from "../src/development-scaffolding/componentScaffoldArtifacts.js";
-import {
-  expectedIntegratedModuleScaffoldArtifacts,
-  loadIntegratedModuleScaffoldSpecs,
-} from "../src/development-scaffolding/moduleScaffoldArtifacts.js";
 import { renderableNodeTypes } from "../src/visual/renderable/types.js";
 import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
+import { checkDocumentationContracts } from "./validation/checkDocumentationContracts.js";
+import { checkGeneratedArtifacts } from "./validation/checkGeneratedArtifacts.js";
+import { checkValidationPipeline } from "./validation/checkValidationPipeline.js";
+import {
+  createArchitectureValidationContext,
+  repositoryFileExists as validationRepositoryFileExists,
+} from "./validation/validationContext.js";
 
-const root = process.cwd();
+const validationContext = createArchitectureValidationContext();
+const {
+  root,
+  violations,
+  resolveRepositoryPath,
+  readText,
+  addViolation,
+  assertContains,
+  assertDoesNotContain,
+} = validationContext;
 const previewRoot = path.join(root, "src", "desktop-preview");
 const currentParityDatabasePath = parityDatabasePath(root);
 
-const violations: string[] = [];
 const retiredTimeFields = [
   "fadeFrames",
   "cursorBlinkFrames",
@@ -89,56 +96,30 @@ function relative(filePath: string) {
   return path.relative(root, filePath).replace(/\\/g, "/");
 }
 
-function resolveRepositoryPath(relativePath: string) {
-  if (path.isAbsolute(relativePath) || path.win32.isAbsolute(relativePath)) {
-    throw new Error(`Absolute repository paths are prohibited: ${relativePath}`);
-  }
-  const normalizedPath = path.posix.normalize(relativePath.replace(/\\/g, "/"))
-    .replace(/^(?:\.\/)+/, "");
-  if (!normalizedPath
-      || normalizedPath === ".."
-      || normalizedPath.startsWith("../")) {
-    throw new Error(`Repository path escapes are prohibited: ${relativePath}`);
-  }
-  if (normalizedPath === "docs/old" || normalizedPath.startsWith("docs/old/")) {
-    throw new Error(`Historical archive access is prohibited: ${normalizedPath}`);
-  }
-  const fullPath = path.resolve(root, ...normalizedPath.split("/"));
-  if (fullPath !== root && !fullPath.startsWith(`${root}${path.sep}`)) {
-    throw new Error(`Repository path escapes are prohibited: ${relativePath}`);
-  }
-  return { fullPath, normalizedPath };
-}
-
-function readText(relativePath: string) {
-  const { fullPath } = resolveRepositoryPath(relativePath);
-  return readFileSync(fullPath, "utf8");
-}
-
-function addViolation(filePath: string, message: string) {
-  violations.push(`${filePath}: ${message}`);
-}
-
 function repositoryFileExists(relativePath: string) {
-  try {
-    return existsSync(resolveRepositoryPath(relativePath).fullPath);
-  } catch (error) {
-    addViolation(
-      "scripts/checkDesktopPreviewArchitecture.ts",
-      error instanceof Error ? error.message : `Invalid repository path: ${relativePath}`,
-    );
-    return false;
-  }
+  return validationRepositoryFileExists(validationContext, relativePath);
 }
 
 {
-  const checkerSource = readText("scripts/checkDesktopPreviewArchitecture.ts");
-  const directSyncReads = [...checkerSource.matchAll(/\breadFileSync\s*\(/g)];
+  const checkerPaths = [
+    "scripts/checkDesktopPreviewArchitecture.ts",
+    ...readdirSync(path.join(root, "scripts", "validation"))
+      .filter((entry) => entry.endsWith(".ts"))
+      .map((entry) => `scripts/validation/${entry}`),
+  ];
+  const checkerSources = checkerPaths.map((checkerPath) => ({
+    checkerPath,
+    source: readText(checkerPath),
+  }));
+  const directSyncReads = checkerSources.flatMap(({ checkerPath, source }) =>
+    [...source.matchAll(/\breadFileSync\s*\(/g)].map(() => checkerPath));
   if (directSyncReads.length !== 1
-      || /\bfs\s*\.\s*readFile\s*\(/.test(checkerSource)
-      || /\bfs\s*\.\s*promises\s*\.\s*readFile\s*\(/.test(checkerSource)) {
+      || directSyncReads[0] !== "scripts/validation/validationContext.ts"
+      || checkerSources.some(({ source }) =>
+        /\bfs\s*\.\s*readFile\s*\(/.test(source)
+        || /\bfs\s*\.\s*promises\s*\.\s*readFile\s*\(/.test(source))) {
     addViolation(
-      "scripts/checkDesktopPreviewArchitecture.ts",
+      "scripts/validation/validationContext.ts",
       "all architecture-checker file reads must pass through the guarded readText boundary",
     );
   }
@@ -216,13 +197,6 @@ function assertNoTerms(relativePath: string, terms: string[]) {
   }
 }
 
-function assertContains(relativePath: string, term: string, message: string) {
-  const source = readText(relativePath);
-  if (!source.includes(term)) {
-    addViolation(relativePath, message);
-  }
-}
-
 function assertSourceContains(sourceLabel: string, source: string, term: string, message: string) {
   if (!source.includes(term)) {
     addViolation(sourceLabel, message);
@@ -245,13 +219,6 @@ function assertAnyContains(relativePaths: string[], term: string, message: strin
   }
 }
 
-function assertDoesNotContain(relativePath: string, term: string, message: string) {
-  const source = readText(relativePath);
-  if (source.includes(term)) {
-    addViolation(relativePath, message);
-  }
-}
-
 function assertPackageScriptDoesNotContain(scriptName: string, term: string, message: string) {
   const packageJson = JSON.parse(readText("package.json")) as {
     scripts?: Record<string, string>;
@@ -269,372 +236,10 @@ function assertFilesDoNotContain(files: readonly string[], term: string, message
   }
 }
 
-const canonicalArchitectureDocuments = [
-  "system_overview.md",
-  "data_persistence.md",
-  "design_system.md",
-  "production.md",
-  "editor_dictionary.md",
-  "composition_runtime.md",
-  "animation.md",
-  "preview_rendering.md",
-  "resources_assets.md",
-  "ux_ui.md",
-  "development_workflow.md",
-  "validation.md",
-] as const;
-const canonicalArchitectureEntries = new Set<string>([
-  "README.md",
-  ...canonicalArchitectureDocuments,
-]);
-const architectureDirectory = path.join(root, "docs", "architecture");
-for (const entry of readdirSync(architectureDirectory)) {
-  if (entry === ".DS_Store") continue;
-  if (!canonicalArchitectureEntries.has(entry)) {
-    addViolation(
-      `docs/architecture/${entry}`,
-      "active architecture contains a file or directory outside the canonical set",
-    );
-  }
-}
-for (const document of canonicalArchitectureDocuments) {
-  const relativePath = `docs/architecture/${document}`;
-  if (!existsSync(path.join(root, relativePath))) {
-    addViolation(relativePath, "canonical architecture document is missing");
-    continue;
-  }
-  assertContains(relativePath, "Status: normative.", "canonical architecture document must be normative");
-  assertContains("AGENTS.md", relativePath, `AGENTS must require ${relativePath}`);
-  assertContains(
-    "docs/architecture/README.md",
-    document,
-    `the architecture index must include ${document}`,
-  );
-}
-for (const archiveRuleOwner of ["AGENTS.md", "docs/README.md"]) {
-  assertContains(
-    archiveRuleOwner,
-    "open, search, read, quote, summarize, cite",
-    `${archiveRuleOwner} must prohibit historical archive consultation`,
-  );
-}
-for (const activeMarkdownPath of [
-  "AGENTS.md",
-  "docs/README.md",
-  "docs/architecture/README.md",
-  ...canonicalArchitectureDocuments.map((document) => `docs/architecture/${document}`),
-]) {
-  const source = readText(activeMarkdownPath);
-  for (const match of source.matchAll(/\]\(([^)]+)\)/g)) {
-    const target = match[1] ?? "";
-    if (target.includes("docs/old") || target.includes("../old")) {
-      addViolation(activeMarkdownPath, "active documentation must not link to the historical archive");
-    }
-  }
-}
-
-const packageScripts = (JSON.parse(readText("package.json")) as {
-  scripts?: Record<string, string>;
-}).scripts ?? {};
-const repositoryTestScript = packageScripts["test:repository"] ?? "";
-const desktopBuildIndex = repositoryTestScript.indexOf("npm run desktop:compile");
-const unusedAnalysisIndex = repositoryTestScript.indexOf("npm run check:unused:desktop");
-if (desktopBuildIndex < 0
-  || unusedAnalysisIndex < 0
-  || desktopBuildIndex > unusedAnalysisIndex) {
-  addViolation(
-    "package.json",
-    "the full test gate must build the desktop project before unused-parameter analysis",
-  );
-}
-if (packageScripts.test !== "tsx scripts/runRepositoryValidation.ts") {
-  addViolation(
-    "package.json",
-    "the public repository gate must isolate the staged parity database through its validation owner",
-  );
-}
-for (const requiredTerm of [
-  "git",
-  `["show", \`:\${parityPath}\`]`,
-  "MOCKUPS_VALIDATION_DATABASE",
-  "symlinkSync",
-  "repositoryAssets",
-  `["run", "test:repository"]`,
-  "finally",
-  "rmSync",
-]) {
-  assertContains(
-    "scripts/runRepositoryValidation.ts",
-    requiredTerm,
-    "the validation owner must use a disposable staged parity database and always clean it",
-  );
-}
-for (const group of ["core", "ui", "exhaustive"]) {
-  if (!(packageScripts[`animation:test:desktop:${group}`] ?? "")
-    .includes(`--group ${group}`)
-    || !repositoryTestScript.includes("npm run animation:test")) {
-    addViolation(
-      "package.json",
-      `the complete repository gate must execute the isolated desktop ${group} group`,
-    );
-  }
-}
-if (packageScripts["test:focus:preview"] !== "tsx --test"
-    || !(packageScripts["test:focus:desktop"] ?? "").endsWith(" --")
-    || !(packageScripts["test:focus:desktop"] ?? "").startsWith("dotnet run ")
-    || !(packageScripts["test:guard"] ?? "").includes("npm run check:architecture")) {
-  addViolation(
-    "package.json",
-    "focused Preview and desktop selectors plus the shared architecture guard must remain available",
-  );
-}
-for (const requiredTerm of [
-  `SingleArgumentValue(args, "--group")`,
-  `ArgumentValues(args, "--exact")`,
-  `ArgumentValues(args, "--filter")`,
-  "Unknown exact desktop test",
-  "Desktop test selection matched no tests.",
-  `"core" => !isolatedUiTests.Contains(test.Name)`,
-  `"ui" => isolatedUiTests.Contains(test.Name)`,
-  `"exhaustive" => exhaustiveTests.Contains(test.Name)`,
-  "MOCKUPS_VALIDATION_DATABASE",
-]) {
-  assertContains(
-    "tests/Mockups.Desktop.Tests/Program.cs",
-    requiredTerm,
-    "the desktop test owner must keep fail-closed focused selection, isolated groups and parity-path injection",
-  );
-}
-if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")
-    || !(packageScripts["test:cold"] ?? "").includes("npm test")) {
-  addViolation(
-    "package.json",
-    "test:cold must clear desktop build outputs before running the complete repository gate",
-  );
-}
-if (packageScripts["scaffold:component"] !== "tsx scripts/scaffoldComponent.ts") {
-  addViolation(
-    "package.json",
-    "Component development scaffolding must use the single scaffold command owner",
-  );
-}
-if (packageScripts["test:scaffolding"] !== "tsx --test tests/scaffolding/*.test.ts"
-    || !repositoryTestScript.includes("npm run test:scaffolding")) {
-  addViolation(
-    "package.json",
-    "the complete repository gate must execute Component scaffolding contract tests",
-  );
-}
-if (packageScripts["scaffold:verify"] !== "tsx scripts/verifyIntegratedComponentScaffolds.ts"
-    || !repositoryTestScript.includes("npm run scaffold:verify")) {
-  addViolation(
-    "package.json",
-    "the complete repository gate must verify every integrated Component scaffold spec",
-  );
-}
-if (packageScripts["scaffold:generate"]
-    !== "tsx scripts/generateIntegratedComponentScaffoldArtifacts.ts") {
-  addViolation(
-    "package.json",
-    "integrated Component scaffold artifacts must use one deterministic generator",
-  );
-}
-if (packageScripts["scaffold:module"] !== "tsx scripts/scaffoldModule.ts"
-    || packageScripts["scaffold:module:generate"]
-      !== "tsx scripts/generateIntegratedModuleScaffoldArtifacts.ts"
-    || packageScripts["scaffold:module:verify"]
-      !== "tsx scripts/verifyIntegratedModuleScaffolds.ts"
-    || !repositoryTestScript.includes("npm run scaffold:module:verify")) {
-  addViolation(
-    "package.json",
-    "Module development scaffolding must expose planning, generation and full-gate verification",
-  );
-}
-for (const [scaffoldPath, requiredTerm] of [
-  ["src/development-scaffolding/componentScaffold.ts", "readonly: true"],
-  ["src/development-scaffolding/componentScaffold.ts", "contract-ready-for-owner-implementation"],
-  ["src/development-scaffolding/componentScaffold.ts", "Default and additionalVariants are the Variant sources"],
-  ["src/development-scaffolding/componentScaffold.ts", "resolveComponentScaffoldSpecPath"],
-  ["scripts/scaffoldComponent.ts", '"dry-run": { type: "boolean"'],
-  ["scripts/scaffoldComponent.ts", 'materialize: { type: "boolean"'],
-  ["scripts/scaffoldComponent.ts", 'integrate: { type: "boolean"'],
-  ["scripts/scaffoldComponent.ts", 'verify: { type: "boolean"'],
-  ["scripts/scaffoldComponent.ts", '"adopt-existing": { type: "boolean"'],
-  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "SCAFFOLD_SEMANTICS_REQUIRED"],
-  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "will not overwrite existing target"],
-  ["src/development-scaffolding/componentScaffoldWorkspace.ts", "still requires semantic implementation"],
-  ["src/development-scaffolding/componentScaffoldArtifacts.ts", "Do not edit manually"],
-  ["src/development-scaffolding/componentScaffoldAdoption.ts", "will not overwrite"],
-  ["scripts/verifyIntegratedComponentScaffolds.ts", "verifyComponentScaffoldImplementation"],
-  ["tests/scaffolding/componentScaffold.test.ts", "opens the database read-only"],
-  ["docs/architecture/development_workflow.md", "materialization never edits the manifest, registry or database"],
-  ["docs/architecture/development_workflow.md", "Integration rejects missing assets"],
-] as const) {
-  assertContains(
-    scaffoldPath,
-    requiredTerm,
-    "Component scaffolding must keep planning read-only and materialization unregistered until semantic owners exist",
-  );
-}
-const integratedScaffoldSpecs = loadIntegratedComponentScaffoldSpecs(root);
-for (const [generatedPath, expected] of
-  expectedIntegratedComponentScaffoldArtifacts(integratedScaffoldSpecs)) {
-  if (readText(generatedPath) !== expected) {
-    addViolation(
-      generatedPath,
-      "generated Component scaffold artifact is stale or was edited manually",
-    );
-  }
-}
-for (const [scaffoldPath, requiredTerm] of [
-  ["src/development-scaffolding/moduleScaffold.ts", "readonly: true"],
-  ["src/development-scaffolding/moduleScaffold.ts", "contract-ready-for-owner-implementation"],
-  ["src/development-scaffolding/moduleScaffold.ts", "resolveModuleScaffoldSpecPath"],
-  ["src/development-scaffolding/moduleScaffoldWorkspace.ts", "MODULE_SCAFFOLD_SEMANTICS_REQUIRED"],
-  ["src/development-scaffolding/moduleScaffoldWorkspace.ts", "materialization will not overwrite"],
-  ["src/development-scaffolding/moduleScaffoldArtifacts.ts", "Do not edit manually"],
-  ["scripts/scaffoldModule.ts", '"dry-run": { type: "boolean"'],
-  ["scripts/scaffoldModule.ts", 'materialize: { type: "boolean"'],
-  ["scripts/scaffoldModule.ts", 'integrate: { type: "boolean"'],
-  ["scripts/scaffoldModule.ts", 'verify: { type: "boolean"'],
-  ["scripts/verifyIntegratedModuleScaffolds.ts", "verifyModuleScaffoldImplementation"],
-  ["tests/scaffolding/moduleScaffold.test.ts", "derives one exact child Runtime contract"],
-  ["docs/architecture/development_workflow.md", "Module contract planning"],
-] as const) {
-  assertContains(
-    scaffoldPath,
-    requiredTerm,
-    "Module scaffolding must keep planning read-only and semantic integration explicit",
-  );
-}
-const integratedModuleScaffoldSpecs = loadIntegratedModuleScaffoldSpecs(root);
-for (const [generatedPath, expected] of
-  expectedIntegratedModuleScaffoldArtifacts(integratedModuleScaffoldSpecs)) {
-  if (readText(generatedPath) !== expected) {
-    addViolation(
-      generatedPath,
-      "generated Module scaffold artifact is stale or was edited manually",
-    );
-  }
-}
-for (const prohibitedWriteTerm of [
-  "INSERT INTO component_classes",
-  "UPDATE component_classes",
-  "DELETE FROM component_classes",
-  "INSERT INTO editor_layouts",
-  "UPDATE editor_layouts",
-]) {
-  assertDoesNotContain(
-    "src/development-scaffolding/componentScaffold.ts",
-    prohibitedWriteTerm,
-    "Component scaffold planning must not mutate current persistence",
-  );
-}
-for (const scaffoldSource of [
-  "src/development-scaffolding/componentScaffold.ts",
-  "scripts/scaffoldComponent.ts",
-]) {
-  for (const prohibitedMutationTerm of [
-    "writeFile",
-    "appendFile",
-    "copyFile",
-    "renameSync",
-    "mkdirSync",
-    "rmSync",
-    "database.exec(",
-  ]) {
-    assertDoesNotContain(
-      scaffoldSource,
-      prohibitedMutationTerm,
-      "Component scaffold planning must remain filesystem- and database-read-only",
-    );
-  }
-}
-type WorkflowStep = {
-  uses?: string;
-  run?: string;
-};
-function workflowSteps(relativePath: string): WorkflowStep[] {
-  const lines = readText(relativePath).split(/\r?\n/);
-  const stepsLine = lines.findIndex((line) => /^\s*steps:\s*$/.test(line));
-  if (stepsLine < 0) return [];
-  const stepsIndent = lines[stepsLine]!.match(/^\s*/)?.[0].length ?? 0;
-  const steps: WorkflowStep[] = [];
-  let current: WorkflowStep | undefined;
-  for (const line of lines.slice(stepsLine + 1)) {
-    if (!line.trim() || line.trimStart().startsWith("#")) continue;
-    const indent = line.match(/^\s*/)?.[0].length ?? 0;
-    if (indent <= stepsIndent) break;
-    const item = line.match(/^\s*-\s+([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
-    if (item) {
-      if (current) steps.push(current);
-      current = {};
-      const key = item[1] ?? "";
-      const value = (item[2] ?? "").trim().replace(/^["']|["']$/g, "");
-      if (key === "uses" || key === "run") current[key] = value;
-      continue;
-    }
-    const property = line.match(/^\s+([A-Za-z][A-Za-z0-9_-]*):\s*(.*)$/);
-    if (!current || !property) continue;
-    const key = property[1] ?? "";
-    const value = (property[2] ?? "").trim().replace(/^["']|["']$/g, "");
-    if (key === "uses" || key === "run") current[key] = value;
-  }
-  if (current) steps.push(current);
-  return steps;
-}
-{
-  const workflowPath = ".github/workflows/validate.yml";
-  const steps = workflowSteps(workflowPath);
-  const supportedCheckoutActions = new Set([
-    "actions/checkout@v6",
-    "actions/checkout@v7",
-  ]);
-  const checkoutIndexes = steps
-    .map((step, index) => step.uses?.startsWith("actions/checkout@") ? index : -1)
-    .filter((index) => index >= 0);
-  const checkoutIndex = checkoutIndexes[0] ?? -1;
-  const checkoutAction = checkoutIndex >= 0 ? steps[checkoutIndex]?.uses ?? "" : "";
-  const setupNodeIndex = steps.findIndex((step) => step.uses === "actions/setup-node@v6");
-  const setupDotnetIndex = steps.findIndex((step) => step.uses === "actions/setup-dotnet@v5");
-  const linuxUiDependenciesCommand =
-    "sudo apt-get update && sudo apt-get install --yes xvfb libwebkit2gtk-4.1-dev";
-  const linuxUiDependenciesIndex = steps.findIndex(
-    (step) => step.run === linuxUiDependenciesCommand,
-  );
-  const npmCiIndex = steps.findIndex((step) => step.run === "npm ci");
-  const coldGateCommand = "xvfb-run -a npm run test:cold";
-  const coldGateIndex = steps.findIndex((step) => step.run === coldGateCommand);
-  if (checkoutIndexes.length !== 1 || !supportedCheckoutActions.has(checkoutAction)) {
-    addViolation(
-      workflowPath,
-      "repository CI must contain one checkout step using an admitted actions/checkout major",
-    );
-  }
-  if (setupNodeIndex < 0 || setupDotnetIndex < 0) {
-    addViolation(
-      workflowPath,
-      "repository CI must configure the admitted Node and .NET setup actions",
-    );
-  }
-  if (linuxUiDependenciesIndex < 0 || npmCiIndex < 0 || coldGateIndex < 0) {
-    addViolation(
-      workflowPath,
-      "repository CI must install Linux UI dependencies and the npm lockfile before running test:cold under a virtual display",
-    );
-  }
-  const setupCompleteIndex = Math.max(setupNodeIndex, setupDotnetIndex);
-  if (checkoutIndex < 0
-      || setupNodeIndex <= checkoutIndex
-      || setupDotnetIndex <= checkoutIndex
-      || linuxUiDependenciesIndex <= setupCompleteIndex
-      || npmCiIndex <= linuxUiDependenciesIndex
-      || coldGateIndex <= npmCiIndex) {
-    addViolation(
-      workflowPath,
-      `repository CI steps must be ordered checkout, setup, ${linuxUiDependenciesCommand}, npm ci, then ${coldGateCommand}`,
-    );
-  }
+if (!process.argv.includes("--residual")) {
+  checkDocumentationContracts(validationContext);
+  checkValidationPipeline(validationContext);
+  checkGeneratedArtifacts(validationContext);
 }
 
 const currentRepositoryFiles = walkFilesByExtension(
