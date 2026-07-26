@@ -1,22 +1,16 @@
-import { chmod, cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { constants } from "node:fs";
+import { access, chmod, cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const publishDir = resolve(repoRoot, "out", "desktop", "osx-arm64");
-const appDir = resolve(repoRoot, "out", "desktop", "MOCKUPS Editor.app");
-const contentsDir = resolve(appDir, "Contents");
-const macOsDir = resolve(contentsDir, "MacOS");
-const executableName = "Mockups.DesktopEditorShell";
+export const macDesktopExecutableName = "Mockups.Desktop.Host";
 
-await rm(appDir, { force: true, recursive: true });
-await mkdir(macOsDir, { recursive: true });
-await cp(publishDir, macOsDir, { recursive: true });
-await chmod(resolve(macOsDir, executableName), 0o755);
-
-await writeFile(
-  resolve(contentsDir, "Info.plist"),
-  `<?xml version="1.0" encoding="UTF-8"?>
+export function macDesktopInfoPlist(
+  executableName = macDesktopExecutableName,
+) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -44,7 +38,56 @@ await writeFile(
   <true/>
 </dict>
 </plist>
-`,
-);
+`;
+}
 
-console.log(`Created ${appDir}`);
+export function macDesktopCodeSignArgs(appDir) {
+  return [
+    "--force",
+    "--deep",
+    "--sign",
+    "-",
+    "--timestamp=none",
+    appDir,
+  ];
+}
+
+export async function packageMacDesktopApp(root = repoRoot) {
+  const publishDir = resolve(root, "out", "desktop", "osx-arm64");
+  const appDir = resolve(root, "out", "desktop", "MOCKUPS Editor.app");
+  const contentsDir = resolve(appDir, "Contents");
+  const macOsDir = resolve(contentsDir, "MacOS");
+  const infoPlistPath = resolve(contentsDir, "Info.plist");
+  const executablePath = resolve(macOsDir, macDesktopExecutableName);
+
+  await rm(appDir, { force: true, recursive: true });
+  await mkdir(macOsDir, { recursive: true });
+  await cp(publishDir, macOsDir, { recursive: true });
+  await chmod(executablePath, 0o755);
+  await access(executablePath, constants.X_OK);
+  await writeFile(infoPlistPath, macDesktopInfoPlist());
+
+  execFileSync("plutil", ["-lint", infoPlistPath], {
+    stdio: "inherit",
+  });
+  execFileSync(
+    "codesign",
+    macDesktopCodeSignArgs(appDir),
+    { stdio: "inherit" },
+  );
+  execFileSync(
+    "codesign",
+    ["--verify", "--deep", "--strict", appDir],
+    { stdio: "inherit" },
+  );
+
+  console.log(`Created and verified ${appDir}`);
+  return appDir;
+}
+
+const executedPath = process.argv[1]
+  ? pathToFileURL(resolve(process.argv[1])).href
+  : "";
+if (executedPath === import.meta.url) {
+  await packageMacDesktopApp();
+}
