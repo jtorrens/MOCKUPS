@@ -833,10 +833,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         string projectId)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).GetProjectSettings(projectId);
 
-    public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.Data.ReferenceUsageDetail> GetReferenceUsageDetails(
-        Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode node)
-        => ((Mockups.DesktopEditorShell.Data.IEditorNodeCommandStore)_target).GetReferenceUsageDetails(node);
-
     public System.Collections.Generic.IReadOnlyList<Mockups.DesktopEditorShell.EditorShell.FieldOption> GetRequiredActorOptions(
         string projectId)
         => ((Mockups.DesktopEditorShell.Data.IEditorChildStore)_target).GetRequiredActorOptions(projectId);

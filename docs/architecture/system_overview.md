@@ -250,6 +250,10 @@ Authored Runtime owner documents are backed directly by Design. The
 document adapter receives the Production timeline separately when the selected
 node is a Module Instance.
 
+Reference Usage is implemented by its focused SQLite query service. Node
+commands do not inherit that query: delete coordination receives the command
+store and Usage query as independent capabilities.
+
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite session and composes the named narrow Application

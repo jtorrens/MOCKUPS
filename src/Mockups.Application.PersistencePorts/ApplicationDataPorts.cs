@@ -262,8 +262,6 @@ public interface IEditorNodeCommandStore
     EditorShell.ProjectTreeNode DuplicateShot(
         EditorShell.ProjectTreeNode shot,
         int shotNumber);
-    IReadOnlyList<ReferenceUsageDetail> GetReferenceUsageDetails(
-        EditorShell.ProjectTreeNode node);
     EditorShell.ProjectTreeNode RenameDirectNode(
         EditorShell.ProjectTreeNode node,
         string name);

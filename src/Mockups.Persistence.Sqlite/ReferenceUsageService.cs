@@ -8,7 +8,9 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed class ReferenceUsageService : IReferenceUsageService
+internal sealed class ReferenceUsageService :
+    IReferenceUsageService,
+    IReferenceUsageQuery
 {
     private static readonly (string Label, string[] Path)[] ModuleComponentReferencePaths =
     [
@@ -81,6 +83,31 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
         return GetUsages(connection, targetKind, targetId);
     }
 
+    public IReadOnlyList<ReferenceUsageDetail> GetReferenceUsageDetails(
+        ProjectTreeNode node)
+    {
+        return GetUsages(node.Kind, node.Id)
+            .Select((usage) => new ReferenceUsageDetail(
+                usage.SourceNodeId,
+                usage.SourceKind,
+                usage.SourceTypeLabel,
+                usage.SourceName,
+                usage.FieldLabel,
+                usage.Scope,
+                usage.EmbeddedContext is null
+                    ? null
+                    : ToEmbeddedComponentUsage(
+                        usage.EmbeddedContext)))
+            .OrderBy((usage) => usage.IsProduction)
+            .ThenBy(
+                (usage) => usage.Label,
+                StringComparer.OrdinalIgnoreCase)
+            .ThenBy(
+                (usage) => usage.Field,
+                StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public IReadOnlyList<ReferenceUsageRecord> GetUsages(
         SqliteConnection connection,
         ProjectTreeNodeKind targetKind,
@@ -116,6 +143,17 @@ internal sealed class ReferenceUsageService : IReferenceUsageService
             .ThenBy((usage) => usage.FieldLabel, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private static EmbeddedComponentUsage ToEmbeddedComponentUsage(
+        ReferenceEmbeddedContext context) =>
+        new(
+            context.ParentComponentClassId,
+            context.ParentComponentName,
+            context.ParentComponentType,
+            context.SlotFieldId,
+            context.SlotLabel,
+            context.HasOverrides,
+            context.SourceNodeId);
 
     private static TargetCatalog ReadTargets(
         SqliteConnection connection,

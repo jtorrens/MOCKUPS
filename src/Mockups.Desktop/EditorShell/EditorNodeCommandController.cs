@@ -11,6 +11,7 @@ internal sealed class EditorNodeCommandController
 {
     private readonly Window _owner;
     private readonly IEditorNodeCommandStore _database;
+    private readonly IReferenceUsageQuery _referenceUsage;
     private readonly IEditorChildStore _children;
     private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IProjectPathResolver _projectPaths;
@@ -25,6 +26,7 @@ internal sealed class EditorNodeCommandController
     public EditorNodeCommandController(
         Window owner,
         IEditorNodeCommandStore database,
+        IReferenceUsageQuery referenceUsage,
         IEditorChildStore children,
         IModuleInstanceCollectionStore moduleInstances,
         IProjectPathResolver projectPaths,
@@ -38,6 +40,7 @@ internal sealed class EditorNodeCommandController
     {
         _owner = owner;
         _database = database;
+        _referenceUsage = referenceUsage;
         _children = children;
         _moduleInstances = moduleInstances;
         _projectPaths = projectPaths;
@@ -254,7 +257,7 @@ internal sealed class EditorNodeCommandController
         if (node.Parent is null) return;
 
         var usages = await _operations.ExecuteAsync(
-            () => _database.GetReferenceUsageDetails(node));
+            () => _referenceUsage.GetReferenceUsageDetails(node));
         if (usages.Count > 0)
         {
             var selected = await new EditorReferenceUsageDialog(_owner, _isDark()).Show(node, usages);

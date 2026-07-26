@@ -150,6 +150,10 @@ does not expose any of those owners or their unrelated operations to Desktop.
 Runtime Preview reads remain on the Production timeline and are composed with
 the authored owner store only in the Desktop document adapter.
 
+`IReferenceUsageQuery` is backed by the owner-declared Usage index service.
+`IEditorNodeCommandStore` has no Usage read capability; workflows that guard a
+delete declare both ports explicitly.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and

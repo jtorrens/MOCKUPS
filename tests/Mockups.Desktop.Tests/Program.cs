@@ -1884,7 +1884,7 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
     var iconRowVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Id == "component_project_foqn_s2_iconRow::variant::default");
-    True(database.GetReferenceUsageDetails(iconRowVariant).Any((usage) =>
+    True(database.ReferenceUsages.GetReferenceUsageDetails(iconRowVariant).Any((usage) =>
         usage.SourceKind == ProjectTreeNodeKind.ComponentVariant
         && usage.SourceNodeId == textBoxVariant.Id
         && usage.Field == "Left icon row"));
@@ -3162,6 +3162,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.ActorPreview is not IEditorNodeCommandStore);
     True(project.Children is not IEditorNodeCommandStore);
     True(project.NodeCommands is not IEditorChildStore);
+    True(project.NodeCommands is not IReferenceUsageQuery);
     True(project.ModuleInstances is not IIconThemeAssetStore);
     True(project.IconThemes is not IThemeTokenQuery);
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);
@@ -3173,6 +3174,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         IModuleInstanceAnimationStore);
     True(project.Animation is not IRuntimeInputInstanceStore);
     True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
+    True(project.ReferenceUsage is not IEditorNodeCommandStore);
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()
@@ -9395,12 +9397,14 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         }
 
         var usedDevice = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed);
-        var deviceUsages = database.GetReferenceUsageDetails(usedDevice);
+        var deviceUsages =
+            database.ReferenceUsages.GetReferenceUsageDetails(usedDevice);
         True(deviceUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Actor && usage.IsProduction));
         Throws<InvalidOperationException>(() => database.Delete(usedDevice));
 
         var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor && node.IsUsed);
-        var actorUsages = database.GetReferenceUsageDetails(actor);
+        var actorUsages =
+            database.ReferenceUsages.GetReferenceUsageDetails(actor);
         True(actorUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Shot && usage.IsProduction));
         True(actorUsages.Any((usage) =>
             (usage.SourceKind is ProjectTreeNodeKind.ComponentClass
@@ -9410,14 +9414,18 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
 
         var usedComponentVariant = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
-            .Select((node) => (Node: node, Usages: database.GetReferenceUsageDetails(node)))
+            .Select((node) => (
+                Node: node,
+                Usages: database.ReferenceUsages
+                    .GetReferenceUsageDetails(node)))
             .First((candidate) => candidate.Usages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.ComponentVariant));
         True(usedComponentVariant.Usages.Any((usage) =>
             usage.SourceKind == ProjectTreeNodeKind.ComponentVariant
             && usage.SourceNodeId.Contains("::variant::", StringComparison.Ordinal)));
 
         var usedModuleVariant = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsUsed);
-        True(database.GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
+        True(database.ReferenceUsages
+            .GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
             usage.SourceKind == ProjectTreeNodeKind.ModuleInstance && usage.IsProduction));
 
         const string designActorId = "actor_usage_design_only";
@@ -9467,7 +9475,8 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
                 ("$notes", $"Unrelated prose blue plus substring prefix-{blue.Id}-suffix"),
                 ("$metadataJson", "{\"comment\":\"blue\"}"));
         }
-        var blueUsages = database.GetReferenceUsageDetails(blue);
+        var blueUsages =
+            database.ReferenceUsages.GetReferenceUsageDetails(blue);
         True(blueUsages.Count > 0);
         True(blueUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
 
@@ -10872,7 +10881,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(componentOptions.All((option) => !string.IsNullOrWhiteSpace(option.GroupValue)));
         True(componentOptions.GroupBy((option) => option.GroupValue)
             .All((group) => group.Any((option) => option.Value == $"{group.Key}::variant::default")));
-        _ = database.GetReferenceUsageDetails(stack);
+        _ = database.ReferenceUsages.GetReferenceUsageDetails(stack);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var payload = Required(CreatePreviewPayload(database, defaultVariant, theme.Id));

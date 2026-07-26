@@ -53,7 +53,8 @@ public sealed class SqliteProjectSession
         Animation =
             new SqliteModuleInstanceAnimationPort(
                 engine.Production);
-        ReferenceUsage = new SqliteReferenceUsagePort(engine);
+        ReferenceUsage =
+            new SqliteReferenceUsagePort(engine.ReferenceUsages);
         Layouts = new SqliteEditorLayoutPort(layouts);
         ActorPreview = new SqliteActorPreviewPort(engine.Resources);
     }

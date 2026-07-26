@@ -114,6 +114,7 @@ public partial class MainWindow : SukiWindow
         _nodeCommands = new EditorNodeCommandController(
             this,
             data.NodeCommands,
+            data.ReferenceUsage,
             data.Children,
             data.ModuleInstances,
             data.ProjectPaths,

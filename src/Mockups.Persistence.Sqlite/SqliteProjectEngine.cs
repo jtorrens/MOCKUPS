@@ -14,7 +14,7 @@ internal sealed partial class SqliteProjectEngine
     private readonly SqliteResourceOwner _resourceOwner;
     private readonly ComponentFieldOptionResolver
         _componentFieldOptions;
-    private readonly IReferenceUsageService _referenceUsageService;
+    private readonly ReferenceUsageService _referenceUsageService;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
@@ -25,6 +25,9 @@ internal sealed partial class SqliteProjectEngine
     internal SqliteProductionOwner Production => _productionOwner;
 
     internal SqliteResourceOwner Resources => _resourceOwner;
+
+    internal IReferenceUsageQuery ReferenceUsages =>
+        _referenceUsageService;
 
     internal SqliteProjectEngine(string databasePath)
         : this(new SqliteProjectContext(databasePath))
