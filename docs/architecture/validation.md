@@ -183,7 +183,9 @@ Architecture validation has focused entrypoints:
 
 `check:architecture` aggregates those owners once. Important dependency rules
 do not inspect source text. The .NET suite evaluates the actual MSBuild graph,
-project references and package references. The Preview suite parses every
+project references, package references and resolved compiler assemblies. It
+also compiles negative fixture projects that must fail when a consumer tries to
+use a transitive Domain or SQLite capability. The Preview suite parses every
 static, exported and dynamic TypeScript import with the TypeScript compiler,
 then derives permitted concrete owner edges from the current manifest.
 

@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup>
+    <PackageReference
+      Update="@(PackageReference)"
+      PrivateAssets="compile;contentfiles;analyzers;build;buildMultitargeting;buildTransitive" />
+  </ItemGroup>
+</Project>

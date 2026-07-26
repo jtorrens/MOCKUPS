@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -7,9 +7,13 @@ import test from "node:test";
 type EvaluatedItem = {
   Identity: string;
   FullPath?: string;
+  PrivateAssets?: string;
 };
 
 type EvaluatedProject = {
+  Properties: {
+    DisableTransitiveProjectReferences: string;
+  };
   Items: {
     ProjectReference: EvaluatedItem[];
     PackageReference: EvaluatedItem[];
@@ -31,6 +35,7 @@ const expectedProjects = new Map([
     {
       projectReferences: [
         "src/Mockups.Application/Mockups.Application.csproj",
+        "src/Mockups.Domain/Mockups.Domain.csproj",
       ],
       packageReferences: [
         "Avalonia",
@@ -57,6 +62,7 @@ const expectedProjects = new Map([
         "Avalonia.Desktop",
         "Avalonia.Fonts.Inter",
         "AvaloniaUI.DiagnosticsSupport",
+        "SukiUI",
       ],
     },
   ],
@@ -103,6 +109,7 @@ function evaluate(projectPath: string): EvaluatedProject {
     [
       "msbuild",
       projectPath,
+      "-getProperty:DisableTransitiveProjectReferences",
       "-getItem:ProjectReference",
       "-getItem:PackageReference",
     ],
@@ -112,6 +119,60 @@ function evaluate(projectPath: string): EvaluatedProject {
     },
   );
   return JSON.parse(output) as EvaluatedProject;
+}
+
+function resolvedReferenceNames(projectPath: string): Set<string> {
+  const output = execFileSync(
+    "dotnet",
+    [
+      "msbuild",
+      projectPath,
+      "-target:ResolveReferences",
+      "-getItem:ReferencePath",
+      "-p:SkipDesktopPreviewBuild=true",
+    ],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      maxBuffer: 2 * 1024 * 1024,
+    },
+  );
+  const evaluated = JSON.parse(output) as {
+    Items: {
+      ReferencePath: Array<{ Filename?: string }>;
+    };
+  };
+  return new Set(
+    evaluated.Items.ReferencePath
+      .map((item) => item.Filename)
+      .filter((name): name is string => Boolean(name)),
+  );
+}
+
+function assertCannotCompile(
+  projectPath: string,
+  expectedDiagnostic: RegExp,
+) {
+  const result = spawnSync(
+    "dotnet",
+    [
+      "build",
+      projectPath,
+      "--nologo",
+      "--verbosity:quiet",
+    ],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+    },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.notEqual(
+    result.status,
+    0,
+    `${projectPath} unexpectedly compiled`,
+  );
+  assert.match(output, expectedDiagnostic);
 }
 
 test("the evaluated .NET project graph exposes only declared dependencies", () => {
@@ -124,6 +185,11 @@ test("the evaluated .NET project graph exposes only declared dependencies", () =
     const expected = expectedProjects.get(projectPath);
     assert.ok(expected, `Missing expected dependency declaration for ${projectPath}`);
     const evaluated = evaluate(projectPath);
+    assert.equal(
+      evaluated.Properties.DisableTransitiveProjectReferences,
+      "true",
+      `${projectPath} permits transitive project compilation`,
+    );
     const projectReferences = evaluated.Items.ProjectReference
       .map((item) => repositoryPath(item.FullPath ?? item.Identity))
       .sort();
@@ -140,6 +206,15 @@ test("the evaluated .NET project graph exposes only declared dependencies", () =
       [...expected.packageReferences].sort(),
       `${projectPath} has an undeclared package dependency`,
     );
+    for (const packageReference of
+      evaluated.Items.PackageReference) {
+      assert.ok(
+        packageReference.PrivateAssets
+          ?.split(";")
+          .includes("compile"),
+        `${projectPath} exposes compile assets from ${packageReference.Identity}`,
+      );
+    }
   }
 });
 
@@ -189,7 +264,7 @@ test("Persistence can see Application and Domain but has no UI package capabilit
   );
 });
 
-test("Desktop can see UI and Application but cannot compile against SQLite", () => {
+test("Desktop explicitly sees UI, Application and Domain but cannot compile against persistence", () => {
   const desktop = evaluate(
     "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
   );
@@ -199,6 +274,7 @@ test("Desktop can see UI and Application but cannot compile against SQLite", () 
       .sort(),
     [
       "src/Mockups.Application/Mockups.Application.csproj",
+      "src/Mockups.Domain/Mockups.Domain.csproj",
     ],
   );
   assert.equal(
@@ -206,9 +282,18 @@ test("Desktop can see UI and Application but cannot compile against SQLite", () 
       .some((item) => item.Identity.includes("Sqlite")),
     false,
   );
+  const references = resolvedReferenceNames(
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+  );
+  assert.equal(references.has("Mockups.Domain"), true);
+  assert.equal(
+    references.has("Mockups.Persistence.Sqlite"),
+    false,
+  );
+  assert.equal(references.has("Microsoft.Data.Sqlite"), false);
 });
 
-test("the executable Host is the only composition project that sees Desktop and Persistence", () => {
+test("the executable Host composes Desktop and Persistence without inheriting their compile capabilities", () => {
   const host = evaluate(
     "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
   );
@@ -221,5 +306,25 @@ test("the executable Host is the only composition project that sees Desktop and 
       "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
       "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
     ],
+  );
+  const references = resolvedReferenceNames(
+    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+  );
+  assert.equal(references.has("Mockups.Domain"), false);
+  assert.equal(references.has("Microsoft.Data.Sqlite"), false);
+  assert.equal(references.has("SQLitePCLRaw.core"), false);
+});
+
+test("an Application-only consumer cannot compile against Domain", () => {
+  assertCannotCompile(
+    "tests/architecture/fixtures/TransitiveDomainLeak/TransitiveDomainLeak.csproj",
+    /ForbiddenDependencyProbe\.cs.*(?:CS0246|CS0234)/su,
+  );
+});
+
+test("a Persistence-only consumer cannot compile against SQLite packages", () => {
+  assertCannotCompile(
+    "tests/architecture/fixtures/TransitiveSqliteLeak/TransitiveSqliteLeak.csproj",
+    /ForbiddenDependencyProbe\.cs.*(?:CS0246|CS0234)/su,
   );
 });

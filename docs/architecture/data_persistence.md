@@ -44,7 +44,10 @@ only to Application and Domain; UI packages are unavailable to that assembly.
 see both Desktop and Persistence.Sqlite. It opens the transitional
 compatibility facade and projects it into the narrow ports declared by
 Application. SQL packages and Persistence source files are unavailable to the
-Desktop assembly.
+Desktop assembly. Project references are non-transitive and package compile
+assets are private, so neither Desktop nor Host inherits SQLite APIs merely by
+referencing Persistence. A project that intentionally spans layers, such as an
+integration-test project, must declare every capability it compiles against.
 
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage, Render and Shot Manager consumers receive their

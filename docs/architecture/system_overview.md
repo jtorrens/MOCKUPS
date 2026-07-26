@@ -117,7 +117,11 @@ immutable output.
 
 Every extracted layer is a separate project. A source file cannot cross a
 layer unless its project declares that exact `ProjectReference`; the evaluated
-project graph is an executable repository contract.
+project graph is an executable repository contract. Repository-wide MSBuild
+configuration disables transitive project compilation and marks package
+compile assets as private. A consumer therefore receives neither a referenced
+project's project references nor its package APIs: every compile capability
+must be declared directly by the consuming project.
 
 `Mockups.Domain` owns dependency-free current value objects and strict document
 rules. It has no project or package references. The desktop application may
@@ -158,8 +162,9 @@ first immutable navigation-tree snapshot before publishing the session, so
 `MainWindow` performs no startup SQLite read. Startup returns one typed result;
 only `Success` can create `MainWindow`. Missing or invalid inputs open a
 recovery surface without constructing a partial editor session.
-`Mockups.Desktop` references Application only; Domain remains reachable solely
-through the contracts exposed by Application. `MainWindow`
+`Mockups.Desktop` declares its two allowed code dependencies directly:
+Application for application ports and session coordination, and Domain for the
+pure value objects used by visual adapters. `MainWindow`
 receives an already composed session and cannot compile a reference to the
 database context, SQLite packages or the Persistence assembly.
 
