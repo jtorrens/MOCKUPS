@@ -2763,8 +2763,10 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
         True(moduleDefault.IsLocked);
 
         var beforeUnlock = SHA256.HashData(File.ReadAllBytes(temporary));
-        componentDefault = database.ToggleComponentVariantLock(componentDefault);
-        moduleDefault = database.ToggleModuleVariantLock(moduleDefault);
+        componentDefault = NodeCommands(database)
+            .ToggleComponentVariantLock(componentDefault);
+        moduleDefault = NodeCommands(database)
+            .ToggleModuleVariantLock(moduleDefault);
         True(!componentDefault.IsLocked);
         True(!moduleDefault.IsLocked);
         SequenceEqual(beforeUnlock, SHA256.HashData(File.ReadAllBytes(temporary)));
@@ -3262,6 +3264,10 @@ static IModuleInstanceCollectionStore ModuleInstances(
     SqliteProjectEngine database) =>
     new SqliteModuleInstanceCollectionPort(
         database.ModuleInstanceCollection);
+
+static IEditorNodeCommandStore NodeCommands(
+    SqliteProjectEngine database) =>
+    new SqliteEditorNodeCommandPort(database.NodeCommands);
 
 static void PreviewResourceSelectionHasOneSessionRule()
 {
@@ -4433,7 +4439,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                     "marker",
                     "Changed fixed Component slot Overrides"));
 
-            var editableVariant = database.SaveModuleVariant(
+            var editableVariant = NodeCommands(database).SaveModuleVariant(
                 selected,
                 "Variant selection test");
             database.UpdateModuleVariantField(
@@ -5364,7 +5370,8 @@ static void ModuleConfigsUseOwnerContracts()
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        conversationVariant = database.ToggleModuleVariantLock(conversationVariant);
+        conversationVariant = NodeCommands(database)
+            .ToggleModuleVariantLock(conversationVariant);
         database.UpdateModuleVariantField(
             conversationVariant,
             "module.conversation.showHeader",
@@ -5429,7 +5436,8 @@ static void SystemBarItemsUseFixedDictionaryCollections()
 
         var navigationClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_navigation_bar");
         var navigationVariant = nodes.Single((node) => node.Id == $"{navigationClass.Id}::variant::default_copy");
-        navigationVariant = database.ToggleComponentVariantLock(navigationVariant);
+        navigationVariant = NodeCommands(database)
+            .ToggleComponentVariantLock(navigationVariant);
         True(!navigationVariant.IsLocked);
         var navigationConfig = JsonPath.ParseRequiredObject(
             database.GetComponentVariantSettings(navigationVariant).ConfigJson,
@@ -5548,7 +5556,10 @@ static void VariantWritesDoNotRepairMissingArrays()
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => database.SaveComponentVariant(defaultVariant, "Must fail"));
+        Throws<InvalidOperationException>(() =>
+            NodeCommands(database).SaveComponentVariant(
+                defaultVariant,
+                "Must fail"));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -5573,7 +5584,10 @@ static void VariantWritesDoNotRepairMissingArrays()
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => database.SaveModuleVariant(defaultVariant, "Must fail"));
+        Throws<InvalidOperationException>(() =>
+            NodeCommands(database).SaveModuleVariant(
+                defaultVariant,
+                "Must fail"));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -6261,7 +6275,9 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var editableVariant = database.SaveComponentVariant(audioVariant, "Embedded boundary test");
+        var editableVariant = NodeCommands(database).SaveComponentVariant(
+            audioVariant,
+            "Embedded boundary test");
         var editableContext = new EditorEmbeddedContext(editableVariant, [surfaceSlot]);
         var editableField = store.CreateFieldValue(editableContext, embeddedFieldId);
         store.CommitFieldValue(editableContext, embeddedFieldId, editableField.Value);
@@ -8463,7 +8479,7 @@ static void ShotActorContextIsExplicit()
         moduleInstances.MoveModuleInstance(duplicate.Id, -1);
         moduleInstances.Delete(duplicate);
         moduleInstances.Delete(screen);
-        database.Delete(shot);
+        NodeCommands(database).Delete(shot);
         True(Descendants(database.LoadProjectTree()).All((node) =>
             node.Id != shot.Id
             && node.Id != screen.Id
@@ -8779,7 +8795,9 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
                 theme.Id,
                 themeMode: "dark")).ThemeMode);
 
-        var lightVariant = database.SaveModuleVariant(defaultVariant, "Forced Light");
+        var lightVariant = NodeCommands(database).SaveModuleVariant(
+            defaultVariant,
+            "Forced Light");
         database.UpdateModuleVariantField(lightVariant, "module.appearanceMode", "light");
         Equal(
             "light",
@@ -8789,7 +8807,9 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
                 theme.Id,
                 themeMode: "dark")).ThemeMode);
 
-        var darkVariant = database.SaveModuleVariant(defaultVariant, "Forced Dark");
+        var darkVariant = NodeCommands(database).SaveModuleVariant(
+            defaultVariant,
+            "Forced Dark");
         database.UpdateModuleVariantField(darkVariant, "module.appearanceMode", "dark");
         Equal(
             "dark",
@@ -9007,7 +9027,9 @@ static void ModuleVariantsAreExplicit()
         var defaultVariant = module.Children.Single((node) => node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
         True(defaultVariant.IsProtected);
 
-        var android = database.SaveModuleVariant(defaultVariant, "Android");
+        var android = NodeCommands(database).SaveModuleVariant(
+            defaultVariant,
+            "Android");
         database.UpdateModuleVariantField(android, "module.appearanceMode", "dark");
         Equal("dark", JsonNode.Parse(database.GetModuleVariantSettings(android).ConfigJson)?["appearanceMode"]?.GetValue<string>());
         Equal("inherit", JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson)?["appearanceMode"]?.GetValue<string>());
@@ -9041,10 +9063,11 @@ static void ModuleVariantsAreExplicit()
         Equal("dark", JsonNode.Parse(database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson)?["appearanceMode"]?.GetValue<string>());
         True(JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).ContentJson)?["orphan"] is null);
         Equal(0, JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).AnimationJson)?["tracks"]?.AsArray().Count);
-        Throws<InvalidOperationException>(() => database.DeleteModuleVariant(android));
+        Throws<InvalidOperationException>(() =>
+            NodeCommands(database).Delete(android));
 
         database.UpdateModuleInstanceVariant(screen.Id, defaultVariant.Id);
-        database.DeleteModuleVariant(android);
+        NodeCommands(database).Delete(android);
         True(!moduleInstances.GetModuleVariantOptions(module.Id)
             .Any((option) => option.Value == android.Id));
     }
@@ -9336,7 +9359,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Parent?.RecordClassId == "module.core.lockScreen"
                 && node.Name == "Default");
-        moduleVariant = database.ToggleModuleVariantLock(moduleVariant);
+        moduleVariant = NodeCommands(database)
+            .ToggleModuleVariantLock(moduleVariant);
         var settings = database.GetModuleVariantSettings(moduleVariant);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var authoredItems = config["lockScreen"]?["stackInputs"]?["items"] as JsonArray

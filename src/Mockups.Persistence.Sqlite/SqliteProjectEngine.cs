@@ -24,6 +24,7 @@ internal sealed partial class SqliteProjectEngine
         _moduleInstanceCollection;
     private readonly SqliteCoreFieldStore _coreFields;
     private readonly SqliteEditorChildStore _children;
+    private readonly SqliteEditorNodeCommandStore _nodeCommands;
 
     public IProjectPathResolver ProjectPaths => _context.ProjectPaths;
 
@@ -54,6 +55,9 @@ internal sealed partial class SqliteProjectEngine
     internal SqliteCoreFieldStore CoreFields => _coreFields;
 
     internal SqliteEditorChildStore Children => _children;
+
+    internal SqliteEditorNodeCommandStore NodeCommands =>
+        _nodeCommands;
 
     internal SqliteProjectEngine(string databasePath)
         : this(new SqliteProjectContext(databasePath))
@@ -103,6 +107,13 @@ internal sealed partial class SqliteProjectEngine
             _designOwner,
             _productionOwner,
             _resourceOwner);
+        _nodeCommands = new SqliteEditorNodeCommandStore(
+            _context,
+            _designOwner,
+            _productionOwner,
+            _resourceOwner,
+            _referenceUsageService,
+            _coreFields);
 
         Initialize();
     }

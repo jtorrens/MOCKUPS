@@ -388,7 +388,7 @@ internal sealed class SqliteReferenceUsagePort(IReferenceUsageQuery target)
 }
 
 internal sealed class SqliteEditorNodeCommandPort(
-    IEditorNodeCommandStore target)
+    SqliteEditorNodeCommandStore target)
     : IEditorNodeCommandStore
 {
     public void Delete(ProjectTreeNode node) =>

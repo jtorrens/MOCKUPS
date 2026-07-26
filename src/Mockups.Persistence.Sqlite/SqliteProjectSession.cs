@@ -29,7 +29,7 @@ public sealed class SqliteProjectSession
         Dictionary = engine.DictionaryContext;
         Children = new SqliteEditorChildPort(engine.Children);
         NodeCommands =
-            new SqliteEditorNodeCommandPort(engine);
+            new SqliteEditorNodeCommandPort(engine.NodeCommands);
         RenderSnapshots =
             new SqliteRenderSnapshotPort(
                 engine.PreviewInputs,
