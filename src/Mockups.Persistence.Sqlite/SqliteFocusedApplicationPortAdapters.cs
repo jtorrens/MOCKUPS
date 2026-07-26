@@ -67,7 +67,7 @@ internal sealed class SqliteModuleInstanceThemeTokenPort(
         target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 }
 
-internal sealed class SqliteEditorChildPort(IEditorChildStore target)
+internal sealed class SqliteEditorChildPort(SqliteEditorChildStore target)
     : IEditorChildStore
 {
     public ProjectTreeNode AddChild(ProjectTreeNode parent) =>

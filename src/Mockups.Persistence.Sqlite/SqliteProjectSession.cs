@@ -27,7 +27,7 @@ public sealed class SqliteProjectSession
             new SqliteModuleInstanceThemeTokenPort(
                 engine.Resources);
         Dictionary = engine.DictionaryContext;
-        Children = new SqliteEditorChildPort(engine);
+        Children = new SqliteEditorChildPort(engine.Children);
         NodeCommands =
             new SqliteEditorNodeCommandPort(engine);
         RenderSnapshots =

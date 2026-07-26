@@ -2,7 +2,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProjectEngine :
     IRecordClassFieldStore,
-    IEditorChildStore,
     IEditorNodeCommandStore
 {
 }
