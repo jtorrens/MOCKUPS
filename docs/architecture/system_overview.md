@@ -143,6 +143,10 @@ reference Avalonia or Desktop.
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite compatibility facade and projects it into the
 narrow Application ports required by one desktop session.
+Its `ApplicationStartupCoordinator` validates the manifested Preview bundle
+and opens the current database on a controlled worker. Startup returns one
+typed result; only `Success` can create `MainWindow`. Missing or invalid inputs
+open a recovery surface without constructing a partial editor session.
 `Mockups.Desktop` references Application only; Domain remains reachable solely
 through the contracts exposed by Application. `MainWindow`
 receives an already composed session and cannot compile a reference to the

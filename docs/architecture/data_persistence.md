@@ -180,6 +180,11 @@ Opening an existing database, constructing repositories and validating the
 schema and documents is read-only. Application startup never creates,
 normalizes, repairs, retires or synchronizes schema or data.
 
+The executable Host performs this validation outside the UI thread and reports
+missing and invalid databases as typed startup results. `MainWindow` is created
+only after the current database and Preview bundle both validate. Cancellation
+or failure cannot publish a partial desktop session.
+
 A schema, vocabulary, field or identifier change requires one explicit
 maintenance migration:
 

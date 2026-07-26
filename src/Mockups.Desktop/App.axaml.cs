@@ -17,11 +17,15 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = CreateMainWindow();
+            ConfigureDesktopLifetime(desktop);
         }
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    protected virtual void ConfigureDesktopLifetime(
+        IClassicDesktopStyleApplicationLifetime desktop) =>
+        desktop.MainWindow = CreateMainWindow();
 
     protected virtual Window CreateMainWindow() =>
         throw new InvalidOperationException(

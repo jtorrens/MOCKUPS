@@ -236,6 +236,11 @@ it is absent. `desktop:launch:mac` packages the current revision first.
 Automated macOS UI review uses one of these launchers; headless checks continue
 to use the Avalonia headless platform.
 
+The Host displays a short startup surface while bundle hashing and current
+database validation run on a worker. A valid prepared session is the only route
+to `MainWindow`; a typed missing or invalid result opens the controlled recovery
+surface and performs no repair.
+
 ## Safe implementation sequence
 
 For each coherent phase:

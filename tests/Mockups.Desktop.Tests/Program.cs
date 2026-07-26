@@ -102,6 +102,9 @@ var tests = new (string Name, Action Run)[]
     ("Production Shot Manager action owns and reveals the optional association", ProductionShotManagerActionOwnsAssociation),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
+    ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
+    ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
+    ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
     ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
@@ -495,6 +498,136 @@ static void DesktopPreviewBundleValidationIsStrict()
     finally
     {
         Directory.Delete(temporary, recursive: true);
+    }
+}
+
+static void StartupClassifiesPreviewBundleFailures()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-startup-preview-{Guid.NewGuid():N}");
+    var missingBundle = Path.Combine(root, "missing");
+    var copiedBundle = Path.Combine(root, "invalid");
+    Directory.CreateDirectory(copiedBundle);
+    try
+    {
+        var missing = new ApplicationStartupCoordinator(
+            missingBundle).Start(ParityDatabasePath());
+        True(missing is StartupResult.PreviewBundleMissing);
+
+        var source = Path.Combine(
+            AppContext.BaseDirectory,
+            "desktop-preview");
+        foreach (var sourceFile in Directory.EnumerateFiles(source))
+        {
+            File.Copy(
+                sourceFile,
+                Path.Combine(
+                    copiedBundle,
+                    Path.GetFileName(sourceFile)));
+        }
+        File.AppendAllText(
+            Path.Combine(
+                copiedBundle,
+                "renderDesignPreviewHtml.cjs"),
+            Environment.NewLine);
+
+        var invalid = new ApplicationStartupCoordinator(
+            copiedBundle).Start(ParityDatabasePath());
+        True(invalid is StartupResult.PreviewBundleInvalid);
+    }
+    finally
+    {
+        if (Directory.Exists(root))
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+}
+
+static void StartupClassifiesDatabaseFailures()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-startup-database-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var bundle = Path.Combine(
+        AppContext.BaseDirectory,
+        "desktop-preview");
+    var coordinator = new ApplicationStartupCoordinator(bundle);
+    var missingPath = Path.Combine(root, "missing.sqlite");
+    var emptyPath = Path.Combine(root, "empty.sqlite");
+    var invalidPath = Path.Combine(root, "invalid.sqlite");
+    try
+    {
+        var missing = coordinator.Start(missingPath);
+        True(missing is StartupResult.DatabaseMissing);
+
+        File.WriteAllBytes(emptyPath, []);
+        var empty = coordinator.Start(emptyPath);
+        True(empty is StartupResult.DatabaseInvalid);
+
+        File.Copy(
+            ParityDatabasePath(),
+            invalidPath,
+            overwrite: true);
+        using (var connection = new SqliteConnection(
+                   $"Data Source={invalidPath}"))
+        {
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = "PRAGMA user_version = 999;";
+            command.ExecuteNonQuery();
+        }
+        var invalid = coordinator.Start(invalidPath);
+        True(invalid is StartupResult.DatabaseInvalid);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void StartupPreparesReadOnlySessionAndHonorsCancellation()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-startup-success-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var databasePath = Path.Combine(root, "current.sqlite");
+    File.Copy(
+        ParityDatabasePath(),
+        databasePath,
+        overwrite: true);
+    try
+    {
+        var before = SHA256.HashData(
+            File.ReadAllBytes(databasePath));
+        var coordinator = new ApplicationStartupCoordinator(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "desktop-preview"));
+
+        var result = coordinator.Start(databasePath);
+
+        True(result is StartupResult.Success);
+        SequenceEqual(
+            before,
+            SHA256.HashData(
+                File.ReadAllBytes(databasePath)));
+
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var canceled = coordinator.StartAsync(
+                databasePath,
+                cancellation.Token)
+            .GetAwaiter()
+            .GetResult();
+        True(canceled is StartupResult.Canceled);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
     }
 }
 
