@@ -63,18 +63,20 @@ public partial class MainWindow : SukiWindow
     private string _renderedPreviewNavigationNodeId = "";
 
     public MainWindow()
-        : this(SpikeDatabase.DefaultDatabasePath())
+        : this(DesktopCompositionRoot.DefaultDatabasePath())
     {
     }
 
     public MainWindow(string databasePath)
     {
-        _database = new SpikeDatabase(databasePath);
+        var application = new DesktopCompositionRoot().Create(databasePath);
+        _database = application.Database;
+        _variantHistory = application.VariantHistory;
+        _coreFieldValues = application.CoreFieldValues;
+        _recordClassFieldValues = application.RecordClassFieldValues;
+        _componentClassFieldValues = application.ComponentClassFieldValues;
+        _productionShotContext = application.ProductionShotContext;
         InitializeComponent();
-        _variantHistory = new EditorVariantHistoryService(_database);
-        _coreFieldValues = new CoreFieldValueService(_database);
-        _recordClassFieldValues = new RecordClassFieldValueService(_database);
-        _componentClassFieldValues = new ComponentClassFieldValueService(_database);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         _inlinePreviews = EditorInlinePreviewControllerFactory.Create(_database, () => _themeController.IsDark);
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
@@ -111,7 +113,6 @@ public partial class MainWindow : SukiWindow
             NavigateToReferenceUsage,
             _messages);
         _shellState = new EditorShellStateService(this, ShellColumns);
-        _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(_database));
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,

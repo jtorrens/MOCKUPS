@@ -135,6 +135,11 @@ compatibility facade. It may reference Application and Domain and is the only
 production project allowed to reference the SQLite packages. It cannot
 reference Avalonia or Desktop.
 
+`DesktopCompositionRoot` is the only Desktop owner that opens the current
+SQLite compatibility facade and constructs the non-visual application
+services required by a window session. `MainWindow` receives that composed
+session and does not construct the database context directly.
+
 ### SQLite and repositories
 
 Repositories own table SQL, row mapping and prepared writes. They do not own

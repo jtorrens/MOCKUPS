@@ -790,7 +790,7 @@ for (const forbiddenProductionContextSql of ["SELECT ", "INSERT ", "UPDATE ", "D
   );
 }
 for (const productionContextConsumer of [
-  "src/Mockups.Desktop/MainWindow.axaml.cs",
+  "src/Mockups.Desktop/DesktopCompositionRoot.cs",
   "src/Mockups.Desktop/EditorShell/EditorPreviewController.cs",
 ]) {
   assertContains(

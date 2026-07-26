@@ -24,7 +24,7 @@ public sealed partial class SpikeDatabase
     private readonly IReferenceUsageService _referenceUsageService;
     private readonly IShotManagerIntegrationRepository _shotManagerIntegrationRepository;
 
-    public SpikeDatabase(string databasePath)
+    internal SpikeDatabase(string databasePath)
     {
         _context = new SqliteProjectContext(databasePath);
         _editorLayoutRepository = new EditorLayoutRepository(_context);

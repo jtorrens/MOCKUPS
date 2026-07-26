@@ -16,7 +16,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var databasePath = DesktopEditorLaunchOptions.DatabasePath
-                ?? Data.SpikeDatabase.DefaultDatabasePath();
+                ?? DesktopCompositionRoot.DefaultDatabasePath();
             desktop.MainWindow = new MainWindow(databasePath);
         }
 
