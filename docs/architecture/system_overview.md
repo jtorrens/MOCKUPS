@@ -253,7 +253,9 @@ node is a Module Instance.
 
 Reference Usage is implemented by its focused SQLite query service. Node
 commands do not inherit that query: delete coordination receives the command
-store and Usage query as independent capabilities.
+store and Usage query as independent capabilities. The Node Command session
+adapter contains only the members declared by its port and cannot recover
+child, Module Instance or timeline operations by casting its target.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

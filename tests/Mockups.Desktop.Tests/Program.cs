@@ -3163,6 +3163,22 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Children is not IEditorNodeCommandStore);
     True(project.NodeCommands is not IEditorChildStore);
     True(project.NodeCommands is not IReferenceUsageQuery);
+    Equal(
+        string.Join(
+            "|",
+            typeof(IEditorNodeCommandStore)
+                .GetMethods()
+                .Select((method) => method.Name)
+                .OrderBy((name) => name, StringComparer.Ordinal)),
+        string.Join(
+            "|",
+            project.NodeCommands.GetType()
+                .GetMethods(
+                    BindingFlags.Instance
+                    | BindingFlags.Public
+                    | BindingFlags.DeclaredOnly)
+                .Select((method) => method.Name)
+                .OrderBy((name) => name, StringComparer.Ordinal)));
     True(project.ModuleInstances is not IIconThemeAssetStore);
     True(project.IconThemes is not IThemeTokenQuery);
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);

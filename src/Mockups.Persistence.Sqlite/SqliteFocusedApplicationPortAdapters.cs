@@ -411,3 +411,52 @@ internal sealed class SqliteReferenceUsagePort(IReferenceUsageQuery target)
         ProjectTreeNode node) =>
         target.GetReferenceUsageDetails(node);
 }
+
+internal sealed class SqliteEditorNodeCommandPort(
+    IEditorNodeCommandStore target)
+    : IEditorNodeCommandStore
+{
+    public void Delete(ProjectTreeNode node) =>
+        target.Delete(node);
+
+    public ProjectTreeNode Duplicate(ProjectTreeNode node) =>
+        target.Duplicate(node);
+
+    public ProjectTreeNode DuplicateShot(
+        ProjectTreeNode shot,
+        int shotNumber) =>
+        target.DuplicateShot(shot, shotNumber);
+
+    public ProjectTreeNode RenameDirectNode(
+        ProjectTreeNode node,
+        string name) =>
+        target.RenameDirectNode(node, name);
+
+    public void ReplaceComponentVariantConfig(
+        ProjectTreeNode node,
+        string configJson) =>
+        target.ReplaceComponentVariantConfig(node, configJson);
+
+    public void ReplaceModuleVariantConfig(
+        ProjectTreeNode node,
+        string configJson) =>
+        target.ReplaceModuleVariantConfig(node, configJson);
+
+    public ProjectTreeNode SaveComponentVariant(
+        ProjectTreeNode sourceNode,
+        string name) =>
+        target.SaveComponentVariant(sourceNode, name);
+
+    public ProjectTreeNode SaveModuleVariant(
+        ProjectTreeNode sourceNode,
+        string name) =>
+        target.SaveModuleVariant(sourceNode, name);
+
+    public ProjectTreeNode ToggleComponentVariantLock(
+        ProjectTreeNode node) =>
+        target.ToggleComponentVariantLock(node);
+
+    public ProjectTreeNode ToggleModuleVariantLock(
+        ProjectTreeNode node) =>
+        target.ToggleModuleVariantLock(node);
+}

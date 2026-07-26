@@ -125,6 +125,9 @@ Reference Usage use distinct adapter instances. A Desktop controller that
 needs more than one capability declares each one in its constructor.
 Persistence keeps adapters only for ports exposed by the current session;
 retired area-wide adapters are removed with their contracts.
+The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no
+child creation, Module Instance, timeline or Reference Usage members and uses
+no runtime casts to recover them.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and
