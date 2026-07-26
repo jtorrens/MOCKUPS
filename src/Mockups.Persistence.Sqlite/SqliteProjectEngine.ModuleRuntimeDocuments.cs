@@ -1,42 +1,33 @@
 using Microsoft.Data.Sqlite;
-using Mockups.DesktopEditorShell.Common;
-using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Linq;
-using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProjectEngine
 {
-    private void ValidateModuleInstanceRuntimeContent(
+    private IReadOnlySet<string> ModuleInstanceProjectActorIds(
         SqliteConnection connection,
-        string moduleInstanceId,
-        JsonObject content)
+        string moduleInstanceId)
     {
-        var instance = _productionOwner.ModuleInstanceRepository.Get(connection, moduleInstanceId);
-        var module = _designOwner.AppModuleRepository.GetModule(connection, instance.ModuleId);
-        var actorIds = _resourceOwner.ActorRepository.QueryAll(connection)
-            .Where((actor) => actor.ProjectId.Equals(module.ProjectId, StringComparison.Ordinal))
+        var instance = _productionOwner.ModuleInstanceRepository.Get(
+            connection,
+            moduleInstanceId);
+        var module = _designOwner.AppModuleRepository.GetModule(
+            connection,
+            instance.ModuleId);
+        return ProjectActorIds(connection, module.ProjectId);
+    }
+
+    private IReadOnlySet<string> ProjectActorIds(
+        SqliteConnection connection,
+        string projectId) =>
+        _resourceOwner.ActorRepository.QueryAll(connection)
+            .Where((actor) => actor.ProjectId.Equals(
+                projectId,
+                StringComparison.Ordinal))
             .Select((actor) => actor.Id)
             .ToHashSet(StringComparer.Ordinal);
-        var contract = _productionOwner.ResolveModuleInstanceContract(
-            module.Id,
-            instance.MetadataJson);
-        RuntimeInputDocumentContract.ValidateCurrentCollections(
-            contract,
-            content,
-            $"Module Instance '{moduleInstanceId}' content_json");
-        RuntimeInputDocumentContract.ValidateCurrentValues(
-            contract,
-            content,
-            $"Module Instance '{moduleInstanceId}' content_json");
-        ModuleRuntimeDocumentContracts.ValidateCurrent(
-            module.RecordClassId,
-            $"Module Instance '{moduleInstanceId}' content_json",
-            content,
-            actorIds);
-    }
 
     private void ValidateCurrentModuleRuntimeDocuments(SqliteConnection connection)
     {
@@ -62,20 +53,9 @@ internal sealed partial class SqliteProjectEngine
                 var content = ParseRequiredObject(
                     instance.ContentJson,
                     $"Module Instance '{instance.Id}' content_json");
-                var contract = _productionOwner.ResolveModuleInstanceContract(
-                    module.Id,
-                    instance.MetadataJson);
-                RuntimeInputDocumentContract.ValidateCurrentCollections(
-                    contract,
-                    content,
-                    $"Module Instance '{instance.Id}' content_json");
-                RuntimeInputDocumentContract.ValidateCurrentValues(
-                    contract,
-                    content,
-                    $"Module Instance '{instance.Id}' content_json");
-                ModuleRuntimeDocumentContracts.ValidateCurrent(
-                    module.RecordClassId,
-                    $"Module Instance '{instance.Id}' content_json",
+                _productionOwner.ValidateModuleInstanceRuntimeContent(
+                    connection,
+                    instance.Id,
                     content,
                     projectActorIds);
             }

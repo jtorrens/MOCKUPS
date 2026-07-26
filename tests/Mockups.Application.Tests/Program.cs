@@ -24,6 +24,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
+    ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
 };
 
 var failures = new List<string>();
@@ -151,6 +152,95 @@ static void RuntimeDocumentsRejectInvalidOwnership()
                 ["variantText"] = "forbidden",
             },
             "Test owner"));
+}
+
+static void RuntimeContractTransitionsRetainCurrentOwners()
+{
+    var contract = new JsonObject
+    {
+        ["inputs"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "runtimeText",
+                ["jsonKey"] = "runtimeText",
+                ["source"] = "runtime",
+                ["kind"] = "text",
+                ["valueKind"] = "StringSingleLine",
+                ["defaultValue"] = "",
+            },
+            new JsonObject
+            {
+                ["id"] = "variantText",
+                ["jsonKey"] = "variantText",
+                ["source"] = "variant",
+                ["kind"] = "text",
+                ["valueKind"] = "StringSingleLine",
+                ["defaultValue"] = "",
+            },
+        },
+    };
+    var content =
+        RuntimeInputDocumentContract.CreateContentForContract(
+            new JsonObject
+            {
+                ["schemaVersion"] = 2,
+                ["runtimeText"] = "authored",
+                ["variantText"] = "parent-owned",
+                ["retired"] = true,
+            },
+            contract);
+
+    Equal("authored", content["runtimeText"]?.GetValue<string>());
+    True(content["variantText"] is null);
+    True(content["retired"] is null);
+
+    content["items"] = new JsonArray
+    {
+        new JsonObject { ["id"] = "kept-target" },
+    };
+    var animation = new JsonObject
+    {
+        ["tracks"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["fieldId"] = "runtimeText",
+                ["targetId"] = "",
+            },
+            new JsonObject
+            {
+                ["fieldId"] = "retired",
+                ["targetId"] = "",
+            },
+            new JsonObject
+            {
+                ["fieldId"] = "value",
+                ["targetId"] = "kept-target",
+            },
+            new JsonObject
+            {
+                ["fieldId"] = "value",
+                ["targetId"] = "retired-target",
+            },
+        },
+    };
+
+    var reconciled =
+        RuntimeInputDocumentContract.RemoveOrphanedAnimationTracks(
+            animation,
+            contract,
+            content);
+    var tracks = reconciled["tracks"]?.AsArray()
+        ?? throw new InvalidOperationException(
+            "Expected reconciled animation tracks.");
+    Equal(2, tracks.Count);
+    Equal(
+        "runtimeText",
+        tracks[0]?["fieldId"]?.GetValue<string>());
+    Equal(
+        "kept-target",
+        tracks[1]?["targetId"]?.GetValue<string>());
 }
 
 static void InitialTreeLoadSelectsDesignContext()

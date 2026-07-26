@@ -120,6 +120,125 @@ public static class RuntimeInputDocumentContract
         return result;
     }
 
+    public static JsonObject CreateContentForContract(
+        JsonObject current,
+        JsonObject contract)
+    {
+        var next = new JsonObject
+        {
+            ["schemaVersion"] = current["schemaVersion"]?.DeepClone()
+                ?? JsonValue.Create(2),
+        };
+        foreach (var input in DefinitionObjects(
+                     contract,
+                     "inputs",
+                     "Effective Module Runtime contract"))
+        {
+            if (!IsRuntimeDefinition(input))
+            {
+                continue;
+            }
+
+            var inputId = JsonPath.RequiredString(
+                input,
+                "id",
+                "Runtime Input definition");
+            var jsonKey = JsonPath.RequiredString(
+                input,
+                "jsonKey",
+                $"Runtime Input '{inputId}'");
+            if (current.TryGetPropertyValue(
+                    jsonKey,
+                    out var currentValue))
+            {
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
+                    input,
+                    currentValue,
+                    $"Current Runtime Input '{inputId}'");
+                next[jsonKey] = currentValue!.DeepClone();
+            }
+            else
+            {
+                next[jsonKey] =
+                    RuntimeInputValueKindContract.CreateDefaultValue(
+                        input,
+                        $"Runtime Input '{inputId}'");
+            }
+        }
+
+        foreach (var collection in DefinitionObjects(
+                     contract,
+                     "collections",
+                     "Effective Module Runtime contract"))
+        {
+            var storageKey = CollectionStorageKey(collection);
+            next[storageKey] =
+                collection.ContainsKey("storageCollectionJsonKey")
+                    ? ReconcileProjectedCollection(
+                        OptionalCollection(
+                            current,
+                            storageKey,
+                            "Current Module Instance content"),
+                        OptionalCollection(
+                            contract,
+                            JsonPath.RequiredString(
+                                collection,
+                                "jsonKey",
+                                "Runtime collection definition"),
+                            "Effective Module Runtime contract"))
+                    : (OptionalCollection(
+                            current,
+                            storageKey,
+                            "Current Module Instance content")
+                        ?? new JsonArray()).DeepClone();
+        }
+
+        return next;
+    }
+
+    public static JsonObject RemoveOrphanedAnimationTracks(
+        JsonObject animation,
+        JsonObject contract,
+        JsonObject content)
+    {
+        var topLevelFields = DefinitionObjects(
+                contract,
+                "inputs",
+                "Effective Module Runtime contract")
+            .Where(IsRuntimeDefinition)
+            .Select((input) => JsonPath.RequiredString(
+                input,
+                "id",
+                "Runtime Input definition"))
+            .ToHashSet(StringComparer.Ordinal);
+        var targetIds = new HashSet<string>(StringComparer.Ordinal);
+        CollectObjectIds(content, targetIds);
+        if (animation["tracks"] is JsonArray tracks)
+        {
+            for (var index = tracks.Count - 1; index >= 0; index--)
+            {
+                if (tracks[index] is not JsonObject track)
+                {
+                    continue;
+                }
+
+                var targetId =
+                    track["targetId"]?.GetValue<string>() ?? "";
+                var fieldId =
+                    track["fieldId"]?.GetValue<string>() ?? "";
+                if ((!string.IsNullOrWhiteSpace(targetId)
+                        && !targetIds.Contains(targetId))
+                    || (string.IsNullOrWhiteSpace(targetId)
+                        && !topLevelFields.Contains(fieldId)))
+                {
+                    tracks.RemoveAt(index);
+                }
+            }
+        }
+
+        return animation;
+    }
+
     public static IReadOnlyList<JsonObject> DefinitionObjects(
         JsonObject owner,
         string key,
@@ -326,5 +445,30 @@ public static class RuntimeInputDocumentContract
         return node as JsonArray
             ?? throw new InvalidOperationException(
                 $"{context} {key} must be an array when present.");
+    }
+
+    private static void CollectObjectIds(
+        JsonNode? node,
+        ISet<string> ids)
+    {
+        if (node is JsonObject value)
+        {
+            if (value["id"]?.GetValue<string>() is { Length: > 0 } id)
+            {
+                ids.Add(id);
+            }
+
+            foreach (var child in value.Select((entry) => entry.Value))
+            {
+                CollectObjectIds(child, ids);
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                CollectObjectIds(child, ids);
+            }
+        }
     }
 }

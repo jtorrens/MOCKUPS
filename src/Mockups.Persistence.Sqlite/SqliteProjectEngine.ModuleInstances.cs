@@ -1,8 +1,5 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -22,39 +19,36 @@ internal sealed partial class SqliteProjectEngine
         _productionOwner.GetModuleInstanceTransitionType(
             moduleInstanceId);
 
-    public string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId)
-    {
-        var instance = GetModuleInstanceSettings(moduleInstanceId);
-        var module = GetModuleInstanceVariantSettings(moduleInstanceId);
-        var preview = RuntimeInputForwardingContract.EffectivePreview(
-            ParseJsonObject(module.DesignPreviewJson),
-            ParseJsonObject(module.ConfigJson));
-        var runtime = ParseJsonObject(instance.ContentJson);
-        foreach (var (key, value) in runtime)
-        {
-            if (key == "schemaVersion") continue;
-            preview[key] = value?.DeepClone();
-        }
-        preview.Remove("testValues");
-        return preview.ToJsonString();
-    }
+    public string GetModuleInstanceRuntimePreviewJson(
+        string moduleInstanceId) =>
+        _productionOwner.GetModuleInstanceRuntimePreviewJson(
+            moduleInstanceId);
 
-    public void UpdateModuleInstanceRuntimeValue(string moduleInstanceId, string jsonKey, JsonNode? value)
+    public void UpdateModuleInstanceRuntimeValue(
+        string moduleInstanceId,
+        string jsonKey,
+        JsonNode? value)
     {
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        _ = RequireDeclaredRuntimeInput(moduleInstanceId, jsonKey, value);
-        content[jsonKey] = value?.DeepClone();
-        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
-    }
-
-    public void UpdateModuleInstanceAnimationJson(string moduleInstanceId, string animationJson)
-    {
-        var animation = ModuleInstanceAnimationDocumentContract.Parse(
-            animationJson,
-            $"Module Instance '{moduleInstanceId}' animation_json");
         using var connection = OpenConnection();
-        _productionOwner.ModuleInstanceRepository.UpdateAnimation(connection, moduleInstanceId, animation.ToJsonString());
-        _productionOwner.SynchronizeTimelineDurations(connection);
+        _productionOwner.UpdateModuleInstanceRuntimeValue(
+            connection,
+            moduleInstanceId,
+            jsonKey,
+            value,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
+    }
+
+    public void UpdateModuleInstanceAnimationJson(
+        string moduleInstanceId,
+        string animationJson)
+    {
+        using var connection = OpenConnection();
+        _productionOwner.UpdateModuleInstanceAnimationJson(
+            connection,
+            moduleInstanceId,
+            animationJson);
     }
 
     public void UpdateModuleInstanceRuntimeCollectionValue(
@@ -62,14 +56,15 @@ internal sealed partial class SqliteProjectEngine
         string collectionJsonKey,
         string itemId,
         string fieldJsonKey,
-        JsonNode? value)
-    {
+        JsonNode? value) =>
         UpdateModuleInstanceRuntimeCollectionValues(
             moduleInstanceId,
             collectionJsonKey,
             itemId,
-            new Dictionary<string, JsonNode?> { [fieldJsonKey] = value });
-    }
+            new Dictionary<string, JsonNode?>
+            {
+                [fieldJsonKey] = value,
+            });
 
     public void UpdateModuleInstanceRuntimeCollectionValues(
         string moduleInstanceId,
@@ -77,38 +72,32 @@ internal sealed partial class SqliteProjectEngine
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
-        if (values.Count == 0)
-        {
-            throw new InvalidOperationException("A runtime collection update requires at least one explicit field.");
-        }
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var item = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content)
-            .OfType<JsonObject>()
-            .FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
-            ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        foreach (var (fieldJsonKey, value) in values)
-        {
-            if (string.IsNullOrWhiteSpace(fieldJsonKey))
-            {
-                throw new InvalidOperationException("Runtime collection field keys cannot be empty.");
-            }
-            RequireDeclaredRuntimeCollectionField(
-                moduleInstanceId,
-                collectionJsonKey,
-                fieldJsonKey,
-                value);
-            item[fieldJsonKey] = value?.DeepClone();
-        }
-        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+        using var connection = OpenConnection();
+        _productionOwner.UpdateModuleInstanceRuntimeCollectionValues(
+            connection,
+            moduleInstanceId,
+            collectionJsonKey,
+            itemId,
+            values,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
     }
 
-    public void AddModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, JsonObject item)
+    public void AddModuleInstanceRuntimeCollectionItem(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        JsonObject item)
     {
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
-        RuntimeCollectionDocumentContract.RequireNewItem(items, item, $"runtime collection '{collectionJsonKey}'");
-        items.Add(item.DeepClone());
-        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+        using var connection = OpenConnection();
+        _productionOwner.AddModuleInstanceRuntimeCollectionItem(
+            connection,
+            moduleInstanceId,
+            collectionJsonKey,
+            item,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
     }
 
     public void InsertModuleInstanceRuntimeCollectionItemAfter(
@@ -117,22 +106,17 @@ internal sealed partial class SqliteProjectEngine
         string afterItemId,
         JsonObject item)
     {
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
-        RuntimeCollectionDocumentContract.RequireNewItem(items, item, $"runtime collection '{collectionJsonKey}'");
-        var currentIndex = -1;
-        for (var index = 0; index < items.Count; index++)
-        {
-            if (items[index]?["id"]?.GetValue<string>() != afterItemId) continue;
-            currentIndex = index;
-            break;
-        }
-        if (currentIndex < 0)
-        {
-            throw new InvalidOperationException($"Missing runtime collection item '{afterItemId}'.");
-        }
-        items.Insert(currentIndex + 1, item.DeepClone());
-        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+        using var connection = OpenConnection();
+        _productionOwner
+            .InsertModuleInstanceRuntimeCollectionItemAfter(
+                connection,
+                moduleInstanceId,
+                collectionJsonKey,
+                afterItemId,
+                item,
+                ModuleInstanceProjectActorIds(
+                    connection,
+                    moduleInstanceId));
     }
 
     public void DuplicateModuleInstanceRuntimeCollectionItem(
@@ -142,108 +126,34 @@ internal sealed partial class SqliteProjectEngine
         JsonObject duplicate,
         IReadOnlyDictionary<string, string> targetIdMappings)
     {
-        var settings = GetModuleInstanceSettings(moduleInstanceId);
-        var content = ParseJsonObject(settings.ContentJson);
-        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
-        RuntimeCollectionDocumentContract.RequireNewItem(items, duplicate, $"runtime collection '{collectionJsonKey}'");
-        var currentIndex = -1;
-        JsonObject? source = null;
-        for (var index = 0; index < items.Count; index++)
-        {
-            if (items[index] is not JsonObject candidate
-                || candidate["id"]?.GetValue<string>() != itemId) continue;
-            currentIndex = index;
-            source = candidate;
-            break;
-        }
-        if (source is null) throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        items.Insert(currentIndex + 1, duplicate.DeepClone());
-
-        var animation = ParseJsonObject(settings.AnimationJson);
-        if (animation["tracks"] is JsonArray tracks)
-        {
-            foreach (var sourceTrack in tracks.OfType<JsonObject>()
-                .Where((track) => targetIdMappings.ContainsKey(track["targetId"]?.GetValue<string>() ?? ""))
-                .ToList())
-            {
-                var duplicateTrack = sourceTrack.DeepClone().AsObject();
-                duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
-                duplicateTrack["targetId"] = targetIdMappings[sourceTrack["targetId"]?.GetValue<string>() ?? ""];
-                foreach (var keyframe in (duplicateTrack["keyframes"] as JsonArray)?.OfType<JsonObject>() ?? [])
-                {
-                    keyframe["id"] = $"keyframe_{Guid.NewGuid():N}";
-                }
-                tracks.Add(duplicateTrack);
-            }
-        }
-
         using var connection = OpenConnection();
-        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
-        ModuleInstanceAnimationDocumentContract.Validate(
-            animation,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _productionOwner.ModuleInstanceRepository.UpdateContentAndAnimation(
-            connection,
-            moduleInstanceId,
-            content.ToJsonString(),
-            animation.ToJsonString());
-        _productionOwner.SynchronizeTimelineDurations(connection);
+        _productionOwner
+            .DuplicateModuleInstanceRuntimeCollectionItem(
+                connection,
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId,
+                duplicate,
+                targetIdMappings,
+                ModuleInstanceProjectActorIds(
+                    connection,
+                    moduleInstanceId));
     }
 
-    public void DeleteModuleInstanceRuntimeCollectionItem(string moduleInstanceId, string collectionJsonKey, string itemId)
+    public void DeleteModuleInstanceRuntimeCollectionItem(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        string itemId)
     {
-        var settings = GetModuleInstanceSettings(moduleInstanceId);
-        var content = ParseJsonObject(settings.ContentJson);
-        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
-        var item = items.OfType<JsonObject>().FirstOrDefault((candidate) => candidate["id"]?.GetValue<string>() == itemId)
-            ?? throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        items.Remove(item);
-        var removedTargetIds = CollectionTargetIds(item);
-        var animation = ParseJsonObject(settings.AnimationJson);
-        if (animation["tracks"] is JsonArray tracks)
-        {
-            foreach (var track in tracks.OfType<JsonObject>()
-                .Where((candidate) => removedTargetIds.Contains(candidate["targetId"]?.GetValue<string>() ?? ""))
-                .ToList())
-            {
-                tracks.Remove(track);
-            }
-        }
         using var connection = OpenConnection();
-        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
-        ModuleInstanceAnimationDocumentContract.Validate(
-            animation,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _productionOwner.ModuleInstanceRepository.UpdateContentAndAnimation(
+        _productionOwner.DeleteModuleInstanceRuntimeCollectionItem(
             connection,
             moduleInstanceId,
-            content.ToJsonString(),
-            animation.ToJsonString());
-        _productionOwner.SynchronizeTimelineDurations(connection);
-    }
-
-    private static HashSet<string> CollectionTargetIds(JsonNode root)
-    {
-        var result = new HashSet<string>(StringComparer.Ordinal);
-        void Visit(JsonNode? node)
-        {
-            if (node is JsonObject value)
-            {
-                if (value["id"] is JsonValue idValue
-                    && idValue.TryGetValue<string>(out var id)
-                    && !string.IsNullOrWhiteSpace(id))
-                {
-                    result.Add(id);
-                }
-                foreach (var child in value.Select((entry) => entry.Value)) Visit(child);
-            }
-            else if (node is JsonArray array)
-            {
-                foreach (var child in array) Visit(child);
-            }
-        }
-        Visit(root);
-        return result;
+            collectionJsonKey,
+            itemId,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
     }
 
     public void MoveModuleInstanceRuntimeCollectionItem(
@@ -252,50 +162,37 @@ internal sealed partial class SqliteProjectEngine
         string itemId,
         int offset)
     {
-        if (offset == 0) return;
-        var content = ParseJsonObject(GetModuleInstanceSettings(moduleInstanceId).ContentJson);
-        var items = RequireDeclaredRuntimeCollection(moduleInstanceId, collectionJsonKey, content);
-        var currentIndex = -1;
-        for (var index = 0; index < items.Count; index++)
-        {
-            if (items[index]?["id"]?.GetValue<string>() != itemId) continue;
-            currentIndex = index;
-            break;
-        }
-        if (currentIndex < 0)
-        {
-            throw new InvalidOperationException($"Missing runtime collection item '{itemId}'.");
-        }
-        var targetIndex = currentIndex + offset;
-        if (targetIndex < 0 || targetIndex >= items.Count) return;
-        var item = items[currentIndex];
-        items.RemoveAt(currentIndex);
-        items.Insert(targetIndex, item);
-        SaveModuleInstanceRuntimeContent(moduleInstanceId, content);
+        using var connection = OpenConnection();
+        _productionOwner.MoveModuleInstanceRuntimeCollectionItem(
+            connection,
+            moduleInstanceId,
+            collectionJsonKey,
+            itemId,
+            offset,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
     }
 
-    private void SaveModuleInstanceRuntimeContent(string moduleInstanceId, JsonObject content)
+    public IReadOnlyList<ModuleInstanceSlot>
+        GetShotModuleInstanceSlots(string shotId) =>
+            _productionOwner.GetShotModuleInstanceSlots(shotId);
+
+    public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(
+        string shotId)
     {
         using var connection = OpenConnection();
-        ValidateModuleInstanceRuntimeContent(connection, moduleInstanceId, content);
-        _productionOwner.ModuleInstanceRepository.UpdateContent(connection, moduleInstanceId, content.ToJsonString());
-        _productionOwner.SynchronizeTimelineDurations(connection);
-    }
-
-    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
-        string shotId) =>
-        _productionOwner.GetShotModuleInstanceSlots(shotId);
-
-    public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId)
-    {
-        using var connection = OpenConnection();
-        var shot = _productionOwner.ShotRepository.Get(connection, shotId);
-        var apps = _designOwner.AppModuleRepository.QueryApps(connection)
+        var shot = _productionOwner.ShotRepository.Get(
+            connection,
+            shotId);
+        var apps = _designOwner.AppModuleRepository
+            .QueryApps(connection)
             .Where((app) => app.ProjectId == shot.ProjectId)
             .OrderBy((app) => app.SortOrder)
             .ThenBy((app) => app.Name)
             .ToDictionary((app) => app.Id, StringComparer.Ordinal);
-        return _designOwner.AppModuleRepository.QueryModules(connection)
+        return _designOwner.AppModuleRepository
+            .QueryModules(connection)
             .Where((module) => apps.ContainsKey(module.AppId))
             .OrderBy((module) => apps[module.AppId].SortOrder)
             .ThenBy((module) => apps[module.AppId].Name)
@@ -310,53 +207,19 @@ internal sealed partial class SqliteProjectEngine
             .ToList();
     }
 
-    public ProjectTreeNode AddModuleInstance(ProjectTreeNode shot, ShotModuleInstanceDraft draft)
+    public ProjectTreeNode AddModuleInstance(
+        ProjectTreeNode shot,
+        ShotModuleInstanceDraft draft)
     {
-        if (shot.Kind != ProjectTreeNodeKind.Shot)
-            throw new InvalidOperationException("A module instance can only be added to a Shot.");
-        var module = draft.Module;
-        if (!VariantReferenceId.TryParse(draft.VariantReference, out var variantModuleId, out _)
-            || !variantModuleId.Equals(module.Id, StringComparison.Ordinal)
-            || GetModuleVariantOptions(module.Id).All((option) => option.Value != draft.VariantReference))
-            throw new InvalidOperationException("The selected Variant does not belong to the selected Module.");
-        var requestedName = draft.Name.Trim();
-        if (requestedName.Length == 0)
-            throw new InvalidOperationException("A Module Instance name is required.");
-        var initialDuration = RuntimeDurationContract.InitialDurationFrames(GetModuleSettings(module.Id).DesignPreviewJson);
         using var connection = OpenConnection();
-        _productionOwner.ModuleInstanceThemeContextService.RequireShotContext(connection, shot.Id);
-        var index = _productionOwner.ModuleInstanceRepository.NextSortOrder(connection, shot.Id);
-        var id = $"module_instance_{Guid.NewGuid():N}";
-        var name = _productionOwner.ModuleInstanceRepository.UniqueName(connection, shot.Id, requestedName);
-        _productionOwner.ModuleInstanceRepository.Insert(
+        var moduleSettings = GetModuleSettings(draft.Module.Id);
+        return _productionOwner.AddModuleInstance(
             connection,
-            new ModuleInstanceRecord(
-                id,
-                shot.Id,
-                module.AppId,
-                module.Id,
-                name,
-                $"{module.Name} module instance.",
-                index,
-                initialDuration,
-                "{\"type\":\"cut\"}",
-                "{}",
-                "{}",
-                DefaultModuleAnimationJson(),
-                new JsonObject
-            {
-                ["moduleVariantReference"] = draft.VariantReference,
-            }.ToJsonString()));
-        ReconcileModuleInstanceRuntimePayload(connection, id);
-        _productionOwner.SynchronizeTimelineDurations(connection);
-        var duration = _productionOwner.ModuleInstanceRepository.Get(connection, id).DurationFrames;
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.ModuleInstance,
-            id,
-            name,
-            $"{module.Name} · {duration} frames · Cut",
-            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
-            shot);
+            shot,
+            draft,
+            ProjectActorIds(
+                connection,
+                moduleSettings.ProjectId));
     }
 
     public ProjectTreeNode RenameModuleInstance(
@@ -367,40 +230,24 @@ internal sealed partial class SqliteProjectEngine
     public void MoveModuleInstance(
         string moduleInstanceId,
         int offset) =>
-        _productionOwner.MoveModuleInstance(moduleInstanceId, offset);
+        _productionOwner.MoveModuleInstance(
+            moduleInstanceId,
+            offset);
 
-    public void UpdateModuleInstanceField(string moduleInstanceId, string fieldId, string value)
+    public void UpdateModuleInstanceField(
+        string moduleInstanceId,
+        string fieldId,
+        string value)
     {
-        switch (fieldId)
-        {
-            case "moduleInstance.variant":
-                UpdateModuleInstanceVariant(moduleInstanceId, value);
-                return;
-            case "moduleInstance.durationFrames":
-                if (RuntimeDurationContract.Policy(GetModuleInstanceEffectiveContractJson(moduleInstanceId))
-                    != RuntimeDurationPolicy.Explicit)
-                    throw new InvalidOperationException("Calculated Screen duration cannot be edited.");
-                using (var connection = OpenConnection())
-                {
-                    _productionOwner.ModuleInstanceRepository.UpdateDuration(
-                        connection,
-                        moduleInstanceId,
-                        Math.Max(1, NumericText.Int32(value, 1)));
-                    _productionOwner.SynchronizeTimelineDurations(connection);
-                }
-                return;
-            default:
-                throw new InvalidOperationException($"Unknown module instance field '{fieldId}'.");
-        }
-    }
-
-    private static string DefaultModuleAnimationJson()
-    {
-        return new JsonObject
-        {
-            ["schemaVersion"] = 2,
-            ["tracks"] = new JsonArray(),
-        }.ToJsonString();
+        using var connection = OpenConnection();
+        _productionOwner.UpdateModuleInstanceField(
+            connection,
+            moduleInstanceId,
+            fieldId,
+            value,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
     }
 
 }
