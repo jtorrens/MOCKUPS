@@ -1,11 +1,68 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner
 {
+    internal void ValidateEmbeddedSlotVariantReferences(
+        SqliteConnection connection,
+        string projectId,
+        JsonObject config)
+    {
+        var componentRows = _componentClassRepository
+            .QueryByProject(connection, projectId);
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (JsonPath.Get(config, slot.SlotPath)
+                is not JsonObject slotNode)
+            {
+                continue;
+            }
+
+            var reference = JsonPath.String(
+                slotNode,
+                "variantReference",
+                "");
+            if (!VariantReferenceId.TryParse(
+                    reference,
+                    out var componentClassId,
+                    out var variantId))
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' must use a full component variant reference.");
+            }
+
+            var componentClass = componentRows.FirstOrDefault(
+                (row) => row.Id.Equals(
+                        componentClassId,
+                        StringComparison.Ordinal)
+                    && row.ComponentType.Equals(
+                        slot.EmbeddedComponentType,
+                        StringComparison.Ordinal));
+            if (componentClass is null)
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' references missing {slot.EmbeddedComponentType} class '{componentClassId}'.");
+            }
+
+            if (!ComponentClassVariants(
+                    componentClass.MetadataJson,
+                    $"Component class '{componentClass.Id}'")
+                .Any(
+                    (variant) => variant.Id.Equals(
+                        variantId,
+                        StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' references missing variant '{variantId}' on '{componentClassId}'.");
+            }
+        }
+    }
+
     internal string ValidateComponentVariantReference(
         SqliteConnection connection,
         string projectId,

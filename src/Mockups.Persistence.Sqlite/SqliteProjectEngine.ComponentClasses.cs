@@ -37,38 +37,12 @@ internal sealed partial class SqliteProjectEngine
         SqliteConnection connection,
         ProjectTreeNode variantNode,
         out string componentClassId,
-        out JsonObject metadata)
-    {
-        if (variantNode.Kind != ProjectTreeNodeKind.ComponentVariant
-            || !VariantReferenceId.TryParse(variantNode.Id, out componentClassId, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
-        }
-
-        var settings = GetComponentClassSettings(connection, componentClassId);
-        metadata = ParseJsonObject(settings.MetadataJson);
-        var variants = VariantEnvelopeContract.RequiredArray(
-            metadata,
-            "variants",
-            $"Component class '{componentClassId}'");
-
-        var variant = VariantEnvelopeContract.FindSource(variants, variantId)
-            ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
-        if (IsVariantLockedForEditing(
-                componentClassId,
-                variantId,
-                JsonBool(variant, ["locked"])))
-        {
-            throw new InvalidOperationException($"Component variant '{variantId}' is locked.");
-        }
-
-        if (variant["config"] is not JsonObject config)
-        {
-            throw new InvalidOperationException($"Component variant '{variantId}' has no config.");
-        }
-
-        return config;
-    }
+        out JsonObject metadata) =>
+        _designOwner.ComponentVariantConfigForUpdate(
+            connection,
+            variantNode,
+            out componentClassId,
+            out metadata);
 
 
     private ComponentClassSettings GetComponentClassSettings(
@@ -259,51 +233,23 @@ internal sealed partial class SqliteProjectEngine
         SetJsonValue(localOverrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
     }
 
-    public void UpdateComponentClassField(string componentClassId, string fieldId, string value)
-    {
-        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0)
-        {
-            return;
-        }
+    public void UpdateComponentClassField(
+        string componentClassId,
+        string fieldId,
+        string value) =>
+        _designOwner.UpdateComponentClassField(
+            componentClassId,
+            fieldId,
+            value);
 
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(settings.ConfigJson);
-            var metadata = ParseJsonObject(settings.MetadataJson);
-            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
-            CurrentComponentConfigContract.Validate(
-                settings.ComponentType,
-                config,
-                $"Component class '{componentClassId}' config_json");
-            ValidateEmbeddedSlotVariantReferences(connection, settings.ProjectId, config);
-            SetDefaultComponentVariantConfig(metadata, config);
-            _designOwner.ComponentClassRepository.UpdateConfigAndMetadata(
-                connection,
-                componentClassId,
-                config.ToJsonString(),
-                metadata.ToJsonString());
-        }
-    }
-
-    public void UpdateComponentVariantField(ProjectTreeNode variantNode, string fieldId, string value)
-    {
-        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
-        if (!descriptor.IsEditable || descriptor.JsonPath.Length == 0)
-        {
-            return;
-        }
-
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var config = ComponentVariantConfigForUpdate(connection, variantNode, out var componentClassId, out var metadata);
-            SetJsonValue(config, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
-            PersistComponentVariantUpdate(connection, variantNode, componentClassId, config, metadata);
-        }
-    }
+    public void UpdateComponentVariantField(
+        ProjectTreeNode variantNode,
+        string fieldId,
+        string value) =>
+        _designOwner.UpdateComponentVariantField(
+            variantNode,
+            fieldId,
+            value);
 
     public FieldValue CreateEmbeddedComponentFieldValue(
         string componentClassId,
@@ -630,58 +576,29 @@ internal sealed partial class SqliteProjectEngine
             metadataJson,
             owner);
 
-    private static void SetDefaultComponentVariantConfig(JsonObject metadata, JsonObject config)
-    {
-        var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", "Component class metadata");
-        var defaultVariant = VariantEnvelopeContract.FindSource(variants, VariantEnvelopeContract.DefaultId)
-            ?? throw new InvalidOperationException("Component class has no Default variant.");
-        defaultVariant["config"] = config.DeepClone();
-    }
-
     private void PersistDefaultComponentConfig(
         SqliteConnection connection,
         string componentClassId,
         JsonObject config,
-        JsonObject metadata)
-    {
-        var component = _designOwner.ComponentClassRepository.Get(connection, componentClassId);
-        CurrentComponentConfigContract.Validate(
-            component.ComponentType,
-            config,
-            $"Component class '{componentClassId}' Default Variant config");
-        ValidateEmbeddedSlotVariantReferences(connection, component.ProjectId, config);
-        SetDefaultComponentVariantConfig(metadata, config);
-        _designOwner.ComponentClassRepository.UpdateConfigAndMetadata(
+        JsonObject metadata) =>
+        _designOwner.PersistDefaultComponentConfig(
             connection,
             componentClassId,
-            config.ToJsonString(),
-            metadata.ToJsonString());
-    }
+            config,
+            metadata);
 
     private void PersistComponentVariantUpdate(
         SqliteConnection connection,
         ProjectTreeNode variantNode,
         string componentClassId,
         JsonObject config,
-        JsonObject metadata)
-    {
-        if (!VariantReferenceId.TryParse(variantNode.Id, out _, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid component variant node id '{variantNode.Id}'.");
-        }
-        var component = _designOwner.ComponentClassRepository.Get(connection, componentClassId);
-        CurrentComponentConfigContract.Validate(
-            component.ComponentType,
+        JsonObject metadata) =>
+        _designOwner.PersistComponentVariantUpdate(
+            connection,
+            variantNode,
+            componentClassId,
             config,
-            $"Component class '{componentClassId}' Variant '{variantId}' config");
-        ValidateEmbeddedSlotVariantReferences(connection, component.ProjectId, config);
-        if (variantId.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal))
-        {
-            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
-            return;
-        }
-        _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
-    }
+            metadata);
 
     private IReadOnlyList<ComponentClassDefinitionRecord> QueryComponentClassRows(SqliteConnection connection) =>
         _designOwner.ComponentClassRepository.QueryAll(connection);
@@ -721,13 +638,14 @@ internal sealed partial class SqliteProjectEngine
         };
     }
 
-    private static JsonNode ComponentConfigJsonValue(ValueKind valueKind, string value, string fieldId)
-    {
-        return RuntimeInputValueKindContract.ParseValue(
+    private static JsonNode ComponentConfigJsonValue(
+        ValueKind valueKind,
+        string value,
+        string fieldId) =>
+        SqliteDesignOwner.ComponentConfigJsonValue(
             valueKind,
             value,
-            $"Component field '{fieldId}' value");
-    }
+            fieldId);
 
     private static JsonObject? EmbeddedOverrides(JsonObject config, EmbeddedComponentSlotDefinition slot, bool createIfMissing)
     {

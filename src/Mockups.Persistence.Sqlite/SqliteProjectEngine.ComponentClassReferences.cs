@@ -210,44 +210,11 @@ internal sealed partial class SqliteProjectEngine
     private void ValidateEmbeddedSlotVariantReferences(
         SqliteConnection connection,
         string projectId,
-        JsonObject config)
-    {
-        var componentRows = QueryComponentClassRows(connection)
-            .Where((row) => row.ProjectId.Equals(projectId, StringComparison.Ordinal))
-            .ToList();
-
-        foreach (var slot in EmbeddedComponentSlotCatalog.All())
-        {
-            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode)
-            {
-                continue;
-            }
-
-            var reference = JsonPath.String(slotNode, "variantReference", "");
-            if (!VariantReferenceId.TryParse(reference, out var componentClassId, out var variantId))
-            {
-                throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' must use a full component variant reference.");
-            }
-
-            var componentClass = componentRows.FirstOrDefault((row) =>
-                row.Id.Equals(componentClassId, StringComparison.Ordinal)
-                && row.ComponentType.Equals(slot.EmbeddedComponentType, StringComparison.Ordinal));
-            if (componentClass is null)
-            {
-                throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' references missing {slot.EmbeddedComponentType} class '{componentClassId}'.");
-            }
-
-            if (!RequiredComponentClassVariants(componentClass)
-                    .Any((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal)))
-            {
-                throw new InvalidOperationException(
-                    $"Embedded component slot '{slot.FieldId}' references missing variant '{variantId}' on '{componentClassId}'.");
-            }
-        }
-
-    }
+        JsonObject config) =>
+        _designOwner.ValidateEmbeddedSlotVariantReferences(
+            connection,
+            projectId,
+            config);
 
     private static string RequiredComponentVariantReference(JsonObject? slotNode, string owner)
     {

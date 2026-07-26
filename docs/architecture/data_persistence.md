@@ -58,6 +58,10 @@ mutations are owned by the same Design assembly. Component Variant deletion
 uses the same split: composition queries typed cross-domain Usage edges, then
 Design alone validates protection/lock state and mutates the authored Variant
 array. This does not grant Design access to the Usage implementation.
+Component configuration-field writes and complete Variant snapshot
+replacement also execute inside Design. Before persistence, Design validates
+the current Component contract and every embedded slot against the exact
+Project, Component type, class id and Variant id.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

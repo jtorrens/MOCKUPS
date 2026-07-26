@@ -157,8 +157,10 @@ Production usage check before asking Design to delete a Module Variant.
 Component Class settings, Variant catalogs and Variant lifecycle mutations
 also execute in Design. The temporary composition layer performs the
 cross-domain Usage check before asking Design to delete a Component Variant.
-Component configuration-field and embedded-boundary edits remain the next
-Design cut.
+Component configuration-field writes, strict snapshot replacement and exact
+embedded-slot reference validation execute in Design as well. Embedded
+boundary editing that can target a Module owner remains the next composition
+split.
 `Mockups.Persistence.Sqlite.Production` owns
 Episode, Shot, Screen and Shot Manager repositories. Its owner already
 contains Project/Episode and Shot Manager application operations; remaining

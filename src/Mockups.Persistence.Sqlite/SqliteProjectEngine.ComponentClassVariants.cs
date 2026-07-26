@@ -65,43 +65,12 @@ internal sealed partial class SqliteProjectEngine
         ProjectTreeNode node) =>
         _designOwner.ToggleComponentVariantLock(node);
 
-    public void ReplaceComponentVariantConfig(ProjectTreeNode node, string configJson)
-    {
-        if (!VariantReferenceId.TryParse(node.Id, out var componentClassId, out var variantId))
-        {
-            throw new InvalidOperationException($"Invalid component variant node id '{node.Id}'.");
-        }
-
-        var nextConfig = ParseJsonObject(configJson);
-
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var settings = GetComponentClassSettings(connection, componentClassId);
-            CurrentComponentConfigContract.Validate(
-                settings.ComponentType,
-                nextConfig,
-                $"Component class '{componentClassId}' Variant '{variantId}' config");
-            ValidateEmbeddedSlotVariantReferences(
-                connection,
-                settings.ProjectId,
-                nextConfig);
-            var metadata = ParseJsonObject(settings.MetadataJson);
-            var variants = VariantEnvelopeContract.RequiredArray(metadata, "variants", $"Component class '{componentClassId}'");
-            var variant = VariantEnvelopeContract.FindSource(variants, variantId)
-                ?? throw new InvalidOperationException($"Missing component variant '{variantId}'.");
-            if (IsVariantLockedForEditing(
-                    componentClassId,
-                    variantId,
-                    JsonBool(variant, ["locked"])))
-            {
-                throw new InvalidOperationException($"Component variant '{variantId}' is locked.");
-            }
-
-            variant["config"] = nextConfig;
-            _designOwner.ComponentClassRepository.UpdateMetadata(connection, componentClassId, metadata.ToJsonString());
-        }
-    }
+    public void ReplaceComponentVariantConfig(
+        ProjectTreeNode node,
+        string configJson) =>
+        _designOwner.ReplaceComponentVariantConfig(
+            node,
+            configJson);
 
     public IReadOnlyList<ComponentVariantReferenceUsage> GetComponentVariantReferenceUsageDetails(ProjectTreeNode node)
     {
