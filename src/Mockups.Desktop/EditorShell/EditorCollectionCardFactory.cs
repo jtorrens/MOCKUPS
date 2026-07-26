@@ -20,6 +20,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
     private readonly IRuntimeInputInstanceStore _runtimeInputInstances;
     private readonly IModuleInstanceAnimationStore _animation;
+    private readonly IModuleInstanceThemeTokenQuery _moduleInstanceThemes;
     private readonly IReferenceUsageQuery _referenceUsage;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
@@ -54,6 +55,7 @@ internal sealed class EditorCollectionCardFactory
         IRuntimeInputOwnerStore runtimeInputOwners,
         IRuntimeInputInstanceStore runtimeInputInstances,
         IModuleInstanceAnimationStore animation,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IReferenceUsageQuery referenceUsage,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
@@ -87,6 +89,7 @@ internal sealed class EditorCollectionCardFactory
         _runtimeInputOwners = runtimeInputOwners;
         _runtimeInputInstances = runtimeInputInstances;
         _animation = animation;
+        _moduleInstanceThemes = moduleInstanceThemes;
         _referenceUsage = referenceUsage;
         _isDark = isDark;
         _showInfo = showInfo;
@@ -147,6 +150,7 @@ internal sealed class EditorCollectionCardFactory
         {
             new ShotModuleInstancesCollectionEditor(
                 _moduleInstances,
+                _moduleInstanceThemes,
                 _onChanged,
                 _reloadAndSelect,
                 _domainDialogs.DefineModuleInstanceForShot,
@@ -196,6 +200,7 @@ internal sealed class EditorCollectionCardFactory
     {
         return new ModuleInstanceAnimationEditor(
             _animation,
+            _moduleInstanceThemes,
             _dictionary,
             _actors,
             _dictionaryServices,
@@ -216,6 +221,7 @@ internal sealed class EditorCollectionCardFactory
             _actors,
             _runtimeInputOwners,
             _runtimeInputInstances,
+            _moduleInstanceThemes,
             _dictionaryServices,
             _onChanged,
             _triggerPreviewAction,

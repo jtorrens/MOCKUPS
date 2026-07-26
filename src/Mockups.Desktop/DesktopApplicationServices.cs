@@ -15,6 +15,7 @@ internal sealed record DesktopApplicationDataPorts(
     IPreviewInputRepository Preview,
     IComponentPreviewInputRepository ComponentPreview,
     IModuleInstanceTimelineStore Timeline,
+    IModuleInstanceThemeTokenQuery ModuleInstanceThemes,
     IDictionaryFieldContextRepository Dictionary,
     IEditorChildStore Children,
     IEditorNodeCommandStore NodeCommands,
@@ -52,6 +53,7 @@ internal sealed record DesktopApplicationServices(
             new CoreFieldValueService(data.CoreFields),
             new RecordClassFieldValueService(
                 data.RecordFields,
+                data.ModuleInstanceThemes,
                 productionOutputRoots),
             new ComponentClassFieldValueService(data.ComponentFields),
             new ProductionShotContextService(

@@ -148,6 +148,7 @@ public sealed class ApplicationStartupCoordinator
                 project.Preview,
                 project.ComponentPreview,
                 project.Timeline,
+                project.ModuleInstanceThemes,
                 project.Dictionary,
                 project.Children,
                 project.NodeCommands,

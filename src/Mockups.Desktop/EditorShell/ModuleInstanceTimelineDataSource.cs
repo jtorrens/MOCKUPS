@@ -16,10 +16,14 @@ internal sealed record ModuleInstanceTimelineSource(
 internal sealed class ModuleInstanceTimelineDataSource
 {
     private readonly IModuleInstanceTimelineStore _database;
+    private readonly IModuleInstanceThemeTokenQuery _themeTokens;
 
-    public ModuleInstanceTimelineDataSource(IModuleInstanceTimelineStore database)
+    public ModuleInstanceTimelineDataSource(
+        IModuleInstanceTimelineStore database,
+        IModuleInstanceThemeTokenQuery themeTokens)
     {
         _database = database;
+        _themeTokens = themeTokens;
     }
 
     public ModuleInstanceTimelineSource Load(string moduleInstanceId)
@@ -32,7 +36,8 @@ internal sealed class ModuleInstanceTimelineDataSource
             instance.AnimationJson,
             _database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),
             _database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-            _database.GetModuleInstanceThemeTokensJson(moduleInstanceId));
+            _themeTokens.GetModuleInstanceThemeTokensJson(
+                moduleInstanceId));
     }
 
     public IReadOnlyList<string> ShotSlotIds(string shotId)

@@ -20,7 +20,11 @@ public sealed class SqliteProjectSession
         Preview = new SqlitePreviewInputPort(engine);
         ComponentPreview =
             new SqliteComponentPreviewInputPort(engine.Design);
-        Timeline = new SqliteModuleInstanceTimelinePort(engine);
+        Timeline =
+            new SqliteModuleInstanceTimelinePort(engine.Production);
+        ModuleInstanceThemes =
+            new SqliteModuleInstanceThemeTokenPort(
+                engine.Resources);
         Dictionary =
             new SqliteDictionaryFieldContextPort(engine);
         Children = new SqliteEditorChildPort(engine);
@@ -65,6 +69,8 @@ public sealed class SqliteProjectSession
     public IComponentPreviewInputRepository ComponentPreview { get; }
 
     public IModuleInstanceTimelineStore Timeline { get; }
+
+    public IModuleInstanceThemeTokenQuery ModuleInstanceThemes { get; }
 
     public IDictionaryFieldContextRepository Dictionary { get; }
 

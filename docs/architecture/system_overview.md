@@ -230,6 +230,11 @@ ports; no one of them can be cast to another. Remaining cross-domain
 application operations move to focused owners as their contracts are
 decomposed.
 
+The Module Instance timeline is backed directly by Production and contains no
+Theme access. Effective Module Instance Theme tokens are a separate Resources
+query. Timeline calculations that need natural motion pacing receive both
+ports explicitly at the application boundary.
+
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite session and composes the named narrow Application

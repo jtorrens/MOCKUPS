@@ -131,6 +131,11 @@ declares every read capability it coordinates. Component Preview and Variant
 history route directly to Design; Actor, Icon Theme and Theme-token reads route
 directly to Resources.
 
+Module Instance row, slot, contract and Runtime Preview reads route directly to
+Production. Effective Theme-token resolution is not part of that timeline
+contract: it is a separate Resources capability composed only by consumers
+that calculate Theme-dependent timing.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and

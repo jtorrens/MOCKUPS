@@ -28,6 +28,7 @@ internal sealed class ModuleInstanceAnimationEditor
 
     public ModuleInstanceAnimationEditor(
         IModuleInstanceAnimationStore animation,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         EditorDictionaryFieldServices dictionaryServices,
@@ -39,9 +40,12 @@ internal sealed class ModuleInstanceAnimationEditor
         Action togglePlayback)
     {
         _timelineDataSource =
-            new ModuleInstanceTimelineDataSource(animation);
+            new ModuleInstanceTimelineDataSource(
+                animation,
+                moduleInstanceThemes);
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
+            moduleInstanceThemes,
             _timelineDataSource);
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);

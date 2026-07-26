@@ -20,6 +20,7 @@ internal sealed class EditorDictionaryFieldServices
         IDictionaryFieldContextRepository database,
         IPreviewInputRepository preview,
         IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IActorPreviewRepository actors,
         IProjectPathResolver projectPaths,
         EditorPathBrowser pathBrowser,
@@ -31,6 +32,7 @@ internal sealed class EditorDictionaryFieldServices
             database,
             preview,
             timeline,
+            moduleInstanceThemes,
             actors,
             projectPaths);
         _pathBrowser = pathBrowser;

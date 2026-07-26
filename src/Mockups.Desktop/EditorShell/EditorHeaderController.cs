@@ -37,6 +37,7 @@ internal sealed class EditorHeaderController
         IComponentDocumentStore components,
         IPreviewInputRepository preview,
         IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
@@ -56,7 +57,8 @@ internal sealed class EditorHeaderController
         _screenPresentation =
             new ProductionScreenPresentationDataSource(
                 preview,
-                timeline);
+                timeline,
+                moduleInstanceThemes);
         _selectedNode = selectedNode;
         _preferredVariantNode = preferredVariantNode;
         _preferredModuleVariantNode = preferredModuleVariantNode;

@@ -15,12 +15,16 @@ internal sealed class RecordClassFieldValueService
 
     public RecordClassFieldValueService(
         IRecordClassFieldStore database,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         ProductionOutputRootStore? productionOutputRoots = null)
     {
         _database = database;
         _productionOutputRoots =
             productionOutputRoots ?? new ProductionOutputRootStore();
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(
+                database,
+                moduleInstanceThemes);
     }
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)

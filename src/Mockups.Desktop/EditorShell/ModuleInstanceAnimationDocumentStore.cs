@@ -12,13 +12,16 @@ internal sealed record ModuleInstanceAnimationSource(
 internal sealed class ModuleInstanceAnimationDocumentStore
 {
     private readonly IModuleInstanceAnimationStore _database;
+    private readonly IModuleInstanceThemeTokenQuery _themeTokens;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public ModuleInstanceAnimationDocumentStore(
         IModuleInstanceAnimationStore database,
+        IModuleInstanceThemeTokenQuery themeTokens,
         ModuleInstanceTimelineDataSource timelineDataSource)
     {
         _database = database;
+        _themeTokens = themeTokens;
         _timelineDataSource = timelineDataSource;
     }
 
@@ -29,7 +32,8 @@ internal sealed class ModuleInstanceAnimationDocumentStore
             _database.GetModuleInstanceVariantSettings(moduleInstanceId).ConfigJson,
             timeline.AnimationJson,
             timeline.RuntimePreviewJson,
-            timeline.ThemeTokensJson,
+            _themeTokens.GetModuleInstanceThemeTokensJson(
+                moduleInstanceId),
             timeline.EffectiveContractJson);
     }
 

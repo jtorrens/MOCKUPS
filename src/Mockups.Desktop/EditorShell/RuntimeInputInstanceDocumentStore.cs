@@ -9,12 +9,17 @@ internal sealed class RuntimeInputInstanceDocumentStore
     private readonly IRuntimeInputInstanceStore _database;
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
 
-    public RuntimeInputInstanceDocumentStore(IRuntimeInputInstanceStore database)
+    public RuntimeInputInstanceDocumentStore(
+        IRuntimeInputInstanceStore database,
+        IModuleInstanceThemeTokenQuery themeTokens)
     {
         _database = database;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             database,
-            new ModuleInstanceTimelineDataSource(database));
+            themeTokens,
+            new ModuleInstanceTimelineDataSource(
+                database,
+                themeTokens));
     }
 
     public void UpdateRuntimeValue(string moduleInstanceId, string jsonKey, JsonNode? value)

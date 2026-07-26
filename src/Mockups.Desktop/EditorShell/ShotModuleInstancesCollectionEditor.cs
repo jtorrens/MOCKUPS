@@ -22,6 +22,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
     public ShotModuleInstancesCollectionEditor(
         IModuleInstanceCollectionStore database,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,
@@ -36,7 +37,10 @@ internal sealed class ShotModuleInstancesCollectionEditor
         _confirmDelete = confirmDelete;
         _shotFrame = shotFrame;
         _playbackState = playbackState;
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(
+                database,
+                moduleInstanceThemes);
     }
 
     public InstantEditorCard Create(ProjectTreeNode shot)

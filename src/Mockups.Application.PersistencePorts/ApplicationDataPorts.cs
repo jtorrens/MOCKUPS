@@ -397,9 +397,13 @@ public interface IModuleInstanceTimelineStore
     string GetModuleInstanceTransitionType(string moduleInstanceId);
     string GetModuleInstanceEffectiveContractJson(string moduleInstanceId);
     string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId);
-    string GetModuleInstanceThemeTokensJson(string moduleInstanceId);
     IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId);
+}
+
+public interface IModuleInstanceThemeTokenQuery
+{
+    string GetModuleInstanceThemeTokensJson(string moduleInstanceId);
 }
 
 public interface IModuleInstanceAnimationStore : IModuleInstanceTimelineStore
@@ -463,7 +467,8 @@ public interface IRenderSnapshotDataSource :
     IPreviewInputRepository,
     IActorPreviewRepository,
     IComponentPreviewInputRepository,
-    IModuleInstanceTimelineStore
+    IModuleInstanceTimelineStore,
+    IModuleInstanceThemeTokenQuery
 {
     ProductionOutputShotPlan GetProductionOutputShotPlan(string shotId);
 }

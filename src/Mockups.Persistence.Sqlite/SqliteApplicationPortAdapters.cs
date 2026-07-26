@@ -116,10 +116,6 @@ internal sealed class SqliteRecordClassFieldPort(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
 
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
-
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceTransitionType(moduleInstanceId);
@@ -473,10 +469,6 @@ internal sealed class SqlitePreviewInputPort(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
 
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
-
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceTransitionType(moduleInstanceId);
@@ -561,6 +553,10 @@ internal sealed class SqliteDictionaryFieldContextPort(
     : Mockups.DesktopEditorShell.Data.IDictionaryFieldContextRepository
 {
     private readonly Mockups.DesktopEditorShell.Data.IDictionaryFieldContextRepository _target = target;
+
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId)
+        => _target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetActorFieldValue(
         string actorId,
@@ -666,10 +662,6 @@ internal sealed class SqliteDictionaryFieldContextPort(
     public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
@@ -825,10 +817,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
 
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
-
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceTransitionType(moduleInstanceId);
@@ -916,6 +904,11 @@ internal sealed class SqliteProductionNavigationPort(
 {
     private readonly Mockups.DesktopEditorShell.Data.IProductionNavigationStore _target = target;
 
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId)
+        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceThemeTokenQuery)_target)
+            .GetModuleInstanceThemeTokensJson(moduleInstanceId);
+
     public Mockups.DesktopEditorShell.Data.ProductionOutputShotPlan GetProductionOutputShotPlan(
         string shotId)
         => ((Mockups.DesktopEditorShell.Data.IRenderSnapshotDataSource)_target).GetProductionOutputShotPlan(shotId);
@@ -992,10 +985,6 @@ internal sealed class SqliteProductionNavigationPort(
     public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
@@ -1154,10 +1143,6 @@ internal sealed class SqliteEditorDomainDialogPort(
     public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
@@ -1395,10 +1380,6 @@ internal sealed class SqliteEditorHeaderPort(
     public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
@@ -1661,10 +1642,6 @@ internal sealed class SqliteEditorCollectionPort(
     public Mockups.DesktopEditorShell.Data.ModuleInstanceSettings GetModuleInstanceSettings(
         string moduleInstanceId)
         => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceSettings(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId)
-        => ((Mockups.DesktopEditorShell.Data.IModuleInstanceTimelineStore)_target).GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)

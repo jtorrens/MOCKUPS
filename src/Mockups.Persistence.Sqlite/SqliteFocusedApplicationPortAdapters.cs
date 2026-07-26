@@ -52,13 +52,18 @@ internal sealed class SqliteModuleInstanceTimelinePort(
         string moduleInstanceId) =>
         target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
 
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
-
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId) =>
         target.GetShotModuleInstanceSlots(shotId);
+}
+
+internal sealed class SqliteModuleInstanceThemeTokenPort(
+    IModuleInstanceThemeTokenQuery target)
+    : IModuleInstanceThemeTokenQuery
+{
+    public string GetModuleInstanceThemeTokensJson(
+        string moduleInstanceId) =>
+        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 }
 
 internal sealed class SqliteEditorChildPort(IEditorChildStore target)
@@ -150,10 +155,6 @@ internal sealed class SqliteModuleInstanceCollectionPort(
     public string GetModuleInstanceRuntimePreviewJson(
         string moduleInstanceId) =>
         target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId) =>
-        target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId) =>
@@ -307,10 +308,6 @@ internal class SqliteModuleInstanceAnimationPort(
     public string GetModuleInstanceRuntimePreviewJson(
         string moduleInstanceId) =>
         Target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
-    public string GetModuleInstanceThemeTokensJson(
-        string moduleInstanceId) =>
-        Target.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId) =>

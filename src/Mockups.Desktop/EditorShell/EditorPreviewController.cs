@@ -250,6 +250,7 @@ internal sealed class EditorPreviewController : IDisposable
         IPreviewInputRepository preview,
         IComponentPreviewInputRepository componentPreview,
         IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IProjectPathResolver projectPaths,
@@ -277,12 +278,15 @@ internal sealed class EditorPreviewController : IDisposable
         _previewPayloadData = new DesignPreviewPayloadDataSource(
             preview,
             timeline,
+            moduleInstanceThemes,
             actors,
             projectPaths);
         _visualContextData =
             new PreviewVisualContextDataSource(preview, actors);
         _timelineDataSource =
-            new ModuleInstanceTimelineDataSource(timeline);
+            new ModuleInstanceTimelineDataSource(
+                timeline,
+                moduleInstanceThemes);
         _productionPreviewData =
             new ProductionPreviewSessionDataSource(preview, timeline);
         _owner = owner;

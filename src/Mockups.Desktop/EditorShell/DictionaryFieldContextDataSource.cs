@@ -22,6 +22,7 @@ internal sealed class DictionaryFieldContextDataSource
         IDictionaryFieldContextRepository database,
         IPreviewInputRepository preview,
         IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IActorPreviewRepository actors,
         IProjectPathResolver projectPaths)
     {
@@ -29,6 +30,7 @@ internal sealed class DictionaryFieldContextDataSource
         _previewPayloadData = new DesignPreviewPayloadDataSource(
             preview,
             timeline,
+            moduleInstanceThemes,
             actors,
             projectPaths);
     }

@@ -16,12 +16,15 @@ internal sealed class ProductionScreenPresentationDataSource
 
     public ProductionScreenPresentationDataSource(
         IPreviewInputRepository database,
-        IModuleInstanceTimelineStore timeline)
+        IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes)
     {
         _database = database;
         _timeline = timeline;
         _timelineDataSource =
-            new ModuleInstanceTimelineDataSource(timeline);
+            new ModuleInstanceTimelineDataSource(
+                timeline,
+                moduleInstanceThemes);
     }
 
     public ProductionScreenPresentationSource Load(string moduleInstanceId)

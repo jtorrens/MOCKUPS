@@ -22,6 +22,8 @@ internal sealed partial class SqliteProjectEngine
 
     internal SqliteDesignOwner Design => _designOwner;
 
+    internal SqliteProductionOwner Production => _productionOwner;
+
     internal SqliteResourceOwner Resources => _resourceOwner;
 
     internal SqliteProjectEngine(string databasePath)

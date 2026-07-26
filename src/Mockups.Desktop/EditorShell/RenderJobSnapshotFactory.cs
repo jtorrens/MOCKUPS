@@ -64,6 +64,7 @@ internal sealed class RenderJobSnapshotFactory
             database,
             database,
             database,
+            database,
             projectPaths);
     }
 

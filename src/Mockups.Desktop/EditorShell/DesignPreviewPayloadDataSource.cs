@@ -67,6 +67,7 @@ internal sealed class DesignPreviewPayloadDataSource
     public DesignPreviewPayloadDataSource(
         IPreviewInputRepository database,
         IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IActorPreviewRepository actors,
         IProjectPathResolver projectPaths)
     {
@@ -75,7 +76,9 @@ internal sealed class DesignPreviewPayloadDataSource
         _actors = actors;
         _projectPaths = projectPaths;
         _timelineDataSource =
-            new ModuleInstanceTimelineDataSource(timeline);
+            new ModuleInstanceTimelineDataSource(
+                timeline,
+                moduleInstanceThemes);
         _actorDataSource = new ActorPreviewDataSource(actors);
         _nestedRuntimeRecordReferenceResolver =
             new NestedRuntimeRecordReferenceResolver(
