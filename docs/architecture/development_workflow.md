@@ -241,6 +241,13 @@ database validation run on a worker. A valid prepared session is the only route
 to `MainWindow`; a typed missing or invalid result opens the controlled recovery
 surface and performs no repair.
 
+The visual editor is a single-instance workstation application. The Host owns
+the operating-system lease and a second launch shows the controlled
+already-running surface without composing a session or opening SQLite.
+Maintenance commands run before visual startup. Render Queue raster and
+encoding child processes are separate non-visual workers, do not acquire the
+lease and continue to consume immutable snapshots without Project reads.
+
 ## Safe implementation sequence
 
 For each coherent phase:

@@ -13,6 +13,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Integrations.ShotManager;
+using System.Diagnostics;
 using System.Reflection;
 using System.IO;
 using System.Globalization;
@@ -21,6 +22,17 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+
+if (args.Length == 2
+    && args[0].Equals(
+        "--desktop-instance-probe",
+        StringComparison.Ordinal))
+{
+    using var probe =
+        DesktopVisualInstanceLease.TryAcquire(args[1]);
+    Environment.ExitCode = probe is null ? 23 : 0;
+    return;
+}
 
 var tests = new (string Name, Action Run)[]
 {
@@ -105,6 +117,7 @@ var tests = new (string Name, Action Run)[]
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
+    ("desktop visual instance lease excludes a second editor and recovers after exit", DesktopVisualInstanceLeaseIsExclusive),
     ("SQLite write coordination is isolated per database context", SqliteWriteCoordinationIsPerContext),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
@@ -728,6 +741,44 @@ static void SqliteWriteCoordinationIsPerContext()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void DesktopVisualInstanceLeaseIsExclusive()
+{
+    var identity =
+        $"mockups-desktop-instance-{Guid.NewGuid():N}";
+    using (var first =
+           DesktopVisualInstanceLease.TryAcquire(identity))
+    {
+        True(first is not null);
+        Equal(23, RunDesktopInstanceProbe(identity));
+    }
+
+    Equal(0, RunDesktopInstanceProbe(identity));
+}
+
+static int RunDesktopInstanceProbe(string identity)
+{
+    var executable = Environment.ProcessPath
+        ?? throw new InvalidOperationException(
+            "The desktop test executable path is unavailable.");
+    var start = new ProcessStartInfo(executable)
+    {
+        UseShellExecute = false,
+    };
+    start.ArgumentList.Add("--desktop-instance-probe");
+    start.ArgumentList.Add(identity);
+    using var process = Process.Start(start)
+        ?? throw new InvalidOperationException(
+            "The desktop instance probe could not start.");
+    if (!process.WaitForExit(
+            milliseconds: 5000))
+    {
+        process.Kill(entireProcessTree: true);
+        throw new TimeoutException(
+            "The desktop instance probe did not exit.");
+    }
+    return process.ExitCode;
 }
 
 static void ActorPreviewSurfacesShareInitialsIdentity()

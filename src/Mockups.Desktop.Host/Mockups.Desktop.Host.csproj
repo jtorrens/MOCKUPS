@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Mockups.DesktopEditorShell.AnimationTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <DesktopPreviewBuildInput Include="$(MockupsRepositoryRoot)/src/**/*.ts;$(MockupsRepositoryRoot)/src/**/*.tsx;$(MockupsRepositoryRoot)/package.json;$(MockupsRepositoryRoot)/package-lock.json;$(MockupsRepositoryRoot)/tsconfig.json;$(MockupsRepositoryRoot)/scripts/buildDesktopPreview.mjs" />
     <Content Include="../../scripts/icon-themes/sync-icon-theme-token.cjs" Link="scripts/icon-themes/sync-icon-theme-token.cjs" CopyToOutputDirectory="PreserveNewest" />
     <Content

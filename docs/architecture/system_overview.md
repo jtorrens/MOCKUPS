@@ -145,6 +145,9 @@ write lock.
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite compatibility facade and projects it into the
 narrow Application ports required by one desktop session.
+The Host acquires one workstation-user visual-editor lease before Avalonia
+startup. A second editor process opens only a controlled already-running
+surface and never constructs services or opens SQLite.
 Its `ApplicationStartupCoordinator` validates the manifested Preview bundle
 and opens the current database on a controlled worker. Startup returns one
 typed result; only `Success` can create `MainWindow`. Missing or invalid inputs
@@ -153,6 +156,10 @@ open a recovery surface without constructing a partial editor session.
 through the contracts exposed by Application. `MainWindow`
 receives an already composed session and cannot compile a reference to the
 database context, SQLite packages or the Persistence assembly.
+
+External raster and encoding processes are not editor instances and do not
+acquire the visual-editor lease. They consume only the Render Queue's immutable
+snapshot or generated frames and cannot open the Project database.
 
 ### SQLite and repositories
 

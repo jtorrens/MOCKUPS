@@ -51,3 +51,13 @@ internal sealed class HostedApp : App
         desktop.MainWindow = startup;
     }
 }
+
+internal sealed class VisualInstanceConflictApp : App
+{
+    protected override void ConfigureDesktopLifetime(
+        IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        desktop.MainWindow =
+            new VisualInstanceConflictWindow();
+    }
+}

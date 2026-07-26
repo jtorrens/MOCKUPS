@@ -24,6 +24,15 @@ internal static class Program
             return;
         }
 
+        using var visualInstance =
+            DesktopVisualInstanceLease.TryAcquire();
+        if (visualInstance is null)
+        {
+            BuildVisualInstanceConflictApp()
+                .StartWithClassicDesktopLifetime(avaloniaArgs);
+            return;
+        }
+
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(avaloniaArgs);
     }
@@ -34,6 +43,12 @@ internal static class Program
 #if DEBUG
             .WithDeveloperTools()
 #endif
+            .WithInterFont()
+            .LogToTrace();
+
+    private static AppBuilder BuildVisualInstanceConflictApp()
+        => AppBuilder.Configure<VisualInstanceConflictApp>()
+            .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
 }

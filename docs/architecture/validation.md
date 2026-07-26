@@ -33,6 +33,8 @@ It includes:
 - typed startup classification for missing or invalid Preview bundles, missing,
   empty or invalid databases, read-only successful preparation and
   cancellation before session publication;
+- exclusive visual-editor lease acquisition, rejection of a concurrent editor
+  owner and successful reacquisition after the first owner exits;
 - per-context SQLite write coordination, covering an independent write while a
   second database gate is held and serialized concurrent writes inside one
   database context;
