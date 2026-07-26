@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class EditorPreviewController
+internal sealed class EditorPreviewController : IDisposable
 {
     private const int LoadingPreviewFrameThreshold = 0;
     private const int InitialPlaybackPreloadFrames = 32;
@@ -244,6 +244,7 @@ internal sealed class EditorPreviewController
     private bool _shotPlaybackIsPreparing;
     private IReadOnlyList<DesignPreviewPayload>? _pendingPlaybackFramesOverride;
     private string _activeProductionModuleInstanceId = "";
+    private bool _disposed;
 
     public EditorPreviewController(
         IDictionaryFieldContextRepository database,
@@ -327,6 +328,25 @@ internal sealed class EditorPreviewController
         _designContextLockButton.Click += (_, _) => ToggleDesignPreviewContextLock();
         AttachDesignContextHistoryPopup();
         UpdateDesignContextChrome(null);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _shotPlaybackTimer.Stop();
+        _designPlaybackPreparation.Dispose();
+        _shotPlaybackPreparation.Dispose();
+        _aheadPreloadCancellation?.Cancel();
+        _aheadPreloadCancellation?.Dispose();
+        _aheadPreloadCancellation = null;
+        _aheadPreloadedFrameKeys.Clear();
+        ReleaseFrameCacheReservation();
+        _chromiumRasterizer.Dispose();
     }
 
     private void AddCurrentDesignContextToHistory()

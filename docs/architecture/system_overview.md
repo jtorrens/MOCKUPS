@@ -262,6 +262,9 @@ state. Its state and transition tests compile without Avalonia or SQLite.
 editor-card composition, Preview host wiring, generic modal hosting and
 application of coordinator transitions to visual controls. It does not retain
 parallel mutable copies of workspace session state.
+Window closing disposes both workspace coordination and the Preview controller;
+no tree read, playback preparation, preload, timer, frame reservation or
+external rasterizer process may outlive that window.
 
 Editor-specific fields, collections, persistence rules, asset logic and domain
 dialogs live in their owning editor or shared editor service.

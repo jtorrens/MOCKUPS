@@ -316,6 +316,7 @@ public partial class MainWindow : SukiWindow
             _shellState.Save(CreateSessionHistoryState());
             _productionNavigationActions.Dispose();
             _workspaceCoordinator.Dispose();
+            _previewController.Dispose();
         };
         _themeController.Apply();
         ApplyTreeLoadTransition(initialTransition);

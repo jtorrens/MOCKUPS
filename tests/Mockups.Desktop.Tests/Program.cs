@@ -128,6 +128,7 @@ var tests = new (string Name, Action Run)[]
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
+    ("closing the editor cancels Preview work and releases its lifetime", ClosingEditorCancelsPreviewLifetime),
     ("desktop visual instance lease excludes a second editor and recovers after exit", DesktopVisualInstanceLeaseIsExclusive),
     ("SQLite write coordination is isolated per database context", SqliteWriteCoordinationIsPerContext),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
@@ -759,6 +760,75 @@ static void SqliteWriteCoordinationIsPerContext()
     finally
     {
         Directory.Delete(root, recursive: true);
+    }
+}
+
+static void ClosingEditorCancelsPreviewLifetime()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-preview-close-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = DesktopHost.CreateWindow(temporary);
+            window.Show();
+            var controller = typeof(MainWindow)
+                .GetField(
+                    "_previewController",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorPreviewController
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow Preview lifetime owner.");
+            var designPreparation = typeof(EditorPreviewController)
+                .GetField(
+                    "_designPlaybackPreparation",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(controller) as PreviewPreparationCancellation
+                ?? throw new InvalidOperationException(
+                    "Missing Design Preview preparation lifetime.");
+            var shotPreparation = typeof(EditorPreviewController)
+                .GetField(
+                    "_shotPlaybackPreparation",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(controller) as PreviewPreparationCancellation
+                ?? throw new InvalidOperationException(
+                    "Missing Production Preview preparation lifetime.");
+            var designOperation = designPreparation.Begin();
+            var shotOperation = shotPreparation.Begin();
+            var aheadOperation = new CancellationTokenSource();
+            typeof(EditorPreviewController)
+                .GetField(
+                    "_aheadPreloadCancellation",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.SetValue(controller, aheadOperation);
+            var timer = typeof(EditorPreviewController)
+                .GetField(
+                    "_shotPlaybackTimer",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(controller) as DispatcherTimer
+                ?? throw new InvalidOperationException(
+                    "Missing Production Preview timer lifetime.");
+            timer.Start();
+
+            window.Close();
+
+            True(designOperation.IsCancellationRequested);
+            True(shotOperation.IsCancellationRequested);
+            True(aheadOperation.IsCancellationRequested);
+            True(!timer.IsEnabled);
+            controller.Dispose();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
     }
 }
 

@@ -196,3 +196,7 @@ reuse rule: the controller retains prepared frames only while their
 cryptographic request signature still matches the resolved payload, action and
 Preview setup. Completion leaves the final frame visible without discarding
 that reusable preparation. Escape cancels both preparation and playback.
+Closing the editor disposes the Preview session owner: Design and Production
+preparation, ahead preload, playback timing, frame-cache reservations and the
+external rasterizer lifetime are canceled or released before the window
+becomes unreachable. A Preview operation may not outlive its window.
