@@ -19,6 +19,7 @@ using System.IO;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -3439,7 +3440,7 @@ static void PreviewShellVisualTreeIsResponsive()
 
             Required(window.FindControl<Button>("ProductionWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
+            WaitForWorkspace(EditorWorkspace.Production);
             True(!Required(Required(window.FindControl<Control>("PreviewDeviceComboBox")).Parent as Visual).IsVisible);
             True(!Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(!Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
@@ -3448,7 +3449,7 @@ static void PreviewShellVisualTreeIsResponsive()
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
+            WaitForWorkspace(EditorWorkspace.Design);
             True(Required(Required(window.FindControl<Control>("PreviewDeviceComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
@@ -3459,6 +3460,21 @@ static void PreviewShellVisualTreeIsResponsive()
             setupGrid.Width = double.NaN;
             setupGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
             window.Hide();
+
+            void WaitForWorkspace(EditorWorkspace workspace)
+            {
+                var timeout = Stopwatch.StartNew();
+                while (WindowSession(window).Workspace != workspace
+                       && timeout.Elapsed < TimeSpan.FromSeconds(5))
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    Thread.Sleep(5);
+                }
+                Equal(
+                    workspace,
+                    WindowSession(window).Workspace);
+                Dispatcher.UIThread.RunJobs();
+            }
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -9541,7 +9557,7 @@ static void UsageNavigationPreservesTypedContext()
         (workspace, nodeId) =>
         {
             events.Add($"select:{workspace}:{nodeId}");
-            return true;
+            return Task.FromResult(true);
         },
         (embedded, nodeId) =>
         {
@@ -12254,9 +12270,16 @@ static DesignPreviewPayload? CreatePreviewPayload(
         themeId,
         themeMode,
         timelineFrame);
-static void True(bool condition)
+static void True(
+    bool condition,
+    [CallerArgumentExpression(nameof(condition))]
+    string expression = "")
 {
-    if (!condition) throw new Exception("Expected true.");
+    if (!condition)
+    {
+        throw new Exception(
+            $"Expected true: {expression}");
+    }
 }
 static void Equal<T>(T expected, T actual)
 {

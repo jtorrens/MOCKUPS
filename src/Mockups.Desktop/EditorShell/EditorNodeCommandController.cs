@@ -13,7 +13,7 @@ internal sealed class EditorNodeCommandController
     private readonly IEditorNodeCommandStore _database;
     private readonly Func<bool> _isDark;
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
-    private readonly Action _loadProjectTree;
+    private readonly Func<Task<bool>> _loadProjectTree;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
@@ -23,7 +23,7 @@ internal sealed class EditorNodeCommandController
         IEditorNodeCommandStore database,
         Func<bool> isDark,
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
-        Action loadProjectTree,
+        Func<Task<bool>> loadProjectTree,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages)
@@ -110,7 +110,7 @@ internal sealed class EditorNodeCommandController
 
         if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
         {
-            _loadProjectTree();
+            await _loadProjectTree();
             return;
         }
 
@@ -233,7 +233,10 @@ internal sealed class EditorNodeCommandController
         if (node.Parent is null || !node.CanDelete) return;
 
         var deleteNodeId = node.Id;
-        _loadProjectTree();
+        if (!await _loadProjectTree())
+        {
+            return;
+        }
         node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
         if (node.Parent is null) return;
 

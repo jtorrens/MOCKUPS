@@ -1,6 +1,9 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,11 +37,14 @@ public abstract record StartupResult
 public sealed class EditorApplicationSession
 {
     private DesktopApplicationServices? _services;
+    private IReadOnlyList<ProjectTreeNode>? _initialTreeRoots;
 
     internal EditorApplicationSession(
-        DesktopApplicationServices services)
+        DesktopApplicationServices services,
+        IReadOnlyList<ProjectTreeNode> initialTreeRoots)
     {
         _services = services;
+        _initialTreeRoots = initialTreeRoots.ToArray();
     }
 
     public MainWindow CreateWindow()
@@ -48,7 +54,14 @@ public sealed class EditorApplicationSession
                 null)
             ?? throw new InvalidOperationException(
                 "The prepared editor session already owns a window.");
-        return new MainWindow(services);
+        var initialTreeRoots = Interlocked.Exchange(
+                ref _initialTreeRoots,
+                null)
+            ?? throw new InvalidOperationException(
+                "The prepared editor session has no initial tree snapshot.");
+        return new MainWindow(
+            services,
+            initialTreeRoots);
     }
 }
 
@@ -142,10 +155,15 @@ public sealed class ApplicationStartupCoordinator
                 database,
                 database,
                 database);
+            var initialTreeRoots =
+                ports.Navigation.LoadProjectTree();
+            cancellationToken.ThrowIfCancellationRequested();
             var services = DesktopApplicationServices.Create(
                 ports);
             return new StartupResult.Success(
-                new EditorApplicationSession(services));
+                new EditorApplicationSession(
+                    services,
+                    initialTreeRoots));
         }
         catch (FileNotFoundException)
         {

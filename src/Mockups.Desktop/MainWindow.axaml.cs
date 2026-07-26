@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using SukiUI.Controls;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -61,7 +62,9 @@ public partial class MainWindow : SukiWindow
             "MainWindow requires a validated desktop application session.");
     }
 
-    internal MainWindow(DesktopApplicationServices application)
+    internal MainWindow(
+        DesktopApplicationServices application,
+        IReadOnlyList<ProjectTreeNode> initialTreeRoots)
     {
         var data = application.Data;
         _variantHistory = application.VariantHistory;
@@ -104,7 +107,7 @@ public partial class MainWindow : SukiWindow
             data.NodeCommands,
             () => _themeController.IsDark,
             () => Session.TreeRoots,
-            LoadProjectTree,
+            LoadProjectTreeAsync,
             ReloadAndSelect,
             NavigateToReferenceUsage,
             _messages);
@@ -185,12 +188,12 @@ public partial class MainWindow : SukiWindow
             this,
             () => _themeController.IsDark,
             SelectNodeById,
-            LoadProjectTree,
+            LoadProjectTreeAsync,
             () => Session.SelectedNode,
             _embeddedEditors.Open,
             _messages);
         _referenceUsageNavigator = new EditorReferenceUsageNavigator(
-            SelectReferenceNodeInWorkspace,
+            SelectReferenceNodeInWorkspaceAsync,
             _embeddedUsageNavigator.NavigateToEmbeddedUsage,
             _messages);
         _editorHeader = new EditorHeaderController(
@@ -281,6 +284,17 @@ public partial class MainWindow : SukiWindow
             EditorWorkspaceNavigation.Parse(_shellState.Workspace),
             _shellState.ProductionId,
             _shellState.SessionHistory.LastComponentVariantSelections));
+        var initialLoad = _workspaceCoordinator.BeginTreeLoad(
+            Session.Workspace);
+        if (!_workspaceCoordinator.TryCommitTreeLoad(
+                initialLoad,
+                initialTreeRoots,
+                "startup",
+                out var initialTransition))
+        {
+            throw new InvalidOperationException(
+                "The prepared startup tree became obsolete before window initialization.");
+        }
         DesignWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Design);
         ProductionWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Production);
         ProductionComboBox.SelectionChanged += (_, _) => SelectProductionFromPicker();
@@ -298,16 +312,16 @@ public partial class MainWindow : SukiWindow
             _workspaceCoordinator.Dispose();
         };
         _themeController.Apply();
-        LoadProjectTree();
+        ApplyTreeLoadTransition(initialTransition);
         InitializePreviewOptions();
         ApplyUiTextScale();
     }
 
-    private void OnRefreshUsageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void OnRefreshUsageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         var selectedId = Session.SelectedNode?.Id;
-        LoadProjectTree();
-        if (selectedId is not null)
+        if (await LoadProjectTreeAsync()
+            && selectedId is not null)
         {
             SelectNodeById(selectedId);
         }
@@ -345,10 +359,32 @@ public partial class MainWindow : SukiWindow
         _previewController.RefreshOptions(Session.TreeRoots);
     }
 
-    private void LoadProjectTree()
+    private async Task<bool> LoadProjectTreeAsync()
     {
         CaptureActiveEditorViewState();
-        var transition = _workspaceCoordinator.ReloadTree();
+        try
+        {
+            var transition =
+                await _workspaceCoordinator.ReloadTreeAsync();
+            if (transition is null)
+            {
+                return false;
+            }
+            ApplyTreeLoadTransition(transition);
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(
+                "Load project tree",
+                exception);
+            return false;
+        }
+    }
+
+    private void ApplyTreeLoadTransition(
+        EditorSessionTransition transition)
+    {
         _treeExpansion.EnsureInitial(transition.Current.TreeRoots);
         ApplyPersistedContext(transition);
         if (transition.Current.SelectedNode is { } selected)
@@ -577,12 +613,28 @@ public partial class MainWindow : SukiWindow
         }, DispatcherPriority.Background);
     }
 
-    private void ReloadActiveEditor(string ownerNodeId)
+    private async void ReloadActiveEditor(string ownerNodeId)
     {
         var viewState = _editorViewState.CaptureState(_editorContent.Cards);
-        var transition = _workspaceCoordinator.ReloadTree(
-            "field-refresh",
-            EditorTreeLoadIntent.ActiveEditor);
+        EditorSessionTransition? transition;
+        try
+        {
+            transition =
+                await _workspaceCoordinator.ReloadTreeAsync(
+                    "field-refresh",
+                    EditorTreeLoadIntent.ActiveEditor);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(
+                "Refresh active editor",
+                exception);
+            return;
+        }
+        if (transition is null)
+        {
+            return;
+        }
         _treeExpansion.EnsureInitial(transition.Current.TreeRoots);
         ApplyPersistedContext(transition);
         var refreshedOwner = transition.Current.SelectedNode;
@@ -635,9 +687,12 @@ public partial class MainWindow : SukiWindow
         _editorHeader.SetEmbeddedTitle(context);
     }
 
-    private void ReloadAndSelect(ProjectTreeNode node)
+    private async void ReloadAndSelect(ProjectTreeNode node)
     {
-        LoadProjectTree();
+        if (!await LoadProjectTreeAsync())
+        {
+            return;
+        }
         RefreshPreviewOptions();
         SelectNodeById(node.Id);
     }
@@ -673,14 +728,19 @@ public partial class MainWindow : SukiWindow
         return _referenceUsageNavigator.Navigate(usage);
     }
 
-    private bool SelectReferenceNodeInWorkspace(EditorWorkspace workspace, string nodeId)
+    private async Task<bool> SelectReferenceNodeInWorkspaceAsync(
+        EditorWorkspace workspace,
+        string nodeId)
     {
         var node = EditorNodeSelectionState.FindNodeById(
             Session.TreeRoots,
             nodeId);
         if (node is null)
         {
-            LoadProjectTree();
+            if (!await LoadProjectTreeAsync())
+            {
+                return false;
+            }
             node = EditorNodeSelectionState.FindNodeById(
                 Session.TreeRoots,
                 nodeId);
@@ -742,13 +802,29 @@ public partial class MainWindow : SukiWindow
         EditorUiTextScale.Apply(this, _shellState.UiTextScale, DesignPreviewHost);
     }
 
-    private void SetWorkspace(EditorWorkspace workspace)
+    private async void SetWorkspace(EditorWorkspace workspace)
     {
-        if (Session.Workspace == workspace) return;
-
         using var transaction = BeginContextTransaction("workspace", workspace.ToString());
         CaptureActiveEditorViewState();
-        var transition = _workspaceCoordinator.SwitchWorkspace(workspace);
+        EditorSessionTransition? transition;
+        try
+        {
+            transition =
+                await _workspaceCoordinator.SwitchWorkspaceAsync(
+                    workspace);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(
+                "Switch workspace",
+                exception);
+            return;
+        }
+        if (transition is null
+            || transition.Effects == EditorSessionEffects.None)
+        {
+            return;
+        }
         ApplyPersistedContext(transition);
         _previewController.SetWorkspaceWithoutRefresh(workspace);
         UpdateWorkspaceButtons();

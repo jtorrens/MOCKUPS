@@ -237,9 +237,11 @@ Automated macOS UI review uses one of these launchers; headless checks continue
 to use the Avalonia headless platform.
 
 The Host displays a short startup surface while bundle hashing and current
-database validation run on a worker. A valid prepared session is the only route
-to `MainWindow`; a typed missing or invalid result opens the controlled recovery
-surface and performs no repair.
+database validation plus the initial navigation snapshot run on a worker. A
+valid prepared session is the only route to `MainWindow`; a typed missing or
+invalid result opens the controlled recovery surface and performs no repair.
+Subsequent workspace reads use the public asynchronous coordinator boundary.
+Desktop cannot compile calls to its internal synchronous loading helpers.
 
 The visual editor is a single-instance workstation application. The Host owns
 the operating-system lease and a second launch shows the controlled

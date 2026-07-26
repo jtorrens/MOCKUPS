@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -65,6 +66,18 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         }
     }
 
+    public bool HasPendingTreeLoad
+    {
+        get
+        {
+            lock (_stateGate)
+            {
+                return !_disposed
+                    && _activeTreeLoad is not null;
+            }
+        }
+    }
+
     public EditorSessionTransition Restore(EditorSessionRestoreState restored)
     {
         lock (_stateGate)
@@ -94,7 +107,7 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         }
     }
 
-    public EditorSessionTransition ReloadTree(
+    internal EditorSessionTransition ReloadTree(
         string source = "tree-load",
         EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
     {
@@ -120,7 +133,17 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         }
     }
 
-    public EditorSessionTransition SwitchWorkspace(
+    public Task<EditorSessionTransition?> ReloadTreeAsync(
+        string source = "tree-load",
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+    {
+        return LoadTreeAsync(
+            State.Workspace,
+            source,
+            intent);
+    }
+
+    internal EditorSessionTransition SwitchWorkspace(
         EditorWorkspace workspace,
         string source = "workspace")
     {
@@ -151,6 +174,22 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             AbandonTreeLoad(operation);
             throw;
         }
+    }
+
+    public Task<EditorSessionTransition?> SwitchWorkspaceAsync(
+        EditorWorkspace workspace,
+        string source = "workspace")
+    {
+        if (!ShouldLoadWorkspace(workspace))
+        {
+            return Task.FromResult<EditorSessionTransition?>(
+                Unchanged(source));
+        }
+
+        return LoadTreeAsync(
+            workspace,
+            source,
+            EditorTreeLoadIntent.Workspace);
     }
 
     public EditorTreeLoadOperation BeginTreeLoad(
@@ -544,6 +583,64 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _state,
                 _state,
                 EditorSessionEffects.None);
+        }
+    }
+
+    private bool ShouldLoadWorkspace(
+        EditorWorkspace workspace)
+    {
+        lock (_stateGate)
+        {
+            ThrowIfDisposed();
+            return workspace != _state.Workspace
+                || _activeTreeLoad is not null;
+        }
+    }
+
+    private async Task<EditorSessionTransition?> LoadTreeAsync(
+        EditorWorkspace workspace,
+        string source,
+        EditorTreeLoadIntent intent)
+    {
+        var operation = BeginTreeLoad(workspace, intent);
+        try
+        {
+            var roots = await Task.Run(
+                _navigation.LoadProjectTree,
+                operation.Token);
+            if (operation.Token.IsCancellationRequested)
+            {
+                return null;
+            }
+            return TryCommitTreeLoad(
+                operation,
+                roots,
+                source,
+                out var transition)
+                ? transition
+                : null;
+        }
+        catch (OperationCanceledException)
+            when (operation.Token.IsCancellationRequested)
+        {
+            AbandonTreeLoad(operation);
+            return null;
+        }
+        catch (ObjectDisposedException)
+            when (operation.Token.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception)
+            when (operation.Token.IsCancellationRequested)
+        {
+            AbandonTreeLoad(operation);
+            return null;
+        }
+        catch
+        {
+            AbandonTreeLoad(operation);
+            throw;
         }
     }
 

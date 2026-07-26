@@ -16,5 +16,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Mockups.Persistence.Sqlite" />
     <InternalsVisibleTo Include="Mockups.DesktopEditorShell.AnimationTests" />
+    <InternalsVisibleTo Include="Mockups.Application.Tests" />
   </ItemGroup>
 </Project>

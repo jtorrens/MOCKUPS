@@ -6,12 +6,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorReferenceUsageNavigator
 {
-    private readonly Func<EditorWorkspace, string, bool> _selectNodeInWorkspace;
+    private readonly Func<EditorWorkspace, string, Task<bool>>
+        _selectNodeInWorkspace;
     private readonly Func<EmbeddedComponentUsage, string, Task> _navigateToEmbeddedUsage;
     private readonly IEditorShellMessageSink _messages;
 
     public EditorReferenceUsageNavigator(
-        Func<EditorWorkspace, string, bool> selectNodeInWorkspace,
+        Func<EditorWorkspace, string, Task<bool>>
+            selectNodeInWorkspace,
         Func<EmbeddedComponentUsage, string, Task> navigateToEmbeddedUsage,
         IEditorShellMessageSink messages)
     {
@@ -28,7 +30,9 @@ internal sealed class EditorReferenceUsageNavigator
             ReferenceUsageScope.Production => EditorWorkspace.Production,
             _ => throw new InvalidOperationException($"Unknown Usage scope '{usage.Scope}'."),
         };
-        if (!_selectNodeInWorkspace(workspace, usage.SourceNodeId))
+        if (!await _selectNodeInWorkspace(
+                workspace,
+                usage.SourceNodeId))
         {
             _messages.Warning(
                 "Open Usage reference",

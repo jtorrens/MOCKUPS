@@ -40,8 +40,9 @@ It includes:
   database context;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
-  selections, Production removal, embedded-context rebasing, cancellation and
-  obsolete revision rejection;
+  selections, Production removal, embedded-context rebasing, worker-thread
+  execution, public async-only loading, rapid workspace reversal, cancellation,
+  disposal and obsolete revision rejection;
 - Component scaffolding contract, collision, no-overwrite draft
   materialization, semantic integration transaction, deterministic generated
   routes, persisted-spec adoption and integrated-owner verification tests;

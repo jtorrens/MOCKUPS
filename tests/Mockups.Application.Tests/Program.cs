@@ -12,6 +12,11 @@ var tests = new (string Name, Action Run)[]
     ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
+    ("async tree reads run on a worker before committing immutable state", AsyncTreeReadRunsOnWorker),
+    ("desktop consumers can compile only asynchronous tree loading", OnlyAsyncTreeLoadingIsPublic),
+    ("rapid async workspace changes discard the older result", RapidAsyncWorkspaceChangeDiscardsOlderResult),
+    ("returning to the current workspace cancels an in-flight change", ReturnToCurrentWorkspaceCancelsInFlightChange),
+    ("disposing the session discards a pending async tree result", DisposeDiscardsPendingAsyncTreeResult),
     ("a selection transition invalidates an in-flight tree result", SelectionInvalidatesInFlightLoad),
     ("a failed tree read leaves the prior session state current", FailedTreeReadLeavesStateCurrent),
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
@@ -252,6 +257,104 @@ static void NewerTreeLoadRejectsOlderResult()
     Equal(EditorWorkspace.Production, coordinator.State.Workspace);
 }
 
+static void AsyncTreeReadRunsOnWorker()
+{
+    var source = new BlockingNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    var ownerThreadId = Environment.CurrentManagedThreadId;
+
+    var load = coordinator.ReloadTreeAsync();
+    True(source.Started.Wait(TimeSpan.FromSeconds(3)));
+    True(source.LoadThreadId != ownerThreadId);
+    source.Release.Set();
+
+    var transition = load.GetAwaiter().GetResult();
+    True(transition is not null);
+    Equal(
+        "component-a::variant::default",
+        coordinator.State.SelectedNode?.Id);
+}
+
+static void OnlyAsyncTreeLoadingIsPublic()
+{
+    var publicMethods = typeof(EditorWorkspaceCoordinator)
+        .GetMethods(
+            System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public)
+        .Select((method) => method.Name)
+        .ToHashSet(StringComparer.Ordinal);
+    True(publicMethods.Contains(
+        nameof(EditorWorkspaceCoordinator.ReloadTreeAsync)));
+    True(publicMethods.Contains(
+        nameof(EditorWorkspaceCoordinator.SwitchWorkspaceAsync)));
+    True(!publicMethods.Contains("ReloadTree"));
+    True(!publicMethods.Contains("SwitchWorkspace"));
+}
+
+static void RapidAsyncWorkspaceChangeDiscardsOlderResult()
+{
+    var source = new SequencedNavigationDataSource(CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+
+    var older = coordinator.ReloadTreeAsync("older");
+    True(source.FirstStarted.Wait(TimeSpan.FromSeconds(3)));
+    var current = coordinator.SwitchWorkspaceAsync(
+            EditorWorkspace.Production,
+            "current")
+        .GetAwaiter()
+        .GetResult();
+    True(current is not null);
+    source.ReleaseFirst.Set();
+
+    True(older.GetAwaiter().GetResult() is null);
+    Equal(EditorWorkspace.Production, coordinator.State.Workspace);
+    Equal("episode-a", coordinator.State.SelectedNode?.Id);
+}
+
+static void ReturnToCurrentWorkspaceCancelsInFlightChange()
+{
+    var source = new SecondReadBlockingNavigationDataSource(
+        CreateTree());
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+
+    var production = coordinator.SwitchWorkspaceAsync(
+        EditorWorkspace.Production,
+        "production");
+    True(source.SecondStarted.Wait(TimeSpan.FromSeconds(3)));
+    True(coordinator.HasPendingTreeLoad);
+
+    var design = coordinator.SwitchWorkspaceAsync(
+            EditorWorkspace.Design,
+            "design")
+        .GetAwaiter()
+        .GetResult();
+    True(design is not null);
+    source.ReleaseSecond.Set();
+
+    True(production.GetAwaiter().GetResult() is null);
+    Equal(EditorWorkspace.Design, coordinator.State.Workspace);
+    True(!coordinator.HasPendingTreeLoad);
+}
+
+static void DisposeDiscardsPendingAsyncTreeResult()
+{
+    var source = new BlockingNavigationDataSource(CreateTree())
+    {
+        FailureAfterRelease =
+            new InvalidOperationException(
+                "The closed session must discard this read failure."),
+    };
+    var coordinator = new EditorWorkspaceCoordinator(source);
+    var pending = coordinator.ReloadTreeAsync();
+    True(source.Started.Wait(TimeSpan.FromSeconds(3)));
+
+    coordinator.Dispose();
+    source.Release.Set();
+
+    True(pending.GetAwaiter().GetResult() is null);
+}
+
 static void SelectionInvalidatesInFlightLoad()
 {
     var source = new MutableNavigationDataSource(CreateTree());
@@ -426,4 +529,75 @@ internal sealed class MutableNavigationDataSource(
 
     public IReadOnlyList<ProjectTreeNode> LoadProjectTree() =>
         Failure is null ? Tree : throw Failure;
+}
+
+internal sealed class BlockingNavigationDataSource(
+    IReadOnlyList<ProjectTreeNode> tree) : IEditorNavigationDataSource
+{
+    public ManualResetEventSlim Started { get; } = new();
+    public ManualResetEventSlim Release { get; } = new();
+    public int LoadThreadId { get; private set; }
+    public Exception? FailureAfterRelease { get; init; }
+
+    public IReadOnlyList<ProjectTreeNode> LoadProjectTree()
+    {
+        LoadThreadId = Environment.CurrentManagedThreadId;
+        Started.Set();
+        if (!Release.Wait(TimeSpan.FromSeconds(10)))
+        {
+            throw new TimeoutException(
+                "Timed out waiting to release the test tree read.");
+        }
+        if (FailureAfterRelease is not null)
+        {
+            throw FailureAfterRelease;
+        }
+        return tree;
+    }
+}
+
+internal sealed class SequencedNavigationDataSource(
+    IReadOnlyList<ProjectTreeNode> tree) : IEditorNavigationDataSource
+{
+    private int _calls;
+
+    public ManualResetEventSlim FirstStarted { get; } = new();
+    public ManualResetEventSlim ReleaseFirst { get; } = new();
+
+    public IReadOnlyList<ProjectTreeNode> LoadProjectTree()
+    {
+        if (Interlocked.Increment(ref _calls) == 1)
+        {
+            FirstStarted.Set();
+            if (!ReleaseFirst.Wait(TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException(
+                    "Timed out waiting to release the first test tree read.");
+            }
+        }
+        return tree;
+    }
+}
+
+internal sealed class SecondReadBlockingNavigationDataSource(
+    IReadOnlyList<ProjectTreeNode> tree) : IEditorNavigationDataSource
+{
+    private int _calls;
+
+    public ManualResetEventSlim SecondStarted { get; } = new();
+    public ManualResetEventSlim ReleaseSecond { get; } = new();
+
+    public IReadOnlyList<ProjectTreeNode> LoadProjectTree()
+    {
+        if (Interlocked.Increment(ref _calls) == 2)
+        {
+            SecondStarted.Set();
+            if (!ReleaseSecond.Wait(TimeSpan.FromSeconds(10)))
+            {
+                throw new TimeoutException(
+                    "Timed out waiting to release the second test tree read.");
+            }
+        }
+        return tree;
+    }
 }

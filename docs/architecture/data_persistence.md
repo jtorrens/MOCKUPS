@@ -188,8 +188,11 @@ normalizes, repairs, retires or synchronizes schema or data.
 
 The executable Host performs this validation outside the UI thread and reports
 missing and invalid databases as typed startup results. `MainWindow` is created
-only after the current database and Preview bundle both validate. Cancellation
-or failure cannot publish a partial desktop session.
+only after the current database, Preview bundle and initial immutable tree
+snapshot validate. Later tree refreshes execute the synchronous repository read
+on the Application coordinator's controlled worker. Revision checks discard a
+result when selection, workspace intent or shutdown has made it obsolete.
+Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit
 maintenance migration:

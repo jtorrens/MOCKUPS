@@ -129,7 +129,11 @@ its exact allowed edge to the project-boundary test.
 window-session transition owner. `EditorWorkspaceCoordinator` consumes only
 `IEditorNavigationDataSource` and publishes immutable `EditorSessionState`
 snapshots and explicit effects for workspace, Production, navigation, editor
-and Preview changes. Application may reference Domain and has no package
+and Preview changes. Its public tree-loading surface is asynchronous: it runs
+the synchronous data-source read on a controlled worker, cancels the prior
+intent and commits only when the operation revision remains current. The
+synchronous convenience methods are internal and cannot be called by Desktop.
+Application may reference Domain and has no package
 capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
 
@@ -149,9 +153,11 @@ The Host acquires one workstation-user visual-editor lease before Avalonia
 startup. A second editor process opens only a controlled already-running
 surface and never constructs services or opens SQLite.
 Its `ApplicationStartupCoordinator` validates the manifested Preview bundle
-and opens the current database on a controlled worker. Startup returns one
-typed result; only `Success` can create `MainWindow`. Missing or invalid inputs
-open a recovery surface without constructing a partial editor session.
+and opens the current database on a controlled worker. It also prepares the
+first immutable navigation-tree snapshot before publishing the session, so
+`MainWindow` performs no startup SQLite read. Startup returns one typed result;
+only `Success` can create `MainWindow`. Missing or invalid inputs open a
+recovery surface without constructing a partial editor session.
 `Mockups.Desktop` references Application only; Domain remains reachable solely
 through the contracts exposed by Application. `MainWindow`
 receives an already composed session and cannot compile a reference to the
@@ -178,8 +184,9 @@ crosses domains.
 `EditorWorkspaceCoordinator` is the single owner of the loaded tree, current
 workspace, active Production, selected node, embedded editor context, remembered
 workspace and Variant selections, Preview transition revision and obsolete
-tree-load cancellation. Its state and transition tests compile without
-Avalonia or SQLite.
+tree-load cancellation. Rapid workspace changes and window disposal invalidate
+the in-flight read; a late result or late failure cannot replace current UI
+state. Its state and transition tests compile without Avalonia or SQLite.
 
 `MainWindow` owns window initialization, the three-panel shell, generic
 editor-card composition, Preview host wiring, generic modal hosting and

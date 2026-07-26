@@ -13,7 +13,7 @@ internal sealed class EditorEmbeddedUsageNavigator
     private readonly Window _owner;
     private readonly Func<bool> _isDark;
     private readonly Func<string, bool> _selectNodeById;
-    private readonly Action _loadProjectTree;
+    private readonly Func<Task<bool>> _loadProjectTree;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly Func<ProjectTreeNode, string, Task> _openEmbeddedComponentEditor;
     private readonly IEditorShellMessageSink _messages;
@@ -23,7 +23,7 @@ internal sealed class EditorEmbeddedUsageNavigator
         Window owner,
         Func<bool> isDark,
         Func<string, bool> selectNodeById,
-        Action loadProjectTree,
+        Func<Task<bool>> loadProjectTree,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, string, Task> openEmbeddedComponentEditor,
         IEditorShellMessageSink messages)
@@ -115,7 +115,7 @@ internal sealed class EditorEmbeddedUsageNavigator
 
         if (!string.IsNullOrWhiteSpace(selection.TargetNodeId))
         {
-            NavigateToNode(selection.TargetNodeId);
+            await NavigateToNode(selection.TargetNodeId);
         }
     }
 
@@ -124,7 +124,7 @@ internal sealed class EditorEmbeddedUsageNavigator
         var nodeId = string.IsNullOrWhiteSpace(targetNodeId)
             ? usage.ParentComponentClassId
             : targetNodeId;
-        if (!NavigateToNode(nodeId))
+        if (!await NavigateToNode(nodeId))
         {
             return;
         }
@@ -136,14 +136,17 @@ internal sealed class EditorEmbeddedUsageNavigator
         }
     }
 
-    private bool NavigateToNode(string nodeId)
+    private async Task<bool> NavigateToNode(string nodeId)
     {
         if (_selectNodeById(nodeId))
         {
             return true;
         }
 
-        _loadProjectTree();
+        if (!await _loadProjectTree())
+        {
+            return false;
+        }
         return _selectNodeById(nodeId);
     }
 }
