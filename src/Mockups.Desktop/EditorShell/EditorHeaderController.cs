@@ -19,7 +19,8 @@ internal sealed class EditorHeaderController
     private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
     private readonly ProductionScreenPresentationDataSource _screenPresentation;
     private readonly Func<ProjectTreeNode?> _selectedNode;
-    private readonly EditorNodeSelectionState _nodeSelection;
+    private readonly Func<ProjectTreeNode, ProjectTreeNode> _preferredVariantNode;
+    private readonly Func<ProjectTreeNode, ProjectTreeNode> _preferredModuleVariantNode;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly Action<ProjectTreeNode, bool> _showNode;
     private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
@@ -35,7 +36,8 @@ internal sealed class EditorHeaderController
         Panel actionsPanel,
         SpikeDatabase database,
         Func<ProjectTreeNode?> selectedNode,
-        EditorNodeSelectionState nodeSelection,
+        Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
+        Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
         EditorEmbeddedUsageNavigator embeddedUsageNavigator,
         Action<ProjectTreeNode, bool> showNode,
         Action<ProjectTreeNode> returnToEmbeddedOwner,
@@ -51,7 +53,8 @@ internal sealed class EditorHeaderController
         _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
         _screenPresentation = new ProductionScreenPresentationDataSource(database);
         _selectedNode = selectedNode;
-        _nodeSelection = nodeSelection;
+        _preferredVariantNode = preferredVariantNode;
+        _preferredModuleVariantNode = preferredModuleVariantNode;
         _embeddedUsageNavigator = embeddedUsageNavigator;
         _showNode = showNode;
         _returnToEmbeddedOwner = returnToEmbeddedOwner;
@@ -215,10 +218,10 @@ internal sealed class EditorHeaderController
         return selected.Kind switch
         {
             ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant => selected,
-            ProjectTreeNodeKind.ComponentClass => _nodeSelection.PreferredVariantNode(selected) is { Kind: ProjectTreeNodeKind.ComponentVariant } variant
+            ProjectTreeNodeKind.ComponentClass => _preferredVariantNode(selected) is { Kind: ProjectTreeNodeKind.ComponentVariant } variant
                 ? variant
                 : null,
-            ProjectTreeNodeKind.Module => _nodeSelection.PreferredModuleVariantNode(selected) is { Kind: ProjectTreeNodeKind.ModuleVariant } variant
+            ProjectTreeNodeKind.Module => _preferredModuleVariantNode(selected) is { Kind: ProjectTreeNodeKind.ModuleVariant } variant
                 ? variant
                 : null,
             _ => null,
@@ -304,7 +307,7 @@ internal sealed class EditorHeaderController
         var selected = _selectedNode();
         var variantSourceNode = selected?.Kind == ProjectTreeNodeKind.ComponentVariant
             ? selected
-            : _nodeSelection.PreferredVariantNode(node);
+            : _preferredVariantNode(node);
         if (variantSourceNode.Kind != ProjectTreeNodeKind.ComponentVariant)
         {
             return null;

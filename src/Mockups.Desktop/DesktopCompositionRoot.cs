@@ -11,7 +11,8 @@ internal sealed record DesktopApplicationServices(
     CoreFieldValueService CoreFieldValues,
     RecordClassFieldValueService RecordClassFieldValues,
     ComponentClassFieldValueService ComponentClassFieldValues,
-    ProductionShotContextService ProductionShotContext);
+    ProductionShotContextService ProductionShotContext,
+    EditorWorkspaceCoordinator WorkspaceCoordinator);
 
 internal sealed class DesktopCompositionRoot
 {
@@ -29,6 +30,7 @@ internal sealed class DesktopCompositionRoot
             new CoreFieldValueService(database),
             new RecordClassFieldValueService(database),
             new ComponentClassFieldValueService(database),
-            new ProductionShotContextService(new ProductionShotContextDataSource(database)));
+            new ProductionShotContextService(new ProductionShotContextDataSource(database)),
+            new EditorWorkspaceCoordinator(database));
     }
 }

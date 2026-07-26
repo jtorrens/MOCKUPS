@@ -2760,10 +2760,7 @@ static void EditorViewStateSurvivesRealNavigation()
             };
             window.Show();
 
-            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
-                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window)
-                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var treeRoots = WindowSession(window).TreeRoots;
             var selectNode = typeof(MainWindow).GetMethod(
                 "SelectNodeById",
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -2791,10 +2788,8 @@ static void EditorViewStateSurvivesRealNavigation()
                     node.Kind == ProjectTreeNodeKind.ComponentClass
                     && node.RecordClassId == recordClassId);
 
-            ProjectTreeNode SelectedNode() => typeof(MainWindow)
-                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as ProjectTreeNode
-                ?? throw new InvalidOperationException("Missing MainWindow selection.");
+            ProjectTreeNode SelectedNode() =>
+                Required(WindowSession(window).SelectedNode);
 
             void Layout()
             {
@@ -3054,10 +3049,7 @@ static void PreviewShellVisualTreeIsResponsive()
 
             if (!authoringTab.IsVisible)
             {
-                var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
-                    .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
-                    ?.GetValue(window)
-                    ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+                var treeRoots = WindowSession(window).TreeRoots;
                 var component = treeRoots
                     .SelectMany(DescendantsAndSelf)
                     .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
@@ -3226,10 +3218,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
-            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
-                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window)
-                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var treeRoots = WindowSession(window).TreeRoots;
             var selectNode = typeof(MainWindow).GetMethod(
                 "SelectNodeById",
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -3544,10 +3533,8 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(window) as EditorPreviewController
                 ?? throw new InvalidOperationException("Missing Preview controller.");
-            var selectedListNode = typeof(MainWindow)
-                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as ProjectTreeNode
-                ?? throw new InvalidOperationException("Missing selected List node.");
+            var selectedListNode = Required(
+                WindowSession(window).SelectedNode);
             var selectedTheme = treeRoots
                 .SelectMany(DescendantsAndSelf)
                 .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
@@ -3634,10 +3621,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(window) as EditorPreviewController
                 ?? throw new InvalidOperationException("Missing Preview controller.");
-            var selectedNode = typeof(MainWindow)
-                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as ProjectTreeNode
-                ?? throw new InvalidOperationException("Missing selected List node.");
+            var selectedNode = Required(WindowSession(window).SelectedNode);
             var effectiveListPreview = previewController.ApplyDesignPreviewTransientTestValues(
                 selectedNode,
                 JsonPath.ParseRequiredObject(listSettings.DesignPreviewJson, "List Design Preview"));
@@ -3733,10 +3717,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
-            var treeRoots = (IReadOnlyList<ProjectTreeNode>?)typeof(MainWindow)
-                .GetField("_treeRoots", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window)
-                ?? throw new InvalidOperationException("Missing MainWindow tree state.");
+            var treeRoots = WindowSession(window).TreeRoots;
             var chatApp = treeRoots
                 .SelectMany(DescendantsAndSelf)
                 .Single((node) =>
@@ -3760,10 +3741,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 "Chat List Module could not be selected.");
             Dispatcher.UIThread.RunJobs();
 
-            var selected = typeof(MainWindow)
-                .GetField("_selectedNode", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as ProjectTreeNode
-                ?? throw new InvalidOperationException("Missing selected Chat List node.");
+            var selected = Required(WindowSession(window).SelectedNode);
             Check(
                 selected.Kind == ProjectTreeNodeKind.ModuleVariant,
                 $"Chat List selection resolved to {selected.Kind} instead of its Default Variant.");
@@ -9347,13 +9325,7 @@ static void ProductionShotManagerActionOwnsAssociation()
             var integrationCard = editorContent.Cards.Single((card) =>
                 card.SessionStateId == "integration:shot-manager");
             True(integrationCard.IsExpanded);
-            var selectedNode = typeof(MainWindow)
-                .GetField(
-                    "_selectedNode",
-                    BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as ProjectTreeNode
-                ?? throw new InvalidOperationException(
-                    "Missing MainWindow selection state.");
+            var selectedNode = Required(WindowSession(window).SelectedNode);
             Equal(ProjectTreeNodeKind.Project, selectedNode.Kind);
 
             new ShotManagerAssociationService(
@@ -11867,6 +11839,15 @@ static string? SingleArgumentValue(string[] arguments, string key)
 }
 
 static T Required<T>(T? value) where T : class => value ?? throw new Exception("Expected a value.");
+static EditorSessionState WindowSession(MainWindow window) =>
+    (typeof(MainWindow)
+        .GetField(
+            "_workspaceCoordinator",
+            BindingFlags.Instance | BindingFlags.NonPublic)
+        ?.GetValue(window) as EditorWorkspaceCoordinator
+        ?? throw new InvalidOperationException(
+            "Missing MainWindow workspace coordinator."))
+    .State;
 static DesignPreviewPayload? CreatePreviewPayload(
     SpikeDatabase database,
     ProjectTreeNode? node,
