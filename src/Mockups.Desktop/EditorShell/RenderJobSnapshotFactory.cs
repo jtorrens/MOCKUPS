@@ -118,7 +118,7 @@ internal sealed class RenderJobSnapshotFactory
 
     private async Task<RouteResolution> ResolveRoutesAsync(
         ProjectTreeNode shot,
-        SpikeDatabase.ShotSettings shotSettings,
+        ShotSettings shotSettings,
         CancellationToken cancellationToken)
     {
         var association = _database.GetShotManagerAssociation(
@@ -232,7 +232,7 @@ internal sealed class RenderJobSnapshotFactory
 
     private static bool CachedRecordMatchesCurrentContext(
         ShotManagerShotStructureRecord? record,
-        SpikeDatabase.ShotSettings shotSettings,
+        ShotSettings shotSettings,
         ShotManagerProjectAssociationRecord? association,
         ShotManagerEpisodeBindingRecord? binding)
     {

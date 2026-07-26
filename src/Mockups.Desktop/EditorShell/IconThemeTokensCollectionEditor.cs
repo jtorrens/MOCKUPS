@@ -87,7 +87,7 @@ internal sealed class IconThemeTokensCollectionEditor
         };
     }
 
-    private Control CreateToolbar(ProjectTreeNode node, IReadOnlyCollection<SpikeDatabase.IconThemeToken> tokens)
+    private Control CreateToolbar(ProjectTreeNode node, IReadOnlyCollection<IconThemeToken> tokens)
     {
         var toolbar = new Grid
         {
@@ -139,7 +139,7 @@ internal sealed class IconThemeTokensCollectionEditor
     }
 
     private Control CreateFilterBox(
-        IReadOnlyList<SpikeDatabase.IconThemeToken> tokens,
+        IReadOnlyList<IconThemeToken> tokens,
         StackPanel rowsPanel,
         TextBlock emptyFilterText,
         ProjectTreeNode node)
@@ -160,7 +160,7 @@ internal sealed class IconThemeTokensCollectionEditor
 
     private void RefreshTokenRows(
         ProjectTreeNode node,
-        IReadOnlyList<SpikeDatabase.IconThemeToken> tokens,
+        IReadOnlyList<IconThemeToken> tokens,
         StackPanel rowsPanel,
         TextBlock emptyFilterText,
         string query)
@@ -183,7 +183,7 @@ internal sealed class IconThemeTokensCollectionEditor
         emptyFilterText.IsVisible = visibleTokens.Count == 0;
     }
 
-    private Control CreateTokenRow(ProjectTreeNode node, SpikeDatabase.IconThemeToken token)
+    private Control CreateTokenRow(ProjectTreeNode node, IconThemeToken token)
     {
         var grid = new Grid
         {

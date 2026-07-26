@@ -165,8 +165,8 @@ internal sealed class IconThemeSearchDialog
             PreviewDebugLog.Write("icon.generate.start", ("token", token));
             try
             {
-                var lucide = lucideList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
-                var material = materialList.SelectedItem as SpikeDatabase.IconThemeSearchCandidate;
+                var lucide = lucideList.SelectedItem as IconThemeSearchCandidate;
+                var material = materialList.SelectedItem as IconThemeSearchCandidate;
                 if (lucide is null || material is null)
                 {
                     SetError("Select one Lucide source and one Material source.");
@@ -296,7 +296,7 @@ internal sealed class IconThemeSearchDialog
 
     private static Control CandidateColumn(string title, ListBox listBox, int column = 0)
     {
-        listBox.ItemTemplate = new FuncDataTemplate<SpikeDatabase.IconThemeSearchCandidate>((candidate, _) =>
+        listBox.ItemTemplate = new FuncDataTemplate<IconThemeSearchCandidate>((candidate, _) =>
         {
             var row = new Grid
             {

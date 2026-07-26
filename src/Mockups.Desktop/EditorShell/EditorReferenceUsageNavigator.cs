@@ -7,12 +7,12 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorReferenceUsageNavigator
 {
     private readonly Func<EditorWorkspace, string, bool> _selectNodeInWorkspace;
-    private readonly Func<SpikeDatabase.EmbeddedComponentUsage, string, Task> _navigateToEmbeddedUsage;
+    private readonly Func<EmbeddedComponentUsage, string, Task> _navigateToEmbeddedUsage;
     private readonly IEditorShellMessageSink _messages;
 
     public EditorReferenceUsageNavigator(
         Func<EditorWorkspace, string, bool> selectNodeInWorkspace,
-        Func<SpikeDatabase.EmbeddedComponentUsage, string, Task> navigateToEmbeddedUsage,
+        Func<EmbeddedComponentUsage, string, Task> navigateToEmbeddedUsage,
         IEditorShellMessageSink messages)
     {
         _selectNodeInWorkspace = selectNodeInWorkspace;
@@ -20,7 +20,7 @@ internal sealed class EditorReferenceUsageNavigator
         _messages = messages;
     }
 
-    public async Task Navigate(SpikeDatabase.ReferenceUsageDetail usage)
+    public async Task Navigate(ReferenceUsageDetail usage)
     {
         var workspace = usage.Scope switch
         {

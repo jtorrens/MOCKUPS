@@ -244,7 +244,7 @@ internal sealed class ThemeTokenPickerDialog
         return result;
     }
 
-    private static Control PreviewFor(SpikeDatabase.ThemeTokenOption option)
+    private static Control PreviewFor(ThemeTokenOption option)
     {
         if (option.Kind == "color")
         {

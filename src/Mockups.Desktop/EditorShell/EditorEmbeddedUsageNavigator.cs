@@ -119,7 +119,7 @@ internal sealed class EditorEmbeddedUsageNavigator
         }
     }
 
-    public async Task NavigateToEmbeddedUsage(SpikeDatabase.EmbeddedComponentUsage usage, string targetNodeId)
+    public async Task NavigateToEmbeddedUsage(EmbeddedComponentUsage usage, string targetNodeId)
     {
         var nodeId = string.IsNullOrWhiteSpace(targetNodeId)
             ? usage.ParentComponentClassId

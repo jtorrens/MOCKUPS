@@ -30,7 +30,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
-    private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
+    private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly Action<EditorEmbeddedContext> _openEmbeddedContext;
     private readonly Func<int> _shotFrame;
     private readonly Action<int> _setShotFrame;
@@ -56,7 +56,7 @@ internal sealed class EditorCollectionCardFactory
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
-        Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage,
+        Func<ReferenceUsageDetail, Task> navigateToUsage,
         Action<EditorEmbeddedContext> openEmbeddedContext,
         Func<int> shotFrame,
         Action<int> setShotFrame,

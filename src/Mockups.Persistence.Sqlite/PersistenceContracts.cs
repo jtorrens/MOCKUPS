@@ -4,19 +4,7 @@ using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-public sealed record ProjectSettings(string Slug, int DefaultFps, string MediaRoot);
-
-public sealed record EpisodeSettings(string Slug, int SortOrder);
-
 internal sealed record ProjectRecord(string Id, string Name, string Notes);
-
-public sealed record EpisodeRecord(
-    string Id,
-    string ProjectId,
-    string Name,
-    string Slug,
-    string Notes,
-    int SortOrder);
 
 internal sealed record ShotRecord(
     string Id,
@@ -34,84 +22,7 @@ internal sealed record ShotRecord(
     string CanvasJson,
     string MetadataJson);
 
-public sealed record ShotManagerProjectAssociationRecord(
-    string ProjectId,
-    string ProductionId,
-    string ProductionName,
-    string SeasonId,
-    string SeasonCode,
-    string? SeasonName,
-    string UpdatedAt);
-
-public sealed record ShotManagerEpisodeBindingRecord(
-    string EpisodeId,
-    string ProjectId,
-    string ExternalEpisodeId,
-    int EpisodeNumber,
-    string EpisodeCode,
-    string UpdatedAt);
-
-public sealed record ShotManagerShotStructureRecord(
-    string ShotId,
-    int PlanVersion,
-    string ProductionId,
-    string SeasonId,
-    string EpisodeId,
-    int ShotNumber,
-    string ShotCode,
-    string FullName,
-    string StructureJson,
-    string CreatedAt);
-
-public sealed record ShotManagerLocalEpisodeRecord(
-    EpisodeRecord Episode,
-    ShotManagerEpisodeBindingRecord? Binding,
-    bool HasShots);
-
-public sealed record ShotManagerEpisodeWrite(
-    EpisodeRecord Episode,
-    string ExternalEpisodeId,
-    int EpisodeNumber,
-    string EpisodeCode);
-
-public sealed record ShotManagerAssociationWritePlan(
-    ShotManagerProjectAssociationRecord Association,
-    IReadOnlyList<ShotManagerEpisodeWrite> Upserts,
-    IReadOnlyList<string> DeleteEpisodeIds);
-
-public sealed record PaletteColorSettings(
-    string Token,
-    string ValueHex,
-    bool IsNeutral,
-    string Source,
-    bool IsProtected,
-    bool HiddenFromPickers,
-    string Note);
-
-public sealed record DeviceSettings(
-    string Name,
-    string Manufacturer,
-    string Model,
-    string OsFamily,
-    string MetricsJson);
-
-public sealed record ActorSettings(
-    string ProjectId,
-    string DisplayName,
-    string ShortName,
-    string DefaultDeviceId,
-    string DefaultThemeId,
-    string MetadataJson);
-
 internal sealed record ResourceOption(string Value, string Label);
-
-public sealed record ProductionFontFace(
-    string FontId,
-    string FamilyName,
-    string Category,
-    string RelativePath,
-    int Weight,
-    string Style);
 
 internal sealed record PaletteColorOption(
     string Token,
@@ -223,12 +134,6 @@ internal sealed record ModuleInstanceRecord(
     string BehaviorJson,
     string AnimationJson,
     string MetadataJson);
-
-public enum ReferenceUsageScope
-{
-    Design,
-    Production,
-}
 
 internal sealed record ReferenceTarget(ProjectTreeNodeKind Kind, string Id);
 

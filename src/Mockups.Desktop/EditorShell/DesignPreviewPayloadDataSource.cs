@@ -223,7 +223,7 @@ internal sealed class DesignPreviewPayloadDataSource
         _nestedRuntimeRecordReferenceResolver.Resolve(runtime, themeMode, paletteColors);
     }
 
-    private DesignPreviewComponentSource ComponentSource(SpikeDatabase.ComponentClassSettings settings)
+    private DesignPreviewComponentSource ComponentSource(ComponentClassSettings settings)
     {
         return new DesignPreviewComponentSource(
             settings.Name,
@@ -235,7 +235,7 @@ internal sealed class DesignPreviewPayloadDataSource
     }
 
     private DesignPreviewModuleSource ModuleSource(
-        SpikeDatabase.ModuleSettings settings,
+        ModuleSettings settings,
         string name,
         string moduleId)
     {

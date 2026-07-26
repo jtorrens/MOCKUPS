@@ -666,7 +666,7 @@ public partial class MainWindow : SukiWindow
         return true;
     }
 
-    private Task NavigateToReferenceUsage(SpikeDatabase.ReferenceUsageDetail usage)
+    private Task NavigateToReferenceUsage(ReferenceUsageDetail usage)
     {
         return _referenceUsageNavigator.Navigate(usage);
     }

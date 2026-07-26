@@ -11,29 +11,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 public sealed partial class SpikeDatabase
 {
-    public sealed record EmbeddedComponentUsage(
-        string ParentComponentClassId,
-        string ParentComponentName,
-        string ParentComponentType,
-        string SlotFieldId,
-        string SlotLabel,
-        bool HasOverrides,
-        string SourceNodeId = "");
-
-    public sealed record ComponentVariantReferenceUsage(
-        string SourceKind,
-        string SourceName,
-        string Detail,
-        string TargetNodeId,
-        EmbeddedComponentUsage? EmbeddedUsage);
-
-    public sealed record ComponentClassVariant(
-        string Id,
-        string Name,
-        bool IsProtected,
-        bool IsLocked,
-        string ConfigJson);
-
     private ProjectTreeNode RenameComponentClass(ProjectTreeNode node, string name)
     {
         var nextName = name.Trim();

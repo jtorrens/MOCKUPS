@@ -13,7 +13,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class EditorReferenceUsageLink
 {
     public static Button Create(
-        SpikeDatabase.ReferenceUsageDetail usage,
+        ReferenceUsageDetail usage,
         bool isDark,
         Func<Task> activate,
         bool includeKindIcon = false)

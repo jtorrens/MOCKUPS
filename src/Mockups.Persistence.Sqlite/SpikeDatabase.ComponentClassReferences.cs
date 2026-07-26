@@ -11,13 +11,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 public sealed partial class SpikeDatabase
 {
-    public sealed record ComponentVariantSelectionSettings(
-        string ProjectId,
-        string ComponentType,
-        string RecordClassId,
-        string ConfigJson);
-
-
     public IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
         string projectId,
         string componentType,

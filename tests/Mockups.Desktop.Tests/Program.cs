@@ -8130,7 +8130,7 @@ static void ShotActorContextIsExplicit()
         var variant = database.GetModuleVariantOptions(module.Id).First();
         var screen = database.AddModuleInstance(
             shot,
-            new SpikeDatabase.ShotModuleInstanceDraft(
+            new ShotModuleInstanceDraft(
                 module,
                 variant.Value,
                 variant.Label,
@@ -8586,8 +8586,8 @@ static void ModuleVariantsAreExplicit()
 
         var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
-        var screen = database.AddModuleInstance(shot, new SpikeDatabase.ShotModuleInstanceDraft(
-            new SpikeDatabase.ShotModuleChoice(
+        var screen = database.AddModuleInstance(shot, new ShotModuleInstanceDraft(
+            new ShotModuleChoice(
                 module.Id, module.Name, module.Parent!.Name, appId, module.RecordClassId),
             defaultVariant.Id,
             defaultVariant.Name,
@@ -9153,7 +9153,7 @@ static void UsageNavigationPreservesTypedContext()
             return Task.CompletedTask;
         },
         messages);
-    var embeddedUsage = new SpikeDatabase.EmbeddedComponentUsage(
+    var embeddedUsage = new EmbeddedComponentUsage(
         "component_parent",
         "Parent",
         "parent",
@@ -9162,7 +9162,7 @@ static void UsageNavigationPreservesTypedContext()
         true,
         "component_parent::variant::default");
 
-    navigator.Navigate(new SpikeDatabase.ReferenceUsageDetail(
+    navigator.Navigate(new ReferenceUsageDetail(
         "component_parent::variant::default",
         ProjectTreeNodeKind.ComponentVariant,
         "Component Variant",
@@ -9170,7 +9170,7 @@ static void UsageNavigationPreservesTypedContext()
         "Slot · overrides",
         ReferenceUsageScope.Design,
         embeddedUsage)).GetAwaiter().GetResult();
-    navigator.Navigate(new SpikeDatabase.ReferenceUsageDetail(
+    navigator.Navigate(new ReferenceUsageDetail(
         "screen_1",
         ProjectTreeNodeKind.ModuleInstance,
         "Screen",

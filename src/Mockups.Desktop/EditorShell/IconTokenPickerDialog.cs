@@ -36,7 +36,7 @@ internal sealed class IconTokenPickerDialog
         string query = "";
         string? result = null;
         var visibleButtons = new Dictionary<string, Button>(StringComparer.Ordinal);
-        var tokensByTheme = new Dictionary<string, IReadOnlyList<SpikeDatabase.IconThemeToken>>(StringComparer.Ordinal);
+        var tokensByTheme = new Dictionary<string, IReadOnlyList<IconThemeToken>>(StringComparer.Ordinal);
         const int visibleResultLimit = 160;
 
         var dialog = new SukiWindow

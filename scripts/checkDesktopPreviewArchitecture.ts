@@ -1146,8 +1146,8 @@ assertDoesNotContain(
   "structured collection parsing must reject invalid current values instead of returning an empty array",
 );
 for (const [componentPath, contractName] of [
-  ["src/Mockups.Persistence.Sqlite/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
-  ["src/Mockups.Persistence.Sqlite/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
+  ["src/Mockups.Application/StatusBarComponentConfigContract.cs", "StatusBarComponentConfigContract"],
+  ["src/Mockups.Application/NavigationBarComponentConfigContract.cs", "NavigationBarComponentConfigContract"],
 ] as const) {
   assertContains(
     componentPath,
@@ -1288,7 +1288,7 @@ for (const moduleConfigContract of [
   "LockScreenModuleConfigContract",
 ]) {
   assertContains(
-    "src/Mockups.Persistence.Sqlite/CurrentModuleConfigContract.cs",
+    "src/Mockups.Application/CurrentModuleConfigContract.cs",
     `${moduleConfigContract}.Validate(config, context)`,
     `current Module config routing must delegate to ${moduleConfigContract}`,
   );
@@ -4182,13 +4182,16 @@ assertContains(
   "_referenceUsageService.BuildIndex(connection)",
   "tree Used state must consume the shared explicit Usage edge set",
 );
-for (const typedUsageDetail of ["ReferenceUsageScope Scope", "usage.Scope,"]) {
-  assertContains(
-    "src/Mockups.Persistence.Sqlite/SpikeDatabase.ReferenceUsageDetails.cs",
-    typedUsageDetail,
-    `Usage details must retain typed edge scope ${typedUsageDetail}`,
-  );
-}
+assertContains(
+  "src/Mockups.Application/ReferenceUsageModels.cs",
+  "ReferenceUsageScope Scope",
+  "Application Usage details must retain their typed edge scope",
+);
+assertContains(
+  "src/Mockups.Persistence.Sqlite/SpikeDatabase.ReferenceUsageDetails.cs",
+  "usage.Scope,",
+  "SQLite Usage projection must preserve the typed edge scope",
+);
 assertDoesNotContain(
   "src/Mockups.Persistence.Sqlite/ReferenceUsageService.cs",
   "MainWindow",

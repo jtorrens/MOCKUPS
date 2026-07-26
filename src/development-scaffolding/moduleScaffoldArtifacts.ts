@@ -16,7 +16,7 @@ export const generatedModuleRegistryPath =
 export const generatedModuleFieldCatalogPath =
   "src/Mockups.Application/GeneratedModuleScaffoldFieldCatalog.cs";
 export const generatedModuleConfigRegistryPath =
-  "src/Mockups.Persistence.Sqlite/GeneratedModuleScaffoldConfigRegistry.cs";
+  "src/Mockups.Application/GeneratedModuleScaffoldConfigRegistry.cs";
 export const generatedModuleEmbeddedSlotsPath =
   "src/Mockups.Application/GeneratedModuleScaffoldEmbeddedSlots.cs";
 

@@ -14,12 +14,12 @@ internal sealed class ReferenceUsageCollectionEditor
 {
     private readonly SpikeDatabase _database;
     private readonly bool _isDark;
-    private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
+    private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
 
     public ReferenceUsageCollectionEditor(
         SpikeDatabase database,
         bool isDark,
-        Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage)
+        Func<ReferenceUsageDetail, Task> navigateToUsage)
     {
         _database = database;
         _isDark = isDark;
@@ -54,7 +54,7 @@ internal sealed class ReferenceUsageCollectionEditor
         };
     }
 
-    private void AddGroup(Panel host, string label, IEnumerable<SpikeDatabase.ReferenceUsageDetail> usages)
+    private void AddGroup(Panel host, string label, IEnumerable<ReferenceUsageDetail> usages)
     {
         var items = usages.ToList();
         if (items.Count == 0) return;
@@ -65,7 +65,7 @@ internal sealed class ReferenceUsageCollectionEditor
             items.Select((usage, index) => CreateUsageLeaf(usage, index == items.Count - 1))));
     }
 
-    private Control CreateUsageLeaf(SpikeDatabase.ReferenceUsageDetail usage, bool isLast)
+    private Control CreateUsageLeaf(ReferenceUsageDetail usage, bool isLast)
     {
         return CollapsibleTree.Leaf(
             EditorIcons.Create(EditorIcons.ForTreeNode(usage.SourceKind), 15),

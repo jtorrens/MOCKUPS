@@ -478,7 +478,7 @@ function ownerTargets(spec: ComponentScaffoldSpec) {
     },
     {
       label: "desktop config contract",
-      path: `src/Mockups.Persistence.Sqlite/${typeName}ComponentConfigContract.cs`,
+      path: `src/Mockups.Application/${typeName}ComponentConfigContract.cs`,
       requiredTerm: `${typeName}ComponentConfigContract`,
     },
     {

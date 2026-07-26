@@ -24,7 +24,7 @@ internal sealed class ShotModulePickerDialog
         _database = database;
     }
 
-    public Task<SpikeDatabase.ShotModuleInstanceDraft?> Show(string shotId)
+    public Task<ShotModuleInstanceDraft?> Show(string shotId)
     {
         var modules = _database.GetAvailableShotModules(shotId);
         var dialog = new SukiWindow
@@ -76,7 +76,7 @@ internal sealed class ShotModulePickerDialog
 
         var nameEdited = false;
         var automaticName = "";
-        SpikeDatabase.ShotModuleChoice? SelectedModule() => modules.FirstOrDefault((module) => module.Id == moduleCombo.SelectedItem?.Value);
+        ShotModuleChoice? SelectedModule() => modules.FirstOrDefault((module) => module.Id == moduleCombo.SelectedItem?.Value);
         void RefreshAddButton() => addButton.IsEnabled = SelectedModule() is not null
             && variantCombo.SelectedItem is not null
             && !string.IsNullOrWhiteSpace(nameBox.Text);
@@ -104,7 +104,7 @@ internal sealed class ShotModulePickerDialog
             var variant = variantCombo.SelectedItem;
             var name = nameBox.Text?.Trim();
             if (module is null || variant is null || string.IsNullOrWhiteSpace(name)) return;
-            dialog.Close(new SpikeDatabase.ShotModuleInstanceDraft(module, variant.Value, variant.Label, name));
+            dialog.Close(new ShotModuleInstanceDraft(module, variant.Value, variant.Label, name));
         }
 
         moduleCombo.SelectionChanged += (_, _) => RefreshVariants();
@@ -175,7 +175,7 @@ internal sealed class ShotModulePickerDialog
             RefreshAddButton();
             if (modules.Count == 0) moduleCombo.IsEnabled = false;
         };
-        return dialog.ShowDialog<SpikeDatabase.ShotModuleInstanceDraft?>(_owner);
+        return dialog.ShowDialog<ShotModuleInstanceDraft?>(_owner);
 
         void AddField(string label, Control control, int row)
         {

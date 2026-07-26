@@ -22,9 +22,9 @@ internal sealed class EditorReferenceUsageDialog
         _isDark = isDark;
     }
 
-    public Task<SpikeDatabase.ReferenceUsageDetail?> Show(
+    public Task<ReferenceUsageDetail?> Show(
         ProjectTreeNode node,
-        IReadOnlyList<SpikeDatabase.ReferenceUsageDetail> usages)
+        IReadOnlyList<ReferenceUsageDetail> usages)
     {
         var dialog = new SukiWindow
         {
@@ -95,14 +95,14 @@ internal sealed class EditorReferenceUsageDialog
         Grid.SetRow(closeButton, 2);
         dialog.Content = new Border { Padding = new Thickness(22), Child = root };
 
-        return dialog.ShowDialog<SpikeDatabase.ReferenceUsageDetail?>(_owner);
+        return dialog.ShowDialog<ReferenceUsageDetail?>(_owner);
     }
 
     private void AddGroup(
         Window dialog,
         Panel host,
         string label,
-        IEnumerable<SpikeDatabase.ReferenceUsageDetail> usages)
+        IEnumerable<ReferenceUsageDetail> usages)
     {
         var items = usages.ToList();
         if (items.Count == 0) return;

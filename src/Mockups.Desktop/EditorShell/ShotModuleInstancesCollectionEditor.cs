@@ -14,7 +14,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly SpikeDatabase _database;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<string, Task<SpikeDatabase.ShotModuleInstanceDraft?>> _defineModuleInstance;
+    private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
     private readonly Func<ProjectTreeNode, Task<bool>> _confirmDelete;
     private readonly Func<int> _shotFrame;
     private readonly PreviewPlaybackState _playbackState;
@@ -24,7 +24,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         SpikeDatabase database,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<string, Task<SpikeDatabase.ShotModuleInstanceDraft?>> defineModuleInstance,
+        Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,
         Func<ProjectTreeNode, Task<bool>> confirmDelete,
         Func<int> shotFrame,
         PreviewPlaybackState playbackState)
@@ -83,7 +83,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
     private Control CreateSlot(
         ProjectTreeNode shot,
-        SpikeDatabase.ModuleInstanceSlot slot,
+        ModuleInstanceSlot slot,
         int index,
         int count,
         out Control activeIndicator)
@@ -168,7 +168,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
     private static ProjectTreeNode ScreenNode(
         ProjectTreeNode shot,
-        SpikeDatabase.ModuleInstanceSlot slot) =>
+        ModuleInstanceSlot slot) =>
         new(
             ProjectTreeNodeKind.ModuleInstance,
             slot.Id,

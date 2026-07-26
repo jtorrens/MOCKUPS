@@ -16,7 +16,7 @@ internal sealed class EditorEmbeddedUsageDialog
     private readonly bool _isDark;
 
     public sealed record Selection(
-        SpikeDatabase.EmbeddedComponentUsage? EmbeddedUsage,
+        EmbeddedComponentUsage? EmbeddedUsage,
         string TargetNodeId);
 
     public EditorEmbeddedUsageDialog(Window owner, bool isDark)
@@ -28,9 +28,9 @@ internal sealed class EditorEmbeddedUsageDialog
     public async Task<Selection?> Show(
         string componentName,
         string componentType,
-        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
+        IReadOnlyList<EmbeddedComponentUsage> classUsages,
         string? variantName = null,
-        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage>? variantUsages = null)
+        IReadOnlyList<ComponentVariantReferenceUsage>? variantUsages = null)
     {
         Selection? selected = null;
         var dialog = new SukiWindow
@@ -98,9 +98,9 @@ internal sealed class EditorEmbeddedUsageDialog
     }
 
     private Control CreateUsageSwitch(
-        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> classUsages,
+        IReadOnlyList<EmbeddedComponentUsage> classUsages,
         string? variantName,
-        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage> variantUsages,
+        IReadOnlyList<ComponentVariantReferenceUsage> variantUsages,
         Window dialog,
         System.Action<Selection> select)
     {
@@ -192,7 +192,7 @@ internal sealed class EditorEmbeddedUsageDialog
     }
 
     private Control CreateUsageTree(
-        IReadOnlyList<SpikeDatabase.EmbeddedComponentUsage> usages,
+        IReadOnlyList<EmbeddedComponentUsage> usages,
         Window dialog,
         System.Action<Selection> select)
     {
@@ -253,7 +253,7 @@ internal sealed class EditorEmbeddedUsageDialog
     }
 
     private static Button CreateLeafButton(
-        SpikeDatabase.EmbeddedComponentUsage usage,
+        EmbeddedComponentUsage usage,
         Window dialog,
         System.Action<Selection> select)
     {
@@ -284,7 +284,7 @@ internal sealed class EditorEmbeddedUsageDialog
     }
 
     private Control CreateVariantUsageList(
-        IReadOnlyList<SpikeDatabase.ComponentVariantReferenceUsage> usages,
+        IReadOnlyList<ComponentVariantReferenceUsage> usages,
         Window dialog,
         System.Action<Selection> select)
     {
@@ -326,7 +326,7 @@ internal sealed class EditorEmbeddedUsageDialog
     }
 
     private static Button CreateVariantUsageButton(
-        SpikeDatabase.ComponentVariantReferenceUsage usage,
+        ComponentVariantReferenceUsage usage,
         Window dialog,
         System.Action<Selection> select)
     {

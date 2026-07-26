@@ -15,7 +15,7 @@ internal sealed class EditorNodeCommandController
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Action _loadProjectTree;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<SpikeDatabase.ReferenceUsageDetail, Task> _navigateToUsage;
+    private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
 
     public EditorNodeCommandController(
@@ -25,7 +25,7 @@ internal sealed class EditorNodeCommandController
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Action loadProjectTree,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<SpikeDatabase.ReferenceUsageDetail, Task> navigateToUsage,
+        Func<ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages)
     {
         _owner = owner;

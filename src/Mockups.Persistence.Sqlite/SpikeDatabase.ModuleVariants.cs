@@ -10,13 +10,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 public sealed partial class SpikeDatabase
 {
-    public sealed record ModuleVariant(
-        string Id,
-        string Name,
-        bool IsProtected,
-        bool IsLocked,
-        string ConfigJson);
-
     internal static IReadOnlyList<ModuleVariant> ModuleVariants(
         string metadataJson,
         string owner = "Module metadata")

@@ -9,14 +9,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 public sealed partial class SpikeDatabase
 {
-    public sealed record ModuleInstanceSlot(
-        string Id,
-        string Name,
-        string ModuleName,
-        int SortOrder,
-        string TransitionType,
-        int StoredDurationFrames);
-
     public ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId)
     {
         var record = _moduleInstanceRepository.Get(moduleInstanceId);

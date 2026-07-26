@@ -12,4 +12,8 @@
   <ItemGroup>
     <EmbeddedResource Include="../desktop-preview/desktopPreviewManifest.json" LogicalName="Mockups.DesktopPreviewManifest.json" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mockups.Persistence.Sqlite" />
+  </ItemGroup>
 </Project>

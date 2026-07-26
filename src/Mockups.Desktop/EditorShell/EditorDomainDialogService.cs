@@ -85,7 +85,7 @@ internal sealed class EditorDomainDialogService
             height: 250);
     }
 
-    public Task<SpikeDatabase.ShotModuleInstanceDraft?> DefineModuleInstanceForShot(string shotId)
+    public Task<ShotModuleInstanceDraft?> DefineModuleInstanceForShot(string shotId)
     {
         return new ShotModulePickerDialog(_owner, _database).Show(shotId);
     }
