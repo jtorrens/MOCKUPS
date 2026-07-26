@@ -11,15 +11,18 @@ public static class CurrentDatabaseMaintenance
     {
         if (args.Contains("--validate-current-database", StringComparer.Ordinal))
         {
-            var path = OptionValue(args, "--source") ?? SpikeDatabase.DefaultDatabasePath();
-            _ = new SpikeDatabase(path);
+            var path = OptionValue(args, "--source")
+                ?? SqlitePersistence.DefaultDatabasePath();
+            _ = SqlitePersistence.OpenCurrent(path);
             Console.WriteLine($"Current desktop database validated read-only with SQLite {RuntimeVersion(path)}: {Path.GetFullPath(path)}");
             return true;
         }
 
         if (!args.Contains("--create-current-database", StringComparer.Ordinal)) return false;
 
-        var sourcePath = Path.GetFullPath(OptionValue(args, "--source") ?? SpikeDatabase.DefaultDatabasePath());
+        var sourcePath = Path.GetFullPath(
+            OptionValue(args, "--source")
+                ?? SqlitePersistence.DefaultDatabasePath());
         var outputPath = Path.GetFullPath(OptionValue(args, "--output")
             ?? throw new InvalidOperationException("Current database creation requires an explicit --output path."));
         if (sourcePath.Equals(outputPath, StringComparison.Ordinal))
@@ -31,12 +34,12 @@ public static class CurrentDatabaseMaintenance
             throw new InvalidOperationException($"Output already exists and will not be overwritten: {outputPath}");
         }
 
-        _ = new SpikeDatabase(sourcePath);
+        _ = SqlitePersistence.OpenCurrent(sourcePath);
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         try
         {
             File.Copy(sourcePath, outputPath, overwrite: false);
-            _ = new SpikeDatabase(outputPath);
+            _ = SqlitePersistence.OpenCurrent(outputPath);
         }
         catch
         {

@@ -135,27 +135,27 @@ public sealed class ApplicationStartupCoordinator
         }
         try
         {
-            var database = SqlitePersistence.OpenCurrent(
+            var project = SqlitePersistence.OpenCurrent(
                 currentDatabasePath);
             cancellationToken.ThrowIfCancellationRequested();
             var ports = new DesktopApplicationDataPorts(
-                database.ProjectPaths,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database,
-                database);
+                project.ProjectPaths,
+                project.Navigation,
+                project.CoreFields,
+                project.RecordFields,
+                project.ComponentFields,
+                project.VariantHistory,
+                project.Preview,
+                project.Dictionary,
+                project.NodeCommands,
+                project.ProductionNavigation,
+                project.Presentation,
+                project.DomainDialogs,
+                project.Components,
+                project.Header,
+                project.Collections,
+                project.Layouts,
+                project.ActorPreview);
             var initialTreeRoots =
                 ports.Navigation.LoadProjectTree();
             cancellationToken.ThrowIfCancellationRequested();

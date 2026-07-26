@@ -328,3 +328,10 @@ test("a Persistence-only consumer cannot compile against SQLite packages", () =>
     /ForbiddenDependencyProbe\.cs.*(?:CS0246|CS0234)/su,
   );
 });
+
+test("a SQLite session cannot compile as a universal application store", () => {
+  assertCannotCompile(
+    "tests/architecture/fixtures/UniversalSqliteCapabilityLeak/UniversalSqliteCapabilityLeak.csproj",
+    /ForbiddenDependencyProbe\.cs.*CS1061/su,
+  );
+});

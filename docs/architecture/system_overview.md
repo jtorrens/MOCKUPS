@@ -142,17 +142,19 @@ capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
 
 `Mockups.Persistence.Sqlite` owns the SQLite context, focused repository
-implementations, table mapping and the transitional `SpikeDatabase`
-compatibility facade. It may reference Application and Domain and is the only
-production project allowed to reference the SQLite packages. It cannot
-reference Avalonia or Desktop. Each SQLite context owns its write
+implementations, table mapping and focused Application-port adapters.
+`SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
+session has no data methods and each exposed port is a distinct adapter that
+cannot be cast to an unrelated port. Persistence may reference Application and
+Domain and is the only production project allowed to reference the SQLite
+packages. It cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global
 write lock.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
-It opens the current SQLite compatibility facade and projects it into the
-narrow Application ports required by one desktop session.
+It opens the current SQLite session and composes the named narrow Application
+ports required by one desktop session.
 The Host acquires one workstation-user visual-editor lease before Avalonia
 startup. A second editor launch exits before constructing Avalonia, services
 or SQLite and therefore never becomes another visual application process.

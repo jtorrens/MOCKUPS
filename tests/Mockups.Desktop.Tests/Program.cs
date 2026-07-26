@@ -58,7 +58,7 @@ var tests = new (string Name, Action Run)[]
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("system bar items use fixed dictionary collections on every Variant", SystemBarItemsUseFixedDictionaryCollections),
     ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
-    ("extracted repositories preserve the SpikeDatabase facade contract", ExtractedRepositoriesPreserveFacadeContract),
+    ("extracted repositories preserve the focused port contract", ExtractedRepositoriesPreserveFacadeContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
@@ -135,6 +135,7 @@ var tests = new (string Name, Action Run)[]
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
+    ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -315,7 +316,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
 
 static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -394,7 +395,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 
 static void ListPresenceReplaysAndRestoresItsOrigin()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -861,7 +862,7 @@ static void TypographyStyleKeepsOnlyExplicitSentinels()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var keyboard = Descendants(database.LoadProjectTree()).Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "keyboard");
@@ -1149,7 +1150,7 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var components = Descendants(database.LoadProjectTree())
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
             .ToList();
@@ -1254,7 +1255,7 @@ static void RecordScalarWritesRejectInvalidValues()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var tree = Descendants(database.LoadProjectTree()).ToList();
         var device = tree.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var actor = tree.First((node) => node.Kind == ProjectTreeNodeKind.Actor);
@@ -1322,7 +1323,7 @@ static void ResourceScalarReadsRejectWrongShapes()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         var fields = new RecordClassFieldValueService(database);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -1745,7 +1746,7 @@ static void RuntimeInputDefaultsUseValueKindOwner()
 
 static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     var textBox = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -1825,7 +1826,7 @@ static void PairFieldsRequireExplicitLabels()
         }
     }
 
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
     foreach (var variant in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant))
     {
@@ -2362,7 +2363,7 @@ static void PreviewActionContractsAreStrict()
                 "UPDATE component_classes SET design_preview_json = json_set(design_preview_json, '$.actions[0].durationMotionConfigPath', 'keyboard.missing') WHERE id = 'component_project_foqn_s2_keyboard'");
         }
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var keyboardVariant = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -2377,7 +2378,7 @@ static void PreviewActionContractsAreStrict()
         File.Delete(temporary);
     }
 
-    var currentDatabase = new SpikeDatabase(sourcePath);
+    var currentDatabase = new SqliteProjectEngine(sourcePath);
     var currentNodes = Descendants(currentDatabase.LoadProjectTree()).ToList();
     var bubbleVariant = currentNodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -2643,7 +2644,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree()
             .SelectMany(DescendantsAndSelf)
             .ToList();
@@ -2674,7 +2675,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
         Equal(true, PersistedDefaultLock(temporary, "component_classes", "component_project_foqn_s2_label"));
         Equal(true, PersistedDefaultLock(temporary, "modules", "module_core_chat"));
 
-        var nextSession = new SpikeDatabase(temporary);
+        var nextSession = new SqliteProjectEngine(temporary);
         var nextNodes = nextSession.LoadProjectTree()
             .SelectMany(DescendantsAndSelf)
             .ToList();
@@ -2719,7 +2720,7 @@ static bool PersistedDefaultLock(
 
 static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var iconRow = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) =>
@@ -2855,7 +2856,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 
 static void IncomingCallExposesExactChildRuntimeBoundaries()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var nodes = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .ToList();
@@ -3009,6 +3010,36 @@ static void SqliteContextsRetainIndependentProjectRoots()
         resolvedBeforeB,
         contextA.ProjectPaths.ResolveProjectPath(
             Path.Combine("assets", "a.png")));
+}
+
+static void SqliteSessionExposesDistinctFocusedPorts()
+{
+    var project = SqlitePersistence.OpenCurrent(
+        ParityDatabasePath());
+    object[] ports =
+    [
+        project.Navigation,
+        project.CoreFields,
+        project.RecordFields,
+        project.ComponentFields,
+        project.VariantHistory,
+        project.Preview,
+        project.Dictionary,
+        project.NodeCommands,
+        project.ProductionNavigation,
+        project.Presentation,
+        project.DomainDialogs,
+        project.Components,
+        project.Header,
+        project.Collections,
+        project.Layouts,
+        project.ActorPreview,
+    ];
+
+    Equal(ports.Length, ports.Distinct().Count());
+    True(project.Navigation is not IPreviewInputRepository);
+    True(project.Layouts is not IRecordClassFieldStore);
+    True(project.ActorPreview is not IEditorNodeCommandStore);
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()
@@ -3255,8 +3286,8 @@ static void ExistingDatabaseOpenIsReadOnly()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        _ = new SpikeDatabase(temporary);
-        _ = new SpikeDatabase(temporary);
+        _ = new SqliteProjectEngine(temporary);
+        _ = new SqliteProjectEngine(temporary);
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -3699,7 +3730,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 VariantOptions(contextHost).Select((option) => option.Label));
             Equal("360", RequiredField(listSurface, "itemWidth").Value);
             Equal("84", RequiredField(listSurface, "itemHeight").Value);
-            var database = new SpikeDatabase(temporary);
+            var database = new SqliteProjectEngine(temporary);
             var listPreview = JsonPath.ParseRequiredObject(
                 database.GetComponentClassSettings("component_project_foqn_s2_list").DesignPreviewJson,
                 "List Design Preview");
@@ -4104,7 +4135,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 selected.Id.EndsWith("::variant::default", StringComparison.Ordinal),
                 $"Chat List selection resolved to unexpected Variant '{selected.Id}'.");
 
-            var database = new SpikeDatabase(temporary);
+            var database = new SqliteProjectEngine(temporary);
             var fieldValues = new RecordClassFieldValueService(database);
             var projectId = treeRoots
                 .SelectMany(DescendantsAndSelf)
@@ -4362,7 +4393,7 @@ static void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -4547,7 +4578,7 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        _ = new SpikeDatabase(temporary);
+        _ = new SqliteProjectEngine(temporary);
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
             connection.Open();
@@ -5007,7 +5038,7 @@ static void ListComponentContractsFailReadOnly()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
             "component_project_foqn_s2_list",
@@ -5055,7 +5086,7 @@ static void ModuleConfigsUseOwnerContracts()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var conversation = nodes.Single((node) => node.Id == "module_core_chat");
         var conversationVariant = nodes.Single((node) => node.Id == "module_core_chat::variant::default");
@@ -5121,7 +5152,7 @@ static void SystemBarItemsUseFixedDictionaryCollections()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
         var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
@@ -5251,7 +5282,7 @@ static void VariantWritesDoNotRepairMissingArrays()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
             node.Id == "component_project_foqn_s2_label::variant::default");
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
@@ -5280,7 +5311,7 @@ static void VariantWritesDoNotRepairMissingArrays()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
             node.Id == "module_core_chat::variant::default");
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
@@ -5316,7 +5347,7 @@ static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnec
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => _ = new SpikeDatabase(temporary));
+        Throws<InvalidOperationException>(() => _ = new SqliteProjectEngine(temporary));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -5333,7 +5364,7 @@ static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var layout = database.LoadEditorLayout("component.keypad");
         database.SaveEditorLayout("component.keypad", layout);
         using var connection = new SqliteConnection($"Data Source={temporary}");
@@ -5360,7 +5391,7 @@ static void ExtractedRepositoriesPreserveFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IEditorLayoutRepository layoutRepository = new EditorLayoutRepository(context);
         IShotRepository shotRepository = new ShotRepository(context);
@@ -5442,7 +5473,7 @@ static void ResourceRepositoriesPreserveFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IPaletteRepository paletteRepository = new PaletteRepository(context);
         IDeviceRepository deviceRepository = new DeviceRepository(context);
@@ -5564,7 +5595,7 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new ActorPreviewDataSource(database);
         var actor = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.Actor);
@@ -5637,7 +5668,7 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new RuntimeInputOptionsDataSource(database);
         var project = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
@@ -5800,7 +5831,7 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
     True(!ComponentVariantOptionContract.SelectsComponentClass("button"));
     True(ComponentVariantOptionContract.SelectsComponentClass("*,-componentStack"));
 
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var list = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) =>
@@ -5852,7 +5883,7 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new DictionaryFieldContextDataSource(
             database,
             database.ProjectPaths);
@@ -5938,7 +5969,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var store = new EmbeddedComponentDocumentStore(database);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var audioClass = nodes
@@ -6026,7 +6057,7 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new EditorPresentationContextDataSource(database);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
@@ -6060,7 +6091,7 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var source = new ProductionScreenPresentationDataSource(database).Load(screen.Id);
@@ -6109,7 +6140,7 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new ComponentPreviewInputDataSource(database);
         var componentClass = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
@@ -6153,7 +6184,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var store = new RuntimeInputOwnerDocumentStore(database);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
@@ -6223,7 +6254,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var store = new RuntimeInputInstanceDocumentStore(database);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
@@ -6408,7 +6439,7 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new PreviewVisualContextDataSource(database);
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
@@ -6440,7 +6471,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new ProductionPreviewSessionDataSource(database);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         var tree = database.LoadProjectTree();
@@ -6473,7 +6504,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(database);
         var store = new ModuleInstanceAnimationDocumentStore(database, timelineDataSource);
         var screen = Descendants(database.LoadProjectTree())
@@ -6519,7 +6550,7 @@ static void ThemeRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IThemeRepository themeRepository = new ThemeRepository(context);
         IModuleInstanceThemeContextService themeContextService = new ModuleInstanceThemeContextService(context);
@@ -6595,7 +6626,7 @@ static void ProductionFontRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IProductionFontRepository repository = new ProductionFontRepository(context);
         var tree = database.LoadProjectTree();
@@ -6733,7 +6764,7 @@ static void IconThemeRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IIconThemeRepository repository = new IconThemeRepository(context);
         var tree = database.LoadProjectTree();
@@ -6832,7 +6863,7 @@ static void AppModuleRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IAppModuleRepository repository = new AppModuleRepository(context);
         var tree = database.LoadProjectTree();
@@ -6926,7 +6957,7 @@ static void ComponentClassRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IComponentClassRepository repository = new ComponentClassRepository(context);
         var componentNode = Descendants(database.LoadProjectTree())
@@ -7013,7 +7044,7 @@ static void ModuleInstanceRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IModuleInstanceRepository repository = new ModuleInstanceRepository(context);
         var node = Descendants(database.LoadProjectTree())
@@ -7155,7 +7186,7 @@ static void ShotRepositoryPreservesFacadeContract()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var context = new SqliteProjectContext(temporary);
         IShotRepository repository = new ShotRepository(context);
         IProjectEpisodeRepository episodeRepository = new ProjectEpisodeRepository(context, repository);
@@ -7371,7 +7402,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree)
             .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -7448,7 +7479,7 @@ static void AnimatedConversationComposerRemainsVisible()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree()
             .SelectMany(DescendantsAndSelf)
             .ToList();
@@ -8115,7 +8146,7 @@ static void ShotManagerIntegrationKeepsShotsLocal()
     Directory.CreateDirectory(productionRoot);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var workstationRoots = new ShotManagerWorkstationRootStore(
             workstationRootsPath);
         var project = database.LoadProjectTree().Single();
@@ -8608,7 +8639,7 @@ static void ShotActorContextIsExplicit()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var tree = database.LoadProjectTree();
         var episode = Descendants(tree)
             .First((node) => node.Kind == ProjectTreeNodeKind.Episode && node.Id == "episode_002");
@@ -8662,7 +8693,7 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new ProductionShotContextDataSource(database);
         var service = new ProductionShotContextService(dataSource);
         var shot = Descendants(database.LoadProjectTree())
@@ -8696,7 +8727,7 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database,
             database.ProjectPaths);
@@ -8759,7 +8790,7 @@ static void ProductionPayloadPreservesActorAndAnimation()
     try
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database,
             database.ProjectPaths);
@@ -8841,7 +8872,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var dataSource = new DesignPreviewPayloadDataSource(
             database,
             database.ProjectPaths);
@@ -8908,7 +8939,7 @@ static void ConversationMessageActorsFollowDirectionContract()
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId
@@ -9077,7 +9108,7 @@ static void ModuleVariantsAreExplicit()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var roots = database.LoadProjectTree();
         var module = Descendants(roots).First((node) => node.Kind == ProjectTreeNodeKind.Module
             && node.RecordClassId == "module.core.lockScreen");
@@ -9136,7 +9167,7 @@ static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nod
 static void LabelSubtextPlacementUsesCurrentContract()
 {
     var source = ParityDatabasePath();
-    var database = new SpikeDatabase(source);
+    var database = new SqliteProjectEngine(source);
     var settings = database.GetComponentClassSettings("component_project_foqn_s2_label");
     var label = JsonNode.Parse(settings.ConfigJson)?["label"]?.AsObject()
         ?? throw new InvalidOperationException("Missing current Label values.");
@@ -9271,7 +9302,7 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var settings = database.GetComponentClassSettings("component_project_foqn_s2_textInputBar");
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
@@ -9372,7 +9403,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var moduleVariant = database.LoadProjectTree()
             .SelectMany(DescendantsAndSelf)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
@@ -9541,7 +9572,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var context = new SqliteProjectContext(temporary);
         IReferenceUsageService usageService = new ReferenceUsageService(context);
@@ -9700,7 +9731,7 @@ static void UsageNavigationPreservesTypedContext()
 
 static void ProductionDataOwnsConcreteResources()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var project = database.LoadProjectTree().Single();
     var productionSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Production);
     SequenceEqual(
@@ -9736,7 +9767,7 @@ static void ProductionDataOwnsConcreteResources()
 
 static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
 {
-    var database = new SpikeDatabase(ParityDatabasePath());
+    var database = new SqliteProjectEngine(ParityDatabasePath());
     var project = database.LoadProjectTree().Single();
     var queueNode = EditorWorkspaceNavigation
         .SectionRoots(project, EditorWorkspace.Production)
@@ -9768,7 +9799,7 @@ static void ProductionShotManagerActionOwnsAssociation()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var workstationRoots = new ShotManagerWorkstationRootStore(
             workstationRootsPath);
         var project = database.LoadProjectTree().Single();
@@ -10684,7 +10715,7 @@ static void LegacyAnimationRequiresExplicitMigration()
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => _ = new SpikeDatabase(temporary));
+        Throws<InvalidOperationException>(() => _ = new SqliteProjectEngine(temporary));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -10697,7 +10728,7 @@ static void LegacyAnimationRequiresExplicitMigration()
 static void AnimatableFieldVocabularyIsConstrained()
 {
     var source = ParityDatabasePath();
-    var database = new SpikeDatabase(source);
+    var database = new SqliteProjectEngine(source);
     var module = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) => node.Kind == ProjectTreeNodeKind.Module
@@ -10872,7 +10903,7 @@ static void CollectionItemReorderPersistsStableIds()
     {
         var before = CollectionOrder(temporary);
         True(before.ItemIds.Count >= 2);
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         database.MoveModuleInstanceRuntimeCollectionItem(before.InstanceId, "messages", before.ItemIds[0], 1);
         var moved = CollectionOrder(temporary, before.InstanceId);
         Equal(before.ItemIds[0], moved.ItemIds[1]);
@@ -10945,7 +10976,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var currentAppsRoot = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.AppsRoot);
         var currentApp = nodes.Single((node) => node.Id == "app_core_chat");
@@ -11015,7 +11046,7 @@ static void OnlyDefaultSystemBarVariantsAreProtected()
     File.Copy(source, temporary);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         foreach (var componentType in new[] { "status_bar", "navigation_bar" })
         {
@@ -11042,7 +11073,7 @@ static void ComponentStackSeedOpensAndRenders()
     File.Copy(source, temporary);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "componentStack");
@@ -11274,7 +11305,7 @@ static void ComponentStackSeedOpensAndRenders()
             populatedPayload).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(populatedHtml));
         True(!populatedHtml.Contains("preview-error", StringComparison.Ordinal));
-        var reopened = new SpikeDatabase(temporary);
+        var reopened = new SqliteProjectEngine(temporary);
         var reopenedPreview = JsonNode.Parse(reopened.GetComponentClassSettings(stack.Id).DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing reopened Component Stack Runtime Inputs.");
         Equal(1, (reopenedPreview["items"] as JsonArray)?.Count ?? -1);
@@ -11292,7 +11323,7 @@ static void CollectionStackSeedOpensAndRenders()
     File.Copy(source, temporary);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "collectionStack");
@@ -11355,7 +11386,7 @@ static void NotificationsSeedOpensAndRenders()
     File.Copy(source, temporary);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -11600,7 +11631,7 @@ static void KeypadSeedOpensAndRenders()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var keypad = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "keypad");
@@ -11671,7 +11702,7 @@ static void PasswordSeedOpensAndRenders()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         var indicator = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "codeIndicator");
@@ -11821,7 +11852,7 @@ static void LockScreenComposesRuntimeStack()
     File.Copy(source, temporary);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
         foreach (var screen in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance))
         {
@@ -12163,7 +12194,7 @@ static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
     File.Copy(source, temporary, overwrite: true);
     try
     {
-        var database = new SpikeDatabase(temporary);
+        var database = new SqliteProjectEngine(temporary);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var currentScreen = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var originalName = currentScreen.Name;
@@ -12388,7 +12419,7 @@ static EditorSessionState WindowSession(MainWindow window) =>
             "Missing MainWindow workspace coordinator."))
     .State;
 static DesignPreviewPayload? CreatePreviewPayload(
-    SpikeDatabase database,
+    SqliteProjectEngine database,
     ProjectTreeNode? node,
     string? themeId,
     string themeMode = "light",

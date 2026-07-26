@@ -41,9 +41,9 @@ SQLite production code lives in the independent
 `src/Mockups.Persistence.Sqlite` project. Its compile-time dependencies point
 only to Application and Domain; UI packages are unavailable to that assembly.
 `Mockups.Desktop.Host` is the only executable composition project allowed to
-see both Desktop and Persistence.Sqlite. It opens the transitional
-compatibility facade and projects it into the narrow ports declared by
-Application. SQL packages and Persistence source files are unavailable to the
+see both Desktop and Persistence.Sqlite. It opens a composition-only
+`SqliteProjectSession` and passes its named ports into Desktop. SQL packages
+and Persistence source files are unavailable to the
 Desktop assembly. Project references are non-transitive and package compile
 assets are private, so neither Desktop nor Host inherits SQLite APIs merely by
 referencing Persistence. A project that intentionally spans layers, such as an
@@ -51,9 +51,11 @@ integration-test project, must declare every capability it compiles against.
 
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage, Render and Shot Manager consumers receive their
-own read or write capability instead of the facade. Desktop controllers cannot
-name `SpikeDatabase`, and neither `EditorWorkspaceCoordinator` nor its state
-contract can compile a SQLite reference.
+own read or write capability. The session itself contains no data methods, and
+each port is backed by a different adapter object that implements only that
+port and its declared inherited capabilities. Neither Desktop controllers,
+`EditorWorkspaceCoordinator` nor its state contract can compile a SQLite
+reference.
 
 Focused repositories own table SQL, row mapping and prepared complete writes:
 
@@ -71,9 +73,10 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 - `EditorLayoutRepository`
 - `ShotManagerIntegrationRepository`
 
-`SpikeDatabase` is a compatibility facade and orchestration boundary. New SQL,
-connection construction, table mapping or write synchronization belongs in the
-focused repository that owns the table.
+There is no universal persistence facade. `SqlitePersistence` validates one
+current database and returns its session descriptor. New SQL, connection
+construction, table mapping or write synchronization belongs in the focused
+repository that owns the table.
 
 Every `SqliteProjectContext` owns its own write gate. Focused repositories route
 writes through that exact context, and a compound write holds the same gate for

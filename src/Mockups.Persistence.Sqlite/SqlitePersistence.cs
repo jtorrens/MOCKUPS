@@ -14,11 +14,13 @@ public sealed class CurrentDatabaseException(
 
 public static class SqlitePersistence
 {
-    public static SpikeDatabase OpenCurrent(string databasePath)
+    public static SqliteProjectSession OpenCurrent(
+        string databasePath)
     {
         try
         {
-            return new SpikeDatabase(databasePath);
+            return new SqliteProjectSession(
+                new SqliteProjectEngine(databasePath));
         }
         catch (FileNotFoundException)
         {
@@ -37,5 +39,5 @@ public static class SqlitePersistence
     }
 
     public static string DefaultDatabasePath() =>
-        SpikeDatabase.DefaultDatabasePath();
+        SqliteProjectEngine.DefaultDatabasePath();
 }

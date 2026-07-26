@@ -94,9 +94,12 @@ fallback fields, coercions or repair paths.
 ## Hard rule: repositories have narrow ownership
 
 Use the shared SQLite context and focused repositories described in
-`docs/architecture/data_persistence.md`. `SpikeDatabase` is an orchestration
-facade. Add no new SQL, connection construction, table mapping or write
-synchronization to it when an owning repository exists.
+`docs/architecture/data_persistence.md`. `SqlitePersistence` returns a
+composition-only `SqliteProjectSession`: it exposes distinct focused adapters
+and contains no general data operations. Do not introduce a universal database
+facade or make one adapter implement unrelated Application ports. Add SQL,
+connection construction, table mapping and write synchronization only to their
+owning context or focused repository.
 
 Repositories contain no UI, Variant selection, Runtime Input forwarding,
 timing, context inference, Preview resolution or migration behavior.

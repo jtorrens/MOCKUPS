@@ -44,7 +44,7 @@ Cross-domain reads use narrow, explicit boundaries:
 These boundaries supply current records or documents and contain no semantic
 fallbacks. The payload factory is the only database-facing boundary for Design
 Preview payload construction. Timeline services consume their focused data
-source rather than the general database facade.
+source rather than a general database capability.
 
 ## Payload preparation
 
@@ -167,7 +167,7 @@ clean raster document, and streams that frozen document into the queue-owned
 content-addressed store. The visible queue receives `PREPARING` children before
 this stream starts; preparation never builds an in-memory list of frame HTML.
 
-The queue worker receives no `SpikeDatabase`, repository or current tree
+The queue worker receives no Project database port, repository or current tree
 selection. It uses the same document-to-raster owner as raster Preview through
 its own persistent Chromium session, reads one frozen document per request and
 then writes a MOV or image sequence. A repeated document hash reuses the
