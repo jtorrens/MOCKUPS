@@ -41,7 +41,6 @@ function workflowSteps(
 export function checkValidationPipeline({
   readText,
   addViolation,
-  assertContains,
 }: ArchitectureValidationContext) {
   const packageScripts = (JSON.parse(readText("package.json")) as {
     scripts?: Record<string, string>;
@@ -76,16 +75,10 @@ export function checkValidationPipeline({
       "the architecture aggregate must execute every focused validation owner",
     );
   }
-  const desktopBuildIndex = repositoryTestScript.indexOf("npm run desktop:compile");
-  const unusedAnalysisIndex = repositoryTestScript.indexOf(
-    "npm run check:unused:desktop",
-  );
-  if (desktopBuildIndex < 0
-    || unusedAnalysisIndex < 0
-    || desktopBuildIndex > unusedAnalysisIndex) {
+  if (repositoryTestScript !== "tsx scripts/runRepositoryGates.ts") {
     addViolation(
       "package.json",
-      "the full test gate must build the desktop project before unused-parameter analysis",
+      "the full test gate must use its executable ordered gate owner",
     );
   }
   if (packageScripts.test !== "tsx scripts/runRepositoryValidation.ts") {
@@ -94,29 +87,12 @@ export function checkValidationPipeline({
       "the public repository gate must isolate the staged parity database through its validation owner",
     );
   }
-  for (const requiredTerm of [
-    "git",
-    `["show", \`:\${parityPath}\`]`,
-    "MOCKUPS_VALIDATION_DATABASE",
-    "symlinkSync",
-    "repositoryAssets",
-    `["run", "test:repository"]`,
-    "finally",
-    "rmSync",
-  ]) {
-    assertContains(
-      "scripts/runRepositoryValidation.ts",
-      requiredTerm,
-      "the validation owner must use a disposable staged parity database and always clean it",
-    );
-  }
   for (const group of ["core", "ui", "exhaustive"]) {
     if (!(packageScripts[`animation:test:desktop:${group}`] ?? "")
-      .includes(`--group ${group}`)
-      || !repositoryTestScript.includes("npm run animation:test")) {
+      .includes(`--group ${group}`)) {
       addViolation(
         "package.json",
-        `the complete repository gate must execute the isolated desktop ${group} group`,
+        `the desktop suite must expose the isolated ${group} group`,
       );
     }
   }
@@ -129,25 +105,6 @@ export function checkValidationPipeline({
     addViolation(
       "package.json",
       "focused Preview, desktop and manifest-owner selectors plus the shared architecture guard must remain available",
-    );
-  }
-  for (const requiredTerm of [
-    `SingleArgumentValue(args, "--group")`,
-    `ArgumentValues(args, "--exact")`,
-    `ArgumentValues(args, "--filter")`,
-    `ArgumentValues(args, "--owner")`,
-    "Unknown exact desktop test",
-    "Unknown Preview owner selector",
-    "Desktop test selection matched no tests.",
-    `"core" => !isolatedUiTests.Contains(test.Name)`,
-    `"ui" => isolatedUiTests.Contains(test.Name)`,
-    `"exhaustive" => exhaustiveTests.Contains(test.Name)`,
-    "MOCKUPS_VALIDATION_DATABASE",
-  ]) {
-    assertContains(
-      "tests/Mockups.Desktop.Tests/Program.cs",
-      requiredTerm,
-      "the desktop test owner must keep fail-closed focused selection, isolated groups and parity-path injection",
     );
   }
   if (!(packageScripts["test:cold"] ?? "").includes("dotnet clean")

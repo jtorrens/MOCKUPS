@@ -63,6 +63,17 @@ export function checkDocumentationContracts({
       `${archiveRuleOwner} must prohibit historical archive consultation`,
     );
   }
+  for (const requiredTerm of [
+    "materialization never edits the manifest, registry or database",
+    "Integration rejects missing assets",
+    "Module contract planning",
+  ]) {
+    assertContains(
+      "docs/architecture/development_workflow.md",
+      requiredTerm,
+      "the normative development workflow must retain its scaffolding boundaries",
+    );
+  }
   for (const activeMarkdownPath of [
     "AGENTS.md",
     "docs/README.md",

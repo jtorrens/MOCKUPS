@@ -216,8 +216,13 @@ dictionary and Runtime Input contracts, Variant references, Overrides, timing,
 animation, UI interaction and Render Queue behavior belong to their focused
 tests. The manifest-wide desktop test renders every committed Variant fixture.
 The C# startup validator and persistence tests own the complete staged SQLite
-contract. Generated artifacts, documentation and CI keep their separate
-validators.
+contract. Scaffolding read-only, collision, materialization and integration
+behavior belongs to executable tests over temporary workspaces and databases;
+generated validation compares deterministic artifacts exactly instead of
+searching implementation text. The repository pipeline is an ordered
+executable gate list with tests for order, early failure, staged-database
+isolation and cleanup. Generated artifacts, documentation and CI keep their
+separate validators.
 
 Architecture enforcement reads only active documentation through one guarded
 repository reader. It rejects absolute paths, parent traversal, alternate

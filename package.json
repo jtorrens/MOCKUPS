@@ -57,7 +57,7 @@
     "test:architecture": "tsx --test tests/architecture/*.test.ts",
     "test:tooling": "tsx --test tests/tooling/*.test.ts",
     "test:unit": "dotnet run --project tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj",
-    "test:repository": "npm run typecheck && npm run desktop:compile && npm run check:unused:desktop && npm run test:unit && npm run test:scaffolding && npm run scaffold:verify && npm run scaffold:module:verify && npm run test:tooling && npm run animation:test && npm run check:architecture",
+    "test:repository": "tsx scripts/runRepositoryGates.ts",
     "test": "tsx scripts/runRepositoryValidation.ts",
     "test:cold": "dotnet clean src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj && npm test"
   },
