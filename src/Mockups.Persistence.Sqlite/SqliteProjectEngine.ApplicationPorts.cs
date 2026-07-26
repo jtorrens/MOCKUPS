@@ -11,7 +11,6 @@ internal sealed partial class SqliteProjectEngine :
     IEditorNodeCommandStore,
     IComponentDocumentStore,
     IRuntimeInputOwnerStore,
-    IRuntimeInputInstanceStore,
     IModuleInstanceTimelineStore,
     IModuleInstanceCollectionStore,
     IReferenceUsageQuery,

@@ -6421,7 +6421,14 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var store = new RuntimeInputInstanceDocumentStore(database, database.Production, database);
+        var store = new RuntimeInputInstanceDocumentStore(
+            new SqliteRuntimeInputInstanceStore(
+                database.Context,
+                database.Design,
+                database.Production,
+                database.Resources),
+            database.Production,
+            database);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
@@ -8795,7 +8802,14 @@ static void ConversationMessageActorsFollowDirectionContract()
             JsonValue.Create("outgoing")));
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        var store = new RuntimeInputInstanceDocumentStore(database, database.Production, database);
+        var store = new RuntimeInputInstanceDocumentStore(
+            new SqliteRuntimeInputInstanceStore(
+                database.Context,
+                database.Design,
+                database.Production,
+                database.Resources),
+            database.Production,
+            database);
         store.UpdateCollectionValues(
             screen.Id,
             "messages",

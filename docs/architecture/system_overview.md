@@ -240,6 +240,11 @@ Runtime Input Instance writes do not inherit animation or timeline capability;
 the Runtime collection editor receives payload writes, animation writes and
 Theme-token reads as three distinct dependencies.
 
+Cross-owner Runtime Input Instance mutation is implemented by the focused
+`SqliteRuntimeInputInstanceStore`, not by the project engine contract. It
+coordinates Production contract validation with the exact same-Project Actor
+set from Resources while exposing only Runtime payload mutation capability.
+
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite session and composes the named narrow Application
