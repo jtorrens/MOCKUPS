@@ -228,7 +228,8 @@ backed directly by the Design owner. Generic Preview input, Component Preview,
 Module Instance timeline, Actor Preview and dictionary context are independent
 ports; no one of them can be cast to another. Remaining cross-domain
 application operations move to focused owners as their contracts are
-decomposed.
+decomposed. Retired area-wide adapters are deleted rather than retained as
+unused forwarding code.
 
 The Module Instance timeline is backed directly by Production and contains no
 Theme access. Effective Module Instance Theme tokens are a separate Resources

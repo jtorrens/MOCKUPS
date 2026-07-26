@@ -123,6 +123,8 @@ node commands, Module Instance collections, Icon Theme assets, Theme tokens,
 Runtime Input owner writes, Runtime Input instance writes, animation and
 Reference Usage use distinct adapter instances. A Desktop controller that
 needs more than one capability declares each one in its constructor.
+Persistence keeps adapters only for ports exposed by the current session;
+retired area-wide adapters are removed with their contracts.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and
