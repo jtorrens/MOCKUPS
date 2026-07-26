@@ -221,6 +221,7 @@ internal sealed class EditorCollectionCardFactory
             _actors,
             _runtimeInputOwners,
             _runtimeInputInstances,
+            _animation,
             _moduleInstanceThemes,
             _dictionaryServices,
             _onChanged,

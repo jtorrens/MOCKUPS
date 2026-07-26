@@ -136,6 +136,11 @@ Production. Effective Theme-token resolution is not part of that timeline
 contract: it is a separate Resources capability composed only by consumers
 that calculate Theme-dependent timing.
 
+`IRuntimeInputInstanceStore` owns only explicit Runtime payload mutations. It
+does not inherit `IModuleInstanceAnimationStore`; animation is an independent
+Production-owned port. Consumers that reconcile animation after a stable-id
+payload edit must declare both capabilities.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and

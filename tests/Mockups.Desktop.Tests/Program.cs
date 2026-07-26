@@ -3167,6 +3167,8 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);
     True(project.Components is not IPreviewInputRepository);
     True(project.RuntimeInputOwners is not IRuntimeInputInstanceStore);
+    True(project.RuntimeInputInstances is not
+        IModuleInstanceAnimationStore);
     True(project.Animation is not IRuntimeInputInstanceStore);
     True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
 }
@@ -6419,7 +6421,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
-        var store = new RuntimeInputInstanceDocumentStore(database, database);
+        var store = new RuntimeInputInstanceDocumentStore(database, database.Production, database);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
@@ -6670,7 +6672,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectEngine(temporary);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(database, database);
-        var store = new ModuleInstanceAnimationDocumentStore(database, database, timelineDataSource);
+        var store = new ModuleInstanceAnimationDocumentStore(database.Production, database, timelineDataSource);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var instance = database.GetModuleInstanceSettings(screen.Id);
@@ -8793,7 +8795,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             JsonValue.Create("outgoing")));
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        var store = new RuntimeInputInstanceDocumentStore(database, database);
+        var store = new RuntimeInputInstanceDocumentStore(database, database.Production, database);
         store.UpdateCollectionValues(
             screen.Id,
             "messages",

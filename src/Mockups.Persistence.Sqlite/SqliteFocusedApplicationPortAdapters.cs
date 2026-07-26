@@ -323,8 +323,7 @@ internal class SqliteModuleInstanceAnimationPort(
 
 internal sealed class SqliteRuntimeInputInstancePort(
     IRuntimeInputInstanceStore target)
-    : SqliteModuleInstanceAnimationPort(target),
-      IRuntimeInputInstanceStore
+    : IRuntimeInputInstanceStore
 {
     public void UpdateModuleInstanceRuntimeValue(
         string moduleInstanceId,

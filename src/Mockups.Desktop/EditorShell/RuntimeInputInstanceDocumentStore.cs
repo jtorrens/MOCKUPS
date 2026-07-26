@@ -11,14 +11,15 @@ internal sealed class RuntimeInputInstanceDocumentStore
 
     public RuntimeInputInstanceDocumentStore(
         IRuntimeInputInstanceStore database,
+        IModuleInstanceAnimationStore animation,
         IModuleInstanceThemeTokenQuery themeTokens)
     {
         _database = database;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
-            database,
+            animation,
             themeTokens,
             new ModuleInstanceTimelineDataSource(
-                database,
+                animation,
                 themeTokens));
     }
 

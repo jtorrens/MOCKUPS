@@ -50,6 +50,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore ownerStore,
         IRuntimeInputInstanceStore instanceStore,
+        IModuleInstanceAnimationStore animationStore,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
@@ -80,6 +81,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _instanceDocuments =
             new RuntimeInputInstanceDocumentStore(
                 instanceStore,
+                animationStore,
                 moduleInstanceThemes);
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);

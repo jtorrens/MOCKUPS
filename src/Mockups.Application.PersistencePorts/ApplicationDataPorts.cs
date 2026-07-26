@@ -346,7 +346,7 @@ public interface IRuntimeInputOwnerStore
         string designPreviewJson);
 }
 
-public interface IRuntimeInputInstanceStore : IModuleInstanceAnimationStore
+public interface IRuntimeInputInstanceStore
 {
     void UpdateModuleInstanceRuntimeValue(
         string moduleInstanceId,

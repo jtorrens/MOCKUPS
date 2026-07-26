@@ -46,7 +46,8 @@ public sealed class SqliteProjectSession
         RuntimeInputInstances =
             new SqliteRuntimeInputInstancePort(engine);
         Animation =
-            new SqliteModuleInstanceAnimationPort(engine);
+            new SqliteModuleInstanceAnimationPort(
+                engine.Production);
         ReferenceUsage = new SqliteReferenceUsagePort(engine);
         Layouts = new SqliteEditorLayoutPort(layouts);
         ActorPreview = new SqliteActorPreviewPort(engine.Resources);

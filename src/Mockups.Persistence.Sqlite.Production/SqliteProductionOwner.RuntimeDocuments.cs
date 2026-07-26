@@ -69,6 +69,17 @@ internal sealed partial class SqliteProductionOwner
         SynchronizeTimelineDurations(connection);
     }
 
+    public void UpdateModuleInstanceAnimationJson(
+        string moduleInstanceId,
+        string animationJson)
+    {
+        using var connection = OpenConnection();
+        UpdateModuleInstanceAnimationJson(
+            connection,
+            moduleInstanceId,
+            animationJson);
+    }
+
     internal void UpdateModuleInstanceRuntimeCollectionValues(
         SqliteConnection connection,
         string moduleInstanceId,
