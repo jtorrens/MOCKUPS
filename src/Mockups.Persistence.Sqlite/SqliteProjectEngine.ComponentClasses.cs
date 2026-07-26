@@ -425,142 +425,35 @@ internal sealed partial class SqliteProjectEngine
         string slotFieldId,
         string embeddedComponentType,
         string embeddedFieldId,
-        string value)
-    {
-        var slot = EmbeddedComponentSlotCatalog.Get(slotFieldId);
-        if (!slot.EmbeddedComponentType.Equals(embeddedComponentType, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
-        }
-
-        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(settings.ConfigJson);
-            var metadata = ParseJsonObject(settings.MetadataJson);
-            var overrides = EmbeddedOverrides(config, slot, createIfMissing: true)
-                ?? throw new InvalidOperationException($"Missing embedded override slot '{slotFieldId}'.");
-
-            if (value.Equals("inherited", StringComparison.Ordinal)
-                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
-            {
-                RemoveJsonValue(overrides, descriptor.JsonPath);
-            }
-            else
-            {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
-            }
-
-            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
-        }
-    }
+        string value) =>
+        _designOwner.UpdateEmbeddedComponentField(
+            componentClassId,
+            slotFieldId,
+            embeddedComponentType,
+            embeddedFieldId,
+            value);
 
     public void UpdateEmbeddedComponentField(
         string componentClassId,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
-        string value)
-    {
-        if (slots.Count == 0)
-        {
-            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
-        }
-
-        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var settings = GetComponentClassSettings(connection, componentClassId);
-            var config = ParseJsonObject(settings.ConfigJson);
-            var metadata = ParseJsonObject(settings.MetadataJson);
-            var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
-                ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
-
-            if (value.Equals("inherited", StringComparison.Ordinal)
-                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
-            {
-                RemoveJsonValue(overrides, descriptor.JsonPath);
-            }
-            else
-            {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
-            }
-
-            PersistDefaultComponentConfig(connection, componentClassId, config, metadata);
-        }
-    }
+        string value) =>
+        _designOwner.UpdateEmbeddedComponentField(
+            componentClassId,
+            slots,
+            embeddedFieldId,
+            value);
 
     public void UpdateEmbeddedComponentField(
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
-        string value)
-    {
-        if (ownerNode.Kind == ProjectTreeNodeKind.ComponentClass)
-        {
-            UpdateEmbeddedComponentField(ownerNode.Id, slots, embeddedFieldId, value);
-            return;
-        }
-
-        if (ownerNode.Kind is ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant)
-        {
-            if (slots.Count == 0) throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
-            var moduleDescriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-            lock (WriteGate)
-            {
-                using var connection = OpenConnection();
-                var settings = ownerNode.Kind == ProjectTreeNodeKind.Module
-                    ? GetModuleSettings(ownerNode.Id)
-                    : GetModuleVariantSettings(ownerNode);
-                var config = ParseJsonObject(settings.ConfigJson);
-                var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
-                    ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
-                if (value.Equals("inherited", StringComparison.Ordinal)
-                    || moduleDescriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
-                    RemoveJsonValue(overrides, moduleDescriptor.JsonPath);
-                else
-                    SetJsonValue(overrides, moduleDescriptor.JsonPath, ComponentConfigJsonValue(moduleDescriptor.ValueKind, value, moduleDescriptor.Id));
-                if (ownerNode.Kind == ProjectTreeNodeKind.Module)
-                    _designOwner.AppModuleRepository.UpdateModuleConfig(connection, ownerNode.Id, config.ToJsonString());
-                else
-                    ReplaceModuleVariantConfig(ownerNode, config.ToJsonString());
-            }
-            return;
-        }
-
-        if (ownerNode.Kind != ProjectTreeNodeKind.ComponentVariant)
-        {
-            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{ownerNode.Kind}'.");
-        }
-
-        if (slots.Count == 0)
-        {
-            throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' needs at least one slot.");
-        }
-
-        var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            var config = ComponentVariantConfigForUpdate(connection, ownerNode, out var componentClassId, out var metadata);
-            var overrides = EmbeddedOverrides(config, slots, createIfMissing: true)
-                ?? throw new InvalidOperationException($"Missing embedded override slot '{slots[^1].FieldId}'.");
-
-            if (value.Equals("inherited", StringComparison.Ordinal)
-                || descriptor.ValueKind == ValueKind.TypographyStyle && TypographyStyleValue.IsEmpty(value))
-            {
-                RemoveJsonValue(overrides, descriptor.JsonPath);
-            }
-            else
-            {
-                SetJsonValue(overrides, descriptor.JsonPath, ComponentConfigJsonValue(descriptor.ValueKind, value, descriptor.Id));
-            }
-
-            PersistComponentVariantUpdate(connection, ownerNode, componentClassId, config, metadata);
-        }
-    }
+        string value) =>
+        _designOwner.UpdateEmbeddedComponentField(
+            ownerNode,
+            slots,
+            embeddedFieldId,
+            value);
 
     private static IReadOnlyList<ComponentClassVariant> ComponentClassVariants(
         string metadataJson,

@@ -62,6 +62,10 @@ Component configuration-field writes and complete Variant snapshot
 replacement also execute inside Design. Before persistence, Design validates
 the current Component contract and every embedded slot against the exact
 Project, Component type, class id and Variant id.
+Local Override writes at embedded boundaries also execute inside Design,
+including boundaries authored by a Module or Module Variant. The owner updates
+only the exact local Override document and preserves the selected full Variant
+reference.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot, Screen and
 Shot Manager persistence. `SqliteProductionOwner` also owns Project/Episode
 and Shot Manager operations; the aggregate delegates those operations and no

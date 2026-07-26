@@ -59,6 +59,11 @@ internal sealed partial class SqliteDesignOwner : IModuleVariantCatalog
         JsonNode value) =>
         JsonPath.Set(root, path, value);
 
+    private static bool RemoveJsonValue(
+        JsonObject root,
+        IReadOnlyList<string> path) =>
+        JsonPath.Remove(root, path);
+
     private static JsonNode NumberNode(string value) =>
         JsonPath.NumberNode(value);
 }
