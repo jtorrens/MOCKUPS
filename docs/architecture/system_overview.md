@@ -207,12 +207,13 @@ asset and token behavior. Resource behavior that needs Production context
 receives its narrow contract; Resources still cannot see the Production
 implementation. These owner projects can see
 Contracts and Core, but cannot reference the composition assembly or one
-another. The temporary `Mockups.Persistence.Sqlite` assembly owns composition,
-validation and application operations not yet extracted; each remaining owner
-moves out without adding a reverse reference.
+another. `Mockups.Persistence.Sqlite` owns composition, read-only validation
+and explicit cross-owner stores. Its internal project engine implements no
+Application interface and cannot be supplied to Desktop as a capability.
 `SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
 session has no data methods and each exposed port is a distinct adapter that
-cannot be cast to an unrelated port. Persistence may reference Application and
+cannot be cast to an unrelated port or to the internal project engine.
+Persistence may reference Application and
 Domain and only persistence projects may reference SQLite packages. They
 cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global

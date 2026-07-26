@@ -214,6 +214,9 @@ only to normative documentation, where prose is the contract being validated.
 
 That structural suite also requires:
 
+- the internal SQLite project engine implements no Application interface, and
+  every session capability exposes exactly the public methods declared by its
+  own port;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

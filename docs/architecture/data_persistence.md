@@ -107,8 +107,10 @@ The three owner assemblies reference Contracts and Core, never another owner
 or the temporary composition assembly. The compiler therefore rejects a
 Design repository that tries to call a Production or Resources implementation,
 and the same rule applies in every direction. `Mockups.Persistence.Sqlite`
-temporarily composes those projects with validation and application operations
-not yet extracted. UI packages are unavailable to every persistence assembly.
+composes those projects with read-only startup validation and explicit
+cross-owner application stores. Its internal `SqliteProjectEngine` implements
+no Application interface. UI packages are unavailable to every persistence
+assembly.
 `Mockups.Desktop.Host` is the only executable composition project allowed to
 see both Desktop and Persistence.Sqlite. It opens a composition-only
 `SqliteProjectSession` and passes its named ports into Desktop. SQL packages
@@ -132,6 +134,12 @@ Every public session capability is tested against its declared interface:
 the concrete adapter may expose no additional public method. This applies
 equally to Preview and Dictionary, whose retired sibling capabilities are not
 present on their runtime adapter types.
+Component documents, Component fields, record fields, core fields, Screen
+collections, child creation and node commands are composed from the exact
+Design, Production, Resources, Usage and context owners they require. None is
+implemented by or recoverable through `SqliteProjectEngine`. Navigation
+receives one tree-loading function behind its exact membrane; a consumer
+cannot cast that function or adapter back to the engine.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and
@@ -221,12 +229,13 @@ Focused repositories own table SQL, row mapping and prepared complete writes:
 
 There is no universal persistence facade. `SqlitePersistence` validates one
 current database and returns its session descriptor. `EditorLayouts` is backed
-directly by `Mockups.Persistence.Sqlite.Design`; the temporary aggregate no
-longer implements that port. Repository implementations already live in their
-Design, Production or Resources owner; the remaining aggregate coordinates
-legacy application operations during the incremental extraction. New SQL,
-connection construction, table mapping or write synchronization belongs in
-the focused assembly and repository that own the table.
+directly by `Mockups.Persistence.Sqlite.Design`. Repository implementations
+already live in their Design, Production or Resources owner. The internal
+engine remains a composition and validation helper during incremental source
+movement, but it implements zero Application interfaces and cannot be passed
+to Desktop as a store. New SQL, connection construction, table mapping or
+write synchronization belongs in the focused assembly and repository that
+own the table.
 
 Every `SqliteProjectContext` owns its own write gate. Focused repositories route
 writes through that exact context, and a compound write holds the same gate for
