@@ -766,6 +766,17 @@ static void SqliteWriteCoordinationIsPerContext()
 static void ClosingEditorCancelsPreviewLifetime()
 {
     var source = ParityDatabasePath();
+    var windowStatePath = Path.GetFullPath(
+        Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "data",
+            "window-state.json"));
+    var priorWindowState = File.Exists(windowStatePath)
+        ? File.ReadAllBytes(windowStatePath)
+        : null;
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -829,6 +840,20 @@ static void ClosingEditorCancelsPreviewLifetime()
     finally
     {
         File.Delete(temporary);
+        if (priorWindowState is null)
+        {
+            File.Delete(windowStatePath);
+        }
+        else
+        {
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(windowStatePath)
+                ?? throw new InvalidOperationException(
+                    "Window state path has no directory."));
+            File.WriteAllBytes(
+                windowStatePath,
+                priorWindowState);
+        }
     }
 }
 
