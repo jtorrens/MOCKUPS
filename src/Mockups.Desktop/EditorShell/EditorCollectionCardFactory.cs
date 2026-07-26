@@ -12,7 +12,14 @@ internal sealed record EditorPreviewAuthoringSurface(string Header, Control Cont
 
 internal sealed class EditorCollectionCardFactory
 {
-    private readonly IEditorCollectionStore _database;
+    private readonly IModuleInstanceCollectionStore _moduleInstances;
+    private readonly IIconThemeAssetStore _iconThemes;
+    private readonly IPreviewInputRepository _preview;
+    private readonly IDictionaryFieldContextRepository _dictionary;
+    private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
+    private readonly IRuntimeInputInstanceStore _runtimeInputInstances;
+    private readonly IModuleInstanceAnimationStore _animation;
+    private readonly IReferenceUsageQuery _referenceUsage;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly EditorDomainDialogService _domainDialogs;
@@ -38,7 +45,14 @@ internal sealed class EditorCollectionCardFactory
     private readonly EditorSessionUiState _sessionUiState;
 
     public EditorCollectionCardFactory(
-        IEditorCollectionStore database,
+        IModuleInstanceCollectionStore moduleInstances,
+        IIconThemeAssetStore iconThemes,
+        IPreviewInputRepository preview,
+        IDictionaryFieldContextRepository dictionary,
+        IRuntimeInputOwnerStore runtimeInputOwners,
+        IRuntimeInputInstanceStore runtimeInputInstances,
+        IModuleInstanceAnimationStore animation,
+        IReferenceUsageQuery referenceUsage,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         EditorDomainDialogService domainDialogs,
@@ -63,7 +77,14 @@ internal sealed class EditorCollectionCardFactory
         Action toggleProductionPlayback,
         EditorSessionUiState sessionUiState)
     {
-        _database = database;
+        _moduleInstances = moduleInstances;
+        _iconThemes = iconThemes;
+        _preview = preview;
+        _dictionary = dictionary;
+        _runtimeInputOwners = runtimeInputOwners;
+        _runtimeInputInstances = runtimeInputInstances;
+        _animation = animation;
+        _referenceUsage = referenceUsage;
         _isDark = isDark;
         _showInfo = showInfo;
         _domainDialogs = domainDialogs;
@@ -95,7 +116,7 @@ internal sealed class EditorCollectionCardFactory
             ProjectTreeNodeKind.IconTheme =>
             [
                 new IconThemeTokensCollectionEditor(
-                    _database,
+                    _iconThemes,
                     _isDark(),
                     _showInfo,
                     _domainDialogs.ConfirmIconTokenDelete,
@@ -110,7 +131,7 @@ internal sealed class EditorCollectionCardFactory
 
         if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
-            cards = [.. cards, new ReferenceUsageCollectionEditor(_database, _isDark(), _navigateToUsage).Create(node)];
+            cards = [.. cards, new ReferenceUsageCollectionEditor(_referenceUsage, _isDark(), _navigateToUsage).Create(node)];
         }
 
         return cards;
@@ -122,7 +143,7 @@ internal sealed class EditorCollectionCardFactory
         var cards = new List<InstantEditorCard>
         {
             new ShotModuleInstancesCollectionEditor(
-                _database,
+                _moduleInstances,
                 _onChanged,
                 _reloadAndSelect,
                 _domainDialogs.DefineModuleInstanceForShot,
@@ -171,7 +192,8 @@ internal sealed class EditorCollectionCardFactory
     private ModuleInstanceAnimationEditor CreateModuleInstanceAnimationEditor()
     {
         return new ModuleInstanceAnimationEditor(
-            _database,
+            _animation,
+            _dictionary,
             _dictionaryServices,
             _onChanged,
             _sessionUiState,
@@ -185,7 +207,10 @@ internal sealed class EditorCollectionCardFactory
         ModuleInstanceAnimationEditor? animationEditor)
     {
         return new RuntimeInputsCollectionEditor(
-            _database,
+            _preview,
+            _dictionary,
+            _runtimeInputOwners,
+            _runtimeInputInstances,
             _dictionaryServices,
             _onChanged,
             _triggerPreviewAction,

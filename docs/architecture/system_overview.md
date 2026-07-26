@@ -218,9 +218,13 @@ cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global
 write lock.
 
-The session's Actor Preview port is backed directly by the Resources owner.
-It does not pass through the temporary aggregate. Remaining broad cross-domain
-ports move to focused owners as their Application contracts are decomposed.
+The session exposes child creation, node commands, Module Instance collections,
+Icon Theme assets, Theme tokens, Component documents, Runtime Input owner and
+instance writes, animation and Reference Usage as separate capabilities. The
+desktop composition passes those capabilities independently; it has no
+dialog-, header- or collection-wide persistence store. Actor Preview is backed
+directly by the Resources owner. Remaining broad read contracts move to focused
+owners as their Application contracts are decomposed.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

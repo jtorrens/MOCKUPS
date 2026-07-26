@@ -11,6 +11,8 @@ internal sealed class EditorNodeCommandController
 {
     private readonly Window _owner;
     private readonly IEditorNodeCommandStore _database;
+    private readonly IEditorChildStore _children;
+    private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IProjectPathResolver _projectPaths;
     private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
@@ -23,6 +25,8 @@ internal sealed class EditorNodeCommandController
     public EditorNodeCommandController(
         Window owner,
         IEditorNodeCommandStore database,
+        IEditorChildStore children,
+        IModuleInstanceCollectionStore moduleInstances,
         IProjectPathResolver projectPaths,
         EditorOperationCoordinator operations,
         Func<bool> isDark,
@@ -34,6 +38,8 @@ internal sealed class EditorNodeCommandController
     {
         _owner = owner;
         _database = database;
+        _children = children;
+        _moduleInstances = moduleInstances;
         _projectPaths = projectPaths;
         _operations = operations;
         _isDark = isDark;
@@ -128,7 +134,8 @@ internal sealed class EditorNodeCommandController
     {
         var workflow = new EditorAddChildWorkflow(
             _owner,
-            _database,
+            _children,
+            _moduleInstances,
             _projectPaths,
             _operations,
             ShowInfoDialog);
@@ -155,7 +162,7 @@ internal sealed class EditorNodeCommandController
                 var episode = node.Parent;
                 var draft = await new ShotCreationDialog(
                     _owner,
-                    _database,
+                    _children,
                     _operations).Show(
                         episode,
                         preserveExistingActor: true);

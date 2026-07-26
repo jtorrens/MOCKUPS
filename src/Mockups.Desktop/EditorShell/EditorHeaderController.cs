@@ -34,7 +34,8 @@ internal sealed class EditorHeaderController
         Panel breadcrumbPanel,
         Panel contextStripHost,
         Panel actionsPanel,
-        IEditorHeaderStore database,
+        IComponentDocumentStore components,
+        IPreviewInputRepository preview,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
@@ -50,8 +51,8 @@ internal sealed class EditorHeaderController
         _breadcrumbPanel = breadcrumbPanel;
         _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
-        _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
-        _screenPresentation = new ProductionScreenPresentationDataSource(database);
+        _embeddedDocuments = new EmbeddedComponentDocumentStore(components);
+        _screenPresentation = new ProductionScreenPresentationDataSource(preview);
         _selectedNode = selectedNode;
         _preferredVariantNode = preferredVariantNode;
         _preferredModuleVariantNode = preferredModuleVariantNode;

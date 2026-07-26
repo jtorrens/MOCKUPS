@@ -247,7 +247,8 @@ internal sealed class EditorPreviewController : IDisposable
     private bool _disposed;
 
     public EditorPreviewController(
-        IDictionaryFieldContextRepository database,
+        IPreviewInputRepository preview,
+        IDictionaryFieldContextRepository dictionary,
         IProjectPathResolver projectPaths,
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
@@ -271,11 +272,11 @@ internal sealed class EditorPreviewController : IDisposable
         _projectPaths = projectPaths;
         _designPreviewPane = new DesignWebPreviewPane(projectPaths);
         _previewPayloadData = new DesignPreviewPayloadDataSource(
-            database,
+            preview,
             projectPaths);
-        _visualContextData = new PreviewVisualContextDataSource(database);
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
-        _productionPreviewData = new ProductionPreviewSessionDataSource(database);
+        _visualContextData = new PreviewVisualContextDataSource(preview);
+        _timelineDataSource = new ModuleInstanceTimelineDataSource(preview);
+        _productionPreviewData = new ProductionPreviewSessionDataSource(preview);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -293,13 +294,14 @@ internal sealed class EditorPreviewController : IDisposable
         _designContextHistoryPopup = CreateDesignContextHistoryPopup();
         _previewBusyHost = previewBusyHost;
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(
-            database,
+            preview,
             projectPaths);
-        _productionShotContext = new ProductionShotContextService(new ProductionShotContextDataSource(database));
+        _productionShotContext = new ProductionShotContextService(
+            new ProductionShotContextDataSource(preview));
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(
-            database,
+            dictionary,
             projectPaths,
             Refresh,
             PreparePlaybackFramesAsync);

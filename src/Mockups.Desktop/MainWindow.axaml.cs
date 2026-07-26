@@ -85,6 +85,7 @@ public partial class MainWindow : SukiWindow
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
         _previewController = new EditorPreviewController(
+            data.Preview,
             data.Dictionary,
             data.ProjectPaths,
             PreviewDeviceComboBox,
@@ -109,6 +110,8 @@ public partial class MainWindow : SukiWindow
         _nodeCommands = new EditorNodeCommandController(
             this,
             data.NodeCommands,
+            data.Children,
+            data.ModuleInstances,
             data.ProjectPaths,
             application.Operations,
             () => _themeController.IsDark,
@@ -157,7 +160,9 @@ public partial class MainWindow : SukiWindow
             () => Session.SelectedNode);
         _domainDialogs = new EditorDomainDialogService(
             this,
-            data.DomainDialogs,
+            data.ModuleInstances,
+            data.IconThemes,
+            data.ThemeTokens,
             application.Operations,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
@@ -212,7 +217,8 @@ public partial class MainWindow : SukiWindow
             EditorBreadcrumbPanel,
             EditorContextStripHost,
             EditorHeaderActionsPanel,
-            data.Header,
+            data.Components,
+            data.Preview,
             () => Session.SelectedNode,
             _workspaceCoordinator.PreferredVariantNode,
             _workspaceCoordinator.PreferredModuleVariantNode,
@@ -225,7 +231,14 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.RestoreVariantSnapshot,
             _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
-            data.Collections,
+            data.ModuleInstances,
+            data.IconThemes,
+            data.Preview,
+            data.Dictionary,
+            data.RuntimeInputOwners,
+            data.RuntimeInputInstances,
+            data.Animation,
+            data.ReferenceUsage,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _domainDialogs,

@@ -221,8 +221,7 @@ public interface IDictionaryFieldContextRepository : IPreviewInputRepository
     string ResolveIconThemeAssetPath(string iconThemeId, string file);
 }
 
-public interface IEditorChildStore :
-    IModuleInstanceCollectionStore
+public interface IEditorChildStore
 {
     EditorShell.ProjectTreeNode AddChild(EditorShell.ProjectTreeNode parent);
     EditorShell.ProjectTreeNode AddImportedDevice(
@@ -254,42 +253,11 @@ public interface IThemeTokenQuery
         string themeId);
 }
 
-public interface IEditorDomainDialogStore :
-    IModuleInstanceCollectionStore,
-    IIconThemeAssetStore,
-    IThemeTokenQuery
+public interface IEditorNodeCommandStore
 {
-}
-
-public interface IEditorHeaderStore :
-    IComponentDocumentStore,
-    IPreviewInputRepository
-{
-}
-
-public interface IRuntimeInputsEditorStore :
-    IDictionaryFieldContextRepository,
-    IRuntimeInputOwnerStore,
-    IRuntimeInputInstanceStore
-{
-}
-
-public interface IModuleInstanceAnimationEditorStore :
-    IModuleInstanceAnimationStore,
-    IDictionaryFieldContextRepository
-{
-}
-
-public interface IEditorCollectionStore :
-    IEditorDomainDialogStore,
-    IReferenceUsageQuery,
-    IRuntimeInputsEditorStore,
-    IModuleInstanceAnimationEditorStore
-{
-}
-
-public interface IEditorNodeCommandStore : IEditorChildStore
-{
+    void Delete(EditorShell.ProjectTreeNode node);
+    EditorShell.ProjectTreeNode Duplicate(
+        EditorShell.ProjectTreeNode node);
     EditorShell.ProjectTreeNode DuplicateShot(
         EditorShell.ProjectTreeNode shot,
         int shotNumber);

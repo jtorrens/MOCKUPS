@@ -27,7 +27,8 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly Action _togglePlayback;
 
     public ModuleInstanceAnimationEditor(
-        IModuleInstanceAnimationEditorStore database,
+        IModuleInstanceAnimationStore animation,
+        IDictionaryFieldContextRepository dictionary,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         EditorSessionUiState sessionUiState,
@@ -36,9 +37,13 @@ internal sealed class ModuleInstanceAnimationEditor
         PreviewPlaybackState playbackState,
         Action togglePlayback)
     {
-        _timelineDataSource = new ModuleInstanceTimelineDataSource(database);
-        _animationDocuments = new ModuleInstanceAnimationDocumentStore(database, _timelineDataSource);
-        _runtimeInputOptions = new RuntimeInputOptionsDataSource(database);
+        _timelineDataSource =
+            new ModuleInstanceTimelineDataSource(animation);
+        _animationDocuments = new ModuleInstanceAnimationDocumentStore(
+            animation,
+            _timelineDataSource);
+        _runtimeInputOptions =
+            new RuntimeInputOptionsDataSource(dictionary);
         _dictionaryServices = dictionaryServices;
         _onChanged = onChanged;
         _sessionUiState = sessionUiState;

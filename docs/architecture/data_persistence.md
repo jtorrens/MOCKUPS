@@ -118,6 +118,12 @@ assets are private, so neither Desktop nor Host inherits SQLite APIs merely by
 referencing Persistence. A project that intentionally spans layers, such as an
 integration-test project, must declare every capability it compiles against.
 
+Session ports are capability membranes, not UI-area facades. Child creation,
+node commands, Module Instance collections, Icon Theme assets, Theme tokens,
+Runtime Input owner writes, Runtime Input instance writes, animation and
+Reference Usage use distinct adapter instances. A Desktop controller that
+needs more than one capability declares each one in its constructor.
+
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their
 own read or write capability. The session itself contains no data methods, and

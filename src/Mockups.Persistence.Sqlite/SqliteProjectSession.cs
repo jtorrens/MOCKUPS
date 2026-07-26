@@ -19,18 +19,26 @@ public sealed class SqliteProjectSession
         Preview = new SqlitePreviewInputPort(engine);
         Dictionary =
             new SqliteDictionaryFieldContextPort(engine);
+        Children = new SqliteEditorChildPort(engine);
         NodeCommands =
             new SqliteEditorNodeCommandPort(engine);
         ProductionNavigation =
             new SqliteProductionNavigationPort(engine);
         Presentation =
             new SqliteEditorPresentationPort(engine);
-        DomainDialogs =
-            new SqliteEditorDomainDialogPort(engine);
+        ModuleInstances =
+            new SqliteModuleInstanceCollectionPort(engine);
+        IconThemes = new SqliteIconThemeAssetPort(engine);
+        ThemeTokens = new SqliteThemeTokenPort(engine);
         Components =
             new SqliteComponentDocumentPort(engine);
-        Header = new SqliteEditorHeaderPort(engine);
-        Collections = new SqliteEditorCollectionPort(engine);
+        RuntimeInputOwners =
+            new SqliteRuntimeInputOwnerPort(engine);
+        RuntimeInputInstances =
+            new SqliteRuntimeInputInstancePort(engine);
+        Animation =
+            new SqliteModuleInstanceAnimationPort(engine);
+        ReferenceUsage = new SqliteReferenceUsagePort(engine);
         Layouts = new SqliteEditorLayoutPort(layouts);
         ActorPreview = new SqliteActorPreviewPort(engine.Resources);
     }
@@ -51,19 +59,29 @@ public sealed class SqliteProjectSession
 
     public IDictionaryFieldContextRepository Dictionary { get; }
 
+    public IEditorChildStore Children { get; }
+
     public IEditorNodeCommandStore NodeCommands { get; }
 
     public IProductionNavigationStore ProductionNavigation { get; }
 
     public IEditorPresentationContextRepository Presentation { get; }
 
-    public IEditorDomainDialogStore DomainDialogs { get; }
+    public IModuleInstanceCollectionStore ModuleInstances { get; }
+
+    public IIconThemeAssetStore IconThemes { get; }
+
+    public IThemeTokenQuery ThemeTokens { get; }
 
     public IComponentDocumentStore Components { get; }
 
-    public IEditorHeaderStore Header { get; }
+    public IRuntimeInputOwnerStore RuntimeInputOwners { get; }
 
-    public IEditorCollectionStore Collections { get; }
+    public IRuntimeInputInstanceStore RuntimeInputInstances { get; }
+
+    public IModuleInstanceAnimationStore Animation { get; }
+
+    public IReferenceUsageQuery ReferenceUsage { get; }
 
     public IEditorLayoutStore Layouts { get; }
 

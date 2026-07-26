@@ -17,6 +17,7 @@ internal sealed class EditorAddChildWorkflow
 {
     private readonly Window _owner;
     private readonly IEditorChildStore _database;
+    private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IProjectPathResolver _projectPaths;
     private readonly EditorOperationCoordinator _operations;
     private readonly Func<string, string, Task> _showInfo;
@@ -24,12 +25,14 @@ internal sealed class EditorAddChildWorkflow
     public EditorAddChildWorkflow(
         Window owner,
         IEditorChildStore database,
+        IModuleInstanceCollectionStore moduleInstances,
         IProjectPathResolver projectPaths,
         EditorOperationCoordinator operations,
         Func<string, string, Task> showInfo)
     {
         _owner = owner;
         _database = database;
+        _moduleInstances = moduleInstances;
         _projectPaths = projectPaths;
         _operations = operations;
         _showInfo = showInfo;
@@ -71,12 +74,12 @@ internal sealed class EditorAddChildWorkflow
         {
             var draft = await new ShotModulePickerDialog(
                 _owner,
-                _database,
+                _moduleInstances,
                 _operations).Show(parent.Id);
             return draft is null
                 ? null
                 : await _operations.ExecuteAsync(
-                    () => _database.AddModuleInstance(parent, draft));
+                    () => _moduleInstances.AddModuleInstance(parent, draft));
         }
 
         if (parent.Kind == ProjectTreeNodeKind.Episode)

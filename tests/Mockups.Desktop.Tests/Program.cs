@@ -3121,13 +3121,18 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         project.VariantHistory,
         project.Preview,
         project.Dictionary,
+        project.Children,
         project.NodeCommands,
         project.ProductionNavigation,
         project.Presentation,
-        project.DomainDialogs,
+        project.ModuleInstances,
+        project.IconThemes,
+        project.ThemeTokens,
         project.Components,
-        project.Header,
-        project.Collections,
+        project.RuntimeInputOwners,
+        project.RuntimeInputInstances,
+        project.Animation,
+        project.ReferenceUsage,
         project.Layouts,
         project.ActorPreview,
     ];
@@ -3136,6 +3141,15 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Navigation is not IPreviewInputRepository);
     True(project.Layouts is not IRecordClassFieldStore);
     True(project.ActorPreview is not IEditorNodeCommandStore);
+    True(project.Children is not IEditorNodeCommandStore);
+    True(project.NodeCommands is not IEditorChildStore);
+    True(project.ModuleInstances is not IIconThemeAssetStore);
+    True(project.IconThemes is not IThemeTokenQuery);
+    True(project.ThemeTokens is not IModuleInstanceCollectionStore);
+    True(project.Components is not IPreviewInputRepository);
+    True(project.RuntimeInputOwners is not IRuntimeInputInstanceStore);
+    True(project.Animation is not IRuntimeInputInstanceStore);
+    True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
 }
 
 static void PreviewResourceSelectionHasOneSessionRule()

@@ -10,7 +10,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorDomainDialogService
 {
     private readonly Window _owner;
-    private readonly IEditorDomainDialogStore _database;
+    private readonly IModuleInstanceCollectionStore _moduleInstances;
+    private readonly IIconThemeAssetStore _iconThemes;
+    private readonly IThemeTokenQuery _themeTokens;
     private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
@@ -19,7 +21,9 @@ internal sealed class EditorDomainDialogService
 
     public EditorDomainDialogService(
         Window owner,
-        IEditorDomainDialogStore database,
+        IModuleInstanceCollectionStore moduleInstances,
+        IIconThemeAssetStore iconThemes,
+        IThemeTokenQuery themeTokens,
         EditorOperationCoordinator operations,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
@@ -27,7 +31,9 @@ internal sealed class EditorDomainDialogService
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _owner = owner;
-        _database = database;
+        _moduleInstances = moduleInstances;
+        _iconThemes = iconThemes;
+        _themeTokens = themeTokens;
         _operations = operations;
         _isDark = isDark;
         _showInfo = showInfo;
@@ -91,7 +97,7 @@ internal sealed class EditorDomainDialogService
     {
         return new ShotModulePickerDialog(
             _owner,
-            _database,
+            _moduleInstances,
             _operations).Show(shotId);
     }
 
@@ -102,21 +108,21 @@ internal sealed class EditorDomainDialogService
 
     public Task ShowIconThemeSearch(ProjectTreeNode node)
     {
-        return new IconThemeSearchDialog(_owner, _database, _showInfo, _reloadAndSelect).Show(node);
+        return new IconThemeSearchDialog(_owner, _iconThemes, _showInfo, _reloadAndSelect).Show(node);
     }
 
     public Task ShowIconThemeSvgReplace(ProjectTreeNode node, string token)
     {
-        return new IconThemeSvgReplaceDialog(_owner, _database, _browseSvgFile, _reloadAndSelect).Show(node, token);
+        return new IconThemeSvgReplaceDialog(_owner, _iconThemes, _browseSvgFile, _reloadAndSelect).Show(node, token);
     }
 
     public Task<string?> ShowIconTokenPicker(string iconThemeId, string currentValue, bool allowMultiple)
     {
-        return new IconTokenPickerDialog(_owner, _database).Show(iconThemeId, currentValue, allowMultiple);
+        return new IconTokenPickerDialog(_owner, _iconThemes).Show(iconThemeId, currentValue, allowMultiple);
     }
 
     public Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
     {
-        return new ThemeTokenPickerDialog(_owner, _database).Show(projectId, currentValue, allowedOptions);
+        return new ThemeTokenPickerDialog(_owner, _themeTokens).Show(projectId, currentValue, allowedOptions);
     }
 }

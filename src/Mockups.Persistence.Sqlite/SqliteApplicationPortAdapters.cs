@@ -1098,10 +1098,12 @@ internal sealed class SqliteEditorPresentationPort(
 }
 
 internal sealed class SqliteEditorDomainDialogPort(
-    Mockups.DesktopEditorShell.Data.IEditorDomainDialogStore target)
-    : Mockups.DesktopEditorShell.Data.IEditorDomainDialogStore
+    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
+    : Mockups.DesktopEditorShell.Data.IModuleInstanceCollectionStore,
+      Mockups.DesktopEditorShell.Data.IIconThemeAssetStore,
+      Mockups.DesktopEditorShell.Data.IThemeTokenQuery
 {
-    private readonly Mockups.DesktopEditorShell.Data.IEditorDomainDialogStore _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddModuleInstance(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode shot,
@@ -1289,10 +1291,10 @@ internal sealed class SqliteComponentDocumentPort(
 }
 
 internal sealed class SqliteEditorHeaderPort(
-    Mockups.DesktopEditorShell.Data.IEditorHeaderStore target)
-    : Mockups.DesktopEditorShell.Data.IEditorHeaderStore
+    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
+    : Mockups.DesktopEditorShell.Data.IComponentDocumentStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.IEditorHeaderStore _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.FieldValue CreateEmbeddedComponentFieldValue(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode ownerNode,
@@ -1500,10 +1502,10 @@ internal sealed class SqliteEditorHeaderPort(
 }
 
 internal sealed class SqliteEditorCollectionPort(
-    Mockups.DesktopEditorShell.Data.IEditorCollectionStore target)
-    : Mockups.DesktopEditorShell.Data.IEditorCollectionStore
+    Mockups.DesktopEditorShell.Data.SqliteProjectEngine target)
+    : Mockups.DesktopEditorShell.Data.IRuntimeInputOwnerStore
 {
-    private readonly Mockups.DesktopEditorShell.Data.IEditorCollectionStore _target = target;
+    private readonly Mockups.DesktopEditorShell.Data.SqliteProjectEngine _target = target;
 
     public Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode AddModuleInstance(
         Mockups.DesktopEditorShell.EditorShell.ProjectTreeNode shot,
