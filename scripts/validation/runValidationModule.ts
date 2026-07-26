@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 
 import { checkDocumentationContracts } from "./checkDocumentationContracts.js";
 import { checkGeneratedArtifacts } from "./checkGeneratedArtifacts.js";
+import { checkRetiredContracts } from "./checkRetiredContracts.js";
 import { checkValidationPipeline } from "./checkValidationPipeline.js";
 import {
   createArchitectureValidationContext,
@@ -25,9 +26,12 @@ switch (owner) {
   case "pipeline":
     checkValidationPipeline(context);
     break;
+  case "retired":
+    checkRetiredContracts(context);
+    break;
   default:
     throw new Error(
-      `Unknown validation owner '${owner}'. Expected contracts, generated or pipeline.`,
+      `Unknown validation owner '${owner}'. Expected contracts, generated, pipeline or retired.`,
     );
 }
 

@@ -51,7 +51,8 @@ export function checkValidationPipeline({
     ["validate:contracts", "runValidationModule.ts contracts"],
     ["validate:generated", "runValidationModule.ts generated"],
     ["validate:pipeline", "runValidationModule.ts pipeline"],
-    ["validate:architecture", "checkDesktopPreviewArchitecture.ts --residual"],
+    ["validate:retired", "runValidationModule.ts retired"],
+    ["validate:architecture", "npm run test:architecture"],
   ] as const) {
     if (!(packageScripts[scriptName] ?? "").includes(expectedOwner)) {
       addViolation(
@@ -66,6 +67,8 @@ export function checkValidationPipeline({
         .includes("npm run validate:generated")
       || !(packageScripts["check:architecture"] ?? "")
         .includes("npm run validate:pipeline")
+      || !(packageScripts["check:architecture"] ?? "")
+        .includes("npm run validate:retired")
       || !(packageScripts["check:architecture"] ?? "")
         .includes("npm run validate:architecture")) {
     addViolation(

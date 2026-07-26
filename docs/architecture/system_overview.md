@@ -150,8 +150,8 @@ production project allowed to reference both Desktop and Persistence.Sqlite.
 It opens the current SQLite compatibility facade and projects it into the
 narrow Application ports required by one desktop session.
 The Host acquires one workstation-user visual-editor lease before Avalonia
-startup. A second editor process opens only a controlled already-running
-surface and never constructs services or opens SQLite.
+startup. A second editor launch exits before constructing Avalonia, services
+or SQLite and therefore never becomes another visual application process.
 Its `ApplicationStartupCoordinator` validates the manifested Preview bundle
 and opens the current database on a controlled worker. It also prepares the
 first immutable navigation-tree snapshot before publishing the session, so

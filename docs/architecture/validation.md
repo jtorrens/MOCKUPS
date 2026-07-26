@@ -33,8 +33,9 @@ It includes:
 - typed startup classification for missing or invalid Preview bundles, missing,
   empty or invalid databases, read-only successful preparation and
   cancellation before session publication;
-- exclusive visual-editor lease acquisition, rejection of a concurrent editor
-  owner and successful reacquisition after the first owner exits;
+- exclusive visual-editor lease acquisition, exit before Avalonia construction
+  for a concurrent launch and successful reacquisition after the first owner
+  exits;
 - per-context SQLite write coordination, covering an independent write while a
   second database gate is held and serialized concurrent writes inside one
   database context;
@@ -145,7 +146,9 @@ npm run check:architecture
 npm run validate:contracts
 npm run validate:generated
 npm run validate:pipeline
+npm run validate:retired
 npm run validate:architecture
+npm run test:architecture
 npm run desktop-preview:build
 npm run desktop:build
 npm run desktop:db:validate
@@ -173,33 +176,39 @@ Architecture validation has focused entrypoints:
 - `validate:generated` owns Component and Module scaffolding contracts and
   generated-artifact parity;
 - `validate:pipeline` owns npm and CI orchestration;
-- `validate:architecture` owns the evaluated .NET dependency graph and the
-  remaining Preview, desktop and persistence boundary rules.
+- `validate:retired` owns only the finite exact path list for architecture
+  surfaces that have been removed and must not return;
+- `validate:architecture` owns compiler- and parser-backed dependency
+  boundaries.
 
-`check:architecture` aggregates those owners once. The remaining rules in
-`scripts/checkDesktopPreviewArchitecture.ts` are transitional and must move to
-structural analysis or focused tests as their compiled owners become
-available. They include:
+`check:architecture` aggregates those owners once. Important dependency rules
+do not inspect source text. The .NET suite evaluates the actual MSBuild graph,
+project references and package references. The Preview suite parses every
+static, exported and dynamic TypeScript import with the TypeScript compiler,
+then derives permitted concrete owner edges from the current manifest.
 
-- exact manifest routing and declared dependencies;
-- exhaustive Preview capability and persisted-action agreement;
-- strict Preview payload documents;
-- generic bridge and renderer boundaries;
-- dictionary and Runtime Input `ValueKind` coverage;
-- complete Variant references and local Overrides;
-- focused repository and typed data-source ownership;
-- recursive timing and animation contracts;
-- shared UI action and input behavior;
-- absence of startup persistence writes and compatibility paths.
+That structural suite also requires:
+
+- exact manifest owner files, categories and declared embeds;
+- exact Component and Module registry parity;
+- registries whose factory entries are direct owner calls without business
+  conditions;
+- generic renderers with no dependency on concrete Preview owners;
+- filesystem imports confined to explicit asset and request boundaries.
+
+Behavior is not owned by architecture validation. Strict Preview payloads,
+dictionary and Runtime Input contracts, Variant references, Overrides, timing,
+animation, UI interaction and Render Queue behavior belong to their focused
+tests. The manifest-wide desktop test renders every committed Variant fixture.
+The C# startup validator and persistence tests own the complete staged SQLite
+contract. Generated artifacts, documentation and CI keep their separate
+validators.
 
 Architecture enforcement reads only active documentation through one guarded
 repository reader. It rejects absolute paths, parent traversal, alternate
 separators that resolve outside the repository and every path below `docs/old`;
 archive isolation is checked from active rules and active links without
 consulting the sealed archive.
-
-The check must fail when a concrete Component name, resolver or layout rule
-leaks into a common Preview helper, central bridge or generic renderer.
 
 ## Persistence validation
 
