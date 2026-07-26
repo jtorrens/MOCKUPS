@@ -381,7 +381,7 @@ for (const group of ["core", "ui", "exhaustive"]) {
 }
 if (packageScripts["test:focus:preview"] !== "tsx --test"
     || !(packageScripts["test:focus:desktop"] ?? "").endsWith(" --")
-    || !(packageScripts["test:focus:desktop"] ?? "").startsWith("npm run desktop-preview:build && ")
+    || !(packageScripts["test:focus:desktop"] ?? "").startsWith("dotnet run ")
     || !(packageScripts["test:guard"] ?? "").includes("npm run check:architecture")) {
   addViolation(
     "package.json",

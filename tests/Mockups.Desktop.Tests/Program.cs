@@ -101,6 +101,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
     ("Production Shot Manager action owns and reveals the optional association", ProductionShotManagerActionOwnsAssociation),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
+    ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
     ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
@@ -461,6 +462,40 @@ static void ExternalNodeProcessesShareExecutableResolution()
     var executable = DesktopChildProcess.ResolveNodeExecutable();
     True(!string.IsNullOrWhiteSpace(executable));
     Equal(OperatingSystem.IsWindows() ? "node.exe" : "node", Path.GetFileName(executable));
+}
+
+static void DesktopPreviewBundleValidationIsStrict()
+{
+    var source = Path.Combine(AppContext.BaseDirectory, "desktop-preview");
+    DesktopPreviewBundle.RequireCurrent(source);
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-preview-bundle-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(temporary);
+    try
+    {
+        foreach (var sourceFile in Directory.EnumerateFiles(source))
+        {
+            File.Copy(
+                sourceFile,
+                Path.Combine(temporary, Path.GetFileName(sourceFile)));
+        }
+        DesktopPreviewBundle.RequireCurrent(temporary);
+
+        File.AppendAllText(
+            Path.Combine(temporary, "renderDesignPreviewHtml.cjs"),
+            Environment.NewLine);
+        Throws<InvalidDataException>(() =>
+            DesktopPreviewBundle.RequireCurrent(temporary));
+
+        File.Delete(Path.Combine(temporary, "manifest.json"));
+        Throws<FileNotFoundException>(() =>
+            DesktopPreviewBundle.RequireCurrent(temporary));
+    }
+    finally
+    {
+        Directory.Delete(temporary, recursive: true);
+    }
 }
 
 static void ActorPreviewSurfacesShareInitialsIdentity()

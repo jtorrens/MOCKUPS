@@ -222,8 +222,13 @@ npm run desktop:open:mac
 npm run desktop:launch:mac
 ```
 
-`desktop` and `desktop:build` rebuild the web Preview bundle before invoking
-.NET, so a development output cannot retain a stale Component or Module route.
+The Desktop MSBuild project owns web Preview generation. Every `dotnet build`,
+`dotnet run` and `dotnet publish` entrypoint executes
+`PrepareDesktopPreview` before compiling and includes the resulting manifest
+and artifacts, so npm wrappers and direct .NET entrypoints have the same
+dependency graph. The manifest records its schema, source commit, build time,
+per-artifact hashes and aggregate bundle hash. Desktop startup rejects a
+missing or stale bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.

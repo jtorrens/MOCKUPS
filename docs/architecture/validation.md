@@ -82,9 +82,15 @@ It includes:
 - architecture enforcement;
 - desktop application build.
 
-The Preview bundle is built once. Desktop compilation reuses it instead of
-starting a second bundle build. The desktop suite runs in three fresh
-processes: `core`, native visual-tree `ui`, and manifest-wide `exhaustive`.
+The Desktop MSBuild target regenerates Preview artifacts incrementally when a
+TypeScript or build input changes, then refreshes their manifest for the
+current build. npm orchestration does not run a second implicit generation
+step. Direct `dotnet build`, `dotnet run` and `dotnet publish` therefore
+produce the same manifested bundle. Startup and tooling tests verify its
+schema, required artifacts, per-file SHA-256 hashes and aggregate hash. The
+desktop suite runs
+in three fresh processes: `core`, native visual-tree `ui`, and manifest-wide
+`exhaustive`.
 This preserves complete coverage while preventing native UI state from leaking
 between unrelated tests.
 
@@ -131,8 +137,9 @@ git diff --check
 
 An exact desktop name that does not exist, an unknown selector or a filter that
 matches nothing fails explicitly. A local owner change starts with its focused
-test and the shared guard. The focused desktop command rebuilds the Preview
-bundle before running so it cannot exercise stale web output. Changes to
+test and the shared guard. The focused desktop command reaches Preview
+generation through the Desktop project before running, so it cannot exercise
+stale web output. Changes to
 manifests, registries, shared Preview
 helpers, persistence, schemas, generated scaffolding or generic desktop
 surfaces expand to their owning suite. `npm test` remains mandatory once, after
