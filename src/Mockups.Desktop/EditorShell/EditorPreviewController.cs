@@ -3635,10 +3635,12 @@ internal sealed class EditorPreviewController : IDisposable
         _designInputsPanel.UpdateForPayload(
             payload,
             _projectId);
-        return _designInputsPanel.ApplyInputs(
+        var resolved = _designInputsPanel.ApplyInputs(
             payload,
             _selectedMode,
             _projectId);
+        PlaybackState.NotifyFrameChanged();
+        return resolved;
     }
 
     private void UpdateProductionPreviewSetup()

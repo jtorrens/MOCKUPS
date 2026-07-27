@@ -5889,6 +5889,31 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                 True(runtime.GetVisualDescendants()
                     .OfType<TextBlock>()
                     .Any((text) => text.Text == "Messages"));
+                NumericUpDown? frameInput = null;
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        frameInput = runtime
+                            .GetVisualDescendants()
+                            .OfType<NumericUpDown>()
+                            .SingleOrDefault((numeric) =>
+                                ToolTip.GetTip(numeric) as string
+                                == "Current frame · Play messages");
+                        return frameInput is not null
+                            && frameInput.Maximum > 0
+                            && frameInput.Value
+                                == frameInput.Maximum;
+                    },
+                    TimeSpan.FromSeconds(10)),
+                    "Conversation initial action transport did not reflect "
+                    + "the final Preview frame. "
+                    + messages.Text);
+                var readyFrameInput = Required(frameInput);
+                True(readyFrameInput.Maximum > 0);
+                Equal(
+                    readyFrameInput.Maximum,
+                    readyFrameInput.Value ?? -1);
 
                 window.Hide();
             },
