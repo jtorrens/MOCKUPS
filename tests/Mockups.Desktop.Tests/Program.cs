@@ -606,7 +606,7 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
     Equal(false, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Recompleted List item"));
 
     True(session.RestoreAction(action.Id));
-    True(!session.CanRestoreAction(action.Id));
+    True(session.CanRestoreAction(action.Id));
     Equal(0, session.CurrentPreviewFrame);
     Equal(true, JsonPath.RequiredBoolean(EffectiveItem(), "present", "Restored List item"));
 }
@@ -9618,7 +9618,7 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
         True(frames.Count > 40);
         Equal(frames.Count - 1, interactivePayload.LocalFrame);
         True(inputSession.CanStepActionFrame(action.Id, -1));
-        True(!inputSession.CanStepActionFrame(action.Id, 1));
+        True(inputSession.CanStepActionFrame(action.Id, 1));
         True(inputSession.StepActionFrame(action.Id, -1));
         Equal(frames.Count - 2, inputSession.CurrentPreviewFrame);
         var previousFramePayload = inputSession.ApplyInputs(
@@ -9634,14 +9634,16 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
             "Conversation previous frame"));
         True(inputSession.StepActionFrame(action.Id, 1));
         Equal(frames.Count - 1, inputSession.CurrentPreviewFrame);
-        True(!inputSession.StepActionFrame(action.Id, 1));
+        True(inputSession.StepActionFrame(action.Id, 1));
+        Equal(frames.Count - 1, inputSession.CurrentPreviewFrame);
         True(inputSession.RestoreAction(action.Id));
+        Equal(0, inputSession.CurrentPreviewFrame);
         var restoredPayload = inputSession.ApplyInputs(
             payload,
             "light",
             module.ProjectId);
-        Equal(frames.Count - 1, restoredPayload.LocalFrame);
-        Equal(false, JsonPath.RequiredBoolean(
+        Equal(0, restoredPayload.LocalFrame);
+        Equal(true, JsonPath.RequiredBoolean(
             JsonPath.ParseRequiredObject(
                 restoredPayload.DesignPreviewJson,
                 "Conversation restored frame"),
@@ -12804,15 +12806,14 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
     session.Dispatch(() =>
     {
         var playbackState = new PreviewPlaybackState();
-        var canRestore = false;
         var currentFrame = 0;
         var control = new RuntimeTestActionControl(
             "Test Action",
             (_) => { },
-            () => { },
-            () => canRestore,
+            () => currentFrame = 0,
+            () => true,
             (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 1),
-            (delta) => delta < 0 ? currentFrame > 0 : currentFrame < 1,
+            (_) => true,
             playbackState);
         var window = new Window
         {
@@ -12832,42 +12833,48 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         var previous = ActionButton("Previous frame · Test Action");
         var next = ActionButton("Next frame · Test Action");
         True(play.IsEnabled);
-        True(!restore.IsEnabled);
-        True(!previous.IsEnabled);
+        True(restore.IsEnabled);
+        True(previous.IsEnabled);
         True(next.IsEnabled);
 
         playbackState.SetBusy(true);
         Dispatcher.UIThread.RunJobs();
-        True(!play.IsEnabled);
-        True(!restore.IsEnabled);
-        True(!previous.IsEnabled);
-        True(!next.IsEnabled);
+        True(play.IsEnabled);
+        True(restore.IsEnabled);
+        True(previous.IsEnabled);
+        True(next.IsEnabled);
 
-        canRestore = true;
         playbackState.SetBusy(false);
         Dispatcher.UIThread.RunJobs();
         True(play.IsEnabled);
         True(restore.IsEnabled);
-        True(!previous.IsEnabled);
+        True(previous.IsEnabled);
         True(next.IsEnabled);
 
         next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         True(previous.IsEnabled);
-        True(!next.IsEnabled);
+        True(next.IsEnabled);
+        restore.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Equal(0, currentFrame);
+        True(previous.IsEnabled);
+        True(next.IsEnabled);
 
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
         playbackState.SetBusy(true);
         window.Content = control;
         Dispatcher.UIThread.RunJobs();
-        True(!play.IsEnabled);
+        True(play.IsEnabled);
+        True(restore.IsEnabled);
+        True(previous.IsEnabled);
+        True(next.IsEnabled);
 
         playbackState.SetBusy(false);
         Dispatcher.UIThread.RunJobs();
         True(play.IsEnabled);
         True(restore.IsEnabled);
         True(previous.IsEnabled);
-        True(!next.IsEnabled);
+        True(next.IsEnabled);
         window.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
@@ -13908,11 +13915,11 @@ static void PasswordSeedOpensAndRenders()
         True(!html.Contains("preview-error", StringComparison.Ordinal));
         True(inputSession.CanRestoreAction(action.Id));
         True(inputSession.RestoreAction(action.Id));
-        True(!inputSession.CanRestoreAction(action.Id));
+        True(inputSession.CanRestoreAction(action.Id));
         var restoredPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
         var restoredPreview = JsonNode.Parse(restoredPayload.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing restored Password preview.");
-        Equal(false, restoredPreview["entryTrigger"]?.GetValue<bool>() ?? true);
+        Equal(true, restoredPreview["entryTrigger"]?.GetValue<bool>() ?? false);
         Equal(0, restoredPreview["entryFrame"]?.GetValue<int>() ?? -1);
         True(inputSession.TriggerAction(action.Id));
         Equal(0, inputSession.CurrentPreviewFrame);

@@ -167,9 +167,9 @@ internal sealed class RuntimeTestActionControl : Border
 
     private void RefreshState()
     {
-        _playButton.IsEnabled = !_playbackState.IsBusy;
-        _restoreButton.IsEnabled = !_playbackState.IsBusy && _canRestore();
-        _previousFrameButton.IsEnabled = !_playbackState.IsBusy && _canStep(-1);
-        _nextFrameButton.IsEnabled = !_playbackState.IsBusy && _canStep(1);
+        _playButton.IsEnabled = true;
+        _restoreButton.IsEnabled = _canRestore();
+        _previousFrameButton.IsEnabled = _canStep(-1);
+        _nextFrameButton.IsEnabled = _canStep(1);
     }
 }

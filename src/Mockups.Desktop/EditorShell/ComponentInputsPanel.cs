@@ -227,23 +227,13 @@ internal sealed class ComponentPreviewInputSession
 
     public bool CanRestoreAction(string actionId)
     {
-        return _actions.Any((candidate) => candidate.Id == actionId)
-            && _actionSnapshots.ContainsKey(ActionSnapshotKey(actionId));
+        return _actions.Any((candidate) => candidate.Id == actionId);
     }
 
     public bool CanStepActionFrame(string actionId, int delta)
     {
-        if (delta is not (-1 or 1)
-            || IsPreparingPlayback
-            || _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is not { } action)
-        {
-            return false;
-        }
-
-        var frame = CurrentPlaybackFrame(action);
-        return delta < 0
-            ? frame > 0
-            : frame < DurationFrames(action);
+        return delta is -1 or 1
+            && _actions.Any((candidate) => candidate.Id == actionId);
     }
 
     public bool StepActionFrame(
@@ -259,12 +249,13 @@ internal sealed class ComponentPreviewInputSession
                 "Design Preview action frame steps must be -1 or 1.");
         }
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
-        if (action is null || !CanStepActionFrame(actionId, delta))
+        if (action is null || IsPreparingPlayback)
         {
             return false;
         }
 
         var frame = CurrentPlaybackFrame(action);
+        var targetFrame = Math.Clamp(frame + delta, 0, DurationFrames(action));
         var hasSnapshot = _actionSnapshots.ContainsKey(ActionSnapshotKey(action.Id));
         CaptureActionSnapshot(action);
         StopPlayback(clearPlayingState: true);
@@ -276,7 +267,7 @@ internal sealed class ComponentPreviewInputSession
         _playbackSecondsByActionId.Remove(action.Id);
         _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(
             action,
-            (frame + delta) / (double)Math.Max(1, _playbackFrameRate));
+            targetFrame / (double)Math.Max(1, _playbackFrameRate));
         _values[ActionStateKey(action)] = "true";
         foreach (var key in ActivatedPlaybackInputKeys(action))
         {
@@ -291,17 +282,25 @@ internal sealed class ComponentPreviewInputSession
     public bool RestoreAction(string actionId)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
-        if (action is null
-            || !_actionSnapshots.Remove(ActionSnapshotKey(actionId), out var snapshot))
+        if (action is null || IsPreparingPlayback)
         {
             return false;
         }
 
-        StopPlayback();
+        CaptureActionSnapshot(action);
+        var snapshot = _actionSnapshots[ActionSnapshotKey(actionId)];
+        StopPlayback(clearPlayingState: true);
         ApplyActionSnapshot(snapshot);
         _playbackSecondsByActionId.Remove(action.Id);
-        if (_heldFinalActionId == action.Id) _heldFinalActionId = "";
-        if (_activeActionId == action.Id) _activeActionId = "";
+        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(action, 0);
+        _values[ActionStateKey(action)] = "true";
+        foreach (var key in ActivatedPlaybackInputKeys(action))
+        {
+            _values[key] = "true";
+        }
+        SyncDeactivatedPlaybackInputs(action);
+        _activeActionId = action.Id;
+        _heldFinalActionId = action.Id;
         _refreshPreview();
         return true;
     }

@@ -83,10 +83,12 @@ Design places Preview authoring above the Preview in three horizontal tabs:
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame
-and next-frame chevrons immediately after Restore. A frame step stops active
-playback, moves exactly one Preview frame within the action duration and leaves
-that frame visible. The scrollable value groups remain below, so playback
-actions stay visible while editing long input sets.
+and next-frame chevrons immediately after Restore. Play, Restore and both
+chevrons stay available while the action exists, including during playback and
+at either endpoint. Restore holds frame zero. A frame step stops active
+playback, moves exactly one Preview frame, clamps to the action duration and
+leaves that frame visible. The scrollable value groups remain below, so
+playback actions stay visible while editing long input sets.
 
 Production places the selected Screen Payload in the corresponding Preview
 authoring area. Runtime Inputs and structured slots are edited beside the
