@@ -4,31 +4,8 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteCurrentDatabaseValidator
 {
-    private IReadOnlySet<string> ModuleInstanceProjectActorIds(
-        SqliteConnection connection,
-        string moduleInstanceId)
-    {
-        var instance = _productionOwner.ModuleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var module = _designOwner.AppModuleRepository.GetModule(
-            connection,
-            instance.ModuleId);
-        return ProjectActorIds(connection, module.ProjectId);
-    }
-
-    private IReadOnlySet<string> ProjectActorIds(
-        SqliteConnection connection,
-        string projectId) =>
-        _resourceOwner.ActorRepository.QueryAll(connection)
-            .Where((actor) => actor.ProjectId.Equals(
-                projectId,
-                StringComparison.Ordinal))
-            .Select((actor) => actor.Id)
-            .ToHashSet(StringComparer.Ordinal);
-
     private void ValidateCurrentModuleRuntimeDocuments(SqliteConnection connection)
     {
         var modules = _designOwner.AppModuleRepository.QueryModules(connection)

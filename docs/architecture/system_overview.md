@@ -170,6 +170,12 @@ Production usage check before asking Design to delete a Module Variant.
 Component Class settings, Variant catalogs and Variant lifecycle mutations
 also execute in Design. The temporary composition layer performs the
 cross-domain Usage check before asking Design to delete a Component Variant.
+Read-only database startup validation is a separate composition-owned
+capability implemented by `SqliteCurrentDatabaseValidator`. It may read through
+the three focused persistence owners to verify cross-owner invariants, but it
+publishes no repository capability and performs no write, repair or migration.
+`SqliteProjectEngine` only constructs the session graph and invokes that
+validator before publishing the session.
 Component configuration-field writes, strict snapshot replacement and exact
 embedded-slot reference validation execute in Design as well. Embedded
 boundary writes for Component Classes, Component Variants, Modules and Module

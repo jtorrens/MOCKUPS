@@ -214,8 +214,11 @@ only to normative documentation, where prose is the contract being validated.
 
 That structural suite also requires:
 
-- the internal SQLite project engine implements no Application interface, and
-  every session capability exposes exactly the public methods declared by its
+- the internal SQLite project engine implements no Application interface,
+  declares no public member or database-validation method; read-only startup
+  contract checks belong to the internal `SqliteCurrentDatabaseValidator`,
+  which exposes no public surface or Application interface;
+- every session capability exposes exactly the public methods declared by its
   own port;
 - the internal SQLite project engine has no tree-loading method; test fixtures
   reach navigation through the focused navigation owner;

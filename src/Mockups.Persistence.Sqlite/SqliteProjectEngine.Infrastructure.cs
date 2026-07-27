@@ -13,12 +13,6 @@ internal sealed partial class SqliteProjectEngine
         return _context.OpenConnection();
     }
 
-    private SqliteConnection OpenValidationConnection()
-    {
-        return _context.OpenValidationConnection();
-    }
-
-
     private static int NextSortOrder(SqliteConnection connection, string table, string parentColumn, string parentId)
     {
         return SqliteCommandExecutor.NextSortOrder(connection, table, parentColumn, parentId);
@@ -160,11 +154,6 @@ internal sealed partial class SqliteProjectEngine
         return JsonPath.NumberNode(value);
     }
 
-    private void ExecuteScript(SqliteConnection connection, string script)
-    {
-        _context.ExecuteScript(connection, script);
-    }
-
     private void Execute(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
     {
         Execute(connection, transaction: null, sql, parameters);
@@ -179,13 +168,4 @@ internal sealed partial class SqliteProjectEngine
         _context.Execute(connection, transaction, sql, parameters);
     }
 
-    private static long ScalarLong(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
-    {
-        return SqliteCommandExecutor.ScalarLong(connection, sql, parameters);
-    }
-
-    private static string? ScalarString(SqliteConnection connection, string sql, params (string Key, object? Value)[] parameters)
-    {
-        return SqliteCommandExecutor.ScalarString(connection, sql, parameters);
-    }
 }

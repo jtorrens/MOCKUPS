@@ -165,7 +165,12 @@ engine exposes no Module Instance operation.
 Shot scalar writes and derived owner-device reads belong to
 `SqliteRecordClassFieldStore`. Default database path discovery belongs to
 `SqlitePersistence`. `SqliteProjectEngine` declares no public member: it is an
-internal construction and read-only startup-validation helper only.
+internal construction helper only. Read-only startup validation belongs
+exclusively to `SqliteCurrentDatabaseValidator`, which receives the shared
+context plus the three already constructed owners, opens its own validation
+connection and rejects a missing, empty or non-current database without
+repairing it. The project engine contains no validation method or persistence
+contract rule.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

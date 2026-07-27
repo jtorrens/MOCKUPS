@@ -1,7 +1,5 @@
-using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
 using System;
-using System.IO;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -143,31 +141,12 @@ internal sealed partial class SqliteProjectEngine
             _productionOwner,
             _resourceOwner);
 
-        Initialize();
-    }
-
-    private void Initialize()
-    {
-        if (!File.Exists(_context.DatabasePath))
-        {
-            throw new FileNotFoundException(
-                "Desktop database does not exist. Create a validated database explicitly before opening the application.",
-                _context.DatabasePath);
-        }
-
-        using var validationConnection = OpenValidationConnection();
-        if (!HasUserTables(validationConnection))
-        {
-            throw new InvalidOperationException(
-                $"Desktop database '{_context.DatabasePath}' is empty. Create a validated database explicitly before opening the application.");
-        }
-
-        ValidateCurrentDatabase(validationConnection);
-    }
-
-    private static bool HasUserTables(SqliteConnection connection)
-    {
-        return ScalarLong(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'") > 0;
+        new SqliteCurrentDatabaseValidator(
+            _context,
+            _designOwner,
+            _productionOwner,
+            _resourceOwner)
+            .Validate();
     }
 
 }

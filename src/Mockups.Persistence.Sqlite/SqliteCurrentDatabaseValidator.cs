@@ -3,14 +3,58 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed partial class SqliteProjectEngine
+internal sealed partial class SqliteCurrentDatabaseValidator
 {
+    private readonly SqliteProjectContext _context;
+    private readonly SqliteDesignOwner _designOwner;
+    private readonly SqliteProductionOwner _productionOwner;
+    private readonly SqliteResourceOwner _resourceOwner;
+
+    internal SqliteCurrentDatabaseValidator(
+        SqliteProjectContext context,
+        SqliteDesignOwner designOwner,
+        SqliteProductionOwner productionOwner,
+        SqliteResourceOwner resourceOwner)
+    {
+        _context = context;
+        _designOwner = designOwner;
+        _productionOwner = productionOwner;
+        _resourceOwner = resourceOwner;
+    }
+
+    internal void Validate()
+    {
+        if (!File.Exists(_context.DatabasePath))
+        {
+            throw new FileNotFoundException(
+                "Desktop database does not exist. Create a validated database explicitly before opening the application.",
+                _context.DatabasePath);
+        }
+
+        using var connection = _context.OpenValidationConnection();
+        if (!HasUserTables(connection))
+        {
+            throw new InvalidOperationException(
+                $"Desktop database '{_context.DatabasePath}' is empty. Create a validated database explicitly before opening the application.");
+        }
+
+        ValidateCurrentDatabase(connection);
+    }
+
+    private static bool HasUserTables(SqliteConnection connection)
+    {
+        return ScalarLong(
+            connection,
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'") > 0;
+    }
+
     private static readonly Version MinimumSafeSqliteVersion = new(3, 50, 2);
 
     private static readonly HashSet<string> CurrentComponentVariantReferenceKeys = new(StringComparer.Ordinal)
@@ -369,7 +413,7 @@ internal sealed partial class SqliteProjectEngine
     {
         using var expected = new SqliteConnection("Data Source=:memory:");
         expected.Open();
-        ExecuteScript(expected, CurrentSqliteSchema.Sql);
+        _context.ExecuteScript(expected, CurrentSqliteSchema.Sql);
 
         if (ScalarLong(connection, "PRAGMA user_version") != ScalarLong(expected, "PRAGMA user_version"))
         {
@@ -696,6 +740,28 @@ internal sealed partial class SqliteProjectEngine
 
     private static bool IsStableReferenceCharacter(char value) =>
         char.IsLetterOrDigit(value) || value is '_' or '-' or '.';
+
+    private static long ScalarLong(
+        SqliteConnection connection,
+        string sql,
+        params (string Key, object? Value)[] parameters)
+    {
+        return SqliteCommandExecutor.ScalarLong(
+            connection,
+            sql,
+            parameters);
+    }
+
+    private static string? ScalarString(
+        SqliteConnection connection,
+        string sql,
+        params (string Key, object? Value)[] parameters)
+    {
+        return SqliteCommandExecutor.ScalarString(
+            connection,
+            sql,
+            parameters);
+    }
 
     private InvalidOperationException InvalidCurrentDatabase(string detail) =>
         new($"Desktop database '{_context.DatabasePath}' does not satisfy the current persistence contract: {detail}. Run an explicit migration on a copy; startup will not repair it.");

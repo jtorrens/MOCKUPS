@@ -3141,6 +3141,30 @@ static void SqliteSessionExposesDistinctFocusedPorts()
             BindingFlags.Instance
             | BindingFlags.Public
             | BindingFlags.NonPublic) is null);
+    True(
+        typeof(SqliteProjectEngine).GetMethod(
+            "ValidateCurrentDatabase",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic) is null);
+    True(typeof(SqliteCurrentDatabaseValidator).IsNotPublic);
+    Equal(
+        0,
+        typeof(SqliteCurrentDatabaseValidator).GetInterfaces().Length);
+    Equal(
+        0,
+        typeof(SqliteCurrentDatabaseValidator)
+            .GetMembers(
+                BindingFlags.Public
+                | BindingFlags.Instance
+                | BindingFlags.Static
+                | BindingFlags.DeclaredOnly)
+            .Length);
+    True(
+        typeof(SqliteCurrentDatabaseValidator).GetMethod(
+            "Validate",
+            BindingFlags.Instance
+            | BindingFlags.NonPublic) is not null);
     foreach (var retiredMethod in new[]
              {
                  "GetAppSettings",
