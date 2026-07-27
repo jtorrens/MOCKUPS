@@ -217,6 +217,8 @@ That structural suite also requires:
 - the internal SQLite project engine implements no Application interface, and
   every session capability exposes exactly the public methods declared by its
   own port;
+- the internal SQLite project engine has no tree-loading method; test fixtures
+  reach navigation through the focused navigation owner;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

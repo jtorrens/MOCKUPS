@@ -3126,6 +3126,12 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     Equal(
         0,
         typeof(SqliteProjectEngine).GetInterfaces().Length);
+    True(
+        typeof(SqliteProjectEngine).GetMethod(
+            "LoadProjectTree",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic) is null);
     var project = SqlitePersistence.OpenCurrent(
         ParityDatabasePath());
     (object Port, Type Contract)[] capabilities =

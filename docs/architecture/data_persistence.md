@@ -137,9 +137,12 @@ present on their runtime adapter types.
 Component documents, Component fields, record fields, core fields, Screen
 collections, child creation and node commands are composed from the exact
 Design, Production, Resources, Usage and context owners they require. None is
-implemented by or recoverable through `SqliteProjectEngine`. Navigation
-receives one tree-loading function behind its exact membrane; a consumer
-cannot cast that function or adapter back to the engine.
+implemented by or recoverable through `SqliteProjectEngine`.
+`SqliteEditorNavigationStore` owns the complete read-only tree projection.
+Navigation receives only that store's tree-loading function behind its exact
+membrane; a consumer cannot cast the function or adapter back to either the
+store or the engine. `SqliteProjectEngine` contains no tree read or node
+command method.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

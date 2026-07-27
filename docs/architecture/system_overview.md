@@ -213,6 +213,8 @@ Application interface and cannot be supplied to Desktop as a capability.
 `SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
 session has no data methods and each exposed port is a distinct adapter that
 cannot be cast to an unrelated port or to the internal project engine.
+The read-only editor tree is built by `SqliteEditorNavigationStore`; the
+project engine has no navigation method.
 Persistence may reference Application and
 Domain and only persistence projects may reference SQLite packages. They
 cannot reference Avalonia or Desktop. Each SQLite context owns its write
