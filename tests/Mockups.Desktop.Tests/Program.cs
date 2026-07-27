@@ -146,6 +146,7 @@ var tests = new (string Name, Action Run)[]
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
+    ("new Shot reload prepares Preview before selection", NewShotReloadPreparesPreviewBeforeSelection),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
@@ -3938,6 +3939,140 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
     finally
     {
         File.Delete(temporary);
+    }
+}
+
+static void NewShotReloadPreparesPreviewBeforeSelection()
+{
+    var source = ParityDatabasePath();
+    var windowStatePath = Path.GetFullPath(
+        Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "data",
+            "window-state.json"));
+    var priorWindowState = File.Exists(windowStatePath)
+        ? File.ReadAllBytes(windowStatePath)
+        : null;
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-new-shot-preview-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                window.Show();
+                var setWorkspace = typeof(MainWindow).GetMethod(
+                    "SetWorkspace",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow workspace transition.");
+                setWorkspace.Invoke(
+                    window,
+                    [EditorWorkspace.Production]);
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).Workspace
+                            == EditorWorkspace.Production;
+                    },
+                    TimeSpan.FromSeconds(10)));
+
+                var preview = typeof(MainWindow)
+                    .GetField(
+                        "_previewController",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(window) as EditorPreviewController
+                    ?? throw new InvalidOperationException(
+                        "Missing Preview controller.");
+                var preparedSession = typeof(EditorPreviewController)
+                    .GetField(
+                        "_productionSessionSnapshot",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException(
+                        "Missing prepared Production Preview session.");
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return preparedSession.GetValue(preview) is not null;
+                    },
+                    TimeSpan.FromSeconds(10)));
+
+                var database =
+                    new SqliteProjectTestContext(temporary);
+                var episode = Descendants(
+                        database.LoadProjectTree())
+                    .Single((node) =>
+                        node.Id == "episode_002");
+                var shot = database.AddShot(
+                    episode,
+                    "actor_alex",
+                    321);
+                var reloadAndSelect = typeof(MainWindow)
+                    .GetMethod(
+                        "ReloadAndSelect",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException(
+                        "Missing reload-and-select transition.");
+                reloadAndSelect.Invoke(window, [shot]);
+
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window)
+                            .SelectedNode?.Id.Equals(
+                                shot.Id,
+                                StringComparison.Ordinal)
+                            == true;
+                    },
+                    TimeSpan.FromSeconds(10)));
+                Equal(
+                    "",
+                    preview.ActiveNavigationNodeId);
+                var snapshot =
+                    preparedSession.GetValue(preview)
+                    as ProductionPreviewSessionSnapshot
+                    ?? throw new InvalidOperationException(
+                        "Missing refreshed Production Preview session.");
+                Equal(
+                    shot.Id,
+                    snapshot.Shot(shot.Id).ShotId);
+                window.Close();
+            },
+            CancellationToken.None);
+    }
+    finally
+    {
+        File.Delete(temporary);
+        if (priorWindowState is null)
+        {
+            File.Delete(windowStatePath);
+        }
+        else
+        {
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(windowStatePath)
+                ?? throw new InvalidOperationException(
+                    "Window state path has no directory."));
+            File.WriteAllBytes(
+                windowStatePath,
+                priorWindowState);
+        }
     }
 }
 
@@ -10280,6 +10415,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
     "collapsed editor cards defer their snapshot until expansion",
     "rapid visual selection commits only the latest prepared editor",
+    "new Shot reload prepares Preview before selection",
     "obsolete Preview authoring preparation cannot replace the latest selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",

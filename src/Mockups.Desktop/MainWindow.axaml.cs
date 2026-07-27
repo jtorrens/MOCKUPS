@@ -402,9 +402,14 @@ public partial class MainWindow : SukiWindow
 
     private async void RefreshPreviewOptions()
     {
+        await RefreshPreviewOptionsAsync();
+    }
+
+    private async Task<bool> RefreshPreviewOptionsAsync()
+    {
         try
         {
-            await _previewController.RefreshOptionsAsync(
+            return await _previewController.RefreshOptionsAsync(
                 Session.TreeRoots);
         }
         catch (Exception exception)
@@ -412,6 +417,7 @@ public partial class MainWindow : SukiWindow
             _messages.Error(
                 "Preview options",
                 exception);
+            return false;
         }
     }
 
@@ -977,12 +983,24 @@ public partial class MainWindow : SukiWindow
 
     private async void ReloadAndSelect(ProjectTreeNode node)
     {
-        if (!await LoadProjectTreeAsync())
+        try
         {
-            return;
+            if (!await LoadProjectTreeAsync())
+            {
+                return;
+            }
+            if (!await RefreshPreviewOptionsAsync())
+            {
+                return;
+            }
+            SelectNodeById(node.Id);
         }
-        RefreshPreviewOptions();
-        SelectNodeById(node.Id);
+        catch (Exception exception)
+        {
+            _messages.Error(
+                $"Reload and select {node.Name}",
+                exception);
+        }
     }
 
     private bool SelectNodeById(string nodeId)

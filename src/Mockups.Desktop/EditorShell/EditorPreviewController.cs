@@ -972,11 +972,11 @@ internal sealed class EditorPreviewController : IDisposable
 
     public string? SelectedDeviceId { get; private set; }
 
-    public async Task RefreshOptionsAsync(
+    public async Task<bool> RefreshOptionsAsync(
         IReadOnlyList<ProjectTreeNode> treeRoots)
     {
         var project = treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
-        if (project is null) return;
+        if (project is null) return false;
 
         var preparation = _visualContextPreparation.Begin();
         var cancellationToken = preparation.Token;
@@ -995,7 +995,7 @@ internal sealed class EditorPreviewController : IDisposable
                 || !_visualContextPreparation.IsCurrent(
                     preparation))
             {
-                return;
+                return false;
             }
 
             _visualContextSnapshot =
@@ -1005,10 +1005,12 @@ internal sealed class EditorPreviewController : IDisposable
             ApplyVisualContextOptions(
                 prepared.Visual);
             Refresh();
+            return true;
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
         {
+            return false;
         }
         finally
         {
