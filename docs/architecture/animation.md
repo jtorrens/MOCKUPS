@@ -65,6 +65,11 @@ snapshot for another Screen and perform no synchronous persistence read while
 creating or refreshing their visual surface. A committed animation write
 returns the replacement snapshot through the same boundary.
 
+Production Preview navigation separately receives a Project-wide immutable
+timeline catalog. Shot controls use its ordered Screen ranges and absolute
+keyframe frames; visual callbacks do not reload a Screen, walk persisted slots
+or recalculate the Shot timeline.
+
 ## Duration policies
 
 A Module declares one Screen duration policy:

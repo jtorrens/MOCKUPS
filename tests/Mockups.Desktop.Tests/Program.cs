@@ -7635,22 +7635,57 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         var database = new SqliteProjectTestContext(temporary);
         var dataSource = new ProductionPreviewSessionDataSource(
             database.PreviewInputs,
-            database.Production);
+            database.Production,
+            database.Resources);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(
             database.Production,
             database.Resources);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var screen = shot.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var snapshot = dataSource.LoadSnapshot(tree);
+        var preparedShot = snapshot.Shot(shot.Id);
+        var preparedScreen = snapshot.Screen(screen.Id);
 
-        Equal(database.GetModuleInstanceSettings(screen.Id).ShotId, dataSource.ModuleInstanceShotId(screen.Id));
-        Equal(database.GetShotSettings(shot.Id).Fps, dataSource.ShotFrameRate(shot.Id));
+        Equal(
+            database.GetModuleInstanceSettings(screen.Id).ShotId,
+            preparedScreen.ShotId);
+        Equal(
+            database.GetShotSettings(shot.Id).Fps,
+            preparedShot.FrameRate);
         Equal(
             database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
-            dataSource.ModuleInstanceVariantConfigJson(screen.Id));
+            preparedScreen.VariantConfigJson);
         SequenceEqual(
             database.GetShotModuleInstanceSlots(shot.Id).Select((slot) => slot.Id),
-            timelineDataSource.ShotSlotIds(shot.Id));
+            preparedShot.Screens.Select(
+                (prepared) => prepared.ScreenId));
+        Equal(
+            ModuleInstanceTimeline.ScreenStartFrame(
+                timelineDataSource,
+                screen.Id),
+            preparedScreen.StartFrame);
+        Equal(
+            Math.Max(
+                1,
+                ModuleInstanceTimeline.DurationFrames(
+                    timelineDataSource,
+                    screen.Id)),
+            preparedScreen.DurationFrames);
+        SequenceEqual(
+            ModuleInstanceTimeline.ShotKeyframeFrames(
+                timelineDataSource,
+                shot.Id),
+            preparedShot.KeyframeFrames);
+        Throws<InvalidOperationException>(
+            () => snapshot.Shot("missing_shot"));
+        Throws<InvalidOperationException>(
+            () => snapshot.Screen("missing_screen"));
+        True(typeof(EditorPreviewController)
+            .GetField(
+                "_timelineDataSource",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic) is null);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

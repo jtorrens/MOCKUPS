@@ -51,6 +51,9 @@ It includes:
   Theme options and Project media root form one read-only snapshot, and that
   the visual controller exposes only an operation-coordinated asynchronous
   refresh boundary;
+- prepared Production Preview session data, proving exact Shot FPS, ordered
+  Screen ranges, keyframes and Variant configs, while preventing the visual
+  controller from retaining a timeline data source;
 - compiled header-constructor enforcement proving that breadcrumb and
   context-strip rendering cannot receive Component, Preview or timeline
   persistence ports and requires an exact prepared header;

@@ -9,7 +9,13 @@ internal static class ModuleInstanceTimeline
 {
     public static int DurationFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
-        var source = dataSource.Load(moduleInstanceId);
+        return DurationFrames(
+            dataSource.Load(moduleInstanceId));
+    }
+
+    public static int DurationFrames(
+        ModuleInstanceTimelineSource source)
+    {
         if (RuntimeDurationContract.Policy(source.EffectiveContractJson) == RuntimeDurationPolicy.Explicit)
             return System.Math.Max(1, source.PersistedDurationFrames);
         return RuntimeTimeline.DurationFrames(
@@ -37,7 +43,13 @@ internal static class ModuleInstanceTimeline
 
     public static IReadOnlyList<int> KeyframeFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
-        var source = dataSource.Load(moduleInstanceId);
+        return KeyframeFrames(
+            dataSource.Load(moduleInstanceId));
+    }
+
+    public static IReadOnlyList<int> KeyframeFrames(
+        ModuleInstanceTimelineSource source)
+    {
         var contract = Parse(source.EffectiveContractJson);
         var runtime = Parse(source.RuntimePreviewJson);
         var animation = Parse(source.AnimationJson);

@@ -368,8 +368,8 @@ public partial class MainWindow : SukiWindow
             _workspaceCoordinator.Dispose();
         };
         _themeController.Apply();
-        ApplyTreeLoadTransition(initialTransition);
         InitializePreviewOptions();
+        ApplyTreeLoadTransition(initialTransition);
         ApplyUiTextScale();
     }
 
