@@ -195,7 +195,11 @@ Preview preparation leaves the visual context. Scalar values and structured
 collection documents travel together in that snapshot. Preview rendering and
 the Test Values authoring surface must consume the same captured revision; they
 must not read each other's mutable controls or keep parallel copies of the
-active authored context.
+active authored context. Preview-authoring document reads, transient
+reconciliation and Runtime contract discovery run behind the session operation
+coordinator. The visual shell shows the shared loading state and constructs
+controls only for the prepared result whose selection revision is still
+current.
 
 Production payload remains owned by the Screen. Repeated Play with unchanged
 inputs reuses the prepared HTML. Isolated Design actions use the same exact

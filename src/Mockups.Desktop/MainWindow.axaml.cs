@@ -361,6 +361,7 @@ public partial class MainWindow : SukiWindow
             _shellState.Save(CreateSessionHistoryState());
             _productionNavigationActions.Dispose();
             _editorContent.Dispose();
+            _collectionCards.Dispose();
             application.Operations.Dispose();
             _workspaceCoordinator.Dispose();
             _previewController.Dispose();
@@ -575,7 +576,9 @@ public partial class MainWindow : SukiWindow
                 transition.Current.Revision,
                 restoreState);
         }
-        RefreshPreviewAuthoringSurface(node);
+        _ = RefreshPreviewAuthoringSurfaceAsync(
+            node,
+            transition.Current.Revision);
         _editorHeader.SetRootTitle(
             editorNode.Name,
             EditorPreparedHeader.Loading(node.Id));
@@ -680,11 +683,84 @@ public partial class MainWindow : SukiWindow
         }
     }
 
-    private void RefreshPreviewAuthoringSurface(ProjectTreeNode node)
+    private async Task RefreshPreviewAuthoringSurfaceAsync(
+        ProjectTreeNode node,
+        long revision)
     {
-        var authoringSurface = _collectionCards.CreatePreviewAuthoringSurface(
+        var workspace = Session.Workspace;
+        if (!EditorCollectionCardFactory
+                .SupportsPreviewAuthoringSurface(
+                    node,
+                    workspace))
+        {
+            _collectionCards
+                .CancelPreviewAuthoringPreparation();
+            RenderPreviewAuthoringSurface(
+                node,
+                null);
+            return;
+        }
+
+        var header = workspace == EditorWorkspace.Production
+            ? "Screen Payload"
+            : "Test Values";
+        RenderPreviewAuthoringSurface(
             node,
-            Session.Workspace);
+            new EditorPreviewAuthoringSurface(
+                header,
+                new Border
+                {
+                    Padding = new Thickness(4),
+                    Child = new EditorLoadingScrim(),
+                }));
+        try
+        {
+            var transientState = _previewController
+                .CaptureDesignPreviewTransientState(node);
+            var prepared = await _collectionCards
+                .PreparePreviewAuthoringSurfaceAsync(
+                    node,
+                    workspace,
+                    transientState);
+            if (!_workspaceCoordinator.IsCurrent(
+                    revision,
+                    node.Id))
+            {
+                return;
+            }
+
+            RenderPreviewAuthoringSurface(
+                node,
+                prepared is null
+                    ? null
+                    : EditorCollectionCardFactory
+                        .CreatePreparedPreviewAuthoringSurface(
+                            prepared));
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer selection owns Preview authoring.
+        }
+        catch (Exception exception)
+        {
+            if (_workspaceCoordinator.IsCurrent(
+                    revision,
+                    node.Id))
+            {
+                RenderPreviewAuthoringSurface(
+                    node,
+                    null);
+                _messages.Error(
+                    "Prepare Preview authoring",
+                    exception);
+            }
+        }
+    }
+
+    private void RenderPreviewAuthoringSurface(
+        ProjectTreeNode node,
+        EditorPreviewAuthoringSurface? authoringSurface)
+    {
         _previewUtilityTabStateKey =
             $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);

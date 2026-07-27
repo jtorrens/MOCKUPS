@@ -1399,6 +1399,13 @@ internal sealed class EditorPreviewController : IDisposable
             : _designInputsPanel.ApplyTransientTestValues(preview, payload);
     }
 
+    public ComponentPreviewTransientState
+        CaptureDesignPreviewTransientState(
+            ProjectTreeNode node) =>
+        _designInputsPanel.CaptureTransientState(
+            node,
+            node.Kind == ProjectTreeNodeKind.ModuleInstance);
+
     public bool ResetDesignPreviewTestValues(ProjectTreeNode node)
     {
         var payload = DesignPreviewPayloadFactory.Create(

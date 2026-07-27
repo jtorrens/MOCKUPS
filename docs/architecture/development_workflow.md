@@ -273,10 +273,13 @@ selection revision is still current. Rapid selection therefore cannot publish
 the cards prepared for an older record.
 
 Design Preview uses the same rule: its temporary scalar and collection Test
-Values are first captured together as one immutable selection snapshot. Later
-Preview and Preview-authoring preparation may use that snapshot on the
-operation worker, but must commit it only while its selection revision remains
-current.
+Values are first captured together as one immutable selection snapshot. The
+Preview-authoring owner document, effective transient projection and declared
+input, collection and action contracts are prepared on the operation worker.
+Avalonia builds the resulting Test Values or Screen Payload controls only after
+that preparation returns, and commits them only while the exact selection
+revision remains current. A newer selection cancels the older preparation and
+an obsolete result cannot replace its authoring surface.
 
 The same prepared result carries Production Screen presentation and embedded
 Variant names for the header. Breadcrumb rendering itself performs no

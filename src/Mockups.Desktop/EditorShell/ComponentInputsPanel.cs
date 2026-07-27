@@ -360,6 +360,14 @@ internal sealed class ComponentPreviewInputSession
         CaptureTransientState(
             ComponentPreviewTransientValues.ScopeKey(payload));
 
+    public ComponentPreviewTransientState CaptureTransientState(
+        ProjectTreeNode node,
+        bool isInstance) =>
+        CaptureTransientState(
+            ComponentPreviewTransientValues.ScopeKey(
+                node,
+                isInstance));
+
     public bool ResetCurrentTestValues()
     {
         return ResetTestValues(_scopeKey);

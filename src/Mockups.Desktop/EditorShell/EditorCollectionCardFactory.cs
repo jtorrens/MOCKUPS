@@ -4,13 +4,19 @@ using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record EditorPreviewAuthoringSurface(string Header, Control Content);
 
-internal sealed class EditorCollectionCardFactory
+internal sealed record EditorPreparedPreviewAuthoringSurface(
+    string Header,
+    RuntimeInputsCollectionEditor Editor,
+    RuntimeInputSurface Surface);
+
+internal sealed class EditorCollectionCardFactory : IDisposable
 {
     private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IIconThemeAssetStore _iconThemes;
@@ -47,6 +53,8 @@ internal sealed class EditorCollectionCardFactory
     private readonly Action<int> _setShotFrame;
     private readonly Action _toggleProductionPlayback;
     private readonly EditorSessionUiState _sessionUiState;
+    private CancellationTokenSource? _previewAuthoringPreparation;
+    private bool _disposed;
 
     public EditorCollectionCardFactory(
         IModuleInstanceCollectionStore moduleInstances,
@@ -206,6 +214,121 @@ internal sealed class EditorCollectionCardFactory
         return designContent is null
             ? null
             : new EditorPreviewAuthoringSurface("Test Values", designContent);
+    }
+
+    public async Task<EditorPreparedPreviewAuthoringSurface?>
+        PreparePreviewAuthoringSurfaceAsync(
+            ProjectTreeNode node,
+            EditorWorkspace workspace,
+            ComponentPreviewTransientState transientState)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var operation = BeginPreviewAuthoringPreparation();
+        var cancellationToken = operation.Token;
+        try
+        {
+            if (!SupportsPreviewAuthoringSurface(
+                    node,
+                    workspace))
+            {
+                return null;
+            }
+
+            var isProduction =
+                workspace == EditorWorkspace.Production;
+            var editor = CreateRuntimeInputsEditor(
+                isProduction
+                    ? CreateModuleInstanceAnimationEditor()
+                    : null);
+            var surface = await _operations.ExecuteAsync(
+                () => editor.PrepareSurface(
+                    node,
+                    transientState,
+                    cancellationToken),
+                cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            return new EditorPreparedPreviewAuthoringSurface(
+                isProduction
+                    ? "Screen Payload"
+                    : "Test Values",
+                editor,
+                surface);
+        }
+        finally
+        {
+            CompletePreviewAuthoringPreparation(operation);
+        }
+    }
+
+    public static bool SupportsPreviewAuthoringSurface(
+        ProjectTreeNode node,
+        EditorWorkspace workspace)
+    {
+        return workspace == EditorWorkspace.Production
+            ? node.Kind == ProjectTreeNodeKind.ModuleInstance
+            : node.Kind is ProjectTreeNodeKind.ComponentVariant
+                or ProjectTreeNodeKind.ModuleVariant
+                or ProjectTreeNodeKind.Module;
+    }
+
+    public static EditorPreviewAuthoringSurface?
+        CreatePreparedPreviewAuthoringSurface(
+            EditorPreparedPreviewAuthoringSurface prepared)
+    {
+        var content = prepared.Surface.Owner.IsInstance
+            ? prepared.Editor
+                .CreateProductionScreenPayloadSurface(
+                    prepared.Surface)
+            : prepared.Editor
+                .CreateDesignTestValuesSurface(
+                    prepared.Surface);
+        return content is null
+            ? null
+            : new EditorPreviewAuthoringSurface(
+                prepared.Header,
+                content);
+    }
+
+    public void CancelPreviewAuthoringPreparation()
+    {
+        var operation = _previewAuthoringPreparation;
+        _previewAuthoringPreparation = null;
+        operation?.Cancel();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        var operation = _previewAuthoringPreparation;
+        _previewAuthoringPreparation = null;
+        operation?.Cancel();
+    }
+
+    private CancellationTokenSource
+        BeginPreviewAuthoringPreparation()
+    {
+        var previous = _previewAuthoringPreparation;
+        previous?.Cancel();
+        var operation = new CancellationTokenSource();
+        _previewAuthoringPreparation = operation;
+        return operation;
+    }
+
+    private void CompletePreviewAuthoringPreparation(
+        CancellationTokenSource operation)
+    {
+        if (ReferenceEquals(
+                _previewAuthoringPreparation,
+                operation))
+        {
+            _previewAuthoringPreparation = null;
+        }
+        operation.Dispose();
     }
 
     private InstantEditorCard CreateRuntimeInputsCard(ProjectTreeNode node)

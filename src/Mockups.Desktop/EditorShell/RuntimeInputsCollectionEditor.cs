@@ -11,9 +11,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record RuntimeInputOwner(
+    ProjectTreeNode Node,
+    string ConfigJson,
+    string DesignPreviewJson,
+    Func<string, Task> Save,
+    bool IsInstance);
+
+internal sealed record RuntimeInputSurface(
+    RuntimeInputOwner Owner,
+    JsonObject Preview,
+    IReadOnlyList<ComponentInputDefinition> Inputs,
+    IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
+    IReadOnlyList<ComponentPreviewActionDefinition> Actions);
 
 internal sealed class RuntimeInputsCollectionEditor
 {
@@ -127,7 +142,13 @@ internal sealed class RuntimeInputsCollectionEditor
 
     public Control CreateProductionScreenPayloadSurface(ProjectTreeNode node)
     {
-        var surface = LoadSurface(node);
+        return CreateProductionScreenPayloadSurface(
+            LoadSurface(node));
+    }
+
+    public Control CreateProductionScreenPayloadSurface(
+        RuntimeInputSurface surface)
+    {
         if (!surface.Owner.IsInstance)
         {
             throw new InvalidOperationException(
@@ -150,7 +171,13 @@ internal sealed class RuntimeInputsCollectionEditor
 
     public Control? CreateDesignTestValuesSurface(ProjectTreeNode node)
     {
-        var surface = LoadSurface(node);
+        return CreateDesignTestValuesSurface(
+            LoadSurface(node));
+    }
+
+    public Control? CreateDesignTestValuesSurface(
+        RuntimeInputSurface surface)
+    {
         if (surface.Owner.IsInstance)
         {
             return null;
@@ -168,6 +195,47 @@ internal sealed class RuntimeInputsCollectionEditor
             surface.Inputs,
             surface.Collections,
             surface.Actions);
+    }
+
+    public RuntimeInputSurface PrepareSurface(
+        ProjectTreeNode node,
+        ComponentPreviewTransientState transientState,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var owner = ResolveOwner(node);
+        cancellationToken.ThrowIfCancellationRequested();
+        var persistedPreview =
+            DesignPreviewTestValues.Parse(
+                owner.DesignPreviewJson);
+        var config = DesignPreviewTestValues.Parse(
+            owner.ConfigJson);
+        var preview = RuntimeInputForwardingContract.EffectivePreview(
+            ComponentPreviewTransientValues.Apply(
+                persistedPreview,
+                config,
+                transientState,
+                _previewInputData.ComponentVariantConfig),
+            config);
+        cancellationToken.ThrowIfCancellationRequested();
+        var inputs =
+            RuntimeInputDefinitionReader.ReadInputs(
+                preview,
+                config);
+        var collections =
+            RuntimeInputDefinitionReader.ReadCollections(
+                preview,
+                config);
+        var actions = ComponentPreviewActions.ReadWithEmbedded(
+            preview,
+            _previewInputData.ComponentVariantRuntimeContract);
+        cancellationToken.ThrowIfCancellationRequested();
+        return new RuntimeInputSurface(
+            owner,
+            preview,
+            inputs,
+            collections,
+            actions);
     }
 
     private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
@@ -2290,17 +2358,4 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? collection.JsonKey
                 : collection.SourceCollectionJsonKey;
 
-    private sealed record RuntimeInputOwner(
-        ProjectTreeNode Node,
-        string ConfigJson,
-        string DesignPreviewJson,
-        Func<string, Task> Save,
-        bool IsInstance);
-
-    private sealed record RuntimeInputSurface(
-        RuntimeInputOwner Owner,
-        JsonObject Preview,
-        IReadOnlyList<ComponentInputDefinition> Inputs,
-        IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
-        IReadOnlyList<ComponentPreviewActionDefinition> Actions);
 }

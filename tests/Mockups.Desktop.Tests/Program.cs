@@ -140,10 +140,12 @@ var tests = new (string Name, Action Run)[]
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
+    ("Preview authoring preparation is task-based cancellable and snapshot-owned", PreviewAuthoringPreparationUsesOperationBoundary),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
+    ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -365,6 +367,11 @@ static void DesignPreviewTransientSnapshotsRemainImmutable()
         [sourceItems[0]]);
     var firstSnapshot =
         session.CaptureTransientState(payload);
+    Equal(
+        ComponentPreviewTransientValues.ScopeKey(payload),
+        ComponentPreviewTransientValues.ScopeKey(
+            listVariant,
+            isInstance: false));
     session.SetExternalCollectionItems(
         payload,
         "items",
@@ -3491,6 +3498,48 @@ static void PostCommitPresentationReadsUseOperationCoordination()
         threadId != callerThread));
 }
 
+static void PreviewAuthoringPreparationUsesOperationBoundary()
+{
+    var factoryMethod = typeof(EditorCollectionCardFactory)
+        .GetMethod(
+            "PreparePreviewAuthoringSurfaceAsync",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing Preview authoring preparation boundary.");
+    True(typeof(Task).IsAssignableFrom(
+        factoryMethod.ReturnType));
+    True(factoryMethod.GetParameters().Any((parameter) =>
+        parameter.ParameterType
+        == typeof(ComponentPreviewTransientState)));
+    True(typeof(IDisposable).IsAssignableFrom(
+        typeof(EditorCollectionCardFactory)));
+
+    var surfaceMethod = typeof(RuntimeInputsCollectionEditor)
+        .GetMethod(
+            "PrepareSurface",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing Runtime Input surface preparation boundary.");
+    True(surfaceMethod.GetParameters().Any((parameter) =>
+        parameter.ParameterType
+        == typeof(ComponentPreviewTransientState)));
+    True(surfaceMethod.GetParameters().Any((parameter) =>
+        parameter.ParameterType == typeof(CancellationToken)));
+
+    var shellMethod = typeof(MainWindow)
+        .GetMethod(
+            "RefreshPreviewAuthoringSurfaceAsync",
+            BindingFlags.Instance
+            | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing revisioned Preview authoring shell adapter.");
+    Equal(typeof(Task), shellMethod.ReturnType);
+}
+
 static void VariantHistoryReadsThroughOperationBoundary()
 {
     var owner = new ProjectTreeNode(
@@ -3720,6 +3769,95 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
                 True(committed);
                 Equal(latest.Id, WindowSession(window).SelectedNode?.Id);
                 Equal(latest.Id, content.CommittedOwnerId);
+                window.Close();
+            },
+            CancellationToken.None);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ObsoletePreviewAuthoringPreparationCannotCommit()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-preview-authoring-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                window.Show();
+                var roots = WindowSession(window).TreeRoots;
+                var previewOwner = Descendants(roots)
+                    .First((node) =>
+                        node.Kind
+                        == ProjectTreeNodeKind.ComponentVariant);
+                var latest = Descendants(roots)
+                    .First((node) =>
+                        node.Kind == ProjectTreeNodeKind.Actor);
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+
+                True((bool)selectNode.Invoke(
+                    window,
+                    [previewOwner.Id])!);
+                True((bool)selectNode.Invoke(
+                    window,
+                    [latest.Id])!);
+                var content = window.FindControl<ContentControl>(
+                    "PreviewAuthoringDataHost")
+                    ?? throw new InvalidOperationException(
+                        "Missing Preview authoring host.");
+                var tab = window.FindControl<TabItem>(
+                    "PreviewAuthoringDataTab")
+                    ?? throw new InvalidOperationException(
+                        "Missing Preview authoring tab.");
+                var editor = typeof(MainWindow)
+                    .GetField(
+                        "_editorContent",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(window) as EditorContentController
+                    ?? throw new InvalidOperationException(
+                        "Missing prepared editor content owner.");
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return editor.CommittedOwnerId.Equals(
+                            latest.Id,
+                            StringComparison.Ordinal);
+                    },
+                    TimeSpan.FromSeconds(10)));
+                var settle = Stopwatch.StartNew();
+                while (settle.Elapsed
+                       < TimeSpan.FromMilliseconds(500))
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    Thread.Sleep(10);
+                }
+
+                Equal(
+                    latest.Id,
+                    WindowSession(window).SelectedNode?.Id);
+                True(content.Content is null);
+                True(!tab.IsVisible);
                 window.Close();
             },
             CancellationToken.None);
@@ -9716,6 +9854,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
     "collapsed editor cards defer their snapshot until expansion",
     "rapid visual selection commits only the latest prepared editor",
+    "obsolete Preview authoring preparation cannot replace the latest selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",

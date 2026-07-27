@@ -56,6 +56,30 @@ internal static class ComponentPreviewTransientValues
         return $"{payload.Kind}:{ownerIdentity}:{instanceId}";
     }
 
+    public static string ScopeKey(
+        ProjectTreeNode node,
+        bool isInstance)
+    {
+        var kind = node.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentClass
+                or ProjectTreeNodeKind.ComponentVariant =>
+                "componentClass",
+            ProjectTreeNodeKind.Module
+                or ProjectTreeNodeKind.ModuleVariant =>
+                "module",
+            ProjectTreeNodeKind.ModuleInstance when isInstance =>
+                "moduleInstance",
+            _ => "",
+        };
+        if (kind.Length == 0)
+        {
+            return "";
+        }
+
+        return $"{kind}:{node.Id}:{(isInstance ? node.Id : "")}";
+    }
+
     public static JsonObject Apply(
         JsonObject preview,
         JsonObject config,
