@@ -94,7 +94,7 @@ internal sealed class ShotRepository : IShotRepository
             shotCode,
             shotNumber,
             1,
-            "New shot created in the desktop shell spike.",
+            "New Shot created in MOCKUPS.",
             sortOrder,
             null,
             240,

@@ -82,7 +82,7 @@ internal sealed class ActorAvatarPreviewFactory
             }
             catch (Exception)
             {
-                // Unsupported image formats fall back to initials in the spike shell.
+                // Unsupported image formats fall back to initials in the editor.
             }
         }
 

@@ -281,7 +281,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         var id = $"episode_{Guid.NewGuid():N}";
         var name = $"Episode {sortOrder + 1}";
         var slug = $"EP_{sortOrder + 1:00}";
-        const string notes = "New episode created in the desktop shell spike.";
+        const string notes = "New Episode created in MOCKUPS.";
         _context.Execute(
             connection,
             """

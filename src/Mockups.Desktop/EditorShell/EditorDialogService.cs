@@ -108,12 +108,12 @@ internal sealed class EditorDialogService
     public Task<bool> ConfirmDelete(ProjectTreeNode node)
     {
         var message = node.Kind == ProjectTreeNodeKind.Episode
-            ? "This will also remove the shots inside this episode in the current in-memory spike."
+            ? "This will also remove the Shots inside this Episode from the current Project."
             : node.Kind == ProjectTreeNodeKind.App
-                ? "This will also remove the modules inside this app in the current spike database."
+                ? "This will also remove the Modules inside this App from the current Project."
                 : node.Kind == ProjectTreeNodeKind.ModuleInstance
                     ? "This removes only this Screen from the Shot. Its Module and Variant remain available."
-                : "This removes this item from the current spike database.";
+                : "This removes this item from the current Project.";
 
         return Confirm(
             node.Kind == ProjectTreeNodeKind.ModuleInstance ? "Delete Screen" : $"Delete {node.Kind}",
