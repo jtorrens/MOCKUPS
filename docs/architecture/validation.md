@@ -223,6 +223,8 @@ That structural suite also requires:
   project-engine forwarding methods;
 - Component document and embedded-boundary overloads exist only on their
   focused store, never on the project engine;
+- Component reference catalogs, Runtime contracts and reference validation
+  cannot reappear as project-engine forwarding queries;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

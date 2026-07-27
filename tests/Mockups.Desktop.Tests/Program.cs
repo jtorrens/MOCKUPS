@@ -3156,6 +3156,11 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "CreateEmbeddedComponentFieldValue",
                  "UpdateEmbeddedComponentField",
                  "UpdateRuntimeComponentOverride",
+                 "GetComponentClassBaseConfigsJson",
+                 "GetComponentVariantConfig",
+                 "GetComponentVariantRuntimeContract",
+                 "GetComponentVariantReferenceOptions",
+                 "ValidateComponentVariantReferenceValue",
              })
     {
         True(
