@@ -381,6 +381,7 @@ public static class ComponentPreviewActions
         var durationThemeToken = JsonString(action, "durationThemeToken");
         var durationStateCollectionJsonKey = JsonString(action, "durationStateCollectionJsonKey");
         var durationOwnerTimeline = JsonBoolean(action, "durationOwnerTimeline", false);
+        var definesModuleDuration = JsonBoolean(action, "definesModuleDuration", false);
         var durationSeconds = JsonNumber(action, "durationSeconds", 0);
         var timeJsonKey = JsonString(action, "timeJsonKey");
         var id = RequiredString(action, "id", "Design Preview action");
@@ -405,6 +406,7 @@ public static class ComponentPreviewActions
             JsonStringArray(action, "durationCollectionMultiplierNumberKeys"),
             JsonNumber(action, "durationBaseFrames", 0),
             durationOwnerTimeline,
+            definesModuleDuration,
             timeJsonKey,
             ParseTimeUnit(JsonString(action, "timeUnit")),
             ParseCompletionBehavior(JsonString(action, "completionBehavior")),
@@ -871,6 +873,7 @@ public sealed record ComponentPreviewActionDefinition(
     IReadOnlyList<string> DurationCollectionMultiplierNumberKeys,
     double DurationBaseFrames,
     bool DurationOwnerTimeline,
+    bool DefinesModuleDuration,
     string TimeJsonKey,
     ComponentPreviewActionTimeUnit TimeUnit,
     ComponentPreviewActionCompletionBehavior CompletionBehavior,

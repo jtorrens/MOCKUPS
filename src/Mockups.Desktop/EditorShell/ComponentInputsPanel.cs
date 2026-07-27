@@ -476,12 +476,28 @@ internal sealed class ComponentPreviewInputSession
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
         ReconcileRuntimeStructure(preview, config);
 
-        return payload with
+        var result = payload with
         {
             ConfigJson = config.ToJsonString(),
             DesignPreviewJson = preview.ToJsonString(),
             RuntimeContractJson = preview.ToJsonString(),
         };
+        var moduleFrameActions = _actions
+            .Where((action) =>
+                action.DefinesModuleDuration
+                && ComponentPreviewActions.IsApplicable(preview, action))
+            .ToList();
+        if (moduleFrameActions.Count > 1)
+        {
+            throw new InvalidOperationException(
+                "Design Preview Runtime declares multiple actions that define the Module frame.");
+        }
+        return moduleFrameActions.Count == 0
+            ? result
+            : DesignPreviewPlaybackFrameProjection.Apply(
+                result,
+                moduleFrameActions[0],
+                PlaybackTimeValue(moduleFrameActions[0]));
     }
 
     private void ResolveCollectionRecordReferences(
@@ -1504,6 +1520,7 @@ internal sealed class ComponentPreviewInputSession
             string.Join(",", action.DurationItemNumberKeys),
             string.Join(",", action.DurationCollectionMultiplierNumberKeys),
             action.DurationBaseFrames.ToString(CultureInfo.InvariantCulture),
+            action.DefinesModuleDuration.ToString(CultureInfo.InvariantCulture),
             action.TimeJsonKey,
             action.TimeUnit,
             action.CompletionBehavior,

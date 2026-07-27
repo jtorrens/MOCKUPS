@@ -116,6 +116,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
+    ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
     ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
     ("animated Conversation text keeps Keyboard and Text Input Bar visible", AnimatedConversationComposerRemainsVisible),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
@@ -9478,6 +9479,84 @@ static void AnimatedConversationComposerRemainsVisible()
             StringComparison.Ordinal));
         True(html.Contains(
             "data-renderable-id=\"component.textInputBar\"",
+            StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ConversationPlayMessagesAdvancesRootOwnerFrame()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $"mockups-conversation-playback-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var conversation = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleVariant
+            && node.Id == "module_core_chat::variant::default");
+        var theme = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(CreatePreviewPayload(
+            database,
+            conversation,
+            theme.Id,
+            timelineFrame: 0));
+        var preview = JsonPath.ParseRequiredObject(
+            payload.DesignPreviewJson,
+            "Conversation Design Preview");
+        var action = ComponentPreviewActions.Read(preview)
+            .Single((candidate) => candidate.Id == "playConversation");
+        True(action.DefinesModuleDuration);
+        var module = database.GetModuleSettings("module_core_chat");
+        var inputSession = new ComponentPreviewInputSession(
+            database.Design,
+            database.DictionaryContext,
+            database.Resources,
+            database.ProjectPaths,
+            () => { });
+        inputSession.UpdateForPayload(payload, module.ProjectId);
+        var interactivePayload = inputSession.ApplyInputs(
+            payload,
+            "light",
+            module.ProjectId);
+
+        var frames = EditorPreviewController.PlaybackFramePayloads(
+                payload,
+                payload.FrameRate,
+                action)
+            .ToList();
+        True(frames.Count > 40);
+        Equal(frames.Count - 1, interactivePayload.LocalFrame);
+        Equal(0, frames[0].LocalFrame);
+        Equal(40, frames[40].LocalFrame);
+        Equal(40, JsonPath.RequiredInteger(
+            JsonPath.ParseRequiredObject(
+                frames[40].DesignPreviewJson,
+                "Conversation playback frame"),
+            "conversationFrame",
+            "Conversation playback frame"));
+
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+            database.GetDevicePreviewMetrics(device.Id),
+            false,
+            frames[40]).GetAwaiter().GetResult();
+        True(!html.Contains(
+            "preview-error",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "Tenias razon",
             StringComparison.Ordinal));
     }
     finally

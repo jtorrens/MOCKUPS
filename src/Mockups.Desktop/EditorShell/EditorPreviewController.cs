@@ -2553,7 +2553,7 @@ internal sealed class EditorPreviewController : IDisposable
         Slow,
     }
 
-    private static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(
+    internal static IEnumerable<DesignPreviewPayload> PlaybackFramePayloads(
         DesignPreviewPayload payload,
         int projectFps,
         ComponentPreviewActionDefinition? requestedAction = null)
@@ -2589,7 +2589,10 @@ internal sealed class EditorPreviewController : IDisposable
                         ? frame / (double)fps * 1000
                         : frame / (double)fps);
             ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
-            yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
+            yield return DesignPreviewPlaybackFrameProjection.Apply(
+                payload with { DesignPreviewJson = framePreview.ToJsonString() },
+                action,
+                frame);
         }
     }
 
@@ -2635,7 +2638,14 @@ internal sealed class EditorPreviewController : IDisposable
                         ? frame / (double)fps * 1000
                         : frame / (double)fps);
             ComponentPreviewActions.SetValue(framePreview, action, action.PlayInputId, true);
-            yield return payload with { DesignPreviewJson = framePreview.ToJsonString() };
+            yield return DesignPreviewPlaybackFrameProjection.Apply(
+                payload with { DesignPreviewJson = framePreview.ToJsonString() },
+                action,
+                action.TimeUnit == ComponentPreviewActionTimeUnit.Frames
+                    ? frame
+                    : action.TimeUnit == ComponentPreviewActionTimeUnit.Milliseconds
+                        ? frame / (double)fps * 1000
+                        : frame / (double)fps);
         }
     }
 
