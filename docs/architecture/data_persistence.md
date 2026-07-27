@@ -150,6 +150,9 @@ Component document implementation.
 Component reference catalogs, Runtime contract reads and reference validation
 are consumed directly from `SqliteDesignOwner` through their focused session
 adapters; the project engine exposes no mirror query surface.
+Component Variant commands are owned by `SqliteEditorNodeCommandStore` and
+reference details by `SqliteComponentDocumentStore`; the project engine has no
+parallel Variant command implementation.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

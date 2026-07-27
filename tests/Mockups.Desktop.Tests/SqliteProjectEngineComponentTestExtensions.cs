@@ -180,4 +180,36 @@ internal static class SqliteProjectEngineComponentTestExtensions
             slots,
             embeddedFieldId,
             value);
+
+    internal static ProjectTreeNode SaveComponentVariant(
+        this SqliteProjectEngine engine,
+        ProjectTreeNode sourceNode,
+        string name) =>
+        engine.NodeCommands.SaveComponentVariant(sourceNode, name);
+
+    internal static ProjectTreeNode RenameComponentVariant(
+        this SqliteProjectEngine engine,
+        ProjectTreeNode node,
+        string name) =>
+        engine.Design.RenameComponentVariant(node, name);
+
+    internal static ProjectTreeNode ToggleComponentVariantLock(
+        this SqliteProjectEngine engine,
+        ProjectTreeNode node) =>
+        engine.NodeCommands.ToggleComponentVariantLock(node);
+
+    internal static void ReplaceComponentVariantConfig(
+        this SqliteProjectEngine engine,
+        ProjectTreeNode node,
+        string configJson) =>
+        engine.NodeCommands.ReplaceComponentVariantConfig(
+            node,
+            configJson);
+
+    internal static IReadOnlyList<ComponentVariantReferenceUsage>
+        GetComponentVariantReferenceUsageDetails(
+            this SqliteProjectEngine engine,
+            ProjectTreeNode node) =>
+        engine.ComponentDocuments
+            .GetComponentVariantReferenceUsageDetails(node);
 }

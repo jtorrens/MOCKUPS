@@ -225,6 +225,8 @@ That structural suite also requires:
   focused store, never on the project engine;
 - Component reference catalogs, Runtime contracts and reference validation
   cannot reappear as project-engine forwarding queries;
+- Component Variant commands and reference details cannot reappear on the
+  project engine;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

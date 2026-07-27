@@ -3161,6 +3161,10 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "GetComponentVariantRuntimeContract",
                  "GetComponentVariantReferenceOptions",
                  "ValidateComponentVariantReferenceValue",
+                 "SaveComponentVariant",
+                 "RenameComponentVariant",
+                 "ToggleComponentVariantLock",
+                 "ReplaceComponentVariantConfig",
              })
     {
         True(
